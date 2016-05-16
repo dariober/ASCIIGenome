@@ -1,0 +1,3 @@
+# comment line
+chr1	0	10
+chr1	20	30
