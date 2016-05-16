@@ -384,7 +384,7 @@ String inline= "\n    N a v i g a t i o n\n\n"
 					System.out.println("    A l i g n m e n t s\n");
 					System.out.println(ArgParse.getDocstrings());
 					System.out.println("q      Quit");
-					System.out.println("See also http://github.com/dariober/Java-cafe/tree/master/SamTextViewer");
+					System.out.println("See also " + ArgParse.WEB_ADDRESS);
 					cmdInput= null;
 					continue;
 				} 

@@ -10,8 +10,9 @@ import net.sourceforge.argparse4j.inf.Namespace;
 
 public class ArgParse {
 	
-	public static String PROG_NAME= "SamTextViewer";
+	public static String PROG_NAME= "ASCIIGenome";
 	public static String VERSION= "0.1.0";
+	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	
 	public static LinkedHashMap<String, String> docstrings= new LinkedHashMap<String, String>(); 
 	
@@ -24,9 +25,7 @@ public class ArgParse {
 				.version("${prog} " + VERSION)
 				.description("DESCRIPTION\n"
 + "Text viewer for genome alignment and annotation files.\n"
-+ "For details see https://github.com/dariober/Java-cafe/tree/master/SamTextViewer\n"
-+ "Example\n"
-+ "java /.../SamTextViewer.jar -r chr18:1000-2000 reads.bam ann.gtf.gz"
++ "For details see " + WEB_ADDRESS + "\n"
 + "");	
 		parser.addArgument("insam")
 			.type(String.class)

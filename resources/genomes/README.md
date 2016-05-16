@@ -13,3 +13,8 @@ mysql -N --user=genome --host=genome-mysql.cse.ucsc.edu -A -e \
     "select chrom, size from hg19.chromInfo"  > hg19.genome
 ```
 
+Or
+
+```
+curl -o - -O http://hgdownload.soe.ucsc.edu/goldenPath/mm10/bigZips/mm10.chrom.sizes > mm10.genome
+```

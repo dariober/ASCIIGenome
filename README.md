@@ -1,36 +1,40 @@
 <!-- MarkdownTOC -->
 
+- [Upload ASCIIGenome-0.1.0.zip to github releases and delete](#upload-asciigenome-010zip-to-github-releases-and-delete)
 - [Text Only Genome Viewer!](#text-only-genome-viewer)
   - [Key Features](#key-features)
 - [Usage](#usage)
   - [Quick start](#quick-start)
+  - [General remarks](#general-remarks)
   - [Navigation](#navigation)
-  - [Search](#search)
+  - [Find](#find)
   - [Display](#display)
   - [Alignments](#alignments)
+  - [Genome option](#genome-option)
+  - [Formatting of reads and features](#formatting-of-reads-and-features)
+  - [TODO: BS-Seq data](#todo-bs-seq-data)
 - [Supported input](#supported-input)
 - [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
   - [Regular expressions](#regular-expressions)
 - [Requirements and Installation](#requirements-and-installation)
-  - [Installation quick start.](#installation-quick-start)
+  - [Installation quick start](#installation-quick-start)
   - [A little more detail](#a-little-more-detail)
 - [Credits](#credits)
 - [DEPRECATED](#deprecated)
-- [ASCIIGenome: A text based no GUI genome viewer](#asciigenome-a-text-based-no-gui-genome-viewer)
-- [Usage](#usage-1)
-  - [Quick start](#quick-start-1)
-  - [Moving around the genome](#moving-around-the-genome)
-  - [Display options](#display-options)
-  - [Filtering reads](#filtering-reads)
-  - [Searching features in annotation files](#searching-features-in-annotation-files)
-  - [Genome option](#genome-option)
-  - [Formatting of reads and features](#formatting-of-reads-and-features)
 
 <!-- /MarkdownTOC -->
 
-<!-- MEMO: Compile, package and uplaod to github releases
+<!-- MEMO: Compile, package and upload to github releases
 - Write-out jar from Eclipse
-/Users/berald01/Tritume/ASCIIGenome.jar
+cd ~/svn_git/ASCIIGenome/trunk
+mkdir ASCIIGenome-0.1.0 # This should match the version in ArgParse
+cp ASCIIGenome ASCIIGenome-0.1.0/
+cp /Users/berald01/Tritume/ASCIIGenome.jar ASCIIGenome-0.1.0/
+zip -r ASCIIGenome-0.1.0.zip ASCIIGenome-0.1.0
+rm -r ASCIIGenome-0.1.0
+
+# Upload ASCIIGenome-0.1.0.zip to github releases and delete
+
  -->
 
 
@@ -90,6 +94,27 @@ ASCIIGenome ftp://ftp.ensemblgenomes.org/pub/release-31/protists/gtf/leishmania_
 
 Then move to visualize chromosome 36: `goto 36:1-2682151`, then make visible only the 'transcript' features: `visible '.*\ttranscript\t.*'`
 
+General remarks
+---------------
+
+As there is no GUI, everything is handled thorough command line. Once `ASCIIGenome` is started enter
+one of the commands below and press ENTER to execute, e.g.:
+
+```
+[h] for help: ff <ENTER>
+```
+
+will move the window forward by half its size. `h <ENTER>` will show help.
+
+Some features of Unix console are enabled, The arrow keys UP and DOWN scroll previous commands and TAB autocompletes commands.
+Just pressing ENTER will repeat the previous command, this is handy to quickly scroll along the genome. For example:
+
+```
+[h] for help: ff <ENTER> ## Move forward
+[h] for help: <ENTER>    ## Move forward again...
+[h] for help: <ENTER>    ## ... and again
+```
+
 Navigation
 ----------
 
@@ -97,9 +122,9 @@ Navigation
 f / b 
       Small step forward/backward 1/10 window
 ff / bb
-      Large step forward/backward 1/2 window
 zi / zo [x]
       Zoom in / zoom out x times (default x= 1). Each zoom halves or doubles the window size
+      Large step forward/backward 1/2 window
 goto chrom:from-to
       Go to given region. E.g. "goto chr1:1-1000" or chr1:10 or chr1. goto keyword can be replaced with ':' (like goto in vim)
 <from> [to]
@@ -108,17 +133,25 @@ goto chrom:from-to
       Move forward/backward by <int> bases. Suffixes k (kilo) and M (mega) allowed. E.g. -2m or +10k
 p / n
       Go to previous/next visited position
+next / next_start [trackId]
+      Move to the next feature in trackId on *current* chromosome
+      'next' centers the window on the found feature while 'next_start' sets the window at the start of the feature.
 ```
 
-Search
-------
+The `next` command does exactly that, it moves to the next feature. If there are no more features after the current position it
+doesn't rewind to the beginning (use `:1` for that) and it doesn't move to another chromosome (use `-r chrom`). 
+
+
+Find
+----
 
 ```
-next <trackId>
-      Move to the next feature in <trackId> on *current* chromosome
-find <regex> [trackId]
+find_next <regex> [trackId]
       Find the next record in trackId matching regex. Use single quotes for strings containing spaces.
       For case insensitive matching prepend (?i) to regex. E.g. "next '(?i).*actb.*' myTrack#1"
+find_all <regex> [trackId]
+      Find all matches on chromosome. The search stops at the first chromosome returning hits
+      starting with the current one. Useful to get all gtf records of a gene
 ```
 
 Display
@@ -141,7 +174,7 @@ print / printFull
       print clip lines to fit the screen, printFull will wrap the long lines
 showGenome
       Print the genome file
-addTracks [file/url]...
+addTracks [file or url]...
       Add tracks
 history
       Show visited positions
@@ -165,6 +198,33 @@ Alignments
 -ml
     Maximum number of lines to print for each methylation track
 ```
+
+Genome option
+-------------
+
+An optional genome file can be passed to option `-g/--genome` to give a set of allowed sequences and their sizes so that browsing is constrained to the real genomic space. 
+The genome file is also used to represent the position of the current window on the chromosome, which is handy to navigate around.
+
+There are three options to pass a genome file:
+
+* A tag identifying a built-in genome, e.g. hg19. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for available genomes
+
+* A local file, tab separated with columns chromosome name and length. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for examples.
+
+* A bam file with suitable header.
+
+Note that if the input list of files contains a bam file, the `--genome` option is effectively ignored as the genome dictionary is extracted from the bam header.
+
+
+Formatting of reads and features
+--------------------------------
+
+When aligned reads are show at single base resolution, read bases follow the same convention as samtools: 
+Upper case letters and `.` for read align to forward strand, lower case and `,` otherwise; second-in-pair reads are underlined;
+grey-shaded reads have mapping quality of <=5. In bisulfite mode the characters M, U, m, u are used for methylated and unmethylated bases on forward and reverse strands.
+
+TODO: BS-Seq data
+-----------------
 
 Supported input
 ===============
@@ -198,17 +258,8 @@ For input format specs see also [UCSC format](https://genome.ucsc.edu/FAQ/FAQfor
 Tips gotchas and miscellanea
 ============================
 
-* Use UP and DOWN arrow keys to display the previous/next executed command just like on Unix terminal. 
- Commands can be auto-completed with TAB, like Unix terminal but more rudimentary really. 
-
-* On interactive prompt, no input, *i.e.* just pressing ENTER, repeats the previous command (useful for quick navigation).
-
-* The `next` command does exactly that, it moves to the next feature. If there are no more features after the current position it
-doesn't rewind to the beginning (use `:1` for that) and it doesn't move to another chromosome (use `-r chrom`). 
-
-* **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow when the window size grows
+**Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow when the window size grows
 above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are loaded in memory unless they are indexed with `tabix`. 
-
 
 #### Regular expressions
 
@@ -227,12 +278,13 @@ The options that take regular expressions assume some familiarity with regexes a
 Requirements and Installation
 =============================
 
-## Installation quick start. 
+Installation quick start 
+------------------------
 
 In the commands below replace version number with the latest from [releases](https://github.com/dariober/Java-cafe/releases):
 
 ```
-wget https://github.com/dariober/Java-cafe/releases/download/v0.1.0/ASCIIGenome-0.1.0.zip
+wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.1.0.zip
 unzip ASCIIGenome-0.1.0.zip
 cd ASCIIGenome-0.1.0/
 chmod a+x ASCIIGenome
@@ -267,57 +319,6 @@ Credits
 DEPRECATED
 ==========
 
-ASCIIGenome: A text based no GUI genome viewer
-================================================
-
-```ASCIIGenome``` is a command line genome viewer useful to browse and visualize sequence alignment and annotation files
-on **console screen**. It aims to be similar to ```samtools tview``` but with the flexibility of
-GUI genome viewers like IGV.
-
-Features that attempt to combine text based viewers (```tview```) with GUI viewers:
-
-* Command line input and interaction, no graphical interface.
-* Can load multiple files in various formats.
-* Support for BS-Seq alignment files.
-* Navigation and search options
-
-![ex3](https://github.com/dariober/Java-cafe/blob/master/ASCIIGenome/screenshots/ex3.png)
-
-Usage
-=====
-
-Quick start
------------
-
-These are some examples, for brevity using the helper `ASCIIGenome`
-
-Display a bam file together with a gtf annotation file, go straight to position chr7:5566640-5569055 (atcb gene). This is RNA-Seq data:
-
-    ASCIIGenome -r chr7:5566640-5569055 ds051.actb.bam hg19.gencode_genes_v19.gtf.gz
-
-![ex1](https://github.com/dariober/Java-cafe/blob/master/ASCIIGenome/screenshots/ex1.png)
-
-
-The header line:
-
-```
-ds051.actb.bam; Each . = 44.68; max depth: 893.62x; 
-```
-
-gives the name of the file, scale of the read depth track (in this example one dot corresponds to 44.68 reads) and the maximum read depth
-in the current view (893.62).
-
-The line at the bottom of the tracks
-
-```
-chr7:5567688-5567847; 160 bp; 1.0 bp/char; Filters: -q 0 -f 0 -F 4; Mem: 552 MB;
-```
-
-shows the current position, the width and scale of the view, filters applied to the bam files and the memory usage.
-
-For visualizing BS-Seq data add the `-bs` flag and provide a reference fasta file:
-
-    ASCIIGenome -bs fa chr7.fa ds051.actb.bam 
 
 <img src="screenshots/exBSmode.png" width="450">
 
@@ -327,113 +328,3 @@ For visualizing BS-Seq data add the `-bs` flag and provide a reference fasta fil
 After starting `ASCIIGenome` you can navigate the genome with the following interactive commands. 
 
 <img src="screenshots/bedCluster.png" width="450">
-
-## Moving around the genome
-
-Use the following keys and commands to navigate the genome
-
-```
-f / b 
-      Small step forward/backward 1/10 window
-ff / bb
-      Large step forward/backward 1/2 window
-zi / zo
-      Zoom in / zoom out
-p / n
-      Go to previous/next visited position
-<from>-[to]
-      Go to position <from> or to region <from>-[to] on current chromosome. E.g. '10' or '10-1000'
-+/-<int>[k,m]
-      Move forward/backward by <int> bases. Suffixes k and m allowed. E.g. -2m or +10k
-```
-
-Display options
----------------
-
-These options can be used to set the limits of the y axis and their height.
-
-```
-visibile [show regex] [hide regex] [track regex]
-        In annotation tracks, only include rows captured by [show regex] and exclude [hide regex].
-        Apply to annotation tracks captured by [track regex]. With no optional arguments reset to default: "'.*' '^$' '.*'"
-        Use '.*' to match everything and '^$' to hide nothing. Ex "visible .*exon.* .*CDS.* .*gtf#.*"
-ylim <min> <max> [regex]
-        Set limits of y axis for all track IDs captured by regex. Default regex: '.*'
-dataCol <idx> [regex]
-        Select data column for all bedgraph tracks captured by regex. <idx>: 1-based column index
-```
-
-also see:
-
-```
-print
-        Turn on/off the printing of bed/gtf features in current interval
-rNameOn / rNameOff
-        Show/Hide read names
-history
-        Show visited positions
-```
-
-These options apply to bam files:
-
-```
--m
-    Maximum number of lines to print for read tracks. No limit If < 0
--rpm
-    Toggle on/off the normalization of Reads Per Million for bam input. Default off
--d
-    Maximum number of lines to print for coverage tracks
--ml
-    Maximum number of lines to print for each methylation track
-```
-
-Filtering reads
----------------
-
-Reads in bam files can be filtered in and out using the -f, -F and -q options as in `samtools`:
-
-```
--f
-    Required sam flags. Use 4096 for reads on top strand
--F
-    Filtering sam flags. Use 4096 for reads on top strand
--q
-    Minumum mapping quality for a read to be considered
-
-```
-
-## Searching features in annotation files
-
-These options apply to bed, gff and gtf files:
-
-```
-next <trackId>
-        Move to the next feature in <trackId> on *current* chromosome
-find <regex> [trackId]
-        Find the next record in trackId matching regex. Use single quotes for strings containing spaces.
-        For case insensitive matching prepend (?i) to regex e.g. '(?i).*actb.*'
-```
-
-Note that `find` searches the entire lines for matches to the given regular expression. So to find the 'ACTB' gene name use `find .*ACTB.*`, using just `find ACTB` as you would with `grep` will return no matches as no line in a bed file can match just that. 
-
-## Genome option
-
-An optional genome file can be passed to option `-g/--genome` to give a set of allowed sequences and their sizes so that browsing is constrained to the real genomic space. 
-The genome file is also used to represent the position of the current window on the chromosome, which is handy to navigate around.
-
-There are three options to pass a genome file:
-
-* A tag identifying a built-in genome, e.g. hg19. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for available genomes
-
-* A local file, tab separated with columns chromosome name and length. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for examples.
-
-* A bam file with suitable header.
-
-Note that if the input list of files contains a bam file, the `--genome` option is effectively ignored as the genome dictionary is extracted from the bam header.
-
-
-## Formatting of reads and features
-
-When aligned reads are show at single base resolution, read bases follow the same convention as samtools: 
-Upper case letters and `.` for read align to forward strand, lower case and `,` otherwise; second-in-pair reads are underlined;
-grey-shaded reads have mapping quality of <=5. In bisulfite mode the characters M, U, m, u are used for methylated and unmethylated bases on forward and reverse strands.
