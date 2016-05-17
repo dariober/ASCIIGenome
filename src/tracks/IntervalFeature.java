@@ -13,6 +13,8 @@ import samTextViewer.Utils;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
+import exceptions.InvalidGenomicCoordsException;
+
 /**
  * Class to hold bed or gtf features. Behaviour should be similar to pybedtools Interval.
  * Feature coords are 1-based. The first ten bases of the chrom have from-to = 1-10
@@ -45,8 +47,9 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * Create an IntervalFeature from a String. Typically this string is a bed or gtf line read from file.
 	 * @param line
 	 * @param type Format of this line
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	public IntervalFeature(String line, TrackFormat type){
+	public IntervalFeature(String line, TrackFormat type) throws InvalidGenomicCoordsException{
 		if(type.equals(TrackFormat.BED) || type.equals(TrackFormat.BEDGRAPH)){
 			intervalFeatureFromBedLine(line);
 			this.format= TrackFormat.BED;
@@ -65,7 +68,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	
 	/* M e t h o d s */
 	
-	private IntervalFeature intervalFeatureFromBedLine (String bedLine){
+	private IntervalFeature intervalFeatureFromBedLine (String bedLine) throws InvalidGenomicCoordsException{
 		
 		bedLine= bedLine.replace("\n", "");
 		bedLine= bedLine.replace("\r", "");
@@ -101,7 +104,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return this;
 	}
 	
-	private IntervalFeature intervalFeatureFromGtfLine (String gtfLine){
+	private IntervalFeature intervalFeatureFromGtfLine (String gtfLine) throws InvalidGenomicCoordsException{
 		//chr1    unknown exon    11874   12227   .       +       .       gene_id "DDX11L1"; transcript_id "NR_046018_1"; gene_name "DDX11L1"; tss_id "TSS14523";
 		gtfLine= gtfLine.replace("\n", "");
 		gtfLine= gtfLine.replace("\r", "");
@@ -142,21 +145,22 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	
 	/**
 	 * A bunch of checks to make sure feature is ok.
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	private void validateIntervalFeature(){
+	private void validateIntervalFeature() throws InvalidGenomicCoordsException{
 
 		if(!chrom.trim().equals(chrom)){
 			System.err.println("Chrom name must not start or end with whitespaces. Got '" + chrom + "'");
-			System.exit(1);
+			throw new InvalidGenomicCoordsException();
 		}
 		
 		if(from < 1 || to < 1 || (from > to)){
 			System.err.println("Invalid coordinates: " + from + " " + to);
-			System.exit(1);
+			throw new InvalidGenomicCoordsException();
 		}
 		if(this.strand != '+' && this.strand != '-' && this.strand != '.'){
 			System.err.println("Invalid strand char " + this.strand);
-			System.exit(1);			
+			throw new InvalidGenomicCoordsException();
 		}		
 	}
 	 

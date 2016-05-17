@@ -8,6 +8,7 @@ import java.util.List;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.junit.Test;
 
+import exceptions.InvalidGenomicCoordsException;
 import tracks.IntervalFeature;
 
 public class IntervalFeatureTest {
@@ -27,7 +28,7 @@ public class IntervalFeatureTest {
 	}
 	
 	@Test
-	public void canCreateIntervalFromGtfString(){
+	public void canCreateIntervalFromGtfString() throws InvalidGenomicCoordsException{
 		String gtfLine= "chr1\tunknown\texon\t11874\t12227\t.\t+\t.\tgene_id \"DDX11L1\"; transcript_id \"NR_046018_1\"; gene_name \"DDX11L1\"; tss_id \"TSS14523\";";
 		IntervalFeature f= new IntervalFeature(gtfLine, TrackFormat.GFF);
 		assertEquals(11874, f.getFrom());
@@ -50,7 +51,7 @@ public class IntervalFeatureTest {
 	//}
 	
 	@Test
-	public void canGetAttribute(){
+	public void canGetAttribute() throws InvalidGenomicCoordsException{
 		String gtfLine= "chr1\tunknown\texon\t11874\t12227\t.\t+\t.\tgene_id \"DDX11L1\"; transcript_id \"NR_046018_1\"; gene_name \"DDX11L1\"; tss_id \"TSS14523\";";	
 		
 		IntervalFeature f= new IntervalFeature(gtfLine, TrackFormat.GFF);
@@ -61,7 +62,7 @@ public class IntervalFeatureTest {
 
 	
 	@Test
-	public void canCreateIntervalFromString() {
+	public void canCreateIntervalFromString() throws InvalidGenomicCoordsException{
 		String bedLine= "chr1\t0\t1";
 		IntervalFeature f= new IntervalFeature(bedLine, TrackFormat.BED);
 		assertEquals("chr1", f.getChrom());
@@ -82,7 +83,7 @@ public class IntervalFeatureTest {
 	}
 	
 	@Test
-	public void canSortByChromPos() {
+	public void canSortByChromPos() throws InvalidGenomicCoordsException{
 		List<IntervalFeature> flist= new ArrayList<IntervalFeature>();
 		flist.add(new IntervalFeature("chrM\t10\t100\tg5", TrackFormat.BED));
 		flist.add(new IntervalFeature("chrM\t1\t100\tg4", TrackFormat.BED));
@@ -95,7 +96,7 @@ public class IntervalFeatureTest {
 	}
 	
 	@Test
-	public void canMapIntervalToRuler(){
+	public void canMapIntervalToRuler() throws InvalidGenomicCoordsException{
 		List<Double> rulerMap= new ArrayList<Double>();
 		for(int i= 10; i < 20; i += 2){
 			rulerMap.add((double)(i + 0.3));

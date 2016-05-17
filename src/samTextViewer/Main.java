@@ -133,7 +133,7 @@ public class Main {
 		for(String x : inputFileList){
 			console.addCompleter(new StringsCompleter(new File(x).getName()));
 		}
-		for(String x : "next next_start goto find_next find_all showGenome addTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
+		for(String x : "next next_start goto find_first find_all find_first_re find_all_re showGenome addTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
 			// Add options. Really you should use a dict for this.
 			if(x.length() > 2){
 				console.addCompleter(new StringsCompleter(x));
@@ -228,7 +228,11 @@ public class Main {
 					TrackIntervalFeature tif= (TrackIntervalFeature) trackSet.getTrackSet().get(trackId);
 					tif.setGc(gch.current());
 					//tif.setyMaxLines(trackHeight);
-					tif.update();
+					try {
+						tif.update();
+					} catch(InvalidGenomicCoordsException e){
+						e.printStackTrace();
+					}
 				} 
 				/* Wiggles */
 				if(Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BIGWIG) 
@@ -352,12 +356,16 @@ String inline= "\n    N a v i g a t i o n\n\n"
 + "      'next' centers the window on the found feature while 'next_start' sets the window at the start of the feature.\n"
 
 + "\n    F i n d  \n\n"
-+ "find_next <regex> [trackId]\n"
-+ "      Find the next record in trackId matching regex. Use single quotes for strings containing spaces.\n"
-+ "      For case insensitive matching prepend (?i) to regex. E.g. \"next '(?i).*actb.*' myTrack#1\"\n"
-+ "find_all <regex> [trackId]\n"
-+ "      Find all matches on chromosome. The search stops at the first chromosome returning hits\n"
-+ "      starting with the current one. Useful to get all gtf records of a gene\n"
++ "find_first <string> [trackId]\n"
++ "      Find the first (next) record in trackId containing string. Use single quotes for strings with spaces.\n"
++ "find_first_re <regex> [trackId]\n"
++ "      Same as find_first but matching is done by regex. For case insensitive matching prepend (?i)\n"
++ "      to regex. E.g. \"next '(?i).*actb.*' myTrack#1\"\n"
++ "find_all <string> [trackId]\n"
++ "      Find all records on chromosome containing string. The search stops at the first chromosome\n"
++ "      returning hits starting with the current one. Useful to get all gtf records of a gene\n"
++ "find_all_re <regex> [trackId]\n"
++ "      Same as find_all but matching regex\n"
 
 + "\n    D i s p l a y  \n\n"
 + "visible [show regex] [hide regex] [track regex]\n"
@@ -501,7 +509,10 @@ String inline= "\n    N a v i g a t i o n\n\n"
 					} else if(cmdInput.startsWith("next ") || cmdInput.equals("next")){
 							GenomicCoords gc= (GenomicCoords)gch.current().clone();
 							gch.add(trackSet.goToNextFeatureOnFile(cmdInput.replace("next", "").trim(), gc, 5.0));
-					} else if(cmdInput.startsWith("find_next ") || cmdInput.startsWith("find_all ")) {  
+					} else if(cmdInput.startsWith("find_first ") || 
+							  cmdInput.startsWith("find_all ") || 
+							  cmdInput.startsWith("find_first_re ") ||
+							  cmdInput.startsWith("find_all_re ")) {  
 						StrTokenizer str= new StrTokenizer(cmdInput);
 						str.setQuoteChar('\'');
 						List<String> tokens= str.getTokenList();
@@ -514,8 +525,13 @@ String inline= "\n    N a v i g a t i o n\n\n"
 							tokens.add("");
 						}
 						GenomicCoords gc= (GenomicCoords)gch.current().clone();
-						boolean all= cmdInput.startsWith("find_all ") ? true : false; 
-						gch.add(trackSet.findNextRegexOnTrack(tokens.get(1), tokens.get(2), gc, all));
+						// Determine whether we match first or all
+						boolean all= (cmdInput.startsWith("find_all ") || 
+  								      cmdInput.startsWith("find_all_re ")) ? true : false;
+						// Determine whether we match as regex
+						boolean asRegex= (cmdInput.startsWith("find_all_re ") || 
+								          cmdInput.startsWith("find_first_re ")) ? true : false;												
+						gch.add(trackSet.findNextMatchOnTrack(tokens.get(1), tokens.get(2), gc, all, asRegex));
 						
 					} else if(cmdInput.startsWith("visible ") || cmdInput.equals("visible")){
 						try{

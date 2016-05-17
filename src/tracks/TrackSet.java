@@ -1,6 +1,8 @@
 package tracks;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -179,67 +181,91 @@ public class TrackSet {
 	 * */
 	public GenomicCoords goToNextFeatureOnFile(String trackId, GenomicCoords currentGc, double slop) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
-		trackId= trackId.trim();
-		
-		LinkedHashMap<String, Track> ifTracks = this.getIntervalFeatureTracks().getTrackSet();
-		
-		if(ifTracks.isEmpty()){
-			System.err.println("\nTrackSet has no interval feature tracks!\n");
+		Track tr= matchIntervalFeatureTrack(trackId.trim(), false);
+		if(tr == null){
 			return currentGc;
 		}
-		
-		Track tr;
-		if(trackId.isEmpty() && ifTracks.size() == 1){
-			tr= ifTracks.values().iterator().next();
-		} else if (trackId.isEmpty() && ifTracks.size() > 1) {
-			tr= ifTracks.values().iterator().next();
-			System.err.println("\nTrackId not given default to first track found: " + tr.getFileTag());
-			// System.err.println("\nPlease specify a track to search from: " + ifTracks.keySet());
-			// throw new InvalidCommandLineException();
-		} else if(!ifTracks.containsKey(trackId)){ 	
-			System.err.println("\nTag '" + trackId + "' not found in track set:");
-			System.err.println(ifTracks.keySet() + "\n");
-			return currentGc;
-		} else {
-			tr= ifTracks.get(trackId);
-		}
-		
 		TrackIntervalFeature tif= (TrackIntervalFeature) tr;
 		if(slop < 0){
 			return tif.getIntervalFeatureSet().coordsOfNextFeature(currentGc);
 		} else {
 			GenomicCoords featureGc= tif.getIntervalFeatureSet().startEndOfNextFeature(currentGc);
-			featureGc.centerAndExtendGenomicCoords(featureGc, featureGc.getGenomicWindowSize(), slop);
-			return featureGc;
+			if(featureGc.equalCoords(currentGc)){ // No "next feature" found.
+				return currentGc;
+			} else {
+				featureGc.centerAndExtendGenomicCoords(featureGc, featureGc.getGenomicWindowSize(), slop);
+				return featureGc;
+			}
 		}
 	}
-
-	public GenomicCoords findNextRegexOnTrack(String regex, String trackId, GenomicCoords curGc, boolean all) throws InvalidGenomicCoordsException, IOException{
-
-		trackId= trackId.trim();
-		LinkedHashMap<String, Track> ifTracks = this.getIntervalFeatureTracks().getTrackSet();
+	
+	/** Convenient method to get interval feature tracks by name containing trackTag or matching trackTag by regex.
+	 * If no matches are found or the trackSet is empty, return null. If multiple matches are found, 
+	 * return the first one with warning.
+	 * */
+	private Track matchIntervalFeatureTrack(String trackTag, boolean asRegex){
 		
-		//if(ifTracks.isEmpty()){
-		//	System.err.println("\nTrackSet has no interval feature tracks!\n");
-		//	return curGc;
-		//}
+		LinkedHashMap<String, Track> ifTracks = this.getIntervalFeatureTracks().getTrackSet();		
+		Track tr= null;
 		
-		Track tr;
-		if(trackId.isEmpty() && ifTracks.size() == 1){
-			tr= ifTracks.values().iterator().next();
-		} else if(!ifTracks.containsKey(trackId)){ 	
-			System.err.println("\nTag '" + trackId + "' not found in searchable track set:");
-			System.err.println(ifTracks.keySet() + "\n");
-			return curGc;
-		} else {
-			tr= ifTracks.get(trackId);
+		if(ifTracks.size() == 0){
+			System.err.println("\nWarning interval feature track is empty.");
+			return tr;
 		}
 		
-		TrackIntervalFeature tif= (TrackIntervalFeature) tr;
-		if(all){
-			return tif.getIntervalFeatureSet().genomicCoordsAllChromRegexInGenome(regex, curGc);
+		if(trackTag.isEmpty() && ifTracks.size() == 1){
+			tr= ifTracks.values().iterator().next();
+		} else if (trackTag.isEmpty() && ifTracks.size() > 1) {
+			tr= ifTracks.values().iterator().next();
+			System.err.println("\nWarning: trackId not given default to first track found: " + tr.getFileTag());
 		} else {
-			return tif.getIntervalFeatureSet().findNextRegex(curGc, regex);
+			List<Track> matched= matchTracks(trackTag, asRegex);
+			if(matched.size() == 0){
+				System.err.println("\nWarning '" + trackTag + "' not found in track set:");
+				System.err.println(ifTracks.keySet() + "\n");
+				return tr;
+			} else {
+				tr= matched.get(0);
+				if(matched.size() > 1){
+					System.err.println("\nWarning '" + trackTag + "' matches: " + matched + ". First track is returned.");
+				}
+			}
+		}
+		return tr;
+	}
+
+
+	/** Return the tracks whose trackId contains trackTag. If asRegex is true, matching is done by regex.
+	 * */
+	private List<Track> matchTracks(String trackTag, boolean asRegex){
+		
+		List<Track> matchedTracks= new ArrayList<Track>();
+		
+		Iterator<String> iter = this.trackSet.keySet().iterator();
+		while(iter.hasNext()){
+			String x= iter.next();
+			if(!asRegex && x.contains(trackTag)){
+				matchedTracks.add(this.trackSet.get(x));
+			} else if(asRegex && x.matches(trackTag)){
+				matchedTracks.add(this.trackSet.get(x));
+			}
+		}
+		return matchedTracks;
+	}
+	
+	public GenomicCoords findNextMatchOnTrack(String query, String trackId, GenomicCoords currentGc, boolean all, boolean asRegex) throws InvalidGenomicCoordsException, IOException{
+
+		TrackIntervalFeature tif= (TrackIntervalFeature) matchIntervalFeatureTrack(trackId.trim(), false);
+		if(tif == null){
+			return currentGc;
+		}
+
+		System.err.println("Matching on " + tif.getFileTag());
+		
+		if(all){
+			return tif.getIntervalFeatureSet().genomicCoordsAllChromMatchInGenome(query, currentGc, asRegex);
+		} else {
+			return tif.getIntervalFeatureSet().findNextMatch(currentGc, query, asRegex);
 		}
 	}
 

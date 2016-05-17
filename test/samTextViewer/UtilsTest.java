@@ -3,18 +3,11 @@ package samTextViewer;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
-
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -89,7 +82,7 @@ public class UtilsTest {
 	} 
 
 	@Test
-	public void canInitRegion() throws IOException{
+	public void canInitRegion() throws IOException, InvalidGenomicCoordsException{
 		assertEquals("chrM", Utils.initRegionFromFile("test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
 		assertEquals("chr1", Utils.initRegionFromFile("/Users/berald01/Downloads/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
@@ -99,7 +92,7 @@ public class UtilsTest {
 	}
 	
 	@Test
-	public void canInitRegionFromURLBam() throws IOException{
+	public void canInitRegionFromURLBam() throws IOException, InvalidGenomicCoordsException{
 		String reg= Utils.initRegionFromFile("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02AlnRep1.bam");
 		assertEquals("chr1", reg);
 	}

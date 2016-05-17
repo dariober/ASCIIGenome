@@ -44,8 +44,9 @@ public class IntervalFeatureSet {
 	/* C o n s t r u c t o r */
 	
 	/** Construct from bed or gtf file.
-	 * @throws IOException */
-	public IntervalFeatureSet(String infile) throws IOException{
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException */
+	public IntervalFeatureSet(String infile) throws IOException, InvalidGenomicCoordsException{
 		
 		this.type= Utils.getFileTypeFromName(new File(infile).getName());
 		
@@ -72,9 +73,14 @@ public class IntervalFeatureSet {
 		} 
 	}
 	
-	public List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to) throws IOException{
+	public List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to) throws IOException, InvalidGenomicCoordsException{
+
 		if(from > to || from < 1 || to < 1){
-			throw new RuntimeException("Invalid range: " + from + "-" + to);
+			System.err.println("Invalid coordinates: from: " + from + ";to: " + to 
+					+ "Resetting to initial 1-" + Integer.MAX_VALUE);
+			from= 1;
+			to= Integer.MAX_VALUE;
+			throw new InvalidGenomicCoordsException();
 		}		
 		List<IntervalFeature> xFeatures= new ArrayList<IntervalFeature>();
 		if(isTabix){
@@ -147,7 +153,7 @@ public class IntervalFeatureSet {
 		return true;
 	}
 	
-	private Map <String, List<IntervalFeature>> loadFileIntoIntervalMap(String infile) throws IOException{
+	private Map <String, List<IntervalFeature>> loadFileIntoIntervalMap(String infile) throws IOException, InvalidGenomicCoordsException{
 		
 		System.err.print("Reading file '" + infile + "'...");
 		
@@ -215,8 +221,9 @@ public class IntervalFeatureSet {
 		
 	/** Get the next feature on chrom after "from" position or null if no 
 	 * feature found 
-	 * @throws IOException */
-	private IntervalFeature getNextFeatureOnChrom(String chrom, int from) throws IOException{
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException */
+	private IntervalFeature getNextFeatureOnChrom(String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
 		if(this.intervalMap != null){
 			List<IntervalFeature> featuresList = this.intervalMap.get(chrom);
@@ -266,8 +273,9 @@ public class IntervalFeatureSet {
 	
 	/** Searching the current chrom starting at "from" to find the *next* feature matching the given string. 
 	 * If not found, search the other chroms, if not found restart from the beginning of
-	 * the current chrom until the "from" position is reached. */
-	protected IntervalFeature findNextRegexInGenome(String regex, String chrom, int from) throws IOException{
+	 * the current chrom until the "from" position is reached. 
+	 * @throws InvalidGenomicCoordsException */
+	protected IntervalFeature findNextRegexInGenome(String query, String chrom, int from, boolean asRegex) throws IOException, InvalidGenomicCoordsException{
 		
 		if(this.intervalMap != null){
 	
@@ -281,7 +289,9 @@ public class IntervalFeatureSet {
 				List<IntervalFeature> featuresList = this.intervalMap.get(curChrom);
 				for(IntervalFeature x : featuresList){
 					//if(x.getFrom() > startingPoint && x.getRaw().toLowerCase().contains(regex.toLowerCase())){
-					if(x.getFrom() > startingPoint && x.getRaw().matches(regex) && this.featureIsVisible(x)){ 
+					if(asRegex && x.getFrom() > startingPoint && x.getRaw().matches(query) && this.featureIsVisible(x)){ 
+						return x;
+					} else if(!asRegex && x.getFrom() > startingPoint && x.getRaw().contains(query) && this.featureIsVisible(x)){ 
 						return x;
 					}
 				}
@@ -300,7 +310,12 @@ public class IntervalFeatureSet {
 				while(true){
 					String line= iter.next();
 					if(line == null) break;
-					if(line.matches(regex)){
+					if(asRegex && line.matches(query)){
+						IntervalFeature x= new IntervalFeature(line, this.type);
+						if(x.getFrom() > startingPoint && this.featureIsVisible(x)){
+							return x;
+						}
+					} else if(!asRegex && line.contains(query)){
 						IntervalFeature x= new IntervalFeature(line, this.type);
 						if(x.getFrom() > startingPoint && this.featureIsVisible(x)){
 							return x;
@@ -318,7 +333,7 @@ public class IntervalFeatureSet {
 	 * The search starts from the beginning of the current chrom and if nothing is found continues
 	 * to the other chroms. 
 	 * @throws InvalidGenomicCoordsException */
-	private List<IntervalFeature> findAllChromRegexInGenome(String regex, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException{
+	private List<IntervalFeature> findAllChromMatchInGenome(String query, GenomicCoords currentGc, boolean asRegex) throws IOException, InvalidGenomicCoordsException{
 		
 		// Accumulate features here
 		List<IntervalFeature> matchedFeatures= new ArrayList<IntervalFeature>(); 
@@ -339,7 +354,9 @@ public class IntervalFeatureSet {
 			if(this.intervalMap != null){
 				List<IntervalFeature> featuresList = this.intervalMap.get(curChrom);
 				for(IntervalFeature x : featuresList){
-					if(x.getRaw().matches(regex) && this.featureIsVisible(x)){ 
+					if(asRegex && x.getRaw().matches(query) && this.featureIsVisible(x)){ 
+						matchedFeatures.add(x);
+					} else if(!asRegex && x.getRaw().contains(query) && this.featureIsVisible(x)){
 						matchedFeatures.add(x);
 					}
 				}
@@ -348,7 +365,12 @@ public class IntervalFeatureSet {
 				while(true){
 					String line= iter.next();
 					if(line == null) break;
-					if(line.matches(regex)){
+					if(asRegex && line.matches(query)){
+						IntervalFeature x= new IntervalFeature(line, this.type);
+						if(this.featureIsVisible(x)){
+							matchedFeatures.add(x);
+						}
+					} else if(!asRegex && line.contains(query)){
 						IntervalFeature x= new IntervalFeature(line, this.type);
 						if(this.featureIsVisible(x)){
 							matchedFeatures.add(x);
@@ -373,9 +395,9 @@ public class IntervalFeatureSet {
 	}
 	
 	/** Execute findAllChromRegexInGenome() and return the extreme coordinates of the matched features */
-	protected GenomicCoords genomicCoordsAllChromRegexInGenome(String regex, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException{
+	protected GenomicCoords genomicCoordsAllChromMatchInGenome(String query, GenomicCoords currentGc, boolean asRegex) throws IOException, InvalidGenomicCoordsException{
 
-		List<IntervalFeature> matchedFeatures = findAllChromRegexInGenome(regex, currentGc);
+		List<IntervalFeature> matchedFeatures = findAllChromMatchInGenome(query, currentGc, asRegex);
 		
 		if(matchedFeatures.size() == 0){
 			return currentGc;
@@ -396,9 +418,9 @@ public class IntervalFeatureSet {
 		
 	}
 	
-	public GenomicCoords findNextRegex(GenomicCoords currentGc, String regex) throws IOException, InvalidGenomicCoordsException{
+	public GenomicCoords findNextMatch(GenomicCoords currentGc, String query, boolean asRegex) throws IOException, InvalidGenomicCoordsException{
 
-		IntervalFeature nextFeature= findNextRegexInGenome(regex, currentGc.getChrom(), currentGc.getTo());
+		IntervalFeature nextFeature= findNextRegexInGenome(query, currentGc.getChrom(), currentGc.getTo(), asRegex);
 		if(nextFeature == null){
 			return currentGc;
 		}

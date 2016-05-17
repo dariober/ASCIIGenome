@@ -245,7 +245,11 @@ public class GenomicCoords implements Cloneable {
 		this.from= (this.from <= 0) ? 1 : this.from; 
 		
 		// Extend midpoint right
-		this.to= midpoint + (range * zoom);
+		long zoomTo= midpoint + (range * zoom);
+		if(zoomTo > Integer.MAX_VALUE){
+			zoomTo= Integer.MAX_VALUE;
+		}
+		this.to= (int)zoomTo;
 		if(this.samSeqDict != null && this.samSeqDict.size() > 0){
 			if(this.samSeqDict.getSequence(this.chrom).getSequenceLength() > 0){
 				this.to= (this.to > this.samSeqDict.getSequence(this.chrom).getSequenceLength()) ? 

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import exceptions.InvalidGenomicCoordsException;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -16,7 +17,7 @@ public class TrackIntervalFeature extends Track {
 	
 	/* C o n s t r u c t o r */
 
-	public TrackIntervalFeature(String filename, GenomicCoords gc) throws IOException{
+	public TrackIntervalFeature(String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException{
 		this.setGc(gc);
 		this.setFilename(filename);
 		this.intervalFeatureSet= new IntervalFeatureSet(filename);
@@ -25,7 +26,7 @@ public class TrackIntervalFeature extends Track {
 	
 	/* Methods */
 	
-	public void update() throws IOException{
+	public void update() throws IOException, InvalidGenomicCoordsException{
 		this.intervalFeatureList = this.intervalFeatureSet.getFeaturesInInterval(
 				this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
 		for(IntervalFeature ift : intervalFeatureList){

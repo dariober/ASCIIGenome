@@ -27,11 +27,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.tdf.TDFReader;
 
+import exceptions.InvalidGenomicCoordsException;
 import tracks.IntervalFeatureSet;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
@@ -57,8 +57,9 @@ public class Utils {
 	}
 	
 	/** Get the first chrom string from first line of input file. As you add support for more filetypes you should update 
-	 * this function. This method is very dirty and shouldn't be trusted 100% */
-	public static String initRegionFromFile(String x) throws IOException{
+	 * this function. This method is very dirty and shouldn't be trusted 100% 
+	 * @throws InvalidGenomicCoordsException */
+	public static String initRegionFromFile(String x) throws IOException, InvalidGenomicCoordsException{
 		UrlValidator urlValidator = new UrlValidator();
 		String region= "";
 		TrackFormat fmt= Utils.getFileTypeFromName(x); 
@@ -216,7 +217,7 @@ public class Utils {
 		}
 	}
 	
-	public static LinkedHashMap<String, IntervalFeatureSet> createIntervalFeatureSets(List<String> fileNames) throws IOException{
+	public static LinkedHashMap<String, IntervalFeatureSet> createIntervalFeatureSets(List<String> fileNames) throws IOException, InvalidGenomicCoordsException{
 		LinkedHashMap<String, IntervalFeatureSet> ifsets= new LinkedHashMap<String, IntervalFeatureSet>();
 		for(String x : fileNames){
 			String f= x;

@@ -1,8 +1,9 @@
+Text Only Genome Viewer!
+========================
+
 <!-- MarkdownTOC -->
 
-- [Upload ASCIIGenome-0.1.0.zip to github releases and delete](#upload-asciigenome-010zip-to-github-releases-and-delete)
-- [Text Only Genome Viewer!](#text-only-genome-viewer)
-  - [Key Features](#key-features)
+- [Key Features](#key-features)
 - [Usage](#usage)
   - [Quick start](#quick-start)
   - [General remarks](#general-remarks)
@@ -24,7 +25,8 @@
 
 <!-- /MarkdownTOC -->
 
-<!-- MEMO: Compile, package and upload to github releases
+<!-- 
+MEMO: Compile, package and upload to github releases
 - Write-out jar from Eclipse
 cd ~/svn_git/ASCIIGenome/trunk
 mkdir ASCIIGenome-0.1.0 # This should match the version in ArgParse
@@ -33,13 +35,9 @@ cp /Users/berald01/Tritume/ASCIIGenome.jar ASCIIGenome-0.1.0/
 zip -r ASCIIGenome-0.1.0.zip ASCIIGenome-0.1.0
 rm -r ASCIIGenome-0.1.0
 
-# Upload ASCIIGenome-0.1.0.zip to github releases and delete
+// Upload ASCIIGenome-0.1.0.zip to github releases and delete
 
  -->
-
-
-Text Only Genome Viewer!
-========================
 
 ```ASCIIGenome``` is a command-line genome browser running from terminal window and solely based on ASCII characters.
 Since ```ASCIIGenome``` does not require a graphical interface it is particularly useful for 
@@ -106,8 +104,8 @@ one of the commands below and press ENTER to execute, e.g.:
 
 will move the window forward by half its size. `h <ENTER>` will show help.
 
-Some features of Unix console are enabled, The arrow keys UP and DOWN scroll previous commands and TAB autocompletes commands.
-Just pressing ENTER will repeat the previous command, this is handy to quickly scroll along the genome. For example:
+Some features of Unix console are enabled, the arrow keys UP and DOWN scroll previous commands and TAB autocompletes commands.
+Just pressing ENTER will repeat the previous command and this is handy to quickly scroll along the genome. For example:
 
 ```
 [h] for help: ff <ENTER> ## Move forward
@@ -119,6 +117,8 @@ Navigation
 ----------
 
 ```
+    N a v i g a t i o n
+
 f / b 
       Small step forward/backward 1/10 window
 ff / bb
@@ -139,20 +139,27 @@ next / next_start [trackId]
 ```
 
 The `next` command does exactly that, it moves to the next feature. If there are no more features after the current position it
-doesn't rewind to the beginning (use `:1` for that) and it doesn't move to another chromosome (use `-r chrom`). 
+doesn't rewind to the beginning (use `1` for that) and it doesn't move to another chromosome (use `got chrom`). 
 
 
 Find
 ----
 
 ```
-find_next <regex> [trackId]
-      Find the next record in trackId matching regex. Use single quotes for strings containing spaces.
-      For case insensitive matching prepend (?i) to regex. E.g. "next '(?i).*actb.*' myTrack#1"
-find_all <regex> [trackId]
-      Find all matches on chromosome. The search stops at the first chromosome returning hits
-      starting with the current one. Useful to get all gtf records of a gene
+find_first <string> [trackId]
+      Find the first (next) record in trackId containing string. Use single quotes for strings with spaces.
+find_first_re <regex> [trackId]
+      Same as find_first but matching is done by regex. For case insensitive matching prepend (?i)
+      to regex. E.g. "next '(?i).*actb.*' myTrack#1"
+find_all <string> [trackId]
+      Find all records on chromosome containing string. The search stops at the first chromosome
+      returning hits starting with the current one. Useful to get all gtf records of a gene
+find_all_re <regex> [trackId]
+      Same as find_all but matching regex
 ```
+
+The regular expression versions (`*_re`) are more powerful but trickier to use (see also [regular expressions](#regular-expressions)). 
+Usually the simpler versions will suffice.
 
 Display
 -------
@@ -225,6 +232,11 @@ grey-shaded reads have mapping quality of <=5. In bisulfite mode the characters 
 
 TODO: BS-Seq data
 -----------------
+
+<img src="screenshots/exBSmode.png" width="450">
+
+<img src="screenshots/exBSmode-2.png" width="450">
+
 
 Supported input
 ===============
@@ -315,15 +327,8 @@ Credits
 * Bigwig and tdf are processed with classes from [IGV](https://github.com/igvteam/igv) source code.
 * Block compression and indexing done using [jvarkit](https://github.com/lindenb/jvarkit)
 
-
 DEPRECATED
 ==========
-
-
-<img src="screenshots/exBSmode.png" width="450">
-
-<img src="screenshots/exBSmode-2.png" width="450">
-
 
 After starting `ASCIIGenome` you can navigate the genome with the following interactive commands. 
 
