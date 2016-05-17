@@ -333,6 +333,8 @@ TODO
 * Enable contain/regex switch for commands matching patterns
 * Enable partial matching for track names
 * Enable (some) options to be set at start 
+* Enable select of range by selecting a range of numbers from the ruler. E.g.
+ `12360739  12360865  12360991  12361117  12361243` to select `12360739 12361243`
 
 DEPRECATED
 ==========
