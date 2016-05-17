@@ -327,6 +327,13 @@ Credits
 * Bigwig and tdf are processed with classes from [IGV](https://github.com/igvteam/igv) source code.
 * Block compression and indexing done using [jvarkit](https://github.com/lindenb/jvarkit)
 
+TODO
+====
+
+* Enable contain/regex switch for commands matching patterns
+* Enable partial matching for track names
+* Enable (some) options to be set at start 
+
 DEPRECATED
 ==========
 
