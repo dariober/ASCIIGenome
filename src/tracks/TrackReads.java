@@ -118,7 +118,11 @@ public class TrackReads extends Track{
 		String printable= "";
 		for(Double idx : keep){
 			List<TextRead> line= this.readStack.get((int)Math.rint(idx));
-			printable += linePrinter(line, bs, this.isNoFormat(), withReadName) + "\n";
+			try {
+				printable += linePrinter(line, bs, this.isNoFormat(), withReadName) + "\n";
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		return printable.replaceAll("\n$", "");
 	}
@@ -177,8 +181,9 @@ public class TrackReads extends Track{
 	 * @param textReads List reads to print out on the same line.
 	 * @param noFormat Do not format reads.
 	 * @return
+	 * @throws IOException 
 	 */
-	private String linePrinter(List<TextRead> textReads, boolean bs, boolean noFormat, boolean withReadName){
+	private String linePrinter(List<TextRead> textReads, boolean bs, boolean noFormat, boolean withReadName) throws IOException{
 		StringBuilder sb= new StringBuilder();
 
 		int curPos= 0; // Position on the line, needed to pad with blanks btw reads.

@@ -1,5 +1,5 @@
 package tracks;
 
 public enum TrackFormat {
-	BED, GFF, BIGWIG, BAM, TDF, BEDGRAPH
+	BED, GFF, BIGWIG, BAM, TDF, BEDGRAPH, VCF
 }

@@ -1,5 +1,6 @@
 package tracks;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,8 +95,9 @@ class TextRead {
 	 * @param noFormat Do not apply string formatting (colours, etc.)
 	 * @param withReadName Print the read name instead of the bases.
 	 * @return
+	 * @throws IOException 
 	 */
-	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName){
+	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName) throws IOException{
 		List<Character> unformatted;
 		if(!bs){
 			unformatted= this.getConsRead();
@@ -278,8 +280,9 @@ class TextRead {
 	/** Convert textRead, the actual bases found in sam, to represent match, mismatch and strandness.
 	 * @param refSeq The reference sequence spanning the window.
 	 * @return
+	 * @throws IOException 
 	 */
-	private List<Character> getConsRead() {
+	private List<Character> getConsRead() throws IOException {
 		
 		List<Character> dnaRead= this.getDnaRead();
 		if(this.gc.getRefSeq() == null){
@@ -317,8 +320,9 @@ class TextRead {
  	
 	 * @param refSeq
 	 * @return
+	 * @throws IOException 
 	 */
-	private List<Character> convertDnaReadToTextReadBS(){
+	private List<Character> convertDnaReadToTextReadBS() throws IOException{
 	
 		if(this.gc.getRefSeq() == null){ // Effectively don't convert 
 			return this.getConsRead();
@@ -386,7 +390,12 @@ class TextRead {
 	
 	public String toString(){
 
-		String txt= this.getPrintableTextRead(false, true, false);
+		String txt= "";
+		try {
+			txt = this.getPrintableTextRead(false, true, false);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 		StringBuilder sb= new StringBuilder();
 		sb.append("On-screen text start: " + this.textStart + "\n");

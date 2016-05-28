@@ -350,7 +350,7 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         final int minQuality = getQualityScoreCutoff();
         final boolean dontCheckQualities = minQuality == 0;
         final byte[] baseQualities = dontCheckQualities ? null : rec.getBaseQualities();
-
+        
         // interpret the CIGAR string and add the base info
         for (final AlignmentBlock alignmentBlock : rec.getAlignmentBlocks()) {
             final int readStart   = alignmentBlock.getReadStart();
@@ -365,13 +365,13 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
                 final int refOffset =  refStart + i - alignmentStart;
 
                 // if the quality score cutoff is met, accumulate the base info
-                if (dontCheckQualities || baseQualities[readOffset] >= minQuality) {
-                    accumulator.get(refOffset).add(rec, readOffset);
-                }
+	            if (baseQualities.length == 0 || dontCheckQualities || baseQualities[readOffset] >= minQuality) {
+	            	accumulator.get(refOffset).add(rec, readOffset);
+	            } // Dario put `baseQualities.length == 0` to cope with missing base quality in samrecord.
             }
         }
     }
-
+    
     /**
      * Create the next relevant zero-coverage LocusInfo
      *

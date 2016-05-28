@@ -15,13 +15,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.validator.routines.UrlValidator;
 
 import exceptions.InvalidGenomicCoordsException;
+import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -37,6 +41,8 @@ public class IntervalFeatureSet {
 	private Map <String, List<IntervalFeature>> intervalMap; // new HashMap <String, List<IntervalFeature>>(); 
 	private TabixReader tabixReader= null;
 	private boolean isTabix= false;
+	private VCFFileReader vcfReader= null;
+	private boolean isVcf= false;
 	private TrackFormat type;
 	private String hideRegex= ""; // Regex to capture feature to hide/show
 	private String showRegex= ".*";
@@ -50,14 +56,33 @@ public class IntervalFeatureSet {
 		
 		this.type= Utils.getFileTypeFromName(new File(infile).getName());
 		
-		if(Utils.hasTabixIndex(new File(infile).getAbsolutePath())){
-			this.tabixReader= new TabixReader(new File(infile).getAbsolutePath());
-			this.isTabix= true;
+		if(this.type.equals(TrackFormat.VCF)){
+			this.vcfReader= new VCFFileReader(new File(infile));
+			if ( ! Utils.hasTabixIndex(new File(infile).getAbsolutePath()) ){
+				throw new RuntimeException("\nTabix index required and not found for VCF input " + infile + "\n");
+			}
+			this.isVcf= true;
 		} else {
-			this.intervalMap= loadFileIntoIntervalMap(infile);
-			this.sortIntervalsWithinChroms();
-			this.isTabix= false;
+			if(Utils.hasTabixIndex(new File(infile).getAbsolutePath())){
+				this.tabixReader= new TabixReader(new File(infile).getAbsolutePath());
+				this.isTabix= true;
+			} else {
+				this.intervalMap= loadFileIntoIntervalMap(infile);
+				this.sortIntervalsWithinChroms();
+				this.isTabix= false;
+			}
 		}
+		if(this.isVcf && this.isTabix){
+			throw new RuntimeException("\nInput must be either VCF or generic Tabix. Not both!\n");
+		}
+	}
+	
+	/** Initialize directly from map of IntervalFeatures
+	 * */
+	public IntervalFeatureSet(Map <String, List<IntervalFeature>> intervalMap, TrackFormat type){
+		this.intervalMap= intervalMap;
+		this.sortIntervalsWithinChroms();
+		this.type= type;
 	}
 	
 	/* M e t h o d s */
@@ -66,7 +91,12 @@ public class IntervalFeatureSet {
 	 * passes the regex filters. Note that regex filters are applied to the raw string.
 	 * */
 	private boolean featureIsVisible(IntervalFeature x){
-		if(x.getRaw().matches(this.showRegex) && !x.getRaw().matches(this.hideRegex)){
+		boolean showIt= Pattern.compile(this.showRegex).matcher(x.getRaw()).find();
+		boolean hideIt= false;
+		if(!this.hideRegex.isEmpty()){
+			hideIt= Pattern.compile(this.hideRegex).matcher(x.getRaw()).find();	
+		}
+		if(showIt && !hideIt){
 			return true;
 		} else {
 			return false;
@@ -93,6 +123,13 @@ public class IntervalFeatureSet {
 				IntervalFeature intervalFeature= new IntervalFeature(q, this.type);
 				xFeatures.add(intervalFeature);
 			}
+		} else if(this.isVcf){
+			CloseableIterator<VariantContext> qry= this.vcfReader.query(chrom, from, to);
+			while(qry.hasNext()){
+				IntervalFeatureVCF intervalFeature= new IntervalFeatureVCF(qry.next());
+				xFeatures.add(intervalFeature);				
+			}
+			qry.close();
 		} else {
 			List<IntervalFeature> thisChrom= this.intervalMap.get(chrom);		
 			if(thisChrom == null){
@@ -275,7 +312,7 @@ public class IntervalFeatureSet {
 	 * If not found, search the other chroms, if not found restart from the beginning of
 	 * the current chrom until the "from" position is reached. 
 	 * @throws InvalidGenomicCoordsException */
-	protected IntervalFeature findNextRegexInGenome(String query, String chrom, int from, boolean asRegex) throws IOException, InvalidGenomicCoordsException{
+	protected IntervalFeature findNextRegexInGenome(String query, String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
 		if(this.intervalMap != null){
 	
@@ -288,10 +325,8 @@ public class IntervalFeatureSet {
 				
 				List<IntervalFeature> featuresList = this.intervalMap.get(curChrom);
 				for(IntervalFeature x : featuresList){
-					//if(x.getFrom() > startingPoint && x.getRaw().toLowerCase().contains(regex.toLowerCase())){
-					if(asRegex && x.getFrom() > startingPoint && x.getRaw().matches(query) && this.featureIsVisible(x)){ 
-						return x;
-					} else if(!asRegex && x.getFrom() > startingPoint && x.getRaw().contains(query) && this.featureIsVisible(x)){ 
+					boolean matched= Pattern.compile(query).matcher(x.getRaw()).find();
+					if(x.getFrom() > startingPoint && matched && this.featureIsVisible(x)){ 
 						return x;
 					}
 				}
@@ -310,17 +345,13 @@ public class IntervalFeatureSet {
 				while(true){
 					String line= iter.next();
 					if(line == null) break;
-					if(asRegex && line.matches(query)){
+					boolean matched= Pattern.compile(query).matcher(line).find();
+					if(matched){
 						IntervalFeature x= new IntervalFeature(line, this.type);
 						if(x.getFrom() > startingPoint && this.featureIsVisible(x)){
 							return x;
 						}
-					} else if(!asRegex && line.contains(query)){
-						IntervalFeature x= new IntervalFeature(line, this.type);
-						if(x.getFrom() > startingPoint && this.featureIsVisible(x)){
-							return x;
-						}
-					}
+					} 
 				}
 				startingPoint= 0;
 			} return null; // Not found anywhere
@@ -333,7 +364,7 @@ public class IntervalFeatureSet {
 	 * The search starts from the beginning of the current chrom and if nothing is found continues
 	 * to the other chroms. 
 	 * @throws InvalidGenomicCoordsException */
-	private List<IntervalFeature> findAllChromMatchInGenome(String query, GenomicCoords currentGc, boolean asRegex) throws IOException, InvalidGenomicCoordsException{
+	private List<IntervalFeature> findAllChromMatchInGenome(String query, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException{
 		
 		// Accumulate features here
 		List<IntervalFeature> matchedFeatures= new ArrayList<IntervalFeature>(); 
@@ -354,23 +385,18 @@ public class IntervalFeatureSet {
 			if(this.intervalMap != null){
 				List<IntervalFeature> featuresList = this.intervalMap.get(curChrom);
 				for(IntervalFeature x : featuresList){
-					if(asRegex && x.getRaw().matches(query) && this.featureIsVisible(x)){ 
+					boolean matched= Pattern.compile(query).matcher(x.getRaw()).find();
+					if(matched && this.featureIsVisible(x)){ 
 						matchedFeatures.add(x);
-					} else if(!asRegex && x.getRaw().contains(query) && this.featureIsVisible(x)){
-						matchedFeatures.add(x);
-					}
+					} 
 				}
 			} else if(this.isTabix){
 				Iterator iter = this.tabixReader.query(curChrom , 0, Integer.MAX_VALUE);
 				while(true){
 					String line= iter.next();
 					if(line == null) break;
-					if(asRegex && line.matches(query)){
-						IntervalFeature x= new IntervalFeature(line, this.type);
-						if(this.featureIsVisible(x)){
-							matchedFeatures.add(x);
-						}
-					} else if(!asRegex && line.contains(query)){
+					boolean matched= Pattern.compile(query).matcher(line).find();
+					if(matched){
 						IntervalFeature x= new IntervalFeature(line, this.type);
 						if(this.featureIsVisible(x)){
 							matchedFeatures.add(x);
@@ -395,9 +421,9 @@ public class IntervalFeatureSet {
 	}
 	
 	/** Execute findAllChromRegexInGenome() and return the extreme coordinates of the matched features */
-	protected GenomicCoords genomicCoordsAllChromMatchInGenome(String query, GenomicCoords currentGc, boolean asRegex) throws IOException, InvalidGenomicCoordsException{
+	protected GenomicCoords genomicCoordsAllChromMatchInGenome(String query, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException{
 
-		List<IntervalFeature> matchedFeatures = findAllChromMatchInGenome(query, currentGc, asRegex);
+		List<IntervalFeature> matchedFeatures = findAllChromMatchInGenome(query, currentGc);
 		
 		if(matchedFeatures.size() == 0){
 			return currentGc;
@@ -418,9 +444,9 @@ public class IntervalFeatureSet {
 		
 	}
 	
-	public GenomicCoords findNextMatch(GenomicCoords currentGc, String query, boolean asRegex) throws IOException, InvalidGenomicCoordsException{
+	public GenomicCoords findNextMatch(GenomicCoords currentGc, String query) throws IOException, InvalidGenomicCoordsException{
 
-		IntervalFeature nextFeature= findNextRegexInGenome(query, currentGc.getChrom(), currentGc.getTo(), asRegex);
+		IntervalFeature nextFeature= findNextRegexInGenome(query, currentGc.getChrom(), currentGc.getTo());
 		if(nextFeature == null){
 			return currentGc;
 		}

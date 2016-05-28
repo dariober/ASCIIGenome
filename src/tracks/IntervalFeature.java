@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.text.StrTokenizer;
 import org.biojava.nbio.genome.parsers.gff.Feature;
 import org.biojava.nbio.genome.parsers.gff.Location;
 
@@ -24,22 +23,22 @@ import exceptions.InvalidGenomicCoordsException;
 public class IntervalFeature implements Comparable<IntervalFeature>{
 
 	// When reading bed files, we expect fields to be in this order.
-	private String chrom;       // Required
-	private int from;           // Required. NB 1 based also for bed files.
-	private int to;             // Required 
+	protected String chrom;       // Required
+	protected int from;           // Required. NB 1 based also for bed files.
+	protected int to;             // Required 
 
-	private float score= Float.NaN;
-	private char strand= '.'; 
-	private String source= "."; // Gtf specific
-	private String feature= "."; // Gtf specific
+	protected float score= Float.NaN;
+	protected char strand= '.'; 
+	protected String source= "."; // Gtf specific
+	protected String feature= "."; // Gtf specific
 
-	private String raw; // Raw input string exactly as read from file.
+	protected String raw; // Raw input string exactly as read from file.
 	private TrackFormat format= TrackFormat.BED;
 	
 	/** Start position of feature in screen coordinates. 
 	 * -1 if the feature is not part of the screenshot. */
-	private int screenFrom= -1;
-	private int screenTo= -1;
+	protected int screenFrom= -1;
+	protected int screenTo= -1;
 	
 	/* C o n s t r u c t o r s */
 		
@@ -62,6 +61,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		}
 	}
 	
+	protected IntervalFeature(){
+		
+	}
+		
 	//public IntervalFeature(IntervalFeature intervalFeature){
 	//	
 	//}
@@ -235,11 +238,17 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	}
 	
 	/** Return true x has the same coordinates of this object */
-	public boolean equalCoords(IntervalFeature x){
+	public boolean equals(IntervalFeature x){
+		if(x == null){
+			return false;
+		}
 		return (this.chrom.equals(x.chrom) && this.from == x.from && this.to == x.to);
 	}
-	
-	protected String getAttribute(String attributeName){
+
+	/** Get attribute value given key, e.g. transcript_id
+	 * This method is never used so it is made private.
+	 *  */
+	private String getAttribute(String attributeName){
 		// * Get attribute field,
 		if(this.format != TrackFormat.GFF){
 			return null;
@@ -261,13 +270,6 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return x; 
 	}
 	
-	//protected Object clone() {
-	//	try {
-	//		return super.clone();
-	//	} catch (CloneNotSupportedException e) {
-	//		return null;
-	//	}
-	//}
 	
 	/*   S e t t e r s   and   G e t t e r s   */
 	
@@ -295,6 +297,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return strand;
 	}
 
+	public void setStrand(char strand) {
+		this.strand= strand;
+	}
+	
 	public int getScreenFrom() {
 		return screenFrom;
 	}
@@ -354,7 +360,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		fwdFeature.put("stop_codon",  'Z'); revFeature.put("stop_codon",  'z');
 		fwdFeature.put("utr",         'U'); revFeature.put("utr",         'u');
 		fwdFeature.put("3utr",        'U'); revFeature.put("3utr",        'u');
-		fwdFeature.put("5utr",        'W'); revFeature.put("3utr",        'w');
+		fwdFeature.put("5utr",        'W'); revFeature.put("5utr",        'w');
 		fwdFeature.put("gene",		  'G'); revFeature.put("gene",        'g');
 		fwdFeature.put("transcript",  'T'); revFeature.put("transcript",  't');
 		fwdFeature.put("mrna",        'M'); revFeature.put("mrna",        'm');
@@ -391,7 +397,6 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		if(!featureToTextCharDict.get('.').containsKey(feature)){
 			feature= "other"; // Feature type NA or not found in dict
 		}
-
 		// Now you have the right char to be used for this feature type and strand.
 		char text= featureToTextCharDict.get(strand).get(feature);
 

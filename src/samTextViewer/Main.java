@@ -133,7 +133,7 @@ public class Main {
 		for(String x : inputFileList){
 			console.addCompleter(new StringsCompleter(new File(x).getName()));
 		}
-		for(String x : "next next_start goto find_first find_all find_first_re find_all_re showGenome addTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
+		for(String x : "next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
 			// Add options. Really you should use a dict for this.
 			if(x.length() > 2){
 				console.addCompleter(new StringsCompleter(x));
@@ -152,6 +152,7 @@ public class Main {
 			trackSet.addOrReplace(cgWiggle);
 		}
 		
+		String seqRegex= null;
 		int idForTrack= 0;
 		while(true){ // Each loop processes the user's input files.
 
@@ -307,6 +308,16 @@ public class Main {
 					System.out.print(gcPrintable + "\n");
 				}
 			}
+			// Track for matching regex
+			TrackIntervalFeature seqRegexTrack = gch.current().findRegex(seqRegex);
+			seqRegexTrack.setNoFormat(noFormat);
+			seqRegexTrack.setyMaxLines(Integer.MAX_VALUE);
+			String seqPattern= seqRegexTrack.printToScreen();
+			if(!seqPattern.isEmpty()){
+				seqPattern+="\n";
+			} 
+			System.out.print(seqPattern); 
+			// Sequence 
 			System.out.print(gch.current().printableRefSeq(noFormat));
 			String ruler= gch.current().printableRuler(10);
 			System.out.println(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize));
@@ -356,22 +367,21 @@ String inline= "\n    N a v i g a t i o n\n\n"
 + "      'next' centers the window on the found feature while 'next_start' sets the window at the start of the feature.\n"
 
 + "\n    F i n d  \n\n"
-+ "find_first <string> [trackId]\n"
-+ "      Find the first (next) record in trackId containing string. Use single quotes for strings with spaces.\n"
-+ "find_first_re <regex> [trackId]\n"
-+ "      Same as find_first but matching is done by regex. For case insensitive matching prepend (?i)\n"
-+ "      to regex. E.g. \"next '(?i).*actb.*' myTrack#1\"\n"
-+ "find_all <string> [trackId]\n"
-+ "      Find all records on chromosome containing string. The search stops at the first chromosome\n"
++ "      Memo: To match regex case-insensitive prepend (?i) to pattern. E.g. (?i)actb will match ACTB\n\n"
++ "find_first <regex> [trackId]\n"
++ "      Find the first (next) record in trackId containing regex. Use single quotes for strings with spaces.\n"
++ "find_all <regex> [trackId]\n"
++ "      Find all records on chromosome containing regex. The search stops at the first chromosome\n"
 + "      returning hits starting with the current one. Useful to get all gtf records of a gene\n"
-+ "find_all_re <regex> [trackId]\n"
-+ "      Same as find_all but matching regex\n"
++ "seqRegex <regex>\n"
++ "      Find regex in reference sequence and show matches as and additional track.\n"
++ "      Useful to show restriction enzyme sites, CpGs etc.\n"
 
 + "\n    D i s p l a y  \n\n"
 + "visible [show regex] [hide regex] [track regex]\n"
 + "      In annotation tracks, only include rows captured by [show regex] and exclude [hide regex].\n"
 + "      Apply to tracks captured by [track regex]. With no optional arguments reset to default: \"'.*' '^$' '.*'\"\n"
-+ "      Use '.*' to match everything and '^$' to hide nothing. E.g. \"visible .*exon.* .*CDS.* .*gtf#.*\"\n"       
++ "      Use '.*' to match everything and '^$' to hide nothing. E.g. \"visible exon CDS gtf\"\n"       
 + "trackHeight <int> [track regex]\n"
 + "      Set track height to int lines for all tracks captured by regex. Default regex: '.*'\n"
 + "ylim <min> <max> [track regex]\n"
@@ -386,6 +396,8 @@ String inline= "\n    N a v i g a t i o n\n\n"
 + "      Print the genome file\n"
 + "addTracks [file or url]...\n"
 + "      Add tracks\n" 
++ "orderTracks [track#1] [track#2]...\n"
++ "      Reorder tracks\n" 
 + "history\n"
 + "      Show visited positions\n";
 					System.out.println(inline);
@@ -468,6 +480,12 @@ String inline= "\n    N a v i g a t i o n\n\n"
 							GenomicCoords gc= gch.current();
 							gc.setSamSeqDict(samSeqDict);
 						}
+					} else if(cmdInput.startsWith("orderTracks ")){
+						StrTokenizer str= new StrTokenizer(cmdInput);
+						str.setQuoteChar('\'');
+						List<String> newOrder= str.getTokenList();
+						newOrder.remove(0);
+						trackSet.orderTracks(newOrder);
 					} else if (cmdInput.equals("p")) {
 						gch.previous();
 					} else if (cmdInput.equals("n")) {
@@ -510,9 +528,7 @@ String inline= "\n    N a v i g a t i o n\n\n"
 							GenomicCoords gc= (GenomicCoords)gch.current().clone();
 							gch.add(trackSet.goToNextFeatureOnFile(cmdInput.replace("next", "").trim(), gc, 5.0));
 					} else if(cmdInput.startsWith("find_first ") || 
-							  cmdInput.startsWith("find_all ") || 
-							  cmdInput.startsWith("find_first_re ") ||
-							  cmdInput.startsWith("find_all_re ")) {  
+							  cmdInput.startsWith("find_all ")) {  
 						StrTokenizer str= new StrTokenizer(cmdInput);
 						str.setQuoteChar('\'');
 						List<String> tokens= str.getTokenList();
@@ -526,13 +542,25 @@ String inline= "\n    N a v i g a t i o n\n\n"
 						}
 						GenomicCoords gc= (GenomicCoords)gch.current().clone();
 						// Determine whether we match first or all
-						boolean all= (cmdInput.startsWith("find_all ") || 
-  								      cmdInput.startsWith("find_all_re ")) ? true : false;
-						// Determine whether we match as regex
-						boolean asRegex= (cmdInput.startsWith("find_all_re ") || 
-								          cmdInput.startsWith("find_first_re ")) ? true : false;												
-						gch.add(trackSet.findNextMatchOnTrack(tokens.get(1), tokens.get(2), gc, all, asRegex));
-						
+						boolean all= (cmdInput.startsWith("find_all ")) ? true : false;
+						gch.add(trackSet.findNextMatchOnTrack(tokens.get(1), tokens.get(2), gc, all));
+					} else if (cmdInput.startsWith("seqRegex")){
+						StrTokenizer str= new StrTokenizer(cmdInput);
+						str.setQuoteChar('\'');
+						List<String> tokens= str.getTokenList();
+						if(tokens.size() == 1){
+							seqRegex= "";
+						} else {
+							seqRegex= tokens.get(1).trim();
+							try{
+								Pattern.compile(seqRegex);
+							} catch(PatternSyntaxException e){
+						    	System.err.println("Invalid seqRegex in: " + cmdInput);
+						    	System.err.println(e.getDescription());
+								cmdInput= null;
+								continue;
+							}							
+						}
 					} else if(cmdInput.startsWith("visible ") || cmdInput.equals("visible")){
 						try{
 							trackSet.setVisibilityForTrackIntervalFeature(cmdInput);

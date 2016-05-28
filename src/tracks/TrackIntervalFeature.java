@@ -13,7 +13,7 @@ import samTextViewer.Utils;
 public class TrackIntervalFeature extends Track {
  
 	private List<IntervalFeature> intervalFeatureList= new ArrayList<IntervalFeature>();  
-	private IntervalFeatureSet intervalFeatureSet;
+	protected IntervalFeatureSet intervalFeatureSet;
 	
 	/* C o n s t r u c t o r */
 
@@ -24,7 +24,13 @@ public class TrackIntervalFeature extends Track {
 		this.update();
 	}
 	
-	/* Methods */
+	public TrackIntervalFeature(IntervalFeatureSet intervalFeatureSet, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException{
+		this.setGc(gc);
+		this.intervalFeatureSet= intervalFeatureSet;
+		this.update();
+	}
+	
+	/* M e t h o d s */
 	
 	public void update() throws IOException, InvalidGenomicCoordsException{
 		this.intervalFeatureList = this.intervalFeatureSet.getFeaturesInInterval(

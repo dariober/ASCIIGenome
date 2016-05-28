@@ -69,7 +69,8 @@ public class TrackSet {
 			System.err.println("Number format exception: " + trackHeight);
 		}
 		for(Track tr : this.trackSet.values()){
-			if(tr.getFileTag().matches(trackNameRegex)){
+			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
+			if(matched){
 				tr.setyMaxLines(trackHeight);
 			}
 		}
@@ -125,7 +126,8 @@ public class TrackSet {
 		//	ymax= Double.NaN;							
 		//}
 		for(Track tr : this.trackSet.values()){
-			if(tr.getFileTag().matches(trackNameRegex)){
+			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
+			if(matched){
 				tr.setYLimitMin(ymin);
 				tr.setYLimitMax(ymax);
 			}
@@ -164,7 +166,8 @@ public class TrackSet {
 
 		System.err.println("Show: '" + showRegex + "'; hide: '" + hideRegex + "'; for tracks captured by '" + trackNameRegex + "':");
 		for(Track tr : this.trackSet.values()){
-			if(tr.getFileTag().matches(trackNameRegex)){
+			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
+			if(matched){
 				System.err.println(tr.getFileTag());
 				tr.setShowRegex(showRegex);
 				tr.setHideRegex(hideRegex);
@@ -181,7 +184,7 @@ public class TrackSet {
 	 * */
 	public GenomicCoords goToNextFeatureOnFile(String trackId, GenomicCoords currentGc, double slop) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
-		Track tr= matchIntervalFeatureTrack(trackId.trim(), false);
+		Track tr= matchIntervalFeatureTrack(trackId.trim());
 		if(tr == null){
 			return currentGc;
 		}
@@ -203,7 +206,7 @@ public class TrackSet {
 	 * If no matches are found or the trackSet is empty, return null. If multiple matches are found, 
 	 * return the first one with warning.
 	 * */
-	private Track matchIntervalFeatureTrack(String trackTag, boolean asRegex){
+	private Track matchIntervalFeatureTrack(String trackTag){
 		
 		LinkedHashMap<String, Track> ifTracks = this.getIntervalFeatureTracks().getTrackSet();		
 		Track tr= null;
@@ -219,7 +222,7 @@ public class TrackSet {
 			tr= ifTracks.values().iterator().next();
 			System.err.println("\nWarning: trackId not given default to first track found: " + tr.getFileTag());
 		} else {
-			List<Track> matched= matchTracks(trackTag, asRegex);
+			List<Track> matched= matchTracks(trackTag);
 			if(matched.size() == 0){
 				System.err.println("\nWarning '" + trackTag + "' not found in track set:");
 				System.err.println(ifTracks.keySet() + "\n");
@@ -237,25 +240,24 @@ public class TrackSet {
 
 	/** Return the tracks whose trackId contains trackTag. If asRegex is true, matching is done by regex.
 	 * */
-	private List<Track> matchTracks(String trackTag, boolean asRegex){
+	private List<Track> matchTracks(String trackTag){
 		
 		List<Track> matchedTracks= new ArrayList<Track>();
 		
 		Iterator<String> iter = this.trackSet.keySet().iterator();
 		while(iter.hasNext()){
 			String x= iter.next();
-			if(!asRegex && x.contains(trackTag)){
-				matchedTracks.add(this.trackSet.get(x));
-			} else if(asRegex && x.matches(trackTag)){
+			boolean matched= Pattern.compile(trackTag).matcher(x).find();
+			if(matched){
 				matchedTracks.add(this.trackSet.get(x));
 			}
 		}
 		return matchedTracks;
 	}
 	
-	public GenomicCoords findNextMatchOnTrack(String query, String trackId, GenomicCoords currentGc, boolean all, boolean asRegex) throws InvalidGenomicCoordsException, IOException{
+	public GenomicCoords findNextMatchOnTrack(String query, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException{
 
-		TrackIntervalFeature tif= (TrackIntervalFeature) matchIntervalFeatureTrack(trackId.trim(), false);
+		TrackIntervalFeature tif= (TrackIntervalFeature) matchIntervalFeatureTrack(trackId.trim());
 		if(tif == null){
 			return currentGc;
 		}
@@ -263,9 +265,9 @@ public class TrackSet {
 		System.err.println("Matching on " + tif.getFileTag());
 		
 		if(all){
-			return tif.getIntervalFeatureSet().genomicCoordsAllChromMatchInGenome(query, currentGc, asRegex);
+			return tif.getIntervalFeatureSet().genomicCoordsAllChromMatchInGenome(query, currentGc);
 		} else {
-			return tif.getIntervalFeatureSet().findNextMatch(currentGc, query, asRegex);
+			return tif.getIntervalFeatureSet().findNextMatch(currentGc, query);
 		}
 	}
 
@@ -284,8 +286,10 @@ public class TrackSet {
 		
 		for(Track tr : this.trackSet.values()){
 			
+			boolean matched= Pattern.compile(trackIdRegex).matcher(tr.getFileTag()).find();
+			
 			if(Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.BEDGRAPH) &&
-			   tr.getFileTag().matches(trackIdRegex)){
+					matched) {
 		
 				TrackWiggles bdg= (TrackWiggles) tr;
 				bdg.setBdgDataColIdx(bdgDataColIdx);
@@ -294,15 +298,43 @@ public class TrackSet {
 		}		
 	}
 	
-	// STUB:
-	//public void setTrackHeight(int height, String trackIdRegex){
-	//	for(Track tr : this.trackSet.values()){
-	//		if(tr.getFileTag().matches(trackIdRegex)){
-	//			tr.setyMaxLines(height);
-	//		}
-	//	}		
-	//}
-	
+	/** Reorder tracks with the one in newOrder. Tracks not in newOrder are appended
+	 * with order unchanged.
+	 * */
+	public void orderTracks(List<String> newOrder) {
+
+		// Create a new LinkedHashMap with the new order
+		LinkedHashMap<String, Track> newTrackSet= new LinkedHashMap<String, Track>(); 
+		for(String query : newOrder){
+			List<Track> trList = this.matchTracks(query);
+			for(Track xtrack : trList){
+				if(!newTrackSet.containsKey(xtrack.getFileTag())){ // This will remove dups
+					newTrackSet.put(xtrack.getFileTag(), xtrack);
+				}
+			}
+		}
+		
+		// Append tracks not in newOrder
+		for(String x : this.trackSet.keySet()){
+			if(!newTrackSet.containsKey(x)){
+				newTrackSet.put(x, this.trackSet.get(x));
+			}
+		}
+		
+		// A sanity check we didn't leave anything behind
+		if(this.trackSet.size() != newTrackSet.size()){
+			throw new RuntimeException("\nReordered track has " + newTrackSet.size() + " tracks. Expected " + this.trackSet.size());
+		}
+		for(String x : this.trackSet.keySet()){
+			if(!newTrackSet.containsKey(x)){
+				throw new RuntimeException("\nReordered track does not contain " + x);
+			}
+		}
+		
+		// Replace old with new hashmap
+		this.trackSet= newTrackSet;
+	}
+		
 	/*   S e t t e r s   and   G e t t e r s  */
 	public LinkedHashMap<String, Track> getTrackSet() {
 		return trackSet;

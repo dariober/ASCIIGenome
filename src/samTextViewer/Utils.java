@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.tdf.TDFReader;
@@ -211,6 +212,8 @@ public class Utils {
 			return TrackFormat.TDF;
 		} else if(fileName.endsWith(".bedgraph.gz") || fileName.endsWith(".bedgraph")) {
 			return TrackFormat.BEDGRAPH;
+		} else if(fileName.endsWith(".vcf.gz") || fileName.endsWith(".vcf")){
+			return TrackFormat.VCF;
 		} else {
 			// System.err.println("Unsopported file: " + fileName);
 			return TrackFormat.BED;
@@ -336,8 +339,12 @@ public class Utils {
 		} else {
 			throw new RuntimeException("Invalid string to convert to int: " + x);
 		}
-		int pos= (int) (Double.parseDouble(x) * multiplier);
-		return pos;
+		long pos= (long) (Double.parseDouble(x) * multiplier);
+		if( pos >= Integer.MAX_VALUE ){
+			System.err.println("Invalid end coordinate: " + pos);
+			pos= Integer.MAX_VALUE;
+		}
+		return (int)pos;
 	}
 	
 	/**
@@ -388,10 +395,6 @@ public class Utils {
 				}
 			}			
 			return chrom + ":" + from + "-" + to;
-			//step= (step == 0) ? 1 : step;
-			//from += step; 
-			//to += step;
-			//return chrom + ":" + from + "-" + to;
 		} else if(rawInput.trim().equals("b")){
 			int step= (int)Math.rint(windowSize / 10d);
 			from -= step;
@@ -401,11 +404,6 @@ public class Utils {
 				to= from + gc.getUserWindowSize() - 1;
 			}
 			return chrom + ":" + from + "-" + to;
-			//int step= (int)Math.rint(windowSize / 10d);
-			//step= (step == 0) ? 1 : step;
-			//from -= step; 
-			//to -= step;
-			//return chrom + ":" + from + "-" + to;
 		} else if(rawInput.trim().matches("\\d+.*")) { // You might want to be more specific
 			return chrom + ":" + parseGoToRegion(rawInput);
 		} else if(rawInput.trim().startsWith("+") 
@@ -431,14 +429,31 @@ public class Utils {
 	 * the first int or both ints. 
 	 * */
 	protected static String parseGoToRegion(String rawInput){
-		String[] fromTo= rawInput.trim().replaceAll(",", "").replaceAll("-", " ").split(" +");
-		if(fromTo.length == 1){
-			Integer.parseInt(fromTo[0].trim()); // Check you actually got an int.
-			return fromTo[0].trim();
+		
+		String[] fromToRaw= rawInput.trim().
+				replaceAll(",", "").  // Remove thousands sep if any
+				replace(GenomicCoords.TICKED, " ").  // From chrom ideogram 
+				replaceAll("-", " "). // Replace - with space for splitting 
+				split(" +");
+		
+		List<String> fromTo= new ArrayList<String>();
+		for(String x : fromToRaw){
+			if(!x.trim().isEmpty()){	
+				fromTo.add(x);
+			}
+		}
+		
+		if(fromTo.size() == 1){
+			return String.valueOf(Utils.parseStringToIntWithUnits(fromTo.get(0)));
+			// Integer.parseInt(fromTo[0].trim()); // Check you actually got an int.
+			// return fromTo[0].trim();
 		} else {
-			Integer.parseInt(fromTo[0].trim()); // Check you actually got an int.
-			Integer.parseInt(fromTo[1].trim());
-			return fromTo[0].trim() + "-" + fromTo[1].trim();
+			String xfrom= String.valueOf(Utils.parseStringToIntWithUnits(fromTo.get(0)));
+			String xto= String.valueOf(Utils.parseStringToIntWithUnits(fromTo.get(fromTo.size()-1)));
+			return xfrom + "-" + xto;
+			// Integer.parseInt(fromTo[0].trim()); // Check you actually got an int.
+			// Integer.parseInt(fromTo[fromTo.length - 1].trim());
+			// return fromTo[0].trim() + "-" + fromTo[fromTo.length - 1].trim();
 		}
 	}
 	
@@ -745,7 +760,7 @@ public class Utils {
 		for(int i= 0; i < samSeqDict.getSequences().size(); i++){
 			SAMSequenceRecord x= samSeqDict.getSequences().get(i);
 			int n= (int)Math.rint(x.getSequenceLength()/bpPerChar);
-			String bar= String.join("", Collections.nCopies(n, "|"));
+			String bar= StringUtils.join(Collections.nCopies(n, "|"), ""); // String.join("", Collections.nCopies(n, "|"));
 			String row= tabList.get(i) + "\t" + bar;
 			tabList.set(i, row);
 		}
@@ -775,4 +790,5 @@ public class Utils {
 		} 
 		return nz;
 	}
+
 }

@@ -12,8 +12,12 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -26,7 +30,11 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.util.SequenceUtil;
+import tracks.IntervalFeature;
+import tracks.IntervalFeatureSet;
 import tracks.TrackFormat;
+import tracks.TrackIntervalFeature;
 //import readWriteBAMUtils.ReadWriteBAMUtils;
 import tracks.TrackWiggles;
 
@@ -42,12 +50,15 @@ import tracks.TrackWiggles;
  */
 public class GenomicCoords implements Cloneable {
 	
+	public static final String SPACER= "-"; // Background character as spacer
+	public static final String TICKED= "*"; // Char to use to mark region
+	
 	private String chrom;
 	private Integer from;
 	private Integer to;
 	private SAMSequenceDictionary samSeqDict; // Can be null
 	private int windowSize; // Size of the screen window
-	private byte[] refSeq;
+	// private byte[] refSeq;
 	private String fastaFile= null;
 	private String gcProfileFileTag= "CG_percent";
 	
@@ -85,7 +96,6 @@ public class GenomicCoords implements Cloneable {
 			correctCoordsAgainstSeqDict(samSeqDict);
 		}
 		this.fastaFile= fastaFile;
-		this.setRefSeq();
 	}
 	
 	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, int windowSize, String fastaFile) throws InvalidGenomicCoordsException, IOException{
@@ -97,26 +107,27 @@ public class GenomicCoords implements Cloneable {
 		this.windowSize= gc.windowSize;
 		this.samSeqDict= gc.samSeqDict;
 		this.fastaFile= fastaFile;
-		this.setRefSeq();
 	}
 		
 	private GenomicCoords(){ };
 	
 	/* Methods */
 	
-	/** Extract sequence from fasta file. Return null if fastaFile is null or the genomic span is larger than 
-	 * windowSize 
+	/**Extract reference sequence for this interval 
 	 * @throws IOException */
-	private void setRefSeq() throws IOException{
+	public byte[] getRefSeq() throws IOException{
+		
 		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
-			this.refSeq= null;
-			return;
+			return null;
 		}
+		
 		IndexedFastaSequenceFile faSeqFile = null;
 		try {
 			faSeqFile = new IndexedFastaSequenceFile(new File(this.fastaFile));
 			try{
-				this.refSeq= faSeqFile.getSubsequenceAt(this.chrom, this.from, this.to).getBases();
+				byte[] seq= faSeqFile.getSubsequenceAt(this.chrom, this.from, this.to).getBases();
+				faSeqFile.close();
+				return seq;
 			} catch (NullPointerException e){
 				System.err.println("Cannot fetch sequence " + this.chrom + ":" + this.from + "-" + this.to +
 						" for fasta file " + this.fastaFile);
@@ -126,11 +137,9 @@ public class GenomicCoords implements Cloneable {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+		return null;
 	}
 	
-	public byte[] getRefSeq(){
-		return this.refSeq;
-	}
 	/**
 	 * Parse string to return coordinates. This method simply populates the fields chrom, from, to by 
 	 * parsing the input string.  
@@ -239,24 +248,26 @@ public class GenomicCoords implements Cloneable {
 			range--;
 		}
 		int midpoint= this.getMidpoint();
+
+		// Extend midpoint right		
+		long zoomTo= midpoint + ((long)range * (long)zoom);
+		
+		if(zoomTo >= Integer.MAX_VALUE){
+			System.err.println("Invalid 'to' coordinate to fetch " + zoomTo + " (integer overflow?)");
+			zoomTo= Integer.MAX_VALUE;
+		}
+		this.to= (int)zoomTo;
 		
 		// * Extend midpoint left by window size x2 and check coords
 		this.from= midpoint - (range * zoom);
 		this.from= (this.from <= 0) ? 1 : this.from; 
 		
-		// Extend midpoint right
-		long zoomTo= midpoint + (range * zoom);
-		if(zoomTo > Integer.MAX_VALUE){
-			zoomTo= Integer.MAX_VALUE;
-		}
-		this.to= (int)zoomTo;
 		if(this.samSeqDict != null && this.samSeqDict.size() > 0){
 			if(this.samSeqDict.getSequence(this.chrom).getSequenceLength() > 0){
 				this.to= (this.to > this.samSeqDict.getSequence(this.chrom).getSequenceLength()) ? 
 						this.samSeqDict.getSequence(this.chrom).getSequenceLength() : this.to;
 			}
 		}
-		this.setRefSeq();
 	}
 
 	/**
@@ -293,7 +304,6 @@ public class GenomicCoords implements Cloneable {
 		if(this.from > this.to){ // Not sure this can happen.
 			this.to= this.from;
 		}
-		this.setRefSeq();
 	}
 	
 	/**
@@ -360,8 +370,6 @@ public class GenomicCoords implements Cloneable {
 	 * @param nDist: Distance between labels   
 	 * */
 	public String getChromIdeogram(int nDist) {
-		String SPACER= "-"; // Background character as spacer
-		String TICKED= "*"; // Char to use to mark region
 		if(this.samSeqDict == null || this.samSeqDict.size() == 0){
 			return null;
 		}
@@ -405,7 +413,7 @@ public class GenomicCoords implements Cloneable {
 			lastTick= i;
 		}
 		map.set(lastTick, TICKED);
-		return String.join("", map);
+		return StringUtils.join(map, ""); // String.join("", map);
 	}
 	
 	/** For debugging only */
@@ -421,7 +429,7 @@ public class GenomicCoords implements Cloneable {
 	}
 	
 	public String printableRuler(int markDist){
-		List<Double> mapping = seqFromToLenOut();
+		List<Double> mapping = this.seqFromToLenOut();
     	String numberLine= "";
     	int prevLen= 0;
     	int i= 0;
@@ -442,16 +450,19 @@ public class GenomicCoords implements Cloneable {
     	return numberLine;	
     }
 	
-	/** Ref sequence usable for print on screen. */
-	public String printableRefSeq(boolean noFormat){
+	/** Ref sequence usable for print on screen. 
+	 * @throws IOException */
+	public String printableRefSeq(boolean noFormat) throws IOException{
 
-		if(this.refSeq == null){
+		byte[] refSeq= this.getRefSeq();
+		
+		if(refSeq == null){
 			return "";
 		} else if(noFormat){
-			return new String(this.refSeq) + "\n";
+			return new String(refSeq) + "\n";
 		} else {
 			String faSeqStr= "";
-			for(byte c : this.refSeq){
+			for(byte c : refSeq){
 				// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
 				char base= (char) c;
 				if(base == 'A' || base == 'a'){
@@ -658,6 +669,73 @@ public class GenomicCoords implements Cloneable {
 		return cgWiggle;
 	}
 
+	public TrackIntervalFeature findRegex(String regex) throws IOException, InvalidGenomicCoordsException{
+		
+		Map <String, List<IntervalFeature>> map= new LinkedHashMap <String, List<IntervalFeature>>();
+		
+		if (regex == null || regex.isEmpty() || this.fastaFile == null){
+			// Return empty track under these conditions
+			IntervalFeatureSet ifs= new IntervalFeatureSet(map, TrackFormat.BED);
+			TrackIntervalFeature tif= new TrackIntervalFeature(ifs, this);
+			return tif;
+		}
+		
+		byte[] seq= this.getRefSeq();
+		
+		Pattern pattern= Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(new String(seq));
+
+		// One list for matches on forward, one for reverse, one for palindromic
+		List<String> regionListPos= new ArrayList<String>();
+		List<String> regionListNeg= new ArrayList<String>();
+		List<String> regionListPalind= new ArrayList<String>();
+
+		// Forward match
+		while (matcher.find()) {
+			int matchStart= this.from + matcher.start() - 1;
+			int matchEnd= this.from + matcher.end() - 1;
+		    String reg= this.chrom + "\t" + matchStart + "\t" + matchEnd;
+		    // IntervalFeature x= new IntervalFeature(reg, TrackFormat.BED);
+		    regionListPos.add(reg);
+		}
+		// Reverse comp match
+		SequenceUtil.reverseComplement(seq);
+		matcher = pattern.matcher(new String(seq));
+		while (matcher.find()) {
+			int matchStart= this.to - matcher.end();
+			int matchEnd= this.to - matcher.start();
+		    String reg= this.chrom + "\t" + matchStart + "\t" + matchEnd; 
+		    // IntervalFeature x= new IntervalFeature(reg, TrackFormat.BED);
+		    if(regionListPos.contains(reg)){
+		    	regionListPos.remove(reg);
+		    	regionListPalind.add(reg);
+		    } else {
+		    	regionListNeg.add(reg);
+		    }
+		}
+		//  Concat and set strands
+		List<IntervalFeature> intervalFeatureList= new ArrayList<IntervalFeature>();
+		for(String reg : regionListPos){
+			IntervalFeature x= new IntervalFeature(reg, TrackFormat.BED);
+			x.setStrand('+');
+			intervalFeatureList.add(x);
+		}
+		for(String reg : regionListNeg){
+			IntervalFeature x= new IntervalFeature(reg, TrackFormat.BED);
+			x.setStrand('-');
+			intervalFeatureList.add(x);
+		}
+		for(String reg : regionListPalind){
+			IntervalFeature x= new IntervalFeature(reg, TrackFormat.BED);
+			x.setStrand('.');
+			intervalFeatureList.add(x);
+		}
+		map.put(this.chrom, intervalFeatureList);
+		IntervalFeatureSet ifs= new IntervalFeatureSet(map, TrackFormat.BED);
+		TrackIntervalFeature tif= new TrackIntervalFeature(ifs, this);
+		return tif;
+	}
+	
 	public void centerAndExtendGenomicCoords(GenomicCoords gc, int size, double slop) throws InvalidGenomicCoordsException {
 		
 		if(size <= 0){
