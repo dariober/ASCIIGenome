@@ -16,12 +16,11 @@ Text Only Genome Viewer!
   - [TODO: BS-Seq data](#todo-bs-seq-data)
 - [Supported input](#supported-input)
 - [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
-  - [Regular expressions](#regular-expressions)
 - [Requirements and Installation](#requirements-and-installation)
   - [Installation quick start](#installation-quick-start)
   - [A little more detail](#a-little-more-detail)
 - [Credits](#credits)
-- [DEPRECATED](#deprecated)
+- [TODO](#todo)
 
 <!-- /MarkdownTOC -->
 
@@ -117,8 +116,6 @@ Navigation
 ----------
 
 ```
-    N a v i g a t i o n
-
 f / b 
       Small step forward/backward 1/10 window
 ff / bb
@@ -146,20 +143,16 @@ Find
 ----
 
 ```
-find_first <string> [trackId]
-      Find the first (next) record in trackId containing string. Use single quotes for strings with spaces.
-find_first_re <regex> [trackId]
-      Same as find_first but matching is done by regex. For case insensitive matching prepend (?i)
-      to regex. E.g. "next '(?i).*actb.*' myTrack#1"
-find_all <string> [trackId]
-      Find all records on chromosome containing string. The search stops at the first chromosome
+find_first <regex> [trackId]
+      Find the first (next) record in trackId containing regex. Use single quotes for strings with spaces.
+find_all <regex> [trackId]
+      Find all records on chromosome containing regex. The search stops at the first chromosome
       returning hits starting with the current one. Useful to get all gtf records of a gene
-find_all_re <regex> [trackId]
-      Same as find_all but matching regex
-```
+seqRegex <regex>
+      Find regex in reference sequence and show matches as and additional track.
+      Only the current genomic position is searched.
 
-The regular expression versions (`*_re`) are more powerful but trickier to use (see also [regular expressions](#regular-expressions)). 
-Usually the simpler versions will suffice.
+```
 
 Display
 -------
@@ -183,6 +176,8 @@ showGenome
       Print the genome file
 addTracks [file or url]...
       Add tracks
+orderTracks [track#1] [track#2]...
+      Reorder tracks
 history
       Show visited positions
 ```
@@ -270,22 +265,11 @@ For input format specs see also [UCSC format](https://genome.ucsc.edu/FAQ/FAQfor
 Tips gotchas and miscellanea
 ============================
 
-**Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow when the window size grows
+* **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow when the window size grows
 above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are loaded in memory unless they are indexed with `tabix`. 
 
-#### Regular expressions
+* **Regular expression** Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
 
-*A programmer has a problem and thinks* "I know, I'll use regular expressions". *Now he has two problems.*
-
-The options that take regular expressions assume some familiarity with regexes and they can be tricky at first. In particular remember that lines are scanned as a single string for matches. These are some pointers:
-
-* Almost always you want to surround your pattern with `.*`, e.g. to find the ACTB gene use `.*ACTB.*`, but note that this will hit LACTB as well unless you are more specific (e.g. `.*"ACTB".*`) or you use fancier regex. E.g. `.*[^A-Z0-9]ACTB[^A-Z0-9].*` will match ACTB but not LACTB or ACTB9. 
-
-* Just using 'ACTB' as pattern, as you would do with `grep`, will return nothing as no line should contain _only_ 'ACTB'.
-
-* Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
-
-* For reference, regexes are parsed by Java `String.match()` method.
 
 Requirements and Installation
 =============================
@@ -330,15 +314,7 @@ Credits
 TODO
 ====
 
-* Enable contain/regex switch for commands matching patterns
-* Enable partial matching for track names
+* Command to "go to other end" of feature?
 * Enable (some) options to be set at start 
-* Enable select of range by selecting a range of numbers from the ruler. E.g.
- `12360739  12360865  12360991  12361117  12361243` to select `12360739 12361243`
-
-DEPRECATED
-==========
-
-After starting `ASCIIGenome` you can navigate the genome with the following interactive commands. 
 
 <img src="screenshots/bedCluster.png" width="450">
