@@ -40,7 +40,7 @@ public class TrackIntervalFeatureTest {
 		//IntervalFeatureSet ifs= new IntervalFeatureSet(new File(intervalFileName)); 
 		GenomicCoords gc= new GenomicCoords("chr1:1-70", null, 70, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-		tif.setNoFormat(true);           		 
+		tif.setNoFormat(true);           		 		
 		String exp= "||||||||||          ||||||||||                                        ";
 		assertEquals(exp, tif.printToScreen());
 
@@ -49,6 +49,11 @@ public class TrackIntervalFeatureTest {
 		tif.setNoFormat(true);
 		exp= "|||||     |||||                    ";
 		assertEquals(exp, tif.printToScreen());	
+
+		// intervalFileName= "test_data/refSeq.hg19.short.sort.bed.gz";
+		// gc= new GenomicCoords("chr1:1-100000000", null, 70, null);
+		// tif= new TrackIntervalFeature(intervalFileName, gc);
+		// System.out.println("MAP: " + tif.getIntervalFeatureSet().);           		 			
 	}
 
 	@Test

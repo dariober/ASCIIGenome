@@ -3,6 +3,9 @@ package tracks;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 
 import exceptions.InvalidCommandLineException;
@@ -11,6 +14,58 @@ import samTextViewer.GenomicCoords;
 
 public class TrackSetTest {
 
+	@Test
+	public void canReorderTracks() throws InvalidGenomicCoordsException, IOException{
+		TrackSet ts= new TrackSet();
+		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
+		Track t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); t1.setFileTag("#1"); ts.addOrReplace(t1);
+		Track t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); t2.setFileTag("#2"); ts.addOrReplace(t2);
+		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#3"); ts.addOrReplace(t3);
+				
+		List<String> newOrder= new ArrayList<String>();
+		newOrder.add("#1");
+		newOrder.add("#2");
+		newOrder.add("#3");
+		ts.orderTracks(newOrder);
+		assertEquals(newOrder, new ArrayList<String>(ts.getTrackSet().keySet()));
+
+		// Handle missing tracks in new order
+		newOrder= new ArrayList<String>();
+		newOrder.add("#3");
+		newOrder.add("#1");
+		ts.orderTracks(newOrder);
+		assertEquals(3, ts.getTrackSet().keySet().size());
+		
+		// Handle non existing tracks
+		newOrder= new ArrayList<String>();
+		ts.orderTracks(newOrder);
+		assertEquals(3, ts.getTrackSet().keySet().size());
+
+		newOrder= new ArrayList<String>();
+		newOrder.add("1");
+		newOrder.add("1");
+		newOrder.add("2");
+		newOrder.add("3");
+		newOrder.add("3");
+		newOrder.add("foo!");
+		ts.orderTracks(newOrder);
+		assertEquals(3, ts.getTrackSet().keySet().size());
+
+		// Partial matches
+		ts= new TrackSet();
+		t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); t1.setFileTag("#1"); ts.addOrReplace(t1);
+		t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); t2.setFileTag("#2"); ts.addOrReplace(t2);
+		t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#3"); ts.addOrReplace(t3);
+				
+		newOrder= new ArrayList<String>();
+		newOrder.add("2");
+		newOrder.add("3");
+		newOrder.add("1");
+		ts.orderTracks(newOrder);
+		assertEquals("#2", new ArrayList<String>(ts.getTrackSet().keySet()).get(0));
+		assertEquals("#3", new ArrayList<String>(ts.getTrackSet().keySet()).get(1));
+	}
+	
 	@Test
 	public void canSetVisibilityForTrackIntervalFeature() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 				
@@ -41,7 +96,7 @@ public class TrackSetTest {
 		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.addOrReplace(t2);
 		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.addOrReplace(t3);
 
-		String cmdInput= "trackHeight 2 #\\d";
+		String cmdInput= "trackHeight 2 #\\d$";
 		ts.setTrackHeightForRegex(cmdInput);
 				
 		assertEquals(2, ts.getTrackSet().get("#1").getyMaxLines());

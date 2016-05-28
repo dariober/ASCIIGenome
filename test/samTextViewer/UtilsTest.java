@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
+
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -26,10 +28,21 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void testStringContainsRegex(){
+		String x= "foobarbaz";
+		String regex= "b.r";
+		System.out.println("PATTERN:" + Pattern.compile(regex).matcher(x).find());
+	}
+	
+	@Test
 	public void canParseGoToRegion(){
 		assertEquals("1-1000", Utils.parseGoToRegion("1-1000"));
 		assertEquals("1-1000", Utils.parseGoToRegion("1 - 1,000  "));
-		assertEquals("1000", Utils.parseGoToRegion("1,000  "));		
+		assertEquals("1000", Utils.parseGoToRegion("1,000  "));
+		assertEquals("1000-1400", Utils.parseGoToRegion("1000 1200 1300 1400"));
+		assertEquals("1000-1400", Utils.parseGoToRegion("1k 1200 1300 1.4k"));
+		assertEquals("1000-1400000", Utils.parseGoToRegion(" **1k*******1.4M** "));
+		assertEquals("1000-5000000", Utils.parseGoToRegion("--**1k*******1.4M**------5.0M--"));
 	}
 	
 	@Test 

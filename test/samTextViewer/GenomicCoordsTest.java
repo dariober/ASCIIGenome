@@ -10,7 +10,7 @@ import java.util.List;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import tracks.TrackSet;
+import tracks.TrackIntervalFeature;
 import tracks.TrackWiggles;
 
 import org.junit.Test;
@@ -49,6 +49,39 @@ public class GenomicCoordsTest {
 		gc= new GenomicCoords("chr7", 20000000, 55000000, samSeqDict, 16, null);
 		chromMap= gc.getChromIdeogram(10);
 		assertEquals("1-****----110M--", chromMap);
+	}
+	
+	@Test
+	public void canReturnTrackFromMatchingRegex() throws InvalidGenomicCoordsException, IOException{
+		GenomicCoords gc= new GenomicCoords("seq", 1, 100, null, 100, "test_data/seq_cg.fa");
+		TrackIntervalFeature reSet= gc.findRegex("(?i)atc"); // revcomp GAT
+		reSet.setNoFormat(true);
+		assertTrue(reSet.printToScreen().startsWith(">>>"));
+		System.out.println(reSet.printToScreen());
+		System.out.println(gc.printableRefSeq(true));
+		
+		// Match not found
+		reSet= gc.findRegex("FOOBAR");
+		assertTrue(reSet.printToScreen().isEmpty());
+		
+		// Regex not given
+		reSet= gc.findRegex(null);
+		assertTrue(reSet.printToScreen().isEmpty());
+		reSet= gc.findRegex("");
+		assertTrue(reSet.printToScreen().isEmpty());
+		
+		// Ref Sequence not given 
+		gc= new GenomicCoords("seq", 1, 100, null, 100, null);
+		reSet= gc.findRegex("ACTG");
+		assertTrue(reSet.printToScreen().isEmpty());
+		
+		// Palindromic
+		gc= new GenomicCoords("seq", 1, 100, null, 100, "test_data/seq_cg.fa");
+		reSet= gc.findRegex("CG");
+		reSet.setNoFormat(true);
+		assertTrue(reSet.printToScreen().trim().startsWith("|"));
+		System.out.println(reSet.printToScreen());
+		System.out.println(gc.printableRefSeq(true));
 	}
 	
 	@Test
@@ -157,7 +190,7 @@ public class GenomicCoordsTest {
 		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566790, samSeqDict, 1000, fastaFile);
 		assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
 		gc= new GenomicCoords("chr7", 5566770, 5566790, samSeqDict, 20, fastaFile);
-		// System.out.println(gc.getBpPerScreenColumn());
+		// System.out.println("BP PER COL: " + gc.getBpPerScreenColumn());
 		assertEquals(null, gc.getRefSeq());
 	}
 	
@@ -242,8 +275,9 @@ public class GenomicCoordsTest {
 		gc= new GenomicCoords("seq", 1, 120, null, 50, "test_data/seq_cg.fa");
 		TrackWiggles gcCnt= gc.getGCProfile();
 		gcCnt.setyMaxLines(2);
-		String exp= "                                     .::::::::::::\n" +
-                    "::::::::::::::::.....____________.::::::::::::::::";
+		String exp= "                                  ::::::::::::::::\n" +
+                    "::::::::::::::::.________________:::::::::::::::::";
+		System.out.println(gcCnt.printToScreen());
 		assertEquals(exp, gcCnt.printToScreen());
 		System.out.println(gcCnt.getTitle());
 		System.out.println(gcCnt.printToScreen());
@@ -267,7 +301,6 @@ public class GenomicCoordsTest {
 		size= 100;
 		gc.centerAndExtendGenomicCoords(gc, size, 5.0); 
 		assertEquals(1, (int)gc.getFrom());
-
 	}
 
 }
