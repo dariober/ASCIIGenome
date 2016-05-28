@@ -106,6 +106,7 @@ public class IntervalFeatureSetTest {
 		set= new IntervalFeatureSet("test_data/refSeq.hg19.short.sort.bed.gz");
 		x = set.findNextRegexInGenome(".*NM_.*", "chr1", 20000000);
 		assertTrue(x.getRaw().contains("NM_013943_utr3_5_0_chr1_25167429_f"));
+		
 		x = set.findNextRegexInGenome(".*NM_.*", "chr1", 80000000);
 		assertTrue(x.getRaw().contains("NM_001080397_utr3_8_0_chr1_8404074_f"));
 	
@@ -113,7 +114,6 @@ public class IntervalFeatureSetTest {
 		x = set.findNextRegexInGenome(".*NM_.*", "chr1", 20000000);
 		int i= 0;
 		while(i < 20){
-			// System.out.println(x);
 			x = set.findNextRegexInGenome(".*NM_.*", x.getChrom(), x.getFrom());
 			assertTrue(x.getRaw().contains("NM_"));
 			i++;
@@ -258,11 +258,26 @@ chr1	67208778	67216822	NM_001308203_utr3_21_0_chr1_67208779_f	0	+
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/CHD.exon.2010_03.sites.vcf.gz");
 		List<IntervalFeature> xset = set.getFeaturesInInterval("1", 1, 10000000);
 		assertEquals(9, xset.size());
-		IntervalFeatureVCF x = (IntervalFeatureVCF) xset.get(0);
+		IntervalFeature x = xset.get(1);
+		assertEquals("1", x.getChrom());
+		assertEquals(1108138, x.getFrom());
 	}
 	
-	//@Test
+	@Test
+	public void canReadFeaturesOfLengthOne() throws IOException, InvalidGenomicCoordsException{		
+		IntervalFeatureSet set= new IntervalFeatureSet("test_data/refSeqZero.bed");
+		List<IntervalFeature> xset = set.getFeaturesInInterval("chr1", 1, 100);
+		assertEquals(1, xset.size());
+		
+		// Tabix
+		set= new IntervalFeatureSet("test_data/refSeqZero.bed.gz");
+		xset = set.getFeaturesInInterval("chr1", 1, 100);
+		assertEquals(1, xset.size());
+	}
+	
+	@Test
 	public void canReadFromURL() throws IOException, InvalidGenomicCoordsException{
+		System.err.println("canReadFromURL: This can take  a while...");
 		String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02PkRep1.broadPeak.gz";
 		
 		IntervalFeatureSet set= new IntervalFeatureSet(urlStr);

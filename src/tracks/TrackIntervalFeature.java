@@ -61,8 +61,7 @@ public class TrackIntervalFeature extends Track {
 	@Override
 	public String printToScreen() {
 	
-		List<String> printable= new ArrayList<String>();
-		
+		List<String> printable= new ArrayList<String>();		
 		int nLines= 0;
 		for(List<IntervalFeature> listToPrint : this.stackFeatures()){
 			nLines++;
@@ -115,7 +114,7 @@ public class TrackIntervalFeature extends Track {
 		for(IntervalFeature x : this.intervalFeatureList){
 			flatList.add(x);
 		}
-		
+				
 		List<List<IntervalFeature>> listOfLines= new ArrayList<List<IntervalFeature>>();
 		if(flatList.size() == 0){
 			return listOfLines;

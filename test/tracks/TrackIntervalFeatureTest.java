@@ -33,7 +33,7 @@ public class TrackIntervalFeatureTest {
 		String gtfString= tif.toString();
 		System.out.println(gtfString);
 	}
-	
+		
 	@Test
 	public void canConstructTrack() throws InvalidGenomicCoordsException, IOException {
 		String intervalFileName= "test_data/refSeq.bed";

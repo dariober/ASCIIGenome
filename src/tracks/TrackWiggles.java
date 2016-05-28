@@ -132,7 +132,7 @@ public class TrackWiggles extends Track {
 
 		BlockCompressedOutputStream writer = new BlockCompressedOutputStream(outFile);
 		long filePosition= writer.getFilePointer();
-		
+				
 		TabixIndexCreator indexCreator=new TabixIndexCreator(TabixFormat.BED);
 		BedLineCodec bedCodec= new BedLineCodec();
 		while(lin.hasNext()){

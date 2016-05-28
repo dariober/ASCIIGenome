@@ -21,11 +21,8 @@ import java.util.zip.GZIPInputStream;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import exceptions.InvalidGenomicCoordsException;
-import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -41,8 +38,6 @@ public class IntervalFeatureSet {
 	private Map <String, List<IntervalFeature>> intervalMap; // new HashMap <String, List<IntervalFeature>>(); 
 	private TabixReader tabixReader= null;
 	private boolean isTabix= false;
-	private VCFFileReader vcfReader= null;
-	private boolean isVcf= false;
 	private TrackFormat type;
 	private String hideRegex= ""; // Regex to capture feature to hide/show
 	private String showRegex= ".*";
@@ -57,11 +52,11 @@ public class IntervalFeatureSet {
 		this.type= Utils.getFileTypeFromName(new File(infile).getName());
 		
 		if(this.type.equals(TrackFormat.VCF)){
-			this.vcfReader= new VCFFileReader(new File(infile));
 			if ( ! Utils.hasTabixIndex(new File(infile).getAbsolutePath()) ){
 				throw new RuntimeException("\nTabix index required and not found for VCF input " + infile + "\n");
 			}
-			this.isVcf= true;
+			this.tabixReader= new TabixReader(new File(infile).getAbsolutePath());
+			this.isTabix= true;
 		} else {
 			if(Utils.hasTabixIndex(new File(infile).getAbsolutePath())){
 				this.tabixReader= new TabixReader(new File(infile).getAbsolutePath());
@@ -71,9 +66,6 @@ public class IntervalFeatureSet {
 				this.sortIntervalsWithinChroms();
 				this.isTabix= false;
 			}
-		}
-		if(this.isVcf && this.isTabix){
-			throw new RuntimeException("\nInput must be either VCF or generic Tabix. Not both!\n");
 		}
 	}
 	
@@ -114,7 +106,7 @@ public class IntervalFeatureSet {
 		}		
 		List<IntervalFeature> xFeatures= new ArrayList<IntervalFeature>();
 		if(isTabix){
-			Iterator qry = this.tabixReader.query(chrom,  from, to);
+			Iterator qry = this.tabixReader.query(chrom,  from-1, to);
 			while(true){
 				String q = qry.next();
 				if(q == null){
@@ -122,14 +114,7 @@ public class IntervalFeatureSet {
 				}
 				IntervalFeature intervalFeature= new IntervalFeature(q, this.type);
 				xFeatures.add(intervalFeature);
-			}
-		} else if(this.isVcf){
-			CloseableIterator<VariantContext> qry= this.vcfReader.query(chrom, from, to);
-			while(qry.hasNext()){
-				IntervalFeatureVCF intervalFeature= new IntervalFeatureVCF(qry.next());
-				xFeatures.add(intervalFeature);				
-			}
-			qry.close();
+			} 
 		} else {
 			List<IntervalFeature> thisChrom= this.intervalMap.get(chrom);		
 			if(thisChrom == null){
@@ -274,7 +259,7 @@ public class IntervalFeatureSet {
 			}
 			return null;
 		} else if(this.isTabix){
-			Iterator iter = this.tabixReader.query(chrom, from, Integer.MAX_VALUE);
+			Iterator iter = this.tabixReader.query(chrom, from-1, Integer.MAX_VALUE);
 			while(true){
 				String line= iter.next();
 				if(line == null){
@@ -336,7 +321,7 @@ public class IntervalFeatureSet {
 
 		} else if(this.isTabix){
 		
-			int startingPoint= from;
+			int startingPoint= from-1; // -1 becouse tabix.query from is 0 based (seems so at least)
 			List<String> chromSearchOrder = getChromListStartingAt(this.tabixReader.getChromosomes(), chrom);
 			chromSearchOrder.add(chrom);
 			for(String curChrom : chromSearchOrder){

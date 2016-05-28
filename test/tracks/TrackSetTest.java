@@ -18,9 +18,10 @@ public class TrackSetTest {
 	public void canReorderTracks() throws InvalidGenomicCoordsException, IOException{
 		TrackSet ts= new TrackSet();
 		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
-		Track t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); t1.setFileTag("#1"); ts.addOrReplace(t1);
-		Track t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); t2.setFileTag("#2"); ts.addOrReplace(t2);
-		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#3"); ts.addOrReplace(t3);
+	
+		Track t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
+		Track t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); t2.setFileTag("#2"); ts.getTrackSet().put(t2.getFileTag(), t2);
+		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
 				
 		List<String> newOrder= new ArrayList<String>();
 		newOrder.add("#1");
@@ -53,9 +54,9 @@ public class TrackSetTest {
 
 		// Partial matches
 		ts= new TrackSet();
-		t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); t1.setFileTag("#1"); ts.addOrReplace(t1);
-		t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); t2.setFileTag("#2"); ts.addOrReplace(t2);
-		t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#3"); ts.addOrReplace(t3);
+		t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
+		t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); t2.setFileTag("#2"); ts.getTrackSet().put(t2.getFileTag(), t2);
+		t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
 				
 		newOrder= new ArrayList<String>();
 		newOrder.add("2");
@@ -71,9 +72,9 @@ public class TrackSetTest {
 				
 		TrackSet ts= new TrackSet();
 		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
-		Track t1= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc); t1.setFileTag("#10"); ts.addOrReplace(t1);
-		Track t2= new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc); t2.setFileTag("#11"); ts.addOrReplace(t2);
-		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#30"); ts.addOrReplace(t3);
+		Track t1= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc); t1.setFileTag("#10"); ts.getTrackSet().put(t1.getFileTag(), t1);
+		Track t2= new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc); t2.setFileTag("#11"); ts.getTrackSet().put(t2.getFileTag(), t2);
+		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#30"); ts.getTrackSet().put(t3.getFileTag(), t3);
 		
 		String cmdInput= "visible exon intron .*#1.*"; // Set for #1...
 		ts.setVisibilityForTrackIntervalFeature(cmdInput);
@@ -92,9 +93,9 @@ public class TrackSetTest {
 	public void canSetTrackHeight() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.addOrReplace(t1);
-		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.addOrReplace(t2);
-		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.addOrReplace(t3);
+		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
+		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
+		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
 
 		String cmdInput= "trackHeight 2 #\\d$";
 		ts.setTrackHeightForRegex(cmdInput);
@@ -113,9 +114,9 @@ public class TrackSetTest {
 		
 		TrackSet ts= new TrackSet();
 		
-		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.addOrReplace(t1);
-		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.addOrReplace(t2);
-		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.addOrReplace(t3);
+		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
+		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
+		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
 		
 		ts.setTrackYlimitsForRegex(cmdInput);
 				

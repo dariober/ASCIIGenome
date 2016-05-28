@@ -27,9 +27,9 @@ public class TrackSet {
 	
 	/*   M e t h o d s   */
 
-	public void addOrReplace(Track track){
-		this.trackSet.put(track.getFileTag(), track);
-	}
+	//public void addOrReplace(Track track){
+	//	this.trackSet.put(track.getFileTag(), track);
+	//}
 
 	/** From cmdInput extract regex and yMaxLines then iterate through the tracks list to set 
 	 * the yMaxLines in the tracks whose filename matches the regex.
@@ -275,8 +275,9 @@ public class TrackSet {
 		TrackSet ifSet= new TrackSet();
 		for(Track tr : this.trackSet.values()){
 			if(Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.BED) 
-			   || Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.GFF)){
-				ifSet.addOrReplace(tr);
+			   || Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.GFF)
+			   || Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.VCF)){
+				ifSet.trackSet.put(tr.getFileTag(), tr);
 			}
 		}
 		return ifSet;

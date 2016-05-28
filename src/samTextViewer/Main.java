@@ -149,7 +149,7 @@ public class Main {
 		/* Initialize GC profile */
 		if(fasta != null){
 			TrackWiggles cgWiggle= gch.current().getGCProfile();
-			trackSet.addOrReplace(cgWiggle);
+			trackSet.getTrackSet().put(cgWiggle.getFileTag(), cgWiggle);
 		}
 		
 		String seqRegex= null;
@@ -172,7 +172,7 @@ public class Main {
 					if(!trackSet.getTrackSet().containsKey(coverageTrackId)){
 						TrackCoverage trackCoverage= new TrackCoverage(inputFileName, gch.current(), filters, bs);
 						trackCoverage.setFileTag(coverageTrackId);
-						trackSet.addOrReplace(trackCoverage);
+						trackSet.getTrackSet().put(trackCoverage.getFileTag(), trackCoverage);
 					}
 					TrackCoverage trackCoverage= (TrackCoverage) trackSet.getTrackSet().get(coverageTrackId);
 					trackCoverage.setGc(gch.current());
@@ -190,7 +190,7 @@ public class Main {
 						if(!trackSet.getTrackSet().containsKey(coverageTrackId)){
 							TrackMethylation trackMethylation= new TrackMethylation(inputFileName, trackCoverage.getScreenLocusInfoList());
 							trackMethylation.setFileTag(coverageTrackId);
-							trackSet.addOrReplace(trackMethylation);
+							trackSet.getTrackSet().put(trackMethylation.getFileTag(), trackMethylation);
 						}
 						TrackMethylation trackMethylation= (TrackMethylation) trackSet.getTrackSet().get(coverageTrackId);
 						trackMethylation.setScreenLocusInfoList(trackCoverage.getScreenLocusInfoList());
@@ -203,7 +203,7 @@ public class Main {
 					if(!trackSet.getTrackSet().containsKey(trackId)){
 						TrackReads trackReads= new TrackReads(inputFileName, gch.current(), filters, maxReadsStack);
 						trackReads.setFileTag(trackId);
-						trackSet.addOrReplace(trackReads);
+						trackSet.getTrackSet().put(trackReads.getFileTag(), trackReads);
 						trackReads.setFilename(inputFileName);
 						trackReads.setFileTag(trackId);
 					}
@@ -217,14 +217,15 @@ public class Main {
 				} // End processing bam file
 				
 				/* Annotatation */
-				if(Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BED) 
-						|| Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.GFF)){
+				if(    Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BED) 
+			        || Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.GFF)
+				    || Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.VCF)){
 					String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
 					idForTrack++;
 					if(!trackSet.getTrackSet().containsKey(trackId)){
 						TrackIntervalFeature tif= new TrackIntervalFeature(inputFileName, gch.current());
 						tif.setFileTag(trackId);
-						trackSet.addOrReplace(tif);
+						trackSet.getTrackSet().put(tif.getFileTag(), tif);
 					}
 					TrackIntervalFeature tif= (TrackIntervalFeature) trackSet.getTrackSet().get(trackId);
 					tif.setGc(gch.current());
@@ -245,7 +246,7 @@ public class Main {
 					if(!trackSet.getTrackSet().containsKey(trackId)){
 						TrackWiggles tw= new TrackWiggles(inputFileName, gch.current(), 4);
 						tw.setFileTag(trackId);
-						trackSet.addOrReplace(tw);
+						trackSet.getTrackSet().put(tw.getFileTag(), tw);
 					}
 					TrackWiggles tw= (TrackWiggles) trackSet.getTrackSet().get(trackId);
 					tw.setGc(gch.current());

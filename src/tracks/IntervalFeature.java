@@ -13,6 +13,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import exceptions.InvalidGenomicCoordsException;
+import htsjdk.variant.variantcontext.VariantContext;
 
 /**
  * Class to hold bed or gtf features. Behaviour should be similar to pybedtools Interval.
@@ -23,22 +24,22 @@ import exceptions.InvalidGenomicCoordsException;
 public class IntervalFeature implements Comparable<IntervalFeature>{
 
 	// When reading bed files, we expect fields to be in this order.
-	protected String chrom;       // Required
-	protected int from;           // Required. NB 1 based also for bed files.
-	protected int to;             // Required 
+	private String chrom;       // Required
+	private int from;           // Required. NB 1 based also for bed files.
+	private int to;             // Required 
 
-	protected float score= Float.NaN;
-	protected char strand= '.'; 
-	protected String source= "."; // Gtf specific
-	protected String feature= "."; // Gtf specific
+	private float score= Float.NaN;
+	private char strand= '.'; 
+	private String source= "."; // Gtf specific
+	private String feature= "."; // Gtf specific
 
-	protected String raw; // Raw input string exactly as read from file.
+	private String raw; // Raw input string exactly as read from source.
 	private TrackFormat format= TrackFormat.BED;
 	
 	/** Start position of feature in screen coordinates. 
 	 * -1 if the feature is not part of the screenshot. */
-	protected int screenFrom= -1;
-	protected int screenTo= -1;
+	private int screenFrom= -1;
+	private int screenTo= -1;
 	
 	/* C o n s t r u c t o r s */
 		
@@ -50,26 +51,57 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 */
 	public IntervalFeature(String line, TrackFormat type) throws InvalidGenomicCoordsException{
 		if(type.equals(TrackFormat.BED) || type.equals(TrackFormat.BEDGRAPH)){
-			intervalFeatureFromBedLine(line);
+			this.intervalFeatureFromBedLine(line);
 			this.format= TrackFormat.BED;
 		} else if(type.equals(TrackFormat.GFF)){
-			intervalFeatureFromGtfLine(line);
+			this.intervalFeatureFromGtfLine(line);
 			this.format= TrackFormat.GFF;
+		} else if(type.equals(TrackFormat.VCF)) {
+			this.intervalFeatureFromVcfLine(line);
+			this.format= TrackFormat.VCF;
 		} else {
 			System.err.println("Format " + type + " not supported");
 			throw new RuntimeException();
 		}
 	}
 	
-	protected IntervalFeature(){
-		
-	}
-		
-	//public IntervalFeature(IntervalFeature intervalFeature){
+	//public IntervalFeature(VariantContext variantContext){
+
+	//	this.chrom= variantContext.getContig();
+	//	this.from= variantContext.getStart();
+	//	this.to= variantContext.getEnd();        
+    //
+	//	this.score= Float.NaN;
+	//	
+	//	this.raw= variantContext.toString();
+	//	this.format= TrackFormat.VCF;
 	//	
 	//}
-	
+			
 	/* M e t h o d s */
+	
+	private IntervalFeature intervalFeatureFromVcfLine(String vcfLine) throws InvalidGenomicCoordsException{
+		vcfLine= vcfLine.replace("\n", "");
+		vcfLine= vcfLine.replace("\r", "");
+		this.raw= vcfLine;
+		
+		List<String> vcfList = Lists.newArrayList(Splitter.on("\t").split(vcfLine));
+		if(vcfList.size() < 8){
+			throw new RuntimeException("intervalFeatureFromVcfLine: Invalid vcf line:\n" + vcfList);
+		}
+				
+		this.chrom= vcfList.get(0).trim();
+		this.from= Integer.parseInt(vcfList.get(1)); // Make it 1-based
+
+		String refAllele= vcfList.get(3);
+		String altAllele= vcfList.get(4);
+		int mutLength= refAllele.length() > altAllele.length() ? refAllele.length() : altAllele.length();
+		this.to= this.from + (mutLength - 1);
+		
+		this.validateIntervalFeature();
+		return this;
+		
+	}
 	
 	private IntervalFeature intervalFeatureFromBedLine (String bedLine) throws InvalidGenomicCoordsException{
 		
