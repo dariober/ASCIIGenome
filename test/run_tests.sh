@@ -51,7 +51,7 @@ echo "GTF TABIX"
 java -Xmx500m -jar $stvExe -r chr7:1-2149128 hg19.gencode_genes_v19.gtf.gz -ni
 
 echo "VCF FILES INDEXED"
-java -Xmx500m -jar $stvExe CHD.exon.2010_03.sites.vcf.gz -ni
+java -Xmx500m -jar $stvExe CHD.exon.2010_03.sites.vcf.gunzip -ni
 
 
 #

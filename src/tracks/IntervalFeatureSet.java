@@ -50,22 +50,13 @@ public class IntervalFeatureSet {
 	public IntervalFeatureSet(String infile) throws IOException, InvalidGenomicCoordsException{
 		
 		this.type= Utils.getFileTypeFromName(new File(infile).getName());
-		
-		if(this.type.equals(TrackFormat.VCF)){
-			if ( ! Utils.hasTabixIndex(new File(infile).getAbsolutePath()) ){
-				throw new RuntimeException("\nTabix index required and not found for VCF input " + infile + "\n");
-			}
+		if(Utils.hasTabixIndex(new File(infile).getAbsolutePath())){
 			this.tabixReader= new TabixReader(new File(infile).getAbsolutePath());
 			this.isTabix= true;
 		} else {
-			if(Utils.hasTabixIndex(new File(infile).getAbsolutePath())){
-				this.tabixReader= new TabixReader(new File(infile).getAbsolutePath());
-				this.isTabix= true;
-			} else {
-				this.intervalMap= loadFileIntoIntervalMap(infile);
-				this.sortIntervalsWithinChroms();
-				this.isTabix= false;
-			}
+			this.intervalMap= loadFileIntoIntervalMap(infile);
+			this.sortIntervalsWithinChroms();
+			this.isTabix= false;
 		}
 	}
 	

@@ -13,7 +13,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import exceptions.InvalidGenomicCoordsException;
-import htsjdk.variant.variantcontext.VariantContext;
 
 /**
  * Class to hold bed or gtf features. Behaviour should be similar to pybedtools Interval.
@@ -93,10 +92,8 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		this.chrom= vcfList.get(0).trim();
 		this.from= Integer.parseInt(vcfList.get(1)); // Make it 1-based
 
-		String refAllele= vcfList.get(3);
-		String altAllele= vcfList.get(4);
-		int mutLength= refAllele.length() > altAllele.length() ? refAllele.length() : altAllele.length();
-		this.to= this.from + (mutLength - 1);
+		// Feature coordinates are based on reference only. Insertions to the reference are indistinguishable from SNP (like IGV) 
+		this.to= this.from + (vcfList.get(3).length()-1);
 		
 		this.validateIntervalFeature();
 		return this;
@@ -280,6 +277,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	/** Get attribute value given key, e.g. transcript_id
 	 * This method is never used so it is made private.
 	 *  */
+	@SuppressWarnings("unused")
 	private String getAttribute(String attributeName){
 		// * Get attribute field,
 		if(this.format != TrackFormat.GFF){
@@ -294,15 +292,42 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		int frame= line[7].equals(".") ? -1 : Integer.parseInt(line[7]);
 		Feature gff= new Feature(line[0], line[1], line[2], location, score, frame, line[8]);
 		String x= gff.getAttribute(attributeName);
-		
-		// String attributes= this.raw.split("\t")[8];
-		// StrTokenizer str= new StrTokenizer();
-		// str.setQuoteChar('\'');
-		// List<String> tokens= str.getTokenList();
 		return x; 
 	}
 	
-	
+	protected String assignTextToFeature(boolean noFormat) {
+		
+		if(this.format.equals(TrackFormat.VCF)){
+			List<String> vcfList = Lists.newArrayList(Splitter.on("\t").split(this.raw));
+			String text= FormatVCF.format(vcfList.get(3), vcfList.get(4), noFormat);
+			return text;
+		}
+		
+		// Get feature strand
+		char strand= '.'; // Default for NA
+		if(this.strand == '+'){
+			strand= '+';
+		} else if(this.strand == '-'){
+			strand= '-';
+		}
+		// Get feature type
+		String feature= this.getFeature().toLowerCase();
+		HashMap<Character, HashMap<String, Character>> featureToTextCharDict = FormatGTF.featureToTextCharDict;
+		if(!featureToTextCharDict.get('.').containsKey(feature)){
+			feature= "other"; // Feature type NA or not found in dict
+		}
+		
+		// Now you have the right char to be used for this feature type and strand.
+		char text= featureToTextCharDict.get(strand).get(feature);
+
+		// Add formatting if required
+		if(noFormat){
+			return Character.toString(text);
+		} else {
+			return FormatGTF.format(text, strand);
+		}
+	}
+		
 	/*   S e t t e r s   and   G e t t e r s   */
 	
 	public String getChrom() {
@@ -379,68 +404,4 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return i;
 	}
 
-	protected String assignTextToFeature(boolean noFormat) {
-
-		/* Map GTF features to characters. Forward capital LETTERS, reverse small letters  
-		 * Feature names are case insensitive */
-		HashMap<String, Character> fwdFeature= new HashMap<String, Character>();
-		HashMap<String, Character> revFeature= new HashMap<String, Character>();
-		HashMap<String, Character> unstrFeature= new HashMap<String, Character>();
-		fwdFeature.put("exon",        'E'); revFeature.put("exon",        'e');
-		fwdFeature.put("cds", 	      'C'); revFeature.put("cds",         'c');
-		fwdFeature.put("start_codon", 'A'); revFeature.put("start_codon", 'a');
-		fwdFeature.put("stop_codon",  'Z'); revFeature.put("stop_codon",  'z');
-		fwdFeature.put("utr",         'U'); revFeature.put("utr",         'u');
-		fwdFeature.put("3utr",        'U'); revFeature.put("3utr",        'u');
-		fwdFeature.put("5utr",        'W'); revFeature.put("5utr",        'w');
-		fwdFeature.put("gene",		  'G'); revFeature.put("gene",        'g');
-		fwdFeature.put("transcript",  'T'); revFeature.put("transcript",  't');
-		fwdFeature.put("mrna",        'M'); revFeature.put("mrna",        'm');
-		fwdFeature.put("trna",        'X'); revFeature.put("trna",        'x');
-		fwdFeature.put("rrna", 		  'R'); revFeature.put("rrna",        'r');
-		fwdFeature.put("mirna",       'I'); revFeature.put("mirna",       'i');
-		fwdFeature.put("ncrna",       'L'); revFeature.put("ncrna",       'l');
-		fwdFeature.put("lncrna",      'L'); revFeature.put("lncrna",      'l');
-		fwdFeature.put("sirna",       'S'); revFeature.put("sirna",       's');
-		fwdFeature.put("pirna",       'P'); revFeature.put("pirna",       'p');
-		fwdFeature.put("snorna",      'O'); revFeature.put("snorna",      'o');
-		
-		// For feature with strand not available, use forward encoding, unless feature unknown
-		unstrFeature.putAll(fwdFeature);
-		fwdFeature.put("other", '>'); 		
-		revFeature.put("other", '<');
-		unstrFeature.put("other", '|');
-		
-		HashMap<Character, HashMap<String, Character>> featureToTextCharDict= 
-					new HashMap<Character, HashMap<String, Character>>();
-		featureToTextCharDict.put('+', fwdFeature);
-		featureToTextCharDict.put('-', revFeature);
-		featureToTextCharDict.put('.', unstrFeature);
-
-		// Get feature strand
-		char strand= '.'; // Default for NA
-		if(this.strand == '+'){
-			strand= '+';
-		} else if(this.strand == '-'){
-			strand= '-';
-		}
-		// Get feature type
-		String feature= this.getFeature().toLowerCase();
-		if(!featureToTextCharDict.get('.').containsKey(feature)){
-			feature= "other"; // Feature type NA or not found in dict
-		}
-		// Now you have the right char to be used for this feature type and strand.
-		char text= featureToTextCharDict.get(strand).get(feature);
-
-		// Add formatting if required
-		if(noFormat){
-			return Character.toString(text);
-		} else if(strand == '+') {
-			return "\033[48;5;147;38;5;240m" + text + "\033[0m";
-		} else if(strand == '-') {
-			return "\033[48;5;225;38;5;240m" + text + "\033[0m";
-		} else {
-			return "\033[48;5;250;38;5;240m" + text + "\033[0m";
-		}			
-	}
 }

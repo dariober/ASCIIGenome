@@ -2,15 +2,20 @@ package tracks;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.text.StrTokenizer;
+import org.broad.igv.bbfile.BBFileReader;
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
+import htsjdk.samtools.seekablestream.SeekableStream;
+import htsjdk.samtools.seekablestream.SeekableStreamFactory;
+import htsjdk.tribble.readers.TabixReader;
 import samTextViewer.GenomicCoords;
 import tracks.IntervalFeature;
 import tracks.IntervalFeatureSet;
@@ -254,8 +259,18 @@ chr1	67208778	67216822	NM_001308203_utr3_21_0_chr1_67208779_f	0	+
 	}
 	
 	@Test
-	public void canReadVCF() throws IOException, InvalidGenomicCoordsException{		
+	public void canReadVCFTabix() throws IOException, InvalidGenomicCoordsException{		
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/CHD.exon.2010_03.sites.vcf.gz");
+		List<IntervalFeature> xset = set.getFeaturesInInterval("1", 1, 10000000);
+		assertEquals(9, xset.size());
+		IntervalFeature x = xset.get(1);
+		assertEquals("1", x.getChrom());
+		assertEquals(1108138, x.getFrom());		
+	}
+	
+	@Test
+	public void canReadVCF() throws IOException, InvalidGenomicCoordsException{		
+		IntervalFeatureSet set= new IntervalFeatureSet("test_data/CHD.exon.2010_03.sites.vcf");
 		List<IntervalFeature> xset = set.getFeaturesInInterval("1", 1, 10000000);
 		assertEquals(9, xset.size());
 		IntervalFeature x = xset.get(1);
@@ -285,5 +300,5 @@ chr1	67208778	67216822	NM_001308203_utr3_21_0_chr1_67208779_f	0	+
 		assertEquals(2, xset.size());
 		assertEquals(878407+1, xset.get(0).getFrom());
 	}
-
+	
 }

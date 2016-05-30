@@ -134,4 +134,23 @@ public class IntervalFeatureTest {
 		//System.out.println(f);
 		//System.out.println(rulerMap);
 	}
+	
+	@Test
+	public void canFormatVCFLine() throws InvalidGenomicCoordsException{
+		String vcfLine= "1 113054374 . C G 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
+		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
+		assertEquals("G", ift.assignTextToFeature(true));		
+		assertTrue(ift.assignTextToFeature(false).trim().startsWith("["));
+		
+		// Deletion
+		vcfLine= "1 113054374 . CTTG C 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
+		ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
+		assertEquals("D", ift.assignTextToFeature(true));
+		
+		// Insertion
+		vcfLine= "1 113054374 . C CTTG 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
+		ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
+		assertEquals("I", ift.assignTextToFeature(true));
+	}
+	
 }

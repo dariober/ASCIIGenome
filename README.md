@@ -30,7 +30,7 @@ MEMO: Compile, package and upload to github releases
 cd ~/svn_git/ASCIIGenome/trunk
 mkdir ASCIIGenome-0.1.0 # This should match the version in ArgParse
 cp ASCIIGenome ASCIIGenome-0.1.0/
-cp /Users/berald01/Tritume/ASCIIGenome.jar ASCIIGenome-0.1.0/
+cp /Users/berald01/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-0.1.0/
 zip -r ASCIIGenome-0.1.0.zip ASCIIGenome-0.1.0
 rm -r ASCIIGenome-0.1.0
 
@@ -239,14 +239,15 @@ Supported input
 File name extensions matter as file types are usually recognized by their extension in case insensitive mode.
 
 * **bam** files should be sorted and indexed, e.g. with `samtools sort` and `samtools index`. 
-  Paths to remote URLs are supported but painfully slow.
+  Paths to remote URLs are supported but painfully slow (*IGV seems to suffer of the same issue*).
 * **bigWig** recognized by extension `.bw` or `.bigWig`. Remote URLs supported.
 * **bedGraph** recognized by extension `.bedGraph` or `.bedgraph`
 * **bed**, **gtf**, **gff** recognized by respective extensions. Remote URLs supported. 
 * **tdf** This is very useful for quickly displaying very large intervals like tens of megabases or entire chromosomes see [tdf](https://www.broadinstitute.org/igv/TDF)
+* **vcf** Supported but not too sophisticated representation. URL should be supported but it appears ftp from 1000genomes doesn't work (same for IGV).
 * All other extensions (e.g. txt, narrowPeak) will be treated as bed files, provided the format is actually bed!
 
-Notable formats currently **not** supported:  cram (because it doesn't seem to be very popular), bigBed (for local files I think tabix indexing is preferable), vcf (too bad it's not recognized, it's because I don't use vcf much but supporting them should be reasonably easy). 
+Notable formats currently **not** supported:  cram, bigBed.
 
 All plain text formats (bed, bedgraph, etc) can be read as gzipped and there is no need to decompress them.
 
