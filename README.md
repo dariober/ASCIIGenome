@@ -225,10 +225,8 @@ When aligned reads are show at single base resolution, read bases follow the sam
 Upper case letters and `.` for read align to forward strand, lower case and `,` otherwise; second-in-pair reads are underlined;
 grey-shaded reads have mapping quality of <=5. In bisulfite mode the characters M, U, m, u are used for methylated and unmethylated bases on forward and reverse strands.
 
-TODO: BS-Seq data
------------------
-
-<img src="screenshots/exBSmode.png" width="450">
+TO be documented: BS-Seq data
+-----------------------------
 
 <img src="screenshots/exBSmode-2.png" width="450">
 
@@ -315,6 +313,9 @@ Credits
 TODO
 ====
 
+* Allow a string of options to be set at prompt. E.g. `-F 16; mapq 10; ylim 0 na`
+* Add a `bookmark` command create on the fly an IntervalFeatureTrack with bookmarked regions. 
+API: `bookmark`: Add current region to bookmarks; `bookmark show` print current bookmarked features; `bookmark clear`, etc.
 * Command to "go to other end" of feature?
 * Enable (some) options to be set at start 
 
