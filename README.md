@@ -3,7 +3,8 @@ Text Only Genome Viewer!
 
 <!-- MarkdownTOC -->
 
-- [Key Features](#key-features)
+- [Description](#description)
+  - [Key Features](#key-features)
 - [Usage](#usage)
   - [Quick start](#quick-start)
   - [General remarks](#general-remarks)
@@ -13,7 +14,7 @@ Text Only Genome Viewer!
   - [Alignments](#alignments)
   - [Genome option](#genome-option)
   - [Formatting of reads and features](#formatting-of-reads-and-features)
-  - [TODO: BS-Seq data](#todo-bs-seq-data)
+  - [BS-Seq data](#bs-seq-data)
 - [Supported input](#supported-input)
 - [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Requirements and Installation](#requirements-and-installation)
@@ -38,6 +39,9 @@ rm -r ASCIIGenome-0.1.0
 
  -->
 
+Description
+-----------
+
 ```ASCIIGenome``` is a command-line genome browser running from terminal window and solely based on ASCII characters.
 Since ```ASCIIGenome``` does not require a graphical interface it is particularly useful for 
 quickly visualizing genomic data on remote servers. With some imagination ```ASCIIGenome``` is the Vim 
@@ -54,7 +58,7 @@ Key Features
 
 * Command line input and interaction, no graphical interface, minimal [installation and requirements](#requirements-and-installation)
 * Can load multiple files in various [formats](#supported-input)
-* Can access remote files view URL or ftp address
+* Can access remote files via URL or ftp address
 * Easy [navigation](#moving-around-the-genome), [search](#searching-features-in-annotation-files), and filtering options
 * Support for BS-Seq alignment
 
@@ -89,7 +93,7 @@ This screenshot has been produced by first loading the *L. major* GTF file:
 ASCIIGenome ftp://ftp.ensemblgenomes.org/pub/release-31/protists/gtf/leishmania_major/Leishmania_major.ASM272v2.31.gtf.gz
 ```
 
-Then move to visualize chromosome 36: `goto 36:1-2682151`, then make visible only the 'transcript' features: `visible '.*\ttranscript\t.*'`
+Then move to visualize chromosome 36: `goto 36:1-2682151`, then make visible only the 'transcript' features: `visible '\ttranscript\t'`
 
 General remarks
 ---------------
@@ -207,7 +211,7 @@ Genome option
 An optional genome file can be passed to option `-g/--genome` to give a set of allowed sequences and their sizes so that browsing is constrained to the real genomic space. 
 The genome file is also used to represent the position of the current window on the chromosome, which is handy to navigate around.
 
-There are three options to pass a genome file:
+There are three ways to pass a genome file:
 
 * A tag identifying a built-in genome, e.g. hg19. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for available genomes
 
@@ -225,8 +229,17 @@ When aligned reads are show at single base resolution, read bases follow the sam
 Upper case letters and `.` for read align to forward strand, lower case and `,` otherwise; second-in-pair reads are underlined;
 grey-shaded reads have mapping quality of <=5. In bisulfite mode the characters M, U, m, u are used for methylated and unmethylated bases on forward and reverse strands.
 
+<<<<<<< .mine
+BS-Seq data
+-----------
+
+TODO: Document me
+
+<img src="screenshots/exBSmode.png" width="450">
+=======
 TO be documented: BS-Seq data
 -----------------------------
+>>>>>>> .r16
 
 <img src="screenshots/exBSmode-2.png" width="450">
 
