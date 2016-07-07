@@ -36,46 +36,37 @@ public class TrackCoverageTest {
 	public static SAMSequenceDictionary samSeqDict= sr.getFileHeader().getSequenceDictionary();
 	public static String fastaFile= "test_data/chr7.fa";
 	
-	//@Test
-	public void testSpeedSamLocIter() throws IOException{
-		
-		SamReader samReader= srf.open(new File("/Volumes/My_Passport_for_Mac/tmp/rhh147-148_untreat_14102014_atac_hacat.bam"));
-		SAMFileHeader fh= samReader.getFileHeader();
+	@Test
+	public void canPrintMethylProfile() throws IOException, InvalidGenomicCoordsException {
+		int yMaxLines= 11;
+		int windowSize= 100;
 
-		// FAST
-		// IntervalList il= new IntervalList(fh);
-		// int x= 5000000;
-		// while(x < 10000000){
-		//	il.add(new Interval("chr7", x, x));
-		//	x += 10;
-		// }
-		//IntervalList il= new IntervalList(fh);
-		// SamLocusIterator samLocIter= new SamLocusIterator(samReader, il); // SLOW
-		//System.out.println(il.size());
-
-		IntervalList il= new IntervalList(fh);
-		il.add(new Interval("chr7", 5000000, 60000000));
-		SamLocusIterator samLocIter= new SamLocusIterator(samReader, il); // FAST
-		System.out.println("SamLocIter DONE");
-		
-		long t0= System.currentTimeMillis();
-		Iterator<samTextViewer.SamLocusIterator.LocusInfo> iter= samLocIter.iterator(); // FAST
-		long t1= System.currentTimeMillis();
-		System.out.println("Iterator done in: " + (t1- t0));
-		
-		// FAST
-		int i= 0;
-		long nbp= 0;
-		while(iter.hasNext()){
-			i++;
-			samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
-			nbp += locusInfo.getRecordAndPositions().size();
-		}
-		long t2= System.currentTimeMillis();
-		System.out.println(i + " loci Done in: " + (t2- t1) + " ms; counted " + nbp);
-		samLocIter.close();
-		samReader.close();
+		GenomicCoords gc= new GenomicCoords("chr7:5564153-5564330", samSeqDict, windowSize, fastaFile);
+		TrackCoverage tc= new TrackCoverage("test_data/ear045.oxBS.actb.bam", gc, filters, true);
+		tc.setyMaxLines(yMaxLines);
+		System.out.println("START");
+		List<Double> profile= tc.getMethylProfile();
+		System.out.println(tc.getScreenLocusInfoList().size());
+		// assertTrue(Double.isNaN(profile.get(0)));
+		// assertTrue(Double.isNaN(profile.get(2)));
+		// assertEquals(0.0, profile.get(3), 0.0001);
+		System.out.println("END");
 	}
+
+	
+	@Test
+	public void canPrintTitleWithColour() throws InvalidGenomicCoordsException, IOException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, 101, fastaFile);
+		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, filters, false);
+		assertEquals("[0;34m", tc.getTitle().trim().substring(0, 6)); // default col
+		tc.setTitleColour("black");
+		assertEquals("[0;30m", tc.getTitle().trim().substring(0, 6));
+	
+		tc.setTitleColour("foo");
+		assertEquals("[0;34m", tc.getTitle().trim().substring(0, 6)); // default col
+	}
+
 	
 	@Test
 	public void testRPMnorm() throws InvalidGenomicCoordsException, IOException{
@@ -103,7 +94,8 @@ public class TrackCoverageTest {
 		// System.out.println(tc.getScorePerDot());
 	}
 
-	@Test
+	// Reading bam from URL is possible but painfully slow.
+	//@Test
 	public void canReadBAMFromURL() throws IOException, InvalidGenomicCoordsException {
 		
 		String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02AlnRep1.bam";
@@ -174,4 +166,46 @@ public class TrackCoverageTest {
 		System.out.println(gc.toString());
 		System.out.println(tc.printToScreen());
 	}
+	
+	//@Test
+	public void testSpeedSamLocIter() throws IOException{
+		
+		SamReader samReader= srf.open(new File("/Volumes/My_Passport_for_Mac/tmp/rhh147-148_untreat_14102014_atac_hacat.bam"));
+		SAMFileHeader fh= samReader.getFileHeader();
+
+		// FAST
+		// IntervalList il= new IntervalList(fh);
+		// int x= 5000000;
+		// while(x < 10000000){
+		//	il.add(new Interval("chr7", x, x));
+		//	x += 10;
+		// }
+		//IntervalList il= new IntervalList(fh);
+		// SamLocusIterator samLocIter= new SamLocusIterator(samReader, il); // SLOW
+		//System.out.println(il.size());
+
+		IntervalList il= new IntervalList(fh);
+		il.add(new Interval("chr7", 5000000, 60000000));
+		SamLocusIterator samLocIter= new SamLocusIterator(samReader, il); // FAST
+		System.out.println("SamLocIter DONE");
+		
+		long t0= System.currentTimeMillis();
+		Iterator<samTextViewer.SamLocusIterator.LocusInfo> iter= samLocIter.iterator(); // FAST
+		long t1= System.currentTimeMillis();
+		System.out.println("Iterator done in: " + (t1- t0));
+		
+		// FAST
+		int i= 0;
+		long nbp= 0;
+		while(iter.hasNext()){
+			i++;
+			samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
+			nbp += locusInfo.getRecordAndPositions().size();
+		}
+		long t2= System.currentTimeMillis();
+		System.out.println(i + " loci Done in: " + (t2- t1) + " ms; counted " + nbp);
+		samLocIter.close();
+		samReader.close();
+	}
+
 }

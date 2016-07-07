@@ -78,10 +78,10 @@ public class ArgParse {
 			.setDefault(10)
 			.help(docstrings.get("-m"));
 
-		docstrings.put("-rpm", "Toggle on/off the normalization of Reads Per Million for bam input. Default off");
-		parser.addArgument("--rpm", "-rpm")
-			.action(Arguments.storeTrue())
-			.help(docstrings.get("-rpm"));
+//		docstrings.put("-rpm", "Toggle on/off the normalization of Reads Per Million for bam input. Default off");
+//		parser.addArgument("--rpm", "-rpm")
+//			.action(Arguments.storeTrue())
+//			.help(docstrings.get("-rpm"));
 
 		
 		// docstrings.put("-d", "Maximum number of lines to print for coverage tracks");
@@ -90,11 +90,11 @@ public class ArgParse {
 		//	.setDefault(10)
 		//	.help("Track height: Maximum number of lines to print for each track");
 
-		docstrings.put("-ml", "Maximum number of lines to print for each methylation track");
-		parser.addArgument("--maxMethylLines", "-ml")
-			.type(Integer.class)
-			.setDefault(10)
-			.help(docstrings.get("-ml"));
+		//docstrings.put("-ml", "Maximum number of lines to print for each methylation track");
+		//parser.addArgument("--maxMethylLines", "-ml")
+		//	.type(Integer.class)
+		//	.setDefault(10)
+		//	.help(docstrings.get("-ml"));
 
 		parser.addArgument("--maxReadsStack", "-M")
 			.type(Integer.class)

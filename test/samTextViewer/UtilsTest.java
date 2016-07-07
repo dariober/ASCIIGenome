@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import htsjdk.samtools.SAMSequenceDictionary;
@@ -15,6 +16,7 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import tracks.TrackFormat;
 
+import org.apache.commons.lang3.text.StrTokenizer;
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
@@ -279,4 +281,26 @@ public class UtilsTest {
 		Utils.printSamSeqDict(emptyDict, 30);
 		Utils.printSamSeqDict(null, 30);
 	}
+	
+	@Test
+	public void canSplitStringInTokens(){
+
+		ArrayList<String> xx= Utils.tokenize("\"foo && bar\" "
+				+ "&& bar"
+				+ "&&baz "
+				+ "&& \"foo && biz\""
+				+ "&& \"foo && ' biz\"", "&&");
+		for (String token : xx) {
+			System.out.println(token);
+		}
+		
+		assertEquals("foo && bar", xx.get(0));
+		assertEquals("bar", xx.get(1));
+		assertEquals("baz", xx.get(2));
+		assertEquals("foo && biz", xx.get(3));
+
+		xx= Utils.tokenize("gene \"ACTB\"", "&&");
+		assertEquals("gene \"ACTB\"", xx.get(0));
+	}
+	
 }

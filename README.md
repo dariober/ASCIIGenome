@@ -15,6 +15,8 @@ Text Only Genome Viewer!
   - [Genome option](#genome-option)
   - [Formatting of reads and features](#formatting-of-reads-and-features)
   - [BS-Seq data](#bs-seq-data)
+- [](#)
+  - [TO be documented: BS-Seq data](#to-be-documented-bs-seq-data)
 - [Supported input](#supported-input)
 - [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Requirements and Installation](#requirements-and-installation)
@@ -128,7 +130,7 @@ zi / zo [x]
       Large step forward/backward 1/2 window
 goto chrom:from-to
       Go to given region. E.g. "goto chr1:1-1000" or chr1:10 or chr1. goto keyword can be replaced with ':' (like goto in vim)
-<from> [to]
+from [to]
       Go to position <from> or to region "from to" on current chromosome. E.g. 10 or "10 1000" or "10-1000"
 +/-<int>[k,m]
       Move forward/backward by <int> bases. Suffixes k (kilo) and M (mega) allowed. E.g. -2m or +10k
@@ -154,8 +156,7 @@ find_all <regex> [trackId]
       returning hits starting with the current one. Useful to get all gtf records of a gene
 seqRegex <regex>
       Find regex in reference sequence and show matches as and additional track.
-      Only the current genomic position is searched.
-
+      Useful to show restriction enzyme sites, CpGs etc.
 ```
 
 Display
@@ -165,17 +166,23 @@ Display
 visible [show regex] [hide regex] [track regex]
       In annotation tracks, only include rows captured by [show regex] and exclude [hide regex].
       Apply to tracks captured by [track regex]. With no optional arguments reset to default: "'.*' '^$' '.*'"
-      Use '.*' to match everything and '^$' to hide nothing. E.g. "visible .*exon.* .*CDS.* .*gtf#.*"
+      Use '.*' to match everything and '^$' to hide nothing. E.g. "visible exon CDS gtf"
 trackHeight <int> [track regex]
       Set track height to int lines for all tracks captured by regex. Default regex: '.*'
+trackColour <colour> [track regex]
+      Set title colour for tracks captured by regex. All colours except white and black
+      accept the prefix 'light_'. Available colours:
+      red green yellow blue magenta cyan grey white black
+      E.g. trackColour light_blue ts.*gtf
 ylim <min> <max> [track regex]
       Set limits of y axis for all track IDs captured by regex. Use na to autoscale to min and/or max.
       E.g. ylim 0 na. If regex is omitted all tracks will be captured. Default: "ylim na na .*"
 dataCol <idx> [regex]
       Select data column for all bedgraph tracks captured by regex. <idx>: 1-based column index.
-print / printFull
-      Turn on/off the printing of bed/gtf features.
-      print clip lines to fit the screen, printFull will wrap the long lines
+print     [track regex] 
+printFull [track regex] 
+      Print the lines of the annotation tracks captured by [track regex]. print clips lines to
+      fit the screen. printFull wraps long lines. With no arguments all tracks are printed.
 showGenome
       Print the genome file
 addTracks [file or url]...
@@ -191,18 +198,19 @@ Alignments
 ----------
 
 ```
--f
-    Required sam flags. Use 4096 for reads on top strand
--F
-    Filtering sam flags. Use 4096 for reads on top strand
--q
-    Minumum mapping quality for a read to be considered
--m
-    Maximum number of lines to print for read tracks.
--rpm
-    Toggle on/off the normalization of Reads Per Million for bam input. Default off
--ml
-    Maximum number of lines to print for each methylation track
+rpm [track regex]
+      Toggle display of read coverage from raw count to reads per million
+      for alignment files captured by [track regex]
+-f INT 
+-F INT 
+      Include (-f) and exclude (-F) reads with INT bits set
+mapq INT
+      Include reads with mapq >= INT
+maxLines INT
+      Maximum number of lines to print for alignment tracks
+
+q       Quit
+h       Show this help. See also https://github.com/dariober/ASCIIGenome
 ```
 
 Genome option

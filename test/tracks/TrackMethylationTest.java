@@ -45,7 +45,7 @@ public class TrackMethylationTest {
 		tm.setNoFormat(true);
 		String tmProfile= tm.printToScreen();
 		System.out.println(tmProfile);
-		System.out.println(tm.getScorePerDot());
+		// System.out.println(tm.getScorePerDot());
 	
 		yMaxLines= 25;
 		windowSize= 101;
@@ -56,7 +56,7 @@ public class TrackMethylationTest {
 		tm.setNoFormat(true);
 		tmProfile= tm.printToScreen();
 		System.out.println(tmProfile);
-		System.out.println(tm.getScorePerDot());
+		// System.out.println(tm.getScorePerDot());
 	
 		long t0= System.currentTimeMillis();
 		int i= 0;

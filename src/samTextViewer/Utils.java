@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.text.StrMatcher;
+import org.apache.commons.lang3.text.StrTokenizer;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.tdf.TDFReader;
@@ -42,6 +44,30 @@ import tracks.TrackFormat;
  *
  */
 public class Utils {
+	
+	public static LinkedHashMap<String, Integer> ansiColourCodes(){
+		// See http://misc.flogisoft.com/bash/tip_colors_and_formatting
+		LinkedHashMap<String, Integer> colourCodes= new LinkedHashMap<String, Integer>();
+		colourCodes.put("default", 39);
+		colourCodes.put("black", 30);
+		colourCodes.put("red", 31);
+		colourCodes.put("green", 32);
+		colourCodes.put("yellow", 33);
+		colourCodes.put("blue", 34);
+		colourCodes.put("magenta", 35);
+		colourCodes.put("cyan", 36);
+		colourCodes.put("light_grey", 37);
+		colourCodes.put("grey", 90);
+		colourCodes.put("light_red", 91);
+		colourCodes.put("light_green", 92);
+		colourCodes.put("light_yellow", 93);
+		colourCodes.put("light_blue", 94);
+		colourCodes.put("light_magenta", 95);
+		colourCodes.put("light_cyan", 96);
+		colourCodes.put("white", 97);
+		// To be continued
+		return colourCodes;
+	}
 	
 	/** Return true if fileName has a valid tabix index. 
 	 * @throws IOException 
@@ -791,4 +817,21 @@ public class Utils {
 		return nz;
 	}
 
+	/** Split string x in tokens. Effectively just a friendly wrapper around StrTokenizer
+	 * */
+	public static ArrayList<String> tokenize(String x, String delimiterString){
+		// See also http://stackoverflow.com/questions/38161437/inconsistent-behaviour-of-strtokenizer-to-split-string
+		StrTokenizer str= new StrTokenizer(x);
+    	str.setTrimmerMatcher(StrMatcher.spaceMatcher()); 
+		str.setDelimiterString(delimiterString);
+		str.setQuoteChar('\"');
+		ArrayList<String> tokens= (ArrayList<String>) str.getTokenList();
+		for(int i= 0; i < tokens.size(); i++){
+			String tok= tokens.get(i).trim();
+			tokens.set(i, tok);
+		}
+		return tokens;
+	
+	}
+	
 }

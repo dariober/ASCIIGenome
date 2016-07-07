@@ -1,6 +1,6 @@
 package exceptions;
 
-public class InvalidGenomicCoordsException extends Exception {
+public class InvalidColourException extends Exception {
 
 	/**
 	 * 

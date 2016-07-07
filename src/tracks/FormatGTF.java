@@ -6,13 +6,19 @@ import java.util.HashMap;
  * */
 public class FormatGTF {
 
-	public static HashMap<Character, HashMap<String, Character>> featureToTextCharDict= 
+	private static HashMap<Character, HashMap<String, Character>> featureToTextCharDict= 
 			new HashMap<Character, HashMap<String, Character>>();
 	
-	/* C ON S T R U C T O R */
+	/* C O N S T R U C T O R */
 	
 	public FormatGTF(){
 
+	}
+
+	/* G E T T E R S */
+	
+	public static HashMap<Character, HashMap<String, Character>> getFeatureToTextCharDict(){
+		
 		/* Map GTF features to characters. Forward capital LETTERS, reverse small letters  
 		 * Feature names are case insensitive */
 		HashMap<String, Character> fwdFeature= new HashMap<String, Character>();
@@ -46,7 +52,9 @@ public class FormatGTF {
 		
 		featureToTextCharDict.put('+', fwdFeature);
 		featureToTextCharDict.put('-', revFeature);
-		featureToTextCharDict.put('.', unstrFeature);		
+		featureToTextCharDict.put('.', unstrFeature);
+		
+		return featureToTextCharDict; 
 	}
 	
 	/* M E T H O D S */

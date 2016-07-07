@@ -413,7 +413,11 @@ public class GenomicCoords implements Cloneable {
 			lastTick= i;
 		}
 		map.set(lastTick, TICKED);
-		return StringUtils.join(map, ""); // String.join("", map);
+		String ideogram= StringUtils.join(map, "");
+		if(ideogram.length() > this.windowSize){
+			ideogram= ideogram.substring(0, this.windowSize);
+		}
+		return ideogram;
 	}
 	
 	/** For debugging only */

@@ -6,7 +6,7 @@ import samTextViewer.SamLocusIterator.RecordAndOffset;
 
 /**
  * Store info about a locus on screen. Sort of counterpart of LocusInfo which refers to genomic
- * position, here we refer to sreen postion */
+ * position, here we refer to screen position */
 class ScreenLocusInfo {
 	
 	// private int screenPosition= -1; 
@@ -21,15 +21,15 @@ class ScreenLocusInfo {
 	/* Methods */
 	/** Increment attributes using locusInfo and refSeq. refSeq can be null which means
 	 * some attributes are not updated */
-	protected void increment(LocusInfo locusInfo, byte refBase, boolean bs){
+	protected void increment(LocusInfo locusInfo, byte refBase){ // , boolean bs
 
 		refBase= (byte) Character.toUpperCase(refBase);
 		
 		cntGenomicLoci++;
 		depth += locusInfo.getRecordAndPositions().size();
-		if(! bs){ 
-			return;
-		}
+		//if(! bs){ 
+		//	return;
+		//}
 		
 		// Code for BS-Seq data:
 		if(refBase == '\0' || (refBase != 'C' && refBase != 'G')){

@@ -103,7 +103,7 @@ public class TrackWiggles extends Track {
 	}
 
 	@Override
-	public String printToScreen(){ // int yMaxLines, Double ymin, Double ymax
+	public String printToScreen(){
 	
 		if(this.getyMaxLines() == 0){return "";}
 		TextProfile textProfile= new TextProfile(this.getScreenScores(), this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
@@ -122,9 +122,7 @@ public class TrackWiggles extends Track {
 	 * @throws IOException 
 	 * */
 	private void blockCompressAndIndex(String in, String bgzfOut, boolean deleteOnExit) throws IOException {
-		
-		// System.err.print("Compressing: " + in + " to file: " + bgzfOut + "... ");
-		
+				
 		File inFile= new File(in);
 		File outFile= new File(bgzfOut);
 		
@@ -145,9 +143,7 @@ public class TrackWiggles extends Track {
 			filePosition = writer.getFilePointer();
 		}
 		writer.flush();
-		
-		// System.err.print("Indexing... ");
-		
+				
 		File tbi= new File(bgzfOut + TabixUtils.STANDARD_INDEX_EXTENSION);
 		if(tbi.exists() && tbi.isFile()){
 			writer.close();
@@ -156,8 +152,6 @@ public class TrackWiggles extends Track {
 		Index index = indexCreator.finalizeIndex(writer.getFilePointer());
 		index.writeBasedOnFeatureFile(outFile);
 		writer.close();
-
-		// System.err.println("Done");
 		
 		if(deleteOnExit){
 			outFile.deleteOnExit();
@@ -171,13 +165,10 @@ public class TrackWiggles extends Track {
 
 		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
 		
-		// String s= Double.toString(Utils.roundToSignificantFigures(this.scorePerDot, 4));
-		// String scoreXDot= s.indexOf(".") < 0 ? s : s.replaceAll("0*$", "").replaceAll("\\.$", "");
-
-		return this.getFileTag() 
+		String xtitle= this.getFileTag() 
 				+ "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]\n";
-		//		+ "; .= " + scoreXDot + ";\n";
+		return this.formatTitle(xtitle);
 	}
 	
 	/** Return true if line looks like a valid bedgraph record  

@@ -3,7 +3,6 @@ package samTextViewer;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -24,7 +23,6 @@ import tracks.Track;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
 import tracks.TrackIntervalFeature;
-import tracks.TrackMethylation;
 import tracks.TrackReads;
 import tracks.TrackSet;
 import tracks.TrackWiggles;
@@ -52,10 +50,10 @@ public class Main {
 		String genome= opts.getString("genome");
 		//int windowSize= opts.getInt("windowSize");
 		String fasta= opts.getString("fasta");
-		boolean rpm= opts.getBoolean("rpm");
+		boolean rpm= false; // opts.getBoolean("rpm");
 		int maxLines= opts.getInt("maxLines");
 		// int trackHeight= opts.getInt("maxDepthLines");
-		int maxMethylLines= opts.getInt("maxMethylLines");
+		// int maxMethylLines= opts.getInt("maxMethylLines");
 		final int maxReadsStack= opts.getInt("maxReadsStack");
 		int f_incl= opts.getInt("f");
 		int F_excl= opts.getInt("F");
@@ -133,7 +131,7 @@ public class Main {
 		for(String x : inputFileList){
 			console.addCompleter(new StringsCompleter(new File(x).getName()));
 		}
-		for(String x : "next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
+		for(String x : "trackColour maxLines mapq next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
 			// Add options. Really you should use a dict for this.
 			if(x.length() > 2){
 				console.addCompleter(new StringsCompleter(x));
@@ -142,8 +140,10 @@ public class Main {
 		
 		String currentCmd = null; // Used to store the current interactive command and repeat it if no new cmd is given. 
 		
-		boolean printIntervalFeatures= false;
-		boolean printIntervalFeaturesFull= false;
+		String printIntervalFeaturesRegex= "x^"; // false;
+		String printIntervalFeaturesFullRegex= "x^";
+		String rpmRegex= "x^";
+		
 		TrackSet trackSet= new TrackSet();
 
 		/* Initialize GC profile */
@@ -177,10 +177,16 @@ public class Main {
 					TrackCoverage trackCoverage= (TrackCoverage) trackSet.getTrackSet().get(coverageTrackId);
 					trackCoverage.setGc(gch.current());
 					trackCoverage.setFilters(filters);
-					trackCoverage.setRpm(rpm);
+					if(Pattern.compile(rpmRegex).matcher(trackCoverage.getFileTag()).find()){
+						rpm= (trackCoverage.getRpm()) ? false : true; // Invert rpm set.
+						System.err.println("Setting RPM to " + rpm + " for " + trackCoverage.getFileTag());
+						trackCoverage.setRpm(rpm);
+					}
 					trackCoverage.update();
 					trackCoverage.printToScreen();				
 					
+					/* Methylation profile disable until a better representation is prepared
+				
 					if(bs && trackCoverage.getScreenLocusInfoList().size() > 0){
 						if(maxMethylLines < 0){
 							maxMethylLines= 0;
@@ -196,6 +202,7 @@ public class Main {
 						trackMethylation.setScreenLocusInfoList(trackCoverage.getScreenLocusInfoList());
 						trackMethylation.setyMaxLines(maxMethylLines);
 					}
+					*/
 										
 					/* Reads */
 					String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
@@ -254,7 +261,8 @@ public class Main {
 					tw.printToScreen();
 				}
 			} // End loop through files 
-
+			rpmRegex= "x^"; // Reset to match nothing so that nothing changes until rpm opt is called again.  
+			
 			/* Print tracks */
 			/* ************ */
 			console.clearScreen();
@@ -268,19 +276,17 @@ public class Main {
 					continue;
 				}
 				tr.setNoFormat(noFormat);
-				if(tr.isNoFormat()){
-					System.out.print(tr.getTitle());
-				} else {
-					System.out.print("\033[0;34m" + tr.getTitle() + "\033[0m");
-				}
+				System.out.print(tr.getTitle());
 				if(tr.getyMaxLines() > 0){
 					System.out.println(tr.printToScreen());
 				}
-				if(printIntervalFeatures){
+
+				// Print features
+				if(Pattern.compile(printIntervalFeaturesRegex).matcher(tr.getFileTag()).find()){
 					String printable= tr.printFeatures(windowSize);
 					System.out.print(printable);
 				}
-				if(printIntervalFeaturesFull){
+				if(Pattern.compile(printIntervalFeaturesFullRegex).matcher(tr.getFileTag()).find()){
 					String printable= tr.printFeatures(Integer.MAX_VALUE);
 					System.out.print(printable);
 				}
@@ -336,7 +342,26 @@ public class Main {
 			if(!nonInteractive){
 				break;
 			}
-			
+
+/*
+			boolean needValidInput= true;
+			while(needValidInput){
+				console.setPrompt("[h] for help: ");
+				String cmdInputLong= console.readLine().trim();
+
+				if (cmdInputLong.trim().isEmpty()){
+					// Repeat previous command(s)
+					cmdInputLong= currentCmd;
+				}
+				
+				ArrayList<String> cmdList= Utils.tokenize(cmdInputLong, "&&");
+				
+				for(String cmdInput : cmdList){
+					
+				}
+				needValidInput= false;
+			}			
+*/			
 			String cmdInput= null;
 			while(cmdInput == null){ // Keep asking for input until you get something valid
 				console.setPrompt("[h] for help: ");
@@ -348,64 +373,7 @@ public class Main {
 				}
 				
 				if(cmdInput == null || cmdInput.equals("h")){
-String inline= "\n    N a v i g a t i o n\n\n"
-+ "f / b \n"
-+ "      Small step forward/backward 1/10 window\n"
-+ "ff / bb\n"
-+ "zi / zo [x]\n"
-+ "      Zoom in / zoom out x times (default x= 1). Each zoom halves or doubles the window size\n"
-+ "      Large step forward/backward 1/2 window\n"
-+ "goto chrom:from-to\n"
-+ "      Go to given region. E.g. \"goto chr1:1-1000\" or chr1:10 or chr1. goto keyword can be replaced with ':' (like goto in vim)\n"
-+ "<from> [to]\n"
-+ "      Go to position <from> or to region \"from to\" on current chromosome. E.g. 10 or \"10 1000\" or \"10-1000\"\n" 
-+ "+/-<int>[k,m]\n"
-+ "      Move forward/backward by <int> bases. Suffixes k (kilo) and M (mega) allowed. E.g. -2m or +10k\n"
-+ "p / n\n"
-+ "      Go to previous/next visited position\n"
-+ "next / next_start [trackId]\n"
-+ "      Move to the next feature in trackId on *current* chromosome\n"
-+ "      'next' centers the window on the found feature while 'next_start' sets the window at the start of the feature.\n"
-
-+ "\n    F i n d  \n\n"
-+ "      Memo: To match regex case-insensitive prepend (?i) to pattern. E.g. (?i)actb will match ACTB\n\n"
-+ "find_first <regex> [trackId]\n"
-+ "      Find the first (next) record in trackId containing regex. Use single quotes for strings with spaces.\n"
-+ "find_all <regex> [trackId]\n"
-+ "      Find all records on chromosome containing regex. The search stops at the first chromosome\n"
-+ "      returning hits starting with the current one. Useful to get all gtf records of a gene\n"
-+ "seqRegex <regex>\n"
-+ "      Find regex in reference sequence and show matches as and additional track.\n"
-+ "      Useful to show restriction enzyme sites, CpGs etc.\n"
-
-+ "\n    D i s p l a y  \n\n"
-+ "visible [show regex] [hide regex] [track regex]\n"
-+ "      In annotation tracks, only include rows captured by [show regex] and exclude [hide regex].\n"
-+ "      Apply to tracks captured by [track regex]. With no optional arguments reset to default: \"'.*' '^$' '.*'\"\n"
-+ "      Use '.*' to match everything and '^$' to hide nothing. E.g. \"visible exon CDS gtf\"\n"       
-+ "trackHeight <int> [track regex]\n"
-+ "      Set track height to int lines for all tracks captured by regex. Default regex: '.*'\n"
-+ "ylim <min> <max> [track regex]\n"
-+ "      Set limits of y axis for all track IDs captured by regex. Use na to autoscale to min and/or max.\n"
-+ "      E.g. ylim 0 na. If regex is omitted all tracks will be captured. Default: \"ylim na na .*\"\n"
-+ "dataCol <idx> [regex]\n"
-+ "      Select data column for all bedgraph tracks captured by regex. <idx>: 1-based column index.\n"
-+ "print / printFull\n"
-+ "      Turn on/off the printing of bed/gtf features.\n"
-+ "      print clip lines to fit the screen, printFull will wrap the long lines\n"
-+ "showGenome\n"
-+ "      Print the genome file\n"
-+ "addTracks [file or url]...\n"
-+ "      Add tracks\n" 
-+ "orderTracks [track#1] [track#2]...\n"
-+ "      Reorder tracks\n" 
-+ "history\n"
-+ "      Show visited positions\n";
-					System.out.println(inline);
-					System.out.println("    A l i g n m e n t s\n");
-					System.out.println(ArgParse.getDocstrings());
-					System.out.println("q      Quit");
-					System.out.println("See also " + ArgParse.WEB_ADDRESS);
+					System.out.println(InlineHelp.getHelp());
 					cmdInput= null;
 					continue;
 				} 
@@ -469,6 +437,16 @@ String inline= "\n    N a v i g a t i o n\n\n"
 							cmdInput= null;
 				        	continue;
 						}
+					} else if(cmdInput.startsWith("trackColour") || cmdInput.startsWith("trackColor")){
+						try{
+							trackSet.setTrackColourForRegex(cmdInput);
+						} catch(InvalidCommandLineException e){
+							cmdInput= null;
+							continue;
+						} catch(PatternSyntaxException e) {
+							cmdInput= null;
+				        	continue;
+						}
 					} else if(cmdInput.startsWith("addTracks ")){
 						StrTokenizer str= new StrTokenizer(cmdInput);
 						str.setQuoteChar('\'');
@@ -510,14 +488,22 @@ String inline= "\n    N a v i g a t i o n\n\n"
 							System.out.println(x);
 						}
 						cmdInput= null;
-					} else if(cmdInput.toLowerCase().equals("print")){
-						printIntervalFeatures= (printIntervalFeatures) ? false : true;
-						printIntervalFeaturesFull= false;
-						System.err.println("Print interval features: " + printIntervalFeatures);
-					} else if(cmdInput.toLowerCase().equals("printfull")){
-						printIntervalFeaturesFull= (printIntervalFeaturesFull) ? false : true;
-						printIntervalFeatures= false;
-						System.err.println("Print full interval features: " + printIntervalFeaturesFull);
+					} else if(cmdInput.equals("print") 
+							|| cmdInput.startsWith("print ") 
+							|| cmdInput.equals("printFull")
+							|| cmdInput.startsWith("printFull ")){
+						String regex= cmdInput.replaceAll("^printFull|^print", "").trim(); // Memo: ^printFull before ^print 
+						if(regex.isEmpty()){
+							regex= ".*";
+						}
+						if(cmdInput.toLowerCase().equals("print") || cmdInput.toLowerCase().startsWith("print ")){
+							printIntervalFeaturesFullRegex= "x^";	// Turn off print/Full
+							printIntervalFeaturesRegex= regex;
+						} else {
+							printIntervalFeaturesRegex= "x^";	// Turn off print/Full
+							printIntervalFeaturesFullRegex= regex;
+							System.out.println("REGEX set to " + regex);
+						}
 					} else if(cmdInput.toLowerCase().equals("rnameon")){
 						withReadName= true;
 					} else if(cmdInput.toLowerCase().equals("rnameoff")) {
@@ -574,35 +560,23 @@ String inline= "\n    N a v i g a t i o n\n\n"
 						System.out.println(Utils.printSamSeqDict(gch.current().getSamSeqDict(), 30));
 						cmdInput= null;
 						continue;
-					// Command line options from Argparse
-					} else { 
-						List<String> clArgs= Arrays.asList(cmdInput.split("\\s+"));
-						if(clArgs.indexOf("-f") != -1){
-							int i= clArgs.indexOf("-f") + 1;
-							f_incl= Integer.parseInt(clArgs.get(i));
-						} else if(clArgs.indexOf("-F") != -1){
-							int i= clArgs.indexOf("-F") + 1;
-							F_excl= Integer.parseInt(clArgs.get(i));
-							if((F_excl & 4) != 4){ // Always filter out read unmapped
-								F_excl += 4;
-							}
-						} else if(clArgs.indexOf("-q") != -1){
-							int i= clArgs.indexOf("-q") + 1;
-							mapq= Integer.parseInt(clArgs.get(i));
-						} else if(clArgs.indexOf("-m") != -1){
-							int i= clArgs.indexOf("-m") + 1;
-							maxLines= Integer.parseInt(clArgs.get(i));
-						} else if(clArgs.indexOf("-ml") != -1){
-							int i= clArgs.indexOf("-ml") + 1;
-							maxMethylLines= Integer.parseInt(clArgs.get(i));
-						} else if(clArgs.indexOf("-rpm") != -1){
-							rpm= (rpm) ? false : true; // Invert rpm set.
-						// END OF CMD LINE ARGS
-						} else {
-							System.err.println("Unrecognized argument: " + cmdInput);
-							cmdInput= null;
+					} else if(cmdInput.equals("rpm") || cmdInput.startsWith("rpm ")) {
+						rpmRegex= cmdInput.replaceAll("^rpm", "").trim();
+					} else if(cmdInput.startsWith("-f")) { 
+						f_incl= Integer.parseInt(cmdInput.replaceAll("^-f", "").trim());
+					} else if(cmdInput.startsWith("-F")) { 
+						F_excl= Integer.parseInt(cmdInput.replaceAll("^-F", "").trim());
+						if((F_excl & 4) != 4){ // Always filter out read unmapped
+							F_excl += 4;
 						}
-					} // END Command line options from Argparse
+					} else if(cmdInput.startsWith("mapq")) { 
+						mapq= Integer.parseInt(cmdInput.replaceAll("^mapq", "").trim());
+					} else if(cmdInput.startsWith("maxLines")){
+						maxLines= Integer.parseInt(cmdInput.replaceAll("^maxLines", "").trim());
+					} else {
+						System.err.println("Unrecognized argument: " + cmdInput);
+						cmdInput= null;
+					} // END OF CMD LINE ARGS
 				} catch(Exception e){
 					System.err.println("\nError processing input: " + cmdInput + "\n");
 					e.printStackTrace(); // Print trace for debugging
@@ -610,7 +584,7 @@ String inline= "\n    N a v i g a t i o n\n\n"
 					cmdInput= null;
 				}
 				currentCmd= cmdInput;
-			} // END while loop to get cmLine args
+			} // END while loop to parse cmdInput
 			idForTrack= 0;
 		} // End while loop keep going until quit or if no interactive input set
 	}

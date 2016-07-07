@@ -301,6 +301,7 @@ public class GenomicCoordsTest {
 		size= 100;
 		gc.centerAndExtendGenomicCoords(gc, size, 5.0); 
 		assertEquals(1, (int)gc.getFrom());
+	
 	}
 
 }

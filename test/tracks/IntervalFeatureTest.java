@@ -36,19 +36,6 @@ public class IntervalFeatureTest {
 		assertEquals("exon", f.getFeature());
 		System.out.println(f.toString());
 	}
-
-	//@Test
-	//public void canFormatGtfFeatureString(){
-	//	List<Double> rulerMap= new ArrayList<Double>();
-	//	for(int i= 1; i <= 5; i++){
-	//		rulerMap.add((double)(i));
-	//	}
-	//	IntervalFeature f= new IntervalFeature("chr1\tuknw\texon\t1\t5\t.\t+\t.\tNA", TrackFormat.GFF);
-	//	f.mapToScreen(rulerMap);
-	//	System.out.println(f.getScreenFrom() + "-" + f.getScreenTo());
-	//	boolean noFormat= true;
-	//	assertEquals("EEEEE", f.p(noFormat));
-	//}
 	
 	@Test
 	public void canGetAttribute() throws InvalidGenomicCoordsException{
@@ -81,8 +68,6 @@ public class IntervalFeatureTest {
 		bedLine= " chr1\t0\t1";
 		f= new IntervalFeature(bedLine, TrackFormat.BED); 
 		assertEquals("chr1", f.getChrom()); // NB: spaces in chrom stripped.
-
-		// System.out.println(f);
 	}
 	
 	@Test
@@ -151,6 +136,14 @@ public class IntervalFeatureTest {
 		vcfLine= "1 113054374 . C CTTG 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
 		assertEquals("I", ift.assignTextToFeature(true));
+	}
+	
+	@Test
+	public void canFormatGTFLine() throws InvalidGenomicCoordsException{
+		String gtfLine= "36 GeneDB exon 4809 7349 . - . gene_id".replaceAll(" ", "\t");
+		IntervalFeature ift= new IntervalFeature(gtfLine, TrackFormat.GFF);
+		assertEquals("e", ift.assignTextToFeature(true));		
+		assertTrue(ift.assignTextToFeature(false).trim().startsWith("["));
 	}
 	
 }

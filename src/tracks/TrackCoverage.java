@@ -30,10 +30,6 @@ public class TrackCoverage extends Track {
 	/* A t t r i b u t e s */
 	
 	private List<ScreenLocusInfo> screenLocusInfoList= new ArrayList<ScreenLocusInfo>(); 
-
-	/** Each dot in the screen output track corresponds to this many units of 
-	 * score in the input. Typically this "reads per dot". */
-	// private double scorePerDot;   
 	private boolean rpm= false;
 	
 	
@@ -100,13 +96,22 @@ public class TrackCoverage extends Track {
 				if(this.getGc().getRefSeq() != null){
 					refBase= this.getGc().getRefSeq()[screenPos];
 				}
-				this.screenLocusInfoList.get(screenPos).increment(locusInfo, refBase, this.isBs());
+				this.screenLocusInfoList.get(screenPos).increment(locusInfo, refBase);
 			}
 			samLocIter.close();
 			samReader.close();	
 		} 
 		this.setYLimitMin(this.getYLimitMin());
 		this.setYLimitMax(this.getYLimitMax());
+	}
+	
+	public List<Double> getMethylProfile(){
+	
+		List<Double> methylProfile= new ArrayList<Double>();
+		for(ScreenLocusInfo x : this.screenLocusInfoList){
+			methylProfile.add((double)x.getCntM() / (double)(x.getCntM() + x.getCntU()));
+		}
+		return methylProfile;
 	}
 	
 	/**
@@ -129,7 +134,7 @@ public class TrackCoverage extends Track {
 		}
 		
 		List<Double> yValues= new ArrayList<Double>();
-		for(ScreenLocusInfo x : screenLocusInfoList){
+		for(ScreenLocusInfo x : this.screenLocusInfoList){
 			yValues.add(x.getMeanDepth());
 		}
 		this.setScreenScores(yValues);
@@ -181,18 +186,20 @@ public class TrackCoverage extends Track {
 	public void setRpm(boolean rpm) {
 		this.rpm = rpm;
 	}
+	public boolean getRpm(){
+		return this.rpm;
+	}
 
 	@Override
 	public String getTitle(){
 		
 		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
-		
-		// String s= Double.toString(Utils.roundToSignificantFigures(this.scorePerDot, 4));
-		// String scoreXDot= s.indexOf(".") < 0 ? s : s.replaceAll("0*$", "").replaceAll("\\.$", "");
-
-		return this.getFileTag() 
+		String rpmTag= this.rpm ? "; rpm" : "";
+		String xtitle= this.getFileTag() 
 				+ "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
-				+ "; range[" + rounded[0] + " " + rounded[1] + "]\n";
-				// + "; .= " + scoreXDot + ";\n";
+				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
+				+ rpmTag
+				+ "\n";
+		return this.formatTitle(xtitle);
 	}
 }

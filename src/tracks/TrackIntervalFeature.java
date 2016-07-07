@@ -96,7 +96,7 @@ public class TrackIntervalFeature extends Track {
 	
 	@Override
 	public String getTitle(){
-		return this.getFileTag() + "\n";
+		return this.formatTitle(this.getFileTag()) + "\n";
 	}
 
 	/**		

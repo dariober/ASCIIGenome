@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import samTextViewer.GenomicCoords;
@@ -43,6 +45,7 @@ public class TrackSet {
 		// 2 regex  optional
 		
 		StrTokenizer str= new StrTokenizer(cmdInput);
+		str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 		str.setQuoteChar('\'');
 		List<String> tokens= str.getTokenList();
 		if(tokens.size() < 2){
@@ -76,6 +79,49 @@ public class TrackSet {
 		}
 	}
 	
+	public void setTrackColourForRegex(String cmdInput) throws InvalidCommandLineException{
+
+		// MEMO of subcommand syntax:
+		// 0 trackColour
+		// 1 Colour
+		// 2 Regex
+
+		StrTokenizer str= new StrTokenizer(cmdInput);
+		str.setTrimmerMatcher(StrMatcher.spaceMatcher());
+		str.setQuoteChar('\'');
+		List<String> tokens= str.getTokenList();
+
+		// Colour
+		String colour= (new Track()).getTitleColour();
+		if(tokens.size() >= 2){
+			String xcolour= tokens.get(1).toLowerCase();
+			if(!Utils.ansiColourCodes().containsKey(xcolour)){
+				System.err.println("\nGot invalid colour: " + xcolour + ". Resetting to " + colour);
+				System.err.println("Valid colours are: " + Utils.ansiColourCodes().keySet());
+			} else {
+				colour= xcolour;
+			}
+		}
+		
+		// Regex
+		String trackNameRegex= ".*"; // Default: Capture everything
+		if(tokens.size() >= 3){
+			trackNameRegex= tokens.get(2);
+		}
+		try{
+			Pattern.compile(trackNameRegex); // Validate regex
+		} catch(PatternSyntaxException e){
+	    	System.err.println("Invalid regex in: " + cmdInput);
+	    	System.err.println(e.getDescription());
+		}
+		
+		for(Track tr : this.trackSet.values()){
+			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
+			if(matched){
+				tr.setTitleColour(colour);
+			}
+		}
+	}
 	
 	/** From cmdInput extract regex and ylimits then iterate through the tracks list to set 
 	 * the ylimits in the tracks whose filename matches the regex.
@@ -84,6 +130,7 @@ public class TrackSet {
 	public void setTrackYlimitsForRegex(String cmdInput) throws InvalidCommandLineException{
 
 		StrTokenizer str= new StrTokenizer(cmdInput);
+		str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 		str.setQuoteChar('\'');
 		List<String> tokens= str.getTokenList();
 		if(tokens.size() < 3){
@@ -139,6 +186,7 @@ public class TrackSet {
 	public void setVisibilityForTrackIntervalFeature(String cmdInput) throws InvalidCommandLineException{
 
 		StrTokenizer str= new StrTokenizer(cmdInput);
+		str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 		str.setQuoteChar('\'');
 		List<String> tokens= str.getTokenList();
 
@@ -335,7 +383,7 @@ public class TrackSet {
 		// Replace old with new hashmap
 		this.trackSet= newTrackSet;
 	}
-		
+	
 	/*   S e t t e r s   and   G e t t e r s  */
 	public LinkedHashMap<String, Track> getTrackSet() {
 		return trackSet;

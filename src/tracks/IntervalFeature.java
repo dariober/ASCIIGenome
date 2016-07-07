@@ -312,7 +312,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		}
 		// Get feature type
 		String feature= this.getFeature().toLowerCase();
-		HashMap<Character, HashMap<String, Character>> featureToTextCharDict = FormatGTF.featureToTextCharDict;
+		HashMap<Character, HashMap<String, Character>> featureToTextCharDict = FormatGTF.getFeatureToTextCharDict();
 		if(!featureToTextCharDict.get('.').containsKey(feature)){
 			feature= "other"; // Feature type NA or not found in dict
 		}
