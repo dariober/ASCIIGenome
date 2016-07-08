@@ -3,7 +3,7 @@ Text Only Genome Viewer!
 
 <!-- MarkdownTOC -->
 
-- [Description](#description)
+  - [Description](#description)
   - [Key Features](#key-features)
 - [Usage](#usage)
   - [Quick start](#quick-start)
@@ -14,9 +14,6 @@ Text Only Genome Viewer!
   - [Alignments](#alignments)
   - [Genome option](#genome-option)
   - [Formatting of reads and features](#formatting-of-reads-and-features)
-  - [BS-Seq data](#bs-seq-data)
-- [](#)
-  - [TO be documented: BS-Seq data](#to-be-documented-bs-seq-data)
 - [Supported input](#supported-input)
 - [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Requirements and Installation](#requirements-and-installation)
@@ -125,9 +122,9 @@ Navigation
 f / b 
       Small step forward/backward 1/10 window
 ff / bb
+      Large step forward/backward 1/2 window
 zi / zo [x]
       Zoom in / zoom out x times (default x= 1). Each zoom halves or doubles the window size
-      Large step forward/backward 1/2 window
 goto chrom:from-to
       Go to given region. E.g. "goto chr1:1-1000" or chr1:10 or chr1. goto keyword can be replaced with ':' (like goto in vim)
 from [to]
@@ -164,24 +161,24 @@ Display
 
 ```
 visible [show regex] [hide regex] [track regex]
-      In annotation tracks, only include rows captured by [show regex] and exclude [hide regex].
-      Apply to tracks captured by [track regex]. With no optional arguments reset to default: "'.*' '^$' '.*'"
+      In annotation tracks, only include rows containing [show regex] and exclude [hide regex].
+      Apply to tracks containing  [track regex]. With no optional arguments reset to default: "'.*' '^$' '.*'"
       Use '.*' to match everything and '^$' to hide nothing. E.g. "visible exon CDS gtf"
 trackHeight <int> [track regex]
-      Set track height to int lines for all tracks captured by regex. Default regex: '.*'
+      Set track height to int lines for all tracks containing regex. Default regex: '.*'
 trackColour <colour> [track regex]
-      Set title colour for tracks captured by regex. All colours except white and black
+      Set colour for tracks containing regex. All colours except white, black, default
       accept the prefix 'light_'. Available colours:
-      red green yellow blue magenta cyan grey white black
+      red green yellow blue magenta cyan grey white black default
       E.g. trackColour light_blue ts.*gtf
 ylim <min> <max> [track regex]
-      Set limits of y axis for all track IDs captured by regex. Use na to autoscale to min and/or max.
+      Set limits of y axis for all track IDs containing regex. Use na to autoscale to min and/or max.
       E.g. ylim 0 na. If regex is omitted all tracks will be captured. Default: "ylim na na .*"
 dataCol <idx> [regex]
-      Select data column for all bedgraph tracks captured by regex. <idx>: 1-based column index.
+      Select data column for all bedgraph tracks containing regex. <idx>: 1-based column index.
 print     [track regex] 
 printFull [track regex] 
-      Print the lines of the annotation tracks captured by [track regex]. print clips lines to
+      Print the lines of the annotation tracks containing  [track regex]. print clips lines to
       fit the screen. printFull wraps long lines. With no arguments all tracks are printed.
 showGenome
       Print the genome file
@@ -200,7 +197,7 @@ Alignments
 ```
 rpm [track regex]
       Toggle display of read coverage from raw count to reads per million
-      for alignment files captured by [track regex]
+      for alignment files containing [track regex]
 -f INT 
 -F INT 
       Include (-f) and exclude (-F) reads with INT bits set
@@ -208,9 +205,8 @@ mapq INT
       Include reads with mapq >= INT
 maxLines INT
       Maximum number of lines to print for alignment tracks
-
-q       Quit
-h       Show this help. See also https://github.com/dariober/ASCIIGenome
+BSseq [track regex]
+      Toggle bisulfite mode for read tracks containing regex. Ignored without reference fasta sequence
 ```
 
 Genome option
@@ -235,19 +231,9 @@ Formatting of reads and features
 
 When aligned reads are show at single base resolution, read bases follow the same convention as samtools: 
 Upper case letters and `.` for read align to forward strand, lower case and `,` otherwise; second-in-pair reads are underlined;
-grey-shaded reads have mapping quality of <=5. In bisulfite mode the characters M, U, m, u are used for methylated and unmethylated bases on forward and reverse strands.
+grey-shaded reads have mapping quality of <=5. 
 
-<<<<<<< .mine
-BS-Seq data
------------
-
-TODO: Document me
-
-<img src="screenshots/exBSmode.png" width="450">
-=======
-TO be documented: BS-Seq data
------------------------------
->>>>>>> .r16
+In bisulfite mode, the characters M, U, m, u are used for methylated and unmethylated bases on forward and reverse strands. For example:
 
 <img src="screenshots/exBSmode-2.png" width="450">
 
@@ -340,4 +326,3 @@ API: `bookmark`: Add current region to bookmarks; `bookmark show` print current 
 * Command to "go to other end" of feature?
 * Enable (some) options to be set at start 
 
-<img src="screenshots/bedCluster.png" width="450">

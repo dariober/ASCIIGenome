@@ -51,7 +51,7 @@ public class TrackCoverage extends Track {
 		this.setGc(gc);
 		this.setFilename(bam);
 		this.setFilters(filters);
-		this.setBs(bs);
+		this.setBisulf(bs);
 		this.update();
 	}
 	
@@ -139,10 +139,8 @@ public class TrackCoverage extends Track {
 		}
 		this.setScreenScores(yValues);
 				
-		// this.scorePerDot= textProfile.getScorePerDot();
 		if(this.rpm){
 			long libSize= getAlignedReadCount(new File(this.getFilename()));
-			// this.scorePerDot= this.scorePerDot / libSize * 1000000.0;
 			for(int i= 0; i < yValues.size(); i++){
 				yValues.set(i, yValues.get(i)/libSize * 1000000.0);
 			}
@@ -154,7 +152,11 @@ public class TrackCoverage extends Track {
 			List<String> xl= textProfile.getProfile().get(i);
 			lineStrings.add(StringUtils.join(xl, ""));
 		}
-		return Joiner.on("\n").join(lineStrings);
+		String printable= Joiner.on("\n").join(lineStrings);
+		if(!this.isNoFormat()){
+			printable= "\033[0;" + Utils.ansiColourCodes().get(this.getTitleColour()) + "m" + printable + "\033[0m";
+		}
+		return printable;
 	}
         
     private long getAlignedReadCount(File bam){

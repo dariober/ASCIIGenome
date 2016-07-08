@@ -30,7 +30,7 @@ import samTextViewer.Utils;
 public class TrackReads extends Track{
 
 	private List<List<TextRead>> readStack;
-	private boolean bs= false;
+	// private boolean bisulf= false;
 	private boolean withReadName= false;
 	private int maxReadStack;
 	
@@ -119,7 +119,7 @@ public class TrackReads extends Track{
 		for(Double idx : keep){
 			List<TextRead> line= this.readStack.get((int)Math.rint(idx));
 			try {
-				printable += linePrinter(line, bs, this.isNoFormat(), withReadName) + "\n";
+				printable += linePrinter(line, this.bisulf, this.isNoFormat(), withReadName) + "\n";
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -243,15 +243,13 @@ public class TrackReads extends Track{
 		return cnt;
 	}
 	
+	@Override
+	public String getTitle(){
+		return this.formatTitle(this.getFileTag()) + "\n";
+	}
+	
 	/* S e t t e r s   and   G e t t e r s */
 	
-	public boolean isBs() {
-		return bs;
-	}
-
-	public void setBs(boolean bs) {
-		this.bs = bs;
-	}
 
 	public boolean isWithReadName() {
 		return withReadName;

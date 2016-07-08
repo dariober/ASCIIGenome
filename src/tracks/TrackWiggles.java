@@ -112,8 +112,12 @@ public class TrackWiggles extends Track {
 		for(int i= (textProfile.getProfile().size() - 1); i >= 0; i--){
 			List<String> xl= textProfile.getProfile().get(i);
 			lineStrings.add(StringUtils.join(xl, ""));
-		}		
-		return Joiner.on("\n").join(lineStrings);
+		}
+		String printable= Joiner.on("\n").join(lineStrings);
+		if(!this.isNoFormat()){
+			printable= "\033[0;" + Utils.ansiColourCodes().get(this.getTitleColour()) + "m" + printable + "\033[0m";
+		}
+		return printable;
 	}
 	
 	/**

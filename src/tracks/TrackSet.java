@@ -11,7 +11,6 @@ import java.util.regex.PatternSyntaxException;
 import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 
-import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import samTextViewer.GenomicCoords;
@@ -78,6 +77,43 @@ public class TrackSet {
 			}
 		}
 	}
+	
+	public void setBisulfiteModeForRegex(String cmdInput) {
+
+		// MEMO of subcommand syntax:
+		// 0 BSseq
+		// 1 Regex
+
+		StrTokenizer str= new StrTokenizer(cmdInput);
+		str.setTrimmerMatcher(StrMatcher.spaceMatcher());
+		str.setQuoteChar('\'');
+		List<String> tokens= str.getTokenList();
+
+		// Regex
+		String trackNameRegex= "^$"; // Default: Capture nothing
+		if(tokens.size() >= 2){
+			trackNameRegex= tokens.get(1);
+		}
+		try{
+			Pattern.compile(trackNameRegex); // Validate regex
+		} catch(PatternSyntaxException e){
+	    	System.err.println("Invalid regex in: " + cmdInput);
+	    	System.err.println(e.getDescription());
+		}
+		
+		for(Track tr : this.trackSet.values()){
+			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
+			if(matched){
+				System.out.println("Setting " + tr);
+				if(tr.isBisulf()){ // Invert setting
+					tr.setBisulf(false);
+				} else {
+					tr.setBisulf(true);
+				}
+			}
+		}
+	}
+
 	
 	public void setTrackColourForRegex(String cmdInput) throws InvalidCommandLineException{
 

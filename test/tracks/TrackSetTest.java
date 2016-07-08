@@ -107,6 +107,24 @@ public class TrackSetTest {
 	*/
 
 	@Test
+	public void canSetBSMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+				
+		TrackSet ts= new TrackSet();
+		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
+		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
+		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+
+		String cmdInput= "bsMode #\\d$";
+		ts.setBisulfiteModeForRegex(cmdInput);
+		assertTrue(ts.getTrackSet().get("#1").isBisulf());
+		assertTrue(! ts.getTrackSet().get("#20").isBisulf());
+		
+		ts.setBisulfiteModeForRegex(cmdInput); // Was set true, now becomes false
+		assertTrue(! ts.getTrackSet().get("#1").isBisulf());
+	}
+
+	
+	@Test
 	public void canSetTrackColour() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 				
 		TrackSet ts= new TrackSet();

@@ -27,11 +27,11 @@ public class ArgParse {
 + "Text viewer for genome alignment and annotation files.\n"
 + "For details see " + WEB_ADDRESS + "\n"
 + "");	
-		parser.addArgument("insam")
+		parser.addArgument("input")
 			.type(String.class)
 			.required(false)
 			.nargs("*")
-			.help("Input files. bam/cram must be sorted and indexed. Large bed/gtf files should be indexed with tabix.");
+			.help("Input files to be displayed: bam, bed, gtf, bigwig, bedgraph, etc");
 		
 		parser.addArgument("--region", "-r")
 			.type(String.class)
@@ -102,9 +102,9 @@ public class ArgParse {
 			.help("Maximum number of reads to accumulate before printing. If more than this many reads map to the window\n"
 					+ "randomy select them");
 		
-		parser.addArgument("--BSseq", "-bs")
-			.action(Arguments.storeTrue())
-			.help("Bisulphite mode: Mark bases as methylated (M/m) or unmethylated (U/u). Requires -fa");
+		//parser.addArgument("--BSseq", "-bs")
+		//	.action(Arguments.storeTrue())
+		//	.help("Bisulphite mode: Mark bases as methylated (M/m) or unmethylated (U/u). Requires -fa");
 		
 		parser.addArgument("--noFormat", "-nf")
 			.action(Arguments.storeTrue())

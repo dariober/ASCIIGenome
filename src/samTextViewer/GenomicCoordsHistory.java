@@ -20,13 +20,10 @@ public class GenomicCoordsHistory {
 	 * to the last one in history. 
 	 * The position tracker is reset to the last when a new position is added */
 	public void add(GenomicCoords gc) {
-		
 		if(this.history.size() == 0 || !this.history.get(this.history.size() - 1).equalCoords(gc)){
 			this.history.add((GenomicCoords) gc.clone());
-			this.positionTracker= this.history.size() - 1;
-			return;
 		}
-		
+		this.positionTracker= this.history.size() - 1;
 	}
 
 	public GenomicCoords current() {

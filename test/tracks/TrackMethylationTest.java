@@ -3,7 +3,6 @@ package tracks;
 import static org.junit.Assert.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,9 +14,7 @@ import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.SamRecordFilter;
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import samTextViewer.GenomicCoords;
 
 public class TrackMethylationTest {
@@ -35,7 +32,8 @@ public class TrackMethylationTest {
 
 		int windowSize= 10;
 		
-		IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File("test_data/chr7.fa"));
+		// IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File("test_data/chr7.fa"));
+		// faSeqFile.close();
 		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, windowSize, fastaFile);
 		
 		int yMaxLines= 5;

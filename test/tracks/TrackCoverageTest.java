@@ -59,7 +59,7 @@ public class TrackCoverageTest {
 		
 		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, 101, fastaFile);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, filters, false);
-		assertEquals("[0;34m", tc.getTitle().trim().substring(0, 6)); // default col
+		assertEquals("[0;3", tc.getTitle().trim().substring(0, 4)); // default col
 		tc.setTitleColour("black");
 		assertEquals("[0;30m", tc.getTitle().trim().substring(0, 6));
 	
@@ -149,6 +149,7 @@ public class TrackCoverageTest {
 		
 		GenomicCoords  gc= new GenomicCoords("chr7", 1, 1000, samSeqDict, 20, null);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, filters, false);
+		tc.setNoFormat(true);
 		tc.setyMaxLines(2);
 		assertEquals(
 				   "                    \n"                   

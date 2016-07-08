@@ -48,6 +48,7 @@ public class InlineHelp {
 		paramList.add("-f");
 		paramList.add("-F");
 		paramList.add("mapq");
+		paramList.add("BSseq");
 		paramList.add("maxLines");
 		for(String x : paramList){
 			if(params.containsKey(x)){
@@ -70,9 +71,9 @@ public class InlineHelp {
 + "${f} / ${b} \n"
 + "      Small step forward/backward 1/10 window\n"
 + "${ff} / ${bb}\n"
++ "      Large step forward/backward 1/2 window\n"
 + "${zi} / ${zo} [x]\n"
 + "      Zoom in / zoom out x times (default x= 1). Each zoom halves or doubles the window size\n"
-+ "      Large step forward/backward 1/2 window\n"
 + "${goto} chrom:from-to\n"
 + "      Go to given region. E.g. \"goto chr1:1-1000\" or chr1:10 or chr1. goto keyword can be replaced with ':' (like goto in vim)\n"
 + "${from} [to]\n"
@@ -86,7 +87,7 @@ public class InlineHelp {
 + "      'next' centers the window on the found feature while 'next_start' sets the window at the start of the feature.\n"
 
 + "\n    F i n d  \n\n"
-+ "      Memo: To match regex case-insensitive prepend (?i) to pattern. E.g. (?i)actb will match ACTB\n\n"
++ "Memo: To match regex case-insensitive prepend (?i) to pattern. E.g. (?i)actb will match ACTB\n\n"
 + "${find_first} <regex> [trackId]\n"
 + "      Find the first (next) record in trackId containing regex. Use single quotes for strings with spaces.\n"
 + "${find_all} <regex> [trackId]\n"
@@ -104,9 +105,9 @@ public class InlineHelp {
 + "${trackHeight} <int> [track regex]\n"
 + "      Set track height to int lines for all tracks containing regex. Default regex: '.*'\n"
 + "${trackColour} <colour> [track regex]\n"
-+ "      Set title colour for tracks containing regex. All colours except white and black\n"
++ "      Set colour for tracks containing regex. All colours except white, black, default\n"
 + "      accept the prefix 'light_'. Available colours:\n"
-+ "      red green yellow blue magenta cyan grey white black\n"
++ "      red green yellow blue magenta cyan grey white black default\n"
 + "      E.g. trackColour light_blue ts.*gtf\n"
 + "${ylim} <min> <max> [track regex]\n"
 + "      Set limits of y axis for all track IDs containing regex. Use na to autoscale to min and/or max.\n"
@@ -137,6 +138,8 @@ public class InlineHelp {
 + "      Include reads with mapq >= INT\n"
 + "${maxLines} INT\n"
 + "      Maximum number of lines to print for alignment tracks\n"
++ "${BSseq} [track regex]\n"
++ "      Toggle bisulfite mode for read tracks containing regex. Ignored without reference fasta sequence\n"
 + "\n${q} "
 + "      Quit\n" 
 + "${h} "

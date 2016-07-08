@@ -45,7 +45,7 @@ public class Main {
 		 * *** If you change something here change also in console input ***/
 		Namespace opts= ArgParse.argParse(args);
 		
-		List<String> inputFileList= opts.getList("insam");
+		List<String> inputFileList= opts.getList("input");
 		String region= opts.getString("region");
 		String genome= opts.getString("genome");
 		//int windowSize= opts.getInt("windowSize");
@@ -58,7 +58,7 @@ public class Main {
 		int f_incl= opts.getInt("f");
 		int F_excl= opts.getInt("F");
 		int mapq= opts.getInt("mapq");
-		boolean bs= opts.getBoolean("BSseq");
+		// boolean bs= opts.getBoolean("BSseq");
 		boolean noFormat= opts.getBoolean("noFormat");
 		boolean nonInteractive= opts.getBoolean("nonInteractive");
 		boolean withReadName= false; // FIXME: Add to parser?
@@ -67,10 +67,10 @@ public class Main {
 			F_excl += 4;
 		}
 			
-		if(fasta == null && bs == true){
-			System.err.println("Warning: Fasta reference not provided. Bisulfite mode will be disabled");
-			bs= false;
-		}
+		//if(fasta == null && bs == true){
+		//	System.err.println("Warning: Fasta reference not provided. Bisulfite mode will be disabled");
+		//	bs= false;
+		//}
 		
 		int windowSize= 160;
 		try{
@@ -131,7 +131,7 @@ public class Main {
 		for(String x : inputFileList){
 			console.addCompleter(new StringsCompleter(new File(x).getName()));
 		}
-		for(String x : "trackColour maxLines mapq next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
+		for(String x : "BSseq trackColour maxLines mapq next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
 			// Add options. Really you should use a dict for this.
 			if(x.length() > 2){
 				console.addCompleter(new StringsCompleter(x));
@@ -170,7 +170,7 @@ public class Main {
 					String coverageTrackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
 					idForTrack++;
 					if(!trackSet.getTrackSet().containsKey(coverageTrackId)){
-						TrackCoverage trackCoverage= new TrackCoverage(inputFileName, gch.current(), filters, bs);
+						TrackCoverage trackCoverage= new TrackCoverage(inputFileName, gch.current(), filters, false);
 						trackCoverage.setFileTag(coverageTrackId);
 						trackSet.getTrackSet().put(trackCoverage.getFileTag(), trackCoverage);
 					}
@@ -218,7 +218,7 @@ public class Main {
 					trackReads.setGc(gch.current());
 					trackReads.setFilters(filters);
 					trackReads.setyMaxLines(maxLines);
-					trackReads.setBs(bs);
+					// trackReads.setBisulf(bs);
 					trackReads.setWithReadName(withReadName);
 					trackReads.update();
 				} // End processing bam file
@@ -302,16 +302,15 @@ public class Main {
 				int yMaxLines= trackSet.getTrackSet().get(gch.current().getGcProfileFileTag()).getyMaxLines();
 				double yLimitMin= trackSet.getTrackSet().get(gch.current().getGcProfileFileTag()).getYLimitMin();
 				double yLimitMax= trackSet.getTrackSet().get(gch.current().getGcProfileFileTag()).getYLimitMax();
+				String col= trackSet.getTrackSet().get(gch.current().getGcProfileFileTag()).getTitleColour();
 				if(yMaxLines > 0){
 					TrackWiggles tw= gch.current().getGCProfile();				
 					tw.setyMaxLines(yMaxLines);
 					tw.setYLimitMin(yLimitMin);
 					tw.setYLimitMax(yLimitMax);
+					tw.setTitleColour(col);
 					System.out.print(tw.getTitle());
 					String gcPrintable= tw.printToScreen();
-					if(!noFormat){
-						gcPrintable= "\033[0;33m" + gcPrintable + "\033[0m";
-					}
 					System.out.print(gcPrintable + "\n");
 				}
 			}
@@ -446,7 +445,9 @@ public class Main {
 						} catch(PatternSyntaxException e) {
 							cmdInput= null;
 				        	continue;
-						}
+						} 
+					} else if(cmdInput.startsWith("BSseq") && fasta != null) {
+						trackSet.setBisulfiteModeForRegex(cmdInput);
 					} else if(cmdInput.startsWith("addTracks ")){
 						StrTokenizer str= new StrTokenizer(cmdInput);
 						str.setQuoteChar('\'');
@@ -510,7 +511,8 @@ public class Main {
 						withReadName= false;
 					} else if(cmdInput.startsWith("next_start ") || cmdInput.equals("next_start")){
 						GenomicCoords gc= (GenomicCoords)gch.current().clone();
-						gch.add(trackSet.goToNextFeatureOnFile(cmdInput.replace("next_start", "").trim(), gc, -1.0));
+						GenomicCoords nextGc= trackSet.goToNextFeatureOnFile(cmdInput.replace("next_start", "").trim(), gc, -1.0);
+						gch.add(nextGc);
 					} else if(cmdInput.startsWith("next ") || cmdInput.equals("next")){
 							GenomicCoords gc= (GenomicCoords)gch.current().clone();
 							gch.add(trackSet.goToNextFeatureOnFile(cmdInput.replace("next", "").trim(), gc, 5.0));

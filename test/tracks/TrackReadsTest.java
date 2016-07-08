@@ -40,7 +40,7 @@ public class TrackReadsTest {
 		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, windowSize, null);
 			
 		TrackReads tr= new TrackReads(bam, gc, filters, 1000);
-		tr.setBs(bs);
+		tr.setBisulf(bs);
 		tr.setNoFormat(noFormat);
 		String exp= 
 		"AAAAAAAAAA           GGGGGGGGGG TTTTTTTTTT\n"+
@@ -53,7 +53,7 @@ public class TrackReadsTest {
 		windowSize= 99;
 		gc= new GenomicCoords("chr7", from, to, samSeqDict, windowSize, null);
 		tr= new TrackReads(bam, gc, filters, 1000);
-		tr.setBs(bs);
+		tr.setBisulf(bs);
 		tr.setNoFormat(noFormat);
 		tr.setyMaxLines(yMaxLines);
 		assertEquals(">>>>>>>>>>>>>>>>>>>> >>>>>>>>>> >>>>>>>>>>", tr.printToScreen());
@@ -73,7 +73,7 @@ public class TrackReadsTest {
 		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, windowSize, fastaFile);
 			
 		TrackReads tr= new TrackReads(bam, gc, filters, maxReadsStack);
-		tr.setBs(bs);
+		tr.setBisulf(bs);
 		tr.setNoFormat(noFormat);
 		tr.setyMaxLines(yMaxLines);
 		System.out.println(tr.printToScreen());
@@ -93,7 +93,7 @@ public class TrackReadsTest {
 			
 		TrackReads tr= new TrackReads(bam, gc, filters, maxReadsStack);
 		tr.setyMaxLines(yMaxLines);
-		tr.setBs(bs);
+		tr.setBisulf(bs);
 		tr.setNoFormat(noFormat);
 		System.out.println(tr.printToScreen());
 	}

@@ -20,11 +20,11 @@ public class Track {
 	private double yLimitMin= Double.NaN; // Same as R ylim()
 	private double yLimitMax= Double.NaN;
 	private List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
-	private boolean bs; 
 	/** Max size of genomic region before the track shuts down to prevent excessive slow down */
 	protected final int MAX_REGION_SIZE= 100000;   
 	
-	protected String titleColour= "blue";
+	protected String titleColour= "default";
+	protected boolean bisulf= false;
 	
 //	public Track(){}
 
@@ -129,8 +129,8 @@ public class Track {
 	public List<SamRecordFilter> getFilters() { return filters; }
 	public void setFilters(List<SamRecordFilter> filters) { this.filters = filters; }
 
-	public boolean isBs() { return bs; }
-	public void setBs(boolean bs) { this.bs = bs; }
+	public boolean isBisulf() { return this.bisulf; }
+	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
 	public void setHideRegex(String hideRegex) { }
 	public String getHideRegex() { return ""; }
