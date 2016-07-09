@@ -12,7 +12,6 @@
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/htsjdk/htsjdk-2.1.1/dist/htsjdk-2.1.1.jar"/>
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/commons-validator/commons-validator-1.5.1/commons-validator-1.5.1.jar"/>
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/biojava/biojava-genome-4.1.0.jar"/>
-	<classpathentry kind="lib" path="/home/cri.camres.org/berald01/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/jline2"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

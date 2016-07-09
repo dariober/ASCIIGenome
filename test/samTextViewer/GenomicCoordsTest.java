@@ -188,10 +188,12 @@ public class GenomicCoordsTest {
 	@Test
 	public void canGetRefSeq() throws InvalidGenomicCoordsException, IOException{
 		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566790, samSeqDict, 1000, fastaFile);
-		assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
+		assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq(true)));
 		gc= new GenomicCoords("chr7", 5566770, 5566790, samSeqDict, 20, fastaFile);
-		// System.out.println("BP PER COL: " + gc.getBpPerScreenColumn());
-		assertEquals(null, gc.getRefSeq());
+		assertEquals(null, gc.getRefSeq(true));
+		
+		// Return seq even if len(seq) > windowSize
+		assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq(false)));
 	}
 	
 	@Test(expected = InvalidGenomicCoordsException.class)
@@ -277,6 +279,7 @@ public class GenomicCoordsTest {
 		gcCnt.setyMaxLines(2);
 		String exp= "                                  ::::::::::::::::\n" +
                     "::::::::::::::::.________________:::::::::::::::::";
+		gcCnt.setNoFormat(true);
 		System.out.println(gcCnt.printToScreen());
 		assertEquals(exp, gcCnt.printToScreen());
 		System.out.println(gcCnt.getTitle());

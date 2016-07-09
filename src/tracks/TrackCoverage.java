@@ -93,8 +93,8 @@ public class TrackCoverage extends Track {
 				samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
 				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), this.getGc().getMapping());
 				byte refBase= '\0';
-				if(this.getGc().getRefSeq() != null){
-					refBase= this.getGc().getRefSeq()[screenPos];
+				if(this.getGc().getRefSeq(true) != null){
+					refBase= this.getGc().getRefSeq(true)[screenPos];
 				}
 				this.screenLocusInfoList.get(screenPos).increment(locusInfo, refBase);
 			}

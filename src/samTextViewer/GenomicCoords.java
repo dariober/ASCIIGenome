@@ -113,11 +113,14 @@ public class GenomicCoords implements Cloneable {
 	
 	/* Methods */
 	
-	/**Extract reference sequence for this interval 
+	/**Extract reference sequence for this interval. 
+	 * @param fitWindow if true return the sequence only if it can fit the window size (i.e. 1bp = 1char). 
+	 * If fitWindow is true and the sequence is longer than the window, return null. This prevents 
+	 * retrieving large sequences unless necessary.
 	 * @throws IOException */
-	public byte[] getRefSeq() throws IOException{
-		
-		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
+	public byte[] getRefSeq(boolean fitWindow) throws IOException{
+				
+		if(fitWindow && (this.fastaFile == null || this.getBpPerScreenColumn() > 1)){
 			return null;
 		}
 		
@@ -458,7 +461,7 @@ public class GenomicCoords implements Cloneable {
 	 * @throws IOException */
 	public String printableRefSeq(boolean noFormat) throws IOException{
 
-		byte[] refSeq= this.getRefSeq();
+		byte[] refSeq= this.getRefSeq(true);
 		
 		if(refSeq == null){
 			return "";
@@ -684,7 +687,7 @@ public class GenomicCoords implements Cloneable {
 			return tif;
 		}
 		
-		byte[] seq= this.getRefSeq();
+		byte[] seq= this.getRefSeq(false);
 		
 		Pattern pattern= Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(new String(seq));
