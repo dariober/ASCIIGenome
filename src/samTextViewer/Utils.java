@@ -9,23 +9,37 @@ import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.tribble.readers.TabixReader;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.text.StrMatcher;
@@ -833,5 +847,117 @@ public class Utils {
 		return tokens;
 	
 	}
+	
+	private static String stripAnsiCodes(String x){
+		return x.replaceAll("\\033\\[[;\\d]*m", "");
+	}
+	
+	/** Print string to stdout AND to filename. If filename is null, print to stdout only.
+	 * If stripAnsi is true, the ansi escape codes are removed before printing to file, but they stay 
+	 * untouched to print to stdout.
+	 * @throws IOException 
+	 * */
+	public static void printer(String xprint, String filename, boolean stripAnsi) throws IOException{
+		System.out.print(xprint);
+		if(filename == null){
+			return;
+		}
+		if(stripAnsi){
+			xprint= stripAnsiCodes(xprint);
+		}
+		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename), true));
+		wr.write(xprint);
+		wr.close();
+	}
+	
+	/** Get a filaname to write to. GenomicCoords obj is used to get current position and 
+	 * create a suitable filename from it, provided a filename is not given.  
+	 * */
+	public static String parseCmdinputToGetSnapshotFile(String cmdInput, GenomicCoords gc) throws IOException{
+		String snapshotFile= cmdInput.replaceAll("^savef|^save", "").trim();
+		if(snapshotFile.isEmpty()){
+			snapshotFile= gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".txt"; 
+		} else if(snapshotFile.equals(".png")){
+			snapshotFile= gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".png";
+		}
+		File file = new File(snapshotFile);
+		if(file.exists() && !file.canWrite()){
+			System.err.println("Cannot write to " + snapshotFile);
+			snapshotFile= null;
+			return snapshotFile;
+		}
+		if(!file.exists()){
+			try{
+				file.createNewFile();
+			} catch(IOException e) {
+				System.err.println("Cannot create file " + snapshotFile);
+				snapshotFile= null;
+				return snapshotFile;
+			}
+		}
+		(new File(snapshotFile)).delete(); // Otherwise you keep appending.
+		System.err.println("Saving screenshot to " + snapshotFile);
+		return snapshotFile;
+	}
+	
+	public static void convertTextFileToGraphic(File infile, File outfile) throws IOException{
+		String filename= infile.getAbsolutePath(); 
+		// Read back text file and remove ansi escapes
+		List<String> lines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
+		for(int i= 0; i < lines.size(); i++){
+			String x= stripAnsiCodes(lines.get(i));
+			lines.set(i, x);
+		}
+		BufferedImage image = convertTextToGraphic(lines);
+		ImageIO.write(image, "png", outfile);
+	}
+	
+	/** 
+	 * */
+    private static BufferedImage convertTextToGraphic(List<String> lines) {
+    // See http://stackoverflow.com/questions/23568114/converting-text-to-image-in-java
+        	    	
+    	BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = img.createGraphics();
+
+        Font font= new Font("Courier", Font.PLAIN, 32);
+        
+        g2d.setFont(font);
+        FontMetrics fm = g2d.getFontMetrics();
+    	/* Width of the image and number of lines */
+    	int width= -1;
+    	int height= 0;
+    	for(String text : lines){
+    		if(fm.stringWidth(text) > width){
+    			width= fm.stringWidth(text);
+    		}
+    		height += Math.round(fm.getAscent() * 1.5);
+    	}
+    	height += Math.round(fm.getAscent() * 0.2);
+        g2d.dispose();
+
+        img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        g2d = img.createGraphics();
+        g2d.setColor(Color.WHITE); // Set background colour by filling a rect
+        g2d.fillRect(0, 0, width, height);
+
+        //g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+        //g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        //g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        //g2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
+        //g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        //g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        //g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        //g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2d.setFont(font);
+        fm = g2d.getFontMetrics();
+        g2d.setColor(Color.BLACK);
+        for(int i= 0; i < lines.size(); i++){
+        	g2d.drawString(lines.get(i), 0, Math.round(fm.getAscent() * (i+1) * 1.5));
+        }
+        g2d.dispose();
+        return img;
+    }
 	
 }

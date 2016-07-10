@@ -3,20 +3,28 @@ package samTextViewer;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.StringTokenizer;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.filter.SamRecordFilter;
+import tracks.TrackCoverage;
 import tracks.TrackFormat;
 
-import org.apache.commons.lang3.text.StrTokenizer;
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
@@ -301,6 +309,34 @@ public class UtilsTest {
 
 		xx= Utils.tokenize("gene \"ACTB\"", "&&");
 		assertEquals("gene \"ACTB\"", xx.get(0));
+	}
+	
+	@Test
+	public void canPrintToStdoutOrFile() throws InvalidGenomicCoordsException, IOException{
+
+		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();		
+		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, 101, fastaFile);
+		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, filters, false);
+		
+		File filename= new File("tmp.txt");
+		filename.delete();
+		Utils.printer(tc.getTitle(), "tmp.txt", true);
+		Utils.printer(tc.printToScreen(), "tmp.txt", true);
+		// Check tmp.txt looks ok.
+	}
+	
+	@Test
+	public void canGetWritableFileOrNull() throws InvalidGenomicCoordsException, IOException{
+		GenomicCoords gc= new GenomicCoords("chr7", 1, 200, samSeqDict, 100, fastaFile);
+		String x= Utils.parseCmdinputToGetSnapshotFile("save", gc);
+		assertEquals("chr7_1-200.txt", x);
+		x= Utils.parseCmdinputToGetSnapshotFile("save /tmp/foo.txt", gc);
+		assertEquals("/tmp/foo.txt", x);
+	}
+
+	@Test
+	public void testPng() throws IOException{
+		Utils.convertTextFileToGraphic(new File("test_data/chr7_5564857-5570489.txt"), new File("tmp.png"));
 	}
 	
 }

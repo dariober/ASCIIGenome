@@ -35,7 +35,7 @@ public class InlineHelp {
 		paramList.add("seqRegex");
 		paramList.add("visible");
 		paramList.add("trackHeight");
-		paramList.add("trackColour");
+		paramList.add("colorTrack");
 		paramList.add("ylim");
 		paramList.add("dataCol");
 		paramList.add("print");
@@ -50,6 +50,8 @@ public class InlineHelp {
 		paramList.add("mapq");
 		paramList.add("BSseq");
 		paramList.add("maxLines");
+		paramList.add("save");
+		paramList.add("savef");
 		for(String x : paramList){
 			if(params.containsKey(x)){
 				try { // Check there are no duplicate params
@@ -104,20 +106,20 @@ public class InlineHelp {
 + "      Use '.*' to match everything and '^$' to hide nothing. E.g. \"visible exon CDS gtf\"\n"       
 + "${trackHeight} <int> [track regex]\n"
 + "      Set track height to int lines for all tracks containing regex. Default regex: '.*'\n"
-+ "${trackColour} <colour> [track regex]\n"
-+ "      Set colour for tracks containing regex. All colours except white, black, default\n"
-+ "      accept the prefix 'light_'. Available colours:\n"
++ "${colorTrack} <color> [track regex]\n"
++ "      Set color for tracks containing regex. All colors except white, black, default\n"
++ "      accept the prefix 'light_'. Available colors:\n"
 + "      red green yellow blue magenta cyan grey white black default\n"
-+ "      E.g. trackColour light_blue ts.*gtf\n"
++ "      E.g. colorTrack light_blue ts.*gtf\n"
 + "${ylim} <min> <max> [track regex]\n"
 + "      Set limits of y axis for all track IDs containing regex. Use na to autoscale to min and/or max.\n"
 + "      E.g. ylim 0 na. If regex is omitted all tracks will be captured. Default: \"ylim na na .*\"\n"
 + "${dataCol} <idx> [regex]\n"
 + "      Select data column for all bedgraph tracks containing regex. <idx>: 1-based column index.\n"
 + "${print}     [track regex] \n"
++ "      Print the lines of the annotation tracks containing [track regex]. Long lines are clipped\n"
 + "${printFull} [track regex] \n"
-+ "      Print the lines of the annotation tracks containing  [track regex]. print clips lines to\n"
-+ "      fit the screen. printFull wraps long lines. With no arguments all tracks are printed.\n"
++ "      Same ${print} but long lines are wrapped instead of clipped.\n"
 + "${showGenome}\n"
 + "      Print the genome file\n"
 + "${addTracks} [file or url]...\n"
@@ -131,18 +133,21 @@ public class InlineHelp {
 + "${rpm} [track regex]\n"
 + "      Toggle display of read coverage from raw count to reads per million\n"
 + "      for alignment files containing [track regex]\n"
-+ "${-f} INT \n"
-+ "${-F} INT \n"
-+ "      Include (-f) and exclude (-F) reads with INT bits set\n"
++ "${-f}/${-F} INT \n"
++ "      Include (-f) and exclude (-F) reads with INT bits set (same as samtools)\n"
 + "${mapq} INT\n"
 + "      Include reads with mapq >= INT\n"
 + "${maxLines} INT\n"
 + "      Maximum number of lines to print for alignment tracks\n"
 + "${BSseq} [track regex]\n"
 + "      Toggle bisulfite mode for read tracks containing regex. Ignored without reference fasta sequence\n"
-+ "\n${q} "
++ "----\n"
++ "${save} [filename]\n"
++ "      Save current screenshot to file in either text or png format, depending onextension.\n"
++ "      With filename missing or '.png', output file will be chrom_start-end.txt or chrom_start-end.png, respectively\n"
++ "${q} \n"
 + "      Quit\n" 
-+ "${h} "
++ "${h} \n"
 + "      Show this help. See also " + ArgParse.WEB_ADDRESS + "\n";
 							
 		String fmtHelp= sub.replace(inline);

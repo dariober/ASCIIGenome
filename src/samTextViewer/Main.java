@@ -48,12 +48,10 @@ public class Main {
 		List<String> inputFileList= opts.getList("input");
 		String region= opts.getString("region");
 		String genome= opts.getString("genome");
-		//int windowSize= opts.getInt("windowSize");
 		String fasta= opts.getString("fasta");
 		boolean rpm= false; // opts.getBoolean("rpm");
 		int maxLines= opts.getInt("maxLines");
 		// int trackHeight= opts.getInt("maxDepthLines");
-		// int maxMethylLines= opts.getInt("maxMethylLines");
 		final int maxReadsStack= opts.getInt("maxReadsStack");
 		int f_incl= opts.getInt("f");
 		int F_excl= opts.getInt("F");
@@ -131,7 +129,7 @@ public class Main {
 		for(String x : inputFileList){
 			console.addCompleter(new StringsCompleter(new File(x).getName()));
 		}
-		for(String x : "BSseq trackColour maxLines mapq next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
+		for(String x : "save BSseq colorTrack maxLines mapq next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
 			// Add options. Really you should use a dict for this.
 			if(x.length() > 2){
 				console.addCompleter(new StringsCompleter(x));
@@ -154,6 +152,8 @@ public class Main {
 		
 		String seqRegex= null;
 		int idForTrack= 0;
+		String snapshotFile= null;
+		boolean snapshotStripAnsi= true;
 		while(true){ // Each loop processes the user's input files.
 
 			/* Prepare filters */
@@ -269,26 +269,26 @@ public class Main {
 			console.flush();
 			
 			if(gch.current().getChromIdeogram(20) != null){
-				System.out.println(gch.current().getChromIdeogram(20));
+				Utils.printer(gch.current().getChromIdeogram(20) + "\n", snapshotFile, snapshotStripAnsi);
 			}			
 			for(Track tr : trackSet.getTrackSet().values()){
 				if(tr.getFileTag() == gch.current().getGcProfileFileTag()){
 					continue;
 				}
 				tr.setNoFormat(noFormat);
-				System.out.print(tr.getTitle());
+				Utils.printer(tr.getTitle(), snapshotFile, snapshotStripAnsi);
 				if(tr.getyMaxLines() > 0){
-					System.out.println(tr.printToScreen());
+					Utils.printer(tr.printToScreen() + "\n", snapshotFile, snapshotStripAnsi);
 				}
 
 				// Print features
 				if(Pattern.compile(printIntervalFeaturesRegex).matcher(tr.getFileTag()).find()){
 					String printable= tr.printFeatures(windowSize);
-					System.out.print(printable);
+					Utils.printer(printable, snapshotFile, snapshotStripAnsi);
 				}
 				if(Pattern.compile(printIntervalFeaturesFullRegex).matcher(tr.getFileTag()).find()){
 					String printable= tr.printFeatures(Integer.MAX_VALUE);
-					System.out.print(printable);
+					Utils.printer(printable, snapshotFile, snapshotStripAnsi);
 				}
 			}
 
@@ -309,9 +309,9 @@ public class Main {
 					tw.setYLimitMin(yLimitMin);
 					tw.setYLimitMax(yLimitMax);
 					tw.setTitleColour(col);
-					System.out.print(tw.getTitle());
+					Utils.printer(tw.getTitle(), snapshotFile, snapshotStripAnsi);
 					String gcPrintable= tw.printToScreen();
-					System.out.print(gcPrintable + "\n");
+					Utils.printer(gcPrintable + "\n", snapshotFile, snapshotStripAnsi);
 				}
 			}
 			// Track for matching regex
@@ -322,20 +322,26 @@ public class Main {
 			if(!seqPattern.isEmpty()){
 				seqPattern+="\n";
 			} 
-			System.out.print(seqPattern); 
+			Utils.printer(seqPattern, snapshotFile, snapshotStripAnsi); 
 			// Sequence 
-			System.out.print(gch.current().printableRefSeq(noFormat));
+			Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile, snapshotStripAnsi);
 			String ruler= gch.current().printableRuler(10);
-			System.out.println(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize));
+			Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile, snapshotStripAnsi);
 
 			String footer= gch.current().toString() + "; " + Math.rint(gch.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " 
 					+ "Filters: -q " + mapq  + " -f " + f_incl + " -F " + F_excl
 					+ "; " + getMemoryStat();
 			if(!noFormat){
-				System.out.println("\033[0;34m" + footer + "\033[0m; ");
+				Utils.printer("\033[0;34m" + footer + "\033[0m; \n", snapshotFile, snapshotStripAnsi);
 			} else {
-				System.out.println(footer);
+				Utils.printer(footer + "\n", snapshotFile, snapshotStripAnsi);
 			}
+			
+			// Optionally convert to png
+			if(snapshotFile != null && snapshotFile.endsWith("png")){
+				Utils.convertTextFileToGraphic(new File(snapshotFile), new File(snapshotFile));
+			}
+			
 			/* Interactive input */
 			/* ================= */
 			if(!nonInteractive){
@@ -362,6 +368,7 @@ public class Main {
 			}			
 */			
 			String cmdInput= null;
+			snapshotFile= null; 
 			while(cmdInput == null){ // Keep asking for input until you get something valid
 				console.setPrompt("[h] for help: ");
 				cmdInput = console.readLine().trim();
@@ -372,7 +379,7 @@ public class Main {
 				}
 				
 				if(cmdInput == null || cmdInput.equals("h")){
-					System.out.println(InlineHelp.getHelp());
+					Utils.printer(InlineHelp.getHelp() + "\n", snapshotFile, snapshotStripAnsi);
 					cmdInput= null;
 					continue;
 				} 
@@ -436,7 +443,7 @@ public class Main {
 							cmdInput= null;
 				        	continue;
 						}
-					} else if(cmdInput.startsWith("trackColour") || cmdInput.startsWith("trackColor")){
+					} else if(cmdInput.startsWith("colorTrack") || cmdInput.startsWith("colourTrack")){
 						try{
 							trackSet.setTrackColourForRegex(cmdInput);
 						} catch(InvalidCommandLineException e){
@@ -486,7 +493,7 @@ public class Main {
 						gch.add(gc);
 					} else if(cmdInput.equals("history")){
 						for(GenomicCoords x : gch.getHistory()){
-							System.out.println(x);
+							Utils.printer(x.toString() + "\n", snapshotFile, snapshotStripAnsi);
 						}
 						cmdInput= null;
 					} else if(cmdInput.equals("print") 
@@ -503,7 +510,7 @@ public class Main {
 						} else {
 							printIntervalFeaturesRegex= "x^";	// Turn off print/Full
 							printIntervalFeaturesFullRegex= regex;
-							System.out.println("REGEX set to " + regex);
+							// System.out.println("REGEX set to " + regex);
 						}
 					} else if(cmdInput.toLowerCase().equals("rnameon")){
 						withReadName= true;
@@ -575,6 +582,13 @@ public class Main {
 						mapq= Integer.parseInt(cmdInput.replaceAll("^mapq", "").trim());
 					} else if(cmdInput.startsWith("maxLines")){
 						maxLines= Integer.parseInt(cmdInput.replaceAll("^maxLines", "").trim());
+					} else if(cmdInput.startsWith("save")) {
+						snapshotFile= Utils.parseCmdinputToGetSnapshotFile(cmdInput, gch.current());
+						if(cmdInput.startsWith("save ") || cmdInput.equals("save")){
+							snapshotStripAnsi= true;
+						} else if(cmdInput.startsWith("savef ") || cmdInput.equals("savef")){
+							snapshotStripAnsi= false;
+						}
 					} else {
 						System.err.println("Unrecognized argument: " + cmdInput);
 						cmdInput= null;
