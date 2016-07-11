@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 
 import exceptions.InvalidCommandLineException;
@@ -317,7 +318,14 @@ public class Main {
 			// Track for matching regex
 			TrackIntervalFeature seqRegexTrack = gch.current().findRegex(seqRegex);
 			seqRegexTrack.setNoFormat(noFormat);
-			seqRegexTrack.setyMaxLines(Integer.MAX_VALUE);
+			if(trackSet.getRegexForTrackHeight().matcher(seqRegexTrack.getFileTag()).find()){
+				if(trackSet.getTrackHeightForRegex() < 0){
+					seqRegexTrack.setyMaxLines(10); // Sensible default if trackHeightForRegex is unset 
+				} else {
+					seqRegexTrack.setyMaxLines(trackSet.getTrackHeightForRegex());
+				}
+			}
+			// seqRegexTrack.setyMaxLines(Integer.MAX_VALUE);
 			String seqPattern= seqRegexTrack.printToScreen();
 			if(!seqPattern.isEmpty()){
 				seqPattern+="\n";
@@ -542,6 +550,7 @@ public class Main {
 						gch.add(trackSet.findNextMatchOnTrack(tokens.get(1), tokens.get(2), gc, all));
 					} else if (cmdInput.startsWith("seqRegex")){
 						StrTokenizer str= new StrTokenizer(cmdInput);
+				    	str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 						str.setQuoteChar('\'');
 						List<String> tokens= str.getTokenList();
 						if(tokens.size() == 1){

@@ -61,7 +61,7 @@ public class Track {
 		if(this.isNoFormat()){
 			return title;
 		} else {
-			int colourCode= Utils.ansiColourCodes().get(this.titleColour);
+			int colourCode= Utils.ansiColorCodes().get(this.titleColour);
 			return "\033[0;" + colourCode + "m" + title + "\033[0m";
 		}
 	}
@@ -143,13 +143,13 @@ public class Track {
 	}
 
 	public void setTitleColour(String colour) {
-		if(!Utils.ansiColourCodes().containsKey(colour)){
+		if(!Utils.ansiColorCodes().containsKey(colour)){
 			try {
 				throw new InvalidColourException();
 			} catch (InvalidColourException e) {
 				// e.printStackTrace();
 				System.err.println("\nGot invalid colour: " + colour + ". Resetting to default");
-				System.err.println("Valid colours are: " + Utils.ansiColourCodes().keySet());
+				System.err.println("Valid colours are: " + Utils.ansiColorCodes().keySet());
 				colour= "blue";
 			} 
 		}

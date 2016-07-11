@@ -12,7 +12,6 @@ import htsjdk.tribble.readers.TabixReader;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -48,6 +47,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.tdf.TDFReader;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import tracks.IntervalFeatureSet;
 import tracks.IntervalFeature;
@@ -59,7 +59,7 @@ import tracks.TrackFormat;
  */
 public class Utils {
 	
-	public static LinkedHashMap<String, Integer> ansiColourCodes(){
+	public static LinkedHashMap<String, Integer> ansiColorCodes(){
 		// See http://misc.flogisoft.com/bash/tip_colors_and_formatting
 		LinkedHashMap<String, Integer> colourCodes= new LinkedHashMap<String, Integer>();
 		colourCodes.put("default", 39);
@@ -81,6 +81,24 @@ public class Utils {
 		colourCodes.put("white", 97);
 		// To be continued
 		return colourCodes;
+	}
+	
+	public static Color ansiColourToGraphicsColor(int ansiColor) throws InvalidColourException{
+		
+		if(!ansiColorCodes().entrySet().contains(ansiColor)){
+			throw new InvalidColourException();
+		}
+		if(ansiColor == 30){ return Color.BLACK; }
+		if(ansiColor == 31 || ansiColor == 91){ return Color.RED; }
+		if(ansiColor == 32 || ansiColor == 92){ return Color.GREEN; }
+		if(ansiColor == 33 || ansiColor == 93){ return Color.YELLOW; }
+		if(ansiColor == 34 || ansiColor == 94){ return Color.BLUE; }
+		if(ansiColor == 35 || ansiColor == 95){ return Color.MAGENTA; }
+		if(ansiColor == 36 || ansiColor == 96){ return Color.CYAN; }
+		if(ansiColor == 37){ return Color.LIGHT_GRAY; }
+		if(ansiColor == 90){ return Color.DARK_GRAY; }
+		if(ansiColor == 97){ return Color.WHITE; }
+		return Color.BLACK;
 	}
 	
 	/** Return true if fileName has a valid tabix index. 
@@ -916,7 +934,7 @@ public class Utils {
 	 * */
     private static BufferedImage convertTextToGraphic(List<String> lines) {
     // See http://stackoverflow.com/questions/23568114/converting-text-to-image-in-java
-        	    	
+        	       	
     	BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = img.createGraphics();
 
@@ -935,7 +953,7 @@ public class Utils {
     	}
     	height += Math.round(fm.getAscent() * 0.2);
         g2d.dispose();
-
+       
         img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         g2d = img.createGraphics();
         g2d.setColor(Color.WHITE); // Set background colour by filling a rect

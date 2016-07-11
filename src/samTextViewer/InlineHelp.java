@@ -97,8 +97,8 @@ public class InlineHelp {
 + "      returning hits starting with the current one. Useful to get all gtf records of a gene\n"
 + "${seqRegex} <regex>\n"
 + "      Find regex in reference sequence and show matches as and additional track.\n"
-+ "      Useful to show restriction enzyme sites, CpGs etc.\n"
-
++ "      Useful to for restriction enzyme sites, TFBS, etc.\n"
++ "      To change track height via ${trackHeight}, this track tag is 'seqRegex'\n"
 + "\n    D i s p l a y  \n\n"
 + "${visible} [show regex] [hide regex] [track regex]\n"
 + "      In annotation tracks, only include rows containing [show regex] and exclude [hide regex].\n"

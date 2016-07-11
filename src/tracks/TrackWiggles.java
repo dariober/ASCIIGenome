@@ -115,7 +115,7 @@ public class TrackWiggles extends Track {
 		}
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
-			printable= "\033[0;" + Utils.ansiColourCodes().get(this.getTitleColour()) + "m" + printable + "\033[0m";
+			printable= "\033[0;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[0m";
 		}
 		return printable;
 	}

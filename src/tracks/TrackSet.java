@@ -21,6 +21,8 @@ import samTextViewer.Utils;
 public class TrackSet {
 	
 	private LinkedHashMap<String, Track> trackSet= new LinkedHashMap<String, Track>();
+	private Pattern regexForTrackHeight= Pattern.compile(".*");
+	private int trackHeightForRegex= -1;
 	
 	/*   C o n s t r u c t o r s   */
 	
@@ -51,29 +53,33 @@ public class TrackSet {
 			System.err.println("Error in trackHeight subcommand. Expected 2 args got: " + cmdInput);
 			throw new InvalidCommandLineException();
 		}
-		String trackNameRegex= ".*"; // Default: Capture everything
 		if(tokens.size() == 3){ // If size 3 (trackHeight int regex) user has set a regex. Used that instead of default.
-			trackNameRegex= tokens.get(2);
+			try{
+				this.regexForTrackHeight= Pattern.compile(tokens.get(2)); // Validate regex
+			} catch(PatternSyntaxException e){
+		    	System.err.println("Invalid regex in: " + cmdInput);
+		    	System.err.println(e.getDescription());
+			}
 		}
 		
-		try{
-			Pattern.compile(trackNameRegex); // Validate regex
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + cmdInput);
-	    	System.err.println(e.getDescription());
-		}
+		//try{
+		//	Pattern.compile(trackNameRegex); // Validate regex
+		//} catch(PatternSyntaxException e){
+	    //	System.err.println("Invalid regex in: " + cmdInput);
+	    //	System.err.println(e.getDescription());
+		//}
 		
-		int trackHeight= 0;
+		// int trackHeight= 0;
 		try{
-			trackHeight= Integer.parseInt(tokens.get(1));
-			trackHeight= trackHeight < 0 ? 0 : trackHeight;
+			this.trackHeightForRegex= Integer.parseInt(tokens.get(1));
+			this.trackHeightForRegex= this.trackHeightForRegex < 0 ? 0 : this.trackHeightForRegex;
 		} catch(NumberFormatException e){
-			System.err.println("Number format exception: " + trackHeight);
+			System.err.println("Number format exception: " + this.trackHeightForRegex);
 		}
 		for(Track tr : this.trackSet.values()){
-			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
+			boolean matched= this.regexForTrackHeight.matcher(tr.getFileTag()).find();
 			if(matched){
-				tr.setyMaxLines(trackHeight);
+				tr.setyMaxLines(this.trackHeightForRegex);
 			}
 		}
 	}
@@ -131,9 +137,9 @@ public class TrackSet {
 		String colour= (new Track()).getTitleColour();
 		if(tokens.size() >= 2){
 			String xcolour= tokens.get(1).toLowerCase();
-			if(!Utils.ansiColourCodes().containsKey(xcolour)){
+			if(!Utils.ansiColorCodes().containsKey(xcolour)){
 				System.err.println("\nGot invalid colour: " + xcolour + ". Resetting to " + colour);
-				System.err.println("Valid colours are: " + Utils.ansiColourCodes().keySet());
+				System.err.println("Valid colours are: " + Utils.ansiColorCodes().keySet());
 			} else {
 				colour= xcolour;
 			}
@@ -425,4 +431,10 @@ public class TrackSet {
 		return trackSet;
 	}
 
+	public Pattern getRegexForTrackHeight() {
+		return regexForTrackHeight;
+	}
+	public int getTrackHeightForRegex() {
+		return trackHeightForRegex;
+	}
 }

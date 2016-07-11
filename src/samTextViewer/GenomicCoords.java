@@ -740,6 +740,7 @@ public class GenomicCoords implements Cloneable {
 		map.put(this.chrom, intervalFeatureList);
 		IntervalFeatureSet ifs= new IntervalFeatureSet(map, TrackFormat.BED);
 		TrackIntervalFeature tif= new TrackIntervalFeature(ifs, this);
+		tif.setFileTag("seqRegex");
 		return tif;
 	}
 	
