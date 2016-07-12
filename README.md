@@ -9,36 +9,35 @@ Text Only Genome Viewer!
   - [Quick start](#quick-start)
 - [Interactive commands](#interactive-commands)
   - [Navigation](#navigation)
-    - [**f** and **b**](#f-and-b)
-    - [**ff** and **bb**](#ff-and-bb)
-    - [**zi** *x* and **zo** *x*](#zi-x-and-zo-x)
-    - [**goto** chrom:**from-to**](#goto-chromfrom-to)
-    - [from INT *to INT*](#from-int-to-int)
-    - [**+/- INT** *k,m*](#--int-km)
-    - [**p** and **n**](#p-and-n)
-    - [**next** *trackId* and **next_start** *trackId*](#next-trackid-and-next_start-trackid)
+    - [f and b](#f-and-b)
+    - [ff and bb](#ff-and-bb)
+    - [zi *x* and zo *x*](#zi-x-and-zo-x)
+    - [goto chrom:*from-to*](#goto-chromfrom-to)
+    - [INT *INT*](#int-int)
+    - [+/- INT *k,m*](#--int-km)
+    - [p and n](#p-and-n)
+    - [next *trackId* and next_start *trackId*](#next-trackid-and-next_start-trackid)
   - [Find](#find)
-    - [**find_first** regex *trackId*](#find_first-regex-trackid)
-    - [**find_all** regex *trackId*](#find_all-regex-trackid)
-    - [**seqRegex** *regex*](#seqregex-regex)
+    - [find_first regex *trackId*](#find_first-regex-trackid)
+    - [find_all regex *trackId*](#find_all-regex-trackid)
+    - [seqRegex *regex*](#seqregex-regex)
   - [Display](#display)
-    - [**visible** *show-regex* *hide-regex* *track-regex*](#visible-show-regex-hide-regex-track-regex)
-    - [**trackHeight** INT *track regex*](#trackheight-int-track-regex)
-    - [**colorTrack** color *track regex*](#colortrack-color-track-regex)
-    - [**ylim** min max *track regex*](#ylim-min-max-track-regex)
-    - [**dataCol** idx *regex*](#datacol-idx-regex)
-    - [print *track regex*](#print-track-regex)
-    - [**printFull** *track regex*](#printfull-track-regex)
-    - [**showGenome**](#showgenome)
-    - [**addTracks** *files or urls*](#addtracks-files-or-urls)
-    - [**orderTracks** *track#1 track#2...*](#ordertracks-track1-track2)
-    - [**history**](#history)
+    - [visible *show-regex* *hide-regex* *track-regex*](#visible-show-regex-hide-regex-track-regex)
+    - [trackHeight INT *track regex*](#trackheight-int-track-regex)
+    - [ylim min max *track regex*](#ylim-min-max-track-regex)
+    - [colorTrack color *track regex*](#colortrack-color-track-regex)
+    - [dataCol idx *regex*](#datacol-idx-regex)
+    - [print *track_regex*](#print-track_regex)
+    - [printFull *track_regex*](#printfull-track_regex)
+    - [showGenome](#showgenome)
+    - [addTracks *files or urls*](#addtracks-files-or-urls)
+    - [orderTracks *track#1 track#2...*](#ordertracks-track1-track2)
+    - [history](#history)
   - [Alignments](#alignments)
-    - [**rpm** *track regex*](#rpm-track-regex)
-    - [**-f** INT and  **-F** INT](#-f-int-and---f-int)
-    - [**mapq** INT](#mapq-int)
-    - [**maxLines** INT](#maxlines-int)
-    - [**BSseq** *track regex*](#bsseq-track-regex)
+    - [rpm *track regex*](#rpm-track-regex)
+    - [-f INT and  -F INT](#-f-int-and---f-int)
+    - [mapq INT](#mapq-int)
+    - [BSseq *track regex*](#bsseq-track-regex)
 - [Genome option](#genome-option)
 - [Formatting of reads and features](#formatting-of-reads-and-features)
 - [Saving screenshots](#saving-screenshots)
@@ -86,7 +85,7 @@ Key Features
 * Command line input and interaction, no graphical interface, minimal [installation and requirements](#requirements-and-installation)
 * Can load multiple files in various [formats](#supported-input)
 * Can access remote files via URL or ftp address
-* Easy [navigation](#moving-around-the-genome), [search](#searching-features-in-annotation-files) and find features and sequences by regular expression, filtering options
+* Easy [navigation](#navigation) and [searching](#find) of features and sequence motifs and filtering options
 * Support for BS-Seq alignment
 
 Usage
@@ -110,18 +109,19 @@ ASCIIGenome -fa genome.fa aln.bam scores.bigWig genes.gtf \
 
 * Navigating, finding & filtering stuff
 
-Once started, ```ASCIIGenome``` makes it easy to browse the genome. The picture below shows the distribution of transcripts on chromosome 36 of *Leishmania major*. It is clearly visible how transcripts in Leishmania tend to be grouped in blocks transcribed from the same direction (blue: forward strand, pink: reverse strand). Note how overlapping features are stacked on top of each other.
-
-<img src="screenshots/leishmania_transcripts.png" width="700">
+Once started, ```ASCIIGenome``` makes it easy to browse the genome. The picture below shows the distribution of transcripts on chromosome 36 of *Leishmania major*. It is clearly visible how transcripts in *Leishmania* tend to be grouped in blocks transcribed from the same direction (blue: forward strand, pink: reverse strand). Note how overlapping features are stacked on top of each other.
 
 This screenshot has been produced by first loading the *L. major* GTF file:
 
 ```
 ASCIIGenome ftp://ftp.ensemblgenomes.org/pub/release-31/protists/gtf/leishmania_major/Leishmania_major.ASM272v2.31.gtf.gz
+
+[h] for help: goto 36:1-2682151
+[h] for help: visible '\ttranscript\t'
+[h] for help: trackHeight 100
 ```
 
-Then move to visualize chromosome 36: `goto 36:1-2682151`, then make visible only the 'transcript' features: `visible '\ttranscript\t'`
-
+<img src="screenshots/leishmania_transcripts.png" width="800">
 
 Interactive commands
 ====================
@@ -135,7 +135,7 @@ one of the commands below and press ENTER to execute, e.g.:
 
 will move the window forward by half its size. `h <ENTER>` will show help.
 
-Some features of Unix console are enabled, the arrow keys UP and DOWN scroll previous commands and TAB autocompletes commands.
+Some features of Unix console are enabled: the arrow keys UP and DOWN scroll previous commands and TAB autocompletes commands.
 Just pressing ENTER will repeat the previous command and this is handy to quickly scroll along the genome. For example:
 
 ```
@@ -144,50 +144,68 @@ Just pressing ENTER will repeat the previous command and this is handy to quickl
 [h] for help: <ENTER>    ## ... and again
 ```
 
-In the documentation below, commands are in bold, mandatory arguments are in plain style and 
-optional argument are in italics.
+In the documentation below, mandatory arguments are in plain style, and 
+optional argument are in italics. When track names are passed as arguments, it is not necessary to 
+give the full name as partial matching is enabled. This is handy since track names have an ID appended as suffix
+which can be used in place of the full name, e.g. `next myLongfileName.bed#1` can be also
+typed as `next #1`.
 
 Navigation
 ----------
 
-#### **f** and **b**
+#### f and b
 
-Move by forward or backward by 1/10 of a window
+Move forward or backward by 1/10 of a window
 
-#### **ff** and **bb**
+#### ff and bb
 
-Move by forward or backward by 1/2 of a window
+Move forward or backward by 1/2 of a window
 
-#### **zi** *x* and **zo** *x*
+#### zi *x* and zo *x*
 
 Zoom in / zoom out *x* times. Each zoom halves or doubles the window size. To zoom in or out really
-quickly use `zi 10` or more. Default x is 1.
+quickly use x= 5 or 10 like `zi 10` or more. Default x is 1.
 
-#### **goto** chrom:**from-to**
+#### goto chrom:*from-to*
 
-Go to region *chrom:from-to*. *E.g.* `goto chr1:1-1000`. Also recognized is the format `goto:chr1:10` or just
-`goto:chr1`. The character ':' is a shortcut for `goto`, *e.g.* `:chr1`.
+Go to region *chrom:from-to* or to position *chrom:from* or to start of chromosome *chrom*.
+The character ':' is a shortcut for `goto`. Examples:
 
-#### from INT *to INT*
+```
+goto chr8:1-1000
+goto chr8:1
+goto chr8
+## The same:
+:chr8:1-1000
+:chr8:1
+:chr8
+```
 
-Go to position `from INT` or to region `from INT to INT` on **current chromosome**.   For example
-`[h] for help: 10` will jump to position 10 and `[h] for help: 10 1000` to region spanned by
-position  10 to 1000. Also allowed is the hyphenated format `[h] for help: 10-1000`. If a list of
-integers is given, the first and last are taken as *from* and *to*; e.g. `10 250
-500 750 1000` is the same as `10 1000`. This is handy to copy and paste intervals from the ruler
-above the prompt.
+#### INT *INT*
 
-#### **+/- INT** *k,m*
+Go to position `INT` or to region `INT INT` on **current chromosome**. Also allowed is the
+hyphenated format  separating the two positions. If a list of integers is given, the first and last
+are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the
+prompt. Examples:
+
+```
+[h] for help: 10                   ## Will jump to position 10
+[h] for help: 10 1000              ## Go to region 10-1000
+[h] for help: 10-1000              ## Same as above
+[h] for help: 10 250 500 750 1000  ## Same as above again
+```
+
+#### +/- INT *k,m*
 
 Move forward/backward by INT bases. Suffixes k (kilo) and M (mega) expanded to x1000 and
 x1,000,000. *E.g.* `-2m` or `+10k` or `+10.5k`.
 
-#### **p** and **n**
+#### p and n
 
 Go to the **p**revious or **n**ext visited position. Similar to the back and forward arrows of an
 Internet browser.
 
-#### **next** *trackId* and **next_start** *trackId*
+#### next *trackId* and next_start *trackId*
 
 Move to the next feature in trackId on *current* chromosome. `next` centers the window on the found
 feature and zooms out. This is useful for quickly browsing through annotation files of genes or
@@ -204,14 +222,14 @@ gtf, etc) a more or less ugly warning is issued.
 Find
 ----
 
-#### **find_first** regex *trackId*
+#### find_first regex *trackId*
 
 Find the first record in trackId containing regex. The search starts from the **end** of the current
 window (so the current window is not searched) and moves forward on the current chromosome. At the end 
 of the current chromosome move to the next chromosomes and then restart at from the start of
 the initial one. The search stops at the first match found.
 
-#### **find_all** regex *trackId*
+#### find_all regex *trackId*
 
 Find the region containing *all* the records on chromosome containing regex. The search stops at the
 first chromosome returning hits starting with the current one. Useful to get all gtf records of a
@@ -229,19 +247,32 @@ chr7:5566779-5570232; 3,454 bp; 19.6 bp/char; Filters: -q 0 -f 0 -F 4; Mem: 1101
 [h] for help: find_all "ACTB" hg19_genes.gtf.gz
 ```
 
-#### **seqRegex** *regex*
+#### seqRegex *regex*
 
 Find regex in reference sequence and show matches as and additional track. Useful to show
-restriction enzyme sites, transcription factor binding motifs etc. The tag of this track is
-`seqRegex` and it is not displayed. To adjust its height use `trackHeight 10 seqRegex`.
+restriction enzyme sites, transcription factor motifs, etc. The tag of this track is
+`seqRegex` and it is not displayed. To adjust its height use `trackHeight 10 seqRegex`. Matching
+is case sensitive, to ignore case use the regex syntax `(?i)` as in `seqReg (?i)ACTG`.
 
 If regex is omitted the matching is disabled. This command is ignored if the reference fasta file is
 missing.
 
+For example, find all instances of the motif `GG..T`:
+
+```
+1------*------------16M-----------------32M-----------------48M-----------------64M-----------------80M-----------------95M-----------------110M----------------130M----------------140M----------------1
+                     <<<<<   >>>>>  >>>>>   >>>>>                      >>>>>      <<<<<    >>>>>                                     >>>>>                                      <<<<<      >>>>>         
+                                              <<<<<                                                                                                                                                      
+ATACAGCTTGCAGCTGAGCAGAGGCCCTTGGATTTGGGAGTTTGGGAATCCTCTTTTCCCTTGATTCTACTGGATTGCATTCAGTCCAGATGGAATGAGGTTGTGGGAAGGGGAGCCAGGATGAACTCTTAATGGCTTGGAAACAGATCTGATCTCCTAAGAGGACAGGAAGTCAGACTCCTTTTGTGGGTTACAGGGGAA
+5567802   5567812   5567822   5567832   5567842   5567852   5567862   5567872   5567882   5567892   5567902   5567912   5567922   5567932   5567942   5567952   5567962   5567972   5567982   5567992   5
+chr7:5567802-5568002; 201 bp; 1.0 bp/char; Filters: -q 0 -f 0 -F 4; Mem: 3124 MB; 
+[h] for help: seqRegex GG..T
+```
+
 Display
 -------
 
-#### **visible** *show-regex* *hide-regex* *track-regex*
+#### visible *show-regex* *hide-regex* *track-regex*
 
 In feature tracks, only include rows containing `show regex` and exclude rows containing `hide regex`.
 Apply to tracks whose name is matched by `track regex`. 
@@ -256,12 +287,19 @@ This command is useful to filter the annotation in GTF files, for example:
 Will show the rows containing "RNA" and will hide those with mRNA in all the tracks whose name
 matches gtf.
 
-#### **trackHeight** INT *track regex*
+#### trackHeight INT *track regex*
 
 Set track height to int lines of text for all tracks matching regex. Default regex: `.*`. 
 *E.g.* `trackHeight 5 bam`.
 
-#### **colorTrack** color *track regex*
+#### ylim min max *track regex*
+
+Set the y-axis limit for all tracks containing regex. Use `na` to autoscale to min and/or max.
+*E.g.* `ylim 0 na` will set the lower limit to 0 and the upper limit to the max of the current range.
+Default `ylim na na .*`. This command applies only for tracks displaying quantitative data on y-axis
+(*e.g.* bigwig, tdf).
+
+#### colorTrack color *track regex*
 
 Set colour for tracks containing regex. Default regex is `.*` (all tracks captured). Available
 colours:
@@ -276,19 +314,12 @@ E.g. `colorTrack light_blue ts.*gtf`
 Colouring is rendered with ANSI codes 8/16, see also [tip colors and
 formatting](http://misc.flogisoft.com/bash/tip_colors_and_formatting)
 
-#### **ylim** min max *track regex*
-
-Set the y-axis limit for all tracks containing regex. Use `na` to autoscale to min and/or max.
-*E.g.* `ylim 0 na` will set the lower limit to 0 and the upper limit to the max of the current range.
-Default `ylim na na .*`. This command applies only for tracks displaying quantitative data on y-axis
-(*e.g.* bigwig, tdf).
-
-#### **dataCol** idx *regex*
+#### dataCol idx *regex*
 
 Select data column for all bedgraph tracks containing regex. idx: 1-based column index. This command
 is not very useful and it might be deprecated.
 
-#### print *track regex*
+#### print *track_regex*
 
 Print the rows of the feature tracks in the current window matched by *track regex*. Long lines are
 clipped if they extend beyond the screen (see also [printFull](#printfull-track-regex)).
@@ -307,15 +338,20 @@ chr7 unknown CDS  5567635 5567816 . - 2 gene_id "ACTB"; transcript_id "NM_001101
 chr7 unknown exon 5567635 5567816 . - . gene_id "ACTB"; transcript_id "NM_001101"; gene_name "ACTB"; p_id "P18102"; tss_id "TSS29223";
 chr7 unknown CDS  5567912 5568350 . - 0 gene_id "ACTB"; transcript_id "NM_001101"; gene_name "ACTB"; p_id "P18102"; tss_id "TSS29223";
 chr7 unknown exon 5567912 5568350 . - . gene_id "ACTB"; transcript_id "NM_001101"; gene_name "ACTB"; p_id "P18102"; tss_id "TSS29223";
+5567470   5567513   5567556   5567600   5567643   5567686   5567729   5567772   5567816   5567859   5567902   5567945   5567988   5568032   5568075   5568118   5568161   5568204   5568248   5568291   5
+chr7:5567470-5568334; 865 bp; 4.3 bp/char; Filters: -q 0 -f 0 -F 4; Mem: 3047 MB; 
+[h] for help: print gtf
 ```
+To turn off the printing give a regex that does not capture the tracks to be turned off (`print ^$` will
+turn off all the tracks).
 
-#### **printFull** *track regex*
+#### printFull *track_regex*
 
 Same as [print](#print-track-regex) but long lines are wrapped instead of clipped.
 
-#### **showGenome**
+#### showGenome
 
-Print the genome dictionary, if present, with a representation of chromosome sizes. E.g.
+Print the genome dictionary with a representation of chromosome sizes. E.g.
 
 ```
 [h] for help: showGenome 
@@ -329,16 +365,16 @@ chrX  155270560 |||||||||||||||||||
 chrY  59373566  |||||||
 ```
 
-#### **addTracks** *files or urls*
+#### addTracks *files or urls*
 
 Add tracks from local or remote files.
 
-#### **orderTracks** *track#1 track#2...*
+#### orderTracks *track#1 track#2...*
 
 Reorder tracks, e.g. `orderTracks #3 #2 #1` not all the tracks need to be listed. The missing ones 
 follow the listed ones in unchanged order.
 
-#### **history**
+#### history
 
 Show the list of visited positions.
 
@@ -347,25 +383,21 @@ Alignments
 
 These commands apply only to bam files.
 
-#### **rpm** *track regex*
+#### rpm *track regex*
 
 Toggle display of read coverage from raw count to reads per million for alignment files matched by 
 *track regex*
 
-#### **-f** INT and  **-F** INT 
+#### -f INT and  -F INT 
 
 Include (-f) and exclude (-F) reads with INT bits set, same as in `samtools`. Note that the flag 4096
 can be used to filter in or out reads on top strand, this is useful in bisulfite mode.
 
-#### **mapq** INT
+#### mapq INT
 
 Include reads with mapq >= INT, sanme as `samtools view -q`
 
-#### **maxLines** INT
-
-Maximum number of lines to print for alignment tracks *TODO: Shouldn't this cmd be merged with trackHeight?*
-
-#### **BSseq** *track regex*
+#### BSseq *track regex*
 
 Toggle bisulfite mode for read tracks matched by regex. Ignored without reference fasta sequence.
 
@@ -442,16 +474,21 @@ bgzip my.bedgraph &&
 tabix -p bed my.bedgraph.gz
 ```
 
-Bed & gtf file are not required to be sorted or index but in this case they are loaded in memory. To save memory and time for large files you can again index them as above. Loaded in memory is typically fast for files of up to ~1/2 million records.
+Bed & gtf file are not required to be sorted or index but in this case they are loaded in memory. To
+save memory and time for large files you can again index them as above. Loading in memory is
+typically fast for files of up to ~1/2 million records.
 
-For input format specs see also [UCSC format](https://genome.ucsc.edu/FAQ/FAQformat.html) and for guidelines on the choice of format see [IGV recommendations](https://www.broadinstitute.org/igv/RecommendedFileFormats).
+For input format specs see also [UCSC format](https://genome.ucsc.edu/FAQ/FAQformat.html) and for
+guidelines on the choice of format see [IGV
+recommendations](https://www.broadinstitute.org/igv/RecommendedFileFormats).
 
 
 Tips gotchas and miscellanea
 ============================
 
-* **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow when the window size grows
-above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are loaded in memory unless they are indexed with `tabix`. 
+* **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow
+when the window size grows above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are
+loaded in memory unless they are indexed with `tabix`.
 
 * **Regular expression** Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
 
@@ -467,6 +504,7 @@ In the commands below replace version number with the latest from [releases](htt
 ```
 wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.1.0.zip
 unzip ASCIIGenome-0.1.0.zip
+
 cd ASCIIGenome-0.1.0/
 chmod a+x ASCIIGenome
 cp ASCIIGenome.jar /usr/local/bin/ # Or ~/bin/
@@ -478,12 +516,16 @@ A little more detail
 
 `ASCIIGenome.jar` requires **Java 1.7+** and this is (should be) the only requirement. There is virtually no installation needed as `ASCIIGenome` is pure Java and should work on most (all?) platforms. Download the zip file `ASCIIGenome-x.x.x.zip` from [releases](https://github.com/dariober/Java-cafe/releases), unzip it and execute the jar file with
 
-    java -jar /path/to/ASCIIGenome.jar --help
+```
+java -jar /path/to/ASCIIGenome.jar --help
+```
 
 To avoid typing `java -jar ...` every time, you can put both the helper 
 script `ASCIIGenome` and the jar file ```ASCIIGenome.jar``` in the same directory in your `PATH` and execute with:
 
-  ASCIIGenome [options]
+```
+ASCIIGenome [options]
+```
 
 Note the helper is a bash script. To set the amount of memory available to java use the `-Xmx` option as e.g. `java -Xmx1500m -jar ...`.
 

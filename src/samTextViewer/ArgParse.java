@@ -72,11 +72,11 @@ public class ArgParse {
 			.setDefault(0)
 			.help(docstrings.get("-q"));
 		
-		docstrings.put("-m", "Maximum number of lines to print for read tracks.");
-		parser.addArgument("--maxLines", "-m")
-			.type(Integer.class)
-			.setDefault(10)
-			.help(docstrings.get("-m"));
+//		docstrings.put("-m", "Maximum number of lines to print for read tracks.");
+//		parser.addArgument("--maxLines", "-m")
+//			.type(Integer.class)
+//			.setDefault(10)
+//			.help(docstrings.get("-m"));
 
 //		docstrings.put("-rpm", "Toggle on/off the normalization of Reads Per Million for bam input. Default off");
 //		parser.addArgument("--rpm", "-rpm")

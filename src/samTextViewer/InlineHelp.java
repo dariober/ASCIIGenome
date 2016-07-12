@@ -49,7 +49,6 @@ public class InlineHelp {
 		paramList.add("-F");
 		paramList.add("mapq");
 		paramList.add("BSseq");
-		paramList.add("maxLines");
 		paramList.add("save");
 		paramList.add("savef");
 		for(String x : paramList){
@@ -77,7 +76,7 @@ public class InlineHelp {
 + "${zi} / ${zo} [x]\n"
 + "      Zoom in / zoom out x times (default x= 1). Each zoom halves or doubles the window size\n"
 + "${goto} chrom:from-to\n"
-+ "      Go to given region. E.g. \"goto chr1:1-1000\" or chr1:10 or chr1. goto keyword can be replaced with ':' (like goto in vim)\n"
++ "      Go to region. E.g. \"goto chr1:1-1000\" or chr1:10 or chr1. goto keyword can be replaced with ':'\n"
 + "${from} [to]\n"
 + "      Go to position <from> or to region \"from to\" on current chromosome. E.g. 10 or \"10 1000\" or \"10-1000\"\n" 
 + "${+}/${-}<int>[k,m]\n"
@@ -89,28 +88,23 @@ public class InlineHelp {
 + "      'next' centers the window on the found feature while 'next_start' sets the window at the start of the feature.\n"
 
 + "\n    F i n d  \n\n"
-+ "Memo: To match regex case-insensitive prepend (?i) to pattern. E.g. (?i)actb will match ACTB\n\n"
+
 + "${find_first} <regex> [trackId]\n"
 + "      Find the first (next) record in trackId containing regex. Use single quotes for strings with spaces.\n"
 + "${find_all} <regex> [trackId]\n"
-+ "      Find all records on chromosome containing regex. The search stops at the first chromosome\n"
-+ "      returning hits starting with the current one. Useful to get all gtf records of a gene\n"
++ "      Find all records containing regex. The search stops at the first chromosome with matches\n"
 + "${seqRegex} <regex>\n"
 + "      Find regex in reference sequence and show matches as and additional track.\n"
-+ "      Useful to for restriction enzyme sites, TFBS, etc.\n"
-+ "      To change track height via ${trackHeight}, this track tag is 'seqRegex'\n"
+
 + "\n    D i s p l a y  \n\n"
+
 + "${visible} [show regex] [hide regex] [track regex]\n"
 + "      In annotation tracks, only include rows containing [show regex] and exclude [hide regex].\n"
 + "      Apply to tracks containing  [track regex]. With no optional arguments reset to default: \"'.*' '^$' '.*'\"\n"
-+ "      Use '.*' to match everything and '^$' to hide nothing. E.g. \"visible exon CDS gtf\"\n"       
 + "${trackHeight} <int> [track regex]\n"
 + "      Set track height to int lines for all tracks containing regex. Default regex: '.*'\n"
 + "${colorTrack} <color> [track regex]\n"
-+ "      Set color for tracks containing regex. All colors except white, black, default\n"
-+ "      accept the prefix 'light_'. Available colors:\n"
-+ "      red green yellow blue magenta cyan grey white black default\n"
-+ "      E.g. colorTrack light_blue ts.*gtf\n"
++ "      Set color for tracks containing regex. E.g. `colorTrack light_blue ts.*gtf`\n"
 + "${ylim} <min> <max> [track regex]\n"
 + "      Set limits of y axis for all track IDs containing regex. Use na to autoscale to min and/or max.\n"
 + "      E.g. ylim 0 na. If regex is omitted all tracks will be captured. Default: \"ylim na na .*\"\n"
@@ -119,7 +113,7 @@ public class InlineHelp {
 + "${print}     [track regex] \n"
 + "      Print the lines of the annotation tracks containing [track regex]. Long lines are clipped\n"
 + "${printFull} [track regex] \n"
-+ "      Same ${print} but long lines are wrapped instead of clipped.\n"
++ "      Same as ${print} but long lines are wrapped instead of clipped.\n"
 + "${showGenome}\n"
 + "      Print the genome file\n"
 + "${addTracks} [file or url]...\n"
@@ -137,8 +131,6 @@ public class InlineHelp {
 + "      Include (-f) and exclude (-F) reads with INT bits set (same as samtools)\n"
 + "${mapq} INT\n"
 + "      Include reads with mapq >= INT\n"
-+ "${maxLines} INT\n"
-+ "      Maximum number of lines to print for alignment tracks\n"
 + "${BSseq} [track regex]\n"
 + "      Toggle bisulfite mode for read tracks containing regex. Ignored without reference fasta sequence\n"
 + "----\n"
@@ -148,7 +140,7 @@ public class InlineHelp {
 + "${q} \n"
 + "      Quit\n" 
 + "${h} \n"
-+ "      Show this help. See also " + ArgParse.WEB_ADDRESS + "\n";
++ "      Show this help. For more help see " + ArgParse.WEB_ADDRESS + "\n";
 							
 		String fmtHelp= sub.replace(inline);
 				

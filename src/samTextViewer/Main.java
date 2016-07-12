@@ -51,7 +51,7 @@ public class Main {
 		String genome= opts.getString("genome");
 		String fasta= opts.getString("fasta");
 		boolean rpm= false; // opts.getBoolean("rpm");
-		int maxLines= opts.getInt("maxLines");
+		// int maxLines= opts.getInt("maxLines");
 		// int trackHeight= opts.getInt("maxDepthLines");
 		final int maxReadsStack= opts.getInt("maxReadsStack");
 		int f_incl= opts.getInt("f");
@@ -130,7 +130,7 @@ public class Main {
 		for(String x : inputFileList){
 			console.addCompleter(new StringsCompleter(new File(x).getName()));
 		}
-		for(String x : "save BSseq colorTrack maxLines mapq next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull rNameOn rNameOff history".split(" ")){
+		for(String x : "save BSseq colorTrack mapq next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull history".split(" ")){
 			// Add options. Really you should use a dict for this.
 			if(x.length() > 2){
 				console.addCompleter(new StringsCompleter(x));
@@ -218,8 +218,6 @@ public class Main {
 					TrackReads trackReads= (TrackReads) trackSet.getTrackSet().get(trackId);
 					trackReads.setGc(gch.current());
 					trackReads.setFilters(filters);
-					trackReads.setyMaxLines(maxLines);
-					// trackReads.setBisulf(bs);
 					trackReads.setWithReadName(withReadName);
 					trackReads.update();
 				} // End processing bam file
@@ -589,9 +587,11 @@ public class Main {
 						}
 					} else if(cmdInput.startsWith("mapq")) { 
 						mapq= Integer.parseInt(cmdInput.replaceAll("^mapq", "").trim());
-					} else if(cmdInput.startsWith("maxLines")){
-						maxLines= Integer.parseInt(cmdInput.replaceAll("^maxLines", "").trim());
-					} else if(cmdInput.startsWith("save")) {
+					}
+					// else if(cmdInput.startsWith("maxLines")){
+					// maxLines= Integer.parseInt(cmdInput.replaceAll("^maxLines", "").trim());
+					//} 
+				    else if(cmdInput.startsWith("save")) {
 						snapshotFile= Utils.parseCmdinputToGetSnapshotFile(cmdInput, gch.current());
 						if(cmdInput.startsWith("save ") || cmdInput.equals("save")){
 							snapshotStripAnsi= true;
