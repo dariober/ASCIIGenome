@@ -4,48 +4,49 @@ Text Only Genome Viewer!
 <!-- MarkdownTOC -->
 
 - [Description](#description)
-- [Key Features](#key-features)
-- [Usage](#usage)
-  - [Quick start](#quick-start)
+- [Usage examples](#usage-examples)
+    - [Minimal example](#minimal-example)
+    - [Open and browse](#open-and-browse)
+    - [Finding & filtering stuff](#finding--filtering-stuff)
 - [Interactive commands](#interactive-commands)
   - [Navigation](#navigation)
-    - [f and b](#f-and-b)
-    - [ff and bb](#ff-and-bb)
-    - [zi *x* and zo *x*](#zi-x-and-zo-x)
-    - [goto chrom:*from-to*](#goto-chromfrom-to)
-    - [INT *INT*](#int-int)
-    - [+/- INT *k,m*](#--int-km)
-    - [p and n](#p-and-n)
-    - [next *trackId* and next_start *trackId*](#next-trackid-and-next_start-trackid)
+      - [f and b](#f-and-b)
+      - [ff and bb](#ff-and-bb)
+      - [zi *x* and zo *x*](#zi-x-and-zo-x)
+      - [goto chrom:*from-to*](#goto-chromfrom-to)
+      - [INT *INT*](#int-int)
+      - [+/- INT *k,m*](#--int-km)
+      - [p and n](#p-and-n)
+      - [next *trackId* and next_start *trackId*](#next-trackid-and-next_start-trackid)
   - [Find](#find)
-    - [find_first regex *trackId*](#find_first-regex-trackid)
-    - [find_all regex *trackId*](#find_all-regex-trackid)
-    - [seqRegex *regex*](#seqregex-regex)
+      - [find_first regex *trackId*](#find_first-regex-trackid)
+      - [find_all regex *trackId*](#find_all-regex-trackid)
+      - [seqRegex *regex*](#seqregex-regex)
   - [Display](#display)
-    - [visible *show-regex* *hide-regex* *track-regex*](#visible-show-regex-hide-regex-track-regex)
-    - [trackHeight INT *track regex*](#trackheight-int-track-regex)
-    - [ylim min max *track regex*](#ylim-min-max-track-regex)
-    - [colorTrack color *track regex*](#colortrack-color-track-regex)
-    - [dataCol idx *regex*](#datacol-idx-regex)
-    - [print *track_regex*](#print-track_regex)
-    - [printFull *track_regex*](#printfull-track_regex)
-    - [showGenome](#showgenome)
-    - [addTracks *files or urls*](#addtracks-files-or-urls)
-    - [orderTracks *track#1 track#2...*](#ordertracks-track1-track2)
-    - [history](#history)
+      - [visible *show-regex* *hide-regex* *track-regex*](#visible-show-regex-hide-regex-track-regex)
+      - [trackHeight INT *track regex*](#trackheight-int-track-regex)
+      - [ylim min max *track regex*](#ylim-min-max-track-regex)
+      - [colorTrack color *track regex*](#colortrack-color-track-regex)
+      - [dataCol idx *regex*](#datacol-idx-regex)
+      - [print *track_regex*](#print-track_regex)
+      - [printFull *track_regex*](#printfull-track_regex)
+      - [showGenome](#showgenome)
+      - [addTracks *files or urls*](#addtracks-files-or-urls)
+      - [orderTracks *track#1 track#2...*](#ordertracks-track1-track2)
+      - [history](#history)
   - [Alignments](#alignments)
-    - [rpm *track regex*](#rpm-track-regex)
-    - [-f INT and  -F INT](#-f-int-and---f-int)
-    - [mapq INT](#mapq-int)
-    - [BSseq *track regex*](#bsseq-track-regex)
+      - [rpm *track regex*](#rpm-track-regex)
+      - [-f INT and  -F INT](#-f-int-and---f-int)
+      - [mapq INT](#mapq-int)
+      - [BSseq *track regex*](#bsseq-track-regex)
 - [Genome option](#genome-option)
 - [Formatting of reads and features](#formatting-of-reads-and-features)
 - [Saving screenshots](#saving-screenshots)
 - [Supported input](#supported-input)
-- [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Requirements and Installation](#requirements-and-installation)
   - [Installation quick start](#installation-quick-start)
   - [A little more detail](#a-little-more-detail)
+- [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Credits](#credits)
 - [TODO](#todo)
 
@@ -79,8 +80,7 @@ The closest program to ```ASCIIGenome``` is [samtools tview](http://samtools.sou
 
 <img src="screenshots/ex3.png" width="600">
 
-Key Features
-============
+Some key features:
 
 * Command line input and interaction, no graphical interface, minimal [installation and requirements](#requirements-and-installation)
 * Can load multiple files in various [formats](#supported-input)
@@ -88,26 +88,52 @@ Key Features
 * Easy [navigation](#navigation) and [searching](#find) of features and sequence motifs and filtering options
 * Support for BS-Seq alignment
 
-Usage
-=====
+Usage examples
+==============
 
-Quick start
------------
+These are just some functionalities to give an idea behind ASCIIGenome.
 
-* Minimal example, open and browse a bam file:
+### Minimal example
+
+Open and browse a bam file:
 
 ```
 ASCIIGenome aln.bam
 ```
 
-* Open several files, including the fasta reference genome and a remote file (from [ENCODE](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/)):
+### Open and browse 
+
+Open some peak and bigWig files from
+[ENCODE](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/). Note that
+opening remote bigwig files is a little slow (IGV seems to be the same in this respect):
 
 ```
-ASCIIGenome -fa genome.fa aln.bam scores.bigWig genes.gtf \
-  http://.../wgEncodeSydhTfbsGm12878P300sc584IggmusPk.narrowPeak.gz
+encode=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs
+
+ASCIIGenome -g hg19 \
+    $encode/wgEncodeSydhTfbsGm10847NfkbTnfaIggrabPk.narrowPeak.gz \
+    $encode/wgEncodeSydhTfbsGm10847NfkbTnfaIggrabSig.bigWig \
+    $encode/wgEncodeSydhTfbsGm12892Pol2IggmusPk.narrowPeak.gz 
+    $encode/wgEncodeSydhTfbsGm12892Pol2IggmusSig.bigWig
 ```
 
-* Navigating, finding & filtering stuff
+Find the first feature on the first file, then change colour of one of the tracks. Reset y axes to
+span 0 to 50, finally save as png to file default file name:
+
+```
+next #1
+colorTrack magenta wgEncodeSydhTfbsGm12892Pol2IggmusSig
+ylim 0 50
+save .png
+```
+
+Result on terminal screen should look like this:
+
+<img src="screenshots/encode.png" width="800">
+
+Saved file is in `chr1_996137-1003137.png` (Currently the png output doesn't include colours, sorry!)
+
+### Finding & filtering stuff
 
 Once started, ```ASCIIGenome``` makes it easy to browse the genome. The picture below shows the distribution of transcripts on chromosome 36 of *Leishmania major*. It is clearly visible how transcripts in *Leishmania* tend to be grouped in blocks transcribed from the same direction (blue: forward strand, pink: reverse strand). Note how overlapping features are stacked on top of each other.
 
@@ -246,6 +272,9 @@ eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee    ccccccccccc   ccccccccccccccccccccccc
 chr7:5566779-5570232; 3,454 bp; 19.6 bp/char; Filters: -q 0 -f 0 -F 4; Mem: 1101 MB; 
 [h] for help: find_all "ACTB" hg19_genes.gtf.gz
 ```
+
+See below for the encoding of GTF features.
+
 
 #### seqRegex *regex*
 
@@ -432,6 +461,31 @@ When aligned reads are show at single base resolution, read bases follow the sam
 Upper case letters and `.` for read align to forward strand, lower case and `,` otherwise; second-in-pair reads are underlined;
 grey-shaded reads have mapping quality of <=5. 
 
+GTF/GFF features on are coded according to the feature column as below. For forward strand 
+features the colour blue and upper case is used, for reverse strand the colour is pink the case is lower. 
+Features with no strand information are in grey.
+
+Feature | Symbol
+--------|-------
+exon | E  
+cds | C  
+start_codon | A 
+stop_codon | Z 
+utr | U 
+3utr | U 
+5utr | W 
+gene | G 
+transcript | T 
+mrna | M 
+trna | X 
+rrna | R 
+mirna | I 
+ncrna | L 
+lncrna | L 
+sirna | S 
+pirna | P 
+snorna | O 
+
 Saving screenshots
 ==================
 
@@ -483,16 +537,6 @@ guidelines on the choice of format see [IGV
 recommendations](https://www.broadinstitute.org/igv/RecommendedFileFormats).
 
 
-Tips gotchas and miscellanea
-============================
-
-* **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow
-when the window size grows above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are
-loaded in memory unless they are indexed with `tabix`.
-
-* **Regular expression** Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
-
-
 Requirements and Installation
 =============================
 
@@ -530,6 +574,17 @@ ASCIIGenome [options]
 Note the helper is a bash script. To set the amount of memory available to java use the `-Xmx` option as e.g. `java -Xmx1500m -jar ...`.
 
 If for some reason the text formatting misbehaves, disable it with the `-nf` option. 
+
+
+Tips gotchas and miscellanea
+============================
+
+* **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow
+when the window size grows above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are
+loaded in memory unless they are indexed with `tabix`.
+
+* **Regular expression** Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
+
 
 Credits
 =======
