@@ -13,7 +13,7 @@ Text Only Genome Viewer!
     - [**ff** and **bb**](#ff-and-bb)
     - [**zi** *x* and **zo** *x*](#zi-x-and-zo-x)
     - [**goto** chrom:**from-to**](#goto-chromfrom-to)
-    - [**from INT** *to INT*](#from-int-to-int)
+    - [from INT *to INT*](#from-int-to-int)
     - [**+/- INT** *k,m*](#--int-km)
     - [**p** and **n**](#p-and-n)
     - [**next** *trackId* and **next_start** *trackId*](#next-trackid-and-next_start-trackid)
@@ -168,7 +168,7 @@ quickly use `zi 10` or more. Default x is 1.
 Go to region *chrom:from-to*. *E.g.* `goto chr1:1-1000`. Also recognized is the format `goto:chr1:10` or just
 `goto:chr1`. The character ':' is a shortcut for `goto`, *e.g.* `:chr1`.
 
-#### **from INT** *to INT*
+#### from INT *to INT*
 
 Go to position `from INT` or to region `from INT to INT` on **current chromosome**.   For example
 `[h] for help: 10` will jump to position 10 and `[h] for help: 10 1000` to region spanned by
