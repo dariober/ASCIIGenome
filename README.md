@@ -94,7 +94,7 @@ These are just some functionalities to give an idea behind ASCIIGenome.
 
 ### Minimal example
 
-Open and browse a bam file:
+Open a bam file:
 
 ```
 ASCIIGenome aln.bam
@@ -588,6 +588,13 @@ loaded in memory unless they are indexed with `tabix`.
 
 * **Regular expression** Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
 
+* When displaying bam files, `ASCIGenome` is hardcoded to disable the coverage and read tracks if
+the window size is >100,000 bp. This is to prevent the browsing to become horribly slow. To display
+such large windows  consider bigWig or tdf file format.
+
+* When opening bam files, the first chromosome is often the mitochondrial chromosome chrM (or chrMT) which
+often has very high read depth (say 10,000x). This can make the opening slow. Consider using the `-r`
+option in these cases. E.g. `ASCIIGenome -r chr1 file1.bam file2.bam ...`
 
 Credits
 =======
