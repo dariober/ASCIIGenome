@@ -69,14 +69,13 @@ rm -r ASCIIGenome-0.1.0
 Description
 ===========
 
-```ASCIIGenome``` is a command-line genome browser running from terminal window and solely based on ASCII characters.
-Since ```ASCIIGenome``` does not require a graphical interface it is particularly useful for 
-quickly visualizing genomic data on remote servers. With some imagination ```ASCIIGenome``` is the Vim 
+`ASCIIGenome` is a command-line genome browser running from terminal window and solely based on ASCII characters.
+Since `ASCIIGenome` does not require a graphical interface it is particularly useful for 
+quickly visualizing genomic data on remote servers. With some imagination `ASCIIGenome` is the Vim 
 of genome viewers.
 
-The closest program to ```ASCIIGenome``` is [samtools tview](http://samtools.sourceforge.net/tview.shtml) but 
-```ASCIIGenome``` offers much more flexibility, similar to popular GUI viewers like [IGV](https://www.broadinstitute.org/igv/).
-
+As far as I know, the closest program to `ASCIIGenome` is [samtools tview](http://samtools.sourceforge.net/tview.shtml) but 
+`ASCIIGenome` offers much more flexibility, similar to popular GUI viewers like [IGV](https://www.broadinstitute.org/igv/).
 
 <img src="screenshots/ex3.png" width="600">
 
@@ -105,7 +104,7 @@ ASCIIGenome aln.bam
 
 Open some peak and bigWig files from
 [ENCODE](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/). Note that
-opening remote bigwig files is a little slow (IGV seems to be the same in this respect):
+opening remote bigwig files is a little slow (IGV seems equally slow):
 
 ```
 encode=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs
@@ -118,7 +117,7 @@ ASCIIGenome -g hg19 \
 ```
 
 Find the first feature on the first file, then change colour of one of the tracks. Reset y axes to
-span 0 to 50, finally save as png to file default file name:
+span 0 to 50, finally save as png to default file name:
 
 ```
 next #1
@@ -131,7 +130,7 @@ Result on terminal screen should look like this:
 
 <img src="screenshots/encode.png" width="800">
 
-Saved file is in `chr1_996137-1003137.png` (Currently the png output doesn't include colours, sorry!)
+Saved file is in `chr1_996137-1003137.png` (currently the png output doesn't include colours though).
 
 ### Finding & filtering stuff
 
@@ -141,7 +140,11 @@ This screenshot has been produced by first loading the *L. major* GTF file:
 
 ```
 ASCIIGenome ftp://ftp.ensemblgenomes.org/pub/release-31/protists/gtf/leishmania_major/Leishmania_major.ASM272v2.31.gtf.gz
+```
 
+At command prompt issue the following commands:
+
+```
 [h] for help: goto 36:1-2682151
 [h] for help: visible '\ttranscript\t'
 [h] for help: trackHeight 100
