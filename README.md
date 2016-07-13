@@ -4,10 +4,18 @@ Text Only Genome Viewer!
 <!-- MarkdownTOC -->
 
 - [Description](#description)
+- [Requirements and Installation](#requirements-and-installation)
+  - [Installation quick start](#installation-quick-start)
+  - [A little more detail](#a-little-more-detail)
 - [Usage examples](#usage-examples)
     - [Minimal example](#minimal-example)
     - [Open and browse](#open-and-browse)
     - [Finding & filtering stuff](#finding--filtering-stuff)
+- [Supported input](#supported-input)
+- [Genome option](#genome-option)
+- [Formatting of reads and features](#formatting-of-reads-and-features)
+- [Saving screenshots](#saving-screenshots)
+- [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Interactive commands](#interactive-commands)
   - [Navigation](#navigation)
       - [f and b](#f-and-b)
@@ -23,30 +31,22 @@ Text Only Genome Viewer!
       - [find_all regex *trackId*](#find_all-regex-trackid)
       - [seqRegex *regex*](#seqregex-regex)
   - [Display](#display)
-      - [visible *show-regex* *hide-regex* *track-regex*](#visible-show-regex-hide-regex-track-regex)
-      - [trackHeight INT *track regex*](#trackheight-int-track-regex)
-      - [ylim min max *track regex*](#ylim-min-max-track-regex)
-      - [colorTrack color *track regex*](#colortrack-color-track-regex)
+      - [visible *show_regex* *hide_regex* *track_regex*](#visible-show_regex-hide_regex-track_regex)
+      - [trackHeight INT *track_regex*](#trackheight-int-track_regex)
+      - [ylim min max *track_regex*](#ylim-min-max-track_regex)
+      - [colorTrack color *track_regex*](#colortrack-color-track_regex)
       - [dataCol idx *regex*](#datacol-idx-regex)
       - [print *track_regex*](#print-track_regex)
       - [printFull *track_regex*](#printfull-track_regex)
       - [showGenome](#showgenome)
       - [addTracks *files or urls*](#addtracks-files-or-urls)
-      - [orderTracks *track#1 track#2...*](#ordertracks-track1-track2)
+      - [orderTracks *regex#1 regex#2 ...*](#ordertracks-regex1-regex2-)
       - [history](#history)
   - [Alignments](#alignments)
-      - [rpm *track regex*](#rpm-track-regex)
+      - [rpm *track_regex*](#rpm-track_regex)
       - [-f INT and  -F INT](#-f-int-and---f-int)
       - [mapq INT](#mapq-int)
-      - [BSseq *track regex*](#bsseq-track-regex)
-- [Genome option](#genome-option)
-- [Formatting of reads and features](#formatting-of-reads-and-features)
-- [Saving screenshots](#saving-screenshots)
-- [Supported input](#supported-input)
-- [Requirements and Installation](#requirements-and-installation)
-  - [Installation quick start](#installation-quick-start)
-  - [A little more detail](#a-little-more-detail)
-- [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
+      - [BSseq *track_regex*](#bsseq-track_regex)
 - [Credits](#credits)
 - [TODO](#todo)
 
@@ -69,15 +69,13 @@ rm -r ASCIIGenome-0.1.0
 Description
 ===========
 
-`ASCIIGenome` is a command-line genome browser running from terminal window and solely based on ASCII characters.
-Since `ASCIIGenome` does not require a graphical interface it is particularly useful for 
-quickly visualizing genomic data on remote servers. With some imagination `ASCIIGenome` is the Vim 
-of genome viewers.
+`ASCIIGenome` is a command-line genome browser running from terminal window and solely based on
+ASCII characters. Since `ASCIIGenome` does not require a graphical interface it is particularly
+useful for  quickly visualizing genomic data on remote servers. The idea is to make `ASCIIGenome`
+the Vim  of genome viewers.
 
 As far as I know, the closest program to `ASCIIGenome` is [samtools tview](http://samtools.sourceforge.net/tview.shtml) but 
 `ASCIIGenome` offers much more flexibility, similar to popular GUI viewers like [IGV](https://www.broadinstitute.org/igv/).
-
-<img src="screenshots/ex3.png" width="600">
 
 Some key features:
 
@@ -87,6 +85,47 @@ Some key features:
 * Easy [navigation](#navigation) and [searching](#find) of features and sequence motifs and filtering options
 * Support for BS-Seq alignment
 
+<img src="screenshots/ex3.png" width="800">
+
+Requirements and Installation
+=============================
+
+Installation quick start 
+------------------------
+
+In the commands below replace version number with the latest from [releases](https://github.com/dariober/Java-cafe/releases):
+
+```
+wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.1.0.zip
+unzip ASCIIGenome-0.1.0.zip
+
+cd ASCIIGenome-0.1.0/
+chmod a+x ASCIIGenome
+cp ASCIIGenome.jar /usr/local/bin/ # Or ~/bin/
+cp ASCIIGenome /usr/local/bin/     # Or ~/bin/ 
+```
+
+A little more detail
+--------------------
+
+`ASCIIGenome.jar` requires **Java 1.7+** and this should be the only requirement. There is virtually no installation needed as `ASCIIGenome` is pure Java and should work on most (all?) platforms. Download the zip file `ASCIIGenome-x.x.x.zip` from [releases](https://github.com/dariober/Java-cafe/releases), unzip it and execute the jar file with
+
+```
+java -jar /path/to/ASCIIGenome.jar --help
+```
+
+To avoid typing `java -jar ...` every time, you can put both the helper 
+script `ASCIIGenome` and the jar file ```ASCIIGenome.jar``` in the same directory in your `PATH` and execute with:
+
+```
+ASCIIGenome [options]
+```
+
+Note the helper is a bash script. To set the amount of memory available to java use the `-Xmx` option as e.g. `java -Xmx1500m -jar ...`.
+
+If for some reason the text formatting misbehaves, disable it with the `-nf` option. I have developed 
+ASCIIGenome on MacOS, Ubuntu and CentOS with `bash 4.1`, white colour background.
+
 Usage examples
 ==============
 
@@ -94,11 +133,18 @@ These are just some functionalities to give an idea behind ASCIIGenome.
 
 ### Minimal example
 
-Open a bam file:
+Open a bam file, as simple as:
 
 ```
 ASCIIGenome aln.bam
 ```
+
+Open with a reference genome:
+
+```
+ASCIIGenome -fa genome.fa aln.bam
+```
+
 
 ### Open and browse 
 
@@ -112,7 +158,7 @@ encode=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs
 ASCIIGenome -g hg19 \
     $encode/wgEncodeSydhTfbsGm10847NfkbTnfaIggrabPk.narrowPeak.gz \
     $encode/wgEncodeSydhTfbsGm10847NfkbTnfaIggrabSig.bigWig \
-    $encode/wgEncodeSydhTfbsGm12892Pol2IggmusPk.narrowPeak.gz 
+    $encode/wgEncodeSydhTfbsGm12892Pol2IggmusPk.narrowPeak.gz \
     $encode/wgEncodeSydhTfbsGm12892Pol2IggmusSig.bigWig
 ```
 
@@ -120,17 +166,17 @@ Find the first feature on the first file, then change colour of one of the track
 span 0 to 50, finally save as png to default file name:
 
 ```
-next #1
-colorTrack magenta wgEncodeSydhTfbsGm12892Pol2IggmusSig
-ylim 0 50
-save .png
+[h] for help: next #1
+[h] for help: colorTrack magenta wgEncodeSydhTfbsGm12892Pol2IggmusSig
+[h] for help: ylim 0 50
+[h] for help: save .png
 ```
 
 Result on terminal screen should look like this:
 
 <img src="screenshots/encode.png" width="800">
 
-Saved file is in `chr1_996137-1003137.png` (currently the png output doesn't include colours though).
+Saved file is `chr1_996137-1003137.png` (currently the png output doesn't include colours though).
 
 ### Finding & filtering stuff
 
@@ -152,32 +198,163 @@ At command prompt issue the following commands:
 
 <img src="screenshots/leishmania_transcripts.png" width="800">
 
+Now return to the start of the chromosome and find the first feature containing *LmjF.36.TRNAGLN.01*,
+print it to screen:
+
+```
+[h] for help: 1
+[h] for help: find_first LmjF.36.TRNAGLN.01
+[h] for help: print 
+```
+
+Now showing:
+
+<img src="screenshots/leishmania_find.png" width="800">
+
+Supported input
+===============
+
+File name extensions matter as file types are usually recognized by their extension in case insensitive mode.
+
+* **bam** files should be sorted and indexed, e.g. with `samtools sort` and `samtools index`. 
+  Paths to remote URLs are supported but painfully slow (*IGV seems to suffer of the same issue*).
+* **bigWig** recognized by extension `.bw` or `.bigWig`. Remote URLs supported.
+* **bedGraph** recognized by extension `.bedGraph` or `.bedgraph`
+* **bed**, **gtf**, **gff** recognized by respective extensions. Remote URLs supported. 
+* **tdf** This is very useful for quickly displaying very large intervals like tens of megabases or entire chromosomes see [tdf](https://www.broadinstitute.org/igv/TDF)
+* **vcf** Supported but not too sophisticated representation. URL should be supported but it appears ftp from 1000genomes doesn't work (same for IGV).
+* All other extensions (e.g. txt, narrowPeak) will be treated as bed files, provided the format is actually bed!
+
+Notable formats currently **not** supported:  cram, bigBed.
+
+All plain text formats (bed, bedgraph, etc) can be read as gzipped and there is no need to decompress them.
+
+Bedgraph files should be sorted by position, a `sort -k1,1 -k2,2n` will do. Unindexed bedGraph files are first bgzipped and indexed to temporary files which are deleted on exit. This can take time for large files so consider creating the index once for all with [tabix](http://www.htslib.org/doc/tabix.html), *e.g.*
+
+```
+bgzip my.bedgraph &&
+tabix -p bed my.bedgraph.gz
+```
+
+Bed & gtf file are not required to be sorted or index but in this case they are loaded in memory. To
+save memory and time for large files you can again index them as above. Loading in memory is
+typically fast for files of up to ~1/2 million records.
+
+For input format specs see also [UCSC format](https://genome.ucsc.edu/FAQ/FAQformat.html) and for
+guidelines on the choice of format see [IGV
+recommendations](https://www.broadinstitute.org/igv/RecommendedFileFormats).
+
+Genome option
+=============
+
+An optional genome file can be passed to option `-g/--genome` to give a set of allowed sequences and their sizes so that browsing is constrained to the real genomic space. 
+The genome file is also used to represent the position of the current window on the chromosome, which is handy to navigate around.
+
+There are three ways to pass a genome file:
+
+* A tag identifying a built-in genome, e.g. hg19. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for available genomes
+
+* A local file, tab separated with columns chromosome name and length. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for examples.
+
+* A bam file with suitable header.
+
+Note that if the input list of files contains a bam file, the `--genome` option is effectively ignored as the genome dictionary is extracted from the bam header.
+
+
+Formatting of reads and features
+================================
+
+When aligned reads are show at single base resolution, read bases follow the same convention as samtools: 
+Upper case letters and `.` for read align to forward strand, lower case and `,` otherwise; second-in-pair reads are underlined;
+grey-shaded reads have mapping quality of <=5. 
+
+GTF/GFF features on are coded according to the feature column as below. For forward strand 
+features the colour blue and upper case is used, for reverse strand the colour is pink the case is lower. 
+Features with no strand information are in grey.
+
+Feature | Symbol
+--------|-------
+exon | E  
+cds | C  
+start_codon | A 
+stop_codon | Z 
+utr | U 
+3utr | U 
+5utr | W 
+gene | G 
+transcript | T 
+mrna | M 
+trna | X 
+rrna | R 
+mirna | I 
+ncrna | L 
+lncrna | L 
+sirna | S 
+pirna | P 
+snorna | O 
+
+Saving screenshots
+==================
+
+Screenshots can be saved to file with the commands `save`. Output format is either ASCII text or
+png, depending on file name extension. For example:
+
+```
+[h] for help: save mygene.txt ## Save to mygene.txt as text
+[h] for help: save            ## Save to chrom_start-end.txt as text
+[h] for help: save .png       ## Save to chrom_start-end.png as png
+[h] for help: save mygene.png ## Save to mygene.png as png
+```
+
+Without arguments, `save` writes to file named after the current  genomic position e.g.
+`chr1_1000-2000.txt`.  The ANSI formatting (*i.e.* colours) is stripped before saving so that files
+can be viewed on any text editor (use a monospace font like `courier`).
+
+
+Tips gotchas and miscellanea
+============================
+
+* **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow
+when the window size grows above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are
+loaded in memory unless they are indexed with `tabix`.
+
+* **Regular expression** Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
+
+* When displaying bam files, `ASCIGenome` is hardcoded to disable the coverage and read tracks if
+the window size is >100,000 bp. This is to prevent the browsing to become horribly slow. To display
+such large windows  consider bigWig or tdf file format.
+
+* When opening bam files, the first chromosome is often the mitochondrial chromosome chrM (or chrMT) which
+often has very high read depth (say 10,000x). This can make the opening slow. Consider using the `-r`
+option in these cases. E.g. `ASCIIGenome -r chr1 file1.bam file2.bam ...`
+
 Interactive commands
 ====================
 
 As there is no GUI, everything is handled thorough command line. Once `ASCIIGenome` is started enter
-one of the commands below and press ENTER to execute, e.g.:
+a commands and press ENTER to execute.
+
+Some features of Unix console are enabled: 
+
+* Arrow keys UP and DOWN scroll previous commands
+* TAB auto-completes commands.
+* ENTER without any argument repeats the previous command 
+
+Examples:
 
 ```
-[h] for help: ff <ENTER>
+[h] for help: ff <ENTER>   ## Move forward
+[h] for help: <ENTER>      ## Move forward again...
+[h] for help: <ENTER>      ## ... and again
+[h] for help: col <TAB>    ## Is expanded to colorTrack
+[h] for help: <ARROW UP>   ## Shows previous command
+[h] for help: h <ENTER>    ## Show help.
 ```
 
-will move the window forward by half its size. `h <ENTER>` will show help.
-
-Some features of Unix console are enabled: the arrow keys UP and DOWN scroll previous commands and TAB autocompletes commands.
-Just pressing ENTER will repeat the previous command and this is handy to quickly scroll along the genome. For example:
-
-```
-[h] for help: ff <ENTER> ## Move forward
-[h] for help: <ENTER>    ## Move forward again...
-[h] for help: <ENTER>    ## ... and again
-```
-
-In the documentation below, mandatory arguments are in plain style, and 
-optional argument are in italics. When track names are passed as arguments, it is not necessary to 
-give the full name as partial matching is enabled. This is handy since track names have an ID appended as suffix
-which can be used in place of the full name, e.g. `next myLongfileName.bed#1` can be also
-typed as `next #1`.
+In the documentation below, mandatory arguments are in plain style while  optional argument are in
+*italics*. When track names are passed as arguments, it is not necessary to  give the full name as
+partial matching is enabled. This is handy since track names have an ID appended as suffix which can
+be used in place of the full name, e.g. `next myLongfileName.bed#1` can be also typed as `next #1`.
 
 Navigation
 ----------
@@ -304,7 +481,7 @@ chr7:5567802-5568002; 201 bp; 1.0 bp/char; Filters: -q 0 -f 0 -F 4; Mem: 3124 MB
 Display
 -------
 
-#### visible *show-regex* *hide-regex* *track-regex*
+#### visible *show_regex* *hide_regex* *track_regex*
 
 In feature tracks, only include rows containing `show regex` and exclude rows containing `hide regex`.
 Apply to tracks whose name is matched by `track regex`. 
@@ -316,22 +493,27 @@ This command is useful to filter the annotation in GTF files, for example:
 
 `visible RNA mRNA gtf`
 
-Will show the rows containing "RNA" and will hide those with mRNA in all the tracks whose name
-matches gtf.
+Will show the rows containing "RNA" and will hide those containing "mRNA", applies to tracks whose name
+matches "gtf".
 
-#### trackHeight INT *track regex*
+#### trackHeight INT *track_regex*
 
 Set track height to int lines of text for all tracks matching regex. Default regex: `.*`. 
 *E.g.* `trackHeight 5 bam`.
 
-#### ylim min max *track regex*
+#### ylim min max *track_regex*
 
 Set the y-axis limit for all tracks containing regex. Use `na` to autoscale to min and/or max.
-*E.g.* `ylim 0 na` will set the lower limit to 0 and the upper limit to the max of the current range.
-Default `ylim na na .*`. This command applies only for tracks displaying quantitative data on y-axis
-(*e.g.* bigwig, tdf).
+This command applies only to tracks displaying quantitative data on y-axis (*e.g.* bigwig, tdf), the other
+tracks are unaffected. Examples:
 
-#### colorTrack color *track regex*
+```
+ylim 0 50      ## Set min= 0 and max= 50 in all tracks.
+ylim 0 na      ## Set min to 0 and autoscale the max. Apply to all tracks
+ylim na na tdf ## Autoscale min and max. Apply to all tracks matching "tdf"
+```
+
+#### colorTrack color *track_regex*
 
 Set colour for tracks containing regex. Default regex is `.*` (all tracks captured). Available
 colours:
@@ -339,7 +521,7 @@ colours:
 red, green, yellow, blue, magenta, cyan, grey,  light_red, light_green, light_yellow, light_blue,
 light_magenta, light_cyan, light_grey, white, black, default
 
-Default reset to system default colour.
+The "default" colour reset to the system default colour.
 
 E.g. `colorTrack light_blue ts.*gtf`
 
@@ -401,10 +583,17 @@ chrY  59373566  |||||||
 
 Add tracks from local or remote files.
 
-#### orderTracks *track#1 track#2...*
+#### orderTracks *regex#1 regex#2 ...*
 
-Reorder tracks, e.g. `orderTracks #3 #2 #1` not all the tracks need to be listed. The missing ones 
-follow the listed ones in unchanged order.
+Reorder tracks according to the list of regexes. Not all the tracks need to be listed, the missing ones 
+follow the listed ones in unchanged order. 
+
+For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]`:
+
+```
+orderTracks #2 #1   -> [hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]
+orderTracks bam bed -> [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]
+```
 
 #### history
 
@@ -415,7 +604,7 @@ Alignments
 
 These commands apply only to bam files.
 
-#### rpm *track regex*
+#### rpm *track_regex*
 
 Toggle display of read coverage from raw count to reads per million for alignment files matched by 
 *track regex*
@@ -427,9 +616,9 @@ can be used to filter in or out reads on top strand, this is useful in bisulfite
 
 #### mapq INT
 
-Include reads with mapq >= INT, sanme as `samtools view -q`
+Include reads with mapq >= INT, same as `samtools view -q`
 
-#### BSseq *track regex*
+#### BSseq *track_regex*
 
 Toggle bisulfite mode for read tracks matched by regex. Ignored without reference fasta sequence.
 
@@ -439,162 +628,6 @@ forward strand, small case for reverse. For example:
 
 <img src="screenshots/exBSmode-2.png" width="450">
 
-
-Genome option
-=============
-
-An optional genome file can be passed to option `-g/--genome` to give a set of allowed sequences and their sizes so that browsing is constrained to the real genomic space. 
-The genome file is also used to represent the position of the current window on the chromosome, which is handy to navigate around.
-
-There are three ways to pass a genome file:
-
-* A tag identifying a built-in genome, e.g. hg19. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for available genomes
-
-* A local file, tab separated with columns chromosome name and length. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for examples.
-
-* A bam file with suitable header.
-
-Note that if the input list of files contains a bam file, the `--genome` option is effectively ignored as the genome dictionary is extracted from the bam header.
-
-
-Formatting of reads and features
-================================
-
-When aligned reads are show at single base resolution, read bases follow the same convention as samtools: 
-Upper case letters and `.` for read align to forward strand, lower case and `,` otherwise; second-in-pair reads are underlined;
-grey-shaded reads have mapping quality of <=5. 
-
-GTF/GFF features on are coded according to the feature column as below. For forward strand 
-features the colour blue and upper case is used, for reverse strand the colour is pink the case is lower. 
-Features with no strand information are in grey.
-
-Feature | Symbol
---------|-------
-exon | E  
-cds | C  
-start_codon | A 
-stop_codon | Z 
-utr | U 
-3utr | U 
-5utr | W 
-gene | G 
-transcript | T 
-mrna | M 
-trna | X 
-rrna | R 
-mirna | I 
-ncrna | L 
-lncrna | L 
-sirna | S 
-pirna | P 
-snorna | O 
-
-Saving screenshots
-==================
-
-Screenshots can be saved to file with the commands `save`. Output format is either ASCII text or
-png, depending on file name extension. For example:
-
-```
-[h] for help: save mygene.txt ## Save to mygene.txt as text
-[h] for help: save            ## Save to chrom_start-end.txt as text
-[h] for help: save .png       ## Save to chrom_start-end.png as png
-[h] for help: save mygene.png ## Save to mygene.png as png
-```
-
-Without arguments, `save` writes to file named after the current  genomic position e.g.
-`chr1_1000-2000.txt`.  The ANSI formatting (*i.e.* colours) is stripped before saving so that files
-can be viewed on any text editor (use a monospace font like `courier`).
-
-Supported input
-===============
-
-File name extensions matter as file types are usually recognized by their extension in case insensitive mode.
-
-* **bam** files should be sorted and indexed, e.g. with `samtools sort` and `samtools index`. 
-  Paths to remote URLs are supported but painfully slow (*IGV seems to suffer of the same issue*).
-* **bigWig** recognized by extension `.bw` or `.bigWig`. Remote URLs supported.
-* **bedGraph** recognized by extension `.bedGraph` or `.bedgraph`
-* **bed**, **gtf**, **gff** recognized by respective extensions. Remote URLs supported. 
-* **tdf** This is very useful for quickly displaying very large intervals like tens of megabases or entire chromosomes see [tdf](https://www.broadinstitute.org/igv/TDF)
-* **vcf** Supported but not too sophisticated representation. URL should be supported but it appears ftp from 1000genomes doesn't work (same for IGV).
-* All other extensions (e.g. txt, narrowPeak) will be treated as bed files, provided the format is actually bed!
-
-Notable formats currently **not** supported:  cram, bigBed.
-
-All plain text formats (bed, bedgraph, etc) can be read as gzipped and there is no need to decompress them.
-
-Bedgraph files should be sorted by position, a `sort -k1,1 -k2,2n` will do. Unindexed bedGraph files are first bgzipped and indexed to temporary files which are deleted on exit. This can take time for large files so consider creating the index once for all with [tabix](http://www.htslib.org/doc/tabix.html), *e.g.*
-
-```
-bgzip my.bedgraph &&
-tabix -p bed my.bedgraph.gz
-```
-
-Bed & gtf file are not required to be sorted or index but in this case they are loaded in memory. To
-save memory and time for large files you can again index them as above. Loading in memory is
-typically fast for files of up to ~1/2 million records.
-
-For input format specs see also [UCSC format](https://genome.ucsc.edu/FAQ/FAQformat.html) and for
-guidelines on the choice of format see [IGV
-recommendations](https://www.broadinstitute.org/igv/RecommendedFileFormats).
-
-
-Requirements and Installation
-=============================
-
-Installation quick start 
-------------------------
-
-In the commands below replace version number with the latest from [releases](https://github.com/dariober/Java-cafe/releases):
-
-```
-wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.1.0.zip
-unzip ASCIIGenome-0.1.0.zip
-
-cd ASCIIGenome-0.1.0/
-chmod a+x ASCIIGenome
-cp ASCIIGenome.jar /usr/local/bin/ # Or ~/bin/
-cp ASCIIGenome /usr/local/bin/     # Or ~/bin/ 
-```
-
-A little more detail
---------------------
-
-`ASCIIGenome.jar` requires **Java 1.7+** and this is (should be) the only requirement. There is virtually no installation needed as `ASCIIGenome` is pure Java and should work on most (all?) platforms. Download the zip file `ASCIIGenome-x.x.x.zip` from [releases](https://github.com/dariober/Java-cafe/releases), unzip it and execute the jar file with
-
-```
-java -jar /path/to/ASCIIGenome.jar --help
-```
-
-To avoid typing `java -jar ...` every time, you can put both the helper 
-script `ASCIIGenome` and the jar file ```ASCIIGenome.jar``` in the same directory in your `PATH` and execute with:
-
-```
-ASCIIGenome [options]
-```
-
-Note the helper is a bash script. To set the amount of memory available to java use the `-Xmx` option as e.g. `java -Xmx1500m -jar ...`.
-
-If for some reason the text formatting misbehaves, disable it with the `-nf` option. 
-
-
-Tips gotchas and miscellanea
-============================
-
-* **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow
-when the window size grows above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are
-loaded in memory unless they are indexed with `tabix`.
-
-* **Regular expression** Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
-
-* When displaying bam files, `ASCIGenome` is hardcoded to disable the coverage and read tracks if
-the window size is >100,000 bp. This is to prevent the browsing to become horribly slow. To display
-such large windows  consider bigWig or tdf file format.
-
-* When opening bam files, the first chromosome is often the mitochondrial chromosome chrM (or chrMT) which
-often has very high read depth (say 10,000x). This can make the opening slow. Consider using the `-r`
-option in these cases. E.g. `ASCIIGenome -r chr1 file1.bam file2.bam ...`
 
 Credits
 =======

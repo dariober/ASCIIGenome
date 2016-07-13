@@ -26,18 +26,18 @@ public class IntervalFeatureSetTest {
 	public void canShowAndHide_getFeaturesInInterval() throws IOException, InvalidGenomicCoordsException{
 		// For Map:
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/hg19_genes_head.gtf");
-		set.setShowRegex(".*start_codon.*");
-		set.setHideRegex(".*OR4F.*");
+		set.setShowRegex("start_codon");
+		set.setHideRegex("OR4F");
 		List<IntervalFeature> subset = set.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(40, subset.size());
 
 		// Same for tabix
 		set= new IntervalFeatureSet("test_data/hg19_genes_head.gtf.gz");
-		set.setShowRegex(".*start_codon.*");
-		set.setHideRegex(".*OR4F.*");
+		set.setShowRegex("start_codon");
+		set.setHideRegex("OR4F");
 		subset = set.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(40, subset.size());
-				
+		
 		// TESTME: coordsOfNextFeature
 		// findNextString
 	}
