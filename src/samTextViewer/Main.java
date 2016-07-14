@@ -598,6 +598,10 @@ public class Main {
 						} else if(cmdInput.startsWith("savef ") || cmdInput.equals("savef")){
 							snapshotStripAnsi= false;
 						}
+					} else if(cmdInput.startsWith("bookmark")){
+						String name= cmdInput.replaceAll("^bookmark", "").trim();
+						GenomicCoords gc = (GenomicCoords)gch.current().clone();
+						trackSet.addBookmark_IN_PREP(gc, name);
 					} else {
 						System.err.println("Unrecognized argument: " + cmdInput);
 						cmdInput= null;

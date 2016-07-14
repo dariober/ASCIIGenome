@@ -35,7 +35,8 @@ import samTextViewer.Utils;
  */
 public class IntervalFeatureSet {
 	
-	private Map <String, List<IntervalFeature>> intervalMap; // new HashMap <String, List<IntervalFeature>>(); 
+	/** Key is chromosome */
+	private Map <String, List<IntervalFeature>> intervalMap; 
 	private TabixReader tabixReader= null;
 	private boolean isTabix= false;
 	private TrackFormat type;

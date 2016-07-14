@@ -15,6 +15,28 @@ import samTextViewer.GenomicCoords;
 public class TrackSetTest {
 
 	@Test
+	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException{
+
+		TrackSet ts= new TrackSet();
+		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
+		ts.addBookmark_IN_PREP(gc, "bookmark_n1");
+		assertTrue(ts.getTrackSet().containsKey(TrackSet.BOOKMARK_TAG));
+		TrackIntervalFeature tif= (TrackIntervalFeature) ts.getTrackSet().get(TrackSet.BOOKMARK_TAG);
+		assertEquals(1, tif.intervalFeatureSet.getIntervalMap().get("chr1").get(0).getFrom());
+		
+		GenomicCoords gc2= new GenomicCoords("chr2", 90, 100, null, 100, null);
+		ts.addBookmark_IN_PREP(gc2, "bookmark_n2");
+		assertEquals(90, tif.intervalFeatureSet.getIntervalMap().get("chr2").get(0).getFrom());
+		
+		GenomicCoords gc3= new GenomicCoords("chr2", 2, 100, null, 100, null);
+		ts.addBookmark_IN_PREP(gc3, "bookmark_n3");
+		assertEquals(2, tif.intervalFeatureSet.getIntervalMap().get("chr2").get(0).getFrom());
+				
+		// System.out.println(tif.intervalFeatureSet.getIntervalMap().get("chr2"));
+		// System.out.println(tif.intervalFeatureSet.getIntervalMap().get("chr2").get(0).getRaw());
+	}
+	
+	@Test
 	public void canReorderTracks() throws InvalidGenomicCoordsException, IOException{
 		TrackSet ts= new TrackSet();
 		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);

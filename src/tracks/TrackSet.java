@@ -2,9 +2,11 @@ package tracks;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -23,6 +25,8 @@ public class TrackSet {
 	private LinkedHashMap<String, Track> trackSet= new LinkedHashMap<String, Track>();
 	private Pattern regexForTrackHeight= Pattern.compile(".*");
 	private int trackHeightForRegex= -1;
+	
+	public static final String BOOKMARK_TAG= "bookmark";
 	
 	/*   C o n s t r u c t o r s   */
 	
@@ -436,5 +440,50 @@ public class TrackSet {
 	}
 	public int getTrackHeightForRegex() {
 		return trackHeightForRegex;
+	}
+
+	public void addBookmark_IN_PREP(GenomicCoords gc, String name) throws IOException, InvalidGenomicCoordsException {
+		
+		String raw= (gc.getChrom() + "\t" + (gc.getFrom()-1) + "\t" + gc.getTo() + "\t" + name).trim();
+		
+		IntervalFeature interval= new IntervalFeature(raw, TrackFormat.BED);
+		// This is the map of intervalFeatures that will be used to construct the bookamrk track.
+		TrackIntervalFeature bookmarkTrack;
+		if(!this.trackSet.containsKey(TrackSet.BOOKMARK_TAG)){
+		
+			List<IntervalFeature> xl= new ArrayList<IntervalFeature>();
+			xl.add(interval);
+			Map<String, List<IntervalFeature>> map= new HashMap<String, List<IntervalFeature>>();
+			map.put(gc.getChrom(), xl); 
+			bookmarkTrack = new TrackIntervalFeature(new IntervalFeatureSet(map, TrackFormat.BED), gc);
+			bookmarkTrack.setFileTag(TrackSet.BOOKMARK_TAG);
+		
+		} else {
+			
+			// Get the map of the IntervalFeature bookmarks
+			Map<String, List<IntervalFeature>> map= new HashMap<String, List<IntervalFeature>>();
+			map = ((TrackIntervalFeature)this.trackSet.get(TrackSet.BOOKMARK_TAG)).
+					getIntervalFeatureSet().
+					getIntervalMap();
+
+			// Get the list of bookmarks on this chrom
+			List<IntervalFeature> xlist= new ArrayList<IntervalFeature>();
+			if(map.containsKey(interval.getChrom())){
+				xlist = map.get(interval.getChrom());
+			}
+			// Add the new bookmark
+			xlist.add(interval);
+
+			// Update map with augmented list 
+			map.put(interval.getChrom(), xlist);
+
+			// Recreate the IntervalFeatureSet. You HAVE TO recreate it in order to have the list sorted.
+			IntervalFeatureSet intervalFeatureSet= new IntervalFeatureSet(map, TrackFormat.BED);
+
+			// In the existing bookmark track, replace the old intervalset with the newly created one
+			bookmarkTrack = (TrackIntervalFeature) this.trackSet.get(TrackSet.BOOKMARK_TAG);
+			bookmarkTrack.setIntervalFeatureSet(intervalFeatureSet);
+		}
+		this.trackSet.put(TrackSet.BOOKMARK_TAG, bookmarkTrack);
 	}
 }

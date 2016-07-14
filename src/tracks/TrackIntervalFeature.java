@@ -170,4 +170,8 @@ public class TrackIntervalFeature extends Track {
 
 	protected IntervalFeatureSet getIntervalFeatureSet() { return intervalFeatureSet; }
 
+	protected void setIntervalFeatureSet(IntervalFeatureSet intervalFeatureSet2) {
+		
+	}
+
 }
