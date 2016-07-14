@@ -51,13 +51,10 @@ public class Main {
 		String genome= opts.getString("genome");
 		String fasta= opts.getString("fasta");
 		boolean rpm= false; // opts.getBoolean("rpm");
-		// int maxLines= opts.getInt("maxLines");
-		// int trackHeight= opts.getInt("maxDepthLines");
 		final int maxReadsStack= opts.getInt("maxReadsStack");
-		int f_incl= opts.getInt("f");
-		int F_excl= opts.getInt("F");
-		int mapq= opts.getInt("mapq");
-		// boolean bs= opts.getBoolean("BSseq");
+		int f_incl= 0; // opts.getInt("f");
+		int F_excl= 0; // opts.getInt("F");
+		int mapq= 0; // opts.getInt("mapq");
 		boolean noFormat= opts.getBoolean("noFormat");
 		boolean nonInteractive= opts.getBoolean("nonInteractive");
 		boolean withReadName= false; // FIXME: Add to parser?
@@ -600,8 +597,8 @@ public class Main {
 						}
 					} else if(cmdInput.startsWith("bookmark")){
 						String name= cmdInput.replaceAll("^bookmark", "").trim();
-						GenomicCoords gc = (GenomicCoords)gch.current().clone();
-						trackSet.addBookmark_IN_PREP(gc, name);
+						//GenomicCoords gc = (GenomicCoords)gch.current().clone();
+						//trackSet.addBookmark_IN_PREP(gc, name);
 					} else {
 						System.err.println("Unrecognized argument: " + cmdInput);
 						cmdInput= null;

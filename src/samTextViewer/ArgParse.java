@@ -44,33 +44,28 @@ public class ArgParse {
 			.setDefault("")
 			.help("A genome file or a tag identifying a genome build (e.g. hg19), or bam file with suitable header");
 		
-//		parser.addArgument("--windowSize", "-w")
-//			.type(Integer.class)
-//			.setDefault(-1)
-//			.help("Window size to display. Default to terminal width x0.95");
-		
 		parser.addArgument("--fasta", "-fa")
 			.type(String.class)
 			.help("Optional reference fasta reference file.\n"
 					+ "If given, must be indexed, e.g. with `samtools faidx ref.fa`");
 
-		docstrings.put("-f", "Required sam flags. Use 4096 for reads on top strand");
-		parser.addArgument("--f", "-f")
-			.type(Integer.class)
-			.setDefault(0)
-			.help(docstrings.get("-f"));
-		
-		docstrings.put("-F", "Filtering sam flags. Use 4096 for reads on top strand");
-		parser.addArgument("--F", "-F")
-			.type(Integer.class)
-			.setDefault(0)
-			.help(docstrings.get("-f"));
-
-		docstrings.put("-q", "Minumum mapping quality for a read to be considered");
-		parser.addArgument("--mapq", "-q")
-			.type(Integer.class)
-			.setDefault(0)
-			.help(docstrings.get("-q"));
+//		docstrings.put("-f", "Required sam flags. Use 4096 for reads on top strand");
+//		parser.addArgument("--f", "-f")
+//			.type(Integer.class)
+//			.setDefault(0)
+//			.help(docstrings.get("-f"));
+//		
+//		docstrings.put("-F", "Filtering sam flags. Use 4096 for reads on top strand");
+//		parser.addArgument("--F", "-F")
+//			.type(Integer.class)
+//			.setDefault(0)
+//			.help(docstrings.get("-f"));
+//
+//		docstrings.put("-q", "Minumum mapping quality for a read to be considered");
+//		parser.addArgument("--mapq", "-q")
+//			.type(Integer.class)
+//			.setDefault(0)
+//			.help(docstrings.get("-q"));
 		
 //		docstrings.put("-m", "Maximum number of lines to print for read tracks.");
 //		parser.addArgument("--maxLines", "-m")
@@ -82,19 +77,6 @@ public class ArgParse {
 //		parser.addArgument("--rpm", "-rpm")
 //			.action(Arguments.storeTrue())
 //			.help(docstrings.get("-rpm"));
-
-		
-		// docstrings.put("-d", "Maximum number of lines to print for coverage tracks");
-		//parser.addArgument("--maxDepthLines", "-d")
-		//	.type(Integer.class)
-		//	.setDefault(10)
-		//	.help("Track height: Maximum number of lines to print for each track");
-
-		//docstrings.put("-ml", "Maximum number of lines to print for each methylation track");
-		//parser.addArgument("--maxMethylLines", "-ml")
-		//	.type(Integer.class)
-		//	.setDefault(10)
-		//	.help(docstrings.get("-ml"));
 
 		parser.addArgument("--maxReadsStack", "-M")
 			.type(Integer.class)

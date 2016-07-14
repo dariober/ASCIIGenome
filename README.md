@@ -93,7 +93,7 @@ Requirements and Installation
 Installation quick start 
 ------------------------
 
-In the commands below replace version number with the latest from [releases](https://github.com/dariober/Java-cafe/releases):
+In the commands below replace version number with the latest from [releases](https://github.com/dariober/ASCIIGenome/releases):
 
 ```
 wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.1.0.zip
@@ -108,7 +108,7 @@ cp ASCIIGenome /usr/local/bin/     # Or ~/bin/
 A little more detail
 --------------------
 
-`ASCIIGenome.jar` requires **Java 1.7+** and this should be the only requirement. There is virtually no installation needed as `ASCIIGenome` is pure Java and should work on most (all?) platforms. Download the zip file `ASCIIGenome-x.x.x.zip` from [releases](https://github.com/dariober/Java-cafe/releases), unzip it and execute the jar file with
+`ASCIIGenome.jar` requires **Java 1.7+** and this should be the only requirement. There is virtually no installation needed as `ASCIIGenome` is pure Java and should work on most (all?) platforms. Download the zip file `ASCIIGenome-x.x.x.zip` from [releases](https://github.com/dariober/ASCIIGenome/releases), unzip it and execute the jar file with
 
 ```
 java -jar /path/to/ASCIIGenome.jar --help
@@ -252,9 +252,9 @@ The genome file is also used to represent the position of the current window on 
 
 There are three ways to pass a genome file:
 
-* A tag identifying a built-in genome, e.g. hg19. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for available genomes
+* A tag identifying a built-in genome, e.g. hg19. See [genomes](https://github.com/dariober/ASCIIGenome/tree/master/resources/genomes) for available genomes
 
-* A local file, tab separated with columns chromosome name and length. See [genomes](http://github.com/dariober/Java-cafe/ASCIIGenome/resources/genomes) for examples.
+* A local file, tab separated with columns chromosome name and length. See [genomes](https://github.com/dariober/ASCIIGenome/tree/master/resources/genomes) for examples.
 
 * A bam file with suitable header.
 
