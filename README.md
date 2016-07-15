@@ -105,6 +105,16 @@ cp ASCIIGenome.jar /usr/local/bin/ # Or ~/bin/
 cp ASCIIGenome /usr/local/bin/     # Or ~/bin/ 
 ```
 
+Installation through Homebrew
+------------------------------
+
+ASCIIGenome can also be installed through [brew](http://brew.sh/) / [Linux Brew](https://github.com/Linuxbrew/brew), although it is still not an official package:
+
+```
+brew install https://raw.githubusercontent.com/dariober/ASCIIGenome/master/install/brew/asciigenome.rb
+```
+
+
 A little more detail
 --------------------
 
