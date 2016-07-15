@@ -5,48 +5,49 @@ Text Only Genome Viewer!
 
 - [Description](#description)
 - [Requirements and Installation](#requirements-and-installation)
-  - [Installation quick start](#installation-quick-start)
-  - [A little more detail](#a-little-more-detail)
+    - [Installation quick start](#installation-quick-start)
+    - [Installation through Homebrew](#installation-through-homebrew)
+    - [A little more detail](#a-little-more-detail)
 - [Usage examples](#usage-examples)
-    - [Minimal example](#minimal-example)
-    - [Open and browse](#open-and-browse)
-    - [Finding & filtering stuff](#finding--filtering-stuff)
+        - [Minimal example](#minimal-example)
+        - [Open and browse](#open-and-browse)
+        - [Finding & filtering stuff](#finding--filtering-stuff)
 - [Supported input](#supported-input)
 - [Genome option](#genome-option)
 - [Formatting of reads and features](#formatting-of-reads-and-features)
 - [Saving screenshots](#saving-screenshots)
 - [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Interactive commands](#interactive-commands)
-  - [Navigation](#navigation)
-      - [f and b](#f-and-b)
-      - [ff and bb](#ff-and-bb)
-      - [zi *x* and zo *x*](#zi-x-and-zo-x)
-      - [goto chrom:*from-to*](#goto-chromfrom-to)
-      - [INT *INT*](#int-int)
-      - [+/- INT *k,m*](#--int-km)
-      - [p and n](#p-and-n)
-      - [next *trackId* and next_start *trackId*](#next-trackid-and-next_start-trackid)
-  - [Find](#find)
-      - [find_first regex *trackId*](#find_first-regex-trackid)
-      - [find_all regex *trackId*](#find_all-regex-trackid)
-      - [seqRegex *regex*](#seqregex-regex)
-  - [Display](#display)
-      - [visible *show_regex* *hide_regex* *track_regex*](#visible-show_regex-hide_regex-track_regex)
-      - [trackHeight INT *track_regex*](#trackheight-int-track_regex)
-      - [ylim min max *track_regex*](#ylim-min-max-track_regex)
-      - [colorTrack color *track_regex*](#colortrack-color-track_regex)
-      - [dataCol idx *regex*](#datacol-idx-regex)
-      - [print *track_regex*](#print-track_regex)
-      - [printFull *track_regex*](#printfull-track_regex)
-      - [showGenome](#showgenome)
-      - [addTracks *files or urls*](#addtracks-files-or-urls)
-      - [orderTracks *regex#1 regex#2 ...*](#ordertracks-regex1-regex2-)
-      - [history](#history)
-  - [Alignments](#alignments)
-      - [rpm *track_regex*](#rpm-track_regex)
-      - [-f INT and  -F INT](#-f-int-and---f-int)
-      - [mapq INT](#mapq-int)
-      - [BSseq *track_regex*](#bsseq-track_regex)
+    - [Navigation](#navigation)
+            - [f and b](#f-and-b)
+            - [ff and bb](#ff-and-bb)
+            - [zi *x* and zo *x*](#zi-x-and-zo-x)
+            - [goto chrom:*from-to*](#goto-chromfrom-to)
+            - [INT *INT*](#int-int)
+            - [+/- INT *k,m*](#--int-km)
+            - [p and n](#p-and-n)
+            - [next *trackId* and next_start *trackId*](#next-trackid-and-next_start-trackid)
+    - [Find](#find)
+            - [find_first regex *trackId*](#find_first-regex-trackid)
+            - [find_all regex *trackId*](#find_all-regex-trackid)
+            - [seqRegex *regex*](#seqregex-regex)
+    - [Display](#display)
+            - [visible *show_regex* *hide_regex* *track_regex*](#visible-show_regex-hide_regex-track_regex)
+            - [trackHeight INT *track_regex*](#trackheight-int-track_regex)
+            - [ylim min max *track_regex*](#ylim-min-max-track_regex)
+            - [colorTrack color *track_regex*](#colortrack-color-track_regex)
+            - [dataCol idx *regex*](#datacol-idx-regex)
+            - [print *track_regex*](#print-track_regex)
+            - [printFull *track_regex*](#printfull-track_regex)
+            - [showGenome](#showgenome)
+            - [addTracks *files or urls*](#addtracks-files-or-urls)
+            - [orderTracks *regex#1 regex#2 ...*](#ordertracks-regex1-regex2-)
+            - [history](#history)
+    - [Alignments](#alignments)
+            - [rpm *track_regex*](#rpm-track_regex)
+            - [-f INT and  -F INT](#-f-int-and---f-int)
+            - [mapq INT](#mapq-int)
+            - [BSseq *track_regex*](#bsseq-track_regex)
 - [Credits](#credits)
 - [TODO](#todo)
 
@@ -254,6 +255,12 @@ For input format specs see also [UCSC format](https://genome.ucsc.edu/FAQ/FAQfor
 guidelines on the choice of format see [IGV
 recommendations](https://www.broadinstitute.org/igv/RecommendedFileFormats).
 
+**Fasta reference**: The reference sequence should be uncompressed and indexed, with *e.g.* [samtools faidx](http://www.htslib.org/doc/samtools.html):
+
+```
+samtools faidx genome.fa
+```
+
 Genome option
 =============
 
@@ -269,6 +276,7 @@ There are three ways to pass a genome file:
 * A bam file with suitable header.
 
 Note that if the input list of files contains a bam file, the `--genome` option is effectively ignored as the genome dictionary is extracted from the bam header.
+
 
 
 Formatting of reads and features

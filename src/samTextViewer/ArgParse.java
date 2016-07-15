@@ -46,7 +46,7 @@ public class ArgParse {
 		
 		parser.addArgument("--fasta", "-fa")
 			.type(String.class)
-			.help("Optional reference fasta reference file.\n"
+			.help("Optional reference fasta file.\n"
 					+ "If given, must be indexed, e.g. with `samtools faidx ref.fa`");
 
 //		docstrings.put("-f", "Required sam flags. Use 4096 for reads on top strand");
