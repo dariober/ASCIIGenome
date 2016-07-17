@@ -28,6 +28,88 @@ public class IntervalFeatureTest {
 	}
 	
 	@Test
+	public void canAssignNameToFeature() throws InvalidGenomicCoordsException{
+		
+		String line; 
+		IntervalFeature f;
+
+		//Custom name from BED: Has no effect
+		line= "chr1 0 10 myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED);
+		f.setGtfAttributeForName("ID");
+		assertEquals("myname", f.getName());
+		
+		//Custom name from GTF
+		line= "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.GFF);
+		f.setGtfAttributeForName("foo");
+		assertEquals("myname", f.getName());
+		
+		//Custom name from GTF, with attribute not found
+		line= "chr1 na exon 1 10 . + . ID=mrna0001;Name=myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.GFF);
+		f.setGtfAttributeForName("foo");
+		assertEquals(".", f.getName());
+		
+		// BED with and without name
+		line= "chr1 0 10".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED);
+		assertEquals(".", f.getName());
+		
+		line= "chr1 0 10 myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED);
+		assertEquals("myname", f.getName());
+		
+		// GTF/GFF without attributes or without any valid filed to get name from
+		line= "chr1 na exon 1 10 . + .".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.GFF);
+		assertEquals(".", f.getName());
+		
+		
+		line= "chr1 na exon 1 10 . + . foo=mrna0001;bar=myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.GFF);
+		assertEquals(".", f.getName());
+		
+		// GFF with Name
+		line= "chr1 na exon 1 10 . + . ID=mrna0001;Name=myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.GFF);
+		assertEquals("myname", f.getName());
+
+		// GFF use ID
+		line= "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");;
+		f= new IntervalFeature(line, TrackFormat.GFF);
+		assertEquals("mrna0001", f.getName());
+		
+		//GTF
+		line= "chr1\tna\texon\t1\t10\t.\t+\t.\tgene_id \"mygene\"; transcript_id \"mytranx\";";
+		f= new IntervalFeature(line, TrackFormat.GFF);
+		assertEquals("mytranx", f.getName());
+
+		line= "chr1\tna\texon\t1\t10\t.\t+\t.\tgene_id \"mygene\";";
+		f= new IntervalFeature(line, TrackFormat.GFF);
+		assertEquals("mygene", f.getName());
+		
+	}
+	
+	@Test
+	public void canTestForEqualCoords() throws InvalidGenomicCoordsException{
+		IntervalFeature plus= new IntervalFeature("chr1 0 10 x . +".replaceAll(" ", "\t"), TrackFormat.BED);
+		IntervalFeature minus= new IntervalFeature("chr1 0 10 y . -".replaceAll(" ", "\t"), TrackFormat.BED);
+		
+		assertTrue(plus.equals(minus)); // Strand not matters
+		assertTrue(! plus.equalStranded(minus)); // Strand matters
+		
+		// Strand NA
+		IntervalFeature na1= new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED);
+		IntervalFeature na2= new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED);
+		assertTrue(na1.equals(na2));
+		assertTrue(na1.equalStranded(na2));
+		
+		assertTrue(plus.equals(na2));
+		assertTrue(!plus.equalStranded(na2));
+	}
+	
+	@Test
 	public void canCreateIntervalFromGtfString() throws InvalidGenomicCoordsException{
 		String gtfLine= "chr1\tunknown\texon\t11874\t12227\t.\t+\t.\tgene_id \"DDX11L1\"; transcript_id \"NR_046018_1\"; gene_name \"DDX11L1\"; tss_id \"TSS14523\";";
 		IntervalFeature f= new IntervalFeature(gtfLine, TrackFormat.GFF);

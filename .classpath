@@ -13,5 +13,6 @@
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/commons-validator/commons-validator-1.5.1/commons-validator-1.5.1.jar"/>
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/biojava/biojava-genome-4.1.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/jline2"/>
+	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/slf4j/slf4j-1.7.13/slf4j-simple-1.7.13.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

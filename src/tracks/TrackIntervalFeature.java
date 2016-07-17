@@ -13,6 +13,8 @@ import samTextViewer.Utils;
 public class TrackIntervalFeature extends Track {
  
 	private List<IntervalFeature> intervalFeatureList= new ArrayList<IntervalFeature>();  
+	/**For GTF/GFF data: Use this attribute to get the feature names 
+	 * */
 	protected IntervalFeatureSet intervalFeatureSet;
 	
 	/* C o n s t r u c t o r */
@@ -86,9 +88,30 @@ public class TrackIntervalFeature extends Track {
 			if(intervalFeature.getScreenFrom() == -1){
 				continue; // Feature doesn't map to screen, this shouldn't happen though
 			}
-			String x= intervalFeature.assignTextToFeature(this.isNoFormat());
+			intervalFeature.setGtfAttributeForName(this.getGtfAttributeForName());
+			String nameOnFeature= intervalFeature.getName().trim() + "_";
+			int relPos= 0;
 			for(int j= intervalFeature.getScreenFrom(); j <= intervalFeature.getScreenTo(); j++){
-				printable.set(j, x);
+				
+				// Default is to use the feature type as printable text, e.g. 'E', 'T', '>', '<', '|', etc.
+				String text= intervalFeature.assignTextToFeature(this.isNoFormat()); 
+ 
+				if((intervalFeature.getScreenTo() - intervalFeature.getScreenFrom() + 1) > 4
+						// (j - intervalFeature.getScreenFrom()) > 0 // First char is feature type (E, C, etc.)
+						&& j < intervalFeature.getScreenTo() // Last char is feature type (E, C, etc.)
+						&& relPos < nameOnFeature.length() 
+						&& !nameOnFeature.equals("._")){
+					// If these conds are satisfied, use the chars in the name as printable chars. 
+					Character x= nameOnFeature.charAt(relPos); 
+					if(this.isNoFormat()){
+						text= Character.toString(x); 	
+					} else {
+						text= FormatGTF.format(x, intervalFeature.getStrand());
+					}
+					relPos += 1;
+				}
+
+				printable.set(j, text);
 			}
 		}
 		return StringUtils.join(printable, "");
@@ -96,9 +119,47 @@ public class TrackIntervalFeature extends Track {
 	
 	@Override
 	public String getTitle(){
-		return this.formatTitle(this.getFileTag()) + "\n";
+		String sq= "";
+		if(this.squash){
+			sq= "; squashed";
+		}
+		String title=  this.getFileTag() + "; " 
+	                 + "Show '" + this.getShowRegex() + "' "
+	                 + "Hide '" + this.getHideRegex() + "' " 
+	                 + sq;
+		this.getHideRegex();
+		return this.formatTitle(title) + "\n";
 	}
 
+	/** dupList is a list of features with the same coords, we want to remove redundant features
+	 * by the precede rule CDS > exon > transcript > gene 
+	 * */
+	//private List<IntervalFeature> dedupFeatures(List<IntervalFeature> dupList){
+	//	
+	//}
+	
+	/** Remove positional duplicates from list of interval features for more compact visualization. 
+	 * Squashing is dome according to feature field which should be applicable to GTF/GFF only.*/
+	private List<IntervalFeature> squashFeatures(List<IntervalFeature> intervalList){
+
+		List<IntervalFeature> stack= new ArrayList<IntervalFeature>();
+		List<IntervalFeature> squashed= new ArrayList<IntervalFeature>();
+		for(IntervalFeature interval : intervalList){
+			if(stack.size() == 0 || stack.get(0).equalStranded(interval)){
+				// Accumulate features with same coords.
+				stack.add(interval);
+			} else {
+				squashed.add(stack.get(0));
+				stack.clear();
+				stack.add(interval);
+			}
+		}
+		if(stack.size() > 0){
+			squashed.add(stack.get(0));
+		}
+		return squashed;
+	}
+	
 	/**		
 	 * Put in the same list reads that will go in the same line of text. 
 	 * This method separates features touching or overlapping each other, useful for visualization.
@@ -108,10 +169,17 @@ public class TrackIntervalFeature extends Track {
 	 */
 	private List<List<IntervalFeature>> stackFeatures(){
 		
+		List<IntervalFeature> intervals; 
+		if(this.squash){
+			intervals = this.squashFeatures(this.intervalFeatureList);
+		} else {
+			intervals = this.intervalFeatureList;
+		}
+		
 		// Make a copy of the IntervalFeature list. Items will be popped out as they are 
 		// added to individual lines. 
 		List<IntervalFeature> flatList= new ArrayList<IntervalFeature>();
-		for(IntervalFeature x : this.intervalFeatureList){
+		for(IntervalFeature x : intervals){ // this.intervalFeatureList
 			flatList.add(x);
 		}
 				

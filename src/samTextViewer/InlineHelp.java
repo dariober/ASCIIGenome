@@ -1,5 +1,6 @@
 package samTextViewer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,8 +8,22 @@ import java.util.Map;
 
 import org.apache.commons.lang3.text.StrSubstitutor;
 
+import jline.console.ConsoleReader;
+import jline.console.completer.StringsCompleter;
+
 public class InlineHelp {
 
+	public static ConsoleReader initConsole() throws IOException{
+		
+		ConsoleReader console= new ConsoleReader(); 
+		for(String x : InlineHelp.populateParams().keySet()){
+			if(x.length() > 2){
+				console.addCompleter(new StringsCompleter(x));
+			}
+		}
+		return console;
+	}
+	
 	public static Map<String, String> populateParams(){
 		
 		Map<String, String> params= new HashMap<String, String>();
@@ -34,6 +49,8 @@ public class InlineHelp {
 		paramList.add("find_all");
 		paramList.add("seqRegex");
 		paramList.add("visible");
+		paramList.add("gffNameAttr");
+		paramList.add("squash");
 		paramList.add("trackHeight");
 		paramList.add("colorTrack");
 		paramList.add("ylim");
@@ -101,10 +118,15 @@ public class InlineHelp {
 + "${visible} [show regex] [hide regex] [track regex]\n"
 + "      In annotation tracks, only include rows containing [show regex] and exclude [hide regex].\n"
 + "      Apply to tracks containing  [track regex]. With no optional arguments reset to default: \"'.*' '^$' '.*'\"\n"
++ "${squash} [track_regex]\n"
++ "      Toggle the squashing of features with same coordinates for track captured by track_regex\n"
 + "${trackHeight} <int> [track regex]\n"
 + "      Set track height to int lines for all tracks containing regex. Default regex: '.*'\n"
 + "${colorTrack} <color> [track regex]\n"
 + "      Set color for tracks containing regex. E.g. `colorTrack light_blue ts.*gtf`\n"
++ "${gffNameAttr} <attribute name> [track regex]\n"
++ "      Set GTF/GFF attribute to assign name to features. With attribute name = NULL reset to default.\n"
++ "      Ignored by non GTF/GFF tracks. Default gffNameAttr NULL .*\n"
 + "${ylim} <min> <max> [track regex]\n"
 + "      Set limits of y axis for all track IDs containing regex. Use na to autoscale to min and/or max.\n"
 + "      E.g. ylim 0 na. If regex is omitted all tracks will be captured. Default: \"ylim na na .*\"\n"

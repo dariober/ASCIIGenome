@@ -19,6 +19,7 @@ import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
+import jline.console.completer.AggregateCompleter;
 import jline.console.completer.StringsCompleter;
 import tracks.Track;
 import tracks.TrackCoverage;
@@ -121,19 +122,6 @@ public class Main {
 		}
 		gch.add(new GenomicCoords(region, samSeqDict, windowSize, fasta));
 
-		/* Initialize console */
-		ConsoleReader console = new ConsoleReader();
-		// console.addCompleter(new FileNameCompleter());
-		for(String x : inputFileList){
-			console.addCompleter(new StringsCompleter(new File(x).getName()));
-		}
-		for(String x : "save BSseq colorTrack mapq next next_start goto seqRegex find_first find_all showGenome addTracks orderTracks visible trackHeight ylim dataCol print printFull history".split(" ")){
-			// Add options. Really you should use a dict for this.
-			if(x.length() > 2){
-				console.addCompleter(new StringsCompleter(x));
-			}
-		}
-		
 		String currentCmd = null; // Used to store the current interactive command and repeat it if no new cmd is given. 
 		
 		String printIntervalFeaturesRegex= "x^"; // false;
@@ -152,6 +140,7 @@ public class Main {
 		int idForTrack= 0;
 		String snapshotFile= null;
 		boolean snapshotStripAnsi= true;
+		ConsoleReader console = InlineHelp.initConsole();
 		while(true){ // Each loop processes the user's input files.
 
 			/* Prepare filters */
@@ -409,6 +398,7 @@ public class Main {
 					} else if(cmdInput.startsWith("dataCol ")){
 						
 						StrTokenizer str= new StrTokenizer(cmdInput);
+						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 						str.setQuoteChar('\'');
 						List<String> tokens= str.getTokenList();
 						String trackIdRegex= ".*";
@@ -456,10 +446,20 @@ public class Main {
 							cmdInput= null;
 				        	continue;
 						} 
-					} else if(cmdInput.startsWith("BSseq") && fasta != null) {
+					} else if(cmdInput.startsWith("BSseq")) {
+						if( fasta == null ){
+							System.err.println("Cannot set BSseq mode without fasta");
+							cmdInput= null;
+							continue;
+						}
 						trackSet.setBisulfiteModeForRegex(cmdInput);
+					} else if (cmdInput.startsWith("squash")){
+						trackSet.setFeatureSquashForRegex(cmdInput);
+					} else if(cmdInput.startsWith("gffNameAttr")) {
+						trackSet.setAttributeForGFFName(cmdInput);
 					} else if(cmdInput.startsWith("addTracks ")){
 						StrTokenizer str= new StrTokenizer(cmdInput);
+						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 						str.setQuoteChar('\'');
 						List<String> newFileNames= str.getTokenList();
 						newFileNames.remove(0);
@@ -472,6 +472,7 @@ public class Main {
 						}
 					} else if(cmdInput.startsWith("orderTracks ")){
 						StrTokenizer str= new StrTokenizer(cmdInput);
+						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 						str.setQuoteChar('\'');
 						List<String> newOrder= str.getTokenList();
 						newOrder.remove(0);
@@ -504,6 +505,14 @@ public class Main {
 							|| cmdInput.equals("printFull")
 							|| cmdInput.startsWith("printFull ")){
 						String regex= cmdInput.replaceAll("^printFull|^print", "").trim(); // Memo: ^printFull before ^print 
+						try{
+							Pattern.compile(regex); // Validate regex
+						} catch(Exception e){
+					    	System.err.println("Invalid regex in: " + cmdInput);
+					    	System.err.println("regex: " + regex);
+					    	cmdInput= null;
+					    	continue;
+						}
 						if(regex.isEmpty()){
 							regex= ".*";
 						}
@@ -513,7 +522,6 @@ public class Main {
 						} else {
 							printIntervalFeaturesRegex= "x^";	// Turn off print/Full
 							printIntervalFeaturesFullRegex= regex;
-							// System.out.println("REGEX set to " + regex);
 						}
 					} else if(cmdInput.toLowerCase().equals("rnameon")){
 						withReadName= true;
@@ -529,6 +537,7 @@ public class Main {
 					} else if(cmdInput.startsWith("find_first ") || 
 							  cmdInput.startsWith("find_all ")) {  
 						StrTokenizer str= new StrTokenizer(cmdInput);
+						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 						str.setQuoteChar('\'');
 						List<String> tokens= str.getTokenList();
 						if(tokens.size() < 2){
@@ -544,6 +553,11 @@ public class Main {
 						boolean all= (cmdInput.startsWith("find_all ")) ? true : false;
 						gch.add(trackSet.findNextMatchOnTrack(tokens.get(1), tokens.get(2), gc, all));
 					} else if (cmdInput.startsWith("seqRegex")){
+						if( fasta == null ){
+							System.err.println("Cannot find regex in sequence without fasta reference!");
+							cmdInput= null;
+							continue;
+						}
 						StrTokenizer str= new StrTokenizer(cmdInput);
 				    	str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 						str.setQuoteChar('\'');

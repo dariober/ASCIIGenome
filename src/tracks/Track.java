@@ -25,6 +25,10 @@ public class Track {
 	
 	protected String titleColour= "default";
 	protected boolean bisulf= false;
+
+	private String gtfAttributeForName= null;
+	/** Should features on with same coords be squashed into a single one? */
+	protected boolean squash= false;
 	
 //	public Track(){}
 
@@ -154,6 +158,14 @@ public class Track {
 			} 
 		}
 		this.titleColour = colour;
+	}
+	
+	public String getGtfAttributeForName() {
+		return this.gtfAttributeForName;
+	}
+
+	public void setGtfAttributeForName(String gtfAttributeForName) {
+		this.gtfAttributeForName = gtfAttributeForName;
 	}
 	
 }

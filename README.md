@@ -1,11 +1,12 @@
 Text Only Genome Viewer!
 ========================
 
+
 - [Description](#description)
 - [Requirements and Installation](#requirements-and-installation)
-    - [Installation quick start](#installation-quick-start)
-    - [Installation through Homebrew](#installation-through-homebrew)
-    - [A little more detail](#a-little-more-detail)
+- [Installation quick start](#installation-quick-start)
+- [Installation through Homebrew](#installation-through-homebrew)
+- [A little more detail](#a-little-more-detail)
 - [Usage examples](#usage-examples)
     - [Minimal example](#minimal-example)
     - [Open and browse](#open-and-browse)
@@ -16,39 +17,39 @@ Text Only Genome Viewer!
 - [Saving screenshots](#saving-screenshots)
 - [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Interactive commands](#interactive-commands)
-  - [Navigation](#navigation)
-    - [f and b](#f-and-b)
-    - [ff and bb](#ff-and-bb)
-    - [zi *x* and zo *x*](#zi-x-and-zo-x)
-    - [goto chrom:*from-to*](#goto-chromfrom-to)
-    - [INT *INT*](#int-int)
-    - [+/- INT *k,m*](#--int-km)
-    - [p and n](#p-and-n)
-    - [next *trackId* and next_start *trackId*](#next-trackid-and-next_start-trackid)
-  - [Find](#find)
-    - [find_first regex *trackId*](#find_first-regex-trackid)
-    - [find_all regex *trackId*](#find_all-regex-trackid)
-    - [seqRegex *regex*](#seqregex-regex)
-  - [Display](#display)
-    - [visible *show_regex* *hide_regex* *track_regex*](#visible-show_regex-hide_regex-track_regex)
-    - [trackHeight INT *track_regex*](#trackheight-int-track_regex)
-    - [ylim min max *track_regex*](#ylim-min-max-track_regex)
-    - [colorTrack color *track_regex*](#colortrack-color-track_regex)
-    - [dataCol idx *regex*](#datacol-idx-regex)
-    - [print *track_regex*](#print-track_regex)
-    - [printFull *track_regex*](#printfull-track_regex)
-    - [showGenome](#showgenome)
-    - [addTracks *files or urls*](#addtracks-files-or-urls)
-    - [orderTracks *regex#1 regex#2 ...*](#ordertracks-regex1-regex2-)
-    - [history](#history)
+    - [Navigation](#navigation)
+        - [f and b](#f-and-b)
+        - [ff and bb](#ff-and-bb)
+        - [zi *x* and zo *x*](#zi-x-and-zo-x)
+        - [goto chrom:*from-to*](#goto-chromfrom-to)
+        - [INT *INT*](#int-int)
+        - [+/- INT *k,m*](#--int-km)
+        - [p and n](#p-and-n)
+        - [next *trackId* and next_start *trackId*](#next-trackid-and-next_start-trackid)
+    - [Find](#find)
+        - [find_first regex *trackId*](#find_first-regex-trackid)
+        - [find_all regex *trackId*](#find_all-regex-trackid)
+        - [seqRegex *regex*](#seqregex-regex)
+    - [Display](#display)
+        - [visible *show_regex* *hide_regex* *track_regex*](#visible-show_regex-hide_regex-track_regex)
+        - [squash *track_regex*](#squash-track_regex)
+        - [gffNameAttr attribute_name *track_regex*](#gffnameattr-attribute_name-track_regex)
+        - [trackHeight INT *track_regex*](#trackheight-int-track_regex)
+        - [ylim min max *track_regex*](#ylim-min-max-track_regex)
+        - [colorTrack color *track_regex*](#colortrack-color-track_regex)
+        - [dataCol idx *regex*](#datacol-idx-regex)
+        - [print *track_regex*](#print-track_regex)
+        - [printFull *track_regex*](#printfull-track_regex)
+        - [showGenome](#showgenome)
+        - [addTracks *files or urls*](#addtracks-files-or-urls)
+        - [orderTracks *regex#1 regex#2 ...*](#ordertracks-regex1-regex2-)
+        - [history](#history)
     - [Alignments](#alignments)
         - [rpm *track_regex*](#rpm-track_regex)
         - [-f INT and  -F INT](#-f-int-and---f-int)
         - [mapq INT](#mapq-int)
         - [BSseq *track_regex*](#bsseq-track_regex)
 - [Credits](#credits)
-- [TODO](#todo)
-
 
 <!-- 
 MEMO: Compile, package and upload to github releases
@@ -147,7 +148,7 @@ Open a bam file, as simple as:
 ASCIIGenome aln.bam
 ```
 
-Open with a reference genome:
+Open with a reference genome (reference must be indexed, see [Supported input](#supported-input)):
 
 ```
 ASCIIGenome -fa genome.fa aln.bam
@@ -158,7 +159,8 @@ ASCIIGenome -fa genome.fa aln.bam
 
 Open some peak and bigWig files from
 [ENCODE](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/). Note that
-opening remote bigwig files is a little slow (IGV seems equally slow):
+opening remote bigwig files is a little slow (IGV seems equally slow) and it might not work 
+with some proxy settings (see also [issue#6](https://github.com/dariober/ASCIIGenome/issues/6)):
 
 ```
 encode=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs
@@ -308,6 +310,20 @@ sirna | S
 pirna | P 
 snorna | O 
 
+
+If available, the feature name is shown on the feature itself. 
+The feature name has a trailing underscore to separate it from the rest of the feature representation. The
+last character of the feature is always the feature type. For example, the feature named `myGene` appears as:
+
+```
+myGene_EEEEEEEEE ## Enough space for the full name
+myGenE           ## Not enough space, name truncated and last char is E
+```
+
+For BED features, name is taken from column 4, if available. Default for GTF/GFF is to take name from attribute 
+`Name`, if absent try: `ID`, `transcript_name`, `transcript_id`, `gene_id`, `gene_name`. 
+To choose an attribute see command `gffNameAttr`.
+
 Saving screenshots
 ==================
 
@@ -347,13 +363,13 @@ Interactive commands
 ====================
 
 As there is no GUI, everything is handled thorough command line. Once `ASCIIGenome` is started enter
-a commands and press ENTER to execute.
+a command and press ENTER to execute.
 
 Some features of Unix console are enabled: 
 
-* Arrow keys UP and DOWN scroll previous commands
+* Arrow keys UP and DOWN scroll previous commands.
 * TAB auto-completes commands.
-* ENTER without any argument repeats the previous command 
+* ENTER without any argument repeats the previous command.
 
 Examples:
 
@@ -511,6 +527,49 @@ This command is useful to filter the annotation in GTF files, for example:
 Will show the rows containing "RNA" and will hide those containing "mRNA", applies to tracks whose name
 matches "gtf".
 
+#### squash *track_regex*
+
+For the feature tracks captured by *track_regex*, toggle the squashing of features with the same coordinates (same
+start, end, and strand) to allow more compact representation. When multiple features are squashed, only the first one
+is shown. Default regex is `.*`. This is an example if features squashed and unsquashed:
+
+```
+hg19_genes_head.gtf#1; Show '.*' Hide '' ; squashed
+                    NR_026820_eeeeeeee
+hg19_genes_head.gtf#2; Show '.*' Hide '' 
+                    NR_026820_eeeeeeee
+                    NR_026818_eeeeeeee
+33967     34296     34625     34954     35283     35612
+chr1:33967-39823; 5,857 bp; 32.7 bp/char;
+```
+
+#### gffNameAttr attribute_name *track_regex*
+
+For GTF/GFF tracks, choose the attribute to get the feature name from. Use attribute NULL to
+reset to default choice of attribute. Applies to all tracks captured by `track_regex`. 
+Ignored by non GFF/GTF features. Default `gffNameAttr NULL .*`. 
+For examples given the feature:
+
+```
+chr1 unknown exon 11874 12227 . + . gene_id "DDX11L1"; Name "NR_046018_1"; gene_name "DDX11L1";
+```
+
+Default:
+
+```
+gffNameAttr NULL 
+E_NR_046018_1_EEEEEE
+```
+
+Use `gene_id` attribute:
+
+```
+gffNameAttr gene_id 
+E_DDX11L1_EEEEEEEEEE
+```
+
+
+
 #### trackHeight INT *track_regex*
 
 Set track height to int lines of text for all tracks matching regex. Default regex: `.*`. 
@@ -649,14 +708,5 @@ Credits
 
 * Bam processing is mostly done with the [samtools/htsjdk](https://github.com/samtools/htsjdk) library.
 * Bigwig and tdf are processed with classes from [IGV](https://github.com/igvteam/igv) source code.
-* Block compression and indexing done using [jvarkit](https://github.com/lindenb/jvarkit)
-
-TODO
-====
-
-* Allow a string of options to be set at prompt. E.g. `-F 16; mapq 10; ylim 0 na`
-* Add a `bookmark` command create on the fly an IntervalFeatureTrack with bookmarked regions. 
-API: `bookmark`: Add current region to bookmarks; `bookmark show` print current bookmarked features; `bookmark clear`, etc.
-* Command to "go to other end" of feature?
-* Enable (some) options to be set at start 
-
+* Block compression and indexing done using [jvarkit](https://github.com/lindenb/jvarkit).
+* Brew installation thanks to [dalloliogm](https://github.com/dalloliogm).
