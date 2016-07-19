@@ -27,6 +27,8 @@ import tracks.TrackFormat;
 
 import org.junit.Test;
 
+import com.google.common.base.Joiner;
+
 import exceptions.InvalidGenomicCoordsException;
 
 public class UtilsTest {
@@ -293,6 +295,8 @@ public class UtilsTest {
 	@Test
 	public void canSplitStringInTokens(){
 
+		assertEquals("bar", Utils.tokenize("foo    bar    baz   ", " ").get(1));
+		
 		ArrayList<String> xx= Utils.tokenize("\"foo && bar\" "
 				+ "&& bar"
 				+ "&&baz "
@@ -309,6 +313,17 @@ public class UtilsTest {
 
 		xx= Utils.tokenize("gene \"ACTB\"", "&&");
 		assertEquals("gene \"ACTB\"", xx.get(0));
+		
+		// Unusual input:
+		assertEquals(null, Utils.tokenize(null, " "));
+		assertTrue(Utils.tokenize("", " ").size() == 0);
+		assertTrue(Utils.tokenize("   ", " ").size() == 0);
+		
+		// Reverse token
+		String cmdInput= "goto chr1 0 100";
+		assertEquals(cmdInput, Joiner.on(" ").join(Utils.tokenize(cmdInput, " ")));
+		assertEquals("goto chr1 0 100", Joiner.on(" ").join(Utils.tokenize("   goto   chr1   0   100  ", " ")));
+		
 	}
 	
 	@Test

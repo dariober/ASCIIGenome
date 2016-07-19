@@ -7,3 +7,5 @@ get name from. Now the display of feature tracks is more informative.
 * Option `squash` to collapse feature with the same coordinates.
 
 * Feature track titles display the `showRegex` and `hideRegex` (so you know what you are filtering).
+
+* Friendlier behaviour of print/printFull: Now toggle between ON and OFF.

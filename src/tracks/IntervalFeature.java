@@ -344,12 +344,12 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	private String featureNameFromGTFAttribute(String attributeName){
 
 		String xname= this.name;
-		// Precedence to assign name 
 		if(attributeName != null){
 			xname= this.getAttribute(attributeName);
 			if(xname == null){
 				xname= ".";
 			}
+		// Precedence to assign name 
 		} else if (this.getAttribute("Name") != null){ xname= this.getAttribute("Name");
 		
 		} else if (this.getAttribute("ID") != null){ xname= this.getAttribute("ID");

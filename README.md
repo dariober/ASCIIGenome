@@ -235,8 +235,6 @@ File name extensions matter as file types are usually recognized by their extens
 * **vcf** Supported but not too sophisticated representation. URL should be supported but it appears ftp from 1000genomes doesn't work (same for IGV).
 * All other extensions (e.g. txt, narrowPeak) will be treated as bed files, provided the format is actually bed!
 
-Notable formats currently **not** supported:  cram, bigBed.
-
 All plain text formats (bed, bedgraph, etc) can be read as gzipped and there is no need to decompress them.
 
 Bedgraph files should be sorted by position, a `sort -k1,1 -k2,2n` will do. Unindexed bedGraph files are first bgzipped and indexed to temporary files which are deleted on exit. This can take time for large files so consider creating the index once for all with [tabix](http://www.htslib.org/doc/tabix.html), *e.g.*
@@ -255,6 +253,15 @@ guidelines on the choice of format see [IGV
 recommendations](https://www.broadinstitute.org/igv/RecommendedFileFormats).
 
 **Fasta reference**: The reference sequence should be uncompressed and indexed, with *e.g.* [samtools faidx](http://www.htslib.org/doc/samtools.html):
+
+
+Notable formats currently **not** supported:  cram, bigBed. bigBed files can be converted to bgzip format with bigBedToBed from 
+[UCSC utilities](http://hgdownload.soe.ucsc.edu/admin/exe/) and then indexed with tabix. For example:
+
+```
+bigBedToBed input.bb /dev/stdout/ | bgzip > input.bed.gz
+tabix -p bed input.bed.gz
+```
 
 ```
 samtools faidx genome.fa

@@ -11,6 +11,7 @@ import org.junit.Test;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
 
 public class TrackSetTest {
 
@@ -99,7 +100,7 @@ public class TrackSetTest {
 		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#30"); ts.getTrackSet().put(t3.getFileTag(), t3);
 		
 		String cmdInput= "visible exon intron .*#1.*"; // Set for #1...
-		ts.setVisibilityForTrackIntervalFeature(cmdInput);
+		ts.setVisibilityForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
 
 		assertEquals("exon", ts.getTrackSet().get("#10").getShowRegex());
 		assertEquals("intron", ts.getTrackSet().get("#11").getHideRegex());
@@ -137,14 +138,38 @@ public class TrackSetTest {
 		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
 
 		String cmdInput= "bsMode #\\d$";
-		ts.setBisulfiteModeForRegex(cmdInput);
+		ts.setBisulfiteModeForRegex(Utils.tokenize(cmdInput, " "));
 		assertTrue(ts.getTrackSet().get("#1").isBisulf());
 		assertTrue(! ts.getTrackSet().get("#20").isBisulf());
 		
-		ts.setBisulfiteModeForRegex(cmdInput); // Was set true, now becomes false
+		ts.setBisulfiteModeForRegex(Utils.tokenize(cmdInput, " ")); // Was set true, now becomes false
 		assertTrue(! ts.getTrackSet().get("#1").isBisulf());
 	}
 
+	@Test
+	public void canSetPrintMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+				
+		TrackSet ts= new TrackSet();
+		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
+		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
+		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+
+		ts.setPrintModeForRegex(Utils.tokenize("print #1", " "));
+		assertEquals(PrintRawLine.CLIP, t1.getPrintMode());
+		
+		ts.setPrintModeForRegex(Utils.tokenize("print #1", " "));
+		assertEquals(PrintRawLine.OFF, t1.getPrintMode());
+		
+		ts.setPrintModeForRegex(Utils.tokenize("print #1", " "));
+		assertEquals(PrintRawLine.CLIP, t1.getPrintMode());
+		
+		ts.setPrintModeForRegex(Utils.tokenize("printFull #1", " "));
+		assertEquals(PrintRawLine.FULL, t1.getPrintMode());
+		
+		ts.setPrintModeForRegex(Utils.tokenize("printFull #1", " "));
+		assertEquals(PrintRawLine.OFF, t1.getPrintMode());
+	}
+	
 	
 	@Test
 	public void canSetTrackColour() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
@@ -157,24 +182,24 @@ public class TrackSetTest {
 		String defaultColour= (new Track()).getTitleColour();
 		
 		String cmdInput= "trackColour RED #\\d$";
-		ts.setTrackColourForRegex(cmdInput);
+		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
 		assertEquals("red", ts.getTrackSet().get("#1").getTitleColour());
 		assertEquals(defaultColour, ts.getTrackSet().get("#20").getTitleColour());
 		assertEquals("red", ts.getTrackSet().get("#3").getTitleColour());
 		
 		// Non-existant colour: Reset to default
 		cmdInput= "trackColour foo .*";
-		ts.setTrackColourForRegex(cmdInput);
+		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
 		assertEquals(defaultColour, ts.getTrackSet().get("#1").getTitleColour());
 		
 		// All reset to red
 		cmdInput= "trackColour red";
-		ts.setTrackColourForRegex(cmdInput);
+		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
 		assertEquals("red", ts.getTrackSet().get("#1").getTitleColour());
 		
 		// All reset to default
 		cmdInput= "trackColour";
-		ts.setTrackColourForRegex(cmdInput);
+		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
 		assertEquals(defaultColour, ts.getTrackSet().get("#1").getTitleColour());
 	}
 	
@@ -187,7 +212,7 @@ public class TrackSetTest {
 		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
 
 		String cmdInput= "trackHeight 2 #\\d$";
-		ts.setTrackHeightForRegex(cmdInput);
+		ts.setTrackHeightForRegex(Utils.tokenize(cmdInput, " "));
 				
 		assertEquals(2, ts.getTrackSet().get("#1").getyMaxLines());
 		assertEquals(10, ts.getTrackSet().get("#20").getyMaxLines()); 
@@ -207,7 +232,7 @@ public class TrackSetTest {
 		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
 		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
 		
-		ts.setTrackYlimitsForRegex(cmdInput);
+		ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
 				
 		assertEquals(0, ts.getTrackSet().get("#1").getYLimitMin(), 0.001);
 		assertEquals(0, ts.getTrackSet().get("#20").getYLimitMin(), 0.001);

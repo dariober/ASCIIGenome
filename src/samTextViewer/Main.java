@@ -10,6 +10,8 @@ import java.util.regex.PatternSyntaxException;
 import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 
+import com.google.common.base.Joiner;
+
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import net.sourceforge.argparse4j.inf.Namespace;
@@ -122,10 +124,10 @@ public class Main {
 		}
 		gch.add(new GenomicCoords(region, samSeqDict, windowSize, fasta));
 
-		String currentCmd = null; // Used to store the current interactive command and repeat it if no new cmd is given. 
+		List<String> currentCmd = null; // Used to store the current interactive command and repeat it if no new cmd is given. 
 		
-		String printIntervalFeaturesRegex= "x^"; // false;
-		String printIntervalFeaturesFullRegex= "x^";
+		//String printIntervalFeaturesRegex= "x^"; // false;
+		//String printIntervalFeaturesFullRegex= "x^";
 		String rpmRegex= "x^";
 		
 		TrackSet trackSet= new TrackSet();
@@ -267,14 +269,8 @@ public class Main {
 				}
 
 				// Print features
-				if(Pattern.compile(printIntervalFeaturesRegex).matcher(tr.getFileTag()).find()){
-					String printable= tr.printFeatures(windowSize);
-					Utils.printer(printable, snapshotFile, snapshotStripAnsi);
-				}
-				if(Pattern.compile(printIntervalFeaturesFullRegex).matcher(tr.getFileTag()).find()){
-					String printable= tr.printFeatures(Integer.MAX_VALUE);
-					Utils.printer(printable, snapshotFile, snapshotStripAnsi);
-				}
+				String printable= tr.printFeatures(windowSize);
+				Utils.printer(printable, snapshotFile, snapshotStripAnsi);
 			}
 
 			/* Footers and interactive prompt */
@@ -359,18 +355,18 @@ public class Main {
 				needValidInput= false;
 			}			
 */			
-			String cmdInput= null;
+			List<String> cmdInput= null;
 			snapshotFile= null; 
 			while(cmdInput == null){ // Keep asking for input until you get something valid
 				console.setPrompt("[h] for help: ");
-				cmdInput = console.readLine().trim();
+				cmdInput = Utils.tokenize(console.readLine().trim(), " ");
 				
-				if (cmdInput.trim().isEmpty()){
+				if (cmdInput.size() == 0){
 					// Repeat previous command
 					cmdInput= currentCmd;
 				}
 				
-				if(cmdInput == null || cmdInput.equals("h")){
+				if(cmdInput == null || (cmdInput.get(0).equals("h") && cmdInput.size() == 1)){
 					Utils.printer(InlineHelp.getHelp() + "\n", snapshotFile, snapshotStripAnsi);
 					cmdInput= null;
 					continue;
@@ -378,194 +374,153 @@ public class Main {
 				/* Parse args */
 				/* ---------- */
 				try{
-					if(cmdInput.equals("q")){
+					if(cmdInput.get(0).equals("q")){
 						System.exit(0);
 					}
 					
-					if(cmdInput.equals("f") 
-						|| cmdInput.equals("b")
-						|| cmdInput.equals("ff") 
-						|| cmdInput.equals("bb")
-						|| cmdInput.matches("^\\d+.*")
-						|| cmdInput.matches("^\\-\\d+.*") 
-						|| cmdInput.matches("^\\+\\d+.*")){ // No cmd line args either f/b ops or ints
-						String newRegion= Utils.parseConsoleInput(cmdInput, gch.current()).trim();
+					if(cmdInput.get(0).equals("f")
+						|| cmdInput.get(0).equals("b")
+						|| cmdInput.get(0).equals("ff") 
+						|| cmdInput.get(0).equals("bb")
+						|| cmdInput.get(0).matches("^\\d+.*")
+						|| cmdInput.get(0).matches("^\\-\\d+.*") 
+						|| cmdInput.get(0).matches("^\\+\\d+.*")){ // No cmd line args either f/b ops or ints
+						String newRegion= Utils.parseConsoleInput(cmdInput.get(0), gch.current()).trim();
 						GenomicCoords newGc= new GenomicCoords(newRegion, samSeqDict, windowSize, fasta);
-						gch.add(newGc);	
-					} else if(cmdInput.startsWith("goto") || cmdInput.startsWith(":")){
-						String reg= cmdInput.replaceFirst("goto|:", "").trim();
-						gch.add(new GenomicCoords(reg, samSeqDict, windowSize, fasta));
-					} else if(cmdInput.startsWith("dataCol ")){
+						gch.add(newGc);
 						
-						StrTokenizer str= new StrTokenizer(cmdInput);
-						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> tokens= str.getTokenList();
+					} else if(cmdInput.get(0).equals("goto") || cmdInput.get(0).startsWith(":")){
+						String reg= Joiner.on(" ").join(cmdInput).replaceFirst("goto|:", "").trim();
+						gch.add(new GenomicCoords(reg, samSeqDict, windowSize, fasta));
+						
+					} else if(cmdInput.get(0).equals("dataCol") && cmdInput.size() > 1){
+						
 						String trackIdRegex= ".*";
-						if(tokens.size() >= 3){
-							trackIdRegex= tokens.get(2);
+						if(cmdInput.size() >= 3){
+							trackIdRegex= cmdInput.get(2);
 							try{
 								Pattern.compile(trackIdRegex);
 							} catch(PatternSyntaxException e){
 						    	System.err.println("Invalid regex in: " + cmdInput);
-						    	System.err.println(e.getDescription());
+						    	System.err.println("Regex: " + trackIdRegex);
 								cmdInput= null;
 								continue;
 							}
 						}
-						trackSet.selectDataColumnForBedgraph(Integer.parseInt(tokens.get(1)), trackIdRegex);
+						trackSet.selectDataColumnForBedgraph(Integer.parseInt(cmdInput.get(1)), trackIdRegex);
 					
-					} else if(cmdInput.startsWith("ylim ")){
-					
-						try{
-							trackSet.setTrackYlimitsForRegex(cmdInput);
-						} catch(InvalidCommandLineException e){
-							cmdInput= null;
-							continue;
-						} catch(PatternSyntaxException e) {
-							cmdInput= null;
-				        	continue;
-						}
-					} else if(cmdInput.startsWith("trackHeight ")){
-						try{
-							trackSet.setTrackHeightForRegex(cmdInput);
-						} catch(InvalidCommandLineException e){
-							cmdInput= null;
-							continue;
-						} catch(PatternSyntaxException e) {
-							cmdInput= null;
-				        	continue;
-						}
-					} else if(cmdInput.startsWith("colorTrack") || cmdInput.startsWith("colourTrack")){
-						try{
-							trackSet.setTrackColourForRegex(cmdInput);
-						} catch(InvalidCommandLineException e){
-							cmdInput= null;
-							continue;
-						} catch(PatternSyntaxException e) {
-							cmdInput= null;
-				        	continue;
-						} 
-					} else if(cmdInput.startsWith("BSseq")) {
+					} else if(cmdInput.get(0).equals("ylim") && cmdInput.size() > 1){
+						trackSet.setTrackYlimitsForRegex(cmdInput);
+						
+					} else if(cmdInput.get(0).equals("trackHeight") && cmdInput.size() > 1){
+						trackSet.setTrackHeightForRegex(cmdInput);
+						
+					} else if((cmdInput.get(0).equals("colorTrack") || cmdInput.get(0).equals("colourTrack")) && cmdInput.size() > 1){
+						trackSet.setTrackColourForRegex(cmdInput); 
+						
+					} else if(cmdInput.get(0).equals("BSseq")) {
 						if( fasta == null ){
 							System.err.println("Cannot set BSseq mode without fasta");
 							cmdInput= null;
 							continue;
 						}
 						trackSet.setBisulfiteModeForRegex(cmdInput);
-					} else if (cmdInput.startsWith("squash")){
+						
+					} else if (cmdInput.get(0).equals("squash")){
 						trackSet.setFeatureSquashForRegex(cmdInput);
-					} else if(cmdInput.startsWith("gffNameAttr")) {
+						
+					} else if(cmdInput.get(0).equals("gffNameAttr")) {
 						trackSet.setAttributeForGFFName(cmdInput);
-					} else if(cmdInput.startsWith("addTracks ")){
-						StrTokenizer str= new StrTokenizer(cmdInput);
-						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> newFileNames= str.getTokenList();
-						newFileNames.remove(0);
-						Utils.addTrack(inputFileList, newFileNames);
+						
+					} else if(cmdInput.get(0).equals("addTracks") && cmdInput.size() > 1){
+						cmdInput.remove(0);
+						Utils.addTrack(inputFileList, cmdInput);
 			
 						if(gch.current().getSamSeqDict().size() == 0){
 							samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(inputFileList, null, null);
 							GenomicCoords gc= gch.current();
 							gc.setSamSeqDict(samSeqDict);
 						}
-					} else if(cmdInput.startsWith("orderTracks ")){
-						StrTokenizer str= new StrTokenizer(cmdInput);
-						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> newOrder= str.getTokenList();
-						newOrder.remove(0);
-						trackSet.orderTracks(newOrder);
-					} else if (cmdInput.equals("p")) {
+						
+					} else if(cmdInput.get(0).equals("orderTracks") && cmdInput.size() > 1){
+						cmdInput.remove(0);
+						trackSet.orderTracks(cmdInput);
+						
+					} else if (cmdInput.get(0).equals("p")) {
 						gch.previous();
-					} else if (cmdInput.equals("n")) {
+						
+					} else if (cmdInput.get(0).equals("n")) {
 						gch.next();
-					} else if(cmdInput.startsWith("zo")){
-						int nz= Utils.parseZoom(cmdInput, 1);
+						
+					} else if(cmdInput.get(0).equals("zo")){
+						int nz= Utils.parseZoom(Joiner.on(" ").join(cmdInput), 1);
 						GenomicCoords gc = (GenomicCoords)gch.current().clone();
 						for(int i= 0; i < nz; i++){
 							gc.zoomOut();
 						}
 						gch.add(gc);
-					} else if(cmdInput.startsWith("zi")){
-						int nz= Utils.parseZoom(cmdInput, 1);
+						
+					} else if(cmdInput.get(0).equals("zi")){
+						int nz= Utils.parseZoom(Joiner.on(" ").join(cmdInput), 1);
 						GenomicCoords gc = (GenomicCoords)gch.current().clone();
 						for(int i= 0; i < nz; i++){
 							gc.zoomIn();
 						}
 						gch.add(gc);
-					} else if(cmdInput.equals("history")){
+						
+					} else if(cmdInput.get(0).equals("history")){
 						for(GenomicCoords x : gch.getHistory()){
 							Utils.printer(x.toString() + "\n", snapshotFile, snapshotStripAnsi);
 						}
 						cmdInput= null;
-					} else if(cmdInput.equals("print") 
-							|| cmdInput.startsWith("print ") 
-							|| cmdInput.equals("printFull")
-							|| cmdInput.startsWith("printFull ")){
-						String regex= cmdInput.replaceAll("^printFull|^print", "").trim(); // Memo: ^printFull before ^print 
-						try{
-							Pattern.compile(regex); // Validate regex
-						} catch(Exception e){
-					    	System.err.println("Invalid regex in: " + cmdInput);
-					    	System.err.println("regex: " + regex);
-					    	cmdInput= null;
-					    	continue;
-						}
-						if(regex.isEmpty()){
-							regex= ".*";
-						}
-						if(cmdInput.toLowerCase().equals("print") || cmdInput.toLowerCase().startsWith("print ")){
-							printIntervalFeaturesFullRegex= "x^";	// Turn off print/Full
-							printIntervalFeaturesRegex= regex;
-						} else {
-							printIntervalFeaturesRegex= "x^";	// Turn off print/Full
-							printIntervalFeaturesFullRegex= regex;
-						}
-					} else if(cmdInput.toLowerCase().equals("rnameon")){
-						withReadName= true;
-					} else if(cmdInput.toLowerCase().equals("rnameoff")) {
-						withReadName= false;
-					} else if(cmdInput.startsWith("next_start ") || cmdInput.equals("next_start")){
+						
+					} else if(cmdInput.get(0).equals("print")
+							|| (cmdInput.get(0).equals("print") && cmdInput.size() > 1) 
+							|| cmdInput.get(0).equals("printFull")
+							|| (cmdInput.get(0).equals("printFull") && cmdInput.size() > 1)){
+						trackSet.setPrintModeForRegex(cmdInput);
+						
+					//} else if(cmdInput.toLowerCase().equals("rnameon")){
+					//	withReadName= true;
+					//} else if(cmdInput.toLowerCase().equals("rnameoff")) {
+					//	withReadName= false;
+						
+					} else if(cmdInput.get(0).equals("next_start") || cmdInput.get(0).equals("next")){
 						GenomicCoords gc= (GenomicCoords)gch.current().clone();
-						GenomicCoords nextGc= trackSet.goToNextFeatureOnFile(cmdInput.replace("next_start", "").trim(), gc, -1.0);
-						gch.add(nextGc);
-					} else if(cmdInput.startsWith("next ") || cmdInput.equals("next")){
-							GenomicCoords gc= (GenomicCoords)gch.current().clone();
-							gch.add(trackSet.goToNextFeatureOnFile(cmdInput.replace("next", "").trim(), gc, 5.0));
-					} else if(cmdInput.startsWith("find_first ") || 
-							  cmdInput.startsWith("find_all ")) {  
-						StrTokenizer str= new StrTokenizer(cmdInput);
-						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> tokens= str.getTokenList();
-						if(tokens.size() < 2){
-							System.err.println("Error in find* subcommand. Expected at least 2 args got: " + cmdInput);
+						String trackId= "";
+						if(cmdInput.size() > 1){
+							trackId= cmdInput.get(1);
+						}
+						if(cmdInput.get(0).equals("next_start")){
+							gch.add(trackSet.goToNextFeatureOnFile(trackId, gc, -1.0));
+						} else {
+							gch.add(trackSet.goToNextFeatureOnFile(trackId, gc, 5.0));
+						}
+					} else if(cmdInput.get(0).equals("find_first") || 
+							  cmdInput.get(0).equals("find_all")) {  
+						if(cmdInput.size() < 2){
+							System.err.println("Error in find* subcommand. Expected at least 1 args got: " + cmdInput);
 							cmdInput= null;
 							continue;
 						}
-						if(tokens.size() == 2){
-							tokens.add("");
+						if(cmdInput.size() == 2){
+							cmdInput.add("");
 						}
 						GenomicCoords gc= (GenomicCoords)gch.current().clone();
 						// Determine whether we match first or all
-						boolean all= (cmdInput.startsWith("find_all ")) ? true : false;
-						gch.add(trackSet.findNextMatchOnTrack(tokens.get(1), tokens.get(2), gc, all));
-					} else if (cmdInput.startsWith("seqRegex")){
+						boolean all= (cmdInput.get(0).equals("find_all ")) ? true : false;
+						gch.add(trackSet.findNextMatchOnTrack(cmdInput.get(1), cmdInput.get(2), gc, all));
+
+					} else if (cmdInput.get(0).equals("seqRegex")){
 						if( fasta == null ){
 							System.err.println("Cannot find regex in sequence without fasta reference!");
 							cmdInput= null;
 							continue;
 						}
-						StrTokenizer str= new StrTokenizer(cmdInput);
-				    	str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> tokens= str.getTokenList();
-						if(tokens.size() == 1){
+						if(cmdInput.size() == 1){
 							seqRegex= "";
 						} else {
-							seqRegex= tokens.get(1).trim();
+							seqRegex= cmdInput.get(1);
 							try{
 								Pattern.compile(seqRegex);
 							} catch(PatternSyntaxException e){
@@ -575,42 +530,39 @@ public class Main {
 								continue;
 							}							
 						}
-					} else if(cmdInput.startsWith("visible ") || cmdInput.equals("visible")){
-						try{
-							trackSet.setVisibilityForTrackIntervalFeature(cmdInput);
-						} catch (PatternSyntaxException e){
-							System.err.println("Invalid pattern in " + cmdInput);
-							cmdInput= null;
-							continue;							
-						}
+					} else if(cmdInput.get(0).equals("visible")){
+						trackSet.setVisibilityForTrackIntervalFeature(cmdInput);
+						
 					} else if(cmdInput.equals("showGenome")) {
 						System.out.println(Utils.printSamSeqDict(gch.current().getSamSeqDict(), 30));
 						cmdInput= null;
 						continue;
-					} else if(cmdInput.equals("rpm") || cmdInput.startsWith("rpm ")) {
-						rpmRegex= cmdInput.replaceAll("^rpm", "").trim();
-					} else if(cmdInput.startsWith("-f")) { 
-						f_incl= Integer.parseInt(cmdInput.replaceAll("^-f", "").trim());
-					} else if(cmdInput.startsWith("-F")) { 
-						F_excl= Integer.parseInt(cmdInput.replaceAll("^-F", "").trim());
+						
+					} else if(cmdInput.get(0).equals("rpm")) {
+						rpmRegex= cmdInput.get(1);
+						
+					} else if(cmdInput.get(0).equals("-f")) { 
+						f_incl= Integer.parseInt(cmdInput.get(1));
+						
+					} else if(cmdInput.get(0).equals("-F")) { 
+						F_excl= Integer.parseInt(cmdInput.get(1));
 						if((F_excl & 4) != 4){ // Always filter out read unmapped
 							F_excl += 4;
 						}
-					} else if(cmdInput.startsWith("mapq")) { 
-						mapq= Integer.parseInt(cmdInput.replaceAll("^mapq", "").trim());
+						
+					} else if(cmdInput.get(0).equals("mapq")) { 
+						mapq= Integer.parseInt(cmdInput.get(1));
 					}
-					// else if(cmdInput.startsWith("maxLines")){
-					// maxLines= Integer.parseInt(cmdInput.replaceAll("^maxLines", "").trim());
-					//} 
-				    else if(cmdInput.startsWith("save")) {
-						snapshotFile= Utils.parseCmdinputToGetSnapshotFile(cmdInput, gch.current());
-						if(cmdInput.startsWith("save ") || cmdInput.equals("save")){
+
+				    else if(cmdInput.get(0).equals("save") || cmdInput.get(0).equals("savef")) {
+						snapshotFile= Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(cmdInput), gch.current());
+						if(cmdInput.get(0).equals("save")){
 							snapshotStripAnsi= true;
-						} else if(cmdInput.startsWith("savef ") || cmdInput.equals("savef")){
+						} else if(cmdInput.get(0).equals("savef")){
 							snapshotStripAnsi= false;
 						}
-					} else if(cmdInput.startsWith("bookmark")){
-						String name= cmdInput.replaceAll("^bookmark", "").trim();
+					} else if(cmdInput.get(0).equals("bookmark")){
+						// String name= cmdInput.replaceAll("^bookmark", "").trim();
 						//GenomicCoords gc = (GenomicCoords)gch.current().clone();
 						//trackSet.addBookmark_IN_PREP(gc, name);
 					} else {
@@ -619,8 +571,7 @@ public class Main {
 					} // END OF CMD LINE ARGS
 				} catch(Exception e){
 					System.err.println("\nError processing input: " + cmdInput + "\n");
-					e.printStackTrace(); // Print trace for debugging
-					System.err.println("");
+					// e.printStackTrace(); // Print trace for debugging
 					cmdInput= null;
 				}
 				currentCmd= cmdInput;

@@ -852,6 +852,11 @@ public class Utils {
 	/** Split string x in tokens. Effectively just a friendly wrapper around StrTokenizer
 	 * */
 	public static ArrayList<String> tokenize(String x, String delimiterString){
+		
+		if(x == null){
+			return null;
+		}
+		
 		// See also http://stackoverflow.com/questions/38161437/inconsistent-behaviour-of-strtokenizer-to-split-string
 		StrTokenizer str= new StrTokenizer(x);
     	str.setTrimmerMatcher(StrMatcher.spaceMatcher()); 

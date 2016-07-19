@@ -29,6 +29,7 @@ public class Track {
 	private String gtfAttributeForName= null;
 	/** Should features on with same coords be squashed into a single one? */
 	protected boolean squash= false;
+	private PrintRawLine printMode= PrintRawLine.OFF; 
 	
 //	public Track(){}
 
@@ -167,6 +168,15 @@ public class Track {
 	public void setGtfAttributeForName(String gtfAttributeForName) {
 		this.gtfAttributeForName = gtfAttributeForName;
 	}
+
+	public PrintRawLine getPrintMode() {
+		return printMode;
+	}
+
+	protected void setPrintMode(PrintRawLine printMode) {
+		this.printMode = printMode;
+	}
+
 	
 }
 

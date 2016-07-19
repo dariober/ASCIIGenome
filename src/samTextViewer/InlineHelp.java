@@ -133,7 +133,7 @@ public class InlineHelp {
 + "${dataCol} <idx> [regex]\n"
 + "      Select data column for all bedgraph tracks containing regex. <idx>: 1-based column index.\n"
 + "${print}     [track regex] \n"
-+ "      Print the lines of the annotation tracks containing [track regex]. Long lines are clipped\n"
++ "      Toggle the printing of lines of the annotation tracks matched by [track regex]. Long lines are clipped\n"
 + "${printFull} [track regex] \n"
 + "      Same as ${print} but long lines are wrapped instead of clipped.\n"
 + "${showGenome}\n"

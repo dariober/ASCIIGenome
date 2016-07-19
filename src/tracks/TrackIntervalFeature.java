@@ -2,6 +2,7 @@ package tracks;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -131,17 +132,37 @@ public class TrackIntervalFeature extends Track {
 		return this.formatTitle(title) + "\n";
 	}
 
-	/** dupList is a list of features with the same coords, we want to remove redundant features
-	 * by the precede rule CDS > exon > transcript > gene 
-	 * */
-	//private List<IntervalFeature> dedupFeatures(List<IntervalFeature> dupList){
-	//	
-	//}
+	private List<IntervalFeature> mergeFeatures(List<IntervalFeature> intervalList){
+		
+		String chrom;
+		int from= -1;
+		int to= -1;
+		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();
+		for(IntervalFeature interval : intervalList){
+			//if(interval.getFrom() >= from && interval.getFrom()){ 
+			//	// Keep merging if
+			//}
+		}
+		return mergedList;
+/* Overlap scenarios
+        from      to
+          |-------|
+--------************-----  4.
+---------****------------- 1.
+------------****---------- 3.
+-----------------****----- 2.
+----------------------***- Break iterating */
+
+	
+	}
 	
 	/** Remove positional duplicates from list of interval features for more compact visualization. 
-	 * Squashing is dome according to feature field which should be applicable to GTF/GFF only.*/
+	 * Squashing is done according to feature field which should be applicable to GTF/GFF only.*/
 	private List<IntervalFeature> squashFeatures(List<IntervalFeature> intervalList){
 
+		// Resort list, possibly again, to make sure same position and strand stay together.
+		Collections.sort(intervalList);
+		
 		List<IntervalFeature> stack= new ArrayList<IntervalFeature>();
 		List<IntervalFeature> squashed= new ArrayList<IntervalFeature>();
 		for(IntervalFeature interval : intervalList){
@@ -220,7 +241,20 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
+	/**Print raw features under track. 
+	 * windowSize size the number of characters before clipping occurs. This is 
+	 * typically the window size for plotting. windowSize is used only by CLIP mode.  
+	 * */
 	public String printFeatures(int windowSize){
+		
+		if(this.getPrintMode().equals(PrintRawLine.FULL)){
+			windowSize= Integer.MAX_VALUE;
+		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
+			// Keep windowSize as it is
+		} else {
+			return "";
+		} 
+		
 		List<String> featureList= new ArrayList<String>();
 		for(IntervalFeature ift : intervalFeatureList){
 			featureList.add(ift.getRaw());
