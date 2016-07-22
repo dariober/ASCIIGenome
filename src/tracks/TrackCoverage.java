@@ -30,8 +30,6 @@ public class TrackCoverage extends Track {
 	/* A t t r i b u t e s */
 	
 	private List<ScreenLocusInfo> screenLocusInfoList= new ArrayList<ScreenLocusInfo>(); 
-	private boolean rpm= false;
-	
 	
 	/* C o n s t r u c t o r */
 	
@@ -93,8 +91,8 @@ public class TrackCoverage extends Track {
 				samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
 				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), this.getGc().getMapping());
 				byte refBase= '\0';
-				if(this.getGc().getRefSeq(true) != null){
-					refBase= this.getGc().getRefSeq(true)[screenPos];
+				if(this.getGc().getRefSeq() != null){
+					refBase= this.getGc().getRefSeq()[screenPos];
 				}
 				this.screenLocusInfoList.get(screenPos).increment(locusInfo, refBase);
 			}
@@ -139,7 +137,7 @@ public class TrackCoverage extends Track {
 		}
 		this.setScreenScores(yValues);
 				
-		if(this.rpm){
+		if(this.isRpm()){
 			long libSize= getAlignedReadCount(new File(this.getFilename()));
 			for(int i= 0; i < yValues.size(); i++){
 				yValues.set(i, yValues.get(i)/libSize * 1000000.0);
@@ -185,18 +183,11 @@ public class TrackCoverage extends Track {
     	return screenLocusInfoList;
     }
 
-	public void setRpm(boolean rpm) {
-		this.rpm = rpm;
-	}
-	public boolean getRpm(){
-		return this.rpm;
-	}
-
 	@Override
 	public String getTitle(){
 		
 		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
-		String rpmTag= this.rpm ? "; rpm" : "";
+		String rpmTag= this.isRpm() ? "; rpm" : "";
 		String xtitle= this.getFileTag() 
 				+ "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"

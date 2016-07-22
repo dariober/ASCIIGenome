@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import exceptions.InvalidColourException;
+import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -28,11 +29,11 @@ public class Track {
 
 	private String gtfAttributeForName= null;
 	/** Should features on with same coords be squashed into a single one? */
-	protected boolean squash= false;
-	private PrintRawLine printMode= PrintRawLine.OFF; 
+	// protected boolean squash= false;
+	private PrintRawLine printMode= PrintRawLine.OFF;
+	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
+	private boolean rpm= false;
 	
-//	public Track(){}
-
 	/* Min value of screen scores. Not to be confused with the y limit **/
 	public double getMinScreenScores(){
 		Double ymin= Double.NaN;
@@ -72,7 +73,7 @@ public class Track {
 	}
 	
 	/* Printers */
-	public String printToScreen(){
+	public String printToScreen() throws InvalidGenomicCoordsException{
 		return null;
 	}
 
@@ -175,6 +176,21 @@ public class Track {
 
 	protected void setPrintMode(PrintRawLine printMode) {
 		this.printMode = printMode;
+	}
+
+	public FeatureDisplayMode getFeatureDisplayMode() {
+		return featureDisplayMode;
+	}
+
+	public void setFeatureDisplayMode(FeatureDisplayMode featureDisplayMode) {
+		this.featureDisplayMode = featureDisplayMode;
+	}
+
+	public void setRpm(boolean rpm) {
+		this.rpm = rpm;
+	}
+	public boolean isRpm(){
+		return this.rpm;
 	}
 
 	

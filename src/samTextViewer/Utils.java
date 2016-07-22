@@ -59,6 +59,77 @@ import tracks.TrackFormat;
  */
 public class Utils {
 	
+	public static List<IntervalFeature> mergeIntervalFeatures(List<IntervalFeature> intervalList) throws InvalidGenomicCoordsException{
+		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();		 
+		if(intervalList.size() == 0){
+			return mergedList;
+		}
+		
+		String chrom = null;
+		int from= -1;
+		int to= -1;
+		int screenFrom= -1;
+		int screenTo= -1;
+		int numMrgIntv= 1; // Number of intervals in the merged one. 
+				
+		for(int i= 0; i < (intervalList.size()+1); i++){
+			// We do an additional loop to add to the mergedList the last interval.
+			// The last loop has interval == null so below you need to account for it
+			IntervalFeature interval= null;
+			if(i < intervalList.size()){
+				interval= intervalList.get(i); 
+			}
+			
+			if(from < 0){ // Init interval
+				chrom= interval.getChrom(); 
+				from= interval.getFrom();
+				to= interval.getTo();
+				screenFrom= interval.getScreenFrom();
+				screenTo= interval.getScreenTo();
+				continue;
+			}
+			// Sanity check: The list to be merged is on the same chrom and sorted by start pos.
+			if(i < intervalList.size() && (!chrom.equals(interval.getChrom()) || from > interval.getFrom() || from > to)){
+				System.err.println(chrom + " " + from + " " + to);
+				throw new RuntimeException();
+			} 
+			if(i < intervalList.size() && (from <= interval.getTo() && to >= (interval.getFrom()-1) )){ 
+				// Overlap: Extend <to> coordinate. See also http://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
+				to= interval.getTo();
+				screenTo= interval.getScreenTo();
+				numMrgIntv++;
+			} else {
+				// No overlap add merged interval to list and reset new merged interval
+				IntervalFeature x= new IntervalFeature(chrom + "\t" + (from-1) + "\t" + to, TrackFormat.BED);
+				x.setScreenFrom(screenFrom);
+				x.setScreenTo(screenTo);
+
+				if(x.equals(intervalList.get(i-1)) && numMrgIntv == 1){
+					mergedList.add(intervalList.get(i-1));
+				} else {
+					mergedList.add(x);
+				}
+				
+				//if(i > 0 && x.equals(intervalList.get(i-1))){
+				//	mergedList.add(intervalList.get(i-1));
+				//} else {
+				//	mergedList.add(x);
+				//}
+				
+				if(i < intervalList.size()){
+					// Do not reset from/to if you are in extra loop.
+					from= interval.getFrom();
+					to= interval.getTo();
+					screenFrom= interval.getScreenFrom();
+					screenTo= interval.getScreenTo();
+					numMrgIntv= 1;
+				}
+			}
+		}
+		return mergedList;
+	}
+
+	
 	public static LinkedHashMap<String, Integer> ansiColorCodes(){
 		// See http://misc.flogisoft.com/bash/tip_colors_and_formatting
 		LinkedHashMap<String, Integer> colourCodes= new LinkedHashMap<String, Integer>();
@@ -411,8 +482,7 @@ public class Utils {
 	 * @param bam 
 	 * @return
 	 */
-	public static String parseConsoleInput(
-			String rawInput, GenomicCoords gc){
+	public static String parseConsoleInput(String rawInput, GenomicCoords gc){
 		
 		String region= "";
 		String chrom= gc.getChrom();

@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.lang3.text.StrMatcher;
-import org.apache.commons.lang3.text.StrTokenizer;
-
 import com.google.common.base.Joiner;
 
 import exceptions.InvalidCommandLineException;
@@ -21,8 +18,6 @@ import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
-import jline.console.completer.AggregateCompleter;
-import jline.console.completer.StringsCompleter;
 import tracks.Track;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
@@ -53,7 +48,6 @@ public class Main {
 		String region= opts.getString("region");
 		String genome= opts.getString("genome");
 		String fasta= opts.getString("fasta");
-		boolean rpm= false; // opts.getBoolean("rpm");
 		final int maxReadsStack= opts.getInt("maxReadsStack");
 		int f_incl= 0; // opts.getInt("f");
 		int F_excl= 0; // opts.getInt("F");
@@ -126,10 +120,6 @@ public class Main {
 
 		List<String> currentCmd = null; // Used to store the current interactive command and repeat it if no new cmd is given. 
 		
-		//String printIntervalFeaturesRegex= "x^"; // false;
-		//String printIntervalFeaturesFullRegex= "x^";
-		String rpmRegex= "x^";
-		
 		TrackSet trackSet= new TrackSet();
 
 		/* Initialize GC profile */
@@ -166,11 +156,6 @@ public class Main {
 					TrackCoverage trackCoverage= (TrackCoverage) trackSet.getTrackSet().get(coverageTrackId);
 					trackCoverage.setGc(gch.current());
 					trackCoverage.setFilters(filters);
-					if(Pattern.compile(rpmRegex).matcher(trackCoverage.getFileTag()).find()){
-						rpm= (trackCoverage.getRpm()) ? false : true; // Invert rpm set.
-						System.err.println("Setting RPM to " + rpm + " for " + trackCoverage.getFileTag());
-						trackCoverage.setRpm(rpm);
-					}
 					trackCoverage.update();
 					trackCoverage.printToScreen();				
 					
@@ -248,7 +233,6 @@ public class Main {
 					tw.printToScreen();
 				}
 			} // End loop through files 
-			rpmRegex= "x^"; // Reset to match nothing so that nothing changes until rpm opt is called again.  
 			
 			/* Print tracks */
 			/* ************ */
@@ -385,7 +369,8 @@ public class Main {
 						|| cmdInput.get(0).matches("^\\d+.*")
 						|| cmdInput.get(0).matches("^\\-\\d+.*") 
 						|| cmdInput.get(0).matches("^\\+\\d+.*")){ // No cmd line args either f/b ops or ints
-						String newRegion= Utils.parseConsoleInput(cmdInput.get(0), gch.current()).trim();
+						// FIXME: You shouldn't join the list of args back to string. You should refactor parseConsoleInput! 
+						String newRegion= Utils.parseConsoleInput(Joiner.on(" ").join(cmdInput), gch.current()).trim();
 						GenomicCoords newGc= new GenomicCoords(newRegion, samSeqDict, windowSize, fasta);
 						gch.add(newGc);
 						
@@ -426,9 +411,9 @@ public class Main {
 						}
 						trackSet.setBisulfiteModeForRegex(cmdInput);
 						
-					} else if (cmdInput.get(0).equals("squash")){
-						trackSet.setFeatureSquashForRegex(cmdInput);
-						
+					} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals("merge")){
+						trackSet.setFeatureDisplayModeForRegex(cmdInput);
+					
 					} else if(cmdInput.get(0).equals("gffNameAttr")) {
 						trackSet.setAttributeForGFFName(cmdInput);
 						
@@ -474,10 +459,7 @@ public class Main {
 						}
 						cmdInput= null;
 						
-					} else if(cmdInput.get(0).equals("print")
-							|| (cmdInput.get(0).equals("print") && cmdInput.size() > 1) 
-							|| cmdInput.get(0).equals("printFull")
-							|| (cmdInput.get(0).equals("printFull") && cmdInput.size() > 1)){
+					} else if(cmdInput.get(0).equals("print") || cmdInput.get(0).equals("printFull")){
 						trackSet.setPrintModeForRegex(cmdInput);
 						
 					//} else if(cmdInput.toLowerCase().equals("rnameon")){
@@ -533,13 +515,13 @@ public class Main {
 					} else if(cmdInput.get(0).equals("visible")){
 						trackSet.setVisibilityForTrackIntervalFeature(cmdInput);
 						
-					} else if(cmdInput.equals("showGenome")) {
+					} else if(cmdInput.get(0).equals("showGenome")) {
 						System.out.println(Utils.printSamSeqDict(gch.current().getSamSeqDict(), 30));
 						cmdInput= null;
 						continue;
 						
 					} else if(cmdInput.get(0).equals("rpm")) {
-						rpmRegex= cmdInput.get(1);
+						trackSet.setRpmForRegex(cmdInput);
 						
 					} else if(cmdInput.get(0).equals("-f")) { 
 						f_incl= Integer.parseInt(cmdInput.get(1));

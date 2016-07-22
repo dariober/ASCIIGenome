@@ -10,9 +10,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.lang3.text.StrMatcher;
-import org.apache.commons.lang3.text.StrTokenizer;
-
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import samTextViewer.GenomicCoords;
@@ -24,7 +21,6 @@ public class TrackSet {
 	
 	private LinkedHashMap<String, Track> trackSet= new LinkedHashMap<String, Track>();
 	private Pattern regexForTrackHeight= Pattern.compile(".*");
-	private Pattern regexForPrintMode= Pattern.compile("x^");
 	private int trackHeightForRegex= -1;
 	
 	public static final String BOOKMARK_TAG= "bookmark";
@@ -54,16 +50,8 @@ public class TrackSet {
 			System.err.println("Error in trackHeight subcommand. Expected 2 args got: " + tokens);
 			throw new InvalidCommandLineException();
 		}
-		if(tokens.size() == 3){ // If size 3 (trackHeight int regex) user has set a regex. Used that instead of default.
-			try{
-				this.regexForTrackHeight= Pattern.compile(tokens.get(2)); // Validate regex
-			} catch(Exception e){
-		    	System.err.println("Invalid regex in: " + tokens);
-		    	System.err.println("Regex: " + this.regexForTrackHeight);
-		    	throw new InvalidCommandLineException();	
-			}
-		}
-		
+
+		// Get height
 		try{
 			this.trackHeightForRegex= Integer.parseInt(tokens.get(1));
 			this.trackHeightForRegex= this.trackHeightForRegex < 0 ? 0 : this.trackHeightForRegex;
@@ -71,12 +59,54 @@ public class TrackSet {
 			System.err.println("Number format exception: " + this.trackHeightForRegex);
 			throw new InvalidCommandLineException();
 		}
-		for(Track tr : this.trackSet.values()){
-			boolean matched= this.regexForTrackHeight.matcher(tr.getFileTag()).find();
-			if(matched){
-				tr.setyMaxLines(this.trackHeightForRegex);
-			}
+
+		
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 3){
+            trackNameRegex= tokens.subList(2, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+        	tr.setyMaxLines(this.trackHeightForRegex);
+        }
+	}
+
+	public void setFeatureDisplayModeForRegex(List<String> tokens) throws InvalidCommandLineException {
+		// MEMO of subcommand syntax:
+		// 0 squash/merge
+		// 1 Regex
+		
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 2){
+            trackNameRegex= tokens.subList(1, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+                
+		FeatureDisplayMode switchTo;
+		if(tokens.get(0).equals("squash")){
+			switchTo = FeatureDisplayMode.SQUASHED;
+		} else if(tokens.get(0).equals("merge")){
+			switchTo = FeatureDisplayMode.MERGED;
+		} else {
+			System.err.println("Unexepected command: " + tokens);
+			throw new InvalidCommandLineException();
 		}
+		
+        // And set as required:
+		List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+        	if(tr.getFeatureDisplayMode().equals(switchTo)){ // Invert setting
+				tr.setFeatureDisplayMode(FeatureDisplayMode.EXPANDED);
+			} else {
+				tr.setFeatureDisplayMode(switchTo);
+			}
+        }
 	}
 	
 	public void setPrintModeForRegex(List<String> tokens) throws InvalidCommandLineException {
@@ -84,18 +114,14 @@ public class TrackSet {
 		// 0 print/printFull
 		// 1 Regex
 		
-		String trackNameRegex= ".*"; // Default capture
-		if(tokens.size() >= 2){
-			trackNameRegex= tokens.get(1);
-		}
-		try{
-			Pattern.compile(trackNameRegex); // Validate regex
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Exception in: " + tokens);
-	    	System.err.println("trackNameRegex: " + trackNameRegex);
-	    	throw new InvalidCommandLineException();
-		}
-		
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 2){
+            trackNameRegex= tokens.subList(1, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+                
 		PrintRawLine switchTo; // If printing is OFF do we switch to CLIP or FULL?
 		if(tokens.get(0).equals("print")){
 			switchTo = PrintRawLine.CLIP;
@@ -105,17 +131,16 @@ public class TrackSet {
 			System.err.println("Unexepected command: " + tokens);
 			throw new InvalidCommandLineException();
 		}
-		
-		for(Track tr : this.trackSet.values()){
-			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
-			if(matched){
-				if(tr.getPrintMode().equals(switchTo)){ // Invert setting
-					tr.setPrintMode(PrintRawLine.OFF);
-				} else {
-					tr.setPrintMode(switchTo);
-				}
+
+        // And set as required:
+		List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+        	if(tr.getPrintMode().equals(switchTo)){ // Invert setting
+        		tr.setPrintMode(PrintRawLine.OFF);
+			} else {
+				tr.setPrintMode(switchTo);
 			}
-		}		
+        }
 	}
 
 	
@@ -125,59 +150,47 @@ public class TrackSet {
 		// 0 BSseq
 		// 1 Regex
 		
-		// Regex
-		String trackNameRegex= "^$"; // Default: Capture nothing
-		if(tokens.size() >= 2){
-			trackNameRegex= tokens.get(1);
-		}
-		try{
-			Pattern.compile(trackNameRegex); // Validate regex
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + tokens);
-	    	System.err.println("trackNameRegex: " + trackNameRegex);
-	    	throw new InvalidCommandLineException();
-		}
-		
-		for(Track tr : this.trackSet.values()){
-			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
-			if(matched){
-				System.out.println("Setting " + tr);
-				if(tr.isBisulf()){ // Invert setting
-					tr.setBisulf(false);
-				} else {
-					tr.setBisulf(true);
-				}
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 2){
+            trackNameRegex= tokens.subList(1, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+			if(tr.isBisulf()){ // Invert setting
+				tr.setBisulf(false);
+			} else {
+				tr.setBisulf(true);
 			}
-		}
-	}
-
-	public void setFeatureSquashForRegex(List<String> tokens) throws InvalidCommandLineException {
-
-		// MEMO of subcommand syntax:
-		// 0 squash
-		// 1 Regex
-
-		// Regex
-		String trackNameRegex= ".*"; // Default
-		if(tokens.size() >= 2){
-			trackNameRegex= tokens.get(1);
-		}
-		try{
-			Pattern.compile(trackNameRegex); // Validate regex
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + tokens);
-	    	System.err.println("trackNameRegex: " + trackNameRegex);
-	    	throw new InvalidCommandLineException();
-		}
-		
-		for(Track tr : this.trackSet.values()){
-			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
-			if(matched){
-				tr.squash = !tr.squash; // Invert boolean
-			}
-		}
+        }
 	}
 	
+	public void setRpmForRegex(List<String> tokens) throws InvalidCommandLineException {
+
+		// MEMO of subcommand syntax:
+		// 0 rpm
+		// 1 Regex
+		
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 2){
+            trackNameRegex= tokens.subList(1, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+			if(tr.isRpm()){ // Invert setting
+				tr.setRpm(false);
+			} else {
+				tr.setRpm(true);
+			}
+        }
+	}
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException{
 
 		// MEMO of subcommand syntax:
@@ -198,23 +211,16 @@ public class TrackSet {
 		}
 		
 		// Regex
-		String trackNameRegex= ".*"; // Default: Capture everything
+		List<String> trackNameRegex= new ArrayList<String>();
 		if(tokens.size() >= 3){
-			trackNameRegex= tokens.get(2);
+			trackNameRegex= tokens.subList(2, tokens.size());
+		} else {
+			trackNameRegex.add(".*"); // Default: Capture everything
 		}
-		try{
-			Pattern.compile(trackNameRegex); // Validate regex
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + tokens);
-	    	System.err.println("trackNameRegex: " + trackNameRegex);
-	    	throw new InvalidCommandLineException();
-		}
-		
-		for(Track tr : this.trackSet.values()){
-			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
-			if(matched){
-				tr.setTitleColour(colour);
-			}
+		// And set as required:
+		List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+		for(Track tr : tracksToReset){
+			tr.setTitleColour(colour);
 		}
 	}
 	
@@ -233,26 +239,18 @@ public class TrackSet {
 			}
 		}
 
-		// Regex
-		String trackNameRegex= ".*"; // Default: Capture everything
-		if(tokens.size() >= 3){
-			trackNameRegex= tokens.get(2);
-		}
-		try{
-			Pattern.compile(trackNameRegex); // Validate regex
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + tokens);
-	    	System.err.println("trackNameRegex: " + trackNameRegex);
-	    	throw new InvalidCommandLineException();
-	    	// e.getMessage();
-		}
-		
-		for(Track tr : this.trackSet.values()){
-			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
-			if(matched){
-				tr.setGtfAttributeForName(gtfAttributeForName);
-			}
-		}
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 3){
+            trackNameRegex= tokens.subList(2, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+        	tr.setGtfAttributeForName(gtfAttributeForName);
+        }		
 	}
 	
 	/** From cmdInput extract regex and ylimits then iterate through the tracks list to set 
@@ -261,24 +259,17 @@ public class TrackSet {
 	*/
 	public void setTrackYlimitsForRegex(List<String> tokens) throws InvalidCommandLineException{
 
+		// MEMO of subcommand syntax:
+		// 0 cmdName
+		// 1 min
+		// 2 max
+		// 3+ regex (opt)
+
 		if(tokens.size() < 3){
 			System.err.println("Error in ylim subcommand. Expected at least 2 args got: " + tokens);
 			throw new InvalidCommandLineException();
 		}
-		String trackNameRegex= ".*"; // Default: Capture everything
-		if(tokens.size() == 4){
-			trackNameRegex= tokens.get(3);
-		}
-		
-		try{
-			Pattern.compile(trackNameRegex); // Validate regex
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + tokens);
-	    	System.err.println("trackNameRegex: " + trackNameRegex);
-	    	throw new InvalidCommandLineException();
-	    	// e.getMessage();
-		}
-		
+		// Parse min and max
 		double ymin= Double.NaN;
 		try{
 			ymin= Double.parseDouble(tokens.get(1));
@@ -297,44 +288,48 @@ public class TrackSet {
 			ymin= ymax;
 			ymax= newMax;			
 		}
-		//if(ymin >= ymax){
-		//	System.err.println("Warning ymin >= ymax. Resetting to default.");
-		//	ymin= Double.NaN;
-		//	ymax= Double.NaN;							
-		//}
-		for(Track tr : this.trackSet.values()){
-			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
-			if(matched){
-				tr.setYLimitMin(ymin);
-				tr.setYLimitMax(ymax);
-			}
-		}
+
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 4){
+            trackNameRegex= tokens.subList(2, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+    		tr.setYLimitMin(ymin);
+			tr.setYLimitMax(ymax);
+        }
 	}
 
 	/** Set visibility for IntervalFeature tracks. 
 	*/
 	public void setVisibilityForTrackIntervalFeature(List<String> tokens) throws InvalidCommandLineException{
 
-		// Defaults:
+		// 0 cmdName
+		// 1 showRe
+		// 2 hideRe
+		// 3 trackRe+
+		
+		// SHOW REGEX
 		String showRegex= ".*";  // Show all
-		String hideRegex= "^$";    // Hide nothing
-		String trackNameRegex= ".*"; // Apply to all tracks
 		if(tokens.size() > 1){
 			showRegex= tokens.get(1);
 		}
-		if(tokens.size() > 2){
-			hideRegex= tokens.get(2);
-		}
-		if(tokens.size() > 3){
-			trackNameRegex= tokens.get(3);
-		}
-		// Validate regexes
 		try{
 			Pattern.compile(showRegex);
 		} catch(PatternSyntaxException e){
 	    	System.err.println("Invalid regex in: " + tokens);
 	    	System.err.println("showRegex: " + showRegex);
 	    	throw new InvalidCommandLineException();
+		}
+		
+		// HIDE REGEX
+		String hideRegex= "^$";    // Hide nothing
+		if(tokens.size() > 2){
+			hideRegex= tokens.get(2);
 		}
 		try{
 			Pattern.compile(hideRegex); 
@@ -343,22 +338,21 @@ public class TrackSet {
 	    	System.err.println("hideRegex: " + hideRegex);
 	    	throw new InvalidCommandLineException();
 	    }
-		try{
-			Pattern.compile(trackNameRegex); 
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + tokens);
-	    	System.err.println("trackNameRegex: " + trackNameRegex);
-	    	throw new InvalidCommandLineException();
-		}
-		System.err.println("Show: '" + showRegex + "'; hide: '" + hideRegex + "'; for tracks captured by '" + trackNameRegex + "':");
-		for(Track tr : this.trackSet.values()){
-			boolean matched= Pattern.compile(trackNameRegex).matcher(tr.getFileTag()).find();
-			if(matched){
-				System.err.println(tr.getFileTag());
-				tr.setShowRegex(showRegex);
-				tr.setHideRegex(hideRegex);
-			}
-		}
+		
+		// TRACK REGEXES
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 4){
+            trackNameRegex= tokens.subList(2, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+			tr.setShowRegex(showRegex);
+			tr.setHideRegex(hideRegex);
+        }
 	}
 	
 	/** Go to the next feature on trackId given the current GenomicCoordinates. 
@@ -391,8 +385,9 @@ public class TrackSet {
 	/** Convenient method to get interval feature tracks by name containing trackTag or matching trackTag by regex.
 	 * If no matches are found or the trackSet is empty, return null. If multiple matches are found, 
 	 * return the first one with warning.
+	 * @throws InvalidCommandLineException 
 	 * */
-	private Track matchIntervalFeatureTrack(String trackTag){
+	private Track matchIntervalFeatureTrack(String trackTag) throws InvalidCommandLineException{
 		
 		LinkedHashMap<String, Track> ifTracks = this.getIntervalFeatureTracks().getTrackSet();		
 		Track tr= null;
@@ -408,7 +403,9 @@ public class TrackSet {
 			tr= ifTracks.values().iterator().next();
 			System.err.println("\nWarning: trackId not given default to first track found: " + tr.getFileTag());
 		} else {
-			List<Track> matched= matchTracks(trackTag);
+			List<String> x= new ArrayList<String>();
+			x.add(trackTag);
+			List<Track> matched= matchTracks(x, true);
 			if(matched.size() == 0){
 				System.err.println("\nWarning '" + trackTag + "' not found in track set:");
 				System.err.println(ifTracks.keySet() + "\n");
@@ -423,25 +420,54 @@ public class TrackSet {
 		return tr;
 	}
 
+	private List<Track> matchTracks(List<String> patterns, boolean asRegex) throws InvalidCommandLineException{
 
-	/** Return the tracks whose trackId contains trackTag. If asRegex is true, matching is done by regex.
-	 * */
-	private List<Track> matchTracks(String trackTag){
+		// Validate regexes
+		if(asRegex){
+			for(String x : patterns){
+				try{
+					Pattern.compile(x); 
+				} catch(PatternSyntaxException e){
+			    	System.err.println("Invalid regex: " + x);
+			    	throw new InvalidCommandLineException();
+				}		
+			}
+		}
 		
 		List<Track> matchedTracks= new ArrayList<Track>();
 		
 		Iterator<String> iter = this.trackSet.keySet().iterator();
 		while(iter.hasNext()){
-			String x= iter.next();
-			boolean matched= Pattern.compile(trackTag).matcher(x).find();
-			if(matched){
-				matchedTracks.add(this.trackSet.get(x));
+			String trackId= iter.next();
+			for(String pattern : patterns){
+				boolean matched= Pattern.compile(pattern).matcher(trackId).find();
+				if(matched && !matchedTracks.contains(trackId)){
+					matchedTracks.add(this.trackSet.get(trackId));
+				}
 			}
 		}
-		return matchedTracks;
+		return matchedTracks;		
 	}
 	
-	public GenomicCoords findNextMatchOnTrack(String query, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException{
+	/** Return the tracks whose trackId contains trackTag. If asRegex is true, matching is done by regex.
+	 * @throws InvalidCommandLineException 
+	 * */
+	//private List<Track> matchTracks(String trackTag){
+	//	
+	//	List<Track> matchedTracks= new ArrayList<Track>();
+	//	
+	//	Iterator<String> iter = this.trackSet.keySet().iterator();
+	//	while(iter.hasNext()){
+	//		String x= iter.next();
+	//		boolean matched= Pattern.compile(trackTag).matcher(x).find();
+	//		if(matched){
+	//			matchedTracks.add(this.trackSet.get(x));
+	//		}
+	//	}
+	//	return matchedTracks;
+	//}
+	
+	public GenomicCoords findNextMatchOnTrack(String query, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
 		TrackIntervalFeature tif= (TrackIntervalFeature) matchIntervalFeatureTrack(trackId.trim());
 		if(tif == null){
@@ -487,13 +513,16 @@ public class TrackSet {
 	
 	/** Reorder tracks with the one in newOrder. Tracks not in newOrder are appended
 	 * with order unchanged.
+	 * @throws InvalidCommandLineException 
 	 * */
-	public void orderTracks(List<String> newOrder) {
+	public void orderTracks(List<String> newOrder) throws InvalidCommandLineException {
 
 		// Create a new LinkedHashMap with the new order
 		LinkedHashMap<String, Track> newTrackSet= new LinkedHashMap<String, Track>(); 
 		for(String query : newOrder){
-			List<Track> trList = this.matchTracks(query);
+			List<String> x= new ArrayList<String>();
+			x.add(query);
+			List<Track> trList = this.matchTracks(x, true);
 			for(Track xtrack : trList){
 				if(!newTrackSet.containsKey(xtrack.getFileTag())){ // This will remove dups
 					newTrackSet.put(xtrack.getFileTag(), xtrack);

@@ -60,6 +60,7 @@ public class GenomicCoords implements Cloneable {
 	private int windowSize; // Size of the screen window
 	// private byte[] refSeq;
 	private String fastaFile= null;
+	private byte[] refSeq= null;
 	private String gcProfileFileTag= "CG_percent";
 	
 	/* Constructors */
@@ -96,6 +97,9 @@ public class GenomicCoords implements Cloneable {
 			correctCoordsAgainstSeqDict(samSeqDict);
 		}
 		this.fastaFile= fastaFile;
+		
+		this.setRefSeq();
+		
 	}
 	
 	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, int windowSize, String fastaFile) throws InvalidGenomicCoordsException, IOException{
@@ -107,23 +111,19 @@ public class GenomicCoords implements Cloneable {
 		this.windowSize= gc.windowSize;
 		this.samSeqDict= gc.samSeqDict;
 		this.fastaFile= fastaFile;
+		
+		this.setRefSeq();
 	}
 		
 	private GenomicCoords(){ };
 	
 	/* Methods */
 	
-	/**Extract reference sequence for this interval. 
-	 * @param fitWindow if true return the sequence only if it can fit the window size (i.e. 1bp = 1char). 
-	 * If fitWindow is true and the sequence is longer than the window, return null. This prevents 
-	 * retrieving large sequences unless necessary.
-	 * @throws IOException */
-	public byte[] getRefSeq(boolean fitWindow) throws IOException{
-				
-		if(fitWindow && (this.fastaFile == null || this.getBpPerScreenColumn() > 1)){
-			return null;
-		}
-		
+	public byte[] getRefSeq() {
+		return this.refSeq;
+	}
+	
+	private byte[] getSequenceFromFasta() throws IOException{
 		IndexedFastaSequenceFile faSeqFile = null;
 		try {
 			faSeqFile = new IndexedFastaSequenceFile(new File(this.fastaFile));
@@ -140,7 +140,21 @@ public class GenomicCoords implements Cloneable {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		return null;
+		return null;	
+	}
+	
+	/**Extract reference sequence for this interval. 
+	 * @param fitWindow if true return the sequence only if it can fit the window size (i.e. 1bp = 1char). 
+	 * If fitWindow is true and the sequence is longer than the window, return null. This prevents 
+	 * retrieving large sequences unless necessary.
+	 * @throws IOException */
+	private void setRefSeq() throws IOException{
+				
+		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
+			this.refSeq= null;
+			return;
+		}
+		this.refSeq= this.getSequenceFromFasta();
 	}
 	
 	/**
@@ -208,6 +222,10 @@ public class GenomicCoords implements Cloneable {
 			this.to= null;
 			return;
 		} 
+		// Reset min coords
+		if( this.from != null && this.from < 1) {
+			this.from= 1;
+		}
 		// Reset max coords
 		if( this.from != null && this.from > samSeqDict.getSequence(this.chrom).getSequenceLength() ) {
 			this.from= samSeqDict.getSequence(this.chrom).getSequenceLength() - this.getGenomicWindowSize() + 1;
@@ -264,13 +282,13 @@ public class GenomicCoords implements Cloneable {
 		// * Extend midpoint left by window size x2 and check coords
 		this.from= midpoint - (range * zoom);
 		this.from= (this.from <= 0) ? 1 : this.from; 
-		
 		if(this.samSeqDict != null && this.samSeqDict.size() > 0){
 			if(this.samSeqDict.getSequence(this.chrom).getSequenceLength() > 0){
 				this.to= (this.to > this.samSeqDict.getSequence(this.chrom).getSequenceLength()) ? 
 						this.samSeqDict.getSequence(this.chrom).getSequenceLength() : this.to;
 			}
 		}
+		this.setRefSeq();
 	}
 
 	/**
@@ -307,6 +325,7 @@ public class GenomicCoords implements Cloneable {
 		if(this.from > this.to){ // Not sure this can happen.
 			this.to= this.from;
 		}
+		this.setRefSeq();
 	}
 	
 	/**
@@ -315,14 +334,20 @@ public class GenomicCoords implements Cloneable {
 	 * @param to
 	 * @param lengthOut Length of sequence, effectively the desired screen width.
 	 * @return
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<Double> seqFromToLenOut(){
+	private List<Double> seqFromToLenOut() {
 		
 		List<Double> mapping= new ArrayList<Double>();
 		
 		if(from < 1 || from > to){
 			System.err.println("Invalid genome coordinates: from " + from + " to " + to);
-			System.exit(1);
+			try {
+				throw new InvalidGenomicCoordsException();
+			} catch (InvalidGenomicCoordsException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
 		}
 		int span= to - from + 1;
 		// If the genomic span is less then screen size, reduce screen size to.
@@ -461,7 +486,7 @@ public class GenomicCoords implements Cloneable {
 	 * @throws IOException */
 	public String printableRefSeq(boolean noFormat) throws IOException{
 
-		byte[] refSeq= this.getRefSeq(true);
+		byte[] refSeq= this.getRefSeq();
 		
 		if(refSeq == null){
 			return "";
@@ -687,7 +712,7 @@ public class GenomicCoords implements Cloneable {
 			return tif;
 		}
 		
-		byte[] seq= this.getRefSeq(false);
+		byte[] seq= this.getSequenceFromFasta();
 		
 		Pattern pattern= Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(new String(seq));

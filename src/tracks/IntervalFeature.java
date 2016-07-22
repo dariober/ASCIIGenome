@@ -405,10 +405,17 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	public int getScreenFrom() {
 		return screenFrom;
 	}
-
+	public void setScreenFrom(int screenFrom) {
+		this.screenFrom= screenFrom;
+	}
+	
 	public int getScreenTo() {
 		return screenTo;
 	}
+	public void setScreenTo(int screenTo) {
+		this.screenTo= screenTo;
+	}
+	
 	
 	public String getSource() {
 		return source;

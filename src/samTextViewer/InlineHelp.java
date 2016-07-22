@@ -51,6 +51,7 @@ public class InlineHelp {
 		paramList.add("visible");
 		paramList.add("gffNameAttr");
 		paramList.add("squash");
+		paramList.add("merge");
 		paramList.add("trackHeight");
 		paramList.add("colorTrack");
 		paramList.add("ylim");
@@ -120,6 +121,8 @@ public class InlineHelp {
 + "      Apply to tracks containing  [track regex]. With no optional arguments reset to default: \"'.*' '^$' '.*'\"\n"
 + "${squash} [track_regex]\n"
 + "      Toggle the squashing of features with same coordinates for track captured by track_regex\n"
++ "${merge} [track_regex]\n"
++ "      Toggle the merging of features with overlapping coordinates for track captured by track_regex\n"
 + "${trackHeight} <int> [track regex]\n"
 + "      Set track height to int lines for all tracks containing regex. Default regex: '.*'\n"
 + "${colorTrack} <color> [track regex]\n"

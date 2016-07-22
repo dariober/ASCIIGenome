@@ -2,7 +2,6 @@ package tracks;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -62,17 +61,22 @@ public class TrackIntervalFeature extends Track {
 	}
 	
 	@Override
-	public String printToScreen() {
+	public String printToScreen() throws InvalidGenomicCoordsException {
 	
 		List<String> printable= new ArrayList<String>();		
 		int nLines= 0;
-		for(List<IntervalFeature> listToPrint : this.stackFeatures()){
-			nLines++;
-			if(nLines > this.yMaxLines){
-				// Limit the number of lines in output
-				break;
+		try {
+			for(List<IntervalFeature> listToPrint : this.stackFeatures()){
+				nLines++;
+				if(nLines > this.yMaxLines){
+					// Limit the number of lines in output
+					break;
+				}
+				printable.add(this.printToScreenOneLine(listToPrint));
 			}
-			printable.add(this.printToScreenOneLine(listToPrint));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return StringUtils.join(printable, "\n");
 	}
@@ -121,8 +125,10 @@ public class TrackIntervalFeature extends Track {
 	@Override
 	public String getTitle(){
 		String sq= "";
-		if(this.squash){
+		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.SQUASHED)){
 			sq= "; squashed";
+		} else if (this.getFeatureDisplayMode().equals(FeatureDisplayMode.MERGED)){
+			sq= "; merged";
 		}
 		String title=  this.getFileTag() + "; " 
 	                 + "Show '" + this.getShowRegex() + "' "
@@ -132,37 +138,11 @@ public class TrackIntervalFeature extends Track {
 		return this.formatTitle(title) + "\n";
 	}
 
-	private List<IntervalFeature> mergeFeatures(List<IntervalFeature> intervalList){
-		
-		String chrom;
-		int from= -1;
-		int to= -1;
-		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();
-		for(IntervalFeature interval : intervalList){
-			//if(interval.getFrom() >= from && interval.getFrom()){ 
-			//	// Keep merging if
-			//}
-		}
-		return mergedList;
-/* Overlap scenarios
-        from      to
-          |-------|
---------************-----  4.
----------****------------- 1.
-------------****---------- 3.
------------------****----- 2.
-----------------------***- Break iterating */
-
-	
-	}
 	
 	/** Remove positional duplicates from list of interval features for more compact visualization. 
 	 * Squashing is done according to feature field which should be applicable to GTF/GFF only.*/
 	private List<IntervalFeature> squashFeatures(List<IntervalFeature> intervalList){
 
-		// Resort list, possibly again, to make sure same position and strand stay together.
-		Collections.sort(intervalList);
-		
 		List<IntervalFeature> stack= new ArrayList<IntervalFeature>();
 		List<IntervalFeature> squashed= new ArrayList<IntervalFeature>();
 		for(IntervalFeature interval : intervalList){
@@ -187,12 +167,15 @@ public class TrackIntervalFeature extends Track {
 	 * Each item of the output list is an IntervalFeatureSet going on its own line.
 	 * 
 	 * See also TrackReads.stackReads();
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<List<IntervalFeature>> stackFeatures(){
+	private List<List<IntervalFeature>> stackFeatures() throws InvalidGenomicCoordsException{
 		
 		List<IntervalFeature> intervals; 
-		if(this.squash){
+		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.SQUASHED)){
 			intervals = this.squashFeatures(this.intervalFeatureList);
+		} else if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.MERGED)) {
+			intervals = Utils.mergeIntervalFeatures(this.intervalFeatureList);
 		} else {
 			intervals = this.intervalFeatureList;
 		}
