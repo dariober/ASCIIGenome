@@ -68,8 +68,6 @@ public class TrackWigglesTest {
 		String prof= tw.printToScreen();
 		System.out.println(prof);
 		
-		tw.setTitle("bla");
-		System.out.println(tw.getTitle());	
 	}
 	
 	@Test

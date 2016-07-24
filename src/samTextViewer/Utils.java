@@ -59,6 +59,7 @@ import tracks.TrackFormat;
  * @author berald01
  *
  */
+@SuppressWarnings("deprecation")
 public class Utils {
 	
     public static long getAlignedReadCount(File bam){

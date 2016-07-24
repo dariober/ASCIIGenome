@@ -33,7 +33,7 @@ public class TrackReads extends Track{
 	// private boolean bisulf= false;
 	private boolean withReadName= false;
 	private int maxReadStack;
-	private long nAlnInWindow= -1;
+	private long nRecsInWindow= -1;
 	/* C o n s t r u c t o r s */
 	/**
 	 * Create read track
@@ -76,8 +76,8 @@ public class TrackReads extends Track{
 			}
 			/*  ------------------------------------------------------ */
 			
-			this.nAlnInWindow= countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
-			float probSample= (float) this.maxReadStack / this.nAlnInWindow;
+			this.nRecsInWindow= countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
+			float probSample= (float) this.maxReadStack / this.nRecsInWindow;
 			
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 			List<TextRead> textReads= new ArrayList<TextRead>();
@@ -96,7 +96,7 @@ public class TrackReads extends Track{
 			}
 			this.readStack= stackReads(textReads);
 		} else {
-			this.nAlnInWindow= -1;
+			this.nRecsInWindow= -1;
 		}
 	}
 	
@@ -250,7 +250,7 @@ public class TrackReads extends Track{
 				+ "; -F" + this.get_F_flag() 
 				+ " -f" + this.get_f_flag() 
 				+ " -q" + this.getMapq()
-				+ "; N. aln here: " + this.nAlnInWindow;
+				+ "; N. recs: " + this.nRecsInWindow;
 		return this.formatTitle(title) + "\n";
 	}
 	

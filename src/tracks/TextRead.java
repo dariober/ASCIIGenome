@@ -68,7 +68,7 @@ class TextRead {
 			System.err.println("Aln starts: " +  rec.getAlignmentStart());
 			System.err.println("Aln ends: " +  rec.getAlignmentEnd());
 			System.err.println("Window: " + gc.toString());
-			System.exit(1);
+			throw new RuntimeException();
 		}
 		//            |  window  |
 		//|---------| read
@@ -78,7 +78,7 @@ class TextRead {
 			System.err.println("Aln starts: " +  rec.getAlignmentStart());
 			System.err.println("Aln ends: " +  rec.getAlignmentEnd());
 			System.err.println("Window: " + gc.toString());
-			System.exit(1);
+			throw new RuntimeException();
 		}		
 		this.gc= gc;
 		this.rec= rec;
@@ -250,7 +250,8 @@ class TextRead {
 						} else if(el.getOperator() == CigarOperator.N){ 
 							dnaRead.add(N);
 						} else {
-							System.err.println("Unexpected operator"); System.exit(1);
+							System.err.println("Unexpected operator");
+							throw new RuntimeException();
 						}
 					}
 					curBaseGenomicPos++;
@@ -264,7 +265,8 @@ class TextRead {
 			} else if(el.getOperator() == CigarOperator.P){
 				// Nothing to do: NOT SURE is is correct to just ignore padding!
 			} else {
-				System.err.println("Unexpected operator in cigar string for record\n" + rec.getSAMString()); System.exit(1);
+				System.err.println("Unexpected operator in cigar string for record\n" + rec.getSAMString()); 
+				throw new RuntimeException();
 			}
 		}
 		for(int i= 0; i < dnaRead.size(); i++){

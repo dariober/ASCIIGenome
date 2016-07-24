@@ -329,4 +329,19 @@ public class TrackSetTest {
 
 	}
 	
+	@Test
+	public void canPrintTrackInfo(){
+		
+		TrackSet ts= new TrackSet();
+		assertEquals("", ts.showTrackInfo());
+		
+		Track t1= new Track(); t1.setFilename("/path/to/foo.gz"); t1.setFileTag("foo#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
+		Track t2= new Track(); t2.setFilename("/path/to/foo.vcf"); t2.setFileTag("bar#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
+		Track t3= new Track(); t3.setFilename("/path/to/bla.gz"); t3.setFileTag("baz#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+
+		assertTrue(ts.showTrackInfo().startsWith("foo"));
+		assertTrue(ts.showTrackInfo().endsWith("BED"));
+		
+	}
+	
 }

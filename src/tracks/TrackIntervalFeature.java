@@ -66,7 +66,7 @@ public class TrackIntervalFeature extends Track {
 		List<String> printable= new ArrayList<String>();		
 		int nLines= 0;
 		try {
-			for(List<IntervalFeature> listToPrint : this.stackFeatures()){
+			for(List<IntervalFeature> listToPrint : this.stackFeatures(1)){
 				nLines++;
 				if(nLines > this.yMaxLines){
 					// Limit the number of lines in output
@@ -75,7 +75,6 @@ public class TrackIntervalFeature extends Track {
 				printable.add(this.printToScreenOneLine(listToPrint));
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return StringUtils.join(printable, "\n");
@@ -132,12 +131,14 @@ public class TrackIntervalFeature extends Track {
 		}
 		String title=  this.getFileTag() + "; " 
 	                 + "Show '" + this.getShowRegex() + "' "
-	                 + "Hide '" + this.getHideRegex() + "'" 
+	                 + "Hide '" + this.getHideRegex() + "'"
+	                 + "; N. recs: " + this.intervalFeatureList.size()
 	                 + sq;
 		this.getHideRegex();
 		return this.formatTitle(title) + "\n";
 	}
 
+	
 	
 	/** Remove positional duplicates from list of interval features for more compact visualization. 
 	 * Squashing is done according to feature field which should be applicable to GTF/GFF only.*/
@@ -165,11 +166,13 @@ public class TrackIntervalFeature extends Track {
 	 * Put in the same list reads that will go in the same line of text. 
 	 * This method separates features touching or overlapping each other, useful for visualization.
 	 * Each item of the output list is an IntervalFeatureSet going on its own line.
-	 * 
+	 * @param space Space between text feature that touch each other on screen. Use 1 to have at least one space
+	 * so that distinct features never look merged with adjacent ones. 0 will not put any space and will give more
+	 * compact view.  
 	 * See also TrackReads.stackReads();
 	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<List<IntervalFeature>> stackFeatures() throws InvalidGenomicCoordsException{
+	private List<List<IntervalFeature>> stackFeatures(int space) throws InvalidGenomicCoordsException{
 		
 		List<IntervalFeature> intervals; 
 		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.SQUASHED)){
@@ -201,8 +204,8 @@ public class TrackIntervalFeature extends Track {
 			// Find a read in input whose start is greater then end of current
 			for(int i=0; i < flatList.size(); i++){
 				IntervalFeature intervalFeature= flatList.get(i);
-				int gap= 1; // Add a space between book-end features
-				if(intervalFeature.getScreenFrom() > line.get(line.size()-1).getScreenTo()+gap){ // +2 because we want some space between adjacent reads
+				// int gap= 1; // Add a space between book-end features
+				if(intervalFeature.getScreenFrom() > line.get(line.size()-1).getScreenTo()+space){ // +2 because we want some space between adjacent reads
 					listOfLines.get(listOfLines.size()-1).add(intervalFeature); // Append to the last line. 
 					trToRemove.add(intervalFeature);
 				}

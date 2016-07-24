@@ -45,17 +45,17 @@ public class Main {
 		
 		List<String> inputFileList= opts.getList("input");
 		String region= opts.getString("region");
-		String genome= opts.getString("genome");
-		String fasta= opts.getString("fasta");
+		final String genome= opts.getString("genome");
+		final String fasta= opts.getString("fasta");
+		final String exec= opts.getString("exec");
 		final int maxReadsStack= opts.getInt("maxReadsStack");
-		boolean noFormat= opts.getBoolean("noFormat");
-		boolean nonInteractive= opts.getBoolean("nonInteractive");
-		boolean withReadName= false; // FIXME: Add to parser?
-		
+		final boolean noFormat= opts.getBoolean("noFormat");
+		final boolean nonInteractive= opts.getBoolean("nonInteractive");
+		// boolean withReadName= false; 
+				
 		int windowSize= 160;
 		try{
-			int terminalWidth = jline.TerminalFactory.get().getWidth();
-			windowSize= (int) (terminalWidth * 0.999); 
+			windowSize= jline.TerminalFactory.get().getWidth() - 1; 
 		} catch(Exception e){
 			e.printStackTrace();
 		}
@@ -105,10 +105,6 @@ public class Main {
 		}
 		gch.add(new GenomicCoords(region, samSeqDict, windowSize, fasta));
 
-		// Put here the previous command so that it is re-issued if no imput is given
-		// You have to initialize this var outside while loop processing input files.
-		String currentCmdConcatInput= ""; 
-
 		TrackSet trackSet= new TrackSet();
 
 		/* Initialize GC profile */
@@ -117,11 +113,19 @@ public class Main {
 			trackSet.getTrackSet().put(cgWiggle.getFileTag(), cgWiggle);
 		}
 		
+		TrackIntervalFeature seqRegexTrack= gch.current().findRegex("^$");
+		
+		// Put here the previous command so that it is re-issued if no imput is given
+		// You have to initialize this var outside the while loop that processes input files.
+		String currentCmdConcatInput= ""; 
 		String seqRegex= null;
 		int idForTrack= 0;
 		String snapshotFile= null;
 		boolean snapshotStripAnsi= true;
 		ConsoleReader console = CommandList.initConsole();
+		
+		boolean execDone= exec.isEmpty() ? true : false; // Do we need to execute commands from --exec? If exec is empty, consider it done.
+
 		while(true){ // Each loop processes the user's input files.
 
 			for(int i= 0; i < inputFileList.size(); i++){ 
@@ -163,7 +167,7 @@ public class Main {
 					*/
 										
 					/* Reads */
-					String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
+					String trackId= new File(inputFileName).getName() + "@" + (idForTrack+1);
 					idForTrack++;
 					if(!trackSet.getTrackSet().containsKey(trackId)){
 						TrackReads trackReads= new TrackReads(inputFileName, gch.current(), maxReadsStack);
@@ -174,7 +178,7 @@ public class Main {
 					}
 					TrackReads trackReads= (TrackReads) trackSet.getTrackSet().get(trackId);
 					trackReads.setGc(gch.current());
-					trackReads.setWithReadName(withReadName);
+					// trackReads.setWithReadName(withReadName);
 					trackReads.update();
 				} // End processing bam file
 				
@@ -215,28 +219,34 @@ public class Main {
 					tw.printToScreen();
 				}
 			} // End loop through files 
-			
+
 			/* Print tracks */
 			/* ************ */
-			console.clearScreen();
-			console.flush();
+			if(!nonInteractive){
+				console.clearScreen();
+				console.flush();
+			}
 			
-			if(gch.current().getChromIdeogram(20) != null){
-				Utils.printer(gch.current().getChromIdeogram(20) + "\n", snapshotFile, snapshotStripAnsi);
+			if(gch.current().getChromIdeogram(20) != null && execDone){
+					Utils.printer(gch.current().getChromIdeogram(20) + "\n", snapshotFile, snapshotStripAnsi);
 			}			
 			for(Track tr : trackSet.getTrackSet().values()){
 				if(tr.getFileTag() == gch.current().getGcProfileFileTag()){
 					continue;
 				}
 				tr.setNoFormat(noFormat);
-				Utils.printer(tr.getTitle(), snapshotFile, snapshotStripAnsi);
-				if(tr.getyMaxLines() > 0){
-					Utils.printer(tr.printToScreen() + "\n", snapshotFile, snapshotStripAnsi);
+				if(execDone && !tr.isHidden()){
+					Utils.printer(tr.getTitle(), snapshotFile, snapshotStripAnsi);
+					if(tr.getyMaxLines() > 0){
+						Utils.printer(tr.printToScreen() + "\n", snapshotFile, snapshotStripAnsi);
+					}
 				}
 
 				// Print features
 				String printable= tr.printFeatures(windowSize);
-				Utils.printer(printable, snapshotFile, snapshotStripAnsi);
+				if(execDone){
+					Utils.printer(printable, snapshotFile, snapshotStripAnsi);
+				}
 			}
 
 			/* Footers and interactive prompt */
@@ -256,49 +266,59 @@ public class Main {
 					tw.setYLimitMin(yLimitMin);
 					tw.setYLimitMax(yLimitMax);
 					tw.setTitleColour(col);
-					Utils.printer(tw.getTitle(), snapshotFile, snapshotStripAnsi);
-					String gcPrintable= tw.printToScreen();
-					Utils.printer(gcPrintable + "\n", snapshotFile, snapshotStripAnsi);
+					tw.setNoFormat(noFormat);
+					tw.setHidden(trackSet.getTrackSet().get(GenomicCoords.gcProfileFileTag).isHidden());
+					if(execDone && !tw.isHidden()){
+						Utils.printer(tw.getTitle(), snapshotFile, snapshotStripAnsi);
+						String gcPrintable= tw.printToScreen();
+						Utils.printer(gcPrintable + "\n", snapshotFile, snapshotStripAnsi);
+					}
 				}
 			}
 			// Track for matching regex
-			TrackIntervalFeature seqRegexTrack = gch.current().findRegex(seqRegex);
+			int prevHeight= seqRegexTrack.getyMaxLines();
+			seqRegexTrack = gch.current().findRegex(seqRegex);
 			seqRegexTrack.setNoFormat(noFormat);
-			if(trackSet.getRegexForTrackHeight().matcher(seqRegexTrack.getFileTag()).find()){
-				if(trackSet.getTrackHeightForRegex() < 0){
-					seqRegexTrack.setyMaxLines(10); // Sensible default if trackHeightForRegex is unset 
-				} else {
+			seqRegexTrack.setyMaxLines(prevHeight);
+			// See if we need to change height
+			for(Pattern p : trackSet.getRegexForTrackHeight()){
+				if(p.matcher(seqRegexTrack.getFileTag()).find()){
 					seqRegexTrack.setyMaxLines(trackSet.getTrackHeightForRegex());
+					break;
 				}
 			}
 			String seqPattern= seqRegexTrack.printToScreen();
 			if(!seqPattern.isEmpty()){
 				seqPattern+="\n";
 			} 
-			Utils.printer(seqPattern, snapshotFile, snapshotStripAnsi); 
-			// Sequence 
-			Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile, snapshotStripAnsi);
-			String ruler= gch.current().printableRuler(10);
-			Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile, snapshotStripAnsi);
-
-			String footer= gch.current().toString() + "; " + Math.rint(gch.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " + getMemoryStat();
-			if(!noFormat){
-				Utils.printer("\033[0;34m" + footer + "\033[0m; \n", snapshotFile, snapshotStripAnsi);
-			} else {
-				Utils.printer(footer + "\n", snapshotFile, snapshotStripAnsi);
+			if(execDone){
+				Utils.printer(seqPattern, snapshotFile, snapshotStripAnsi);
 			}
-			
-			// Optionally convert to png
-			if(snapshotFile != null && snapshotFile.endsWith("png")){
-				Utils.convertTextFileToGraphic(new File(snapshotFile), new File(snapshotFile));
+			// Sequence 
+			if(execDone){
+				Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile, snapshotStripAnsi);
+				String ruler= gch.current().printableRuler(10);
+				Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile, snapshotStripAnsi);
+			}
+			String footer= gch.current().toString() + "; " + Math.rint(gch.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " + getMemoryStat();
+			if(execDone){
+				if(!noFormat){
+					Utils.printer("\033[0;34m" + footer + "\033[0m; \n", snapshotFile, snapshotStripAnsi);
+				} else {
+					Utils.printer(footer + "\n", snapshotFile, snapshotStripAnsi);
+				}
+				// Optionally convert to png
+				if(snapshotFile != null && snapshotFile.endsWith("png")){
+					Utils.convertTextFileToGraphic(new File(snapshotFile), new File(snapshotFile));
+				} 
 			}
 			
 			/* Interactive input */
 			/* ================= */
-			if(!nonInteractive){
+			if(nonInteractive && execDone){
+				// Exit now if non-interctive mode is set and no string is passed to be executed. 
 				break;
 			}
-
 			
 			/* =================================== *
 			 * I N T E R A C T I V E    I N P U T  *
@@ -308,14 +328,19 @@ public class Main {
 			snapshotFile= null; 
 
 			while(cmdConcatInput == null){
-				console.setPrompt("[h] for help: ");
-				cmdConcatInput= console.readLine().trim();
 				
-				if (cmdConcatInput.isEmpty() || cmdConcatInput == null){
-					// Repeat previous command
-					cmdConcatInput= currentCmdConcatInput;
+				if(execDone){
+					console.setPrompt("[h] for help: ");
+					cmdConcatInput= console.readLine().trim();
+					
+					if (cmdConcatInput.isEmpty() || cmdConcatInput == null){
+						// Repeat previous command
+						cmdConcatInput= currentCmdConcatInput;
+					}
+				} else {
+					cmdConcatInput= exec;
+					execDone= true;
 				}
-
 				// cmdInputList: List of individual commands in tokens to be issued. 
 				// E.g.: [ ["zi"], 
 				//         ["-F", "16"], 
@@ -354,7 +379,12 @@ public class Main {
 							System.out.println(Utils.printSamSeqDict(gch.current().getSamSeqDict(), 30));
 							currentCmdConcatInput= cmdConcatInput;
 							cmdConcatInput= null;
-													
+						
+						} else if(cmdInput.get(0).equals("infoTracks")) {
+							System.out.println(trackSet.showTrackInfo());
+							currentCmdConcatInput= cmdConcatInput;
+							cmdConcatInput= null;
+							
 						} else if(cmdInput.get(0).equals("q")){
 							System.exit(0);
 						
@@ -392,8 +422,11 @@ public class Main {
 								cmdConcatInput= null;
 								continue;
 							}
-							trackSet.setBisulfiteModeForRegex(cmdInput);
-							
+						    trackSet.setBisulfiteModeForRegex(cmdInput);
+						
+						} else if(cmdInput.get(0).equals("hideTrack")) {
+							trackSet.setHiddenForRegex(cmdInput);
+						    
 						} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals("merge")){
 							trackSet.setFeatureDisplayModeForRegex(cmdInput);
 						
@@ -483,7 +516,7 @@ public class Main {
 							    	System.err.println(e.getDescription());
 									cmdConcatInput= null;
 									continue;
-								}							
+								}						
 							}
 
 						} else if(cmdInput.get(0).equals("visible")){
@@ -518,7 +551,7 @@ public class Main {
 							
 						} else {
 							System.err.println("Unrecognized argument: " + cmdInput);
-							cmdConcatInput= null;
+							throw new InvalidCommandLineException();
 						}
 						
 					} catch(Exception e){ // You shouldn't catch anything! Be more specific.
@@ -527,7 +560,11 @@ public class Main {
 					} // END PARSING ONE COMMAND
 					
 					if(cmdConcatInput == null){
-						// If something goes wrong or help is invoked, stop executing commands and restart asking for input 
+						// If something goes wrong or help is invoked, stop executing commands and restart asking for input
+						// Unless we are in non-interactive mode
+						if(nonInteractive){
+							System.exit(1);
+						} 
 						break;
 					}
 				} // END PARSING ALL COMMANDS

@@ -260,7 +260,12 @@ public class GenomicCoordsTest {
 		
 		GenomicCoords gc= new GenomicCoords("chr1:101-200", samSeqDict, 50, null);
 		assertEquals(50, gc.printableRuler(10).length());
-	
+
+		gc= new GenomicCoords("chr1:1-10000", null, 50, null);
+
+		
+		String ruler= gc.printableRuler(3);
+		System.out.println(ruler);
 	}
 	
 	@Test

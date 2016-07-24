@@ -244,7 +244,7 @@ public class CommandList {
 				+ "`seqRegex` and it is not displayed. To adjust its height use "
 				+ "`trackHeight~10~seqRegex`. If regex is omitted the matching is disabled Matching is case sensitive, to ignore case use the regex syntax "
 				+ "`(?i)`. Example\n"
-				+ "seqReg~(?i)ACTG\n"
+				+ "seqRegex~(?i)ACTG\n"
 				+ "This command is ignored if the reference fasta file is missing.");
 		cmdList.add(cmd);
 		
@@ -252,10 +252,10 @@ public class CommandList {
 		cmd.setName("visible"); cmd.setArgs("[show_regex = .*] [hide_regex = ''] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Display features matching show_regex, hide those matching hide_regex. Apply to tracks matched by track_regex.");
 		cmd.setAdditionalDescription(""
-				+ "\nThis command is useful to filter the annotation in GTF or BED files, for example: "
-				+ "`visible~RNA~mRNA~gtf` \n "
+				+ "This command is useful to filter the annotation in GTF or BED files, for example:\n\n"
+				+ "visible~RNA~mRNA~gtf~gff\n\n"
 				+ "Will show the rows containing 'RNA' but will hide those containing 'mRNA', applies "
-				+ "to tracks whose name matches 'gtf'."
+				+ "to tracks whose name matches 'gtf' or 'gff'."
 				+ ""
 				+ "\nWith no arguments reset to default: `visible~.*~^$~.*` which means show everything, hide nothing, apply to all tracks. "
 				);
@@ -338,19 +338,26 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Print the genome dictionary with a representation of chromosome sizes.");
 		cmd.setAdditionalDescription("");
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("addTracks"); cmd.setArgs("[file or URL]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("infoTracks"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Print the name of the current tracks along with file name and format. ");
+		cmd.setAdditionalDescription("Hidden tracks are marked by *.");
+		cmdList.add(cmd);
+
+		
+		cmd= new CommandHelp();
+		cmd.setName("addTracks"); cmd.setArgs("[file or URL]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Add tracks from local or remote files.");
 		cmd.setAdditionalDescription("");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("orderTracks"); cmd.setArgs("[track_regex]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("orderTracks"); cmd.setArgs("[track_regex]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Reorder tracks according to the list of regexes.");
 		cmd.setAdditionalDescription("Not all the tracks need to be listed, the missing ones "
 				+ "follow the listed ones in unchanged order.\n"
@@ -359,9 +366,15 @@ public class CommandList {
 				+ "orderTracks bam bed -> [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]");
 		cmdList.add(cmd);
 
-
 		cmd= new CommandHelp();
-		cmd.setName("history"); cmd.setArgs(""); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("hideTrack"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Toggle the hiding of tracks. ");
+		cmd.setAdditionalDescription("Tracks captured by the list of regexes are not shown. Note however "
+				+ "that they are still processed, they are just not printed.");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
+		cmd.setName("history"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Show the list of visited positions.");
 		cmd.setAdditionalDescription("");
 		cmdList.add(cmd);
@@ -400,7 +413,7 @@ public class CommandList {
 				+ "(i.e. C converted to T). Upper case is used for reads on  forward strand, small case for reverse. "
 				+ "Ignored without reference fasta sequence.");
 		cmdList.add(cmd);		
-
+		
 		cmd= new CommandHelp();
 		cmd.setName("save"); cmd.setArgs("[filename = chrom_start_end.txt']"); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Save current screenshot to file in either text or png format.");
@@ -485,8 +498,10 @@ public class CommandList {
 		paramList.add("print");
 		paramList.add("printFull");
 		paramList.add("showGenome");
+		paramList.add("infoTracks");
 		paramList.add("addTracks");
 		paramList.add("orderTracks");
+		paramList.add("hideTrack");
 		paramList.add("history");
 		paramList.add("rpm");
 		paramList.add("-f");

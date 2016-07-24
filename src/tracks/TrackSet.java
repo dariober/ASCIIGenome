@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -23,7 +24,7 @@ import samTextViewer.Utils;
 public class TrackSet {
 	
 	private LinkedHashMap<String, Track> trackSet= new LinkedHashMap<String, Track>();
-	private Pattern regexForTrackHeight= Pattern.compile(".*");
+	private List<Pattern> regexForTrackHeight= new ArrayList<Pattern>();
 	private int trackHeightForRegex= -1;
 	
 	public static final String BOOKMARK_TAG= "bookmark";
@@ -34,9 +35,33 @@ public class TrackSet {
 	
 	/*   M e t h o d s   */
 
-	//public void addOrReplace(Track track){
-	//	this.trackSet.put(track.getFileTag(), track);
+	//public Track getTrackFromTag(){
+	//	Track tr;
+	//	for(){
+	//		this.trackSet.get(key)
+	//	}
+	//	return tr;
 	//}
+
+	public String showTrackInfo(){
+		List<String> trackInfo= new ArrayList<String>();
+		Iterator<Entry<String, Track>> trx= this.trackSet.entrySet().iterator();
+		
+		while(trx.hasNext()){
+			Entry<String, Track> x = trx.next();
+			String hd= x.getValue().isHidden() ? "*" : "";
+			trackInfo.add(x.getKey() + "\t" 
+					+ x.getValue().getFilename() + "\t" 
+					+ Utils.getFileTypeFromName(x.getValue().getFilename()) + "\t"
+					+ hd);
+		}
+		StringBuilder sb= new StringBuilder();
+		for(String str : Utils.tabulateList(trackInfo)){
+			sb.append(str + "\n");
+		}
+		return sb.toString().trim();
+	}
+
 
 	/** From cmdInput extract regex and yMaxLines then iterate through the tracks list to set 
 	 * the yMaxLines in the tracks whose filename matches the regex.
@@ -71,6 +96,20 @@ public class TrackSet {
         } else {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
+        
+        // Update
+        this.regexForTrackHeight.clear();
+        for(String x : trackNameRegex){
+        	try{
+        		this.regexForTrackHeight.add(Pattern.compile(x));
+        	} catch(PatternSyntaxException e){
+        		System.err.println("Command: " + tokens);
+        		System.err.println("Invalid regex in: " + x);
+		    	System.err.println(e.getDescription());
+        		throw new InvalidCommandLineException();
+        	}
+        }
+        
         // And set as required:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
         for(Track tr : tracksToReset){
@@ -142,6 +181,30 @@ public class TrackSet {
         		tr.setPrintMode(PrintRawLine.OFF);
 			} else {
 				tr.setPrintMode(switchTo);
+			}
+        }
+	}
+
+	public void setHiddenForRegex(List<String> tokens) throws InvalidCommandLineException {
+
+		// MEMO of subcommand syntax:
+		// 0 hide
+		// 1 Regex
+		
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 2){
+            trackNameRegex= tokens.subList(1, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+			if(tr.isHidden()){ // Invert setting
+				tr.setHidden(false);
+			} else {
+				tr.setHidden(true);
 			}
         }
 	}
@@ -561,7 +624,7 @@ public class TrackSet {
 		return trackSet;
 	}
 
-	public Pattern getRegexForTrackHeight() {
+	public List<Pattern> getRegexForTrackHeight() {
 		return regexForTrackHeight;
 	}
 	public int getTrackHeightForRegex() {

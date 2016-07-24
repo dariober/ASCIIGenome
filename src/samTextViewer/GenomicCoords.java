@@ -61,7 +61,7 @@ public class GenomicCoords implements Cloneable {
 	// private byte[] refSeq;
 	private String fastaFile= null;
 	private byte[] refSeq= null;
-	private String gcProfileFileTag= "CG_percent";
+	final public static String gcProfileFileTag= "CG_percent";
 	
 	/* Constructors */
 	public GenomicCoords(String chrom, Integer from, Integer to, SAMSequenceDictionary samSeqDict, int windowSize, String fastaFile) 
@@ -467,6 +467,10 @@ public class GenomicCoords implements Cloneable {
     	int i= 0;
 		while(i < mapping.size()){
 			String posMark= String.valueOf(Math.round(mapping.get(i)));
+			// Increase markDist if the number is bigger than the space itself
+			if(posMark.length() >= markDist){
+				markDist= posMark.length() + 1;
+			}
 			if(i == 0){
 				numberLine= posMark;
 				i += posMark.length();
