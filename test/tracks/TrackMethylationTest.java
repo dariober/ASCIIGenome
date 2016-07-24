@@ -4,8 +4,6 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import org.junit.Test;
@@ -14,12 +12,11 @@ import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
 
 public class TrackMethylationTest {
 
-	public static List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
+	//public static List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 
 	static SamReaderFactory srf=SamReaderFactory.make();
 	static SamReader samReader= srf.open(new File("test_data/ds051.short.bam"));
@@ -37,7 +34,7 @@ public class TrackMethylationTest {
 		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, windowSize, fastaFile);
 		
 		int yMaxLines= 5;
-		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, filters, true);
+		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, true);
 		TrackMethylation tm= new TrackMethylation(tc.getFilename(), tc.getScreenLocusInfoList());
 		tm.setyMaxLines(yMaxLines);
 		tm.setNoFormat(true);
@@ -48,7 +45,7 @@ public class TrackMethylationTest {
 		yMaxLines= 25;
 		windowSize= 101;
 		gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, windowSize, fastaFile);
-		tc= new TrackCoverage("test_data/ds051.short.bam", gc, filters, true);
+		tc= new TrackCoverage("test_data/ds051.short.bam", gc, true);
 		tm= new TrackMethylation(tc.getFilename(), tc.getScreenLocusInfoList());
 		tm.setyMaxLines(yMaxLines);
 		tm.setNoFormat(true);

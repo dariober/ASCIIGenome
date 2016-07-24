@@ -11,45 +11,48 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
 
-import htsjdk.samtools.BAMIndex;
-import htsjdk.samtools.SAMFileReader;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
-import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.util.Interval;
 import htsjdk.samtools.util.IntervalList;
 import samTextViewer.GenomicCoords;
 import samTextViewer.SamLocusIterator;
 import samTextViewer.Utils;
 
-@SuppressWarnings("deprecation")
 public class TrackCoverage extends Track {
 
 	/* A t t r i b u t e s */
 	
 	private List<ScreenLocusInfo> screenLocusInfoList= new ArrayList<ScreenLocusInfo>(); 
+	private long alnRecCnt= -1; 
 	
 	/* C o n s t r u c t o r */
 	
+	//public TrackCoverage(String bam, GenomicCoords gc,
+	//		List<SamRecordFilter> filters, boolean bs) throws IOException{
+	//	this.setGc(gc);
+	//	this.setFilename(bam);
+	//	this.setFilters(filters);
+	//	this.setBisulf(bs);
+	//	this.update();
+	//}
+
 	/**
 	 * Construct coverage track from bam alignment in the provided interval. 
 	 * Loci will be sampled according to the size of the interval and the size of the printable screen. 
 	 * @param bam Input bam file
 	 * @param gc Interval to sample positions from
 	 * @param windowSize The size of the screen in number of characters.
-	 * @param filters Record filters to apply to input sam records.
 	 * @param bs Should loci be parsed also as BS-Seq data? 
 	 * @throws IOException 
 	 */
-	public TrackCoverage(String bam, GenomicCoords gc,
-			List<SamRecordFilter> filters, boolean bs) throws IOException{
-		
+	public TrackCoverage(String bam, GenomicCoords gc, boolean bs) throws IOException{
 		this.setGc(gc);
 		this.setFilename(bam);
-		this.setFilters(filters);
 		this.setBisulf(bs);
+		this.alnRecCnt= Utils.getAlignedReadCount(new File(bam));
 		this.update();
 	}
 	
@@ -80,7 +83,7 @@ public class TrackCoverage extends Track {
 			IntervalList il= new IntervalList(samReader.getFileHeader());
 			il.add(new Interval(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));
 			SamLocusIterator samLocIter= new SamLocusIterator(samReader, il, true);
-			samLocIter.setSamFilters(this.getFilters());
+			samLocIter.setSamFilters(this.getSamRecordFilter());
 			Iterator<samTextViewer.SamLocusIterator.LocusInfo> iter= samLocIter.iterator();
 		
 			for(int i= 0; i < this.getGc().getMapping().size(); i++){
@@ -136,11 +139,11 @@ public class TrackCoverage extends Track {
 			yValues.add(x.getMeanDepth());
 		}
 		this.setScreenScores(yValues);
-				
+			
 		if(this.isRpm()){
-			long libSize= getAlignedReadCount(new File(this.getFilename()));
+			// long libSize= Utils.getAlignedReadCount(new File(this.getFilename()));
 			for(int i= 0; i < yValues.size(); i++){
-				yValues.set(i, yValues.get(i)/libSize * 1000000.0);
+				yValues.set(i, yValues.get(i)/this.alnRecCnt * 1000000.0);
 			}
 		}
 
@@ -156,7 +159,8 @@ public class TrackCoverage extends Track {
 		}
 		return printable;
 	}
-        
+	
+	/*
     private long getAlignedReadCount(File bam){
 
     	SAMFileReader.setDefaultValidationStringency(ValidationStringency.SILENT);
@@ -174,7 +178,7 @@ public class TrackCoverage extends Track {
 		}
 		sr.close();
 		return alnCount;
-    }
+    } */
     
     /* S e t t e r s   and   G e t t e r s */
     
@@ -191,6 +195,7 @@ public class TrackCoverage extends Track {
 		String xtitle= this.getFileTag() 
 				+ "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
+				+ "; Library size: " + this.alnRecCnt
 				+ rpmTag
 				+ "\n";
 		return this.formatTitle(xtitle);

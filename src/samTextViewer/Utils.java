@@ -1,5 +1,7 @@
 package samTextViewer;
 
+import htsjdk.samtools.BAMIndex;
+import htsjdk.samtools.SAMFileReader;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamInputResource;
@@ -58,6 +60,26 @@ import tracks.TrackFormat;
  *
  */
 public class Utils {
+	
+    public static long getAlignedReadCount(File bam){
+
+    	SAMFileReader.setDefaultValidationStringency(ValidationStringency.SILENT);
+		@SuppressWarnings("resource")
+		BAMIndex sr= new SAMFileReader(bam).getIndex();
+		long alnCount= 0; 
+		int i= 0;
+		while(true){
+			try{
+				alnCount += sr.getMetaData(i).getAlignedRecordCount();
+			} catch(NullPointerException e){
+				break;
+			}
+			i++;
+		}
+		sr.close();
+		return alnCount;
+    }
+
 	
 	public static List<IntervalFeature> mergeIntervalFeatures(List<IntervalFeature> intervalList) throws InvalidGenomicCoordsException{
 		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();		 

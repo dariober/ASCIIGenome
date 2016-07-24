@@ -153,6 +153,35 @@ public class TrackSetTest {
 		assertTrue(! ts.getTrackSet().get("#1").isRpm());
 	}
 
+	@Test
+	public void canSetFilterFlagForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+				
+		TrackSet ts= new TrackSet();
+		Track t1= new Track(); t1.setFilename("foo.bam"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
+		Track t2= new Track(); t2.setFilename("foo.bam"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
+		Track t3= new Track(); t3.setFilename("bla.txt"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+
+		String cmdInput= "-F 1024 #1 #3";
+		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));
+		assertEquals(1024+4, ts.getTrackSet().get("#1").get_F_flag());
+		assertEquals(4, ts.getTrackSet().get("#20").get_F_flag());
+		
+		cmdInput= "-F 16";
+		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));
+		cmdInput= "-f 1024 #1 #3";
+		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));		
+		cmdInput= "mapq 30 #1 #3";
+		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));		
+		
+		assertEquals(16+4, ts.getTrackSet().get("#1").get_F_flag());
+		assertEquals(16+4, ts.getTrackSet().get("#20").get_F_flag());
+		assertEquals(16+4, ts.getTrackSet().get("#3").get_F_flag());
+
+		assertEquals(1024, ts.getTrackSet().get("#1").get_f_flag());
+		assertEquals(0, ts.getTrackSet().get("#20").get_f_flag());
+		assertEquals(30, ts.getTrackSet().get("#3").getMapq());
+		
+	}
 	
 	@Test
 	public void canSetFeatureDisplayModeForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{

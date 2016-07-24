@@ -132,7 +132,7 @@ public class TrackIntervalFeature extends Track {
 		}
 		String title=  this.getFileTag() + "; " 
 	                 + "Show '" + this.getShowRegex() + "' "
-	                 + "Hide '" + this.getHideRegex() + "' " 
+	                 + "Hide '" + this.getHideRegex() + "'" 
 	                 + sq;
 		this.getHideRegex();
 		return this.formatTitle(title) + "\n";

@@ -5,6 +5,7 @@ import java.util.List;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
+import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -20,7 +21,6 @@ public class Track {
 	private boolean noFormat= false; 
 	private double yLimitMin= Double.NaN; // Same as R ylim()
 	private double yLimitMax= Double.NaN;
-	private List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 	/** Max size of genomic region before the track shuts down to prevent excessive slow down */
 	protected final int MAX_REGION_SIZE= 100000;   
 	
@@ -33,6 +33,10 @@ public class Track {
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
 	private boolean rpm= false;
+	private int f_flag= 0;
+	private int F_flag= 4;
+	private int mapq= 0;
+	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
 	
 	/* Min value of screen scores. Not to be confused with the y limit **/
 	public double getMinScreenScores(){
@@ -106,6 +110,7 @@ public class Track {
 	}
 
 	public String getFileTag() { return fileTag; }
+	
 	public void setFileTag(String fileTag) { this.fileTag = fileTag; }
 	
 	protected List<Double> getScreenScores() {
@@ -132,9 +137,18 @@ public class Track {
 	public double getYLimitMax() { return yLimitMax; }
 	public void setYLimitMax(double ymax) { this.yLimitMax = ymax; }
 
-	public List<SamRecordFilter> getFilters() { return filters; }
-	public void setFilters(List<SamRecordFilter> filters) { this.filters = filters; }
+	public List<SamRecordFilter> getSamRecordFilter() { 
+		AlignedFilter unmapped = new AlignedFilter(true);
+		if(!this.samRecordFilter.contains(unmapped)){
+			this.samRecordFilter.add(unmapped); // Unmapped reads are always discarded	
+		}
+		return this.samRecordFilter; 
+	}
 
+	protected void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) {
+		this.samRecordFilter = samRecordFilter;
+	}
+	
 	public boolean isBisulf() { return this.bisulf; }
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
@@ -193,6 +207,35 @@ public class Track {
 		return this.rpm;
 	}
 
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected int get_f_flag() {
+		return f_flag;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected void set_f_flag(int f_flag) {
+		this.f_flag = f_flag;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected int get_F_flag() {
+		return F_flag;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected void set_F_flag(int F_flag) {
+		this.F_flag = F_flag;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	public int getMapq() {
+		return mapq;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected void setMapq(int mapq) {
+		this.mapq = mapq;
+	}
 	
 }
 

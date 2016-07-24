@@ -103,7 +103,6 @@ public class FlagToFilter {
 		if((F_excl & 4096) == 4096){
 			list.add(new ReadFromTopStrandFilter(false));
 		}		
-
 		
 		return list;
 	} 

@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.filter.SamRecordFilter;
 import tracks.IntervalFeature;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
@@ -146,7 +145,12 @@ public class UtilsTest {
 		assertThat(expList, is(obsList));
 		
 	}
-		
+	
+	@Test
+	public void canGetBamReadCount(){
+		assertEquals(15098, Utils.getAlignedReadCount(new File("test_data/ds051.actb.bam")));
+	}
+	
 	@Test
 	public void canTestForTabixIndex() throws IOException{
 		assertTrue(Utils.hasTabixIndex("test_data/test.bedGraph.gz"));
@@ -383,9 +387,8 @@ public class UtilsTest {
 	@Test
 	public void canPrintToStdoutOrFile() throws InvalidGenomicCoordsException, IOException{
 
-		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();		
 		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, 101, fastaFile);
-		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, filters, false);
+		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		
 		File filename= new File("tmp.txt");
 		filename.delete();

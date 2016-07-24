@@ -33,7 +33,7 @@ public class TrackReads extends Track{
 	// private boolean bisulf= false;
 	private boolean withReadName= false;
 	private int maxReadStack;
-	
+	private long nAlnInWindow= -1;
 	/* C o n s t r u c t o r s */
 	/**
 	 * Create read track
@@ -43,7 +43,7 @@ public class TrackReads extends Track{
 	 * @param maxReadsStack Accumulate at most this many reads.
 	 * @throws IOException 
 	 */
-	public TrackReads(String bam, GenomicCoords gc, List<SamRecordFilter> filters, int maxReadStack) throws IOException{
+	public TrackReads(String bam, GenomicCoords gc, int maxReadStack) throws IOException{
 
 		if(!Utils.bamHasIndex(bam)){
 			System.err.println("\nAlignment file " + bam + " has no index.\n");
@@ -51,11 +51,10 @@ public class TrackReads extends Track{
 		}
 		this.setFilename(bam);
 		this.setGc(gc);
-		this.setFilters(filters);
 		this.maxReadStack= maxReadStack;
 		this.update();
 
-	} 
+	}
 	
 	/* M e t h o d s */
 	
@@ -77,12 +76,12 @@ public class TrackReads extends Track{
 			}
 			/*  ------------------------------------------------------ */
 			
-			long cnt= countReadsInWindow(this.getFilename(), this.getGc(), this.getFilters());
-			float probSample= (float) this.maxReadStack / cnt;
+			this.nAlnInWindow= countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
+			float probSample= (float) this.maxReadStack / this.nAlnInWindow;
 			
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 			List<TextRead> textReads= new ArrayList<TextRead>();
-			AggregateFilter aggregateFilter= new AggregateFilter(this.getFilters());
+			AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
 			
 			while(sam.hasNext() && textReads.size() < this.maxReadStack){
 	
@@ -96,7 +95,9 @@ public class TrackReads extends Track{
 				}
 			}
 			this.readStack= stackReads(textReads);
-		} 
+		} else {
+			this.nAlnInWindow= -1;
+		}
 	}
 	
 	/** 
@@ -245,7 +246,12 @@ public class TrackReads extends Track{
 	
 	@Override
 	public String getTitle(){
-		return this.formatTitle(this.getFileTag()) + "\n";
+		String title= this.getFileTag() 
+				+ "; -F" + this.get_F_flag() 
+				+ " -f" + this.get_f_flag() 
+				+ " -q" + this.getMapq()
+				+ "; N. aln here: " + this.nAlnInWindow;
+		return this.formatTitle(title) + "\n";
 	}
 	
 	/* S e t t e r s   and   G e t t e r s */
