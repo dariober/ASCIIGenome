@@ -91,7 +91,7 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canSetVisibilityForTrackIntervalFeature() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+	public void canSetFilterForTrackIntervalFeature() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 				
 		TrackSet ts= new TrackSet();
 		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
@@ -99,21 +99,21 @@ public class TrackSetTest {
 		Track t2= new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc); t2.setFileTag("#11"); ts.getTrackSet().put(t2.getFileTag(), t2);
 		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#30"); ts.getTrackSet().put(t3.getFileTag(), t3);
 		
-		String cmdInput= "visible exon intron #1"; // Set for #1...
-		ts.setVisibilityForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		String cmdInput= "filter exon intron #1"; // Set for #1...
+		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
 
 		assertEquals("exon", ts.getTrackSet().get("#10").getShowRegex());
 		assertEquals("intron", ts.getTrackSet().get("#11").getHideRegex());
 		assertEquals(".*", ts.getTrackSet().get("#30").getShowRegex()); // As default
 		assertEquals("^$", ts.getTrackSet().get("#30").getHideRegex());
 
-		cmdInput= "visible exon intron #10 #3"; // Set for #1...
-		ts.setVisibilityForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		cmdInput= "filter exon intron #10 #3"; // Set for #1...
+		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
 		assertEquals("exon", ts.getTrackSet().get("#30").getShowRegex()); // As default
 		assertEquals("intron", ts.getTrackSet().get("#30").getHideRegex());
 
-		cmdInput= "visible"; // Set for #1...
-		ts.setVisibilityForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		cmdInput= "filter"; // Set for #1...
+		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
 		assertEquals(".*", ts.getTrackSet().get("#30").getShowRegex()); // As default
 		assertEquals("^$", ts.getTrackSet().get("#30").getHideRegex());
 	}

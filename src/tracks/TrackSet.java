@@ -49,7 +49,7 @@ public class TrackSet {
 		
 		while(trx.hasNext()){
 			Entry<String, Track> x = trx.next();
-			String hd= x.getValue().isHidden() ? "*" : "";
+			String hd= x.getValue().getyMaxLines() <= 0 ? "*" : "";
 			trackInfo.add(x.getKey() + "\t" 
 					+ x.getValue().getFilename() + "\t" 
 					+ Utils.getFileTypeFromName(x.getValue().getFilename()) + "\t"
@@ -184,31 +184,6 @@ public class TrackSet {
 			}
         }
 	}
-
-	public void setHiddenForRegex(List<String> tokens) throws InvalidCommandLineException {
-
-		// MEMO of subcommand syntax:
-		// 0 hide
-		// 1 Regex
-		
-        // Regex
-        List<String> trackNameRegex= new ArrayList<String>();
-        if(tokens.size() >= 2){
-            trackNameRegex= tokens.subList(1, tokens.size());
-        } else {
-            trackNameRegex.add(".*"); // Default: Capture everything
-        }
-        // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-        for(Track tr : tracksToReset){
-			if(tr.isHidden()){ // Invert setting
-				tr.setHidden(false);
-			} else {
-				tr.setHidden(true);
-			}
-        }
-	}
-
 	
 	public void setBisulfiteModeForRegex(List<String> tokens) throws InvalidCommandLineException {
 
@@ -233,6 +208,32 @@ public class TrackSet {
 			}
         }
 	}
+
+	/*
+	public void setPrintPileupForRegex(List<String> tokens) throws InvalidCommandLineException {
+
+		// MEMO of subcommand syntax:
+		// 0 pileup
+		// 1 Regex
+		
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 2){
+            trackNameRegex= tokens.subList(1, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+			if(tr.isPrintPileup()){ // Invert setting
+				tr.setPrintPileup(false);
+			} else {
+				tr.setPrintPileup(true);
+			}
+        }
+	} */
+	
 	
 	public void setRpmForRegex(List<String> tokens) throws InvalidCommandLineException {
 
@@ -269,8 +270,9 @@ public class TrackSet {
 		if(tokens.size() >= 2){
 			String xcolour= tokens.get(1).toLowerCase();
 			if(!Utils.ansiColorCodes().containsKey(xcolour)){
-				System.err.println("\nGot invalid colour: " + xcolour + ". Resetting to " + colour);
+				System.err.println("\nInvalid colour: " + xcolour);
 				System.err.println("Valid colours are: " + Utils.ansiColorCodes().keySet());
+				throw new InvalidCommandLineException();
 			} else {
 				colour= xcolour;
 			}
@@ -370,9 +372,9 @@ public class TrackSet {
         }
 	}
 
-	/** Set visibility for IntervalFeature tracks. 
+	/** Set filter for IntervalFeature tracks. 
 	*/
-	public void setVisibilityForTrackIntervalFeature(List<String> tokens) throws InvalidCommandLineException{
+	public void setFilterForTrackIntervalFeature(List<String> tokens) throws InvalidCommandLineException{
 
 		// 0 cmdName
 		// 1 showRe

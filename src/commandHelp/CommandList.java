@@ -249,15 +249,15 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("visible"); cmd.setArgs("[show_regex = .*] [hide_regex = ''] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("Display features matching show_regex, hide those matching hide_regex. Apply to tracks matched by track_regex.");
+		cmd.setName("filter"); cmd.setArgs("[incl_regex = .*] [excl_regex = ''] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Filter for features matching incl_regex, hide those matching excl_regex. Apply to tracks matched by track_regex.");
 		cmd.setAdditionalDescription(""
 				+ "This command is useful to filter the annotation in GTF or BED files, for example:\n\n"
-				+ "visible~RNA~mRNA~gtf~gff\n\n"
+				+ "filter~RNA~mRNA~gtf~gff\n\n"
 				+ "Will show the rows containing 'RNA' but will hide those containing 'mRNA', applies "
 				+ "to tracks whose name matches 'gtf' or 'gff'."
 				+ ""
-				+ "\nWith no arguments reset to default: `visible~.*~^$~.*` which means show everything, hide nothing, apply to all tracks. "
+				+ "\nWith no arguments reset to default: `filter~.*~^$~.*` which means show everything, hide nothing, apply to all tracks. "
 				);
 		cmdList.add(cmd);		
 
@@ -288,8 +288,10 @@ public class CommandList {
 
 		cmd= new CommandHelp();
 		cmd.setName("trackHeight"); cmd.setArgs("INT [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("Set track height to INT lines of text for all tracks matching regexes.\n");
-		cmd.setAdditionalDescription("Example: `trackHeight 5 aln.*bam gtf`");
+		cmd.setBriefDescription("Set track height to INT lines of text for all tracks matching regexes. ");
+		cmd.setAdditionalDescription("Setting height to zero hides the track and skips the processing altogether. "
+				+ "This is useful to speed up the browsing when large bam files are present. Use infoTrack "
+				+ "to see which tracks are hidden. Example:\n`trackHeight 5 aln.*bam gtf`");
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
@@ -327,16 +329,24 @@ public class CommandList {
 		cmd.setName("print"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Toggle the printing of lines in the tracks matched by track_regex. Long lines clipped. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
-				+ "Features are filtered in/out according to the `visible` command. Applies only to annotation tracks");
+				+ "Features are filtered in/out according to the `filter` command. Applies only to annotation tracks");
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
 		cmd.setName("printFull"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Toggle the printing of lines in the tracks matched by track_regex. Long lines wrapped. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
-				+ "Features are filtered in/out according to the `visible` command. Applies only to annotation tracks");
+				+ "Features are filtered in/out according to the `filter` command. Applies only to annotation tracks");
 		cmdList.add(cmd);
 
+		//cmd= new CommandHelp();
+		//cmd.setName("windowSize"); cmd.setArgs("[INT = auto-fit terminal]"); cmd.inSection= Section.GENERAL; 
+		//cmd.setBriefDescription("Set window size to auto-fit the terminal or set size to INT characters. ");
+		//cmd.setAdditionalDescription("windowSize is useful to resize the view after you make the font of your terminal smaller or bigger. "
+		//		+ "For example, to temporarily view more tracks and larger genomic windows you can reduce the font size and "
+		//		+ "call windowSize to refit the width of the view to fit the terminal.");
+		//cmdList.add(cmd);
+		
 		cmd= new CommandHelp();
 		cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Print the genome dictionary with a representation of chromosome sizes.");
@@ -366,12 +376,12 @@ public class CommandList {
 				+ "orderTracks bam bed -> [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]");
 		cmdList.add(cmd);
 
-		cmd= new CommandHelp();
-		cmd.setName("hideTrack"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("Toggle the hiding of tracks. ");
-		cmd.setAdditionalDescription("Tracks captured by the list of regexes are not shown. Note however "
-				+ "that they are still processed, they are just not printed.");
-		cmdList.add(cmd);
+		//cmd= new CommandHelp();
+		//cmd.setName("hideTrack"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		//cmd.setBriefDescription("Toggle the hiding of tracks. ");
+		//cmd.setAdditionalDescription("Tracks captured by the list of regexes are not shown. Note however "
+		//		+ "that they are still processed, they are just not printed.");
+		//cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
 		cmd.setName("history"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
@@ -413,6 +423,12 @@ public class CommandList {
 				+ "(i.e. C converted to T). Upper case is used for reads on  forward strand, small case for reverse. "
 				+ "Ignored without reference fasta sequence.");
 		cmdList.add(cmd);		
+
+		//cmd= new CommandHelp();
+		//cmd.setName("pileup"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
+		//cmd.setBriefDescription("Print pileup of nucleotide counts.");
+		//cmd.setAdditionalDescription("...");
+		//cmdList.add(cmd);		
 		
 		cmd= new CommandHelp();
 		cmd.setName("save"); cmd.setArgs("[filename = chrom_start_end.txt']"); cmd.inSection= Section.GENERAL; 
@@ -433,7 +449,7 @@ public class CommandList {
 		cmd.setBriefDescription("Show this help. For help on specific commands use `<command name> -h`");
 		cmd.setAdditionalDescription("");
 		cmdList.add(cmd);
-		
+				
 		// Make sure ther are no undocumented cmds
 		List<String> documented= new ArrayList<String>();
 		for(CommandHelp x : cmdList){
@@ -482,12 +498,13 @@ public class CommandList {
 		paramList.add("-");
 		paramList.add("p");
 		paramList.add("n");
+		// paramList.add("windowSize");
 		paramList.add("next");
 		paramList.add("next_start");
 		paramList.add("find_first");
 		paramList.add("find_all");
 		paramList.add("seqRegex");
-		paramList.add("visible");
+		paramList.add("filter");
 		paramList.add("gffNameAttr");
 		paramList.add("squash");
 		paramList.add("merge");
@@ -501,9 +518,9 @@ public class CommandList {
 		paramList.add("infoTracks");
 		paramList.add("addTracks");
 		paramList.add("orderTracks");
-		paramList.add("hideTrack");
 		paramList.add("history");
 		paramList.add("rpm");
+		// paramList.add("pileup");
 		paramList.add("-f");
 		paramList.add("-F");
 		paramList.add("mapq");

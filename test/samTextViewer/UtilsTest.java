@@ -7,12 +7,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.filter.AlignedFilter;
+import htsjdk.samtools.filter.MappingQualityFilter;
+import htsjdk.samtools.filter.SamRecordFilter;
 import tracks.IntervalFeature;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
@@ -22,6 +27,7 @@ import org.junit.Test;
 import com.google.common.base.Joiner;
 
 import exceptions.InvalidGenomicCoordsException;
+import filter.FirstOfPairFilter;
 
 public class UtilsTest {
 
@@ -30,6 +36,29 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+
+	@Test
+	public void testSortByValueReverse(){
+		
+		Map<Character, Integer> baseCount= new LinkedHashMap<Character, Integer>();
+		baseCount.put('A', 0);
+		baseCount.put('C', 0);
+		baseCount.put('G', 0);
+		baseCount.put('T', 0);
+		baseCount.put('N', 0);
+
+		for(int i= 0; i < 10000; i++){
+			int count= baseCount.get('G') + 1; 
+			baseCount.put('G', count);
+		}
+		assertEquals('G', (char)Utils.sortByValue(baseCount).keySet().iterator().next());
+	} 
+	
+	// @Test // Not run
+	public void throwsGentleMessageOnMissingFaIndex(){
+		String fastaFile= "test_data/noindex.fa";
+		Utils.checkFasta(fastaFile);
+	} 
 	
 	@Test
 	public void canMergeIntervals() throws InvalidGenomicCoordsException{
@@ -149,6 +178,22 @@ public class UtilsTest {
 	@Test
 	public void canGetBamReadCount(){
 		assertEquals(15098, Utils.getAlignedReadCount(new File("test_data/ds051.actb.bam")));
+	}
+	
+	@Test
+	public void canCountReadsInWindow() throws InvalidGenomicCoordsException, IOException{
+		GenomicCoords gc= new GenomicCoords("chr7:5522436-5613572", samSeqDict, 200, fastaFile);
+		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
+		
+		filters.add(new MappingQualityFilter(30)); // Same as   
+		filters.add(new FirstOfPairFilter(true));  // samtools view -q 30 -f 64
+		
+		long t0= System.currentTimeMillis();
+		for(int i= 0; i < 10; i++){
+			assertEquals(42770, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+		}
+		long t1= System.currentTimeMillis();
+		System.out.println("TIME TO FILTER: " + (t1-t0));
 	}
 	
 	@Test

@@ -2,12 +2,15 @@ package samTextViewer;
 
 import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.SAMFileReader;
+import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.filter.AggregateFilter;
+import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.tribble.readers.TabixReader;
 
@@ -29,15 +32,19 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import javax.imageio.ImageIO;
@@ -61,6 +68,35 @@ import tracks.TrackFormat;
  */
 @SuppressWarnings("deprecation")
 public class Utils {
+	
+	public static void checkFasta(String fasta) {
+		if(fasta == null){
+			return;
+		}
+		File fafile= new File(fasta);
+		if(!fafile.isFile()){
+			System.err.println("Fasta file '" + fasta + "' not found.");
+			System.exit(1);
+		} 
+		if(!fafile.canRead()){
+			System.err.println("Fasta file '" + fasta + "' is not readable.");
+			System.exit(1);			
+		}
+		
+		IndexedFastaSequenceFile faSeqFile = null;
+		try {
+			faSeqFile= new IndexedFastaSequenceFile(fafile);
+		} catch (FileNotFoundException e) {
+			System.err.println("\nIs fasta file '" + fasta + "' indexed? If not index it with e.g");
+			System.err.println("samtools faidx '" + fasta + "'\n");
+			System.exit(1);
+		}
+		try {
+			faSeqFile.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	
     public static long getAlignedReadCount(File bam){
 
@@ -1075,5 +1111,67 @@ public class Utils {
         g2d.dispose();
         return img;
     }
+
+
+	/**
+	 * Count reads in interval using the given filters.
+	 * @param bam
+	 * @param gc
+	 * @param filters List of filters to apply
+	 * @return
+	 * @throws MalformedURLException 
+	 */
+	public static long countReadsInWindow(String bam, GenomicCoords gc, List<SamRecordFilter> filters) throws MalformedURLException {
+
+		/*  ------------------------------------------------------ */
+		/* This chunk prepares SamReader from local bam or URL bam */
+		UrlValidator urlValidator = new UrlValidator();
+		SamReaderFactory srf=SamReaderFactory.make();
+		srf.validationStringency(ValidationStringency.SILENT);
+		SamReader samReader;
+		if(urlValidator.isValid(bam)){
+			samReader = srf.open(SamInputResource.of(new URL(bam)).index(new URL(bam + ".bai")));
+		} else {
+			samReader= srf.open(new File(bam));
+		}
+		/*  ------------------------------------------------------ */
+		
+		long cnt= 0;
+		
+		Iterator<SAMRecord> sam= samReader.query(gc.getChrom(), gc.getFrom(), gc.getTo(), false);
+		AggregateFilter aggregateFilter= new AggregateFilter(filters);
+		while(sam.hasNext()){
+			SAMRecord rec= sam.next();
+			if( !aggregateFilter.filterOut(rec) ){
+				cnt++;
+			}
+		}
+		try {
+			samReader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return cnt;
+	}
+
+	/** Sort Map by value in descending order. See
+	 * http://stackoverflow.com/questions/109383/sort-a-mapkey-value-by-values-java
+	 *  */
+	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue( Map<K, V> map ){
+	    List<Map.Entry<K, V>> list = new LinkedList<>( map.entrySet() );
+	    Collections.sort( list, new Comparator<Map.Entry<K, V>>() {
+	        @Override
+	        public int compare( Map.Entry<K, V> o1, Map.Entry<K, V> o2 ){
+	            return -( o1.getValue() ).compareTo( o2.getValue() );
+	        }
+	    });
+	    
+	    Map<K, V> result = new LinkedHashMap<>();
+	    for (Map.Entry<K, V> entry : list){
+	        result.put( entry.getKey(), entry.getValue() );
+	    }
+	    return result;
+	}
+
 	
 }

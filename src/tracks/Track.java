@@ -1,5 +1,6 @@
 package tracks;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,8 +37,8 @@ public class Track {
 	private int f_flag= 0;
 	private int F_flag= 4;
 	private int mapq= 0;
+	// private boolean printPileup= false;
 	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
-	private boolean isHidden;
 	
 	/* Min value of screen scores. Not to be confused with the y limit **/
 	public double getMinScreenScores(){
@@ -208,6 +209,14 @@ public class Track {
 		return this.rpm;
 	}
 
+	//public void setPrintPileup(boolean printPileup) {
+	//	this.printPileup = printPileup;
+	//}
+	//public boolean isPrintPileup(){
+	//	return this.printPileup;
+	//}
+
+	
 	/** This int is just a setting but is NOT translated to a filter! */
 	protected int get_f_flag() {
 		return f_flag;
@@ -237,13 +246,13 @@ public class Track {
 	protected void setMapq(int mapq) {
 		this.mapq = mapq;
 	}
-
-	public boolean isHidden() {
-		return isHidden;
+	
+	public List<String> printPileupList(){
+		return new ArrayList<String>();
 	}
-
-	public void setHidden(boolean isHidden) {
-		this.isHidden = isHidden;
+	
+	public String getPrintableConsensusSequence() throws IOException{
+		return "";
 	}
 	
 }

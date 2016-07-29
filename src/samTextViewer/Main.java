@@ -60,6 +60,8 @@ public class Main {
 			e.printStackTrace();
 		}
 		
+		Utils.checkFasta(fasta);
+		
 		/* Test input files exist */
 		List<String> dropMe= new ArrayList<String>();
 		for(String x : inputFileList){
@@ -126,7 +128,11 @@ public class Main {
 		
 		boolean execDone= exec.isEmpty() ? true : false; // Do we need to execute commands from --exec? If exec is empty, consider it done.
 
-		while(true){ // Each loop processes the user's input files.
+		/* =================================== *
+		 * Start processing interactive input  *
+		 * =================================== */
+		
+		while(true){ 
 
 			for(int i= 0; i < inputFileList.size(); i++){ 
 				/* Iterate through each input file */
@@ -144,7 +150,9 @@ public class Main {
 					}
 					TrackCoverage trackCoverage= (TrackCoverage) trackSet.getTrackSet().get(coverageTrackId);
 					trackCoverage.setGc(gch.current());
-					trackCoverage.update();
+					if(trackCoverage.getyMaxLines() > 0){
+						trackCoverage.update();
+					}
 					trackCoverage.printToScreen();				
 					
 					/* Methylation profile disable until a better representation is prepared
@@ -179,7 +187,9 @@ public class Main {
 					TrackReads trackReads= (TrackReads) trackSet.getTrackSet().get(trackId);
 					trackReads.setGc(gch.current());
 					// trackReads.setWithReadName(withReadName);
-					trackReads.update();
+					if(trackReads.getyMaxLines() > 0){
+						trackReads.update();
+					}
 				} // End processing bam file
 				
 				/* Annotatation */
@@ -196,7 +206,9 @@ public class Main {
 					TrackIntervalFeature tif= (TrackIntervalFeature) trackSet.getTrackSet().get(trackId);
 					tif.setGc(gch.current());
 					try {
-						tif.update();
+						if(tif.getyMaxLines() > 0){
+							tif.update();
+						}
 					} catch(InvalidGenomicCoordsException e){
 						e.printStackTrace();
 					}
@@ -215,7 +227,9 @@ public class Main {
 					}
 					TrackWiggles tw= (TrackWiggles) trackSet.getTrackSet().get(trackId);
 					tw.setGc(gch.current());
-					tw.update();
+					if(tw.getyMaxLines() > 0){
+						tw.update();
+					}
 					tw.printToScreen();
 				}
 			} // End loop through files 
@@ -228,18 +242,17 @@ public class Main {
 			}
 			
 			if(gch.current().getChromIdeogram(20) != null && execDone){
-					Utils.printer(gch.current().getChromIdeogram(20) + "\n", snapshotFile, snapshotStripAnsi);
+				Utils.printer(gch.current().getChromIdeogram(20) + "\n", snapshotFile, snapshotStripAnsi);
 			}			
 			for(Track tr : trackSet.getTrackSet().values()){
 				if(tr.getFileTag() == gch.current().getGcProfileFileTag()){
 					continue;
 				}
 				tr.setNoFormat(noFormat);
-				if(execDone && !tr.isHidden()){
+				if(execDone && tr.getyMaxLines() > 0){
 					Utils.printer(tr.getTitle(), snapshotFile, snapshotStripAnsi);
-					if(tr.getyMaxLines() > 0){
-						Utils.printer(tr.printToScreen() + "\n", snapshotFile, snapshotStripAnsi);
-					}
+					Utils.printer(tr.printToScreen() + "\n", snapshotFile, snapshotStripAnsi);
+					Utils.printer(tr.getPrintableConsensusSequence(), snapshotFile, snapshotStripAnsi);
 				}
 
 				// Print features
@@ -267,8 +280,8 @@ public class Main {
 					tw.setYLimitMax(yLimitMax);
 					tw.setTitleColour(col);
 					tw.setNoFormat(noFormat);
-					tw.setHidden(trackSet.getTrackSet().get(GenomicCoords.gcProfileFileTag).isHidden());
-					if(execDone && !tw.isHidden()){
+					// tw.setHidden(trackSet.getTrackSet().get(GenomicCoords.gcProfileFileTag).isHidden());
+					if(execDone && tw.getyMaxLines() > 0){
 						Utils.printer(tw.getTitle(), snapshotFile, snapshotStripAnsi);
 						String gcPrintable= tw.printToScreen();
 						Utils.printer(gcPrintable + "\n", snapshotFile, snapshotStripAnsi);
@@ -294,7 +307,7 @@ public class Main {
 			if(execDone){
 				Utils.printer(seqPattern, snapshotFile, snapshotStripAnsi);
 			}
-			// Sequence 
+			// Ruler and sequence
 			if(execDone){
 				Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile, snapshotStripAnsi);
 				String ruler= gch.current().printableRuler(10);
@@ -356,18 +369,29 @@ public class Main {
 				
 				for(List<String> cmdInput : cmdInputList){
 					try {
-						System.err.println("Executing: " + cmdInput);
-					
+						
 						if(cmdInput.get(0).equals("h")){  
 							Utils.printer(CommandList.briefHelp(), snapshotFile, snapshotStripAnsi);
 							currentCmdConcatInput= cmdConcatInput;
-							cmdConcatInput= null;
-						
+							cmdConcatInput= null;	
+							
 						} else if(cmdInput.size() >= 2 && cmdInput.get(1).equals("-h")){ // Help on this command
 							Utils.printer("\n" + CommandList.getHelpForCommand(cmdInput.get(0)) + "\n", snapshotFile, snapshotStripAnsi);
 							currentCmdConcatInput= cmdConcatInput;
 							cmdConcatInput= null;
 						
+						//} else if(cmdInput.get(0).equals("windowSize")){
+						//	if(cmdInput.size() == 1){
+						//		windowSize= jline.TerminalFactory.get().getWidth() - 1;
+						//	} else {
+						//		windowSize= Integer.parseInt(cmdInput.get(1));
+						//	}
+						//	// Replace the current genomicCoords obj with a new one having the same coordinates 
+						//	// but different windowSize.
+						//	// NB: The current genomic obj might not be the last one in the history list.
+						//	String newRegion= gch.current().getChrom() + ":" + gch.current().getFrom() + "-" + gch.current().getTo(); 
+						//	gch.getHistory().add(gch.getHistory().indexOf(gch.current()), new GenomicCoords(newRegion, samSeqDict, windowSize, fasta));							
+							
 						} else if(cmdInput.get(0).equals("history")){
 							for(GenomicCoords xgc : gch.getHistory()){
 								Utils.printer(xgc.toString() + "\n", snapshotFile, snapshotStripAnsi);
@@ -397,8 +421,7 @@ public class Main {
 								|| cmdInput.get(0).matches("^\\+\\d+.*")){ // No cmd line args either f/b ops or ints
 								// FIXME: You shouldn't join the list of args back to string. You should refactor parseConsoleInput! 
 								String newRegion= Utils.parseConsoleInput(Joiner.on(" ").join(cmdInput), gch.current()).trim();
-								GenomicCoords newGc= new GenomicCoords(newRegion, samSeqDict, windowSize, fasta);
-								gch.add(newGc);
+								gch.add(new GenomicCoords(newRegion, samSeqDict, windowSize, fasta));
 								
 						} else if(cmdInput.get(0).equals("goto") || cmdInput.get(0).startsWith(":")){
 							String reg= Joiner.on(" ").join(cmdInput).replaceFirst("goto|:", "").trim();
@@ -423,9 +446,6 @@ public class Main {
 								continue;
 							}
 						    trackSet.setBisulfiteModeForRegex(cmdInput);
-						
-						} else if(cmdInput.get(0).equals("hideTrack")) {
-							trackSet.setHiddenForRegex(cmdInput);
 						    
 						} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals("merge")){
 							trackSet.setFeatureDisplayModeForRegex(cmdInput);
@@ -519,8 +539,8 @@ public class Main {
 								}						
 							}
 
-						} else if(cmdInput.get(0).equals("visible")){
-							trackSet.setVisibilityForTrackIntervalFeature(cmdInput);
+						} else if(cmdInput.get(0).equals("filter")){
+							trackSet.setFilterForTrackIntervalFeature(cmdInput);
 
 						} else if(cmdInput.get(0).equals("rpm")) {
 							trackSet.setRpmForRegex(cmdInput);
@@ -572,6 +592,15 @@ public class Main {
 					currentCmdConcatInput= cmdConcatInput;
 				}
 			} // END PARSING CONSOLE INPUT 
+			
+			int newSize= jline.TerminalFactory.get().getWidth() - 1;
+			if(newSize != gch.current().getUserWindowSize()){
+				// Replace the current genomicCoords obj with a new one having the same coordinates but different windowSize.
+				// NB: The current genomic obj might not be the last one in the history list.
+				windowSize= newSize;
+				String newRegion= gch.current().getChrom() + ":" + gch.current().getFrom() + "-" + gch.current().getTo(); 
+				gch.getHistory().add(gch.getHistory().indexOf(gch.current()), new GenomicCoords(newRegion, samSeqDict, windowSize, fasta));
+			}
 			
 			idForTrack= 0;
 		} // End while loop keep going until quit or if no interactive input set

@@ -5,12 +5,14 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
+import filter.ReadNegativeStrandFilter;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMRecordIterator;
@@ -19,10 +21,12 @@ import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.util.Interval;
 import htsjdk.samtools.util.IntervalList;
 import samTextViewer.GenomicCoords;
 import samTextViewer.SamLocusIterator;
+import samTextViewer.Utils;
 import tracks.TrackCoverage;
 
 public class TrackCoverageTest {
@@ -31,23 +35,73 @@ public class TrackCoverageTest {
 	static SamReader sr= srf.open(new File("test_data/ds051.short.bam"));
 	public static SAMSequenceDictionary samSeqDict= sr.getFileHeader().getSequenceDictionary();
 	public static String fastaFile= "test_data/chr7.fa";
+
+	@Test
+	public void canPrintConsensusSequence() throws InvalidGenomicCoordsException, IOException{
+
+		GenomicCoords gc= new GenomicCoords("chr7:5566779-5566879", null, 101, "test_data/chr7.fa");
+		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
+		tc.setNoFormat(true);
+
+		String expected= "=TT===========N==========================================================================            \n";
+		assertEquals(101 + 1, tc.getPrintableConsensusSequence().length()); // +1 for newline char
+		assertEquals(expected, tc.getPrintableConsensusSequence());
+				
+		// Large window doesn't show consensus 
+		gc= new GenomicCoords("chr7:5566779-5566879", null, 20, "test_data/chr7.fa");
+		tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
+		tc.setNoFormat(true);
+		assertEquals("", tc.getPrintableConsensusSequence());
+		
+		// Region with no coverage
+		gc= new GenomicCoords("chr7:1-100", null, 1000, "test_data/chr7.fa");
+		tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
+		tc.setNoFormat(true);
+		assertEquals("", tc.getPrintableConsensusSequence());
+
+	}
+
 	
 	@Test
-	public void canPrintMethylProfile() throws IOException, InvalidGenomicCoordsException {
-		int yMaxLines= 11;
-		int windowSize= 100;
+	public void canPrintPileup() throws InvalidGenomicCoordsException, IOException{
 
-		GenomicCoords gc= new GenomicCoords("chr7:5564153-5564330", samSeqDict, windowSize, fastaFile);
-		TrackCoverage tc= new TrackCoverage("test_data/ear045.oxBS.actb.bam", gc, true);
-		tc.setyMaxLines(yMaxLines);
-		System.out.println("START");
-		List<Double> profile= tc.getMethylProfile();
-		System.out.println(tc.getScreenLocusInfoList().size());
+		GenomicCoords gc= new GenomicCoords("chr7:5566779-5566879", null, 100, "test_data/chr7.fa");
+		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
+		List<PileupLocus> pileup= tc.getPileupList(); 
+		assertEquals(101, pileup.size());
+		assertEquals("chr7\t5566779\tT\t0\t0\t0\t4\t0", pileup.get(0).toString());
+		assertEquals("chr7\t5566780\tC\t0\t1\t0\t3\t0", pileup.get(1).toString());
+
+		Utils.tabulateList(tc.printPileupList());
+		
+		// Check filter is applied
+		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
+		filters.add(new ReadNegativeStrandFilter(true));
+		tc.setSamRecordFilter(filters);
+		assertEquals("chr7\t5566779\tT\t0\t0\t0\t0\t0", tc.getPileupList().get(0).toString());
+		
+		gc= new GenomicCoords("chr7:5554001-5580001", null, 100, "test_data/chr7.fa");
+		tc= new TrackCoverage("test_data/ds051.actb.bam", gc, false);
+		assertEquals((5580001 - 5554001 + 1), tc.getPileupList().size());
+		
+	}
+	
+	//@Test
+	//public void canPrintMethylProfile() throws IOException, InvalidGenomicCoordsException {
+	//	int yMaxLines= 11;
+	//	int windowSize= 100;
+
+	//	GenomicCoords gc= new GenomicCoords("chr7:5564153-5564330", samSeqDict, windowSize, fastaFile);
+	//	TrackCoverage tc= new TrackCoverage("test_data/ear045.oxBS.actb.bam", gc, true);
+	//	tc.setyMaxLines(yMaxLines);
+	//	System.out.println("START");
+	//	List<Double> profile= tc.getMethylProfile();
+	//	System.out.println(tc.getScreenLocusInfoList().size());
 		// assertTrue(Double.isNaN(profile.get(0)));
 		// assertTrue(Double.isNaN(profile.get(2)));
 		// assertEquals(0.0, profile.get(3), 0.0001);
-		System.out.println("END");
-	}
+	//	System.out.println("END");
+	//}
 
 	
 	@Test

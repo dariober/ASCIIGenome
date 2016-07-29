@@ -18,7 +18,6 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AggregateFilter;
-import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -76,7 +75,7 @@ public class TrackReads extends Track{
 			}
 			/*  ------------------------------------------------------ */
 			
-			this.nRecsInWindow= countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
+			this.nRecsInWindow= Utils.countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
 			float probSample= (float) this.maxReadStack / this.nRecsInWindow;
 			
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
@@ -207,10 +206,11 @@ public class TrackReads extends Track{
 	 * @return
 	 * @throws MalformedURLException 
 	 */
+	/*
 	private long countReadsInWindow(String bam, GenomicCoords gc, List<SamRecordFilter> filters) throws MalformedURLException {
 
-		/*  ------------------------------------------------------ */
-		/* This chunk prepares SamReader from local bam or URL bam */
+		/*  ------------------------------------------------------ 
+		 This chunk prepares SamReader from local bam or URL bam 
 		UrlValidator urlValidator = new UrlValidator();
 		SamReaderFactory srf=SamReaderFactory.make();
 		srf.validationStringency(ValidationStringency.SILENT);
@@ -220,7 +220,7 @@ public class TrackReads extends Track{
 		} else {
 			samReader= srf.open(new File(bam));
 		}
-		/*  ------------------------------------------------------ */
+		  ------------------------------------------------------ 
 		
 		long cnt= 0;
 		
@@ -242,15 +242,14 @@ public class TrackReads extends Track{
 			e.printStackTrace();
 		}
 		return cnt;
-	}
+	}*/
 	
 	@Override
 	public String getTitle(){
 		String title= this.getFileTag() 
 				+ "; -F" + this.get_F_flag() 
 				+ " -f" + this.get_f_flag() 
-				+ " -q" + this.getMapq()
-				+ "; N. recs: " + this.nRecsInWindow;
+				+ " -q" + this.getMapq();
 		return this.formatTitle(title) + "\n";
 	}
 	

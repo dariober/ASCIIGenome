@@ -696,7 +696,7 @@ public class GenomicCoords implements Cloneable {
 		TrackWiggles cgWiggle= new TrackWiggles(temp.getAbsolutePath(), this, 4);
 		temp.delete();
 		cgWiggle.setFileTag(this.gcProfileFileTag);
-		cgWiggle.setyMaxLines(5);
+		cgWiggle.setyMaxLines(0);
 		cgWiggle.setYLimitMin(0);
 		cgWiggle.setYLimitMax(100);
 		// cgWiggle.setYmin(Math.round(ymin * 10.0)/10.0);
@@ -816,6 +816,12 @@ public class GenomicCoords implements Cloneable {
 	public int getUserWindowSize(){
 		return this.windowSize;
 	}
+
+	//public void setUserWindowSize(int windowSize) {
+	//	this.windowSize= windowSize; 
+	//	this.refSeq= this.getRefSeq();
+	//}
+
 	
 	/** Size of genomic interval. Can be smaller than windowSize set by user. */
 	public int getGenomicWindowSize(){
