@@ -37,13 +37,13 @@ public class CommandList {
 				+ "Note that the help documented here can be invoked also at the command prompt with `command -h`, for example to "
 				+ "get the help for `ylim`:\n"
 				+ "```\n"
-				+ "ylim -h"
+				+ "ylim -h\n"
 				+ "```\n"
 				+ "Parameters in square brakets are optional and the default argument is "
 				+ "indicated by the `=` sign. The syntax `...` indicate that the argument "
 				+ "can be repeated multiple times. For example\n"
 				+ "```\n"
-				+ "ylim min max [track_regex = .*]..."
+				+ "ylim min max [track_regex = .*]...\n"
 				+ "```\n"
 				+ "Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional "
 				+ "argument, `track_regex`, defaults to `.*` and can be repated multiple times.\n";
@@ -52,16 +52,17 @@ public class CommandList {
 		String help= "";
 		for(Section sec : Section.values()){
 			
-			toc += ("- [" + toTitleCase(sec.toString()) + "]" + "(#" + toTitleCase(sec.toString()) + ")" + "\n");
+			toc += ("- [" + toTitleCase(sec.toString()) + "]" + "(#" + sec.toString().toLowerCase() + ")" + "\n");
 			
 			help += "## " +  toTitleCase(sec.toString()) + "\n\n";
 			for(CommandHelp x : CommandList.getCommandsForSection(sec)){
 				
-				String header= (x.getName() + " " + x.getArgs()).trim();
+				// String header= (x.getName() + " " + x.getArgs()).trim();
 				
-				toc += ("  - [" + x.getName() + "]" + "(#" + header.replaceAll(" ", "-") + ")" + "\n");
+				toc += ("  - [" + x.getName() + "]" + "(#" + x.getName().toLowerCase() + ")" + "\n");
 				
-				help += ("### " + header + "\n\n"); 
+				help += ("### " + x.getName() + "\n\n"); 
+				help += "**Usage: " + x.getName() + " " + x.getArgs().trim() + "**\n\n";
 				help += (x.getBriefDescription() + " " + x.getAdditionalDescription() + "\n\n");
 			}			
 		}
@@ -371,9 +372,18 @@ public class CommandList {
 		cmd.setName("gffNameAttr"); cmd.setArgs("[attribute_name = NULL] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("For GTF/GFF tracks, choose the attribute to get the feature name from.");
 		cmd.setAdditionalDescription("Use attribute NULL to reset to default choice of attribute. "
-				+ "Applies to all GFF/GTF tracks captured by the list of `track_regex`. Example\n"
+				+ "Applies to all GFF/GTF tracks captured by the list of `track_regex`. Example, given "
+				+ "the gtf feature\n"
 				+ "```\n"
-				+ "gffNameAttr gene_name genes.gtf .*gff"
+				+ "chr1 . CDS  10 99 . + 2 gene_id \"PTGFRN\"; transcript_id \"NM_020440\";\n"
+				+ "```\n"
+				+ "Use gene_name as feature name or transcript_id:\n"
+				+ "```\n"
+				+ "gffNameAttr gene_name genes.gtf .*gff\n"
+				+ "PTGFRN_CCCCCCCCC\n"
+				+ "\n"
+				+ "gffNameAttr transcript_id genes.gtf .*gff\n"
+				+ "NM_020440_CCCCCC\n"
 				+ "```\n");
 		cmdList.add(cmd);
 
@@ -407,7 +417,9 @@ public class CommandList {
 				+ "light_red, light_green, light_yellow, light_blue, light_magenta, light_cyan, light_grey, "
 				+ "white, black, default. The 'default' colour reset to the system default colour. "
 				+ "Colouring is rendered with ANSI codes 8/16. Example:\n"
-				+ "colorTrack~light_blue~ts.*gtf~ts.*bam");
+				+ "```\n"
+				+ "colorTrack~light_blue~ts.*gtf~ts.*bam\n"
+				+ "```\n");
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
@@ -416,7 +428,7 @@ public class CommandList {
 		cmd.setAdditionalDescription("index: 1-based column index. This command applies only to "
 				+ "tracks of type bedgraph.\n For example, use column 5 on tracks containing #1 and #3:\n "
 				+ "```\n"
-				+ "dataCol 5 #1 #3"
+				+ "dataCol 5 #1 #3\n"
 				+ "```\n");
 		cmdList.add(cmd);
 
@@ -480,8 +492,8 @@ public class CommandList {
 				+ "follow the listed ones in unchanged order.\n"
 				+ "For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]`:\n\n"
 				+ "```\n"
-				+ "orderTracks #2 #1~~~returns: [hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]\n"
-				+ "orderTracks bam bed~returns: [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]\n"
+				+ "orderTracks #2 #1~~~new order: [hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]\n"
+				+ "orderTracks bam bed~new order: [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]\n"
 				+ "```\n");
 		cmdList.add(cmd);
 
