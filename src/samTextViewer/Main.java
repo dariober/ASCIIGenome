@@ -153,8 +153,7 @@ public class Main {
 					if(trackCoverage.getyMaxLines() > 0){
 						trackCoverage.update();
 					}
-					trackCoverage.printToScreen();				
-					
+					trackCoverage.printToScreen();					
 					/* Methylation profile disable until a better representation is prepared
 				
 					if(bs && trackCoverage.getScreenLocusInfoList().size() > 0){
@@ -449,7 +448,10 @@ public class Main {
 						    
 						} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals("merge")){
 							trackSet.setFeatureDisplayModeForRegex(cmdInput);
-						
+
+						} else if (cmdInput.get(0).equals("gap")){
+							trackSet.setFeatureGapForRegex(cmdInput);
+							
 						} else if(cmdInput.get(0).equals("gffNameAttr")) {
 							trackSet.setAttributeForGFFName(cmdInput);
 							
@@ -605,4 +607,5 @@ public class Main {
 			idForTrack= 0;
 		} // End while loop keep going until quit or if no interactive input set
 	}
+	
 }

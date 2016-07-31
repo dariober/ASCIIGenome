@@ -28,6 +28,8 @@ import com.google.common.base.Joiner;
 
 import exceptions.InvalidGenomicCoordsException;
 import filter.FirstOfPairFilter;
+import filter.FlagToFilter;
+import filter.ReadNegativeStrandFilter;
 
 public class UtilsTest {
 
@@ -179,6 +181,36 @@ public class UtilsTest {
 	public void canGetBamReadCount(){
 		assertEquals(15098, Utils.getAlignedReadCount(new File("test_data/ds051.actb.bam")));
 	}
+
+	@Test
+	public void canCountReadsInWindow2() throws InvalidGenomicCoordsException, IOException{
+		GenomicCoords gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, 200, fastaFile);
+		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
+		
+		assertEquals(100377, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters.add(new AlignedFilter(true));
+		assertEquals(100265, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters= new ArrayList<SamRecordFilter>();
+		filters.add(new AlignedFilter(true));
+		filters.add(new ReadNegativeStrandFilter(false));
+		assertEquals(50157, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters= new ArrayList<SamRecordFilter>();
+		filters.add(new AlignedFilter(true));
+		filters.add(new ReadNegativeStrandFilter(true));
+		assertEquals(50108, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters= FlagToFilter.flagToFilterList(80, 1026);
+		assertEquals(2729, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters= FlagToFilter.flagToFilterList(80, 1026);
+		filters.add(new MappingQualityFilter(30));
+		assertEquals(1592, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+	}
+	
 	
 	@Test
 	public void canCountReadsInWindow() throws InvalidGenomicCoordsException, IOException{
@@ -194,6 +226,9 @@ public class UtilsTest {
 		}
 		long t1= System.currentTimeMillis();
 		System.out.println("TIME TO FILTER: " + (t1-t0));
+		
+		gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, 200, fastaFile);
+		
 	}
 	
 	@Test

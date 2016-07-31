@@ -85,7 +85,7 @@ public class TrackReads extends Track{
 			while(sam.hasNext() && textReads.size() < this.maxReadStack){
 	
 				SAMRecord rec= sam.next();
-				if( !aggregateFilter.filterOut(rec) ){
+				if( !rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec) ){
 					Random rand = new Random();
 					if(rand.nextFloat() < probSample){ // Downsampler
 						TextRead tr= new TextRead(rec, this.getGc());

@@ -12,6 +12,7 @@ import java.util.List;
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
+import filter.FirstOfPairFilter;
 import filter.ReadNegativeStrandFilter;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
@@ -36,6 +37,20 @@ public class TrackCoverageTest {
 	public static SAMSequenceDictionary samSeqDict= sr.getFileHeader().getSequenceDictionary();
 	public static String fastaFile= "test_data/chr7.fa";
 
+	@Test
+	public void canRecoverFromInappropriateCallIfNotPairedRead() throws InvalidGenomicCoordsException, IOException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7:5568018-5568698", null, 101, "test_data/chr7.fa");
+		TrackCoverage tc= new TrackCoverage("test_data/ds051.actb.bam", gc, false);
+		List<SamRecordFilter> filter= new ArrayList<SamRecordFilter>();
+		filter.add(new FirstOfPairFilter(true));
+		tc.setSamRecordFilter(filter);
+		tc.update();
+		System.out.println(tc.getSamRecordFilter());
+		System.out.println(tc.printToScreen());
+
+	}
+	
 	@Test
 	public void canPrintConsensusSequence() throws InvalidGenomicCoordsException, IOException{
 

@@ -31,8 +31,9 @@ Text Only Genome Viewer!
         - [find_all regex *trackId*](#find_all-regex-trackid)
         - [seqRegex *regex*](#seqregex-regex)
     - [Display](#display)
-        - [visible *show_regex* *hide_regex* *track_regex*](#visible-show_regex-hide_regex-track_regex)
+        - [filter *incl_regex* *excl_regex* *track_regex*](#filter-incl_regex-excl_regex-track_regex)
         - [squash *track_regex*](#squash-track_regex)
+        - [gap [track_regex = .*]...](#gap-[track_regex-=-.*]...)
         - [gffNameAttr attribute_name *track_regex*](#gffnameattr-attribute_name-track_regex)
         - [trackHeight INT *track_regex*](#trackheight-int-track_regex)
         - [ylim min max *track_regex*](#ylim-min-max-track_regex)
@@ -202,7 +203,7 @@ At command prompt issue the following commands:
 
 ```
 [h] for help: goto 36:1-2682151
-[h] for help: visible '\ttranscript\t'
+[h] for help: filter '\ttranscript\t'
 [h] for help: trackHeight 100
 ```
 
@@ -519,17 +520,17 @@ chr7:5567802-5568002; 201 bp; 1.0 bp/char; Filters: -q 0 -f 0 -F 4; Mem: 3124 MB
 Display
 -------
 
-#### visible *show_regex* *hide_regex* *track_regex*
+#### filter *incl_regex* *excl_regex* *track_regex*
 
 In feature tracks, only include rows containing `show regex` and exclude rows containing `hide regex`.
 Apply to tracks whose name is matched by `track regex`. 
 
-With no arguments reset to default: `visible .* ^$ .*` which means show everything, hide nothing,
+With no arguments reset to default: `filter .* ^$ .*` which means show everything, hide nothing,
 apply to all tracks. Use '.*' to match everything and '^$' to hide nothing. 
 
 This command is useful to filter the annotation in GTF files, for example: 
 
-`visible RNA mRNA gtf`
+`filter RNA mRNA gtf`
 
 Will show the rows containing "RNA" and will hide those containing "mRNA", applies to tracks whose name
 matches "gtf".
@@ -549,6 +550,26 @@ hg19_genes_head.gtf#2; Show '.*' Hide ''
 33967     34296     34625     34954     35283     35612
 chr1:33967-39823; 5,857 bp; 32.7 bp/char;
 ```
+
+#### gap [track_regex = .*]...
+
+Switch to add a gap between features. Default is true. If gap is set, as per
+default, features which on screen appear next to each other (bookended) have
+at least one space separating them or go on different lines. If gap is unset
+such features might appear as a single one.
+Example with gap set:
+||||||
+    ||||||
+With gap unset these two features look like:
+||||||||||||
+
+Gap unset is preferable when the interest is in knowing which regions are covered
+since it gives a more compact view and the distiction betwen adjacent features
+is not important.
+
+This is an example of the same track without gap (above) and with gap (below):
+
+<img src=screenshots/gap_ungapped.png width="600">
 
 #### gffNameAttr attribute_name *track_regex*
 
@@ -620,7 +641,7 @@ Print the rows of the feature tracks in the current window matched by *track reg
 clipped if they extend beyond the screen (see also [printFull](#printfull-track-regex)).
 
 Useful to show exactly what features are present in the current window. Features are filtered in/out
-according to the `visible` command. For example `print gtf`:
+according to the `filter` command. For example `print gtf`:
 
 ```
 1------*------------16M-----------------32M-----------------48M-----------------64M-----------------80M-----------------95M-----------------110M----------------130M----------------140M----------------1

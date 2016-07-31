@@ -66,7 +66,7 @@ public class TrackIntervalFeature extends Track {
 		List<String> printable= new ArrayList<String>();		
 		int nLines= 0;
 		try {
-			for(List<IntervalFeature> listToPrint : this.stackFeatures(1)){
+			for(List<IntervalFeature> listToPrint : this.stackFeatures()){
 				nLines++;
 				if(nLines > this.yMaxLines){
 					// Limit the number of lines in output
@@ -129,11 +129,16 @@ public class TrackIntervalFeature extends Track {
 		} else if (this.getFeatureDisplayMode().equals(FeatureDisplayMode.MERGED)){
 			sq= "; merged";
 		}
+		String gapped= "";
+		if(this.getGap() == 0){
+			gapped= "; ungapped";
+		}
 		String title=  this.getFileTag() + "; " 
-	                 + "Show '" + this.getShowRegex() + "' "
-	                 + "Hide '" + this.getHideRegex() + "'"
-	                 + "; N. recs: " + this.intervalFeatureList.size()
-	                 + sq;
+	                 + "Incl " + this.getShowRegex()
+	                 + " Excl " + this.getHideRegex()
+	                 + " N: " + this.intervalFeatureList.size()
+	                 + sq
+	                 + gapped;
 		this.getHideRegex();
 		return this.formatTitle(title) + "\n";
 	}
@@ -172,7 +177,7 @@ public class TrackIntervalFeature extends Track {
 	 * See also TrackReads.stackReads();
 	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<List<IntervalFeature>> stackFeatures(int space) throws InvalidGenomicCoordsException{
+	private List<List<IntervalFeature>> stackFeatures() throws InvalidGenomicCoordsException{
 		
 		List<IntervalFeature> intervals; 
 		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.SQUASHED)){
@@ -205,7 +210,7 @@ public class TrackIntervalFeature extends Track {
 			for(int i=0; i < flatList.size(); i++){
 				IntervalFeature intervalFeature= flatList.get(i);
 				// int gap= 1; // Add a space between book-end features
-				if(intervalFeature.getScreenFrom() > line.get(line.size()-1).getScreenTo()+space){ // +2 because we want some space between adjacent reads
+				if(intervalFeature.getScreenFrom() > line.get(line.size()-1).getScreenTo()+this.getGap()){ // +2 because we want some space between adjacent reads
 					listOfLines.get(listOfLines.size()-1).add(intervalFeature); // Append to the last line. 
 					trToRemove.add(intervalFeature);
 				}

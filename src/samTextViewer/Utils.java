@@ -58,6 +58,7 @@ import org.broad.igv.tdf.TDFReader;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
+import filter.FirstOfPairFilter;
 import tracks.IntervalFeatureSet;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
@@ -1173,5 +1174,17 @@ public class Utils {
 	    return result;
 	}
 
+	public static List<SamRecordFilter> cleanInappropriateCallIfNotPairedRead(List<SamRecordFilter> filter){
+		List<SamRecordFilter> cleanfilter= new ArrayList<SamRecordFilter>(); 
+		for(SamRecordFilter x : filter){
+			if(x.equals(new FirstOfPairFilter(true)) ||
+			   x.equals(new FirstOfPairFilter(false))){
+			   //
+			} else {
+				cleanfilter.add(x);
+			}
+		}
+		return cleanfilter;
+	} 
 	
 }

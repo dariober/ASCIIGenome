@@ -83,15 +83,25 @@ public class CommandHelp {
 		return this.name;
 	}
 	
+	protected String getArgs() {
+		return this.args;
+	}	
 	protected void setArgs(String args) {
 		this.args = args;
 	}
+	
 	protected void setAdditionalDescription(String description) {
 		this.additionalDescription = description;
 	}
-
+	protected String getAdditionalDescription() {
+		return this.additionalDescription;
+	}
+	
 	protected void setBriefDescription(String briefDescription) {
 		this.briefDescription = briefDescription;
+	}
+	protected String getBriefDescription() {
+		return this.briefDescription;
 	}
 
 

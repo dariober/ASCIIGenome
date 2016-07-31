@@ -33,6 +33,7 @@ public class Track {
 	// protected boolean squash= false;
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
+	private int gap= 1;
 	private boolean rpm= false;
 	private int f_flag= 0;
 	private int F_flag= 4;
@@ -139,6 +140,8 @@ public class Track {
 	public double getYLimitMax() { return yLimitMax; }
 	public void setYLimitMax(double ymax) { this.yLimitMax = ymax; }
 
+	/** Return filter making sure the AlignedFilter to discard unmapped is set.
+	 * */
 	public List<SamRecordFilter> getSamRecordFilter() { 
 		AlignedFilter unmapped = new AlignedFilter(true);
 		if(!this.samRecordFilter.contains(unmapped)){
@@ -200,6 +203,17 @@ public class Track {
 
 	public void setFeatureDisplayMode(FeatureDisplayMode featureDisplayMode) {
 		this.featureDisplayMode = featureDisplayMode;
+	}
+
+	protected int getGap() {
+		return gap;
+	}
+
+	protected void setGap(int gap) {
+		if(gap < 0){
+			throw new RuntimeException("Cannot set gap < 0");
+		}
+		this.gap = gap;
 	}
 
 	public void setRpm(boolean rpm) {

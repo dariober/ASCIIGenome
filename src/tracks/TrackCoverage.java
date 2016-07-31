@@ -11,15 +11,18 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
 
+import filter.FirstOfPairFilter;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.samtools.util.Interval;
 import htsjdk.samtools.util.IntervalList;
 import samTextViewer.GenomicCoords;
 import samTextViewer.SamLocusIterator;
+import samTextViewer.SamLocusIterator.LocusInfo;
 import samTextViewer.Utils;
 
 public class TrackCoverage extends Track {
@@ -64,28 +67,11 @@ public class TrackCoverage extends Track {
 	}
 	
 	/* M e t h o d s */
-
-    //private SeekableStream myIndexSeekableStream() {
-    //   throw new UnsupportedOperationException();
-    // }
 	
 	public void update() throws IOException{
 		
 		this.screenLocusInfoList= new ArrayList<ScreenLocusInfo>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
-			
-			/*  ------------------------------------------------------ */
-			/* This chunk prepares SamReader from local bam or URL bam */
-			// UrlValidator urlValidator = new UrlValidator();
-			// SamReaderFactory srf=SamReaderFactory.make();
-			// srf.validationStringency(ValidationStringency.SILENT);
-			// SamReader samReader;
-			// if(urlValidator.isValid(this.getFilename())){
-			// 	samReader = srf.open(SamInputResource.of(new URL(this.getFilename())).index(new URL(this.getFilename() + ".bai")));
-			// } else {
-			// 	samReader= srf.open(new File(this.getFilename()));
-			// }
-			/*  ------------------------------------------------------ */
 			
 			IntervalList il= new IntervalList(samReader.getFileHeader());
 			il.add(new Interval(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));

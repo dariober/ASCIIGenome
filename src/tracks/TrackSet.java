@@ -716,16 +716,16 @@ public class TrackSet {
             
         	List<SamRecordFilter> filters= null;
         	
-        	// NMB: When you set one filetr, e.g. mapq, you have to restored the others!
+        	// NMB: When you set one filetr, e.g. mapq, you have to restore the others!
             if(tokens.get(0).equals("-F")){
         		tr.set_F_flag(flag);
         		filters= FlagToFilter.flagToFilterList(tr.get_f_flag(), flag);
-        		filters.add(new MappingQualityFilter(flag));
+        		filters.add(new MappingQualityFilter(tr.getMapq()));
         		
         	} else if(tokens.get(0).equals("-f")){
         		tr.set_f_flag(flag);
         		filters= FlagToFilter.flagToFilterList(flag, tr.get_F_flag());
-        		filters.add(new MappingQualityFilter(flag));
+        		filters.add(new MappingQualityFilter(tr.getMapq()));
         		
         	} else if(tokens.get(0).equals("mapq")){
         		tr.setMapq(flag);
@@ -738,6 +738,30 @@ public class TrackSet {
         	}
         	tr.setSamRecordFilter(filters);
         }		
+	}
+
+	public void setFeatureGapForRegex(List<String> tokens) throws InvalidCommandLineException {
+
+		// MEMO of subcommand syntax:
+		// 0 gap
+		// 1 Regex
+		
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 2){
+            trackNameRegex= tokens.subList(1, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+			if(tr.getGap() == 0){ // Invert setting
+				tr.setGap(1);
+			} else {
+				tr.setGap(0);
+			}
+        }
 	}
 
 	/*
