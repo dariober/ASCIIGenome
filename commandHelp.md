@@ -4,57 +4,59 @@
 
 This is the documentation for the indvidual commands. Note that the help documented here can be invoked also at the command prompt with `command -h`, for example to get the help for `ylim`:
 ```
-ylim -h```
+ylim -h
+```
 Parameters in square brakets are optional and the default argument is indicated by the `=` sign. The syntax `...` indicate that the argument can be repeated multiple times. For example
 ```
-ylim min max [track_regex = .*]...```
+ylim min max [track_regex = .*]...
+```
 Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional argument, `track_regex`, defaults to `.*` and can be repated multiple times.
 
 
-- [Navigation](#Navigation)
+- [Navigation](#navigation)
   - [f](#f)
   - [b](#b)
   - [ff](#ff)
   - [bb](#bb)
-  - [goto](#goto-chrom:[from]-[to])
-  - [zi](#zi-[INT-=-1])
-  - [zo](#zo-[INT-=-1])
-  - [INT](#INT-[INT])
-  - [+](#+-INT-[k|m])
-  - [-](#--INT-[k|m])
+  - [goto](#goto)
+  - [zi](#zi)
+  - [zo](#zo)
+  - [INT](#int)
+  - [+](#+)
+  - [-](#-)
   - [p](#p)
   - [n](#n)
-  - [next](#next-[track_id])
-  - [next_start](#next_start-[track_id])
-- [Find](#Find)
-  - [find_first](#find_first-regex-[track_id])
-  - [find_all](#find_all-regex-[track_id])
-  - [seqRegex](#seqRegex-regex)
-- [Display](#Display)
-  - [filter](#filter-[incl_regex-=-.*]-[excl_regex-=-'']-[track_regex-=-.*]...)
-  - [squash](#squash-[track_regex-=-.*]...)
-  - [merge](#merge-[track_regex-=-.*]...)
-  - [gap](#gap-[track_regex-=-.*]...)
-  - [gffNameAttr](#gffNameAttr-[attribute_name-=-NULL]-[track_regex-=-.*]...)
-  - [trackHeight](#trackHeight-INT-[track_regex-=-.*]...)
-  - [ylim](#ylim-min-max-[track_regex-=-.*]...)
-  - [colorTrack](#colorTrack-color-[track_regex-=-.*]...)
-  - [dataCol](#dataCol-[index-=-4]-[track_regex-=-.*]...)
-  - [print](#print-[track_regex-=-.*]...)
-  - [printFull](#printFull-[track_regex-=-.*]...)
-- [Alignments](#Alignments)
-  - [rpm](#rpm-[track_regex-=-.*])
-  - [-f](#-f-INT-[track_regex-=-.*]...)
-  - [-F](#-F-INT-[track_regex-=-.*]...)
-  - [mapq](#mapq-INT-[track_regex-=-.*]...)
-  - [BSseq](#BSseq-[track_regex-=-.*]...)
-- [General](#General)
-  - [showGenome](#showGenome)
-  - [infoTracks](#infoTracks)
-  - [addTracks](#addTracks-[file-or-URL]...)
-  - [orderTracks](#orderTracks-[track_regex]...)
+  - [next](#next)
+  - [next_start](#next_start)
+- [Find](#find)
+  - [find_first](#find_first)
+  - [find_all](#find_all)
+  - [seqRegex](#seqregex)
+- [Display](#display)
+  - [filter](#filter)
+  - [squash](#squash)
+  - [merge](#merge)
+  - [gap](#gap)
+  - [gffNameAttr](#gffnameattr)
+  - [trackHeight](#trackheight)
+  - [ylim](#ylim)
+  - [colorTrack](#colortrack)
+  - [dataCol](#datacol)
+  - [print](#print)
+  - [printFull](#printfull)
+- [Alignments](#alignments)
+  - [rpm](#rpm)
+  - [-f](#-f)
+  - [-F](#-f)
+  - [mapq](#mapq)
+  - [BSseq](#bsseq)
+- [General](#general)
+  - [showGenome](#showgenome)
+  - [infoTracks](#infotracks)
+  - [addTracks](#addtracks)
+  - [orderTracks](#ordertracks)
   - [history](#history)
-  - [save](#save-[filename-=-chrom_start_end.txt'])
+  - [save](#save)
   - [q](#q)
   - [h](#h)
 
@@ -63,21 +65,31 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
 
 ### f
 
+**Usage: f **
+
 Move forward by 1/10 of a window 
 
 ### b
+
+**Usage: b **
 
 Move backward by 1/10 of a window 
 
 ### ff
 
+**Usage: ff **
+
 Move forward by 1/2 of a window 
 
 ### bb
 
+**Usage: bb **
+
 Move backward by 1/2 of a window 
 
-### goto chrom:[from]-[to]
+### goto
+
+**Usage: goto chrom:[from]-[to]**
 
 Go to region chrom:from-to or to chrom:from or to start of chrom.  The character ':' is a shortcut for `goto`. Examples:
 ```
@@ -92,15 +104,21 @@ Or the same
 :chr8
 ```
 
-### zi [INT = 1]
+### zi
+
+**Usage: zi [INT = 1]**
 
 Zoom in INT times. Each zoom halves the window size.  To zoom quickly use INT= 5 or 10 e.g. `zi 10`
 
-### zo [INT = 1]
+### zo
+
+**Usage: zo [INT = 1]**
 
 Zoom out INT times. Each zoom doubles the window size.  To zoom quickly use INT= 5 or 10 e.g. `zo 10`
 
-### INT [INT]
+### INT
+
+**Usage: INT [INT]**
 
 Go to position `INT` or to region `INT INT` on current chromosome.  Allowed is the hyphenated format  separating the two positions. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt. 
 Examples:
@@ -112,24 +130,34 @@ Examples:
 ```
 
 
-### + INT [k|m]
+### +
+
+**Usage: + INT [k|m]**
 
 Move forward by INT bases. Suffixes k (kilo) and M (mega) are expanded to x1000 and x1,000,000. Examples: `-2m` or `+10k` or `+10.5k` 
 
-### - INT [k|m]
+### -
+
+**Usage: - INT [k|m]**
 
 Move backwards by INT bases. Suffixes k (kilo) and M (mega) are expanded to x1000 and x1,000,000.
 Examples: `-100` or `-10k` or `-10.5m` 
 
 ### p
 
+**Usage: p **
+
 Go to the previous visited position. Similar to the back and forward arrows of an Internet browser.
 
 ### n
 
+**Usage: n **
+
 Go to the next visited position. Similar to the back and forward arrows of an Internet browser.
 
-### next [track_id]
+### next
+
+**Usage: next [track_id]**
 
 Move to the next feature on track_id on *current* chromosome.  `next` centers the window on the found feature and zooms out. This is useful for quickly browsing through annotation files of genes or ChIP-Seq peaks in combination with read coverage tracks (bigwig, tdf, etc.). `next_start` instead sets the window right at the start of the feature.
  
@@ -137,7 +165,9 @@ The `next` command does exactly that, it moves to the next feature. If there are
  
 If `track_id` is omitted, the first annotation track is used. If trackId is not a feature track (bed, gtf, etc) a more or less ugly warning is issued.
 
-### next_start [track_id]
+### next_start
+
+**Usage: next_start [track_id]**
 
 Move to the next feature on track_id on *current* chromosome.  `next` centers the window on the found feature and zooms out. This is useful for quickly browsing through annotation files of genes or ChIP-Seq peaks in combination with read coverage tracks (bigwig, tdf, etc.). `next_start` instead sets the window right at the start of the feature.
  
@@ -147,17 +177,23 @@ If `track_id` is omitted, the first annotation track is used. If track_id is not
 
 ## Find
 
-### find_first regex [track_id]
+### find_first
+
+**Usage: find_first regex [track_id]**
 
 Find the first record in track_id containing regex. The search starts from the *end* of the current window (so the current window is not searched) and moves forward on the current chromosome. At the end  of the current chromosome move to the next chromosomes and then restart at  the start of the initial one. The search stops at the first match found.
 
-### find_all regex [track_id]
+### find_all
+
+**Usage: find_all regex [track_id]**
 
 Find the region containing *all* the records on chromosome containing regex.  The search starts at the current chromosome before moving to the other ones. It stops at the first chromosome returning one or more hits. Useful to get all gtf records of a gene.
 
 E.g. `find_all ACTB genes.gtf` will find the entire ACTB gene (provided the regex is specific enough of course).
 
-### seqRegex regex
+### seqRegex
+
+**Usage: seqRegex regex**
 
 Find regex in reference sequence and show matches as and additional track.  Useful to show restriction enzyme sites, transcription factor motifs, etc. The tag of this track is `seqRegex` and it is not displayed. To adjust its height use `trackHeight 10 seqRegex`. If regex is omitted the matching is disabled Matching is case sensitive, to ignore case use the regex syntax `(?i)`. Example
 ```
@@ -176,7 +212,9 @@ chr7:100172-100238; 67 bp; 1.0 bp/char; Mem: 288 MB;
 
 ## Display
 
-### filter [incl_regex = .\*] [excl_regex = ''] [track_regex = .*]...
+### filter
+
+**Usage: filter [incl_regex = .\*] [excl_regex = ''] [track_regex = .*]...**
 
 Filter for features matching incl_regex, hide those matching excl_regex. Apply to tracks matched by track_regex. This command is useful to filter the annotation in GTF or BED files, for example:
 ```
@@ -185,15 +223,21 @@ filter RNA mRNA gtf gff
 Will show the rows containing 'RNA' but will hide those containing 'mRNA', applies to tracks whose name matches 'gtf' or 'gff'.
 With no arguments reset to default: `filter .* ^$ .*` which means show everything, hide nothing, apply to all tracks. 
 
-### squash [track_regex = .*]...
+### squash
+
+**Usage: squash [track_regex = .*]...**
 
 Toggle the squashing of features with the same coordinates.  If set, features with the same start, end, and strand are squashed in a single one. The displayed feature is the first one found in the group of features with the same coordinates. Useful to compact GTF where e.g. CDS and exons have the same coordinates. Applies only to annotation tracks captured by track_regex
 
-### merge [track_regex = .*]...
+### merge
+
+**Usage: merge [track_regex = .*]...**
 
 Toggle the merging of overlapping features. If set, features with overalapping coordinates are merged in a single one. Merged features will not have strand and name information. Note that merging is done without considering strand information. Applies only to annotation tracks captured by the list of track_regex
 
-### gap [track_regex = .*]...
+### gap
+
+**Usage: gap [track_regex = .*]...**
 
 Toggle the switch to add a gap between features. Default is true. If gap is set, as per default, features which on screen do not have at least one space separating are moved to different lines so that it is clear where is the end of one feature  and the start of the next one. If gap is unset such features might appear as a single, continuous one instaed. 
 Example with gap set:
@@ -207,19 +251,34 @@ With gap unset these two features look like:
 ```
 Gap unset is preferable when the interest is in knowing which regions are covered since it gives a more compact view and the distiction betwen adjacent features is not important.
 
-### gffNameAttr [attribute_name = NULL] [track_regex = .*]...
+### gffNameAttr
 
-For GTF/GFF tracks, choose the attribute to get the feature name from. Use attribute NULL to reset to default choice of attribute. Applies to all GFF/GTF tracks captured by the list of `track_regex`. Example
+**Usage: gffNameAttr [attribute_name = NULL] [track_regex = .*]...**
+
+For GTF/GFF tracks, choose the attribute to get the feature name from. Use attribute NULL to reset to default choice of attribute. Applies to all GFF/GTF tracks captured by the list of `track_regex`. Example, given the gtf feature
 ```
-gffNameAttr gene_name genes.gtf .*gff```
+chr1 . CDS  10 99 . + 2 gene_id "PTGFRN"; transcript_id "NM_020440";
+```
+Use gene_name as feature name or transcript_id:
+```
+gffNameAttr gene_name genes.gtf .*gff
+PTGFRN_CCCCCCCCC
+
+gffNameAttr transcript_id genes.gtf .*gff
+NM_020440_CCCCCC
+```
 
 
-### trackHeight INT [track_regex = .*]...
+### trackHeight
+
+**Usage: trackHeight INT [track_regex = .*]...**
 
 Set track height to INT lines of text for all tracks matching regexes.  Setting height to zero hides the track and skips the processing altogether. This is useful to speed up the browsing when large bam files are present. Use infoTrack to see which tracks are hidden. Example:
 `trackHeight 5 aln.*bam gtf`
 
-### ylim min max [track_regex = .*]...
+### ylim
+
+**Usage: ylim min max [track_regex = .*]...**
 
 Set the y-axis limit for all tracks matched by regexes. Use `na` to autoscale to min and/or max. This command applies only to tracks displaying quantitative data on y-axis (e.g. bigwig, tdf), the other tracks are unaffected.
 Examples:
@@ -230,52 +289,75 @@ ylim na na tdf ## Autoscale min and max. Apply to all tracks matching 'tdf'
 ```
 
 
-### colorTrack color [track_regex = .*]...
+### colorTrack
+
+**Usage: colorTrack color [track_regex = .*]...**
 
 Set colour for tracks matched by regex.  Available colours: red, green, yellow, blue, magenta, cyan, grey, light_red, light_green, light_yellow, light_blue, light_magenta, light_cyan, light_grey, white, black, default. The 'default' colour reset to the system default colour. Colouring is rendered with ANSI codes 8/16. Example:
+```
 colorTrack light_blue ts.*gtf ts.*bam
+```
 
-### dataCol [index = 4] [track_regex = .*]...
+
+### dataCol
+
+**Usage: dataCol [index = 4] [track_regex = .*]...**
 
 Select data column for bedgraph tracks containing regex.  index: 1-based column index. This command applies only to tracks of type bedgraph.
  For example, use column 5 on tracks containing #1 and #3:
  ```
-`dataCol 5 #1 #3````
+dataCol 5 #1 #3```
 
 
-### print [track_regex = .*]...
+### print
+
+**Usage: print [track_regex = .*]...**
 
 Toggle the printing of lines in the tracks matched by track_regex. Long lines clipped.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the `filter` command. Applies only to annotation tracks
 
-### printFull [track_regex = .*]...
+### printFull
+
+**Usage: printFull [track_regex = .*]...**
 
 Toggle the printing of lines in the tracks matched by track_regex. Long lines wrapped.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the `filter` command. Applies only to annotation tracks
 
 ## Alignments
 
-### rpm [track_regex = .*]
+### rpm
+
+**Usage: rpm [track_regex = .*]**
 
 Toggle read coverage from raw count to reads per million. 
 
-### -f INT [track_regex = .*]...
+### -f
+
+**Usage: -f INT [track_regex = .*]...**
 
 Include reads with INT bits set in tracks matched by regexes. Same as in `samtools view`. Note that the flag 4096 can be used to filter in or out reads on top strand, this is useful in bisulfite mode.
 
-### -F INT [track_regex = .*]...
+### -F
+
+**Usage: -F INT [track_regex = .*]...**
 
 Exclude reads with INT bits set in tracks matched by regexes. Same as in `samtools view`. Note that the flag 4096 can be used to filter in or out reads on top strand, this is useful in bisulfite mode.
 
-### mapq INT [track_regex = .*]...
+### mapq
+
+**Usage: mapq INT [track_regex = .*]...**
 
 Include reads with mapq >= INT in tracks matched by regexes For example: mapq 30 aln1.bam aln2.bam
 
-### BSseq [track_regex = .*]...
+### BSseq
+
+**Usage: BSseq [track_regex = .*]...**
 
 Toggle bisulfite mode for read tracks matched by regex. In bisulfite mode, the characters M and m mark methylated bases (i.e. unconverted C to T) and U and u are used for unmethylated bases (i.e. C converted to T). Upper case is used for reads on  forward strand, small case for reverse. Ignored without reference fasta sequence.
 
 ## General
 
 ### showGenome
+
+**Usage: showGenome **
 
 Print the genome dictionary with a representation of chromosome sizes.  Example output:
 ```
@@ -293,28 +375,38 @@ chrY  59373566  |||||||
 
 ### infoTracks
 
+**Usage: infoTracks **
+
 Print the name of the current tracks along with file name and format.  Hidden tracks are marked by *.
 
-### addTracks [file or URL]...
+### addTracks
+
+**Usage: addTracks [file or URL]...**
 
 Add tracks from local or remote files. 
 
-### orderTracks [track_regex]...
+### orderTracks
+
+**Usage: orderTracks [track_regex]...**
 
 Reorder tracks according to the list of regexes. Not all the tracks need to be listed, the missing ones follow the listed ones in unchanged order.
 For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]`:
 
 ```
-orderTracks #2 #1   returns: [hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]
-orderTracks bam bed returns: [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]
+orderTracks #2 #1   new order: [hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]
+orderTracks bam bed new order: [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]
 ```
 
 
 ### history
 
+**Usage: history **
+
 Show the list of visited positions. 
 
-### save [filename = chrom_start_end.txt']
+### save
+
+**Usage: save [filename = chrom_start_end.txt']**
 
 Save current screenshot to file in either text or png format. Default filename is generated from the current coordinates and the default format is txt. With filename .png save as png using current coordinates as filename. Use extension .png to save as png format. Note that colours are not retained. Examples:
 ```
@@ -327,9 +419,13 @@ save mygene.png ## Save to mygene.png as png
 
 ### q
 
+**Usage: q **
+
 Quit 
 
 ### h
+
+**Usage: h **
 
 Show this help. For help on specific commands use `command -h`, for example `ylim -h` 
 

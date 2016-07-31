@@ -4,6 +4,13 @@ TODO
 Features
 --------
 
+Need to turn off DEBUG when reading fasta files!
+
+```
+DEBUG   2016-07-31 22:23:19 BlockCompressedOutputStream Using deflater: Deflater
+DEBUG   2016-07-31 22:23:19 BlockCompressedOutputStream Using deflater: Deflater
+```
+
 * Add a `bookmark` command create on the fly an IntervalFeatureTrack with bookmarked regions.  API:
 `bookmark`: Add current region to bookmarks; `bookmark show` print current bookmarked features;
 `bookmark clear`, etc.
