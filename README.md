@@ -65,10 +65,10 @@ Installation quick start
 In the commands below replace version number with the latest from [releases](https://github.com/dariober/ASCIIGenome/releases):
 
 ```
-wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.1.0.zip
-unzip ASCIIGenome-0.1.0.zip
+wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.2.0.zip
+unzip ASCIIGenome-0.2.0.zip
 
-cd ASCIIGenome-0.1.0/
+cd ASCIIGenome-0.2.0/
 chmod a+x ASCIIGenome
 cp ASCIIGenome.jar /usr/local/bin/ # Or ~/bin/
 cp ASCIIGenome /usr/local/bin/     # Or ~/bin/ 
