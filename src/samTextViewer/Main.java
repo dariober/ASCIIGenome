@@ -7,20 +7,16 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.lang3.text.StrMatcher;
-import org.apache.commons.lang3.text.StrTokenizer;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 
+import commandHelp.CommandList;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import net.sourceforge.argparse4j.inf.Namespace;
-import filter.FlagToFilter;
 import htsjdk.samtools.SAMSequenceDictionary;
-import htsjdk.samtools.filter.MappingQualityFilter;
-import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
-import jline.console.completer.AggregateCompleter;
-import jline.console.completer.StringsCompleter;
 import tracks.Track;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
@@ -49,33 +45,22 @@ public class Main {
 		
 		List<String> inputFileList= opts.getList("input");
 		String region= opts.getString("region");
-		String genome= opts.getString("genome");
-		String fasta= opts.getString("fasta");
-		boolean rpm= false; // opts.getBoolean("rpm");
+		final String genome= opts.getString("genome");
+		final String fasta= opts.getString("fasta");
+		final String exec= opts.getString("exec");
 		final int maxReadsStack= opts.getInt("maxReadsStack");
-		int f_incl= 0; // opts.getInt("f");
-		int F_excl= 0; // opts.getInt("F");
-		int mapq= 0; // opts.getInt("mapq");
-		boolean noFormat= opts.getBoolean("noFormat");
-		boolean nonInteractive= opts.getBoolean("nonInteractive");
-		boolean withReadName= false; // FIXME: Add to parser?
-		
-		if((F_excl & 4) != 4){ // Always filter out read unmapped
-			F_excl += 4;
-		}
-			
-		//if(fasta == null && bs == true){
-		//	System.err.println("Warning: Fasta reference not provided. Bisulfite mode will be disabled");
-		//	bs= false;
-		//}
-		
+		final boolean noFormat= opts.getBoolean("noFormat");
+		final boolean nonInteractive= opts.getBoolean("nonInteractive");
+		// boolean withReadName= false; 
+				
 		int windowSize= 160;
 		try{
-			int terminalWidth = jline.TerminalFactory.get().getWidth();
-			windowSize= (int) (terminalWidth * 0.999); 
+			windowSize= jline.TerminalFactory.get().getWidth() - 1; 
 		} catch(Exception e){
 			e.printStackTrace();
 		}
+		
+		Utils.checkFasta(fasta);
 		
 		/* Test input files exist */
 		List<String> dropMe= new ArrayList<String>();
@@ -122,12 +107,6 @@ public class Main {
 		}
 		gch.add(new GenomicCoords(region, samSeqDict, windowSize, fasta));
 
-		String currentCmd = null; // Used to store the current interactive command and repeat it if no new cmd is given. 
-		
-		String printIntervalFeaturesRegex= "x^"; // false;
-		String printIntervalFeaturesFullRegex= "x^";
-		String rpmRegex= "x^";
-		
 		TrackSet trackSet= new TrackSet();
 
 		/* Initialize GC profile */
@@ -136,17 +115,25 @@ public class Main {
 			trackSet.getTrackSet().put(cgWiggle.getFileTag(), cgWiggle);
 		}
 		
+		TrackIntervalFeature seqRegexTrack= gch.current().findRegex("^$");
+		
+		// Put here the previous command so that it is re-issued if no imput is given
+		// You have to initialize this var outside the while loop that processes input files.
+		String currentCmdConcatInput= ""; 
 		String seqRegex= null;
 		int idForTrack= 0;
 		String snapshotFile= null;
 		boolean snapshotStripAnsi= true;
-		ConsoleReader console = InlineHelp.initConsole();
-		while(true){ // Each loop processes the user's input files.
+		ConsoleReader console = CommandList.initConsole();
+		
+		boolean execDone= exec.isEmpty() ? true : false; // Do we need to execute commands from --exec? If exec is empty, consider it done.
 
-			/* Prepare filters */
-			List<SamRecordFilter> filters= FlagToFilter.flagToFilterList(f_incl, F_excl);
-			filters.add(new MappingQualityFilter(mapq));
-			
+		/* =================================== *
+		 * Start processing interactive input  *
+		 * =================================== */
+		
+		while(true){ 
+
 			for(int i= 0; i < inputFileList.size(); i++){ 
 				/* Iterate through each input file */
 				String inputFileName= inputFileList.get(i);
@@ -157,21 +144,16 @@ public class Main {
 					String coverageTrackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
 					idForTrack++;
 					if(!trackSet.getTrackSet().containsKey(coverageTrackId)){
-						TrackCoverage trackCoverage= new TrackCoverage(inputFileName, gch.current(), filters, false);
+						TrackCoverage trackCoverage= new TrackCoverage(inputFileName, gch.current(), false);
 						trackCoverage.setFileTag(coverageTrackId);
 						trackSet.getTrackSet().put(trackCoverage.getFileTag(), trackCoverage);
 					}
 					TrackCoverage trackCoverage= (TrackCoverage) trackSet.getTrackSet().get(coverageTrackId);
 					trackCoverage.setGc(gch.current());
-					trackCoverage.setFilters(filters);
-					if(Pattern.compile(rpmRegex).matcher(trackCoverage.getFileTag()).find()){
-						rpm= (trackCoverage.getRpm()) ? false : true; // Invert rpm set.
-						System.err.println("Setting RPM to " + rpm + " for " + trackCoverage.getFileTag());
-						trackCoverage.setRpm(rpm);
+					if(trackCoverage.getyMaxLines() > 0){
+						trackCoverage.update();
 					}
-					trackCoverage.update();
-					trackCoverage.printToScreen();				
-					
+					trackCoverage.printToScreen();					
 					/* Methylation profile disable until a better representation is prepared
 				
 					if(bs && trackCoverage.getScreenLocusInfoList().size() > 0){
@@ -192,10 +174,10 @@ public class Main {
 					*/
 										
 					/* Reads */
-					String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
+					String trackId= new File(inputFileName).getName() + "@" + (idForTrack+1);
 					idForTrack++;
 					if(!trackSet.getTrackSet().containsKey(trackId)){
-						TrackReads trackReads= new TrackReads(inputFileName, gch.current(), filters, maxReadsStack);
+						TrackReads trackReads= new TrackReads(inputFileName, gch.current(), maxReadsStack);
 						trackReads.setFileTag(trackId);
 						trackSet.getTrackSet().put(trackReads.getFileTag(), trackReads);
 						trackReads.setFilename(inputFileName);
@@ -203,9 +185,10 @@ public class Main {
 					}
 					TrackReads trackReads= (TrackReads) trackSet.getTrackSet().get(trackId);
 					trackReads.setGc(gch.current());
-					trackReads.setFilters(filters);
-					trackReads.setWithReadName(withReadName);
-					trackReads.update();
+					// trackReads.setWithReadName(withReadName);
+					if(trackReads.getyMaxLines() > 0){
+						trackReads.update();
+					}
 				} // End processing bam file
 				
 				/* Annotatation */
@@ -221,9 +204,10 @@ public class Main {
 					}
 					TrackIntervalFeature tif= (TrackIntervalFeature) trackSet.getTrackSet().get(trackId);
 					tif.setGc(gch.current());
-					//tif.setyMaxLines(trackHeight);
 					try {
-						tif.update();
+						if(tif.getyMaxLines() > 0){
+							tif.update();
+						}
 					} catch(InvalidGenomicCoordsException e){
 						e.printStackTrace();
 					}
@@ -242,18 +226,21 @@ public class Main {
 					}
 					TrackWiggles tw= (TrackWiggles) trackSet.getTrackSet().get(trackId);
 					tw.setGc(gch.current());
-					tw.update();
+					if(tw.getyMaxLines() > 0){
+						tw.update();
+					}
 					tw.printToScreen();
 				}
 			} // End loop through files 
-			rpmRegex= "x^"; // Reset to match nothing so that nothing changes until rpm opt is called again.  
-			
+
 			/* Print tracks */
 			/* ************ */
-			console.clearScreen();
-			console.flush();
+			if(!nonInteractive){
+				console.clearScreen();
+				console.flush();
+			}
 			
-			if(gch.current().getChromIdeogram(20) != null){
+			if(gch.current().getChromIdeogram(20) != null && execDone){
 				Utils.printer(gch.current().getChromIdeogram(20) + "\n", snapshotFile, snapshotStripAnsi);
 			}			
 			for(Track tr : trackSet.getTrackSet().values()){
@@ -261,18 +248,15 @@ public class Main {
 					continue;
 				}
 				tr.setNoFormat(noFormat);
-				Utils.printer(tr.getTitle(), snapshotFile, snapshotStripAnsi);
-				if(tr.getyMaxLines() > 0){
+				if(execDone && tr.getyMaxLines() > 0){
+					Utils.printer(tr.getTitle(), snapshotFile, snapshotStripAnsi);
 					Utils.printer(tr.printToScreen() + "\n", snapshotFile, snapshotStripAnsi);
+					Utils.printer(tr.getPrintableConsensusSequence(), snapshotFile, snapshotStripAnsi);
 				}
 
 				// Print features
-				if(Pattern.compile(printIntervalFeaturesRegex).matcher(tr.getFileTag()).find()){
-					String printable= tr.printFeatures(windowSize);
-					Utils.printer(printable, snapshotFile, snapshotStripAnsi);
-				}
-				if(Pattern.compile(printIntervalFeaturesFullRegex).matcher(tr.getFileTag()).find()){
-					String printable= tr.printFeatures(Integer.MAX_VALUE);
+				String printable= tr.printFeatures(windowSize);
+				if(execDone){
 					Utils.printer(printable, snapshotFile, snapshotStripAnsi);
 				}
 			}
@@ -294,338 +278,334 @@ public class Main {
 					tw.setYLimitMin(yLimitMin);
 					tw.setYLimitMax(yLimitMax);
 					tw.setTitleColour(col);
-					Utils.printer(tw.getTitle(), snapshotFile, snapshotStripAnsi);
-					String gcPrintable= tw.printToScreen();
-					Utils.printer(gcPrintable + "\n", snapshotFile, snapshotStripAnsi);
+					tw.setNoFormat(noFormat);
+					// tw.setHidden(trackSet.getTrackSet().get(GenomicCoords.gcProfileFileTag).isHidden());
+					if(execDone && tw.getyMaxLines() > 0){
+						Utils.printer(tw.getTitle(), snapshotFile, snapshotStripAnsi);
+						String gcPrintable= tw.printToScreen();
+						Utils.printer(gcPrintable + "\n", snapshotFile, snapshotStripAnsi);
+					}
 				}
 			}
 			// Track for matching regex
-			TrackIntervalFeature seqRegexTrack = gch.current().findRegex(seqRegex);
+			int prevHeight= seqRegexTrack.getyMaxLines();
+			seqRegexTrack = gch.current().findRegex(seqRegex);
 			seqRegexTrack.setNoFormat(noFormat);
-			if(trackSet.getRegexForTrackHeight().matcher(seqRegexTrack.getFileTag()).find()){
-				if(trackSet.getTrackHeightForRegex() < 0){
-					seqRegexTrack.setyMaxLines(10); // Sensible default if trackHeightForRegex is unset 
-				} else {
+			seqRegexTrack.setyMaxLines(prevHeight);
+			// See if we need to change height
+			for(Pattern p : trackSet.getRegexForTrackHeight()){
+				if(p.matcher(seqRegexTrack.getFileTag()).find()){
 					seqRegexTrack.setyMaxLines(trackSet.getTrackHeightForRegex());
+					break;
 				}
 			}
-			// seqRegexTrack.setyMaxLines(Integer.MAX_VALUE);
 			String seqPattern= seqRegexTrack.printToScreen();
 			if(!seqPattern.isEmpty()){
 				seqPattern+="\n";
 			} 
-			Utils.printer(seqPattern, snapshotFile, snapshotStripAnsi); 
-			// Sequence 
-			Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile, snapshotStripAnsi);
-			String ruler= gch.current().printableRuler(10);
-			Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile, snapshotStripAnsi);
-
-			String footer= gch.current().toString() + "; " + Math.rint(gch.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " 
-					+ "Filters: -q " + mapq  + " -f " + f_incl + " -F " + F_excl
-					+ "; " + getMemoryStat();
-			if(!noFormat){
-				Utils.printer("\033[0;34m" + footer + "\033[0m; \n", snapshotFile, snapshotStripAnsi);
-			} else {
-				Utils.printer(footer + "\n", snapshotFile, snapshotStripAnsi);
+			if(execDone){
+				Utils.printer(seqPattern, snapshotFile, snapshotStripAnsi);
 			}
-			
-			// Optionally convert to png
-			if(snapshotFile != null && snapshotFile.endsWith("png")){
-				Utils.convertTextFileToGraphic(new File(snapshotFile), new File(snapshotFile));
+			// Ruler and sequence
+			if(execDone){
+				Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile, snapshotStripAnsi);
+				String ruler= gch.current().printableRuler(10);
+				Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile, snapshotStripAnsi);
+			}
+			String footer= gch.current().toString() + "; " + Math.rint(gch.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " + getMemoryStat();
+			if(execDone){
+				if(!noFormat){
+					Utils.printer("\033[0;34m" + footer + "\033[0m; \n", snapshotFile, snapshotStripAnsi);
+				} else {
+					Utils.printer(footer + "\n", snapshotFile, snapshotStripAnsi);
+				}
+				// Optionally convert to png
+				if(snapshotFile != null && snapshotFile.endsWith("png")){
+					Utils.convertTextFileToGraphic(new File(snapshotFile), new File(snapshotFile));
+				} 
 			}
 			
 			/* Interactive input */
 			/* ================= */
-			if(!nonInteractive){
+			if(nonInteractive && execDone){
+				// Exit now if non-interctive mode is set and no string is passed to be executed. 
 				break;
 			}
-
-/*
-			boolean needValidInput= true;
-			while(needValidInput){
-				console.setPrompt("[h] for help: ");
-				String cmdInputLong= console.readLine().trim();
-
-				if (cmdInputLong.trim().isEmpty()){
-					// Repeat previous command(s)
-					cmdInputLong= currentCmd;
-				}
-				
-				ArrayList<String> cmdList= Utils.tokenize(cmdInputLong, "&&");
-				
-				for(String cmdInput : cmdList){
-					
-				}
-				needValidInput= false;
-			}			
-*/			
-			String cmdInput= null;
+			
+			/* =================================== *
+			 * I N T E R A C T I V E    I N P U T  *
+			 * =================================== */
+			
+			String cmdConcatInput= null; // String like "zi && -F 16 && mapq 10"
 			snapshotFile= null; 
-			while(cmdInput == null){ // Keep asking for input until you get something valid
-				console.setPrompt("[h] for help: ");
-				cmdInput = console.readLine().trim();
+
+			while(cmdConcatInput == null){
 				
-				if (cmdInput.trim().isEmpty()){
-					// Repeat previous command
-					cmdInput= currentCmd;
+				if(execDone){
+					console.setPrompt("[h] for help: ");
+					cmdConcatInput= console.readLine().trim();
+					
+					if (cmdConcatInput.isEmpty() || cmdConcatInput == null){
+						// Repeat previous command
+						cmdConcatInput= currentCmdConcatInput;
+					}
+				} else {
+					cmdConcatInput= exec;
+					execDone= true;
+				}
+				// cmdInputList: List of individual commands in tokens to be issued. 
+				// E.g.: [ ["zi"], 
+				//         ["-F", "16"], 
+				//         ["mapq", "10"] ]
+				// Don't check the validity of each cmd now. Execute one by one and if anything goes wrong
+				// reset cmdConcatInput=null so that console input is asked again. Of course, what is executed is not 
+				// rolled back.
+				List<List<String>> cmdInputList= new ArrayList<List<String>>();
+
+				for(String cmd : Splitter.on("&&").trimResults().omitEmptyStrings().split(cmdConcatInput)){
+					cmdInputList.add(Utils.tokenize(cmd, " "));
 				}
 				
-				if(cmdInput == null || cmdInput.equals("h")){
-					Utils.printer(InlineHelp.getHelp() + "\n", snapshotFile, snapshotStripAnsi);
-					cmdInput= null;
-					continue;
-				} 
-				/* Parse args */
-				/* ---------- */
-				try{
-					if(cmdInput.equals("q")){
-						System.exit(0);
-					}
-					
-					if(cmdInput.equals("f") 
-						|| cmdInput.equals("b")
-						|| cmdInput.equals("ff") 
-						|| cmdInput.equals("bb")
-						|| cmdInput.matches("^\\d+.*")
-						|| cmdInput.matches("^\\-\\d+.*") 
-						|| cmdInput.matches("^\\+\\d+.*")){ // No cmd line args either f/b ops or ints
-						String newRegion= Utils.parseConsoleInput(cmdInput, gch.current()).trim();
-						GenomicCoords newGc= new GenomicCoords(newRegion, samSeqDict, windowSize, fasta);
-						gch.add(newGc);	
-					} else if(cmdInput.startsWith("goto") || cmdInput.startsWith(":")){
-						String reg= cmdInput.replaceFirst("goto|:", "").trim();
-						gch.add(new GenomicCoords(reg, samSeqDict, windowSize, fasta));
-					} else if(cmdInput.startsWith("dataCol ")){
+				for(List<String> cmdInput : cmdInputList){
+					try {
 						
-						StrTokenizer str= new StrTokenizer(cmdInput);
-						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> tokens= str.getTokenList();
-						String trackIdRegex= ".*";
-						if(tokens.size() >= 3){
-							trackIdRegex= tokens.get(2);
-							try{
-								Pattern.compile(trackIdRegex);
-							} catch(PatternSyntaxException e){
-						    	System.err.println("Invalid regex in: " + cmdInput);
-						    	System.err.println(e.getDescription());
-								cmdInput= null;
+						if(cmdInput.get(0).equals("h")){  
+							Utils.printer(CommandList.briefHelp(), snapshotFile, snapshotStripAnsi);
+							currentCmdConcatInput= cmdConcatInput;
+							cmdConcatInput= null;	
+							
+						} else if(cmdInput.size() >= 2 && cmdInput.get(1).equals("-h")){ // Help on this command
+							Utils.printer("\n" + CommandList.getHelpForCommand(cmdInput.get(0)) + "\n", snapshotFile, snapshotStripAnsi);
+							currentCmdConcatInput= cmdConcatInput;
+							cmdConcatInput= null;
+						
+						//} else if(cmdInput.get(0).equals("windowSize")){
+						//	if(cmdInput.size() == 1){
+						//		windowSize= jline.TerminalFactory.get().getWidth() - 1;
+						//	} else {
+						//		windowSize= Integer.parseInt(cmdInput.get(1));
+						//	}
+						//	// Replace the current genomicCoords obj with a new one having the same coordinates 
+						//	// but different windowSize.
+						//	// NB: The current genomic obj might not be the last one in the history list.
+						//	String newRegion= gch.current().getChrom() + ":" + gch.current().getFrom() + "-" + gch.current().getTo(); 
+						//	gch.getHistory().add(gch.getHistory().indexOf(gch.current()), new GenomicCoords(newRegion, samSeqDict, windowSize, fasta));							
+							
+						} else if(cmdInput.get(0).equals("history")){
+							for(GenomicCoords xgc : gch.getHistory()){
+								Utils.printer(xgc.toString() + "\n", snapshotFile, snapshotStripAnsi);
+							}
+							currentCmdConcatInput= cmdConcatInput;
+							cmdConcatInput= null;
+
+						} else if(cmdInput.get(0).equals("showGenome")) {
+							System.out.println(Utils.printSamSeqDict(gch.current().getSamSeqDict(), 30));
+							currentCmdConcatInput= cmdConcatInput;
+							cmdConcatInput= null;
+						
+						} else if(cmdInput.get(0).equals("infoTracks")) {
+							System.out.println(trackSet.showTrackInfo());
+							currentCmdConcatInput= cmdConcatInput;
+							cmdConcatInput= null;
+							
+						} else if(cmdInput.get(0).equals("q")){
+							System.exit(0);
+						
+						} else if(cmdInput.get(0).equals("f")
+								|| cmdInput.get(0).equals("b")
+								|| cmdInput.get(0).equals("ff") 
+								|| cmdInput.get(0).equals("bb")
+								|| cmdInput.get(0).matches("^\\d+.*")
+								|| cmdInput.get(0).matches("^\\-\\d+.*") 
+								|| cmdInput.get(0).matches("^\\+\\d+.*")){ // No cmd line args either f/b ops or ints
+								// FIXME: You shouldn't join the list of args back to string. You should refactor parseConsoleInput! 
+								String newRegion= Utils.parseConsoleInput(Joiner.on(" ").join(cmdInput), gch.current()).trim();
+								gch.add(new GenomicCoords(newRegion, samSeqDict, windowSize, fasta));
+								
+						} else if(cmdInput.get(0).equals("goto") || cmdInput.get(0).startsWith(":")){
+							String reg= Joiner.on(" ").join(cmdInput).replaceFirst("goto|:", "").trim();
+							gch.add(new GenomicCoords(reg, samSeqDict, windowSize, fasta));
+							
+						} else if(cmdInput.get(0).equals("dataCol")){
+							trackSet.setDataColForRegex(cmdInput);
+											
+						} else if(cmdInput.get(0).equals("ylim") && cmdInput.size() > 1){
+							trackSet.setTrackYlimitsForRegex(cmdInput);
+							
+						} else if(cmdInput.get(0).equals("trackHeight") && cmdInput.size() > 1){
+							trackSet.setTrackHeightForRegex(cmdInput);
+							
+						} else if((cmdInput.get(0).equals("colorTrack") || cmdInput.get(0).equals("colourTrack")) && cmdInput.size() > 1){
+							trackSet.setTrackColourForRegex(cmdInput); 
+
+						} else if(cmdInput.get(0).equals("BSseq")) {
+							if( fasta == null ){
+								System.err.println("Cannot set BSseq mode without fasta");
+								cmdConcatInput= null;
 								continue;
 							}
-						}
-						trackSet.selectDataColumnForBedgraph(Integer.parseInt(tokens.get(1)), trackIdRegex);
-					
-					} else if(cmdInput.startsWith("ylim ")){
-					
-						try{
-							trackSet.setTrackYlimitsForRegex(cmdInput);
-						} catch(InvalidCommandLineException e){
-							cmdInput= null;
-							continue;
-						} catch(PatternSyntaxException e) {
-							cmdInput= null;
-				        	continue;
-						}
-					} else if(cmdInput.startsWith("trackHeight ")){
-						try{
-							trackSet.setTrackHeightForRegex(cmdInput);
-						} catch(InvalidCommandLineException e){
-							cmdInput= null;
-							continue;
-						} catch(PatternSyntaxException e) {
-							cmdInput= null;
-				        	continue;
-						}
-					} else if(cmdInput.startsWith("colorTrack") || cmdInput.startsWith("colourTrack")){
-						try{
-							trackSet.setTrackColourForRegex(cmdInput);
-						} catch(InvalidCommandLineException e){
-							cmdInput= null;
-							continue;
-						} catch(PatternSyntaxException e) {
-							cmdInput= null;
-				        	continue;
-						} 
-					} else if(cmdInput.startsWith("BSseq")) {
-						if( fasta == null ){
-							System.err.println("Cannot set BSseq mode without fasta");
-							cmdInput= null;
-							continue;
-						}
-						trackSet.setBisulfiteModeForRegex(cmdInput);
-					} else if (cmdInput.startsWith("squash")){
-						trackSet.setFeatureSquashForRegex(cmdInput);
-					} else if(cmdInput.startsWith("gffNameAttr")) {
-						trackSet.setAttributeForGFFName(cmdInput);
-					} else if(cmdInput.startsWith("addTracks ")){
-						StrTokenizer str= new StrTokenizer(cmdInput);
-						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> newFileNames= str.getTokenList();
-						newFileNames.remove(0);
-						Utils.addTrack(inputFileList, newFileNames);
-			
-						if(gch.current().getSamSeqDict().size() == 0){
-							samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(inputFileList, null, null);
-							GenomicCoords gc= gch.current();
-							gc.setSamSeqDict(samSeqDict);
-						}
-					} else if(cmdInput.startsWith("orderTracks ")){
-						StrTokenizer str= new StrTokenizer(cmdInput);
-						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> newOrder= str.getTokenList();
-						newOrder.remove(0);
-						trackSet.orderTracks(newOrder);
-					} else if (cmdInput.equals("p")) {
-						gch.previous();
-					} else if (cmdInput.equals("n")) {
-						gch.next();
-					} else if(cmdInput.startsWith("zo")){
-						int nz= Utils.parseZoom(cmdInput, 1);
-						GenomicCoords gc = (GenomicCoords)gch.current().clone();
-						for(int i= 0; i < nz; i++){
-							gc.zoomOut();
-						}
-						gch.add(gc);
-					} else if(cmdInput.startsWith("zi")){
-						int nz= Utils.parseZoom(cmdInput, 1);
-						GenomicCoords gc = (GenomicCoords)gch.current().clone();
-						for(int i= 0; i < nz; i++){
-							gc.zoomIn();
-						}
-						gch.add(gc);
-					} else if(cmdInput.equals("history")){
-						for(GenomicCoords x : gch.getHistory()){
-							Utils.printer(x.toString() + "\n", snapshotFile, snapshotStripAnsi);
-						}
-						cmdInput= null;
-					} else if(cmdInput.equals("print") 
-							|| cmdInput.startsWith("print ") 
-							|| cmdInput.equals("printFull")
-							|| cmdInput.startsWith("printFull ")){
-						String regex= cmdInput.replaceAll("^printFull|^print", "").trim(); // Memo: ^printFull before ^print 
-						try{
-							Pattern.compile(regex); // Validate regex
-						} catch(Exception e){
-					    	System.err.println("Invalid regex in: " + cmdInput);
-					    	System.err.println("regex: " + regex);
-					    	cmdInput= null;
-					    	continue;
-						}
-						if(regex.isEmpty()){
-							regex= ".*";
-						}
-						if(cmdInput.toLowerCase().equals("print") || cmdInput.toLowerCase().startsWith("print ")){
-							printIntervalFeaturesFullRegex= "x^";	// Turn off print/Full
-							printIntervalFeaturesRegex= regex;
-						} else {
-							printIntervalFeaturesRegex= "x^";	// Turn off print/Full
-							printIntervalFeaturesFullRegex= regex;
-						}
-					} else if(cmdInput.toLowerCase().equals("rnameon")){
-						withReadName= true;
-					} else if(cmdInput.toLowerCase().equals("rnameoff")) {
-						withReadName= false;
-					} else if(cmdInput.startsWith("next_start ") || cmdInput.equals("next_start")){
-						GenomicCoords gc= (GenomicCoords)gch.current().clone();
-						GenomicCoords nextGc= trackSet.goToNextFeatureOnFile(cmdInput.replace("next_start", "").trim(), gc, -1.0);
-						gch.add(nextGc);
-					} else if(cmdInput.startsWith("next ") || cmdInput.equals("next")){
+						    trackSet.setBisulfiteModeForRegex(cmdInput);
+						    
+						} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals("merge")){
+							trackSet.setFeatureDisplayModeForRegex(cmdInput);
+
+						} else if (cmdInput.get(0).equals("gap")){
+							trackSet.setFeatureGapForRegex(cmdInput);
+							
+						} else if(cmdInput.get(0).equals("gffNameAttr")) {
+							trackSet.setAttributeForGFFName(cmdInput);
+							
+						} else if(cmdInput.get(0).equals("addTracks") && cmdInput.size() > 1){
+							cmdInput.remove(0);
+							Utils.addTrack(inputFileList, cmdInput);
+				
+							if(gch.current().getSamSeqDict().size() == 0){
+								samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(inputFileList, null, null);
+								GenomicCoords gc= gch.current();
+								gc.setSamSeqDict(samSeqDict);
+							}
+							
+						} else if(cmdInput.get(0).equals("orderTracks") && cmdInput.size() > 1){
+							cmdInput.remove(0);
+							trackSet.orderTracks(cmdInput);
+							
+						} else if (cmdInput.get(0).equals("p")) {
+							gch.previous();
+							
+						} else if (cmdInput.get(0).equals("n")) {
+							gch.next();
+							
+						} else if(cmdInput.get(0).equals("zo")){
+							int nz= Utils.parseZoom(Joiner.on(" ").join(cmdInput), 1);
+							GenomicCoords gc = (GenomicCoords)gch.current().clone();
+							for(int i= 0; i < nz; i++){
+								gc.zoomOut();
+							}
+							gch.add(gc);
+							
+						} else if(cmdInput.get(0).equals("zi")){
+							int nz= Utils.parseZoom(Joiner.on(" ").join(cmdInput), 1);
+							GenomicCoords gc = (GenomicCoords)gch.current().clone();
+							for(int i= 0; i < nz; i++){
+								gc.zoomIn();
+							}
+							gch.add(gc);
+						
+						} else if(cmdInput.get(0).equals("print") || cmdInput.get(0).equals("printFull")){
+								trackSet.setPrintModeForRegex(cmdInput);
+
+						} else if(cmdInput.get(0).equals("next_start") || cmdInput.get(0).equals("next")){
 							GenomicCoords gc= (GenomicCoords)gch.current().clone();
-							gch.add(trackSet.goToNextFeatureOnFile(cmdInput.replace("next", "").trim(), gc, 5.0));
-					} else if(cmdInput.startsWith("find_first ") || 
-							  cmdInput.startsWith("find_all ")) {  
-						StrTokenizer str= new StrTokenizer(cmdInput);
-						str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> tokens= str.getTokenList();
-						if(tokens.size() < 2){
-							System.err.println("Error in find* subcommand. Expected at least 2 args got: " + cmdInput);
-							cmdInput= null;
-							continue;
-						}
-						if(tokens.size() == 2){
-							tokens.add("");
-						}
-						GenomicCoords gc= (GenomicCoords)gch.current().clone();
-						// Determine whether we match first or all
-						boolean all= (cmdInput.startsWith("find_all ")) ? true : false;
-						gch.add(trackSet.findNextMatchOnTrack(tokens.get(1), tokens.get(2), gc, all));
-					} else if (cmdInput.startsWith("seqRegex")){
-						if( fasta == null ){
-							System.err.println("Cannot find regex in sequence without fasta reference!");
-							cmdInput= null;
-							continue;
-						}
-						StrTokenizer str= new StrTokenizer(cmdInput);
-				    	str.setTrimmerMatcher(StrMatcher.spaceMatcher());
-						str.setQuoteChar('\'');
-						List<String> tokens= str.getTokenList();
-						if(tokens.size() == 1){
-							seqRegex= "";
-						} else {
-							seqRegex= tokens.get(1).trim();
-							try{
-								Pattern.compile(seqRegex);
-							} catch(PatternSyntaxException e){
-						    	System.err.println("Invalid seqRegex in: " + cmdInput);
-						    	System.err.println(e.getDescription());
-								cmdInput= null;
+							String trackId= "";
+							if(cmdInput.size() > 1){
+								trackId= cmdInput.get(1);
+							}
+							if(cmdInput.get(0).equals("next_start")){
+								gch.add(trackSet.goToNextFeatureOnFile(trackId, gc, -1.0));
+							} else {
+								gch.add(trackSet.goToNextFeatureOnFile(trackId, gc, 5.0));
+							}
+
+						} else if(cmdInput.get(0).equals("find_first") || 
+								  cmdInput.get(0).equals("find_all")) {  
+							if(cmdInput.size() < 2){
+								System.err.println("Error in find* subcommand. Expected at least 1 args got: " + cmdInput);
+								cmdConcatInput= null;
 								continue;
-							}							
+							}
+							if(cmdInput.size() == 2){
+								cmdInput.add("");
+							}
+							GenomicCoords gc= (GenomicCoords)gch.current().clone();
+							// Determine whether we match first or all
+							boolean all= (cmdInput.get(0).equals("find_all")) ? true : false;
+							gch.add(trackSet.findNextMatchOnTrack(cmdInput.get(1), cmdInput.get(2), gc, all));
+						
+						} else if (cmdInput.get(0).equals("seqRegex")){
+							if( fasta == null ){
+								System.err.println("Cannot find regex in sequence without fasta reference!");
+								cmdConcatInput= null;
+								continue;
+							}
+							if(cmdInput.size() == 1){
+								seqRegex= "";
+							} else {
+								seqRegex= cmdInput.get(1);
+								try{
+									Pattern.compile(seqRegex);
+								} catch(PatternSyntaxException e){
+							    	System.err.println("Invalid seqRegex in: " + cmdInput);
+							    	System.err.println(e.getDescription());
+									cmdConcatInput= null;
+									continue;
+								}						
+							}
+
+						} else if(cmdInput.get(0).equals("filter")){
+							trackSet.setFilterForTrackIntervalFeature(cmdInput);
+
+						} else if(cmdInput.get(0).equals("rpm")) {
+							trackSet.setRpmForRegex(cmdInput);
+							
+						} else if(cmdInput.get(0).equals("-F")) {     //
+							trackSet.setFilterFlagForRegex(cmdInput); //	
+						}											  //
+																	  //
+						else if(cmdInput.get(0).equals("-f")) {       //
+							trackSet.setFilterFlagForRegex(cmdInput); //  -F -f mapq are processed by the same method!
+						}                                             //
+																	  //
+						else if(cmdInput.get(0).equals("mapq")) {     //
+							trackSet.setFilterFlagForRegex(cmdInput); //	
+						}                                             //
+						
+					    else if(cmdInput.get(0).equals("save") || cmdInput.get(0).equals("savef")) {
+							snapshotFile= Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(cmdInput), gch.current());
+							if(cmdInput.get(0).equals("save")){
+								snapshotStripAnsi= true;
+							} else if(cmdInput.get(0).equals("savef")){
+								snapshotStripAnsi= false;
+							}
+						} else if(cmdInput.get(0).equals("bookmark")){
+							// String name= cmdInput.replaceAll("^bookmark", "").trim();
+							//GenomicCoords gc = (GenomicCoords)gch.current().clone();
+							//trackSet.addBookmark_IN_PREP(gc, name);
+							
+						} else {
+							System.err.println("Unrecognized argument: " + cmdInput);
+							throw new InvalidCommandLineException();
 						}
-					} else if(cmdInput.startsWith("visible ") || cmdInput.equals("visible")){
-						try{
-							trackSet.setVisibilityForTrackIntervalFeature(cmdInput);
-						} catch (PatternSyntaxException e){
-							System.err.println("Invalid pattern in " + cmdInput);
-							cmdInput= null;
-							continue;							
-						}
-					} else if(cmdInput.equals("showGenome")) {
-						System.out.println(Utils.printSamSeqDict(gch.current().getSamSeqDict(), 30));
-						cmdInput= null;
-						continue;
-					} else if(cmdInput.equals("rpm") || cmdInput.startsWith("rpm ")) {
-						rpmRegex= cmdInput.replaceAll("^rpm", "").trim();
-					} else if(cmdInput.startsWith("-f")) { 
-						f_incl= Integer.parseInt(cmdInput.replaceAll("^-f", "").trim());
-					} else if(cmdInput.startsWith("-F")) { 
-						F_excl= Integer.parseInt(cmdInput.replaceAll("^-F", "").trim());
-						if((F_excl & 4) != 4){ // Always filter out read unmapped
-							F_excl += 4;
-						}
-					} else if(cmdInput.startsWith("mapq")) { 
-						mapq= Integer.parseInt(cmdInput.replaceAll("^mapq", "").trim());
+						
+					} catch(Exception e){ // You shouldn't catch anything! Be more specific.
+						System.err.println("\nError processing input: " + cmdInput + "\n");
+						cmdConcatInput= null; 
+					} // END PARSING ONE COMMAND
+					
+					if(cmdConcatInput == null){
+						// If something goes wrong or help is invoked, stop executing commands and restart asking for input
+						// Unless we are in non-interactive mode
+						if(nonInteractive){
+							System.exit(1);
+						} 
+						break;
 					}
-					// else if(cmdInput.startsWith("maxLines")){
-					// maxLines= Integer.parseInt(cmdInput.replaceAll("^maxLines", "").trim());
-					//} 
-				    else if(cmdInput.startsWith("save")) {
-						snapshotFile= Utils.parseCmdinputToGetSnapshotFile(cmdInput, gch.current());
-						if(cmdInput.startsWith("save ") || cmdInput.equals("save")){
-							snapshotStripAnsi= true;
-						} else if(cmdInput.startsWith("savef ") || cmdInput.equals("savef")){
-							snapshotStripAnsi= false;
-						}
-					} else if(cmdInput.startsWith("bookmark")){
-						String name= cmdInput.replaceAll("^bookmark", "").trim();
-						//GenomicCoords gc = (GenomicCoords)gch.current().clone();
-						//trackSet.addBookmark_IN_PREP(gc, name);
-					} else {
-						System.err.println("Unrecognized argument: " + cmdInput);
-						cmdInput= null;
-					} // END OF CMD LINE ARGS
-				} catch(Exception e){
-					System.err.println("\nError processing input: " + cmdInput + "\n");
-					e.printStackTrace(); // Print trace for debugging
-					System.err.println("");
-					cmdInput= null;
+				} // END PARSING ALL COMMANDS
+				if(cmdConcatInput != null){
+					currentCmdConcatInput= cmdConcatInput;
 				}
-				currentCmd= cmdInput;
-			} // END while loop to parse cmdInput
+			} // END PARSING CONSOLE INPUT 
+			
+			int newSize= jline.TerminalFactory.get().getWidth() - 1;
+			if(newSize != gch.current().getUserWindowSize()){
+				// Replace the current genomicCoords obj with a new one having the same coordinates but different windowSize.
+				// NB: The current genomic obj might not be the last one in the history list.
+				windowSize= newSize;
+				String newRegion= gch.current().getChrom() + ":" + gch.current().getFrom() + "-" + gch.current().getTo(); 
+				gch.getHistory().add(gch.getHistory().indexOf(gch.current()), new GenomicCoords(newRegion, samSeqDict, windowSize, fasta));
+			}
+			
 			idForTrack= 0;
 		} // End while loop keep going until quit or if no interactive input set
 	}
+	
 }

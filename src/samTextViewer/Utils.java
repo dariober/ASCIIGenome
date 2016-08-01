@@ -1,11 +1,16 @@
 package samTextViewer;
 
+import htsjdk.samtools.BAMIndex;
+import htsjdk.samtools.SAMFileReader;
+import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.filter.AggregateFilter;
+import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.tribble.readers.TabixReader;
 
@@ -27,15 +32,19 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import javax.imageio.ImageIO;
@@ -49,6 +58,7 @@ import org.broad.igv.tdf.TDFReader;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
+import filter.FirstOfPairFilter;
 import tracks.IntervalFeatureSet;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
@@ -57,7 +67,128 @@ import tracks.TrackFormat;
  * @author berald01
  *
  */
+@SuppressWarnings("deprecation")
 public class Utils {
+	
+	public static void checkFasta(String fasta) {
+		if(fasta == null){
+			return;
+		}
+		File fafile= new File(fasta);
+		if(!fafile.isFile()){
+			System.err.println("Fasta file '" + fasta + "' not found.");
+			System.exit(1);
+		} 
+		if(!fafile.canRead()){
+			System.err.println("Fasta file '" + fasta + "' is not readable.");
+			System.exit(1);			
+		}
+		
+		IndexedFastaSequenceFile faSeqFile = null;
+		try {
+			faSeqFile= new IndexedFastaSequenceFile(fafile);
+		} catch (FileNotFoundException e) {
+			System.err.println("\nIs fasta file '" + fasta + "' indexed? If not index it with e.g");
+			System.err.println("samtools faidx '" + fasta + "'\n");
+			System.exit(1);
+		}
+		try {
+			faSeqFile.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+    public static long getAlignedReadCount(File bam){
+
+    	SAMFileReader.setDefaultValidationStringency(ValidationStringency.SILENT);
+		@SuppressWarnings("resource")
+		BAMIndex sr= new SAMFileReader(bam).getIndex();
+		long alnCount= 0; 
+		int i= 0;
+		while(true){
+			try{
+				alnCount += sr.getMetaData(i).getAlignedRecordCount();
+			} catch(NullPointerException e){
+				break;
+			}
+			i++;
+		}
+		sr.close();
+		return alnCount;
+    }
+
+	
+	public static List<IntervalFeature> mergeIntervalFeatures(List<IntervalFeature> intervalList) throws InvalidGenomicCoordsException{
+		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();		 
+		if(intervalList.size() == 0){
+			return mergedList;
+		}
+		
+		String chrom = null;
+		int from= -1;
+		int to= -1;
+		int screenFrom= -1;
+		int screenTo= -1;
+		int numMrgIntv= 1; // Number of intervals in the merged one. 
+				
+		for(int i= 0; i < (intervalList.size()+1); i++){
+			// We do an additional loop to add to the mergedList the last interval.
+			// The last loop has interval == null so below you need to account for it
+			IntervalFeature interval= null;
+			if(i < intervalList.size()){
+				interval= intervalList.get(i); 
+			}
+			
+			if(from < 0){ // Init interval
+				chrom= interval.getChrom(); 
+				from= interval.getFrom();
+				to= interval.getTo();
+				screenFrom= interval.getScreenFrom();
+				screenTo= interval.getScreenTo();
+				continue;
+			}
+			// Sanity check: The list to be merged is on the same chrom and sorted by start pos.
+			if(i < intervalList.size() && (!chrom.equals(interval.getChrom()) || from > interval.getFrom() || from > to)){
+				System.err.println(chrom + " " + from + " " + to);
+				throw new RuntimeException();
+			} 
+			if(i < intervalList.size() && (from <= interval.getTo() && to >= (interval.getFrom()-1) )){ 
+				// Overlap: Extend <to> coordinate. See also http://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
+				to= interval.getTo();
+				screenTo= interval.getScreenTo();
+				numMrgIntv++;
+			} else {
+				// No overlap add merged interval to list and reset new merged interval
+				IntervalFeature x= new IntervalFeature(chrom + "\t" + (from-1) + "\t" + to, TrackFormat.BED);
+				x.setScreenFrom(screenFrom);
+				x.setScreenTo(screenTo);
+
+				if(x.equals(intervalList.get(i-1)) && numMrgIntv == 1){
+					mergedList.add(intervalList.get(i-1));
+				} else {
+					mergedList.add(x);
+				}
+				
+				//if(i > 0 && x.equals(intervalList.get(i-1))){
+				//	mergedList.add(intervalList.get(i-1));
+				//} else {
+				//	mergedList.add(x);
+				//}
+				
+				if(i < intervalList.size()){
+					// Do not reset from/to if you are in extra loop.
+					from= interval.getFrom();
+					to= interval.getTo();
+					screenFrom= interval.getScreenFrom();
+					screenTo= interval.getScreenTo();
+					numMrgIntv= 1;
+				}
+			}
+		}
+		return mergedList;
+	}
+
 	
 	public static LinkedHashMap<String, Integer> ansiColorCodes(){
 		// See http://misc.flogisoft.com/bash/tip_colors_and_formatting
@@ -411,8 +542,7 @@ public class Utils {
 	 * @param bam 
 	 * @return
 	 */
-	public static String parseConsoleInput(
-			String rawInput, GenomicCoords gc){
+	public static String parseConsoleInput(String rawInput, GenomicCoords gc){
 		
 		String region= "";
 		String chrom= gc.getChrom();
@@ -852,6 +982,11 @@ public class Utils {
 	/** Split string x in tokens. Effectively just a friendly wrapper around StrTokenizer
 	 * */
 	public static ArrayList<String> tokenize(String x, String delimiterString){
+		
+		if(x == null){
+			return null;
+		}
+		
 		// See also http://stackoverflow.com/questions/38161437/inconsistent-behaviour-of-strtokenizer-to-split-string
 		StrTokenizer str= new StrTokenizer(x);
     	str.setTrimmerMatcher(StrMatcher.spaceMatcher()); 
@@ -977,5 +1112,79 @@ public class Utils {
         g2d.dispose();
         return img;
     }
+
+
+	/**
+	 * Count reads in interval using the given filters.
+	 * @param bam
+	 * @param gc
+	 * @param filters List of filters to apply
+	 * @return
+	 * @throws MalformedURLException 
+	 */
+	public static long countReadsInWindow(String bam, GenomicCoords gc, List<SamRecordFilter> filters) throws MalformedURLException {
+
+		/*  ------------------------------------------------------ */
+		/* This chunk prepares SamReader from local bam or URL bam */
+		UrlValidator urlValidator = new UrlValidator();
+		SamReaderFactory srf=SamReaderFactory.make();
+		srf.validationStringency(ValidationStringency.SILENT);
+		SamReader samReader;
+		if(urlValidator.isValid(bam)){
+			samReader = srf.open(SamInputResource.of(new URL(bam)).index(new URL(bam + ".bai")));
+		} else {
+			samReader= srf.open(new File(bam));
+		}
+		/*  ------------------------------------------------------ */
+		
+		long cnt= 0;
+		
+		Iterator<SAMRecord> sam= samReader.query(gc.getChrom(), gc.getFrom(), gc.getTo(), false);
+		AggregateFilter aggregateFilter= new AggregateFilter(filters);
+		while(sam.hasNext()){
+			SAMRecord rec= sam.next();
+			if( !aggregateFilter.filterOut(rec) ){
+				cnt++;
+			}
+		}
+		try {
+			samReader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return cnt;
+	}
+
+	/** Sort Map by value in descending order. See
+	 * http://stackoverflow.com/questions/109383/sort-a-mapkey-value-by-values-java
+	 *  */
+	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue( Map<K, V> map ){
+	    List<Map.Entry<K, V>> list = new LinkedList<>( map.entrySet() );
+	    Collections.sort( list, new Comparator<Map.Entry<K, V>>() {
+	        @Override
+	        public int compare( Map.Entry<K, V> o1, Map.Entry<K, V> o2 ){
+	            return -( o1.getValue() ).compareTo( o2.getValue() );
+	        }
+	    });
+	    
+	    Map<K, V> result = new LinkedHashMap<>();
+	    for (Map.Entry<K, V> entry : list){
+	        result.put( entry.getKey(), entry.getValue() );
+	    }
+	    return result;
+	}
+
+	public static List<SamRecordFilter> cleanInappropriateCallIfNotPairedRead(List<SamRecordFilter> filter){
+		List<SamRecordFilter> cleanfilter= new ArrayList<SamRecordFilter>(); 
+		for(SamRecordFilter x : filter){
+			if(x.equals(new FirstOfPairFilter(true)) ||
+			   x.equals(new FirstOfPairFilter(false))){
+			   //
+			} else {
+				cleanfilter.add(x);
+			}
+		}
+		return cleanfilter;
+	} 
 	
 }

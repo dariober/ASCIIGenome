@@ -64,7 +64,7 @@ public class GenomicCoordsHistory {
 		}
 		
 	}
-
+	
 	protected List<GenomicCoords> getHistory() {
 		return history;
 	}

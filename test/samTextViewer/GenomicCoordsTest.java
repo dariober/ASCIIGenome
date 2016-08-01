@@ -24,7 +24,7 @@ public class GenomicCoordsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
-	
+		
 	@Test
 	public void canPrintChromMap() throws InvalidGenomicCoordsException, IOException{
 			
@@ -188,12 +188,12 @@ public class GenomicCoordsTest {
 	@Test
 	public void canGetRefSeq() throws InvalidGenomicCoordsException, IOException{
 		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566790, samSeqDict, 1000, fastaFile);
-		assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq(true)));
+		assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
 		gc= new GenomicCoords("chr7", 5566770, 5566790, samSeqDict, 20, fastaFile);
-		assertEquals(null, gc.getRefSeq(true));
+		assertEquals(null, gc.getRefSeq());
 		
 		// Return seq even if len(seq) > windowSize
-		assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq(false)));
+		// assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
 	}
 	
 	@Test(expected = InvalidGenomicCoordsException.class)
@@ -260,7 +260,12 @@ public class GenomicCoordsTest {
 		
 		GenomicCoords gc= new GenomicCoords("chr1:101-200", samSeqDict, 50, null);
 		assertEquals(50, gc.printableRuler(10).length());
-	
+
+		gc= new GenomicCoords("chr1:1-10000", null, 50, null);
+
+		
+		String ruler= gc.printableRuler(3);
+		System.out.println(ruler);
 	}
 	
 	@Test
@@ -304,7 +309,7 @@ public class GenomicCoordsTest {
 		size= 100;
 		gc.centerAndExtendGenomicCoords(gc, size, 5.0); 
 		assertEquals(1, (int)gc.getFrom());
-	
+		
 	}
 
 }

@@ -26,6 +26,12 @@ public class FilterTest {
 	final SAMRecord rec= new SAMRecord(null);
 	
 	@Test
+	public void testBit(){
+		System.out.println(2048 & 2);
+		System.out.println(FlagToFilter.flagToFilterList(3588, 0));
+	}
+	
+	@Test
 	public void exampleFromSamtools(){
 		// How filters behave:
 		// filterOut(): 

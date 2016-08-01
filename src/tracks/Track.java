@@ -1,9 +1,12 @@
 package tracks;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import exceptions.InvalidColourException;
+import exceptions.InvalidGenomicCoordsException;
+import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -19,7 +22,6 @@ public class Track {
 	private boolean noFormat= false; 
 	private double yLimitMin= Double.NaN; // Same as R ylim()
 	private double yLimitMax= Double.NaN;
-	private List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 	/** Max size of genomic region before the track shuts down to prevent excessive slow down */
 	protected final int MAX_REGION_SIZE= 100000;   
 	
@@ -28,10 +30,17 @@ public class Track {
 
 	private String gtfAttributeForName= null;
 	/** Should features on with same coords be squashed into a single one? */
-	protected boolean squash= false;
+	// protected boolean squash= false;
+	private PrintRawLine printMode= PrintRawLine.OFF;
+	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
+	private int gap= 1;
+	private boolean rpm= false;
+	private int f_flag= 0;
+	private int F_flag= 4;
+	private int mapq= 0;
+	// private boolean printPileup= false;
+	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
 	
-//	public Track(){}
-
 	/* Min value of screen scores. Not to be confused with the y limit **/
 	public double getMinScreenScores(){
 		Double ymin= Double.NaN;
@@ -71,7 +80,7 @@ public class Track {
 	}
 	
 	/* Printers */
-	public String printToScreen(){
+	public String printToScreen() throws InvalidGenomicCoordsException{
 		return null;
 	}
 
@@ -84,9 +93,9 @@ public class Track {
 	}
 	
 	/* Setters and getters */
-	public void setTitle(String title){
-		this.title= title;
-	}
+	//public void setTitle(String title){
+	//	this.title= title;
+	//}
 	public String getTitle(){
 		return this.title;
 	}
@@ -104,6 +113,7 @@ public class Track {
 	}
 
 	public String getFileTag() { return fileTag; }
+	
 	public void setFileTag(String fileTag) { this.fileTag = fileTag; }
 	
 	protected List<Double> getScreenScores() {
@@ -130,9 +140,20 @@ public class Track {
 	public double getYLimitMax() { return yLimitMax; }
 	public void setYLimitMax(double ymax) { this.yLimitMax = ymax; }
 
-	public List<SamRecordFilter> getFilters() { return filters; }
-	public void setFilters(List<SamRecordFilter> filters) { this.filters = filters; }
+	/** Return filter making sure the AlignedFilter to discard unmapped is set.
+	 * */
+	public List<SamRecordFilter> getSamRecordFilter() { 
+		AlignedFilter unmapped = new AlignedFilter(true);
+		if(!this.samRecordFilter.contains(unmapped)){
+			this.samRecordFilter.add(unmapped); // Unmapped reads are always discarded	
+		}
+		return this.samRecordFilter; 
+	}
 
+	protected void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) {
+		this.samRecordFilter = samRecordFilter;
+	}
+	
 	public boolean isBisulf() { return this.bisulf; }
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
@@ -166,6 +187,86 @@ public class Track {
 
 	public void setGtfAttributeForName(String gtfAttributeForName) {
 		this.gtfAttributeForName = gtfAttributeForName;
+	}
+
+	public PrintRawLine getPrintMode() {
+		return printMode;
+	}
+
+	protected void setPrintMode(PrintRawLine printMode) {
+		this.printMode = printMode;
+	}
+
+	public FeatureDisplayMode getFeatureDisplayMode() {
+		return featureDisplayMode;
+	}
+
+	public void setFeatureDisplayMode(FeatureDisplayMode featureDisplayMode) {
+		this.featureDisplayMode = featureDisplayMode;
+	}
+
+	protected int getGap() {
+		return gap;
+	}
+
+	protected void setGap(int gap) {
+		if(gap < 0){
+			throw new RuntimeException("Cannot set gap < 0");
+		}
+		this.gap = gap;
+	}
+
+	public void setRpm(boolean rpm) {
+		this.rpm = rpm;
+	}
+	public boolean isRpm(){
+		return this.rpm;
+	}
+
+	//public void setPrintPileup(boolean printPileup) {
+	//	this.printPileup = printPileup;
+	//}
+	//public boolean isPrintPileup(){
+	//	return this.printPileup;
+	//}
+
+	
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected int get_f_flag() {
+		return f_flag;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected void set_f_flag(int f_flag) {
+		this.f_flag = f_flag;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected int get_F_flag() {
+		return F_flag;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected void set_F_flag(int F_flag) {
+		this.F_flag = F_flag;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	public int getMapq() {
+		return mapq;
+	}
+
+	/** This int is just a setting but is NOT translated to a filter! */
+	protected void setMapq(int mapq) {
+		this.mapq = mapq;
+	}
+	
+	public List<String> printPileupList(){
+		return new ArrayList<String>();
+	}
+	
+	public String getPrintableConsensusSequence() throws IOException{
+		return "";
 	}
 	
 }

@@ -61,17 +61,21 @@ public class TrackIntervalFeature extends Track {
 	}
 	
 	@Override
-	public String printToScreen() {
+	public String printToScreen() throws InvalidGenomicCoordsException {
 	
 		List<String> printable= new ArrayList<String>();		
 		int nLines= 0;
-		for(List<IntervalFeature> listToPrint : this.stackFeatures()){
-			nLines++;
-			if(nLines > this.yMaxLines){
-				// Limit the number of lines in output
-				break;
+		try {
+			for(List<IntervalFeature> listToPrint : this.stackFeatures()){
+				nLines++;
+				if(nLines > this.yMaxLines){
+					// Limit the number of lines in output
+					break;
+				}
+				printable.add(this.printToScreenOneLine(listToPrint));
 			}
-			printable.add(this.printToScreenOneLine(listToPrint));
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		return StringUtils.join(printable, "\n");
 	}
@@ -120,26 +124,29 @@ public class TrackIntervalFeature extends Track {
 	@Override
 	public String getTitle(){
 		String sq= "";
-		if(this.squash){
+		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.SQUASHED)){
 			sq= "; squashed";
+		} else if (this.getFeatureDisplayMode().equals(FeatureDisplayMode.MERGED)){
+			sq= "; merged";
+		}
+		String gapped= "";
+		if(this.getGap() == 0){
+			gapped= "; ungapped";
 		}
 		String title=  this.getFileTag() + "; " 
-	                 + "Show '" + this.getShowRegex() + "' "
-	                 + "Hide '" + this.getHideRegex() + "' " 
-	                 + sq;
+	                 + "Incl " + this.getShowRegex()
+	                 + " Excl " + this.getHideRegex()
+	                 + " N: " + this.intervalFeatureList.size()
+	                 + sq
+	                 + gapped;
 		this.getHideRegex();
 		return this.formatTitle(title) + "\n";
 	}
 
-	/** dupList is a list of features with the same coords, we want to remove redundant features
-	 * by the precede rule CDS > exon > transcript > gene 
-	 * */
-	//private List<IntervalFeature> dedupFeatures(List<IntervalFeature> dupList){
-	//	
-	//}
+	
 	
 	/** Remove positional duplicates from list of interval features for more compact visualization. 
-	 * Squashing is dome according to feature field which should be applicable to GTF/GFF only.*/
+	 * Squashing is done according to feature field which should be applicable to GTF/GFF only.*/
 	private List<IntervalFeature> squashFeatures(List<IntervalFeature> intervalList){
 
 		List<IntervalFeature> stack= new ArrayList<IntervalFeature>();
@@ -164,14 +171,19 @@ public class TrackIntervalFeature extends Track {
 	 * Put in the same list reads that will go in the same line of text. 
 	 * This method separates features touching or overlapping each other, useful for visualization.
 	 * Each item of the output list is an IntervalFeatureSet going on its own line.
-	 * 
+	 * @param space Space between text feature that touch each other on screen. Use 1 to have at least one space
+	 * so that distinct features never look merged with adjacent ones. 0 will not put any space and will give more
+	 * compact view.  
 	 * See also TrackReads.stackReads();
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<List<IntervalFeature>> stackFeatures(){
+	private List<List<IntervalFeature>> stackFeatures() throws InvalidGenomicCoordsException{
 		
 		List<IntervalFeature> intervals; 
-		if(this.squash){
+		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.SQUASHED)){
 			intervals = this.squashFeatures(this.intervalFeatureList);
+		} else if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.MERGED)) {
+			intervals = Utils.mergeIntervalFeatures(this.intervalFeatureList);
 		} else {
 			intervals = this.intervalFeatureList;
 		}
@@ -197,8 +209,8 @@ public class TrackIntervalFeature extends Track {
 			// Find a read in input whose start is greater then end of current
 			for(int i=0; i < flatList.size(); i++){
 				IntervalFeature intervalFeature= flatList.get(i);
-				int gap= 1; // Add a space between book-end features
-				if(intervalFeature.getScreenFrom() > line.get(line.size()-1).getScreenTo()+gap){ // +2 because we want some space between adjacent reads
+				// int gap= 1; // Add a space between book-end features
+				if(intervalFeature.getScreenFrom() > line.get(line.size()-1).getScreenTo()+this.getGap()){ // +2 because we want some space between adjacent reads
 					listOfLines.get(listOfLines.size()-1).add(intervalFeature); // Append to the last line. 
 					trToRemove.add(intervalFeature);
 				}
@@ -220,7 +232,20 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
+	/**Print raw features under track. 
+	 * windowSize size the number of characters before clipping occurs. This is 
+	 * typically the window size for plotting. windowSize is used only by CLIP mode.  
+	 * */
 	public String printFeatures(int windowSize){
+		
+		if(this.getPrintMode().equals(PrintRawLine.FULL)){
+			windowSize= Integer.MAX_VALUE;
+		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
+			// Keep windowSize as it is
+		} else {
+			return "";
+		} 
+		
 		List<String> featureList= new ArrayList<String>();
 		for(IntervalFeature ift : intervalFeatureList){
 			featureList.add(ift.getRaw());
