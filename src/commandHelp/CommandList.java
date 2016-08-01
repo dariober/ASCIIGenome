@@ -56,13 +56,11 @@ public class CommandList {
 			
 			help += "## " +  toTitleCase(sec.toString()) + "\n\n";
 			for(CommandHelp x : CommandList.getCommandsForSection(sec)){
-				
-				// String header= (x.getName() + " " + x.getArgs()).trim();
-				
+								
 				toc += ("  - [" + x.getName() + "]" + "(#" + x.getName().toLowerCase() + ")" + "\n");
 				
 				help += ("### " + x.getName() + "\n\n"); 
-				help += "**Usage: " + x.getName() + " " + x.getArgs().trim() + "**\n\n";
+				help += "**Usage: " + (x.getName() + " " + x.getArgs()).trim() + "**\n\n";
 				help += (x.getBriefDescription() + " " + x.getAdditionalDescription() + "\n\n");
 			}			
 		}
