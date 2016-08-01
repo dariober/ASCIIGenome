@@ -3,31 +3,33 @@ package samTextViewer;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
-
-import javax.imageio.ImageIO;
 
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.filter.AlignedFilter;
+import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import tracks.IntervalFeature;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
 
 import org.junit.Test;
 
+import com.google.common.base.Joiner;
+
 import exceptions.InvalidGenomicCoordsException;
+import filter.FirstOfPairFilter;
+import filter.FlagToFilter;
+import filter.ReadNegativeStrandFilter;
 
 public class UtilsTest {
 
@@ -36,6 +38,90 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+
+	@Test
+	public void testSortByValueReverse(){
+		
+		Map<Character, Integer> baseCount= new LinkedHashMap<Character, Integer>();
+		baseCount.put('A', 0);
+		baseCount.put('C', 0);
+		baseCount.put('G', 0);
+		baseCount.put('T', 0);
+		baseCount.put('N', 0);
+
+		for(int i= 0; i < 10000; i++){
+			int count= baseCount.get('G') + 1; 
+			baseCount.put('G', count);
+		}
+		assertEquals('G', (char)Utils.sortByValue(baseCount).keySet().iterator().next());
+	} 
+	
+	// @Test // Not run
+	public void throwsGentleMessageOnMissingFaIndex(){
+		String fastaFile= "test_data/noindex.fa";
+		Utils.checkFasta(fastaFile);
+	} 
+	
+	@Test
+	public void canMergeIntervals() throws InvalidGenomicCoordsException{
+		
+		// Zero len list
+		List<IntervalFeature> intv= new ArrayList<IntervalFeature>();
+		assertEquals(0, Utils.mergeIntervalFeatures(intv).size());
+		
+		
+		/* MEME: Start of bed features must be augmented by 1 */
+		// One feature
+		intv.add(new IntervalFeature("chr1 0 10 x1".replaceAll(" ", "\t"), TrackFormat.BED));
+		assertEquals(1, Utils.mergeIntervalFeatures(intv).get(0).getFrom());
+		// Test the name is taken from the original feature since only one interval is merged (i.e. no merging at all)
+		assertEquals(intv.get(0).getName(), Utils.mergeIntervalFeatures(intv).get(0).getName());
+		
+		// One feature overalapping
+		intv.add(new IntervalFeature("chr1 5 10".replaceAll(" ", "\t"), TrackFormat.BED));
+		IntervalFeature expected= new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED);
+		
+		assertEquals(expected.getFrom(), Utils.mergeIntervalFeatures(intv).get(0).getFrom());
+		assertTrue(expected.equals(Utils.mergeIntervalFeatures(intv).get(0)));
+
+		intv.add(new IntervalFeature("chr1 20 100".replaceAll(" ", "\t"), TrackFormat.BED));
+		assertEquals(2, Utils.mergeIntervalFeatures(intv).size());
+		assertEquals(21, Utils.mergeIntervalFeatures(intv).get(1).getFrom());
+		assertEquals(100, Utils.mergeIntervalFeatures(intv).get(1).getTo());
+		
+		intv.add(new IntervalFeature("chr1 30 110".replaceAll(" ", "\t"), TrackFormat.BED));
+		intv.add(new IntervalFeature("chr1 50 110".replaceAll(" ", "\t"), TrackFormat.BED));
+		assertEquals(2, Utils.mergeIntervalFeatures(intv).size());
+		assertEquals(21, Utils.mergeIntervalFeatures(intv).get(1).getFrom());
+		assertEquals(110, Utils.mergeIntervalFeatures(intv).get(1).getTo());
+		
+		// Touching features get merged into a single one
+		intv.clear();
+		intv.add(new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED));
+		intv.add(new IntervalFeature("chr1 10 20".replaceAll(" ", "\t"), TrackFormat.BED));
+		assertEquals(1, Utils.mergeIntervalFeatures(intv).size());
+		assertEquals(1, Utils.mergeIntervalFeatures(intv).get(0).getFrom());
+		assertEquals(20, Utils.mergeIntervalFeatures(intv).get(0).getTo());
+
+		// Touching GFF feature 
+		intv.clear();
+		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
+		intv.add(new IntervalFeature("chr1 . . 11 20 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
+		assertEquals(1, Utils.mergeIntervalFeatures(intv).size());
+		assertEquals(1, Utils.mergeIntervalFeatures(intv).get(0).getFrom());
+		assertEquals(20, Utils.mergeIntervalFeatures(intv).get(0).getTo());
+
+		// Nothing to merge 
+		intv.clear();
+		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
+		intv.add(new IntervalFeature("chr1 . . 20 30 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
+		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
+		assertEquals(3, Utils.mergeIntervalFeatures(intv).size());
+		
+		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
+		assertEquals(3, Utils.mergeIntervalFeatures(intv).size());
+	
+	}
 	
 	@Test
 	public void testStringContainsRegex(){
@@ -90,7 +176,61 @@ public class UtilsTest {
 		assertThat(expList, is(obsList));
 		
 	}
+	
+	@Test
+	public void canGetBamReadCount(){
+		assertEquals(15098, Utils.getAlignedReadCount(new File("test_data/ds051.actb.bam")));
+	}
+
+	@Test
+	public void canCountReadsInWindow2() throws InvalidGenomicCoordsException, IOException{
+		GenomicCoords gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, 200, fastaFile);
+		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 		
+		assertEquals(100377, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters.add(new AlignedFilter(true));
+		assertEquals(100265, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters= new ArrayList<SamRecordFilter>();
+		filters.add(new AlignedFilter(true));
+		filters.add(new ReadNegativeStrandFilter(false));
+		assertEquals(50157, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters= new ArrayList<SamRecordFilter>();
+		filters.add(new AlignedFilter(true));
+		filters.add(new ReadNegativeStrandFilter(true));
+		assertEquals(50108, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters= FlagToFilter.flagToFilterList(80, 1026);
+		assertEquals(2729, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+		filters= FlagToFilter.flagToFilterList(80, 1026);
+		filters.add(new MappingQualityFilter(30));
+		assertEquals(1592, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+
+	}
+	
+	
+	@Test
+	public void canCountReadsInWindow() throws InvalidGenomicCoordsException, IOException{
+		GenomicCoords gc= new GenomicCoords("chr7:5522436-5613572", samSeqDict, 200, fastaFile);
+		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
+		
+		filters.add(new MappingQualityFilter(30)); // Same as   
+		filters.add(new FirstOfPairFilter(true));  // samtools view -q 30 -f 64
+		
+		long t0= System.currentTimeMillis();
+		for(int i= 0; i < 10; i++){
+			assertEquals(42770, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
+		}
+		long t1= System.currentTimeMillis();
+		System.out.println("TIME TO FILTER: " + (t1-t0));
+		
+		gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, 200, fastaFile);
+		
+	}
+	
 	@Test
 	public void canTestForTabixIndex() throws IOException{
 		assertTrue(Utils.hasTabixIndex("test_data/test.bedGraph.gz"));
@@ -293,6 +433,8 @@ public class UtilsTest {
 	@Test
 	public void canSplitStringInTokens(){
 
+		assertEquals("bar", Utils.tokenize("foo    bar    baz   ", " ").get(1));
+		
 		ArrayList<String> xx= Utils.tokenize("\"foo && bar\" "
 				+ "&& bar"
 				+ "&&baz "
@@ -309,14 +451,24 @@ public class UtilsTest {
 
 		xx= Utils.tokenize("gene \"ACTB\"", "&&");
 		assertEquals("gene \"ACTB\"", xx.get(0));
+		
+		// Unusual input:
+		assertEquals(null, Utils.tokenize(null, " "));
+		assertTrue(Utils.tokenize("", " ").size() == 0);
+		assertTrue(Utils.tokenize("   ", " ").size() == 0);
+		
+		// Reverse token
+		String cmdInput= "goto chr1 0 100";
+		assertEquals(cmdInput, Joiner.on(" ").join(Utils.tokenize(cmdInput, " ")));
+		assertEquals("goto chr1 0 100", Joiner.on(" ").join(Utils.tokenize("   goto   chr1   0   100  ", " ")));
+		
 	}
 	
 	@Test
 	public void canPrintToStdoutOrFile() throws InvalidGenomicCoordsException, IOException{
 
-		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();		
 		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, 101, fastaFile);
-		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, filters, false);
+		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		
 		File filename= new File("tmp.txt");
 		filename.delete();

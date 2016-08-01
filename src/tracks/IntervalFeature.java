@@ -34,6 +34,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 
 	private String raw; // Raw input string exactly as read from source.
 	private TrackFormat format= TrackFormat.BED;
+	/** Name to be displayed to the user */
+	private String name= ".";
+	/** Use this attribute to as key to assign the name field */
+	private String gtfAttributeForName= null;
 	
 	/** Start position of feature in screen coordinates. 
 	 * -1 if the feature is not part of the screenshot. */
@@ -94,7 +98,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 
 		// Feature coordinates are based on reference only. Insertions to the reference are indistinguishable from SNP (like IGV) 
 		this.to= this.from + (vcfList.get(3).length()-1);
-		
+		this.name= vcfList.get(2);
 		this.validateIntervalFeature();
 		return this;
 		
@@ -116,7 +120,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 
 		// Process optional fields
 		if(bedList.size() > 3){
-			this.source= bedList.get(3);
+			this.name= bedList.get(3);
 		}
 		if(bedList.size() > 4){
 			if(NumberUtils.isNumber(bedList.get(4))){ // NB: Returns false if leading or trailing spaces are present.
@@ -165,12 +169,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 				this.strand= '.';
 			}
 		}
-		//if(gtfList.get(7).trim().length() == 0){
-		//	this.frame= '.';
-		//} else {
-		//	this.frame= gtfList.get(7).trim().charAt(0);
-		//}
-		//this.attribute= gtfList.get(8).trim();
+		this.name= this.featureNameFromGTFAttribute(null);
 		this.validateIntervalFeature();
 		return this;
 	}
@@ -266,7 +265,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return feature;
 	}
 	
-	/** Return true x has the same coordinates of this object */
+	/** Return true if x has the same coordinates of this object. Strand *not* taken into account */
 	public boolean equals(IntervalFeature x){
 		if(x == null){
 			return false;
@@ -274,25 +273,12 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return (this.chrom.equals(x.chrom) && this.from == x.from && this.to == x.to);
 	}
 
-	/** Get attribute value given key, e.g. transcript_id
-	 * This method is never used so it is made private.
-	 *  */
-	@SuppressWarnings("unused")
-	private String getAttribute(String attributeName){
-		// * Get attribute field,
-		if(this.format != TrackFormat.GFF){
-			return null;
+	/** Return true if x has the same coordinates of this object. Strand *is* taken into account */
+	public boolean equalStranded(IntervalFeature x){
+		if(x == null){
+			return false;
 		}
-		String[] line= this.raw.split("\t");
-		if(line.length < 9){
-			return null;
-		}
-		Location location= new Location(Integer.parseInt(line[3]), Integer.parseInt(line[4]));
-		double score= line[5].equals(".") ? Double.NaN : Double.parseDouble(line[5]);
-		int frame= line[7].equals(".") ? -1 : Integer.parseInt(line[7]);
-		Feature gff= new Feature(line[0], line[1], line[2], location, score, frame, line[8]);
-		String x= gff.getAttribute(attributeName);
-		return x; 
+		return (this.chrom.equals(x.chrom) && this.from == x.from && this.to == x.to && this.strand == x.strand);
 	}
 	
 	protected String assignTextToFeature(boolean noFormat) {
@@ -327,7 +313,61 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 			return FormatGTF.format(text, strand);
 		}
 	}
+
+	/** Get attribute value given key, e.g. transcript_id */
+	private String getAttribute(String attributeName){
+		// * Get attribute field,
+		if(!this.format.equals(TrackFormat.GFF)){
+			return null;
+		}
+		String[] line= this.raw.split("\t");
+		if(line.length < 9){
+			return null;
+		}
+		Location location= new Location(Integer.parseInt(line[3]), Integer.parseInt(line[4]));
+		double score= line[5].equals(".") ? Double.NaN : Double.parseDouble(line[5]);
+		int frame= line[7].equals(".") ? -1 : Integer.parseInt(line[7]);
 		
+		Feature gff= new Feature(line[0], line[1], line[2], location, score, frame, line[8]);
+		String x= gff.getAttribute(attributeName);
+		if(x != null ){
+			x= x.trim();
+		}
+		return x; 
+	}
+	
+	/**Return the name for the feature given the attributes.
+	 * Here you decide what the user should see as name for different types of GTF/GFF attributes.
+	 * @param attributeName: Attribute to use as key to get name from. E.g. gene_name. If null use 
+	 * the default precedence rule to find one. If attributeName is not found, set name to '.' (missing).
+	 * */
+	private String featureNameFromGTFAttribute(String attributeName){
+
+		String xname= this.name;
+		if(attributeName != null){
+			xname= this.getAttribute(attributeName);
+			if(xname == null){
+				xname= ".";
+			}
+		// Precedence to assign name 
+		} else if (this.getAttribute("Name") != null){ xname= this.getAttribute("Name");
+		
+		} else if (this.getAttribute("ID") != null){ xname= this.getAttribute("ID");
+
+		} else if (this.getAttribute("transcript_name") != null){ xname= this.getAttribute("transcript_name");
+		
+		} else if (this.getAttribute("transcript_id") != null){ xname= this.getAttribute("transcript_id");
+		
+		} else if (this.getAttribute("gene_name") != null){ xname= this.getAttribute("gene_name");
+		
+		} else if (this.getAttribute("gene_id") != null){ xname= this.getAttribute("gene_id");
+		
+		} else {
+			// Leave as default
+		}
+		return xname;
+	}
+	
 	/*   S e t t e r s   and   G e t t e r s   */
 	
 	public String getChrom() {
@@ -342,8 +382,12 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return to;
 	}
 
+	/** Name be shown to the user */
 	public String getName() {
-		return source;
+		if(this.format.equals(TrackFormat.GFF)){
+			return this.featureNameFromGTFAttribute(this.gtfAttributeForName);
+		}
+		return this.name;
 	}
 
 	public float getScore() {
@@ -361,10 +405,17 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	public int getScreenFrom() {
 		return screenFrom;
 	}
-
+	public void setScreenFrom(int screenFrom) {
+		this.screenFrom= screenFrom;
+	}
+	
 	public int getScreenTo() {
 		return screenTo;
 	}
+	public void setScreenTo(int screenTo) {
+		this.screenTo= screenTo;
+	}
+	
 	
 	public String getSource() {
 		return source;
@@ -385,10 +436,18 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	public String getRaw() {
 		return raw;
 	}
+
+	public String getGtfAttributeForName() {
+		return this.gtfAttributeForName;
+	}
+
+	public void setGtfAttributeForName(String gtfAttributeForName) {
+		this.gtfAttributeForName = gtfAttributeForName;
+	}
 	
 	@Override
 	/**
-	 * Sort by chrom, start, end. Should be the same as Unix `sort -k1,1 -k2,2n -k3,3n` 
+	 * Sort by chrom, start, end, strand. 
 	 */
 	public int compareTo(IntervalFeature other) {
 		
@@ -401,6 +460,9 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	    i = this.to - other.to;
 		    if (i != 0) return i;
 
+		i= Character.toString(this.strand).compareTo(Character.toString(other.strand));
+		    if (i != 0) return i;
+		    
 		return i;
 	}
 

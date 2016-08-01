@@ -68,7 +68,7 @@ class TextRead {
 			System.err.println("Aln starts: " +  rec.getAlignmentStart());
 			System.err.println("Aln ends: " +  rec.getAlignmentEnd());
 			System.err.println("Window: " + gc.toString());
-			System.exit(1);
+			throw new RuntimeException();
 		}
 		//            |  window  |
 		//|---------| read
@@ -78,7 +78,7 @@ class TextRead {
 			System.err.println("Aln starts: " +  rec.getAlignmentStart());
 			System.err.println("Aln ends: " +  rec.getAlignmentEnd());
 			System.err.println("Window: " + gc.toString());
-			System.exit(1);
+			throw new RuntimeException();
 		}		
 		this.gc= gc;
 		this.rec= rec;
@@ -250,7 +250,8 @@ class TextRead {
 						} else if(el.getOperator() == CigarOperator.N){ 
 							dnaRead.add(N);
 						} else {
-							System.err.println("Unexpected operator"); System.exit(1);
+							System.err.println("Unexpected operator");
+							throw new RuntimeException();
 						}
 					}
 					curBaseGenomicPos++;
@@ -264,7 +265,8 @@ class TextRead {
 			} else if(el.getOperator() == CigarOperator.P){
 				// Nothing to do: NOT SURE is is correct to just ignore padding!
 			} else {
-				System.err.println("Unexpected operator in cigar string for record\n" + rec.getSAMString()); System.exit(1);
+				System.err.println("Unexpected operator in cigar string for record\n" + rec.getSAMString()); 
+				throw new RuntimeException();
 			}
 		}
 		for(int i= 0; i < dnaRead.size(); i++){
@@ -285,14 +287,14 @@ class TextRead {
 	private List<Character> getConsRead() throws IOException {
 		
 		List<Character> dnaRead= this.getDnaRead();
-		if(this.gc.getRefSeq(true) == null){
+		if(this.gc.getRefSeq() == null){
 			return dnaRead;
 		}
 		List<Character> consRead= new ArrayList<Character>();
 		int posOnRead= 0;
 		for(int i= this.textStart - 1; i < this.textEnd; i++){
 			char base= Character.toUpperCase( dnaRead.get(posOnRead) );
-			char ref= (char) Character.toUpperCase(this.gc.getRefSeq(true)[i]);
+			char ref= (char) Character.toUpperCase(this.gc.getRefSeq()[i]);
 			if( base == ref){
 				if(this.rec.getReadNegativeStrandFlag()){
 					consRead.add(',');
@@ -324,7 +326,7 @@ class TextRead {
 	 */
 	private List<Character> convertDnaReadToTextReadBS() throws IOException{
 	
-		if(this.gc.getRefSeq(true) == null){ // Effectively don't convert 
+		if(this.gc.getRefSeq() == null){ // Effectively don't convert 
 			return this.getConsRead();
 		}
 		
@@ -341,7 +343,7 @@ class TextRead {
 		
 		List<Character> textReadBS= this.getConsRead(); // Iterate through each base to set methyl state
 		for(int i= 0; i < textReadBS.size(); i++){
-			char ref= (char) this.gc.getRefSeq(true)[i + this.textStart - 1];
+			char ref= (char) this.gc.getRefSeq()[i + this.textStart - 1];
 			ref= Character.toUpperCase(ref);
 			char read= textReadBS.get(i);
 			if( ( isForwardStrand && !isSecondOfPair ) || ( !isForwardStrand && isSecondOfPair )){

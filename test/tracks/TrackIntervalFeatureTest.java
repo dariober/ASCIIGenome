@@ -12,6 +12,7 @@ import samTextViewer.GenomicCoords;
 
 public class TrackIntervalFeatureTest {
 	
+	
 	@Test
 	public void canReadTabix() throws IOException, InvalidGenomicCoordsException{
 		
@@ -62,7 +63,40 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:11874-12227", null, 5, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
+		tif.setGtfAttributeForName("N/A");
 		assertEquals("EEEEE", tif.printToScreen());
+	}
+
+	@Test
+	public void canPrintFeatureWithName() throws InvalidGenomicCoordsException, IOException{
+		
+		String intervalFileName= "test_data/hg19_genes_head.gtf";
+		GenomicCoords gc= new GenomicCoords("chr1:11874-12052", null, 20, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		tif.setGtfAttributeForName(null);
+		assertEquals("NR_046018_1_EEEEEEEE", tif.printToScreen());
+
+		
+		gc= new GenomicCoords("chr1:11874-12052", null, 5, null);
+		tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		tif.setGtfAttributeForName(null);
+		assertEquals("NR_0E", tif.printToScreen());
+
+		gc= new GenomicCoords("chr1:11874-12052", null, 20, null);
+		tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		tif.setGtfAttributeForName("gene_id");
+		assertEquals("DDX11L1_EEEEEEEEEEEE", tif.printToScreen());
+		
+		gc= new GenomicCoords("chr1:11872-12050", null, 200, null);
+		tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		tif.setGtfAttributeForName("gene_id");
+		assertTrue(tif.printToScreen().startsWith("  DDX11L1_EEEEEEEEE"));
+		
+		
 	}
 	
 	@Test

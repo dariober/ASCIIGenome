@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "0.1.0";
+	public static String VERSION= "0.2.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	
 	public static LinkedHashMap<String, String> docstrings= new LinkedHashMap<String, String>(); 
@@ -46,54 +46,27 @@ public class ArgParse {
 		
 		parser.addArgument("--fasta", "-fa")
 			.type(String.class)
-			.help("Optional reference fasta reference file.\n"
+			.help("Optional reference fasta file.\n"
 					+ "If given, must be indexed, e.g. with `samtools faidx ref.fa`");
 
-//		docstrings.put("-f", "Required sam flags. Use 4096 for reads on top strand");
-//		parser.addArgument("--f", "-f")
-//			.type(Integer.class)
-//			.setDefault(0)
-//			.help(docstrings.get("-f"));
-//		
-//		docstrings.put("-F", "Filtering sam flags. Use 4096 for reads on top strand");
-//		parser.addArgument("--F", "-F")
-//			.type(Integer.class)
-//			.setDefault(0)
-//			.help(docstrings.get("-f"));
-//
-//		docstrings.put("-q", "Minumum mapping quality for a read to be considered");
-//		parser.addArgument("--mapq", "-q")
-//			.type(Integer.class)
-//			.setDefault(0)
-//			.help(docstrings.get("-q"));
+		parser.addArgument("--exec", "-x")
+			.type(String.class)
+			.setDefault("")
+			.help("Commands to be executed at the prompt. Must be a single string. E.g. 'goto chr1 && next && seqRegex ACTG'");
+
 		
-//		docstrings.put("-m", "Maximum number of lines to print for read tracks.");
-//		parser.addArgument("--maxLines", "-m")
-//			.type(Integer.class)
-//			.setDefault(10)
-//			.help(docstrings.get("-m"));
-
-//		docstrings.put("-rpm", "Toggle on/off the normalization of Reads Per Million for bam input. Default off");
-//		parser.addArgument("--rpm", "-rpm")
-//			.action(Arguments.storeTrue())
-//			.help(docstrings.get("-rpm"));
-
 		parser.addArgument("--maxReadsStack", "-M")
 			.type(Integer.class)
 			.setDefault(2000)
 			.help("Maximum number of reads to accumulate before printing. If more than this many reads map to the window\n"
 					+ "randomy select them");
 		
-		//parser.addArgument("--BSseq", "-bs")
-		//	.action(Arguments.storeTrue())
-		//	.help("Bisulphite mode: Mark bases as methylated (M/m) or unmethylated (U/u). Requires -fa");
-		
 		parser.addArgument("--noFormat", "-nf")
 			.action(Arguments.storeTrue())
 			.help("Do not format output with non ascii chars (colour, bold, etc.)");
 
 		parser.addArgument("--nonInteractive", "-ni")
-			.action(Arguments.storeFalse())
+			.action(Arguments.storeTrue())
 			.help("Non interactive mode: Exit after having processed cmd line args.");
 		
 		parser.addArgument("--version", "-v").action(Arguments.version());

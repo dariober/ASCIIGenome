@@ -27,7 +27,7 @@ public class FlagToFilter {
 			list.add(new ProperPairFilter(false));
 		}
 		
-		if((f_incl & 4) == 4){ // sic! tru/false is the other way round.
+		if((f_incl & 4) == 4){ // sic! true/false is the other way round.
 			list.add(new AlignedFilter(false));
 		}
 		if((F_excl & 4) == 4){
@@ -103,7 +103,6 @@ public class FlagToFilter {
 		if((F_excl & 4096) == 4096){
 			list.add(new ReadFromTopStrandFilter(false));
 		}		
-
 		
 		return list;
 	} 

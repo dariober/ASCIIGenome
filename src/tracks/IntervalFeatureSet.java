@@ -40,7 +40,7 @@ public class IntervalFeatureSet {
 	private TabixReader tabixReader= null;
 	private boolean isTabix= false;
 	private TrackFormat type;
-	private String hideRegex= ""; // Regex to capture feature to hide/show
+	private String hideRegex= "^$"; // Regex to capture feature to hide/show
 	private String showRegex= ".*";
 	
 	/* C o n s t r u c t o r */
@@ -89,7 +89,12 @@ public class IntervalFeatureSet {
 	
 	public List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to) throws IOException, InvalidGenomicCoordsException{
 
-		if(from > to || from < 1 || to < 1){
+		if(from < 1){
+			System.err.println("from < 1: " + from + "; resetting to 1."); 
+			from= 1;
+		}
+		
+		if(from > to || to < 1){
 			System.err.println("Invalid coordinates: from: " + from + ";to: " + to 
 					+ "Resetting to initial 1-" + Integer.MAX_VALUE);
 			from= 1;
