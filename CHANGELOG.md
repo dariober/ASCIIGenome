@@ -4,10 +4,6 @@ New in 0.2.0
 New commands
 ------------
 
-* **Merge & squash** features for more compact view of annotation tracks. Option `squash` collapses feature with the same coordinates and `merge` collapses overlapping features.
-
-* **gap** command to set whether bookended features should be next to each other (more compact) or on different lines (more informative).
-
 * **Commands can be chained!** Instead of executing commands one by one at the prompt you can do:
 `mapq 10 && -F 16 && colorTrack red` etc.  This is more convenient and much
 faster because the current window is refreshed only at the end of the chain.
@@ -15,13 +11,17 @@ faster because the current window is refreshed only at the end of the chain.
 * Chained commands can also be passed at the start via the `--exec/-x` arg. Useful to set right at the start 
 the configuration you want e.g. `ASCIIGenome -x 'trackHeight 5 bam && colorTrack red bigwig' aln.bam genes.gtf ...`
 
+* **Merge & squash** features for more compact view of annotation tracks. Option `squash` collapses feature with the same coordinates and `merge` collapses overlapping features.
+
+* **gap** command to set whether bookended features should be next to each other (more compact) or on different lines (more informative).
+
 * **infoTracks** shows some characteristics of the loaded files.
 
 Features
 --------
 
 * **Refit window size** automatically to fit the terminal width. Useful if you change the font size of your terminal while using ASCIIGenome.
-For example make the font smaller to fit larger regions and more tracks.
+For example make the font smaller to fit larger regions and more tracks. The view is resized at the next command executed. 
 
 * **Features have a name!** BED and GFF feature names are shown. Use option `gffNameAttr` to choose which GFF attribute to use to
 get name from. Now the display of feature tracks is more informative.

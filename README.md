@@ -208,6 +208,10 @@ ASCIIGenome -x 'goto 36:1-2682151 && filter \ttranscript\t && trackHeight 100' \
     ftp://ftp.ensemblgenomes.org/pub/release-31/protists/gtf/leishmania_major/Leishmania_major.ASM272v2.31.gtf.gz
 ```
 
+Note that if the first option passed to `-exec/-x` starts with `-` you need to add a space between 
+the opening quote and the option itself. For example do  `ASCIIGenome -x ' -F 16' ...` instead of
+`ASCIIGenome -x '-F 16' ...`.
+
 Supported input
 ===============
 
