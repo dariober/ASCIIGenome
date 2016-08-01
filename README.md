@@ -1,5 +1,3 @@
-*Note: Versions 0.1.0 and 0.2.0a are mostly experimental. Better version(s) coming soon!*
-
 Text Only Genome Viewer!
 ========================
 
