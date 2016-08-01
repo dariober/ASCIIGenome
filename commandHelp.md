@@ -65,25 +65,25 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
 
 ### f
 
-**Usage: f **
+**Usage: f**
 
 Move forward by 1/10 of a window 
 
 ### b
 
-**Usage: b **
+**Usage: b**
 
 Move backward by 1/10 of a window 
 
 ### ff
 
-**Usage: ff **
+**Usage: ff**
 
 Move forward by 1/2 of a window 
 
 ### bb
 
-**Usage: bb **
+**Usage: bb**
 
 Move backward by 1/2 of a window 
 
@@ -145,13 +145,13 @@ Examples: `-100` or `-10k` or `-10.5m`
 
 ### p
 
-**Usage: p **
+**Usage: p**
 
 Go to the previous visited position. Similar to the back and forward arrows of an Internet browser.
 
 ### n
 
-**Usage: n **
+**Usage: n**
 
 Go to the next visited position. Similar to the back and forward arrows of an Internet browser.
 
@@ -306,7 +306,8 @@ colorTrack light_blue ts.*gtf ts.*bam
 Select data column for bedgraph tracks containing regex.  index: 1-based column index. This command applies only to tracks of type bedgraph.
  For example, use column 5 on tracks containing #1 and #3:
  ```
-dataCol 5 #1 #3```
+dataCol 5 #1 #3
+```
 
 
 ### print
@@ -357,7 +358,7 @@ Toggle bisulfite mode for read tracks matched by regex. In bisulfite mode, the c
 
 ### showGenome
 
-**Usage: showGenome **
+**Usage: showGenome**
 
 Print the genome dictionary with a representation of chromosome sizes.  Example output:
 ```
@@ -375,7 +376,7 @@ chrY  59373566  |||||||
 
 ### infoTracks
 
-**Usage: infoTracks **
+**Usage: infoTracks**
 
 Print the name of the current tracks along with file name and format.  Hidden tracks are marked by *.
 
@@ -400,7 +401,7 @@ orderTracks bam bed new order: [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]
 
 ### history
 
-**Usage: history **
+**Usage: history**
 
 Show the list of visited positions. 
 
@@ -419,13 +420,13 @@ save mygene.png ## Save to mygene.png as png
 
 ### q
 
-**Usage: q **
+**Usage: q**
 
 Quit 
 
 ### h
 
-**Usage: h **
+**Usage: h**
 
 Show this help. For help on specific commands use `command -h`, for example `ylim -h` 
 
