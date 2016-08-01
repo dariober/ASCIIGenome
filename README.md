@@ -25,13 +25,13 @@ Text Only Genome Viewer!
 MEMO: Compile, package and upload to github releases
 - Write-out jar from Eclipse
 cd ~/svn_git/ASCIIGenome/trunk
-mkdir ASCIIGenome-0.1.0 # This should match the version in ArgParse
-cp ASCIIGenome ASCIIGenome-0.1.0/
-cp /Users/berald01/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-0.1.0/
-zip -r ASCIIGenome-0.1.0.zip ASCIIGenome-0.1.0
-rm -r ASCIIGenome-0.1.0
+mkdir ASCIIGenome-0.2.0 # This should match the version in ArgParse
+cp ASCIIGenome ASCIIGenome-0.2.0/
+cp /Users/berald01/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-0.2.0/
+zip -r ASCIIGenome-0.2.0.zip ASCIIGenome-0.2.0
+rm -r ASCIIGenome-0.2.0
 
-// Upload ASCIIGenome-0.1.0.zip to github releases and delete
+// Upload ASCIIGenome-0.2.0.zip to github releases and delete
 
  -->
 
@@ -65,10 +65,10 @@ Installation quick start
 In the commands below replace version number with the latest from [releases](https://github.com/dariober/ASCIIGenome/releases):
 
 ```
-wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.1.0.zip
-unzip ASCIIGenome-0.1.0.zip
+wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.2.0.zip
+unzip ASCIIGenome-0.2.0.zip
 
-cd ASCIIGenome-0.1.0/
+cd ASCIIGenome-0.2.0/
 chmod a+x ASCIIGenome
 cp ASCIIGenome.jar /usr/local/bin/ # Or ~/bin/
 cp ASCIIGenome /usr/local/bin/     # Or ~/bin/ 
