@@ -348,6 +348,25 @@ Without arguments, `save` writes to file named after the current  genomic positi
 `chr1_1000-2000.txt`.  The ANSI formatting (*i.e.* colours) is stripped before saving so that files
 can be viewed on any text editor (use a monospace font like `courier`).
 
+Screenshots can be saved also in **non-interactive mode**. Since ASCIIGenome prints to stdout you just
+need to use the redirection operator `>` together with options `-ni` (non-interactive) and `-nf` (no
+formatting). For example: save to `view.txt` the region *chr1:100000-102000*, set mapping quality 
+threshold to 10 and track height to 5:
+
+```
+ASCIIGenome -r chr1:100000-102000 -x 'mapq 10 && trackHeight 5' -nf -ni aln.bam dat.bigwig > view.txt
+```
+
+This is handy to embed ASCIIGenome in scripts or to generate several screenshots in batch. For example
+using for-loops.
+
+```
+for reg in chr1:1000-2000 chr18:2000-3000 chr21:5000-8000
+do
+    ASCIIGenome -r $reg -nf -ni input.bed input.bw >> regs.txt
+done
+```
+
 
 Tips gotchas and miscellanea
 ============================
