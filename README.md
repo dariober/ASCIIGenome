@@ -367,6 +367,7 @@ do
 done
 ```
 
+Alternatively images could be saved to png using `-x 'save .png'` option.
 
 Tips gotchas and miscellanea
 ============================
