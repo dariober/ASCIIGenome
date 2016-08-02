@@ -62,3 +62,5 @@ tracks and height 1 for read tracks.
 * Command `visible` renamed to `filter` since this is what it actually does.
 
 * `CG_profile` track is hidden by default (*i.e.* it has `trackHeight 0`).
+
+* Invalid input is generally handled a bit more gently then just by making ASCIIGenome crash or throwing terrifying Java stack traces.
