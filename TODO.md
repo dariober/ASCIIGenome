@@ -4,12 +4,17 @@ TODO
 Features
 --------
 
-Need to turn off DEBUG when reading fasta files!
+* Add color to png output. It might not be too difficult: 1) Join the list of strings (lines) in a single 
+string; 2) split again the big string at the end-of-formatting escape code (now each string in the least 
+starts with the color of that string); 3) loop through the list and write each string using the color 
+code at the beginning of the string.
 
-```
-DEBUG   2016-07-31 22:23:19 BlockCompressedOutputStream Using deflater: Deflater
-DEBUG   2016-07-31 22:23:19 BlockCompressedOutputStream Using deflater: Deflater
-```
+The methods to look for are : `Utils.ansiColourToGraphicsColor()` to convert ansi color number to
+graphics color; `Utils.convertTextFileToGraphic()` currently it strips the ansi escapes, it shouldn't if you 
+want color; `Utils.convertTextToGraphic()` which loops through the list of strings.
+
+* Accept file of regions to create images from? See https://github.com/dariober/ASCIIGenome/issues/18 and 
+https://github.com/dariober/ASCIIGenome/issues/16
 
 * Add a `bookmark` command create on the fly an IntervalFeatureTrack with bookmarked regions.  API:
 `bookmark`: Add current region to bookmarks; `bookmark show` print current bookmarked features;
