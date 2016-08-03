@@ -129,8 +129,8 @@ ASCIIGenome -fa genome.fa aln.bam
 
 Open some peak and bigWig files from
 [ENCODE](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/). Note that
-opening remote bigwig files is a little slow (IGV seems equally slow) and it might not work 
-with some proxy settings (see also [issue#6](https://github.com/dariober/ASCIIGenome/issues/6)):
+opening remote bigwig files is a little slow (IGV seems equally slow). You might also need to 
+start Java with the option ` -Djava.net.useSystemProxies=true` (see also [issue#6](https://github.com/dariober/ASCIIGenome/issues/6)):
 
 ```
 encode=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs
@@ -216,6 +216,8 @@ Supported input
 ===============
 
 File name extensions matter as file types are usually recognized by their extension in case insensitive mode.
+Reading remote files might require starting java with the option `-Djava.net.useSystemProxies=true` 
+(see [issue#6](https://github.com/dariober/ASCIIGenome/issues/6)).
 
 * **bam** files should be sorted and indexed, e.g. with `samtools sort` and `samtools index`. 
   Paths to remote URLs are supported but painfully slow (*IGV seems to suffer of the same issue*).
