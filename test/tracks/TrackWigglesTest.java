@@ -12,6 +12,7 @@ import org.broad.igv.tdf.TDFUtils;
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 
 public class TrackWigglesTest {
@@ -35,7 +36,7 @@ public class TrackWigglesTest {
 	}
 	
 	@Test
-	public void canGetDataColumnIndexForBedGraph() throws IOException, NoSuchAlgorithmException, InvalidGenomicCoordsException{
+	public void canGetDataColumnIndexForBedGraph() throws IOException, NoSuchAlgorithmException, InvalidGenomicCoordsException, InvalidRecordException{
 		
 		String url= "test_data/test.bedGraph";
 		int windowSize= 160;
@@ -46,7 +47,7 @@ public class TrackWigglesTest {
 	
 	
 	@Test
-	public void canParseNonBGZFFile() throws IOException, InvalidGenomicCoordsException{
+	public void canParseNonBGZFFile() throws IOException, InvalidGenomicCoordsException, InvalidRecordException{
 		
 		String url= "test_data/test2.bedGraph";
 		int windowSize= 160;
@@ -56,7 +57,7 @@ public class TrackWigglesTest {
 	}
 	
 	@Test
-	public void testYLimits() throws InvalidGenomicCoordsException, IOException{
+	public void testYLimits() throws InvalidGenomicCoordsException, IOException, InvalidRecordException{
 
 		String url= "test_data/test.bedGraph.gz";
 		int windowSize= 160;
@@ -71,7 +72,7 @@ public class TrackWigglesTest {
 	}
 	
 	@Test
-	public void testCloseToBorder() throws InvalidGenomicCoordsException, IOException{
+	public void testCloseToBorder() throws InvalidGenomicCoordsException, IOException, InvalidRecordException{
 		String url= "test_data/test.bedGraph.gz";
 		int yMaxLines= 10;
 		int windowSize= 160;
@@ -86,7 +87,7 @@ public class TrackWigglesTest {
 	
 	
 	@Test 
-	public void canPrintBedGraph() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintBedGraph() throws InvalidGenomicCoordsException, IOException, InvalidRecordException{
 		
 		String url= "test_data/test.bedGraph.gz";
 		int yMaxLines= 5;
@@ -123,7 +124,7 @@ public class TrackWigglesTest {
 	}
 	
 	// @Test
-	public void canPrintWiggleTrack() throws InvalidGenomicCoordsException, IOException {
+	public void canPrintWiggleTrack() throws InvalidGenomicCoordsException, IOException, InvalidRecordException {
 		
 		// * Check big* are 0 or 1 based
 		
@@ -143,7 +144,7 @@ public class TrackWigglesTest {
 	}
 	
 	// @Test
-	public void canPrintFromTdf() throws IOException, InvalidGenomicCoordsException{
+	public void canPrintFromTdf() throws IOException, InvalidGenomicCoordsException, InvalidRecordException{
 
 		GenomicCoords gc= new GenomicCoords("chr8", 1, 100, null, 100, null);
 		String tdfFile= "test_data/hg18_var_sample.wig.v2.1.30.tdf";

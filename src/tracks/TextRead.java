@@ -145,7 +145,7 @@ class TextRead {
 				fmt += "4;"; // Underline 2nd in pair
 			}					
 			if(this.rec.getMappingQuality() < SHADE_MAPQ){ // Grey out low mapq
-				fmt += "48;5;250;38;5;240";
+				fmt += "30;47";
 			} else if(Character.toUpperCase(c) == charM){
 				fmt += "97;101"; // 97: white fg; 101: Light read bg; 104 Light blue bg
 			} else if(Character.toUpperCase(c) == charU){
@@ -159,9 +159,9 @@ class TextRead {
 			} else if(Character.toUpperCase(c) == 'T') {
 				fmt += "1;107;33";
 			} else if(!this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
-				fmt += "48;5;147"; // Test on terminal: echo -e "\033[48;5;225m <<<<<<<<<<<<<<<<<<<<<<<<<<< \033[0m"
+				fmt += "30;48;5;147"; // 105: light magenta; Test on terminal: echo -e "\033[48;5;225m <<<<<<<<<<<<<<<<<<<<<<<<<<< \033[0m"
 			} else if(this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
-				fmt += "48;5;225"; // 105 light magenta bg
+				fmt += "30;48;5;225"; // 106: light cyan
 			}
 			// The formatted string will look like `echo -e "\033[4;1;107;31mACTGnnnnnACTG\033[0m"`
 			formatted += fmt + "m" + c + "\033[0m"; // Clear all formatting

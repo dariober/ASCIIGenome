@@ -57,11 +57,13 @@ import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.tdf.TDFReader;
 
 import exceptions.InvalidColourException;
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import filter.FirstOfPairFilter;
 import tracks.IntervalFeatureSet;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
+import tracks.UcscFetch;
 
 /**
  * @author berald01
@@ -906,23 +908,40 @@ public class Utils {
 	         return false;
 	      }
 	}
+
+//	public static List<String> checkAvailableInput(List<String> inputFileList){
+//		
+//	}
 	
 	/** Add track(s) to list of input files 
 	 * @param inputFileList Existing list of files to be extended
 	 * @param newFileNames List of files to append
+	 * @throws InvalidCommandLineException 
 	 */
-	public static void addTrack(List<String> inputFileList, List<String> newFileNames) {
+	public static void addTrack(List<String> inputFileList, List<String> newFileNames) throws InvalidCommandLineException {
 
 		List<String> dropMe= new ArrayList<String>();
+		List<String> addMe= new ArrayList<String>();
 		for(String x : newFileNames){
 			x= x.trim();
 			if(!new File(x).exists() && !Utils.urlFileExists(x)){
 				dropMe.add(x);
+				try{
+					// This is not a local file, see if you can download it from ucsc
+					UcscFetch ucsc= new UcscFetch(x);
+					addMe.add(ucsc.genePredToGtf().getAbsolutePath());
+				} catch(Exception e){
+					System.err.println("Unable to fecth " + x);
+					throw new InvalidCommandLineException();
+				}
 			} 
 		}
 		for(String x : dropMe){
-			System.err.println("\nWarning: Dropping file " + x + " as it does not exist.\n");
+			System.err.println("\nWarning: File " + x + " is not a local file.\n");
 			newFileNames.remove(x);
+		}
+		for(String x : addMe){
+			newFileNames.add(x);
 		}
 		inputFileList.addAll(newFileNames);
 		
@@ -1010,12 +1029,13 @@ public class Utils {
 	 * untouched to print to stdout.
 	 * @throws IOException 
 	 * */
-	public static void printer(String xprint, String filename, boolean stripAnsi) throws IOException{
+	public static void printer(String xprint, String filename) throws IOException{
 		System.out.print(xprint);
 		if(filename == null){
 			return;
 		}
-		if(stripAnsi){
+		if(! filename.toLowerCase().endsWith(".png")){
+			// We write file as plain text so strip ansi codes.
 			xprint= stripAnsiCodes(xprint);
 		}
 		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename), true));

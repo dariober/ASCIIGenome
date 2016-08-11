@@ -14,6 +14,8 @@ import utils.IOUtils;
 import utils.BedLine;
 import utils.BedLineCodec;
 import com.google.common.base.Joiner;
+
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.tabix.TabixFormat;
@@ -40,8 +42,9 @@ public class TrackWiggles extends Track {
 	 * Read bigWig from local file or remote URL.
 	 * @param filename Filename or URL to access 
 	 * @param gc Query coordinates and size of printable window 
-	 * @throws IOException */
-	public TrackWiggles(String filename, GenomicCoords gc, int bdgDataColIdx) throws IOException{
+	 * @throws IOException 
+	 * @throws InvalidRecordException */
+	public TrackWiggles(String filename, GenomicCoords gc, int bdgDataColIdx) throws IOException, InvalidRecordException{
 
 		this.setGc(gc);
 		this.setFilename(filename);
@@ -61,7 +64,7 @@ public class TrackWiggles extends Track {
 
 	/*  M e t h o d s  */
 	
-	public void update() throws IOException {
+	public void update() throws IOException, InvalidRecordException {
 
 		if(this.bdgDataColIdx < 4){
 			System.err.println("Invalid index for bedgraph column of data value. Resetting to 4. Expected >=4. Got " + this.bdgDataColIdx);
@@ -124,8 +127,9 @@ public class TrackWiggles extends Track {
 	 * Block compress input file and create associated tabix index. Newly created file and index are
 	 * deleted on exit if deleteOnExit true.
 	 * @throws IOException 
+	 * @throws InvalidRecordException 
 	 * */
-	private void blockCompressAndIndex(String in, String bgzfOut, boolean deleteOnExit) throws IOException {
+	private void blockCompressAndIndex(String in, String bgzfOut, boolean deleteOnExit) throws IOException, InvalidRecordException {
 				
 		File inFile= new File(in);
 		File outFile= new File(bgzfOut);
@@ -139,6 +143,10 @@ public class TrackWiggles extends Track {
 		BedLineCodec bedCodec= new BedLineCodec();
 		while(lin.hasNext()){
 			String line = lin.next();
+			if ( !this.isValidBedGraphLine(line.trim()) ) {
+				System.err.println("\nInvalid record found: " + line + "\n");
+				throw new InvalidRecordException();
+			}			
 			BedLine bed = bedCodec.decode(line);
 			if(bed==null) continue;
 			writer.write(line.getBytes());
@@ -177,7 +185,12 @@ public class TrackWiggles extends Track {
 	
 	/** Return true if line looks like a valid bedgraph record  
 	 * */
-	public static boolean isValidBedGraphLine(String line){
+	private boolean isValidBedGraphLine(String line){
+		
+		if(line.trim().startsWith("#") || line.trim().startsWith("track ")){
+			return true;
+		}
+		
 		String[] bdg= line.split("\t");
 		if(bdg.length < 4){
 			return false;
@@ -185,6 +198,7 @@ public class TrackWiggles extends Track {
 		try{
 			Integer.parseInt(bdg[1]);
 			Integer.parseInt(bdg[2]);
+			Double.parseDouble(bdg[this.bdgDataColIdx - 1]);
 		} catch(NumberFormatException e){
 			return false;
 		}
@@ -216,8 +230,9 @@ public class TrackWiggles extends Track {
 	}
 	
 	/** Get values for bedgraph
+	 * @throws InvalidRecordException 
 	 * */
-	private void bedGraphToScores(String fileName) throws IOException{
+	private void bedGraphToScores(String fileName) throws IOException, InvalidRecordException{
 		
 		List<ScreenWiggleLocusInfo> screenWigLocInfoList= new ArrayList<ScreenWiggleLocusInfo>();
 		for(int i= 0; i < getGc().getUserWindowSize(); i++){
@@ -231,6 +246,10 @@ public class TrackWiggles extends Track {
 				String q = qry.next();
 				if(q == null){
 					break;
+				}
+				if ( !this.isValidBedGraphLine(q) ) {
+					System.err.println("\nInvalid record found: " + q + "\n");
+					throw new InvalidRecordException();
 				}
 				String[] tokens= q.split("\t");
 				int screenFrom= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[1])+1, this.getGc().getMapping());

@@ -1,3 +1,14 @@
+New in 0.3.0
+=============
+
+* **Colors** Now the png output has colours.
+
+* **UCSC gtf** Annotation tables can be pulled directly from UCSC.
+
+* Fixed issue https://github.com/dariober/ASCIIGenome/issues/20 (remember to close it on merge with trunk). 
+
+* `ASCIIGenome` can start without any input file.
+
 New in 0.2.0
 =============
 

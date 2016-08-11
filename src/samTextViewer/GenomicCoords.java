@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamInputResource;
@@ -644,8 +645,9 @@ public class GenomicCoords implements Cloneable {
 
 	/** Return GC profile in region by sliding window of given step size 
 	 * @throws IOException 
+	 * @throws InvalidRecordException 
 	 * */
-	public TrackWiggles getGCProfile() throws IOException {
+	public TrackWiggles getGCProfile() throws IOException, InvalidRecordException {
 		if(this.fastaFile == null){
 			return null; 
 		}

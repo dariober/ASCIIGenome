@@ -1,7 +1,5 @@
 package tracks;
 
-import org.apache.commons.lang3.StringUtils;
-
 public class FormatVCF {
 
 	public FormatVCF(){

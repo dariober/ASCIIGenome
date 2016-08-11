@@ -10,9 +10,11 @@ import java.util.regex.PatternSyntaxException;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 
+import coloring.Png;
 import commandHelp.CommandList;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
@@ -37,13 +39,13 @@ public class Main {
 		return memStats;
 	}
 
-	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException {
+	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException {
 		
 		/* Start parsing arguments * 
 		 * *** If you change something here change also in console input ***/
 		Namespace opts= ArgParse.argParse(args);
 		
-		List<String> inputFileList= opts.getList("input");
+		List<String> initFileList= opts.getList("input");
 		String region= opts.getString("region");
 		final String genome= opts.getString("genome");
 		final String fasta= opts.getString("fasta");
@@ -55,7 +57,7 @@ public class Main {
 				
 		int windowSize= 160;
 		try{
-			windowSize= jline.TerminalFactory.get().getWidth() - 1; 
+			windowSize= jline.TerminalFactory.get().getWidth() - 1;			
 		} catch(Exception e){
 			e.printStackTrace();
 		}
@@ -63,21 +65,29 @@ public class Main {
 		Utils.checkFasta(fasta);
 		
 		/* Test input files exist */
-		List<String> dropMe= new ArrayList<String>();
-		for(String x : inputFileList){
-			if(!new File(x).exists() && !Utils.urlFileExists(x)){
-				dropMe.add(x);
-			} 
-		}
-		for(String x : dropMe){
-			System.err.println("\nWarning: Dropping file " + x + " as it does not exist.\n");
-			inputFileList.remove(x);
-		}
+		List<String> inputFileList= new ArrayList<String>();
+		try{
+			Utils.addTrack(inputFileList, initFileList);
+		} catch(InvalidCommandLineException e){
+			//System.err.println("Error processing input list: ");
+			//System.err.println(initFileList);
+		}	
 		
-		if(inputFileList.size() == 0 && fasta == null){
-			System.err.println("\nNo files in input: Nothing to be done!\n");
-			System.exit(1);
-		}
+		//List<String> dropMe= new ArrayList<String>();
+		//for(String x : inputFileList){
+		//	if(!new File(x).exists() && !Utils.urlFileExists(x)){
+		//		dropMe.add(x);
+		//	} 
+		//}
+		//for(String x : dropMe){
+		//	System.err.println("\nWarning: Dropping file " + x + " as it does not exist.\n");
+		//	inputFileList.remove(x);
+		//}
+		
+		//if(inputFileList.size() == 0 && fasta == null){
+		//	System.err.println("\nNo files in input: Nothing to be done!\n");
+		//	System.exit(1);
+		//}
 		
 		if((region == null || region.isEmpty()) && fasta != null){ // Try to initilize from fasta
 			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
@@ -123,9 +133,8 @@ public class Main {
 		String seqRegex= null;
 		int idForTrack= 0;
 		String snapshotFile= null;
-		boolean snapshotStripAnsi= true;
+		// boolean snapshotStripAnsi= true;
 		ConsoleReader console = CommandList.initConsole();
-		
 		boolean execDone= exec.isEmpty() ? true : false; // Do we need to execute commands from --exec? If exec is empty, consider it done.
 
 		/* =================================== *
@@ -140,6 +149,12 @@ public class Main {
 				
 				if(Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BAM)){
 				
+					if(!Utils.bamHasIndex(inputFileName)){
+						System.err.println("\nNo index found for '" + inputFileName + "'. Index can be generated with ");
+						System.err.println("samtools index '" + inputFileName + "'\n");
+						System.exit(1);
+					}
+					
 					/* Coverage and methylation track */
 					String coverageTrackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
 					idForTrack++;
@@ -241,7 +256,7 @@ public class Main {
 			}
 			
 			if(gch.current().getChromIdeogram(20) != null && execDone){
-				Utils.printer(gch.current().getChromIdeogram(20) + "\n", snapshotFile, snapshotStripAnsi);
+				Utils.printer(gch.current().getChromIdeogram(20) + "\n", snapshotFile);
 			}			
 			for(Track tr : trackSet.getTrackSet().values()){
 				if(tr.getFileTag() == gch.current().getGcProfileFileTag()){
@@ -249,15 +264,15 @@ public class Main {
 				}
 				tr.setNoFormat(noFormat);
 				if(execDone && tr.getyMaxLines() > 0){
-					Utils.printer(tr.getTitle(), snapshotFile, snapshotStripAnsi);
-					Utils.printer(tr.printToScreen() + "\n", snapshotFile, snapshotStripAnsi);
-					Utils.printer(tr.getPrintableConsensusSequence(), snapshotFile, snapshotStripAnsi);
+					Utils.printer(tr.getTitle(), snapshotFile);
+					Utils.printer(tr.printToScreen() + "\n", snapshotFile);
+					Utils.printer(tr.getPrintableConsensusSequence(), snapshotFile);
 				}
 
 				// Print features
 				String printable= tr.printFeatures(windowSize);
 				if(execDone){
-					Utils.printer(printable, snapshotFile, snapshotStripAnsi);
+					Utils.printer(printable, snapshotFile);
 				}
 			}
 
@@ -281,9 +296,9 @@ public class Main {
 					tw.setNoFormat(noFormat);
 					// tw.setHidden(trackSet.getTrackSet().get(GenomicCoords.gcProfileFileTag).isHidden());
 					if(execDone && tw.getyMaxLines() > 0){
-						Utils.printer(tw.getTitle(), snapshotFile, snapshotStripAnsi);
+						Utils.printer(tw.getTitle(), snapshotFile);
 						String gcPrintable= tw.printToScreen();
-						Utils.printer(gcPrintable + "\n", snapshotFile, snapshotStripAnsi);
+						Utils.printer(gcPrintable + "\n", snapshotFile);
 					}
 				}
 			}
@@ -304,24 +319,24 @@ public class Main {
 				seqPattern+="\n";
 			} 
 			if(execDone){
-				Utils.printer(seqPattern, snapshotFile, snapshotStripAnsi);
+				Utils.printer(seqPattern, snapshotFile);
 			}
 			// Ruler and sequence
 			if(execDone){
-				Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile, snapshotStripAnsi);
+				Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile);
 				String ruler= gch.current().printableRuler(10);
-				Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile, snapshotStripAnsi);
+				Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile);
 			}
 			String footer= gch.current().toString() + "; " + Math.rint(gch.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " + getMemoryStat();
 			if(execDone){
 				if(!noFormat){
-					Utils.printer("\033[0;34m" + footer + "\033[0m; \n", snapshotFile, snapshotStripAnsi);
+					Utils.printer("\033[0;34m" + footer + "\033[0m; \n", snapshotFile);
 				} else {
-					Utils.printer(footer + "\n", snapshotFile, snapshotStripAnsi);
+					Utils.printer(footer + "\n", snapshotFile);
 				}
 				// Optionally convert to png
 				if(snapshotFile != null && snapshotFile.endsWith("png")){
-					Utils.convertTextFileToGraphic(new File(snapshotFile), new File(snapshotFile));
+					(new Png(new File(snapshotFile))).convert(new File(snapshotFile));
 				} 
 			}
 			
@@ -370,30 +385,18 @@ public class Main {
 					try {
 						
 						if(cmdInput.get(0).equals("h")){  
-							Utils.printer(CommandList.briefHelp(), snapshotFile, snapshotStripAnsi);
+							Utils.printer(CommandList.briefHelp(), snapshotFile);
 							currentCmdConcatInput= cmdConcatInput;
 							cmdConcatInput= null;	
 							
 						} else if(cmdInput.size() >= 2 && cmdInput.get(1).equals("-h")){ // Help on this command
-							Utils.printer("\n" + CommandList.getHelpForCommand(cmdInput.get(0)) + "\n", snapshotFile, snapshotStripAnsi);
+							Utils.printer("\n" + CommandList.getHelpForCommand(cmdInput.get(0)) + "\n", snapshotFile);
 							currentCmdConcatInput= cmdConcatInput;
 							cmdConcatInput= null;
 						
-						//} else if(cmdInput.get(0).equals("windowSize")){
-						//	if(cmdInput.size() == 1){
-						//		windowSize= jline.TerminalFactory.get().getWidth() - 1;
-						//	} else {
-						//		windowSize= Integer.parseInt(cmdInput.get(1));
-						//	}
-						//	// Replace the current genomicCoords obj with a new one having the same coordinates 
-						//	// but different windowSize.
-						//	// NB: The current genomic obj might not be the last one in the history list.
-						//	String newRegion= gch.current().getChrom() + ":" + gch.current().getFrom() + "-" + gch.current().getTo(); 
-						//	gch.getHistory().add(gch.getHistory().indexOf(gch.current()), new GenomicCoords(newRegion, samSeqDict, windowSize, fasta));							
-							
 						} else if(cmdInput.get(0).equals("history")){
 							for(GenomicCoords xgc : gch.getHistory()){
-								Utils.printer(xgc.toString() + "\n", snapshotFile, snapshotStripAnsi);
+								Utils.printer(xgc.toString() + "\n", snapshotFile);
 							}
 							currentCmdConcatInput= cmdConcatInput;
 							cmdConcatInput= null;
@@ -559,13 +562,8 @@ public class Main {
 							trackSet.setFilterFlagForRegex(cmdInput); //	
 						}                                             //
 						
-					    else if(cmdInput.get(0).equals("save") || cmdInput.get(0).equals("savef")) {
+					    else if(cmdInput.get(0).equals("save")) {
 							snapshotFile= Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(cmdInput), gch.current());
-							if(cmdInput.get(0).equals("save")){
-								snapshotStripAnsi= true;
-							} else if(cmdInput.get(0).equals("savef")){
-								snapshotStripAnsi= false;
-							}
 						} else if(cmdInput.get(0).equals("bookmark")){
 							// String name= cmdInput.replaceAll("^bookmark", "").trim();
 							//GenomicCoords gc = (GenomicCoords)gch.current().clone();

@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import filter.FirstOfPairFilter;
 import filter.FlagToFilter;
@@ -410,7 +411,7 @@ public class UtilsTest {
 	}
 	
 	@Test
-	public void canAddTracksToList() throws IOException, InvalidGenomicCoordsException{
+	public void canAddTracksToList() throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException{
 		List<String> inputFileList= new ArrayList<String>();
 		inputFileList.add("foo");
 		inputFileList.add("bar");
@@ -472,8 +473,8 @@ public class UtilsTest {
 		
 		File filename= new File("tmp.txt");
 		filename.delete();
-		Utils.printer(tc.getTitle(), "tmp.txt", true);
-		Utils.printer(tc.printToScreen(), "tmp.txt", true);
+		Utils.printer(tc.getTitle(), "tmp.txt");
+		Utils.printer(tc.printToScreen(), "tmp.txt");
 		// Check tmp.txt looks ok.
 	}
 	

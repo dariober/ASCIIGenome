@@ -478,9 +478,17 @@ public class CommandList {
 
 		
 		cmd= new CommandHelp();
-		cmd.setName("addTracks"); cmd.setArgs("[file or URL]..."); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("Add tracks from local or remote files.");
-		cmd.setAdditionalDescription("");
+		cmd.setName("addTracks"); cmd.setArgs("[file or URL or ucsc_genome:table]..."); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Add tracks from local or remote files or from UCSC Genome Browser.");
+		cmd.setAdditionalDescription("Add one or more paths to local files, remote URLs or pull tables from UCSC genome browser. "
+				+ "To query UCSC use the syntax genome:table. See http://genome.ucsc.edu/cgi-bin/hgTables for available "
+				+ "genomes (i.e. databeses) and tables.\n"
+				+ "Examples:\n"
+				+ "```\n"
+				+ "addTracks peaks.bed gene.gtf\n"
+				+ "addTracks http://remote/host/peaks.bed\n"
+				+ "addTracks hg19:refGene\n"
+				+ "```");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
@@ -554,7 +562,8 @@ public class CommandList {
 		cmd.setBriefDescription("Save current screenshot to file in either text or png format.");
 		cmd.setAdditionalDescription("Default filename is generated from the current coordinates and the default format is txt. "
 				+ "With filename .png save as png using current coordinates as filename. "
-				+ "Use extension .png to save as png format. Note that colours are not retained. Examples:\n"
+				+ "Use extension .png to save as png format. Colours are stripped from text output but they retained"
+				+ "in the png. Examples:\n"
 				+ "```\n"
 				+ "save mygene.txt ## Save to mygene.txt as text\n"
 				+ "save~~~~~~~~~~~~## Save to chrom_start-end.txt as text\n"
@@ -653,7 +662,6 @@ public class CommandList {
 		paramList.add("mapq");
 		paramList.add("BSseq");
 		paramList.add("save");
-		//paramList.add("savef");
 	
 		return paramList;
 	}

@@ -6,7 +6,7 @@
 # Setup: Path to jar and data
 # ===========================
 stvExe=~/Dropbox/Public/ASCIIGenome.jar ## Path to jar 
-cd /Users/berald01/svn_git/ASCIIGenome/branches/toggle_print/test_data ## Path to test data
+cd /Users/berald01/svn_git/ASCIIGenome/branches/color_etc/test_data ## Path to test data
 
 # Get and prepare chr7.fa file, if not already available
 if [ ! -e chr7.fa ]
@@ -29,7 +29,7 @@ echo "CAN SHOW BS DATA"
 java -Xmx500m -jar $stvExe -r chr7:5600000-5600179 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -x 'mapq 10 && BSseq' -ni 
 
 echo "HANDLE NO READS IN INPUT"
-java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x ' -f 16 && -F 16' -ni # Note space bebween quote and -f
+java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x ' -f 16 && -F 16' -ni # Note space between quote and -f
 
 echo "BED FILES"
 java -Xmx500m -jar $stvExe refSeq.hg19.short.bed -ni
@@ -37,6 +37,9 @@ java -Xmx500m -jar $stvExe refSeq.hg19.short.sort.bed.gz -ni
 
 echo "FROM URL"
 java -Xmx500m -jar $stvExe http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/wgEncodeSydhTfbsGm12878P300bStdPk.narrowPeak.gz -ni
+
+echo "FROM UCSC"
+java -Xmx500m -jar $stvExe dm6:refGene -ni
 
 echo "TABIX FILES"
 java -Xmx500m -jar $stvExe test.bedGraph.gz -ni
@@ -57,6 +60,7 @@ echo "GRACEFULLY HANDLE INVALID INPUT"
 java -Xmx500m -jar $stvExe refSeq.hg19.short.bed -x 'foo' -ni
 java -Xmx500m -jar $stvExe refSeq.hg19.short.bed -x 'ylim 0 10 *' -ni
 java -Xmx500m -jar $stvExe foo.bed -ni
+java -Xmx500m -jar $stvExe invalid-1.bedgraph -ni ## Not so nice
 
 echo -e "\n\nDONE\n\n"
 

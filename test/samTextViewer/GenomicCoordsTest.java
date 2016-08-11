@@ -16,6 +16,7 @@ import tracks.TrackWiggles;
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 
 public class GenomicCoordsTest {
 	
@@ -269,7 +270,7 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
-	public void canGetGCProfileInRegion() throws InvalidGenomicCoordsException, IOException{
+	public void canGetGCProfileInRegion() throws InvalidGenomicCoordsException, IOException, InvalidRecordException{
 				
 		GenomicCoords gc= new GenomicCoords("chr7", 1000000, 1000500, samSeqDict, 50, null);
 		assertEquals(null, gc.getGCProfile()); // null fasta

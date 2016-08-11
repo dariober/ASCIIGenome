@@ -63,11 +63,11 @@ public class FormatGTF {
 	 * */
 	public static String format(char text, char strand){
 		if(strand == '+') {
-			return "\033[48;5;147;38;5;240m" + text + "\033[0m";
+			return "\033[30;48;5;147m" + text + "\033[0m";
 		} else if(strand == '-') {
-			return "\033[48;5;225;38;5;240m" + text + "\033[0m";
+			return "\033[30;48;5;225m" + text + "\033[0m";
 		} else {
-			return "\033[48;5;250;38;5;240m" + text + "\033[0m";
+			return "\033[30;47m" + text + "\033[0m";
 		}	
 	}
 }
