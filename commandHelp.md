@@ -382,9 +382,15 @@ Print the name of the current tracks along with file name and format.  Hidden tr
 
 ### addTracks
 
-**Usage: addTracks [file or URL]...**
+**Usage: addTracks [file or URL or ucsc_genome:table]...**
 
-Add tracks from local or remote files. 
+Add tracks from local or remote files or from UCSC Genome Browser. Add one or more paths to local files, remote URLs or pull tables from UCSC genome browser. To query UCSC use the syntax genome:table. See http://genome.ucsc.edu/cgi-bin/hgTables for available genomes (i.e. databeses) and tables.
+Examples:
+```
+addTracks peaks.bed gene.gtf
+addTracks http://remote/host/peaks.bed
+addTracks hg19:refGene
+```
 
 ### orderTracks
 
@@ -409,7 +415,7 @@ Show the list of visited positions.
 
 **Usage: save [filename = chrom_start_end.txt']**
 
-Save current screenshot to file in either text or png format. Default filename is generated from the current coordinates and the default format is txt. With filename .png save as png using current coordinates as filename. Use extension .png to save as png format. Note that colours are not retained. Examples:
+Save current screenshot to file in either text or png format. Default filename is generated from the current coordinates and the default format is txt. With filename .png save as png using current coordinates as filename. Use extension .png to save as png format. Colours are stripped from text output but they retainedin the png. Examples:
 ```
 save mygene.txt ## Save to mygene.txt as text
 save            ## Save to chrom_start-end.txt as text
