@@ -31,24 +31,24 @@ public class GenomicCoordsTest {
 			
 		GenomicCoords gc= new GenomicCoords("chr7", 1, 1, samSeqDict, 10, null);
 		
-		String chromMap= gc.getChromIdeogram(10);		
+		String chromMap= gc.getChromIdeogram(10, true);		
 		assertEquals("*---------", chromMap);
 
 		gc= new GenomicCoords("chr7", 1, 1, samSeqDict, 117, null);
-		chromMap= gc.getChromIdeogram(10);
+		chromMap= gc.getChromIdeogram(10, true);
 		assertEquals(117, chromMap.length());
 		
 		gc= new GenomicCoords("chr7", 1, 1000000000, samSeqDict, 10, null);
-		chromMap= gc.getChromIdeogram(10);		
+		chromMap= gc.getChromIdeogram(10, true);		
 		assertEquals("**********", chromMap);
 		
 		gc= new GenomicCoords("chr7", 200000000, 200000000, samSeqDict, 10, null);
-		chromMap= gc.getChromIdeogram(10);		
+		chromMap= gc.getChromIdeogram(10, true);		
 		assertEquals("1--------*", chromMap);
 		
 		
 		gc= new GenomicCoords("chr7", 20000000, 55000000, samSeqDict, 16, null);
-		chromMap= gc.getChromIdeogram(10);
+		chromMap= gc.getChromIdeogram(10, true);
 		assertEquals("1-****----110M--", chromMap);
 	}
 	
@@ -145,7 +145,7 @@ public class GenomicCoordsTest {
 		assertEquals("CACTTGGCCTCATTTTTAAGG\n", gc.printableRefSeq(true));
 		// with format
 		gc= new GenomicCoords("chr7", 5566770, 5566772, samSeqDict, 100, fastaFile);
-		assertEquals("[107;31mC[0m[107;34mA[0m[107;31mC[0m\n", gc.printableRefSeq(false));
+		assertTrue(gc.printableRefSeq(false).contains("["));
 	}
 	
 	@Test
@@ -192,9 +192,9 @@ public class GenomicCoordsTest {
 		assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
 		gc= new GenomicCoords("chr7", 5566770, 5566790, samSeqDict, 20, fastaFile);
 		assertEquals(null, gc.getRefSeq());
-		
+	
 		// Return seq even if len(seq) > windowSize
-		// assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
+		//assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
 	}
 	
 	@Test(expected = InvalidGenomicCoordsException.class)
@@ -260,12 +260,12 @@ public class GenomicCoordsTest {
 	public void canPrintRuler() throws InvalidGenomicCoordsException, IOException{
 		
 		GenomicCoords gc= new GenomicCoords("chr1:101-200", samSeqDict, 50, null);
-		assertEquals(50, gc.printableRuler(10).length());
+		assertEquals(50, gc.printableRuler(10, true).length());
 
 		gc= new GenomicCoords("chr1:1-10000", null, 50, null);
 
 		
-		String ruler= gc.printableRuler(3);
+		String ruler= gc.printableRuler(3, true);
 		System.out.println(ruler);
 	}
 	

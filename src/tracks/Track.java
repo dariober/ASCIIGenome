@@ -17,6 +17,7 @@ public class Track {
 	protected int yMaxLines= 10;
 	private String filename= "N/A"; // File name as given in input
 	private String fileTag= "N/A"; // File name for title
+	private int id= 1; 
 	private List<Double> screenScores= new ArrayList<Double>();
 	private GenomicCoords gc;
 	private boolean noFormat= false; 
@@ -25,7 +26,7 @@ public class Track {
 	/** Max size of genomic region before the track shuts down to prevent excessive slow down */
 	protected final int MAX_REGION_SIZE= 100000;   
 	
-	protected String titleColour= "default";
+	protected String titleColour= "black";
 	protected boolean bisulf= false;
 
 	private String gtfAttributeForName= null;
@@ -75,7 +76,7 @@ public class Track {
 			return title;
 		} else {
 			int colourCode= Utils.ansiColorCodes().get(this.titleColour);
-			return "\033[0;" + colourCode + "m" + title + "\033[0m";
+			return "\033[48;5;231;" + colourCode + "m" + title + "\033[48;5;231m";
 		}
 	}
 	
@@ -267,6 +268,14 @@ public class Track {
 	
 	public String getPrintableConsensusSequence() throws IOException{
 		return "";
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
 	}
 	
 }

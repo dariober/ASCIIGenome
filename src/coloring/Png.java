@@ -109,7 +109,7 @@ public class Png {
 		int x= 1;
 		int y= 1;
 		for(String xv : ansiList){
-			if(xv.equals("[0m")){
+			if(xv.equals("[48;5;231m")){
 				continue;
 			}
 			Color fgColor= this.ansiCodesToFgColor(xv);

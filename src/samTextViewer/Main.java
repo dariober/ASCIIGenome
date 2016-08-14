@@ -12,6 +12,7 @@ import com.google.common.base.Splitter;
 
 import coloring.Png;
 import commandHelp.CommandList;
+import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -39,7 +40,7 @@ public class Main {
 		return memStats;
 	}
 
-	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException {
+	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException {
 		
 		/* Start parsing arguments * 
 		 * *** If you change something here change also in console input ***/
@@ -53,8 +54,27 @@ public class Main {
 		final int maxReadsStack= opts.getInt("maxReadsStack");
 		final boolean noFormat= opts.getBoolean("noFormat");
 		final boolean nonInteractive= opts.getBoolean("nonInteractive");
-		// boolean withReadName= false; 
-				
+
+		
+		/* Set up console */
+		
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+		    public void run() {
+		    	System.out.print("\033[0m");
+		    	try {
+					ConsoleReader x= new ConsoleReader();
+					x.clearScreen();
+					x.flush();
+		    	} catch (IOException e) {
+					e.printStackTrace();
+				}
+		    }
+		}));
+		
+		if(!noFormat){
+			System.out.print("\033[48;5;231m");
+		}		
+		
 		int windowSize= 160;
 		try{
 			windowSize= jline.TerminalFactory.get().getWidth() - 1;			
@@ -67,27 +87,10 @@ public class Main {
 		/* Test input files exist */
 		List<String> inputFileList= new ArrayList<String>();
 		try{
-			Utils.addTrack(inputFileList, initFileList);
+			Utils.addSourceName(inputFileList, initFileList);
 		} catch(InvalidCommandLineException e){
-			//System.err.println("Error processing input list: ");
-			//System.err.println(initFileList);
+			//
 		}	
-		
-		//List<String> dropMe= new ArrayList<String>();
-		//for(String x : inputFileList){
-		//	if(!new File(x).exists() && !Utils.urlFileExists(x)){
-		//		dropMe.add(x);
-		//	} 
-		//}
-		//for(String x : dropMe){
-		//	System.err.println("\nWarning: Dropping file " + x + " as it does not exist.\n");
-		//	inputFileList.remove(x);
-		//}
-		
-		//if(inputFileList.size() == 0 && fasta == null){
-		//	System.err.println("\nNo files in input: Nothing to be done!\n");
-		//	System.exit(1);
-		//}
 		
 		if((region == null || region.isEmpty()) && fasta != null){ // Try to initilize from fasta
 			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
@@ -118,11 +121,15 @@ public class Main {
 		gch.add(new GenomicCoords(region, samSeqDict, windowSize, fasta));
 
 		TrackSet trackSet= new TrackSet();
-
+		for(String sourceName : inputFileList){
+			trackSet.add(sourceName, gch.current());
+		}
+		
 		/* Initialize GC profile */
 		if(fasta != null){
 			TrackWiggles cgWiggle= gch.current().getGCProfile();
-			trackSet.getTrackSet().put(cgWiggle.getFileTag(), cgWiggle);
+			trackSet.add(cgWiggle);
+			// trackSet.getTrackSet_DEPRECATED().put(cgWiggle.getFileTag(), cgWiggle);
 		}
 		
 		TrackIntervalFeature seqRegexTrack= gch.current().findRegex("^$");
@@ -155,15 +162,15 @@ public class Main {
 						System.exit(1);
 					}
 					
-					/* Coverage and methylation track */
+					/* BAM Coverage track */
 					String coverageTrackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
 					idForTrack++;
-					if(!trackSet.getTrackSet().containsKey(coverageTrackId)){
+					if(!trackSet.getTrackSet_DEPRECATED().containsKey(coverageTrackId)){
 						TrackCoverage trackCoverage= new TrackCoverage(inputFileName, gch.current(), false);
 						trackCoverage.setFileTag(coverageTrackId);
-						trackSet.getTrackSet().put(trackCoverage.getFileTag(), trackCoverage);
+						trackSet.getTrackSet_DEPRECATED().put(trackCoverage.getFileTag(), trackCoverage);
 					}
-					TrackCoverage trackCoverage= (TrackCoverage) trackSet.getTrackSet().get(coverageTrackId);
+					TrackCoverage trackCoverage= (TrackCoverage) trackSet.getTrackSet_DEPRECATED().get(coverageTrackId);
 					trackCoverage.setGc(gch.current());
 					if(trackCoverage.getyMaxLines() > 0){
 						trackCoverage.update();
@@ -191,16 +198,15 @@ public class Main {
 					/* Reads */
 					String trackId= new File(inputFileName).getName() + "@" + (idForTrack+1);
 					idForTrack++;
-					if(!trackSet.getTrackSet().containsKey(trackId)){
+					if(!trackSet.getTrackSet_DEPRECATED().containsKey(trackId)){
 						TrackReads trackReads= new TrackReads(inputFileName, gch.current(), maxReadsStack);
 						trackReads.setFileTag(trackId);
-						trackSet.getTrackSet().put(trackReads.getFileTag(), trackReads);
+						trackSet.getTrackSet_DEPRECATED().put(trackReads.getFileTag(), trackReads);
 						trackReads.setFilename(inputFileName);
 						trackReads.setFileTag(trackId);
 					}
-					TrackReads trackReads= (TrackReads) trackSet.getTrackSet().get(trackId);
+					TrackReads trackReads= (TrackReads) trackSet.getTrackSet_DEPRECATED().get(trackId);
 					trackReads.setGc(gch.current());
-					// trackReads.setWithReadName(withReadName);
 					if(trackReads.getyMaxLines() > 0){
 						trackReads.update();
 					}
@@ -212,12 +218,12 @@ public class Main {
 				    || Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.VCF)){
 					String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
 					idForTrack++;
-					if(!trackSet.getTrackSet().containsKey(trackId)){
+					if(!trackSet.getTrackSet_DEPRECATED().containsKey(trackId)){
 						TrackIntervalFeature tif= new TrackIntervalFeature(inputFileName, gch.current());
 						tif.setFileTag(trackId);
-						trackSet.getTrackSet().put(tif.getFileTag(), tif);
+						trackSet.getTrackSet_DEPRECATED().put(tif.getFileTag(), tif);
 					}
-					TrackIntervalFeature tif= (TrackIntervalFeature) trackSet.getTrackSet().get(trackId);
+					TrackIntervalFeature tif= (TrackIntervalFeature) trackSet.getTrackSet_DEPRECATED().get(trackId);
 					tif.setGc(gch.current());
 					try {
 						if(tif.getyMaxLines() > 0){
@@ -234,12 +240,12 @@ public class Main {
 
 					String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
 					idForTrack++;
-					if(!trackSet.getTrackSet().containsKey(trackId)){
+					if(!trackSet.getTrackSet_DEPRECATED().containsKey(trackId)){
 						TrackWiggles tw= new TrackWiggles(inputFileName, gch.current(), 4);
 						tw.setFileTag(trackId);
-						trackSet.getTrackSet().put(tw.getFileTag(), tw);
+						trackSet.getTrackSet_DEPRECATED().put(tw.getFileTag(), tw);
 					}
-					TrackWiggles tw= (TrackWiggles) trackSet.getTrackSet().get(trackId);
+					TrackWiggles tw= (TrackWiggles) trackSet.getTrackSet_DEPRECATED().get(trackId);
 					tw.setGc(gch.current());
 					if(tw.getyMaxLines() > 0){
 						tw.update();
@@ -255,10 +261,10 @@ public class Main {
 				console.flush();
 			}
 			
-			if(gch.current().getChromIdeogram(20) != null && execDone){
-				Utils.printer(gch.current().getChromIdeogram(20) + "\n", snapshotFile);
+			if(gch.current().getChromIdeogram(20, noFormat) != null && execDone){
+				Utils.printer(gch.current().getChromIdeogram(20, noFormat) + "\n", snapshotFile);
 			}			
-			for(Track tr : trackSet.getTrackSet().values()){
+			for(Track tr : trackSet.getTrackSet_DEPRECATED().values()){
 				if(tr.getFileTag() == gch.current().getGcProfileFileTag()){
 					continue;
 				}
@@ -279,14 +285,14 @@ public class Main {
 			/* Footers and interactive prompt */
 			/* ****************************** */
 			// GC content profile
-			if(trackSet.getTrackSet().containsKey(gch.current().getGcProfileFileTag())){
+			if(trackSet.getTrackSet_DEPRECATED().containsKey(gch.current().getGcProfileFileTag())){
 				// There is a bad hack here: We get yMaxLines from the TrackSet, but we don't plot the wiggle profile in the track set. 
 				// Instead we get wiggle from GenomicCoords object and replace yMaxLines in GenomicCoords with the one from the TrackSet.
 				// This is because the TrackSet profile is not updated.
-				int yMaxLines= trackSet.getTrackSet().get(gch.current().getGcProfileFileTag()).getyMaxLines();
-				double yLimitMin= trackSet.getTrackSet().get(gch.current().getGcProfileFileTag()).getYLimitMin();
-				double yLimitMax= trackSet.getTrackSet().get(gch.current().getGcProfileFileTag()).getYLimitMax();
-				String col= trackSet.getTrackSet().get(gch.current().getGcProfileFileTag()).getTitleColour();
+				int yMaxLines= trackSet.getTrackSet_DEPRECATED().get(gch.current().getGcProfileFileTag()).getyMaxLines();
+				double yLimitMin= trackSet.getTrackSet_DEPRECATED().get(gch.current().getGcProfileFileTag()).getYLimitMin();
+				double yLimitMax= trackSet.getTrackSet_DEPRECATED().get(gch.current().getGcProfileFileTag()).getYLimitMax();
+				String col= trackSet.getTrackSet_DEPRECATED().get(gch.current().getGcProfileFileTag()).getTitleColour();
 				if(yMaxLines > 0){
 					TrackWiggles tw= gch.current().getGCProfile();				
 					tw.setyMaxLines(yMaxLines);
@@ -324,13 +330,13 @@ public class Main {
 			// Ruler and sequence
 			if(execDone){
 				Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile);
-				String ruler= gch.current().printableRuler(10);
+				String ruler= gch.current().printableRuler(10, noFormat);
 				Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile);
 			}
 			String footer= gch.current().toString() + "; " + Math.rint(gch.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " + getMemoryStat();
 			if(execDone){
 				if(!noFormat){
-					Utils.printer("\033[0;34m" + footer + "\033[0m; \n", snapshotFile);
+					Utils.printer("\033[48;5;231;34m" + footer + "\033[48;5;231m; \n", snapshotFile);
 				} else {
 					Utils.printer(footer + "\n", snapshotFile);
 				}
@@ -460,7 +466,7 @@ public class Main {
 							
 						} else if(cmdInput.get(0).equals("addTracks") && cmdInput.size() > 1){
 							cmdInput.remove(0);
-							Utils.addTrack(inputFileList, cmdInput);
+							Utils.addSourceName(inputFileList, cmdInput);
 				
 							if(gch.current().getSamSeqDict().size() == 0){
 								samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(inputFileList, null, null);

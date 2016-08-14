@@ -61,7 +61,7 @@ public class GenomicCoords implements Cloneable {
 	private int windowSize; // Size of the screen window
 	// private byte[] refSeq;
 	private String fastaFile= null;
-	private byte[] refSeq= null;
+	// private byte[] refSeq= null;
 	final public static String gcProfileFileTag= "CG_percent";
 	
 	/* Constructors */
@@ -99,7 +99,7 @@ public class GenomicCoords implements Cloneable {
 		}
 		this.fastaFile= fastaFile;
 		
-		this.setRefSeq();
+		//this.setRefSeq();
 		
 	}
 	
@@ -113,15 +113,20 @@ public class GenomicCoords implements Cloneable {
 		this.samSeqDict= gc.samSeqDict;
 		this.fastaFile= fastaFile;
 		
-		this.setRefSeq();
+		// this.setRefSeq();
 	}
 		
 	private GenomicCoords(){ };
 	
 	/* Methods */
 	
-	public byte[] getRefSeq() {
-		return this.refSeq;
+	/** Get sequence from fasta, but only if it can fit the screen. Null otherwise. 
+	 * */
+	public byte[] getRefSeq() throws IOException {
+		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
+			return null;
+		}
+		return getSequenceFromFasta(); // this.refSeq;
 	}
 	
 	private byte[] getSequenceFromFasta() throws IOException{
@@ -149,14 +154,14 @@ public class GenomicCoords implements Cloneable {
 	 * If fitWindow is true and the sequence is longer than the window, return null. This prevents 
 	 * retrieving large sequences unless necessary.
 	 * @throws IOException */
-	private void setRefSeq() throws IOException{
-				
-		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
-			this.refSeq= null;
-			return;
-		}
-		this.refSeq= this.getSequenceFromFasta();
-	}
+	//private void setRefSeq() throws IOException{
+	//	
+	//	if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
+	//		this.refSeq= null;
+	//		return;
+	//	}
+	//	this.refSeq= this.getSequenceFromFasta();
+	//}
 	
 	/**
 	 * Parse string to return coordinates. This method simply populates the fields chrom, from, to by 
@@ -289,7 +294,7 @@ public class GenomicCoords implements Cloneable {
 						this.samSeqDict.getSequence(this.chrom).getSequenceLength() : this.to;
 			}
 		}
-		this.setRefSeq();
+		// this.setRefSeq();
 	}
 
 	/**
@@ -326,7 +331,7 @@ public class GenomicCoords implements Cloneable {
 		if(this.from > this.to){ // Not sure this can happen.
 			this.to= this.from;
 		}
-		this.setRefSeq();
+		// this.setRefSeq();
 	}
 	
 	/**
@@ -398,7 +403,7 @@ public class GenomicCoords implements Cloneable {
 	 * Produce a string representation of the current position on the chromosome
 	 * @param nDist: Distance between labels   
 	 * */
-	public String getChromIdeogram(int nDist) {
+	public String getChromIdeogram(int nDist, boolean noFormat) {
 		if(this.samSeqDict == null || this.samSeqDict.size() == 0){
 			return null;
 		}
@@ -446,6 +451,9 @@ public class GenomicCoords implements Cloneable {
 		if(ideogram.length() > this.windowSize){
 			ideogram= ideogram.substring(0, this.windowSize);
 		}
+		if(!noFormat){
+			ideogram= "\033[30m" + ideogram + "\033[48;5;231m";
+		}
 		return ideogram;
 	}
 	
@@ -461,7 +469,7 @@ public class GenomicCoords implements Cloneable {
 		return str;
 	}
 	
-	public String printableRuler(int markDist){
+	public String printableRuler(int markDist, boolean noFormat){
 		List<Double> mapping = this.seqFromToLenOut();
     	String numberLine= "";
     	int prevLen= 0;
@@ -484,18 +492,23 @@ public class GenomicCoords implements Cloneable {
 				i++;
 			}
 		}
-    	return numberLine;	
+		if(!noFormat){
+			numberLine= "\033[30m" + numberLine + "\033[48;5;231m";
+		}
+    	return numberLine;
     }
 	
 	/** Ref sequence usable for print on screen. 
 	 * @throws IOException */
 	public String printableRefSeq(boolean noFormat) throws IOException{
 
+		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
+			return "";
+		}
+		
 		byte[] refSeq= this.getRefSeq();
 		
-		if(refSeq == null){
-			return "";
-		} else if(noFormat){
+		if(noFormat){
 			return new String(refSeq) + "\n";
 		} else {
 			String faSeqStr= "";
@@ -503,15 +516,15 @@ public class GenomicCoords implements Cloneable {
 				// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
 				char base= (char) c;
 				if(base == 'A' || base == 'a'){
-					faSeqStr += "\033[107;34m" + base + "\033[0m";
+					faSeqStr += "\033[34m" + base + "\033[48;5;231m";
 				} else if(base == 'C' || base == 'c') {
-					faSeqStr += "\033[107;31m" + base + "\033[0m";
+					faSeqStr += "\033[31m" + base + "\033[48;5;231m";
 				} else if(base == 'G' || base == 'g') {
-					faSeqStr += "\033[107;32m" + base + "\033[0m";
+					faSeqStr += "\033[32m" + base + "\033[48;5;231m";
 				} else if(base == 'T' || base == 't') {
-					faSeqStr += "\033[107;33m" + base + "\033[0m";
+					faSeqStr += "\033[33m" + base + "\033[48;5;231m";
 				} else {
-					faSeqStr += base;
+					faSeqStr += "\033[30m" + base + "\033[48;5;231m";;
 				} 
 			}
 			return faSeqStr + "\n";
@@ -781,7 +794,7 @@ public class GenomicCoords implements Cloneable {
 			System.err.println("Invalid feature size. Must be > 0, got " + size);
 			throw new InvalidGenomicCoordsException();
 		}
-		
+				
 		double center= (size/2.0) + gc.getFrom();
 		gc.from= (int)Math.rint(center - (size * slop));
 		gc.to= (int)Math.rint(center + (size * slop));
@@ -793,6 +806,7 @@ public class GenomicCoords implements Cloneable {
 			gc.to += extendBy;
 		}
 		gc.correctCoordsAgainstSeqDict(samSeqDict);
+		
 	}
 
 	

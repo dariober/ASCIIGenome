@@ -418,7 +418,7 @@ public class UtilsTest {
 		List<String> newFileNames= new ArrayList<String>();
 		newFileNames.add("test_data/ds051.actb.bam");
 		newFileNames.add("nonsense");
-		Utils.addTrack(inputFileList, newFileNames);
+		Utils.addSourceName(inputFileList, newFileNames);
 		assertEquals(3, inputFileList.size());
 	}
 	

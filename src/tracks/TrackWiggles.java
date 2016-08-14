@@ -98,6 +98,7 @@ public class TrackWiggles extends Track {
 				blockCompressAndIndex(this.getFilename(), this.getFilename() + ".samTextViewer.tmp.gz", true);
 				bedGraphToScores(this.getFilename() + ".samTextViewer.tmp.gz");
 			}
+			
 		} else {
 			throw new RuntimeException("Extension (i.e. file type) not recognized for " + this.getFilename());
 		}
@@ -118,7 +119,7 @@ public class TrackWiggles extends Track {
 		}
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
-			printable= "\033[0;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[0m";
+			printable= "\033[48;5;231;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[48;5;231m";
 		}
 		return printable;
 	}

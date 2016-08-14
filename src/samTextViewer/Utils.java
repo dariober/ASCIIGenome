@@ -918,7 +918,7 @@ public class Utils {
 	 * @param newFileNames List of files to append
 	 * @throws InvalidCommandLineException 
 	 */
-	public static void addTrack(List<String> inputFileList, List<String> newFileNames) throws InvalidCommandLineException {
+	public static void addSourceName(List<String> inputFileList, List<String> newFileNames) throws InvalidCommandLineException {
 
 		List<String> dropMe= new ArrayList<String>();
 		List<String> addMe= new ArrayList<String>();

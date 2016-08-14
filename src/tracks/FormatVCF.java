@@ -28,13 +28,13 @@ public class FormatVCF {
 			// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
 			char base= text.charAt(i);
 			if(base == 'A' || base == 'a'){
-				formattedText += "\033[107;34m" + base + "\033[0m";
+				formattedText += "\033[107;34m" + base + "\033[48;5;231m";
 			} else if(base == 'C' || base == 'c') {
-				formattedText += "\033[107;31m" + base + "\033[0m";
+				formattedText += "\033[107;31m" + base + "\033[48;5;231m";
 			} else if(base == 'G' || base == 'g') {
-				formattedText += "\033[107;32m" + base + "\033[0m";
+				formattedText += "\033[107;32m" + base + "\033[48;5;231m";
 			} else if(base == 'T' || base == 't') {
-				formattedText += "\033[107;33m" + base + "\033[0m";
+				formattedText += "\033[107;33m" + base + "\033[48;5;231m";
 			} else {
 				formattedText += base;
 			} 

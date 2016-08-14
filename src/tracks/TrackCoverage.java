@@ -145,7 +145,7 @@ public class TrackCoverage extends Track {
 		}
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
-			printable= "\033[0;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[0m";
+			printable= "\033[48;5;231;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[48;5;231m";
 		}
 		return printable;
 	}
@@ -222,10 +222,10 @@ public class TrackCoverage extends Track {
 			if(this.isNoFormat()){
 				faSeqStr += base;
 			} 
-			  else if(base == 'A') { faSeqStr += "\033[107;34m" + base + "\033[0m";} 
-			  else if(base == 'C') { faSeqStr += "\033[107;31m" + base + "\033[0m";} 
-			  else if(base == 'G') { faSeqStr += "\033[107;32m" + base + "\033[0m";} 
-			  else if(base == 'T') { faSeqStr += "\033[107;33m" + base + "\033[0m";} 
+			  else if(base == 'A') { faSeqStr += "\033[107;34m" + base + "\033[48;5;231m";} 
+			  else if(base == 'C') { faSeqStr += "\033[107;31m" + base + "\033[48;5;231m";} 
+			  else if(base == 'G') { faSeqStr += "\033[107;32m" + base + "\033[48;5;231m";} 
+			  else if(base == 'T') { faSeqStr += "\033[107;33m" + base + "\033[48;5;231m";} 
 			  else { faSeqStr += base; } 
 		}
 		if(allEmpty){

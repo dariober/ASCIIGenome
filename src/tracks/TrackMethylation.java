@@ -94,9 +94,9 @@ public class TrackMethylation extends Track {
             throw new RuntimeException();
         }
         
-        String charForM= (noFormat) ? "*" : "\033[31m*\033[0m"; // 107: white bg; 31: red text
-        String charForU= (noFormat) ? "." : "\033[34m.\033[0m"; // 107: white bg; 34: blue text
-        // String charForZero= (noFormat) ? "_" : "\033[_\033[0m"; // 107: white bg
+        String charForM= (noFormat) ? "*" : "\033[31m*\033[48;5;231m"; // 107: white bg; 31: red text
+        String charForU= (noFormat) ? "." : "\033[34m.\033[48;5;231m"; // 107: white bg; 34: blue text
+        // String charForZero= (noFormat) ? "_" : "\033[_\033[48;5;231m"; // 107: white bg
         String charForZero= "_";
         String charForNonCyt= " ";
         String charForFill= " ";

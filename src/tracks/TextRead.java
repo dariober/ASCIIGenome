@@ -159,12 +159,12 @@ class TextRead {
 			} else if(Character.toUpperCase(c) == 'T') {
 				fmt += "1;107;33";
 			} else if(!this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
-				fmt += "30;48;5;147"; // 105: light magenta; Test on terminal: echo -e "\033[48;5;225m <<<<<<<<<<<<<<<<<<<<<<<<<<< \033[0m"
+				fmt += "30;48;5;147"; // 105: light magenta; Test on terminal: echo -e "\033[48;5;225m <<<<<<<<<<<<<<<<<<<<<<<<<<< \033[48;5;231m"
 			} else if(this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
-				fmt += "30;48;5;225"; // 106: light cyan
+				fmt += "30;48;5;225"; // 48;5;231: light cyan
 			}
-			// The formatted string will look like `echo -e "\033[4;1;107;31mACTGnnnnnACTG\033[0m"`
-			formatted += fmt + "m" + c + "\033[0m"; // Clear all formatting
+			// The formatted string will look like `echo -e "\033[4;1;107;31mACTGnnnnnACTG\033[48;5;231m"`
+			formatted += fmt + "m" + c + "\033[48;5;231m"; // Clear all formatting
 		}
 		return formatted;
 	}

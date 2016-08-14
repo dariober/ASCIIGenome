@@ -1,6 +1,6 @@
 package exceptions;
 
-public class InvalidColourException extends Exception {
+public class BamIndexNotFoundException extends Exception {
 
 	/**
 	 * 

@@ -1,11 +1,15 @@
 New in 0.3.0
 =============
 
-* **Colors** Now the png output has colours.
+* **Colours** Now the png output has colours.
+
+* **Colours II** ASCIIGenome sets the background colour of the terminal to white, unless started with `--noFormat`. In this way the visual look of ASCIIGenome should be independent of the user's colour scheme of the terminal.
 
 * **UCSC gtf** Annotation tables can be pulled directly from UCSC.
 
 * Fixed issue https://github.com/dariober/ASCIIGenome/issues/20 (remember to close it on merge with trunk). 
+
+* Fixed issue https://github.com/dariober/ASCIIGenome/issues/23 (remember to close it on merge with trunk).
 
 * `ASCIIGenome` can start without any input file.
 

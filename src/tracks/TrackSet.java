@@ -1,18 +1,19 @@
 package tracks;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import filter.FlagToFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
@@ -23,7 +24,8 @@ import samTextViewer.Utils;
  * */
 public class TrackSet {
 	
-	private LinkedHashMap<String, Track> trackSet= new LinkedHashMap<String, Track>();
+	private LinkedHashMap<String, Track> trackSet_DEPRECATED= new LinkedHashMap<String, Track>();
+	private List<Track> trackList= new ArrayList<Track>();
 	private List<Pattern> regexForTrackHeight= new ArrayList<Pattern>();
 	private int trackHeightForRegex= -1;
 	
@@ -43,9 +45,108 @@ public class TrackSet {
 	//	return tr;
 	//}
 
+	public void add(Track track) {
+		int idForTrack= this.getMaxTrackId() + 1;
+		String trackId= track.getFilename() + "#" + idForTrack;
+		track.setFileTag(trackId);
+		track.setId(idForTrack);
+		this.trackList.add(track);
+	}
+
+	
+	/** Add track from given file or URL
+	 * @throws BamIndexNotFoundException 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidRecordException 
+	 * */
+	public void add(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException{
+
+		if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
+			this.addBamTrackFromSourceName(sourceName, gc);
+		
+		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
+		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
+			      || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
+			this.addIntervalFeatureTrackFromSourceName(sourceName, gc);
+		
+		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG) 
+				|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.TDF) 
+				|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)){
+			this.addWiggleTrackFromSourceName(sourceName, gc);
+		}
+	}
+	
+	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidRecordException{
+		
+		int idForTrack= this.getMaxTrackId() + 1;
+		String trackId= new File(sourceName).getName() + "#" + idForTrack;
+		
+		TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
+		tw.setId(idForTrack);
+		tw.setFileTag(trackId);
+		this.trackList.add(tw);
+	}
+	
+	private void addIntervalFeatureTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException{
+		
+		int idForTrack= this.getMaxTrackId() + 1;
+		
+		String trackId= new File(sourceName).getName() + "#" + (idForTrack);
+		TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
+		tif.setFileTag(trackId);
+		tif.setId(idForTrack);
+		this.trackList.add(tif);
+	}
+	
+	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException{
+
+		int idForTrack= this.getMaxTrackId() + 1;
+		
+		if(!Utils.bamHasIndex(sourceName)){
+			System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
+			System.err.println("samtools index '" + sourceName + "'\n");
+			throw new BamIndexNotFoundException();
+		}
+		
+		/* BAM Coverage track */
+		String coverageTrackId= new File(sourceName).getName() + "#" + (idForTrack);
+		
+		TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
+		trackCoverage.setId(idForTrack);
+		trackCoverage.setFileTag(coverageTrackId);
+		this.trackList.add(trackCoverage);
+		
+		/* Reads */
+		idForTrack= this.getMaxTrackId() + 1;
+		String trackId= new File(sourceName).getName() + "@" + (idForTrack+1);
+
+		TrackReads trackReads= new TrackReads(sourceName, gc, 2000);
+		trackReads.setFileTag(trackId);
+		trackReads.setId(idForTrack);
+		trackReads.setFileTag(trackId);
+
+		this.trackList.add(trackReads);
+	} 
+	
+	private int getMaxTrackId(){
+		
+		if(this.trackList.size() == 0){
+			return 1;
+		}
+		
+		int id= Integer.MIN_VALUE;
+		for(Track tr : this.trackList){
+			if(tr.getId() > id){
+				id= tr.getId();
+			}
+		}
+		return id; 
+	}
+	
 	public String showTrackInfo(){
 		List<String> trackInfo= new ArrayList<String>();
-		Iterator<Entry<String, Track>> trx= this.trackSet.entrySet().iterator();
+		Iterator<Entry<String, Track>> trx= this.trackSet_DEPRECATED.entrySet().iterator();
 		
 		while(trx.hasNext()){
 			Entry<String, Track> x = trx.next();
@@ -457,7 +558,7 @@ public class TrackSet {
 	 * */
 	private Track matchIntervalFeatureTrack(String trackTag) throws InvalidCommandLineException{
 		
-		LinkedHashMap<String, Track> ifTracks = this.getIntervalFeatureTracks().getTrackSet();		
+		LinkedHashMap<String, Track> ifTracks = this.getIntervalFeatureTracks().getTrackSet_DEPRECATED();		
 		Track tr= null;
 		
 		if(ifTracks.size() == 0){
@@ -504,13 +605,13 @@ public class TrackSet {
 		
 		List<Track> matchedTracks= new ArrayList<Track>();
 		
-		Iterator<String> iter = this.trackSet.keySet().iterator();
+		Iterator<String> iter = this.trackSet_DEPRECATED.keySet().iterator();
 		while(iter.hasNext()){
 			String trackId= iter.next();
 			for(String pattern : patterns){
 				boolean matched= Pattern.compile(pattern).matcher(trackId).find();
 				if(matched && !matchedTracks.contains(trackId)){
-					matchedTracks.add(this.trackSet.get(trackId));
+					matchedTracks.add(this.trackSet_DEPRECATED.get(trackId));
 				}
 			}
 		}
@@ -535,11 +636,11 @@ public class TrackSet {
 
 	private TrackSet getIntervalFeatureTracks(){
 		TrackSet ifSet= new TrackSet();
-		for(Track tr : this.trackSet.values()){
+		for(Track tr : this.trackSet_DEPRECATED.values()){
 			if(Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.BED) 
 			   || Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.GFF)
 			   || Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.VCF)){
-				ifSet.trackSet.put(tr.getFileTag(), tr);
+				ifSet.trackSet_DEPRECATED.put(tr.getFileTag(), tr);
 			}
 		}
 		return ifSet;
@@ -601,31 +702,35 @@ public class TrackSet {
 		}
 		
 		// Append tracks not in newOrder
-		for(String x : this.trackSet.keySet()){
+		for(String x : this.trackSet_DEPRECATED.keySet()){
 			if(!newTrackSet.containsKey(x)){
-				newTrackSet.put(x, this.trackSet.get(x));
+				newTrackSet.put(x, this.trackSet_DEPRECATED.get(x));
 			}
 		}
 		
 		// A sanity check we didn't leave anything behind
-		if(this.trackSet.size() != newTrackSet.size()){
-			throw new RuntimeException("\nReordered track has " + newTrackSet.size() + " tracks. Expected " + this.trackSet.size());
+		if(this.trackSet_DEPRECATED.size() != newTrackSet.size()){
+			throw new RuntimeException("\nReordered track has " + newTrackSet.size() + " tracks. Expected " + this.trackSet_DEPRECATED.size());
 		}
-		for(String x : this.trackSet.keySet()){
+		for(String x : this.trackSet_DEPRECATED.keySet()){
 			if(!newTrackSet.containsKey(x)){
 				throw new RuntimeException("\nReordered track does not contain " + x);
 			}
 		}
 		
 		// Replace old with new hashmap
-		this.trackSet= newTrackSet;
+		this.trackSet_DEPRECATED= newTrackSet;
 	}
 	
 	/*   S e t t e r s   and   G e t t e r s  */
-	public LinkedHashMap<String, Track> getTrackSet() {
-		return trackSet;
+	public LinkedHashMap<String, Track> getTrackSet_DEPRECATED() {
+		return trackSet_DEPRECATED;
 	}
-
+	
+	public List<Track> getTrackList() {
+		return trackList;
+	}
+	
 	public List<Pattern> getRegexForTrackHeight() {
 		return regexForTrackHeight;
 	}
@@ -633,6 +738,7 @@ public class TrackSet {
 		return trackHeightForRegex;
 	}
 
+	/*
 	public void addBookmark_IN_PREP(GenomicCoords gc, String name) throws IOException, InvalidGenomicCoordsException {
 		
 		String raw= (gc.getChrom() + "\t" + (gc.getFrom()-1) + "\t" + gc.getTo() + "\t" + name).trim();
@@ -676,7 +782,7 @@ public class TrackSet {
 			bookmarkTrack.setIntervalFeatureSet(intervalFeatureSet);
 		}
 		this.trackSet.put(TrackSet.BOOKMARK_TAG, bookmarkTrack);
-	}
+	} */
 
 	/** Method to set any of the three alignment filters: -F,-f, mapq */
 	public void setFilterFlagForRegex(List<String> tokens) throws InvalidCommandLineException {
