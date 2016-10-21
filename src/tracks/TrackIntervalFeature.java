@@ -1,12 +1,14 @@
 package tracks;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -19,7 +21,7 @@ public class TrackIntervalFeature extends Track {
 	
 	/* C o n s t r u c t o r */
 
-	public TrackIntervalFeature(String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException{
+	public TrackIntervalFeature(String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		this.setGc(gc);
 		this.setFilename(filename);
 		this.intervalFeatureSet= new IntervalFeatureSet(filename);
@@ -133,7 +135,7 @@ public class TrackIntervalFeature extends Track {
 		if(this.getGap() == 0){
 			gapped= "; ungapped";
 		}
-		String title=  this.getFileTag() + "; " 
+		String title=  this.getTrackTag() + "; " 
 	                 + "Incl " + this.getShowRegex()
 	                 + " Excl " + this.getHideRegex()
 	                 + " N: " + this.intervalFeatureList.size()

@@ -2,6 +2,7 @@ package samTextViewer;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -21,10 +22,7 @@ import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
 import tracks.Track;
-import tracks.TrackCoverage;
-import tracks.TrackFormat;
 import tracks.TrackIntervalFeature;
-import tracks.TrackReads;
 import tracks.TrackSet;
 import tracks.TrackWiggles;
 
@@ -40,23 +38,8 @@ public class Main {
 		return memStats;
 	}
 
-	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException {
-		
-		/* Start parsing arguments * 
-		 * *** If you change something here change also in console input ***/
-		Namespace opts= ArgParse.argParse(args);
-		
-		List<String> initFileList= opts.getList("input");
-		String region= opts.getString("region");
-		final String genome= opts.getString("genome");
-		final String fasta= opts.getString("fasta");
-		final String exec= opts.getString("exec");
-		final int maxReadsStack= opts.getInt("maxReadsStack");
-		final boolean noFormat= opts.getBoolean("noFormat");
-		final boolean nonInteractive= opts.getBoolean("nonInteractive");
-
-		
-		/* Set up console */
+	
+	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException {
 		
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 		    public void run() {
@@ -71,9 +54,19 @@ public class Main {
 		    }
 		}));
 		
-		if(!noFormat){
-			System.out.print("\033[48;5;231m");
-		}		
+		/* Start parsing arguments * 
+		 * *** If you change something here change also in console input ***/
+		Namespace opts= ArgParse.argParse(args);
+		
+		List<String> initFileList= opts.getList("input");
+		String region= opts.getString("region");
+		final String genome= opts.getString("genome");
+		final String fasta= opts.getString("fasta");
+		final String exec= opts.getString("exec");
+		final boolean noFormat= opts.getBoolean("noFormat");
+		final boolean nonInteractive= opts.getBoolean("nonInteractive");
+		
+		/* Set up console */
 		
 		int windowSize= 160;
 		try{
@@ -120,143 +113,36 @@ public class Main {
 		}
 		gch.add(new GenomicCoords(region, samSeqDict, windowSize, fasta));
 
-		TrackSet trackSet= new TrackSet();
-		for(String sourceName : inputFileList){
-			trackSet.add(sourceName, gch.current());
-		}
+		/* Initialize trackSet */
+		TrackSet trackSet= new TrackSet(inputFileList, gch.current());
 		
 		/* Initialize GC profile */
 		if(fasta != null){
 			TrackWiggles cgWiggle= gch.current().getGCProfile();
-			trackSet.add(cgWiggle);
-			// trackSet.getTrackSet_DEPRECATED().put(cgWiggle.getFileTag(), cgWiggle);
+			trackSet.add(cgWiggle, "gcProfile");
 		}
-		
-		TrackIntervalFeature seqRegexTrack= gch.current().findRegex("^$");
 		
 		// Put here the previous command so that it is re-issued if no imput is given
 		// You have to initialize this var outside the while loop that processes input files.
 		String currentCmdConcatInput= ""; 
-		String seqRegex= null;
-		int idForTrack= 0;
+		// String seqRegex= null;
 		String snapshotFile= null;
 		// boolean snapshotStripAnsi= true;
-		ConsoleReader console = CommandList.initConsole();
 		boolean execDone= exec.isEmpty() ? true : false; // Do we need to execute commands from --exec? If exec is empty, consider it done.
 
+		if(!noFormat){
+			System.out.print("\033[48;5;231m");
+		}		
+		
 		/* =================================== *
 		 * Start processing interactive input  *
 		 * =================================== */
+		ConsoleReader console = CommandList.initConsole();
 		
 		while(true){ 
 
-			for(int i= 0; i < inputFileList.size(); i++){ 
-				/* Iterate through each input file */
-				String inputFileName= inputFileList.get(i);
-				
-				if(Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BAM)){
-				
-					if(!Utils.bamHasIndex(inputFileName)){
-						System.err.println("\nNo index found for '" + inputFileName + "'. Index can be generated with ");
-						System.err.println("samtools index '" + inputFileName + "'\n");
-						System.exit(1);
-					}
-					
-					/* BAM Coverage track */
-					String coverageTrackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
-					idForTrack++;
-					if(!trackSet.getTrackSet_DEPRECATED().containsKey(coverageTrackId)){
-						TrackCoverage trackCoverage= new TrackCoverage(inputFileName, gch.current(), false);
-						trackCoverage.setFileTag(coverageTrackId);
-						trackSet.getTrackSet_DEPRECATED().put(trackCoverage.getFileTag(), trackCoverage);
-					}
-					TrackCoverage trackCoverage= (TrackCoverage) trackSet.getTrackSet_DEPRECATED().get(coverageTrackId);
-					trackCoverage.setGc(gch.current());
-					if(trackCoverage.getyMaxLines() > 0){
-						trackCoverage.update();
-					}
-					trackCoverage.printToScreen();					
-					/* Methylation profile disable until a better representation is prepared
-				
-					if(bs && trackCoverage.getScreenLocusInfoList().size() > 0){
-						if(maxMethylLines < 0){
-							maxMethylLines= 0;
-						}
-						coverageTrackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
-						idForTrack++;
-						if(!trackSet.getTrackSet().containsKey(coverageTrackId)){
-							TrackMethylation trackMethylation= new TrackMethylation(inputFileName, trackCoverage.getScreenLocusInfoList());
-							trackMethylation.setFileTag(coverageTrackId);
-							trackSet.getTrackSet().put(trackMethylation.getFileTag(), trackMethylation);
-						}
-						TrackMethylation trackMethylation= (TrackMethylation) trackSet.getTrackSet().get(coverageTrackId);
-						trackMethylation.setScreenLocusInfoList(trackCoverage.getScreenLocusInfoList());
-						trackMethylation.setyMaxLines(maxMethylLines);
-					}
-					*/
-										
-					/* Reads */
-					String trackId= new File(inputFileName).getName() + "@" + (idForTrack+1);
-					idForTrack++;
-					if(!trackSet.getTrackSet_DEPRECATED().containsKey(trackId)){
-						TrackReads trackReads= new TrackReads(inputFileName, gch.current(), maxReadsStack);
-						trackReads.setFileTag(trackId);
-						trackSet.getTrackSet_DEPRECATED().put(trackReads.getFileTag(), trackReads);
-						trackReads.setFilename(inputFileName);
-						trackReads.setFileTag(trackId);
-					}
-					TrackReads trackReads= (TrackReads) trackSet.getTrackSet_DEPRECATED().get(trackId);
-					trackReads.setGc(gch.current());
-					if(trackReads.getyMaxLines() > 0){
-						trackReads.update();
-					}
-				} // End processing bam file
-				
-				/* Annotatation */
-				if(    Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BED) 
-			        || Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.GFF)
-				    || Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.VCF)){
-					String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
-					idForTrack++;
-					if(!trackSet.getTrackSet_DEPRECATED().containsKey(trackId)){
-						TrackIntervalFeature tif= new TrackIntervalFeature(inputFileName, gch.current());
-						tif.setFileTag(trackId);
-						trackSet.getTrackSet_DEPRECATED().put(tif.getFileTag(), tif);
-					}
-					TrackIntervalFeature tif= (TrackIntervalFeature) trackSet.getTrackSet_DEPRECATED().get(trackId);
-					tif.setGc(gch.current());
-					try {
-						if(tif.getyMaxLines() > 0){
-							tif.update();
-						}
-					} catch(InvalidGenomicCoordsException e){
-						e.printStackTrace();
-					}
-				} 
-				/* Wiggles */
-				if(Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BIGWIG) 
-						|| Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.TDF) 
-						|| Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BEDGRAPH)){
 
-					String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
-					idForTrack++;
-					if(!trackSet.getTrackSet_DEPRECATED().containsKey(trackId)){
-						TrackWiggles tw= new TrackWiggles(inputFileName, gch.current(), 4);
-						tw.setFileTag(trackId);
-						trackSet.getTrackSet_DEPRECATED().put(tw.getFileTag(), tw);
-					}
-					TrackWiggles tw= (TrackWiggles) trackSet.getTrackSet_DEPRECATED().get(trackId);
-					tw.setGc(gch.current());
-					if(tw.getyMaxLines() > 0){
-						tw.update();
-					}
-					tw.printToScreen();
-				}
-			} // End loop through files 
-
-			/* Print tracks */
-			/* ************ */
-			if(!nonInteractive){
+			if(!nonInteractive){ // == interactive
 				console.clearScreen();
 				console.flush();
 			}
@@ -264,82 +150,55 @@ public class Main {
 			if(gch.current().getChromIdeogram(20, noFormat) != null && execDone){
 				Utils.printer(gch.current().getChromIdeogram(20, noFormat) + "\n", snapshotFile);
 			}			
-			for(Track tr : trackSet.getTrackSet_DEPRECATED().values()){
-				if(tr.getFileTag() == gch.current().getGcProfileFileTag()){
-					continue;
+			
+			for(Track track : trackSet.getTrackList()){
+			
+				track.setNoFormat(noFormat);
+
+				track.setGc(gch.current());
+				if(track.getyMaxLines() > 0){
+					track.update();
 				}
-				tr.setNoFormat(noFormat);
-				if(execDone && tr.getyMaxLines() > 0){
-					Utils.printer(tr.getTitle(), snapshotFile);
-					Utils.printer(tr.printToScreen() + "\n", snapshotFile);
-					Utils.printer(tr.getPrintableConsensusSequence(), snapshotFile);
+			
+				if(execDone && track.getyMaxLines() > 0){
+					Utils.printer(track.getTitle(), snapshotFile);
+					Utils.printer(track.printToScreen() + "\n", snapshotFile);
+					Utils.printer(track.getPrintableConsensusSequence(), snapshotFile);
+					Utils.printer(track.printFeatures(windowSize), snapshotFile);
 				}
 
-				// Print features
-				String printable= tr.printFeatures(windowSize);
-				if(execDone){
-					Utils.printer(printable, snapshotFile);
-				}
 			}
 
 			/* Footers and interactive prompt */
 			/* ****************************** */
-			// GC content profile
-			if(trackSet.getTrackSet_DEPRECATED().containsKey(gch.current().getGcProfileFileTag())){
-				// There is a bad hack here: We get yMaxLines from the TrackSet, but we don't plot the wiggle profile in the track set. 
-				// Instead we get wiggle from GenomicCoords object and replace yMaxLines in GenomicCoords with the one from the TrackSet.
-				// This is because the TrackSet profile is not updated.
-				int yMaxLines= trackSet.getTrackSet_DEPRECATED().get(gch.current().getGcProfileFileTag()).getyMaxLines();
-				double yLimitMin= trackSet.getTrackSet_DEPRECATED().get(gch.current().getGcProfileFileTag()).getYLimitMin();
-				double yLimitMax= trackSet.getTrackSet_DEPRECATED().get(gch.current().getGcProfileFileTag()).getYLimitMax();
-				String col= trackSet.getTrackSet_DEPRECATED().get(gch.current().getGcProfileFileTag()).getTitleColour();
-				if(yMaxLines > 0){
-					TrackWiggles tw= gch.current().getGCProfile();				
-					tw.setyMaxLines(yMaxLines);
-					tw.setYLimitMin(yLimitMin);
-					tw.setYLimitMax(yLimitMax);
-					tw.setTitleColour(col);
-					tw.setNoFormat(noFormat);
-					// tw.setHidden(trackSet.getTrackSet().get(GenomicCoords.gcProfileFileTag).isHidden());
-					if(execDone && tw.getyMaxLines() > 0){
-						Utils.printer(tw.getTitle(), snapshotFile);
-						String gcPrintable= tw.printToScreen();
-						Utils.printer(gcPrintable + "\n", snapshotFile);
-					}
-				}
-			}
-			// Track for matching regex
-			int prevHeight= seqRegexTrack.getyMaxLines();
-			seqRegexTrack = gch.current().findRegex(seqRegex);
-			seqRegexTrack.setNoFormat(noFormat);
-			seqRegexTrack.setyMaxLines(prevHeight);
-			// See if we need to change height
+			TrackIntervalFeature seqRegexTrack = gch.findRegex();
+			// Track for regex match on fasta sequence See if we need to change height
 			for(Pattern p : trackSet.getRegexForTrackHeight()){
-				if(p.matcher(seqRegexTrack.getFileTag()).find()){
+				if(p.matcher(seqRegexTrack.getTrackTag()).find()){
 					seqRegexTrack.setyMaxLines(trackSet.getTrackHeightForRegex());
 					break;
 				}
 			}
 			String seqPattern= seqRegexTrack.printToScreen();
 			if(!seqPattern.isEmpty()){
-				seqPattern+="\n";
+				seqPattern += "\n";
 			} 
 			if(execDone){
 				Utils.printer(seqPattern, snapshotFile);
-			}
-			// Ruler and sequence
-			if(execDone){
+				
+				// Ruler and sequence
 				Utils.printer(gch.current().printableRefSeq(noFormat), snapshotFile);
 				String ruler= gch.current().printableRuler(10, noFormat);
 				Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile);
-			}
-			String footer= gch.current().toString() + "; " + Math.rint(gch.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " + getMemoryStat();
-			if(execDone){
+
+				// Position, memory, etc
+				String footer= gch.current().toString() + "; " + Math.rint(gch.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " + getMemoryStat();
 				if(!noFormat){
-					Utils.printer("\033[48;5;231;34m" + footer + "\033[48;5;231m; \n", snapshotFile);
+					Utils.printer("\033[48;5;231;34m" + footer + "\033[48;5;231;30m; \n", snapshotFile);
 				} else {
 					Utils.printer(footer + "\n", snapshotFile);
 				}
+
 				// Optionally convert to png
 				if(snapshotFile != null && snapshotFile.endsWith("png")){
 					(new Png(new File(snapshotFile))).convert(new File(snapshotFile));
@@ -349,7 +208,7 @@ public class Main {
 			/* Interactive input */
 			/* ================= */
 			if(nonInteractive && execDone){
-				// Exit now if non-interctive mode is set and no string is passed to be executed. 
+				// Exit now if non-interactive mode is set and no string is passed to be executed. 
 				break;
 			}
 			
@@ -467,11 +326,15 @@ public class Main {
 						} else if(cmdInput.get(0).equals("addTracks") && cmdInput.size() > 1){
 							cmdInput.remove(0);
 							Utils.addSourceName(inputFileList, cmdInput);
-				
+		
 							if(gch.current().getSamSeqDict().size() == 0){
 								samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(inputFileList, null, null);
 								GenomicCoords gc= gch.current();
 								gc.setSamSeqDict(samSeqDict);
+							}
+							
+							for(String sourceName : cmdInput){
+								trackSet.add(sourceName, gch.current());
 							}
 							
 						} else if(cmdInput.get(0).equals("orderTracks") && cmdInput.size() > 1){
@@ -536,12 +399,15 @@ public class Main {
 								cmdConcatInput= null;
 								continue;
 							}
+							String seqRegex= null;
 							if(cmdInput.size() == 1){
 								seqRegex= "";
+								gch.setSeqRegex(seqRegex);
 							} else {
 								seqRegex= cmdInput.get(1);
 								try{
 									Pattern.compile(seqRegex);
+									gch.setSeqRegex(seqRegex);
 								} catch(PatternSyntaxException e){
 							    	System.err.println("Invalid seqRegex in: " + cmdInput);
 							    	System.err.println(e.getDescription());
@@ -607,9 +473,96 @@ public class Main {
 				String newRegion= gch.current().getChrom() + ":" + gch.current().getFrom() + "-" + gch.current().getTo(); 
 				gch.getHistory().add(gch.getHistory().indexOf(gch.current()), new GenomicCoords(newRegion, samSeqDict, windowSize, fasta));
 			}
-			
-			idForTrack= 0;
 		} // End while loop keep going until quit or if no interactive input set
 	}
 	
 }
+
+
+/*
+for(int i= 0; i < inputFileList.size(); i++){ 
+	// Iterate through each input file
+	String inputFileName= inputFileList.get(i);
+	
+	if(Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BAM)){
+	
+		if(!Utils.bamHasIndex(inputFileName)){
+			System.err.println("\nNo index found for '" + inputFileName + "'. Index can be generated with ");
+			System.err.println("samtools index '" + inputFileName + "'\n");
+			System.exit(1);
+		}
+		
+		// BAM Coverage track
+		String coverageTrackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
+		idForTrack++;
+		if(!trackSet.getTrackSet_DEPRECATED().containsKey(coverageTrackId)){
+			TrackCoverage trackCoverage= new TrackCoverage(inputFileName, gch.current(), false);
+			trackCoverage.setTrackTag(coverageTrackId);
+			trackSet.getTrackSet_DEPRECATED().put(trackCoverage.getTrackTag(), trackCoverage);
+		}
+		TrackCoverage trackCoverage= (TrackCoverage) trackSet.getTrackSet_DEPRECATED().get(coverageTrackId);
+		trackCoverage.setGc(gch.current());
+		if(trackCoverage.getyMaxLines() > 0){
+			trackCoverage.update();
+		}
+		trackCoverage.printToScreen();					
+
+		// Reads
+		String trackId= new File(inputFileName).getName() + "@" + (idForTrack+1);
+		idForTrack++;
+		if(!trackSet.getTrackSet_DEPRECATED().containsKey(trackId)){
+			TrackReads trackReads= new TrackReads(inputFileName, gch.current());
+			trackReads.setTrackTag(trackId);
+			trackSet.getTrackSet_DEPRECATED().put(trackReads.getTrackTag(), trackReads);
+			trackReads.setFilename(inputFileName);
+			trackReads.setTrackTag(trackId);
+		}
+		TrackReads trackReads= (TrackReads) trackSet.getTrackSet_DEPRECATED().get(trackId);
+		trackReads.setGc(gch.current());
+		if(trackReads.getyMaxLines() > 0){
+			trackReads.update();
+		}
+	} // End processing bam file
+	
+	// Annotatation
+	if(    Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BED) 
+        || Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.GFF)
+	    || Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.VCF)){
+		String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
+		idForTrack++;
+		if(!trackSet.getTrackSet_DEPRECATED().containsKey(trackId)){
+			TrackIntervalFeature tif= new TrackIntervalFeature(inputFileName, gch.current());
+			tif.setTrackTag(trackId);
+			trackSet.getTrackSet_DEPRECATED().put(tif.getTrackTag(), tif);
+		}
+		TrackIntervalFeature tif= (TrackIntervalFeature) trackSet.getTrackSet_DEPRECATED().get(trackId);
+		tif.setGc(gch.current());
+		try {
+			if(tif.getyMaxLines() > 0){
+				tif.update();
+			}
+		} catch(InvalidGenomicCoordsException e){
+			e.printStackTrace();
+		}
+	} 
+	// Wiggles
+	if(Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BIGWIG) 
+			|| Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.TDF) 
+			|| Utils.getFileTypeFromName(inputFileName).equals(TrackFormat.BEDGRAPH)){
+
+		String trackId= new File(inputFileName).getName() + "#" + (idForTrack+1);
+		idForTrack++;
+		if(!trackSet.getTrackSet_DEPRECATED().containsKey(trackId)){
+			TrackWiggles tw= new TrackWiggles(inputFileName, gch.current(), 4);
+			tw.setTrackTag(trackId);
+			trackSet.getTrackSet_DEPRECATED().put(tw.getTrackTag(), tw);
+		}
+		TrackWiggles tw= (TrackWiggles) trackSet.getTrackSet_DEPRECATED().get(trackId);
+		tw.setGc(gch.current());
+		if(tw.getyMaxLines() > 0){
+			tw.update();
+		}
+		tw.printToScreen();
+	} 
+} // End loop through files 
+*/

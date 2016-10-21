@@ -182,7 +182,7 @@ public class TrackMethylation extends Track {
 
         double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
         
-        String xtitle= this.getFileTag() 
+        String xtitle= this.getTrackTag() 
                 + "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
                 + "; range[" + rounded[0] + " " + rounded[1] + "]\n";
 		return this.formatTitle(xtitle);

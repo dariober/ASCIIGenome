@@ -2,20 +2,17 @@
 
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.text.StrTokenizer;
-import org.broad.igv.bbfile.BBFileReader;
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
-import htsjdk.samtools.seekablestream.SeekableStream;
-import htsjdk.samtools.seekablestream.SeekableStreamFactory;
-import htsjdk.tribble.readers.TabixReader;
+import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 import tracks.IntervalFeature;
 import tracks.IntervalFeatureSet;
@@ -23,7 +20,17 @@ import tracks.IntervalFeatureSet;
 public class IntervalFeatureSetTest {
 
 	@Test
-	public void canShowAndHide_getFeaturesInInterval() throws IOException, InvalidGenomicCoordsException{
+	public void canInitialize() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		
+		IntervalFeatureSet set= new IntervalFeatureSet("test_data/hg19_genes_head.gtf");
+		List<IntervalFeature> x = set.getFeaturesInInterval("chr1", 1000000, 5000000);
+		assertTrue(x.get(0).getRaw().startsWith("chr1"));
+		assertTrue(x.get(0).getFrom() >= 1000000);
+		
+	}
+	
+	@Test
+	public void canShowAndHide_getFeaturesInInterval() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		// For Map:
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/hg19_genes_head.gtf");
 		set.setShowRegex("start_codon");
@@ -43,7 +50,7 @@ public class IntervalFeatureSetTest {
 	}
 
 	@Test
-	public void canShowAndHide_coordsOfNextFeature() throws IOException, InvalidGenomicCoordsException{
+	public void canShowAndHide_coordsOfNextFeature() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr1:1", null, 100, null);
 
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/hg19_genes_head.gtf");
@@ -54,7 +61,7 @@ public class IntervalFeatureSetTest {
 	}
 
 	@Test
-	public void canShowAndHide_findNextRegex() throws IOException, InvalidGenomicCoordsException{
+	public void canShowAndHide_findNextRegex() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr1:1", null, 100, null);
 
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/hg19_genes_head.gtf");
@@ -65,14 +72,15 @@ public class IntervalFeatureSetTest {
 	}
 	
 	@Test
-	public void canReadFileWithHeader() throws IOException, InvalidGenomicCoordsException{
+	public void canReadFileWithComments() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/refSeq.bed");
-		assertEquals(2, set.getIntervalMap().size());
-		assertEquals(2, set.getIntervalMap().get("chr1").size());
+		assertEquals(2, set.getFeaturesInInterval("chr1", 0, 100000).size());
+	
 	}
 	
 	@Test
-	public void test2() throws IOException, InvalidGenomicCoordsException{
+	public void test2() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		Set<String> chroms= new HashSet<String>();
 		chroms.add("c1");
 		chroms.add("c2");
@@ -89,7 +97,7 @@ public class IntervalFeatureSetTest {
 
 	
 	@Test
-	public void canFindNextFeatureOnChromGivenRegex() throws IOException, InvalidGenomicCoordsException{
+	public void canFindNextFeatureOnChromGivenRegex() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		StrTokenizer str= new StrTokenizer("one\n   two '   three four'");
 		str.setQuoteChar('\'');
@@ -128,7 +136,7 @@ public class IntervalFeatureSetTest {
 
 	
 	@Test
-	public void canGetCoordsOfNextFeature() throws IOException, InvalidGenomicCoordsException{
+	public void canGetCoordsOfNextFeature() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/refSeq.hg19.short.sort-2.bed");
 		
 		GenomicCoords gc= new GenomicCoords("chr1:8000000-20000000", null, 100, null);
@@ -148,7 +156,7 @@ public class IntervalFeatureSetTest {
 	}
 
 	@Test
-	public void canGetCoordsOfNextFeatureTabix() throws IOException, InvalidGenomicCoordsException{
+	public void canGetCoordsOfNextFeatureTabix() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/refSeq.hg19.short.sort.bed.gz");
 		
 		GenomicCoords gc= new GenomicCoords("chr1:8000000-20000000", null, 100, null);
@@ -166,7 +174,7 @@ public class IntervalFeatureSetTest {
 	}
 	
 	@Test
-	public void canFindAllRegex() throws IOException, InvalidGenomicCoordsException{
+	public void canFindAllRegex() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/hg19_genes_head.gtf");
 		GenomicCoords gc= new GenomicCoords("chr18:1-10000", null, 100, null);
@@ -193,15 +201,15 @@ public class IntervalFeatureSetTest {
 	}
 	
 	@Test
-	public void test() throws IOException, InvalidGenomicCoordsException {
+	public void test() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException {
 		// Note that refSeq.hg19.short.bed is not sorted by pos. 
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/refSeq.hg19.short.bed");
-		assertEquals("NM_001080397_utr3_8_0_chr1_8404074_f", set.getIntervalMap().get("chr1").get(0).getName());
+		assertEquals("NM_001080397_utr3_8_0_chr1_8404074_f", set.getFeaturesInInterval("chr1", 0, 1000000000).get(0).getName());
 		set= new IntervalFeatureSet("test_data/refSeq.hg19.bed.gz");		
 	}
 
 	@Test
-	public void canFetchInterval() throws IOException, InvalidGenomicCoordsException{
+	public void canFetchInterval() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/refSeq.hg19.short.bed");
 		List<IntervalFeature> interval= set.getFeaturesInInterval("chr1", 20000000, 40000000);
@@ -218,48 +226,19 @@ public class IntervalFeatureSetTest {
 		
 	}
 	
-	//@Test // BROKEN
-	public void canMapIntervalSetToScreen() throws IOException, InvalidGenomicCoordsException{
-		
-/* Sorted refSeq.hg19.short.bed
-chr1	8404073	8404227	NM_001080397_utr3_8_0_chr1_8404074_f	0	+
-chr1	16785385	16786584	NM_001145278_utr3_7_0_chr1_16785386_f	0	+
-chr1	16785385	16786584	NM_018090_utr3_7_0_chr1_16785386_f	0	+
-chr1	16785491	16786584	NM_001145277_utr3_6_0_chr1_16785492_f	0	+
-chr1	25167428	25170815	NM_013943_utr3_5_0_chr1_25167429_f	0	+
-chr1	33585783	33586132	NM_001301825_utr3_8_0_chr1_33585784_f	0	+
-chr1	33585783	33586132	NM_052998_utr3_11_0_chr1_33585784_f	0	+
-chr1	33585783	33586132	NM_001293562_utr3_10_0_chr1_33585784_f	0	+
-chr1	67208778	67216822	NM_032291_utr3_24_0_chr1_67208779_f	0	+
-chr1	67208778	67216822	NM_001308203_utr3_21_0_chr1_67208779_f	0	+
-*/
-		List<Double> rulerMap= new ArrayList<Double>();
-		for(int i= 30000000; i < 70000000; i += 2000000){
-			rulerMap.add((double)(i + 0.3));
-		} // [3.0E7, 3.2E7, 3.4E7, 3.6E7, 3.8E7, 4.0E7, 4.2E7, 4.4E7, 4.6E7, 4.8E7, 5.0E7, 5.2E7, 5.4E7, 5.6E7, 5.8E7, 6.0E7, 6.2E7, 6.4E7, 6.6E7, 6.8E7]
-		IntervalFeatureSet set= new IntervalFeatureSet("test_data/refSeq.hg19.short.bed");
-		//set.mapIntervalsToScreen("chr1", rulerMap);
-		
-		List<IntervalFeature> mapSet = set.getIntervalMap().get("chr1");
-		
-		assertEquals(-1, mapSet.get(0).getScreenFrom());
-		assertEquals(19, mapSet.get(mapSet.size() - 1).getScreenFrom());
-		assertEquals(19, mapSet.get(mapSet.size() - 1).getScreenTo());
-	}	
-	
 	@Test
-	public void canPrintMappingOfFeaturesToScreen() throws IOException, InvalidGenomicCoordsException{
+	public void canPrintMappingOfFeaturesToScreen() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		List<Double> rulerMap= new ArrayList<Double>();
 		for(int i= 14000; i < 14400; i += 10){
 			rulerMap.add((double)i);
 		}
 		System.out.println(rulerMap);
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/refSeq.hg19.bed.gz");
-		System.out.println(set.getIntervalMap().get("chr1").get(0));
+		System.out.println(set.getFeaturesInInterval("chr1", 0, 1000000000).get(0));
 	}
 	
 	@Test
-	public void canReadVCFTabix() throws IOException, InvalidGenomicCoordsException{		
+	public void canReadVCFTabix() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{		
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/CHD.exon.2010_03.sites.vcf.gz");
 		List<IntervalFeature> xset = set.getFeaturesInInterval("1", 1, 10000000);
 		assertEquals(9, xset.size());
@@ -269,8 +248,8 @@ chr1	67208778	67216822	NM_001308203_utr3_21_0_chr1_67208779_f	0	+
 	}
 	
 	@Test
-	public void canReadVCF() throws IOException, InvalidGenomicCoordsException{		
-		IntervalFeatureSet set= new IntervalFeatureSet("test_data/CHD.exon.2010_03.sites.vcf");
+	public void canReadUnsortedVCF() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{		
+		IntervalFeatureSet set= new IntervalFeatureSet("test_data/CHD.exon.2010_03.sites.unsorted.vcf");
 		List<IntervalFeature> xset = set.getFeaturesInInterval("1", 1, 10000000);
 		assertEquals(9, xset.size());
 		IntervalFeature x = xset.get(1);
@@ -279,7 +258,7 @@ chr1	67208778	67216822	NM_001308203_utr3_21_0_chr1_67208779_f	0	+
 	}
 	
 	@Test
-	public void canReadFeaturesOfLengthOne() throws IOException, InvalidGenomicCoordsException{		
+	public void canReadFeaturesOfLengthOne() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{		
 		IntervalFeatureSet set= new IntervalFeatureSet("test_data/refSeqZero.bed");
 		List<IntervalFeature> xset = set.getFeaturesInInterval("chr1", 1, 100);
 		assertEquals(1, xset.size());
@@ -291,7 +270,7 @@ chr1	67208778	67216822	NM_001308203_utr3_21_0_chr1_67208779_f	0	+
 	}
 	
 	@Test
-	public void canReadFromURL() throws IOException, InvalidGenomicCoordsException{
+	public void canReadFromURL() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		System.err.println("canReadFromURL: This can take  a while...");
 		String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02PkRep1.broadPeak.gz";
 		
@@ -299,6 +278,7 @@ chr1	67208778	67216822	NM_001308203_utr3_21_0_chr1_67208779_f	0	+
 		List<IntervalFeature> xset = set.getFeaturesInInterval("chr1", 1, 1000000);
 		assertEquals(2, xset.size());
 		assertEquals(878407+1, xset.get(0).getFrom());
+		
 	}
-	
+
 }

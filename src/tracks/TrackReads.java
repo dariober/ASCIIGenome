@@ -31,7 +31,7 @@ public class TrackReads extends Track{
 	private List<List<TextRead>> readStack;
 	// private boolean bisulf= false;
 	private boolean withReadName= false;
-	private int maxReadStack;
+	private static int MAX_READS_STACK= 2000;
 	private long nRecsInWindow= -1;
 	/* C o n s t r u c t o r s */
 	/**
@@ -42,7 +42,7 @@ public class TrackReads extends Track{
 	 * @param maxReadsStack Accumulate at most this many reads.
 	 * @throws IOException 
 	 */
-	public TrackReads(String bam, GenomicCoords gc, int maxReadStack) throws IOException{
+	public TrackReads(String bam, GenomicCoords gc) throws IOException{
 
 		if(!Utils.bamHasIndex(bam)){
 			System.err.println("\nAlignment file " + bam + " has no index.\n");
@@ -50,7 +50,6 @@ public class TrackReads extends Track{
 		}
 		this.setFilename(bam);
 		this.setGc(gc);
-		this.maxReadStack= maxReadStack;
 		this.update();
 
 	}
@@ -76,13 +75,13 @@ public class TrackReads extends Track{
 			/*  ------------------------------------------------------ */
 			
 			this.nRecsInWindow= Utils.countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
-			float probSample= (float) this.maxReadStack / this.nRecsInWindow;
+			float probSample= (float) this.MAX_READS_STACK / this.nRecsInWindow;
 			
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 			List<TextRead> textReads= new ArrayList<TextRead>();
 			AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
 			
-			while(sam.hasNext() && textReads.size() < this.maxReadStack){
+			while(sam.hasNext() && textReads.size() < this.MAX_READS_STACK){
 	
 				SAMRecord rec= sam.next();
 				if( !rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec) ){
@@ -246,7 +245,7 @@ public class TrackReads extends Track{
 	
 	@Override
 	public String getTitle(){
-		String title= this.getFileTag() 
+		String title= this.getTrackTag() 
 				+ "; -F" + this.get_F_flag() 
 				+ " -f" + this.get_f_flag() 
 				+ " -q" + this.getMapq();

@@ -164,7 +164,7 @@ class TextRead {
 				fmt += "30;48;5;225"; // 48;5;231: light cyan
 			}
 			// The formatted string will look like `echo -e "\033[4;1;107;31mACTGnnnnnACTG\033[48;5;231m"`
-			formatted += fmt + "m" + c + "\033[48;5;231m"; // Clear all formatting
+			formatted += fmt + "m" + c + "\033[0m\033[48;5;231m"; // Clear all formatting
 		}
 		return formatted;
 	}

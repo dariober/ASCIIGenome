@@ -2,18 +2,28 @@ package tracks;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BigWigIterator;
+import org.broad.igv.tdf.TDFGroup;
+import org.broad.igv.tdf.TDFReader;
 import org.broad.igv.tdf.TDFUtils;
+import org.broad.igv.util.ResourceLocator;
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMRecordIterator;
+import htsjdk.samtools.SamReader;
+import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.ValidationStringency;
 import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
 
 public class TrackWigglesTest {
 
@@ -170,5 +180,19 @@ public class TrackWigglesTest {
 		
 	}
 
-	
+	@Test
+	/** Snippet to extract totalCount from TDF, useful for normalizing signal. 
+	 * */
+	public void getAttributesFromTDF(){
+		
+		String path= "test_data/ear045.oxBS.actb.tdf";
+		ResourceLocator resourceLocator= new ResourceLocator(path);
+		
+		TDFReader reader= new TDFReader(resourceLocator);
+		TDFGroup rootGroup= reader.getGroup("/");
+		System.out.println(rootGroup.getAttribute("totalCount"));
+		assertEquals("63476", rootGroup.getAttribute("totalCount"));
+		// System.out.println(rootGroup.getAttributeNames());
+	}
+		
 }

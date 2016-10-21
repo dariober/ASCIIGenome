@@ -1,11 +1,13 @@
 package tracks;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
@@ -16,8 +18,8 @@ public class Track {
 	private String title= "";
 	protected int yMaxLines= 10;
 	private String filename= "N/A"; // File name as given in input
-	private String fileTag= "N/A"; // File name for title
-	private int id= 1; 
+	private String trackTag= "N/A"; // Tag name for title
+	private int id= 1;              // A unique identifier for the track. Changed when the track is added to a TrackSet. 
 	private List<Double> screenScores= new ArrayList<Double>();
 	private GenomicCoords gc;
 	private boolean noFormat= false; 
@@ -89,8 +91,13 @@ public class Track {
 		return "";
 	};
 	
+	/** Print track info - for debugging and development only.
+	 * */
 	public String toString(){
-		return this.getFilename();
+		return  "file name: " + this.getFilename() + 
+				"; file type: " + Utils.getFileTypeFromName(this.getFilename()) +
+				"; track tag: " + this.getTrackTag() +
+				"; track class: " + this.getClass().getSimpleName();
 	}
 	
 	/* Setters and getters */
@@ -113,9 +120,13 @@ public class Track {
 		this.filename = filename;
 	}
 
-	public String getFileTag() { return fileTag; }
+	public String getTrackTag() { 
+		return trackTag; 
+	}
 	
-	public void setFileTag(String fileTag) { this.fileTag = fileTag; }
+	public void setTrackTag(String trackTag) { 
+		this.trackTag = trackTag; 
+	}
 	
 	protected List<Double> getScreenScores() {
 		return screenScores;
@@ -276,6 +287,11 @@ public class Track {
 
 	public void setId(int id) {
 		this.id = id;
+	}
+
+	public void update() throws MalformedURLException, IOException, InvalidGenomicCoordsException, InvalidRecordException {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,13 +54,14 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
-	public void canReturnTrackFromMatchingRegex() throws InvalidGenomicCoordsException, IOException{
+	public void canReturnTrackFromMatchingRegex() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("seq", 1, 100, null, 100, "test_data/seq_cg.fa");
 		TrackIntervalFeature reSet= gc.findRegex("(?i)atc"); // revcomp GAT
 		reSet.setNoFormat(true);
-		assertTrue(reSet.printToScreen().startsWith(">>>"));
 		System.out.println(reSet.printToScreen());
 		System.out.println(gc.printableRefSeq(true));
+		assertTrue(reSet.printToScreen().startsWith(">>>"));
+		
 		
 		// Match not found
 		reSet= gc.findRegex("FOOBAR");
@@ -277,7 +279,7 @@ public class GenomicCoordsTest {
 		
 		gc= new GenomicCoords("chr7", 1, 100, samSeqDict, 50, fastaFile);
 		System.out.println("START");
-		System.out.println(gc.getGCProfile().getFileTag());
+		System.out.println(gc.getGCProfile().getTrackTag());
 		System.out.println(gc.getGCProfile().printToScreen());
 		
 		gc= new GenomicCoords("seq", 1, 120, null, 50, "test_data/seq_cg.fa");

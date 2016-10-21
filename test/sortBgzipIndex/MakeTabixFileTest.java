@@ -5,14 +5,29 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-
 import org.junit.Test;
 
+import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.index.tabix.TabixFormat;
+import htsjdk.tribble.readers.TabixReader;
+import htsjdk.tribble.readers.TabixReader.Iterator;
+import tracks.IntervalFeatureSet;
 
 public class MakeTabixFileTest {
 
+	@Test 
+	public void canHandleEmptyFile() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
+		String infile= "test_data/empty.bed";
+		File outfile= new File("test_data/empty.tmp.bed.gz");
+		outfile.deleteOnExit();
+		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		expectedTbi.deleteOnExit();
+		
+		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+		
+	}
+	
 	@Test
 	public void canCompressAndIndexSortedFile() throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
 		
@@ -29,7 +44,11 @@ public class MakeTabixFileTest {
 		assertTrue(outfile.length() > 80);
 		assertTrue(expectedTbi.exists());
 		assertTrue(expectedTbi.length() > 80);
-
+		
+		TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
+		Iterator x = tbx.query("chr1", 1, 1000000);
+		assertTrue(x.next().startsWith("chr1"));
+		
 	}
 
 	@Test
@@ -43,12 +62,15 @@ public class MakeTabixFileTest {
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(infile, outfile, TabixFormat.GFF);
-		
-		
+
 		assertTrue(outfile.exists());
 		assertTrue(outfile.length() > 7000000);
 		assertTrue(expectedTbi.exists());
 		assertTrue(expectedTbi.length() > 500000);
+		
+		TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
+		Iterator x = tbx.query("chr1", 1, 1000000);
+		assertTrue(x.next().startsWith("chr1"));
 		
 	}
 	
@@ -108,6 +130,29 @@ public class MakeTabixFileTest {
 		assertTrue(expectedTbi.exists());
 		assertTrue(expectedTbi.length() > 1000);
 		
+	}
+	
+	@Test
+	public void canCompressAndIndexVCF() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
+
+		String infile= "test_data/CHD.exon.2010_03.sites.unsorted.vcf";
+		File outfile= new File("test_data/tmp6.bed.gz");
+		//outfile.deleteOnExit();
+		
+		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		//expectedTbi.deleteOnExit();
+
+		new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+		
+		assertTrue(outfile.exists());
+		assertTrue(outfile.length() > 1000);
+		assertTrue(expectedTbi.exists());
+		assertTrue(expectedTbi.length() > 1000);
+
+		TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
+		Iterator x = tbx.query("1", 20000000, 30000000);
+		assertTrue(x.next().startsWith("1"));
+
 	}
 	
 }

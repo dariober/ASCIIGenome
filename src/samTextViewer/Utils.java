@@ -12,6 +12,7 @@ import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
 
 import java.awt.Color;
@@ -37,6 +38,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -59,6 +61,7 @@ import org.broad.igv.tdf.TDFReader;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import filter.FirstOfPairFilter;
 import tracks.IntervalFeatureSet;
 import tracks.IntervalFeature;
@@ -411,7 +414,7 @@ public class Utils {
 		}
 	}
 	
-	public static LinkedHashMap<String, IntervalFeatureSet> createIntervalFeatureSets(List<String> fileNames) throws IOException, InvalidGenomicCoordsException{
+	public static LinkedHashMap<String, IntervalFeatureSet> createIntervalFeatureSets(List<String> fileNames) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		LinkedHashMap<String, IntervalFeatureSet> ifsets= new LinkedHashMap<String, IntervalFeatureSet>();
 		for(String x : fileNames){
 			String f= x;
@@ -1206,5 +1209,23 @@ public class Utils {
 		}
 		return cleanfilter;
 	} 
+	
+	public static TabixFormat trackFormatToTabixFormat(TrackFormat fmt){
+		
+		TabixFormat tbx= null;
+		if(fmt.equals(TrackFormat.BAM)){
+			tbx= TabixFormat.SAM; 
+		} else if (fmt.equals(TrackFormat.BED) || fmt.equals(TrackFormat.BEDGRAPH)){
+			tbx= TabixFormat.BED; 
+		} else if (fmt.equals(TrackFormat.GFF)){
+			tbx= TabixFormat.GFF;
+		} else if (fmt.equals(TrackFormat.VCF)){
+			tbx= TabixFormat.VCF;
+		} else {
+			throw new RuntimeException();
+		}
+		return tbx;
+		
+	}
 	
 }

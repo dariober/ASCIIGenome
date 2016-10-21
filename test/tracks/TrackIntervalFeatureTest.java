@@ -3,18 +3,20 @@ package tracks;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 
 public class TrackIntervalFeatureTest {
 	
 	
 	@Test
-	public void canReadTabix() throws IOException, InvalidGenomicCoordsException{
+	public void canReadTabix() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		String bgzFn= "test_data/refSeq.hg19.short.sort.bed.gz"; // "test_data/refSeq.hg19.short.sort.bed.gz";
 		GenomicCoords gc= new GenomicCoords("chr1:16000000-20000000", null, 70, null);
@@ -25,7 +27,7 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
-	public void canPrintGtfFeatures() throws IOException, InvalidGenomicCoordsException{
+	public void canPrintGtfFeatures() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		String intervalFileName= "test_data/refSeq.bed";
 		//IntervalFeatureSet ifs= new IntervalFeatureSet(new File(intervalFileName)); 
@@ -36,7 +38,7 @@ public class TrackIntervalFeatureTest {
 	}
 		
 	@Test
-	public void canConstructTrack() throws InvalidGenomicCoordsException, IOException {
+	public void canConstructTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		String intervalFileName= "test_data/refSeq.bed";
 		//IntervalFeatureSet ifs= new IntervalFeatureSet(new File(intervalFileName)); 
 		GenomicCoords gc= new GenomicCoords("chr1:1-70", null, 70, null);
@@ -58,7 +60,7 @@ public class TrackIntervalFeatureTest {
 	}
 
 	@Test
-	public void canAssignFeatureText() throws InvalidGenomicCoordsException, IOException {
+	public void canAssignFeatureText() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		String intervalFileName= "test_data/hg19_genes_head.gtf";
 		GenomicCoords gc= new GenomicCoords("chr1:11874-12227", null, 5, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
@@ -68,7 +70,7 @@ public class TrackIntervalFeatureTest {
 	}
 
 	@Test
-	public void canPrintFeatureWithName() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintFeatureWithName() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		String intervalFileName= "test_data/hg19_genes_head.gtf";
 		GenomicCoords gc= new GenomicCoords("chr1:11874-12052", null, 20, null);
@@ -100,7 +102,7 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
-	public void canStackFeatures() throws InvalidGenomicCoordsException, IOException{
+	public void canStackFeatures() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		String intervalFileName= "test_data/overlapped.bed";
 		int windowSize= 70;
 		GenomicCoords gc= new GenomicCoords("chr1:1-70", null, windowSize, null);
@@ -115,12 +117,10 @@ public class TrackIntervalFeatureTest {
 	
 	}
 	
-	//@Test
-	public void canConstructTrackfromGtf() throws IOException, InvalidGenomicCoordsException{
+	@Test
+	public void canConstructTrackfromGtf() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		String intervalFileName= "test_data/hg19_genes.gtf.gz";
-		//IntervalFeatureSet ifs= new IntervalFeatureSet(new File(intervalFileName)); 
-		// System.out.println(ifs.getIntervalMap().size());
 		GenomicCoords gc= new GenomicCoords("chr1:1-13000", null, 70, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		

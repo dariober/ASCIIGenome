@@ -26,12 +26,18 @@ import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndexCreator;
 import htsjdk.tribble.readers.LineIterator;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFCodec;
+import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFHeaderVersion;
 import utils.BedLine;
 import utils.BedLineCodec;
 import utils.GtfLine;
 
 public class MakeTabixIndex {
 
+	private File sqliteFile;
+	
 	/** Sort, block compress and index the input with format fmt to the given output file.
 	 * Input is either a local file, possibly compressed, or a URL.
 	 * @throws InvalidRecordException 
@@ -39,7 +45,7 @@ public class MakeTabixIndex {
 	 * @throws SQLException 
 	 * @throws ClassNotFoundException 
 	 * */
-	MakeTabixIndex(String intab, File bgzfOut, TabixFormat fmt) throws IOException, InvalidRecordException, ClassNotFoundException, SQLException{
+	public MakeTabixIndex(String intab, File bgzfOut, TabixFormat fmt) throws IOException, InvalidRecordException, ClassNotFoundException, SQLException{
 
 		try{
 			// Try to block compress and create index assuming the file is sorted
@@ -65,7 +71,7 @@ public class MakeTabixIndex {
 		BlockCompressedOutputStream writer = new BlockCompressedOutputStream(bgzfOut);
 		long filePosition= writer.getFilePointer();
 			
-		TabixIndexCreator indexCreator=new TabixIndexCreator(TabixFormat.BED);
+		TabixIndexCreator indexCreator=new TabixIndexCreator(fmt);
 		
 		while(lin.hasNext()){
 			
@@ -106,10 +112,14 @@ public class MakeTabixIndex {
 			GtfLine gtf= new GtfLine(line.split("\t"));
 			indexCreator.addFeature(gtf, filePosition);
 		
-		// TODO: Support for VCF
-		//} else if(fmt.equals(TabixFormat.VCF)) {
-		//	VariantContext vcf = vcfCodec.decode(line);
-		//	indexCreator.addFeature(vcf, filePosition);
+		} else if(fmt.equals(TabixFormat.VCF)) {
+
+			// NB: bgzf file will be headerless!
+			VCFCodec vcfCodec= new VCFCodec();
+		    VCFHeader header= new VCFHeader();
+		    vcfCodec.setVCFHeader(header, VCFHeaderVersion.VCF4_0);
+			VariantContext vcf = vcfCodec.decode(line);
+			indexCreator.addFeature(vcf, filePosition);
 			
 		} else {
 			System.err.println("Unexpected TabixFormat: " + fmt.sequenceColumn + " " + fmt.startPositionColumn);
@@ -130,6 +140,8 @@ public class MakeTabixIndex {
 			//
 		} else if(fmt.equals(TabixFormat.GFF)){
 			posIdx= 4;
+		} else if(fmt.equals(TabixFormat.VCF)){
+			posIdx= 2;
 		} else {
 			System.err.println("Invalid format found");
 			throw new InvalidRecordException();
@@ -186,14 +198,15 @@ public class MakeTabixIndex {
 		conn.commit();
 		stmtSelect.close();
 		wr.close();
+		this.sqliteFile.delete();
 	}
 
 	/** Create a tmp sqlite db and return the connection to it. 
 	 */
 	private Connection createSQLiteDb(String tablename) throws IOException {
 		
-	    File tmpfile= File.createTempFile("asciigenome.", ".tmp.sqlite");
-	    tmpfile.deleteOnExit();
+	    this.sqliteFile= File.createTempFile("asciigenome.", ".tmp.sqlite");
+	    this.sqliteFile.deleteOnExit();
 	    
 	    try {
 			Class.forName("org.sqlite.JDBC");
@@ -201,7 +214,7 @@ public class MakeTabixIndex {
 			e.printStackTrace();
 		}
 	    try {
-			Connection conn = DriverManager.getConnection("jdbc:sqlite:" + tmpfile);
+			Connection conn = DriverManager.getConnection("jdbc:sqlite:" + this.sqliteFile);
 	        Statement stmt = conn.createStatement();
 	        String sql = "CREATE TABLE " + tablename +  
 	        		   " (" +

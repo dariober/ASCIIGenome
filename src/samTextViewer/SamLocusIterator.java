@@ -18,7 +18,6 @@ import htsjdk.samtools.util.IntervalListReferenceSequenceMask;
 import htsjdk.samtools.util.Locus;
 import htsjdk.samtools.util.LocusComparator;
 import htsjdk.samtools.util.LocusImpl;
-import htsjdk.samtools.util.Log;
 import htsjdk.samtools.util.PeekableIterator;
 import htsjdk.samtools.util.ReferenceSequenceMask;
 import htsjdk.samtools.util.SamRecordIntervalIteratorFactory;
@@ -40,8 +39,6 @@ import java.util.List;
  * @author alecw@broadinstitute.org
  */
 public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, CloseableIterator<SamLocusIterator.LocusInfo> {
-    private static final Log LOG = Log.getInstance(SamLocusIterator.class);
-
     /**
      * Holds a SAMRecord plus the zero-based offset into that SAMRecord's bases and quality scores that corresponds
      * to the base and quality at the genomic position described the containing LocusInfo.

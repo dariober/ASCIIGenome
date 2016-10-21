@@ -1,30 +1,24 @@
 package tracks;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URL;
+import java.nio.file.Files;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.validator.routines.UrlValidator;
+import org.apache.commons.io.FileUtils;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import sortBgzipIndex.MakeTabixIndex;
 
 /**
  * Class containing sets of IntervalFeature objects. Essentially a representation of
@@ -36,9 +30,7 @@ import samTextViewer.Utils;
 public class IntervalFeatureSet {
 	
 	/** Key is chromosome */
-	private Map <String, List<IntervalFeature>> intervalMap; 
 	private TabixReader tabixReader= null;
-	private boolean isTabix= false;
 	private TrackFormat type;
 	private String hideRegex= "^$"; // Regex to capture feature to hide/show
 	private String showRegex= ".*";
@@ -47,27 +39,51 @@ public class IntervalFeatureSet {
 	
 	/** Construct from bed or gtf file.
 	 * @throws IOException 
-	 * @throws InvalidGenomicCoordsException */
-	public IntervalFeatureSet(String infile) throws IOException, InvalidGenomicCoordsException{
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws ClassNotFoundException */
+	public IntervalFeatureSet(String infile) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		this.type= Utils.getFileTypeFromName(new File(infile).getName());
-		if(Utils.hasTabixIndex(new File(infile).getAbsolutePath())){
-			this.tabixReader= new TabixReader(new File(infile).getAbsolutePath());
-			this.isTabix= true;
-		} else {
-			this.intervalMap= loadFileIntoIntervalMap(infile);
-			this.sortIntervalsWithinChroms();
-			this.isTabix= false;
-		}
+		String sourceFile= infile;
+		
+		if( ! Utils.hasTabixIndex(new File(infile).getAbsolutePath())){
+			// Tabix index not found for this file. Sort and index input to tmp.
+
+			//final File tmpdir = Files.createTempDirectory("asciigenome_tmp_").toFile();	
+			//sourceFile= new File(tmpdir, new File(infile).getName()).getAbsolutePath();
+			
+			if( ! infile.endsWith(".gz")){
+				sourceFile += ".gz";
+			}
+			sourceFile= File.createTempFile("asciigenome_intFeatSet.", "." + new File(infile).getName()).getAbsolutePath();
+			new File(sourceFile).deleteOnExit();
+			new File(sourceFile + ".tbi").deleteOnExit();
+
+			new MakeTabixIndex(infile, new File( sourceFile ), Utils.trackFormatToTabixFormat(this.type));
+			
+			//Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+			//	// Delete on exit non-empty dir. See http://stackoverflow.com/questions/11165253/deleting-a-directory-on-exit-in-java
+			//	@Override
+			//	public void run() {
+			//		FileUtils.deleteQuietly(tmpdir);
+			//	}
+			//}));
+			
+		} 
+
+		this.tabixReader= new TabixReader(new File(sourceFile).getAbsolutePath());
+			
 	}
 	
 	/** Initialize directly from map of IntervalFeatures
 	 * */
-	public IntervalFeatureSet(Map <String, List<IntervalFeature>> intervalMap, TrackFormat type){
-		this.intervalMap= intervalMap;
-		this.sortIntervalsWithinChroms();
-		this.type= type;
-	}
+//	public IntervalFeatureSet(Map <String, List<IntervalFeature>> intervalMap, TrackFormat type){
+//		this.intervalMap= intervalMap;
+//		this.sortIntervalsWithinChroms();
+//		this.type= type;
+//	}
 	
 	/* M e t h o d s */
 
@@ -102,41 +118,17 @@ public class IntervalFeatureSet {
 			throw new InvalidGenomicCoordsException();
 		}		
 		List<IntervalFeature> xFeatures= new ArrayList<IntervalFeature>();
-		if(isTabix){
-			Iterator qry = this.tabixReader.query(chrom,  from-1, to);
-			while(true){
-				String q = qry.next();
-				if(q == null){
-					break;
-				}
-				IntervalFeature intervalFeature= new IntervalFeature(q, this.type);
-				xFeatures.add(intervalFeature);
-			} 
-		} else {
-			List<IntervalFeature> thisChrom= this.intervalMap.get(chrom);		
-			if(thisChrom == null){
-				return xFeatures;
+		//if(isTabix){
+		Iterator qry = this.tabixReader.query(chrom,  from-1, to);
+		while(true){
+			String q = qry.next();
+			if(q == null){
+				break;
 			}
-			/* Overlap scenarios
-			             from      to
-			               |-------|
-			     --------************-----  4.
-			     ---------****------------- 1.
-			     ------------****---------- 3.
-			 	 -----------------****----- 2.
-			     ----------------------***- Break iterating */
-			for(IntervalFeature x : thisChrom){
-				if( (x.getFrom() >= from && x.getFrom() <= to)  // 2. 3.
-					|| (x.getTo() >= from && x.getTo() <= to)   // 1. 3.
-					|| (x.getFrom() <= from && x.getTo() >= to)   // 4.
-					){
-					xFeatures.add(x);
-				}
-				if(x.getFrom() > to){
-					break;
-				}
-			}
-		}
+			IntervalFeature intervalFeature= new IntervalFeature(q, this.type);
+			xFeatures.add(intervalFeature);
+		} 
+		
 		// Remove hidden features
 		List<IntervalFeature> xFeaturesFiltered= new ArrayList<IntervalFeature>();
 		for(IntervalFeature x : xFeatures){
@@ -172,71 +164,12 @@ public class IntervalFeatureSet {
 		return true;
 	}
 	
-	private Map <String, List<IntervalFeature>> loadFileIntoIntervalMap(String infile) throws IOException, InvalidGenomicCoordsException{
-		
-		System.err.print("Reading file '" + infile + "'...");
-		
-		Map <String, List<IntervalFeature>> intervalMap= new HashMap<String, List<IntervalFeature>>(); 
-		
-		BufferedReader br= null;
-		InputStream gzipStream= null;
-		UrlValidator urlValidator = new UrlValidator();
-		if(infile.endsWith(".gz")){
-			if(urlValidator.isValid(infile)) {
-				gzipStream = new GZIPInputStream(new URL(infile).openStream());
-			} else {
-				gzipStream = new GZIPInputStream(new FileInputStream(infile));
-			}
-			Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
-			br = new BufferedReader(decoder);
-		} else if(urlValidator.isValid(infile)) {
-			InputStream instream= new URL(infile).openStream();
-			Reader decoder = new InputStreamReader(instream, "UTF-8");
-			br = new BufferedReader(decoder);
-		} else {
-			br = new BufferedReader(new FileReader(infile));
-		}
-		String line;
-		boolean isFirst= true;
-		while ((line = br.readLine()) != null) {
-			if(line.trim().equals("##FASTA")){
-				// Stop reading once you hit the optional sequence section in gff3 format
-				// See http://gmod.org/wiki/GFF#GFF3_Sequence_Section
-				break;
-			}
-			if(line.trim().startsWith("#") || line.trim().isEmpty()){
-				continue;
-			}
-			if(isFirst && this.type.equals(TrackFormat.BED)){
-				isFirst= false;
-				if(!isValidBedLine(line)){ // Allow first line to fail: Might be header.
-					System.err.print("First line skipped. ");
-					continue;
-				}
-			}
-			IntervalFeature f= new IntervalFeature(line, this.type);
-			if(intervalMap.containsKey(f.getChrom())){
-				intervalMap.get(f.getChrom()).add(f);
-			} else {
-				List<IntervalFeature> il= new ArrayList<IntervalFeature>();
-				il.add(f);
-				intervalMap.put(f.getChrom(), il);
-			}
-		}
-		br.close();
-		if(gzipStream != null){
-			gzipStream.close();
-		}
-		System.err.println(" Done");
-		return intervalMap;
-	} 
-	
-	private void sortIntervalsWithinChroms(){
-		for(String chrom : this.intervalMap.keySet()){
-			List<IntervalFeature> interalList = this.intervalMap.get(chrom);
-			Collections.sort(interalList);
-		}
-	}
+//	private void sortIntervalsWithinChroms(){
+//		for(String chrom : this.intervalMap.keySet()){
+//			List<IntervalFeature> interalList = this.intervalMap.get(chrom);
+//			Collections.sort(interalList);
+//		}
+//	}
 		
 	/** Get the next feature on chrom after "from" position or null if no 
 	 * feature found 
@@ -244,31 +177,17 @@ public class IntervalFeatureSet {
 	 * @throws InvalidGenomicCoordsException */
 	private IntervalFeature getNextFeatureOnChrom(String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
-		if(this.intervalMap != null){
-			List<IntervalFeature> featuresList = this.intervalMap.get(chrom);
-			if(featuresList == null){ // No features at all on this chrom.
+		Iterator iter = this.tabixReader.query(chrom, from-1, Integer.MAX_VALUE);
+		while(true){
+			String line= iter.next();
+			if(line == null){
 				return null;
-			}
-			for(IntervalFeature x : featuresList){
-				if(x.getFrom() > from && this.featureIsVisible(x)){
-					return x;
-				}
-			}
-			return null;
-		} else if(this.isTabix){
-			Iterator iter = this.tabixReader.query(chrom, from-1, Integer.MAX_VALUE);
-			while(true){
-				String line= iter.next();
-				if(line == null){
-					return null;
-				} 
-				IntervalFeature x= new IntervalFeature(line, this.type);
-				if(x.getFrom() > from && this.featureIsVisible(x)){
-					return x;
-				}
+			} 
+			IntervalFeature x= new IntervalFeature(line, this.type);
+			if(x.getFrom() > from && this.featureIsVisible(x)){
+				return x;
 			}
 		}
-		return null;
 	}
 	
 	/** Return the set chroms sorted but with and first chrom set to startChrom.
@@ -296,49 +215,25 @@ public class IntervalFeatureSet {
 	 * @throws InvalidGenomicCoordsException */
 	protected IntervalFeature findNextRegexInGenome(String query, String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
-		if(this.intervalMap != null){
-	
-			// We start search from input chrom and starting position. We'll return to 
-			// the start of this chrom only after having searched all the other chroms.
-			int startingPoint= from;
-			List<String> chromSearchOrder = getChromListStartingAt(this.intervalMap.keySet(), chrom);
-			chromSearchOrder.add(chrom);
-			for(String curChrom : chromSearchOrder){
-				
-				List<IntervalFeature> featuresList = this.intervalMap.get(curChrom);
-				for(IntervalFeature x : featuresList){
-					boolean matched= Pattern.compile(query).matcher(x.getRaw()).find();
-					if(x.getFrom() > startingPoint && matched && this.featureIsVisible(x)){ 
+		int startingPoint= from-1; // -1 becouse tabix.query from is 0 based (seems so at least)
+		List<String> chromSearchOrder = getChromListStartingAt(this.tabixReader.getChromosomes(), chrom);
+		chromSearchOrder.add(chrom);
+		for(String curChrom : chromSearchOrder){
+			
+			Iterator iter = this.tabixReader.query(curChrom , startingPoint, Integer.MAX_VALUE);
+			while(true){
+				String line= iter.next();
+				if(line == null) break;
+				boolean matched= Pattern.compile(query).matcher(line).find();
+				if(matched){
+					IntervalFeature x= new IntervalFeature(line, this.type);
+					if(x.getFrom() > startingPoint && this.featureIsVisible(x)){
 						return x;
 					}
-				}
-				startingPoint= 0;
-				
-			} return null; // Not found anywhere
-
-		} else if(this.isTabix){
-		
-			int startingPoint= from-1; // -1 becouse tabix.query from is 0 based (seems so at least)
-			List<String> chromSearchOrder = getChromListStartingAt(this.tabixReader.getChromosomes(), chrom);
-			chromSearchOrder.add(chrom);
-			for(String curChrom : chromSearchOrder){
-				
-				Iterator iter = this.tabixReader.query(curChrom , startingPoint, Integer.MAX_VALUE);
-				while(true){
-					String line= iter.next();
-					if(line == null) break;
-					boolean matched= Pattern.compile(query).matcher(line).find();
-					if(matched){
-						IntervalFeature x= new IntervalFeature(line, this.type);
-						if(x.getFrom() > startingPoint && this.featureIsVisible(x)){
-							return x;
-						}
-					} 
-				}
-				startingPoint= 0;
-			} return null; // Not found anywhere
-		}
-		return null;
+				} 
+			}
+			startingPoint= 0;
+		} return null; // Not found anywhere
 	}
 	
 	/** Find all the feature matching regex.
@@ -353,36 +248,20 @@ public class IntervalFeatureSet {
 
 		// We start search from input chrom
 		List<String> chromSearchOrder= null;
-		if(this.intervalMap != null){
-			chromSearchOrder = getChromListStartingAt(this.intervalMap.keySet(), currentGc.getChrom());
-		} else if (this.isTabix){
-			chromSearchOrder = getChromListStartingAt(this.tabixReader.getChromosomes(), currentGc.getChrom());
-		} else {
-			throw new RuntimeException("Cannot init chroms");
-		}
+		chromSearchOrder = getChromListStartingAt(this.tabixReader.getChromosomes(), currentGc.getChrom());
 		
 		chromSearchOrder.add(currentGc.getChrom());		
 		for(String curChrom : chromSearchOrder){
 		
-			if(this.intervalMap != null){
-				List<IntervalFeature> featuresList = this.intervalMap.get(curChrom);
-				for(IntervalFeature x : featuresList){
-					boolean matched= Pattern.compile(query).matcher(x.getRaw()).find();
-					if(matched && this.featureIsVisible(x)){ 
+			Iterator iter = this.tabixReader.query(curChrom , 0, Integer.MAX_VALUE);
+			while(true){
+				String line= iter.next();
+				if(line == null) break;
+				boolean matched= Pattern.compile(query).matcher(line).find();
+				if(matched){
+					IntervalFeature x= new IntervalFeature(line, this.type);
+					if(this.featureIsVisible(x)){
 						matchedFeatures.add(x);
-					} 
-				}
-			} else if(this.isTabix){
-				Iterator iter = this.tabixReader.query(curChrom , 0, Integer.MAX_VALUE);
-				while(true){
-					String line= iter.next();
-					if(line == null) break;
-					boolean matched= Pattern.compile(query).matcher(line).find();
-					if(matched){
-						IntervalFeature x= new IntervalFeature(line, this.type);
-						if(this.featureIsVisible(x)){
-							matchedFeatures.add(x);
-						}
 					}
 				}
 			}
@@ -477,9 +356,9 @@ public class IntervalFeatureSet {
 	
 	/* S e t t e r s  and  G e t t e r s */
     
-	protected Map<String, List<IntervalFeature>> getIntervalMap() {
-		return intervalMap;
-	}
+//	protected Map<String, List<IntervalFeature>> getIntervalMap() {
+//		return intervalMap;
+//	}
 
 	protected void setHideRegex(String hideRegex) {
 		this.hideRegex = hideRegex;

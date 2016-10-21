@@ -2,11 +2,9 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -24,7 +22,7 @@ import samTextViewer.Utils;
  * */
 public class TrackSet {
 	
-	private LinkedHashMap<String, Track> trackSet_DEPRECATED= new LinkedHashMap<String, Track>();
+	// private LinkedHashMap<String, Track> trackSet_DEPRECATED= new LinkedHashMap<String, Track>();
 	private List<Track> trackList= new ArrayList<Track>();
 	private List<Pattern> regexForTrackHeight= new ArrayList<Pattern>();
 	private int trackHeightForRegex= -1;
@@ -35,32 +33,87 @@ public class TrackSet {
 	
 	public TrackSet(){}
 	
+	public TrackSet(List<String> inputFileList, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
+		
+		for(String sourceName : inputFileList){
+
+			if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
+				//
+				// BAM FILE
+				//
+				if(!Utils.bamHasIndex(sourceName)){
+					System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
+					System.err.println("samtools index '" + sourceName + "'\n");
+					System.exit(1);
+				}
+				
+				/* Coverage track */
+				TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
+				trackCoverage.setId(this.getMaxTrackId() + 1);
+				trackCoverage.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId() + 1));
+				this.trackList.add(trackCoverage);
+				
+				/* Read track */
+				TrackReads trackReads= new TrackReads(sourceName, gc);
+				trackReads.setId(this.getMaxTrackId() + 1);
+				trackReads.setTrackTag(new File(sourceName).getName() + "@" + (this.getMaxTrackId() + 1));
+				this.trackList.add(trackReads);
+			}
+			
+			else if(    Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
+		        || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
+			    || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
+				//
+				// Annotatation
+				//
+				TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
+				//tif.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId()+1));
+				//tif.setId(this.getMaxTrackId() + 1);
+				this.add(tif, new File(sourceName).getName());
+			} 
+
+			else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG) 
+					|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.TDF) 
+					|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)){
+				//
+				// Wiggles
+				//
+				TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
+				//tw.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId()+1));
+				//tw.setId(this.getMaxTrackId()+1);
+				this.add(tw, new File(sourceName).getName());
+				
+			} else {
+				System.err.println("Unable to classify " + sourceName + "; skipping"); 								
+			}			
+		}		
+
+		
+	}
+	
 	/*   M e t h o d s   */
 
-	//public Track getTrackFromTag(){
-	//	Track tr;
-	//	for(){
-	//		this.trackSet.get(key)
-	//	}
-	//	return tr;
-	//}
-
-	public void add(Track track) {
+	/**
+	 * Add this track with given baseTag. The suffix "#id" will be appended to the baseTag string. 
+	 * NB: Adding a track resets the track's ID
+	 * */
+	public void add(Track track, String baseTag) {
 		int idForTrack= this.getMaxTrackId() + 1;
-		String trackId= track.getFilename() + "#" + idForTrack;
-		track.setFileTag(trackId);
+		String trackTag= baseTag + "#" + idForTrack;
+		track.setTrackTag(trackTag);
 		track.setId(idForTrack);
 		this.trackList.add(track);
 	}
 
-	
-	/** Add track from given file or URL
+	/** Add track from given file or URL.
 	 * @throws BamIndexNotFoundException 
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidRecordException 
+	 * @throws SQLException 
+	 * @throws ClassNotFoundException 
 	 * */
-	public void add(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException{
+	public void add(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
 
 		if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
 			this.addBamTrackFromSourceName(sourceName, gc);
@@ -84,17 +137,17 @@ public class TrackSet {
 		
 		TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
 		tw.setId(idForTrack);
-		tw.setFileTag(trackId);
+		tw.setTrackTag(trackId);
 		this.trackList.add(tw);
 	}
 	
-	private void addIntervalFeatureTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException{
+	private void addIntervalFeatureTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		int idForTrack= this.getMaxTrackId() + 1;
 		
 		String trackId= new File(sourceName).getName() + "#" + (idForTrack);
 		TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
-		tif.setFileTag(trackId);
+		tif.setTrackTag(trackId);
 		tif.setId(idForTrack);
 		this.trackList.add(tif);
 	}
@@ -114,17 +167,17 @@ public class TrackSet {
 		
 		TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
 		trackCoverage.setId(idForTrack);
-		trackCoverage.setFileTag(coverageTrackId);
+		trackCoverage.setTrackTag(coverageTrackId);
 		this.trackList.add(trackCoverage);
 		
 		/* Reads */
 		idForTrack= this.getMaxTrackId() + 1;
 		String trackId= new File(sourceName).getName() + "@" + (idForTrack+1);
 
-		TrackReads trackReads= new TrackReads(sourceName, gc, 2000);
-		trackReads.setFileTag(trackId);
+		TrackReads trackReads= new TrackReads(sourceName, gc);
+		trackReads.setTrackTag(trackId);
 		trackReads.setId(idForTrack);
-		trackReads.setFileTag(trackId);
+		trackReads.setTrackTag(trackId);
 
 		this.trackList.add(trackReads);
 	} 
@@ -132,7 +185,7 @@ public class TrackSet {
 	private int getMaxTrackId(){
 		
 		if(this.trackList.size() == 0){
-			return 1;
+			return 0;
 		}
 		
 		int id= Integer.MIN_VALUE;
@@ -144,18 +197,19 @@ public class TrackSet {
 		return id; 
 	}
 	
+	/** Show track info as nicely printable string.  
+	 * */
 	public String showTrackInfo(){
 		List<String> trackInfo= new ArrayList<String>();
-		Iterator<Entry<String, Track>> trx= this.trackSet_DEPRECATED.entrySet().iterator();
 		
-		while(trx.hasNext()){
-			Entry<String, Track> x = trx.next();
-			String hd= x.getValue().getyMaxLines() <= 0 ? "*" : "";
-			trackInfo.add(x.getKey() + "\t" 
-					+ x.getValue().getFilename() + "\t" 
-					+ Utils.getFileTypeFromName(x.getValue().getFilename()) + "\t"
-					+ hd);
+		for(Track track : this.getTrackList()){
+			String hd= track.getyMaxLines() <= 0 ? "*" : "";
+			trackInfo.add(track.getTrackTag() + "\t" 
+					+ track.getFilename() + "\t" 
+					+ Utils.getFileTypeFromName(track.getFilename()) + "\t"
+					+ hd);		
 		}
+		
 		StringBuilder sb= new StringBuilder();
 		for(String str : Utils.tabulateList(trackInfo)){
 			sb.append(str + "\n");
@@ -188,7 +242,6 @@ public class TrackSet {
 			System.err.println("Number format exception: " + this.trackHeightForRegex);
 			throw new InvalidCommandLineException();
 		}
-
 		
         // Regex
         List<String> trackNameRegex= new ArrayList<String>();
@@ -557,8 +610,9 @@ public class TrackSet {
 	 * @throws InvalidCommandLineException 
 	 * */
 	private Track matchIntervalFeatureTrack(String trackTag) throws InvalidCommandLineException{
-		
-		LinkedHashMap<String, Track> ifTracks = this.getIntervalFeatureTracks().getTrackSet_DEPRECATED();		
+
+		List<Track> ifTracks = this.getIntervalFeatureTracks().getTrackList();	
+				
 		Track tr= null;
 		
 		if(ifTracks.size() == 0){
@@ -567,17 +621,17 @@ public class TrackSet {
 		}
 		
 		if(trackTag.isEmpty() && ifTracks.size() == 1){
-			tr= ifTracks.values().iterator().next();
+			tr= ifTracks.get(0);
 		} else if (trackTag.isEmpty() && ifTracks.size() > 1) {
-			tr= ifTracks.values().iterator().next();
-			System.err.println("\nWarning: trackId not given default to first track found: " + tr.getFileTag());
+			tr= ifTracks.get(0);
+			System.err.println("\nWarning: trackId not given default to first track found: " + tr.getTrackTag());
 		} else {
 			List<String> x= new ArrayList<String>();
 			x.add(trackTag);
 			List<Track> matched= matchTracks(x, true);
 			if(matched.size() == 0){
 				System.err.println("\nWarning '" + trackTag + "' not found in track set:");
-				System.err.println(ifTracks.keySet() + "\n");
+				System.err.println(ifTracks + "\n");
 				return tr;
 			} else {
 				tr= matched.get(0);
@@ -605,18 +659,42 @@ public class TrackSet {
 		
 		List<Track> matchedTracks= new ArrayList<Track>();
 		
-		Iterator<String> iter = this.trackSet_DEPRECATED.keySet().iterator();
-		while(iter.hasNext()){
-			String trackId= iter.next();
+		for(Track track : this.getTrackList()){
+			String trackId= track.getTrackTag();
 			for(String pattern : patterns){
 				boolean matched= Pattern.compile(pattern).matcher(trackId).find();
 				if(matched && !matchedTracks.contains(trackId)){
-					matchedTracks.add(this.trackSet_DEPRECATED.get(trackId));
+					matchedTracks.add(track);
 				}
 			}
 		}
 		return matchedTracks;		
 	}
+	
+	/** Simple method to get track from track object. See also this.getTrackFromTag. Return null if track not found. 
+	 * */
+	protected Track getTrack(Track track){
+		
+		int idx= this.getTrackList().indexOf(track);
+		if(idx == -1){
+			return null;
+		}
+		return this.getTrackList().get(idx);
+		
+	}
+
+	/** Get track given a track tag. See also this.getTrack. Returns null if trackTag not found.
+	 * */
+	protected Track getTrackFromTag(String trackTag){
+		
+		for(Track track : this.getTrackList()){
+			if(track.getTrackTag().equals(trackTag)){
+				return track;
+			}
+		}
+		return null;
+	}
+
 	
 	public GenomicCoords findNextMatchOnTrack(String query, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
@@ -625,7 +703,7 @@ public class TrackSet {
 			return currentGc;
 		}
 
-		System.err.println("Matching on " + tif.getFileTag());
+		System.err.println("Matching on " + tif.getTrackTag());
 		
 		if(all){
 			return tif.getIntervalFeatureSet().genomicCoordsAllChromMatchInGenome(query, currentGc);
@@ -636,11 +714,11 @@ public class TrackSet {
 
 	private TrackSet getIntervalFeatureTracks(){
 		TrackSet ifSet= new TrackSet();
-		for(Track tr : this.trackSet_DEPRECATED.values()){
+		for(Track tr : this.getTrackList()){
 			if(Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.BED) 
 			   || Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.GFF)
 			   || Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.VCF)){
-				ifSet.trackSet_DEPRECATED.put(tr.getFileTag(), tr);
+				ifSet.add(tr, new File(tr.getFilename()).getName());
 			}
 		}
 		return ifSet;
@@ -688,44 +766,57 @@ public class TrackSet {
 	 * */
 	public void orderTracks(List<String> newOrder) throws InvalidCommandLineException {
 
-		// Create a new LinkedHashMap with the new order
-		LinkedHashMap<String, Track> newTrackSet= new LinkedHashMap<String, Track>(); 
+		// Create a new list that will have the new order
+		List<Track> newTrackList= new ArrayList<Track>();
+		
 		for(String query : newOrder){
 			List<String> x= new ArrayList<String>();
 			x.add(query);
 			List<Track> trList = this.matchTracks(x, true);
 			for(Track xtrack : trList){
-				if(!newTrackSet.containsKey(xtrack.getFileTag())){ // This will remove dups
-					newTrackSet.put(xtrack.getFileTag(), xtrack);
+				if(!newTrackList.contains(xtrack)){ // This will remove dups
+					newTrackList.add(xtrack);
 				}
 			}
 		}
 		
 		// Append tracks not in newOrder
-		for(String x : this.trackSet_DEPRECATED.keySet()){
-			if(!newTrackSet.containsKey(x)){
-				newTrackSet.put(x, this.trackSet_DEPRECATED.get(x));
-			}
+		for(Track xtrack : this.getTrackList()){
+			if(!newTrackList.contains(xtrack)){
+				newTrackList.add(xtrack);
+			}			
 		}
 		
 		// A sanity check we didn't leave anything behind
-		if(this.trackSet_DEPRECATED.size() != newTrackSet.size()){
-			throw new RuntimeException("\nReordered track has " + newTrackSet.size() + " tracks. Expected " + this.trackSet_DEPRECATED.size());
+		if(this.getTrackList().size() != newTrackList.size()){
+			throw new RuntimeException("\nReordered track has " + newTrackList.size() + " tracks. Expected " + this.getTrackList().size());
 		}
-		for(String x : this.trackSet_DEPRECATED.keySet()){
-			if(!newTrackSet.containsKey(x)){
-				throw new RuntimeException("\nReordered track does not contain " + x);
+		for(Track x : this.getTrackList()){
+			if(!newTrackList.contains(x)){
+				throw new RuntimeException("\nReordered track does not contain " + x.getTrackTag());
 			}
 		}
 		
 		// Replace old with new hashmap
-		this.trackSet_DEPRECATED= newTrackSet;
+		this.trackList= newTrackList;
 	}
 	
-	/*   S e t t e r s   and   G e t t e r s  */
-	public LinkedHashMap<String, Track> getTrackSet_DEPRECATED() {
-		return trackSet_DEPRECATED;
+	/** Simple method to get list of track tags
+	 * */
+	protected List<String> getTrackTags(){
+		
+		List<String> trackTags= new ArrayList<String>();
+		for(Track tr : this.getTrackList()){
+			trackTags.add(tr.getTrackTag());
+		}
+		return trackTags;
+		
 	}
+		
+	/*   S e t t e r s   and   G e t t e r s  */
+	//public LinkedHashMap<String, Track> getTrackSet_DEPRECATED() {
+	//	return trackSet_DEPRECATED;
+	//}
 	
 	public List<Track> getTrackList() {
 		return trackList;
@@ -870,6 +961,17 @@ public class TrackSet {
         }
 	}
 
+	@Override
+	/** For debugging and convenience only. This method not to be used for seriuous stuff. 
+	 * */
+	public String toString(){
+		String x= "";
+		for(Track tr : this.trackList){
+			x += tr.toString() + "\n";
+		}
+		return x;
+	} 
+	
 	/*
 	public void set_f_flagForRegex(ArrayList<String> tokens) throws InvalidCommandLineException {
 		// MEMO of subcommand syntax:

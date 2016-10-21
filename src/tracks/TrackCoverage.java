@@ -11,18 +11,15 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
 
-import filter.FirstOfPairFilter;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
-import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.samtools.util.Interval;
 import htsjdk.samtools.util.IntervalList;
 import samTextViewer.GenomicCoords;
 import samTextViewer.SamLocusIterator;
-import samTextViewer.SamLocusIterator.LocusInfo;
 import samTextViewer.Utils;
 
 public class TrackCoverage extends Track {
@@ -162,7 +159,7 @@ public class TrackCoverage extends Track {
 				
 		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
 		String rpmTag= this.isRpm() ? "; rpm" : "";
-		String xtitle= this.getFileTag() 
+		String xtitle= this.getTrackTag() 
 				+ "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
 				+ "; -F" + this.get_F_flag() 

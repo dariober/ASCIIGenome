@@ -3,12 +3,15 @@ package samTextViewer;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
+import tracks.TrackIntervalFeature;
 
 public class GenomicCoordsHistoryTest {
 
@@ -87,4 +90,18 @@ public class GenomicCoordsHistoryTest {
 		// System.out.println(gch.getHistory());
 	}
 	
+	@Test
+	public void canFindRegexInFasta() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoordsHistory gch= new GenomicCoordsHistory();
+		GenomicCoords g1= new GenomicCoords("chr7:5567588-5571236", null, 100, "test_data/chr7.fa");
+		// GenomicCoords g2= new GenomicCoords("chr7:2-100", null, 100, null);
+		gch.add(g1);		
+		gch.setSeqRegex("CCGGG");
+		TrackIntervalFeature seqRegexTrack= gch.findRegex(); 
+		seqRegexTrack.setNoFormat(true);
+		
+		assertTrue(seqRegexTrack.printToScreen().trim().length() > 10); // test we do find some hits
+		
+	}
 }
