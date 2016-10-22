@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "0.3.0";
+	public static String VERSION= "0.4.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	
 	public static LinkedHashMap<String, String> docstrings= new LinkedHashMap<String, String>(); 
@@ -32,7 +32,14 @@ public class ArgParse {
 			.required(false)
 			.nargs("*")
 			.help("Input files to be displayed: bam, bed, gtf, bigwig, bedgraph, etc");
-		
+
+		parser.addArgument("--batchFile", "-b")
+			.type(String.class)
+			.required(false)
+			.setDefault("")
+			.help("Bed or gff file of regions to process in batch. "
+					+ "ASCIIGenome will iterate through the regions in this file");
+
 		parser.addArgument("--region", "-r")
 			.type(String.class)
 			.required(false)

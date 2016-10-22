@@ -2,15 +2,12 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import org.apache.commons.io.FileUtils;
 
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -62,14 +59,6 @@ public class IntervalFeatureSet {
 			new File(sourceFile + ".tbi").deleteOnExit();
 
 			new MakeTabixIndex(infile, new File( sourceFile ), Utils.trackFormatToTabixFormat(this.type));
-			
-			//Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-			//	// Delete on exit non-empty dir. See http://stackoverflow.com/questions/11165253/deleting-a-directory-on-exit-in-java
-			//	@Override
-			//	public void run() {
-			//		FileUtils.deleteQuietly(tmpdir);
-			//	}
-			//}));
 			
 		} 
 

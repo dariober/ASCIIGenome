@@ -935,7 +935,7 @@ public class Utils {
 					addMe.add(ucsc.genePredToGtf().getAbsolutePath());
 				} catch(Exception e){
 					System.err.println("Unable to fecth " + x);
-					throw new InvalidCommandLineException();
+					// throw new InvalidCommandLineException();
 				}
 			} 
 		}
@@ -1047,15 +1047,25 @@ public class Utils {
 	}
 	
 	/** Get a filaname to write to. GenomicCoords obj is used to get current position and 
-	 * create a suitable filename from it, provided a filename is not given.  
+	 * create a suitable filename from it, provided a filename is not given.
+	 * The string '%r' in the file name, is replaced with the current position. Useful to construct
+	 * file names like myPeaks.%r.png -> myPeaks.chr1_1234-5000.png.
 	 * */
 	public static String parseCmdinputToGetSnapshotFile(String cmdInput, GenomicCoords gc) throws IOException{
-		String snapshotFile= cmdInput.replaceAll("^savef|^save", "").trim();
+		
+		final String REGVAR= "%r";
+		
+		String snapshotFile= cmdInput.trim().replaceAll("^save", "").trim();
+		
+		String region= gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo();
+		
 		if(snapshotFile.isEmpty()){
-			snapshotFile= gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".txt"; 
+			snapshotFile= REGVAR + ".txt"; 
 		} else if(snapshotFile.equals(".png")){
-			snapshotFile= gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".png";
-		}
+			snapshotFile= REGVAR + ".png";
+		} 
+		snapshotFile= snapshotFile.replace(REGVAR, region); // Special string '%r' is replaced with the region 
+		
 		File file = new File(snapshotFile);
 		if(file.exists() && !file.canWrite()){
 			System.err.println("Cannot write to " + snapshotFile);

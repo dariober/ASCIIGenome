@@ -57,10 +57,8 @@ public class GenomicCoords implements Cloneable {
 	private Integer from;
 	private Integer to;
 	private SAMSequenceDictionary samSeqDict; // Can be null
-	private int windowSize; // Size of the screen window
-	// private byte[] refSeq;
+	private int userWindowSize; // Size of the screen window
 	private String fastaFile= null;
-	// private byte[] refSeq= null;
 	final public static String gcProfileFileTag= "CG_percent";
 	private TrackIntervalFeature regexMatchTrack;
 	
@@ -92,7 +90,7 @@ public class GenomicCoords implements Cloneable {
 		this.chrom= chrom;
 		this.from= from;
 		this.to= to;
-		this.windowSize= windowSize;
+		this.userWindowSize= windowSize;
 		this.samSeqDict= samSeqDict;
 		if(this.samSeqDict != null && this.samSeqDict.size() > 0){
 			correctCoordsAgainstSeqDict(samSeqDict);
@@ -109,7 +107,7 @@ public class GenomicCoords implements Cloneable {
 		this.chrom= gc.chrom;
 		this.from= gc.from;
 		this.to= gc.to;
-		this.windowSize= gc.windowSize;
+		this.userWindowSize= gc.userWindowSize;
 		this.samSeqDict= gc.samSeqDict;
 		this.fastaFile= fastaFile;
 		
@@ -299,8 +297,8 @@ public class GenomicCoords implements Cloneable {
 		int extendBy= (int) Math.rint(range * zoom);
 		int newFrom= midpoint - extendBy;
 		int newTo= midpoint + extendBy;
-		if((newTo - newFrom + 1) < windowSize){ // Reset new coords to be at least windowSize in span
-			int diff= windowSize - (newTo - newFrom + 1);
+		if((newTo - newFrom + 1) < userWindowSize){ // Reset new coords to be at least windowSize in span
+			int diff= userWindowSize - (newTo - newFrom + 1);
 			if(diff % 2 == 0){
 				newFrom -= diff/2;
 				newTo += diff/2;
@@ -344,16 +342,16 @@ public class GenomicCoords implements Cloneable {
 		int span= to - from + 1;
 		// If the genomic span is less then screen size, reduce screen size to.
 		// If genomic span == screenSize then you have a mapping one to one.
-		if(span <= this.windowSize){ 
+		if(span <= this.userWindowSize){ 
 			for(int i= from; i <= to; i++){
 				mapping.add((double)i);
 			}
 			return mapping;
 		}
 		
-		double step= ((double)span - 1)/(this.windowSize - 1);
+		double step= ((double)span - 1)/(this.userWindowSize - 1);
 		mapping.add((double)from);
-		for(int i= 1; i < this.windowSize; i++){
+		for(int i= 1; i < this.userWindowSize; i++){
 			mapping.add((double)mapping.get(i-1)+step);
 		}
 		
@@ -370,9 +368,9 @@ public class GenomicCoords implements Cloneable {
 		}
 		
 		double diffFrom= Math.abs(mapping.get(0) - from);		
-		if(diffFrom > 0.01 || mapping.size() != this.windowSize){
+		if(diffFrom > 0.01 || mapping.size() != this.userWindowSize){
 			System.err.println("Error generating sequence:");
-			System.err.println("Expected size: " + this.windowSize + "; Effective: " + mapping.size());
+			System.err.println("Expected size: " + this.userWindowSize + "; Effective: " + mapping.size());
 			System.err.println("From diff: " + diffFrom);
 			System.exit(1);
 		}
@@ -393,7 +391,7 @@ public class GenomicCoords implements Cloneable {
 		if(this.samSeqDict == null || this.samSeqDict.size() == 0){
 			return null;
 		}
-		List<Double> positionMap = Utils.seqFromToLenOut(1, this.samSeqDict.getSequence(this.chrom).getSequenceLength(), this.windowSize);
+		List<Double> positionMap = Utils.seqFromToLenOut(1, this.samSeqDict.getSequence(this.chrom).getSequenceLength(), this.userWindowSize);
 		// This code taken from printableRuler() above.
 		String numberLine= "";
     	int prevLen= 0;
@@ -434,8 +432,8 @@ public class GenomicCoords implements Cloneable {
 		}
 		map.set(lastTick, TICKED);
 		String ideogram= StringUtils.join(map, "");
-		if(ideogram.length() > this.windowSize){
-			ideogram= ideogram.substring(0, this.windowSize);
+		if(ideogram.length() > this.userWindowSize){
+			ideogram= ideogram.substring(0, this.userWindowSize);
 		}
 		if(!noFormat){
 			ideogram= "\033[30m" + ideogram + "\033[48;5;231m";
@@ -670,7 +668,7 @@ public class GenomicCoords implements Cloneable {
 		for(int xfrom= 0; xfrom < fa.length(); xfrom += step){
 			int xto= xfrom + step;
 			// Look ahead: If the next round is going to be the last one and the step
-			// is not a mulitple of the sequence length, merge thi sround with the next in a 
+			// is not a multiple of the sequence length, merge this round with the next in a 
 			// longer sequence. This is to avoid the last chunk to be too skewed in percentage.
 			if(((xto+step) > fa.length())){
 				xto= fa.length();
@@ -695,14 +693,15 @@ public class GenomicCoords implements Cloneable {
 		bw.close();
 		// * Read this bedGraph via TrackWiggles 
 		TrackWiggles cgWiggle= new TrackWiggles(temp.getAbsolutePath(), this, 4);
-		temp.delete();
-		cgWiggle.setTrackTag(this.gcProfileFileTag);
+		temp.delete(); // Track has been created - remove al associated tmp files.
+		new File(cgWiggle.getFilename()).delete();
+		new File(cgWiggle.getFilename() + ".tbi").delete();
+
+		cgWiggle.setTrackTag(GenomicCoords.gcProfileFileTag);
 		cgWiggle.setyMaxLines(0);
 		cgWiggle.setYLimitMin(0);
 		cgWiggle.setYLimitMax(100);
-		// cgWiggle.setYmin(Math.round(ymin * 10.0)/10.0);
-		// cgWiggle.setYmax(Math.round(ymax * 10.0)/10.0); 
-		// cgWiggle.update();
+		
 		return cgWiggle;
 	}
 
@@ -804,9 +803,9 @@ public class GenomicCoords implements Cloneable {
 		gc.from= (int)Math.rint(center - (size * slop));
 		gc.to= (int)Math.rint(center + (size * slop));
 		
-		if(((gc.to - gc.from)+1) < gc.windowSize){
+		if(((gc.to - gc.from)+1) < gc.userWindowSize){
 			int span= (gc.to - gc.from);
-			int extendBy= (int)Math.rint((gc.windowSize / 2.0) - (span / 2.0));
+			int extendBy= (int)Math.rint((gc.userWindowSize / 2.0) - (span / 2.0));
 			gc.from -= extendBy;
 			gc.to += extendBy;
 		}
@@ -833,9 +832,10 @@ public class GenomicCoords implements Cloneable {
 		return to;
 	}
 	
-	/** Size of the window as set in input this.windowSize */
+	/** Width of the terminal screen window in number of characters. 
+	 * Not to be confused with the genomic window size (as in bp) */
 	public int getUserWindowSize(){
-		return this.windowSize;
+		return this.userWindowSize;
 	}
 
 	//public void setUserWindowSize(int windowSize) {
@@ -844,7 +844,8 @@ public class GenomicCoords implements Cloneable {
 	//}
 
 	
-	/** Size of genomic interval. Can be smaller than windowSize set by user. */
+	/** Size of genomic interval. Can be smaller than windowSize set by user. 
+	 * Not to be confused with userWindowSize. */
 	public int getGenomicWindowSize(){
 		return this.to - this.from + 1;
 	}
@@ -862,7 +863,7 @@ public class GenomicCoords implements Cloneable {
 	}
 
 	public String getGcProfileFileTag(){
-		return this.gcProfileFileTag;
+		return GenomicCoords.gcProfileFileTag;
 	}
 
 }

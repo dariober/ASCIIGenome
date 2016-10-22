@@ -158,6 +158,8 @@ class TextRead {
 				fmt += "1;107;32";
 			} else if(Character.toUpperCase(c) == 'T') {
 				fmt += "1;107;33";
+			} else if(bs){
+				fmt += "38;5;0;48;5;231";
 			} else if(!this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
 				fmt += "30;48;5;147"; // 105: light magenta; Test on terminal: echo -e "\033[48;5;225m <<<<<<<<<<<<<<<<<<<<<<<<<<< \033[48;5;231m"
 			} else if(this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){

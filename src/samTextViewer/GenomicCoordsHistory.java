@@ -100,6 +100,28 @@ public class GenomicCoordsHistory {
 		return seqRegexTrack;
 	}
 
+	/** Reset window size according to current terminal screen. 
+	 * If the user reshapes the terminal window size or the font size, 
+	 * detect the new size and add it to the history. 
+	 * */
+	public void resetWindowSize() throws InvalidGenomicCoordsException, IOException{
+
+		int currentWindowSize= this.current().getUserWindowSize(); 
+		
+		int newSize= jline.TerminalFactory.get().getWidth() - 1;
+		if(newSize != this.current().getUserWindowSize()){
+			// Replace the current genomicCoords obj with a new one having the same coordinates but different windowSize.
+			// NB: The current genomic obj might not be the last one in the history list.
+			currentWindowSize= newSize;
+			String newRegion= this.current().getChrom() + ":" + this.current().getFrom() + "-" + this.current().getTo(); 
+			this.getHistory().add(
+					this.getHistory().indexOf(this.current()), 
+					new GenomicCoords(newRegion, this.current().getSamSeqDict(), currentWindowSize, this.current().getFastaFile())
+			);
+		}
+	}
+
+	
 	public String getSeqRegex() {
 		return seqRegex;
 	}

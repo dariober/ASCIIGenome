@@ -23,7 +23,7 @@ echo "CAN LOAD BAM FILES"
 java -Xmx500m -jar $stvExe -r chr7:5598650-5601530 ds051.actb.bam ear045.oxBS.actb.bam -ni
 java -Xmx500m -jar $stvExe -r chr7:5598650-5601530 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -ni 
 java -Xmx500m -jar $stvExe -rpm -r chr7:5598650-5601530 ds051.actb.bam ear045.oxBS.actb.bam -ni 
-java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x 'mapq 10 -f 16' -ni 
+java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x 'mapq 10 && -f 16' -ni 
 
 echo "CAN SHOW BS DATA"
 java -Xmx500m -jar $stvExe -r chr7:5600000-5600179 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -x 'mapq 10 && BSseq' -ni 
@@ -61,6 +61,10 @@ java -Xmx500m -jar $stvExe refSeq.hg19.short.bed -x 'foo' -ni
 java -Xmx500m -jar $stvExe refSeq.hg19.short.bed -x 'ylim 0 10 *' -ni
 java -Xmx500m -jar $stvExe foo.bed -ni
 java -Xmx500m -jar $stvExe invalid-1.bedgraph -ni ## Not so nice
+
+echo "BATCH FILE"
+java -Xmx500m -jar $stvExe -b batch_actb.bed -x 'zo 3 && save deleteme.%r.png' -g hg19 ear045.oxBS.actb.tdf hg19.gencode_genes_v19.gtf.gz batch_actb.bed > /dev/null
+rm deleteme*
 
 echo -e "\n\nDONE\n\n"
 

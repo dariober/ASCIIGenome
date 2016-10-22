@@ -685,7 +685,7 @@ public class TrackSet {
 
 	/** Get track given a track tag. See also this.getTrack. Returns null if trackTag not found.
 	 * */
-	protected Track getTrackFromTag(String trackTag){
+	public Track getTrackFromTag(String trackTag){
 		
 		for(Track track : this.getTrackList()){
 			if(track.getTrackTag().equals(trackTag)){
@@ -812,7 +812,19 @@ public class TrackSet {
 		return trackTags;
 		
 	}
+
+	/** Simple method to get list of filenames
+	 * */
+	public List<String> getFilenameList(){
 		
+		List<String> filenames= new ArrayList<String>();
+		for(Track tr : this.getTrackList()){
+			filenames.add(tr.getTrackTag());
+		}
+		return filenames;
+		
+	}
+	
 	/*   S e t t e r s   and   G e t t e r s  */
 	//public LinkedHashMap<String, Track> getTrackSet_DEPRECATED() {
 	//	return trackSet_DEPRECATED;

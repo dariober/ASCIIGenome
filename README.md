@@ -11,6 +11,7 @@ Text Only Genome Viewer!
     - [Open and browse](#open-and-browse)
     - [Finding & filtering stuff](#finding--filtering-stuff)
     - [Chaining commands](#chaining-commands)
+    - [Batch processing](#batch-processing)
 - [Supported input](#supported-input)
 - [Genome option](#genome-option)
 - [Formatting of reads and features](#formatting-of-reads-and-features)
@@ -18,7 +19,6 @@ Text Only Genome Viewer!
 - [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Interactive commands](#interactive-commands)
 - [Credits](#credits)
-
 
 
 <!-- 
@@ -211,6 +211,34 @@ ASCIIGenome -x 'goto 36:1-2682151 && filter \ttranscript\t && trackHeight 100' \
 Note that if the first option passed to `-exec/-x` starts with `-` you need to add a space between 
 the opening quote and the option itself. For example do  `ASCIIGenome -x ' -F 16' ...` instead of
 `ASCIIGenome -x '-F 16' ...`.
+
+### Batch processing
+
+Often you have a list of regions to visualize in batch for a one or more tracks. For example, you have a list of ChIP-Seq peaks or RNA-Seq genes and you want to see the coverage profiles together with an annotation file. `ASCIIGenome` allows easy batch processing 
+via the `--batchFile` option.
+
+This script iterates through the intervals in *peaks.bed*. For each interval, it displays two bigiwig, a gtf file and the peak file itself. 
+Each interval is zoomed out 3 times and the screenshot saved as png to `/tmp/peak.%r.png`, where `%r` is a special variable 
+expanded to the current coordinates as `chrom_start-end`.
+
+```
+ASCIIGenome -b peaks.bed \
+    -x 'zo 3 && save /tmp/peak.%r.png' \
+    chipseq.bigwig \
+    input.bigwig \
+    gencode_genes.gtf \
+    peaks.bed > /dev/null
+```
+
+[convert](http://www.imagemagick.org/script/convert.php) tools from ImageMagick is handy to concatenate png files and create 
+a gallery of screenshots in a single file: 
+
+```
+convert -append /tmp/peak.*.png myPeaks.png
+```
+
+A similar task may be achieved by wrapping ASCIIGenome in a for-loop but it would much slower and complicated since each iteration would
+require restarting the JVM and re-loading the tracks.
 
 Supported input
 ===============

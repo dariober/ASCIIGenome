@@ -1,17 +1,23 @@
-New in 0.3.0
+New in 0.4.0
 =============
+
+* **Batch processing** with `--batchFile` option: ASCIIGenome will iterate through each interval in a batch file in bed or gff format. This is super useful to generate a gallery of screenshots in target regions (e.g. genes, peaks, etc). Much much faster then 
+iterating ASCIIGenome in a for-loop since the JVM and files are loaded only once!
+This should address almost completely [issue 18](https://github.com/dariober/ASCIIGenome/issues/18) (remember to close on merge)
 
 * **Colours** Now the png output has colours.
 
 * **Colours II** ASCIIGenome sets the background colour of the terminal to white, unless started with `--noFormat`. In this way the visual look of ASCIIGenome should be independent of the user's colour scheme of the terminal.
 
-* **UCSC gtf** Annotation tables can be pulled directly from UCSC.
+* **Memory** Memory footprint is now even smaller since files are never fully read in memory now. Bed or gff files without tabix index are sorted, block compressed and indexed as needed to temporary files. 
 
-* Fixed issue https://github.com/dariober/ASCIIGenome/issues/20 (remember to close it on merge with trunk). 
+* Fixed [issue 20](https://github.com/dariober/ASCIIGenome/issues/20) (remember to close it on merge with trunk). 
 
-* Fixed issue https://github.com/dariober/ASCIIGenome/issues/23 (remember to close it on merge with trunk).
+* Fixed [issue 23](https://github.com/dariober/ASCIIGenome/issues/23) (remember to close it on merge with trunk).
 
 * `ASCIIGenome` can start without any input file.
+
+* Major refactoring should make further devlopment easier.
 
 New in 0.2.0
 =============
