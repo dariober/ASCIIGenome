@@ -222,20 +222,19 @@ public class InteractiveInput {
 					String seqRegex= null;
 					if(cmdInput.size() == 1){
 						seqRegex= "";
-						proc.getGenomicCoordsHistory().setSeqRegex(seqRegex);
 					} else {
 						seqRegex= cmdInput.get(1);
 						try{
 							Pattern.compile(seqRegex);
-							proc.getGenomicCoordsHistory().setSeqRegex(seqRegex);
 						} catch(PatternSyntaxException e){
 					    	System.err.println("Invalid seqRegex in: " + cmdInput);
 					    	System.err.println(e.getDescription());
 					    	this.interactiveInputExitCode= 1;
 							continue;
-						}						
+						}
 					}
-				
+					proc.getTrackSet().setSeqRegexForTracks(seqRegex);
+
 				} else if(cmdInput.get(0).equals("bookmark")){
 					// TODO
 					

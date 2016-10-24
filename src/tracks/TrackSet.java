@@ -26,7 +26,6 @@ public class TrackSet {
 	private List<Track> trackList= new ArrayList<Track>();
 	private List<Pattern> regexForTrackHeight= new ArrayList<Pattern>();
 	private int trackHeightForRegex= -1;
-	
 	public static final String BOOKMARK_TAG= "bookmark";
 	
 	/*   C o n s t r u c t o r s   */
@@ -87,8 +86,7 @@ public class TrackSet {
 				System.err.println("Unable to classify " + sourceName + "; skipping"); 								
 			}			
 		}		
-
-		
+		// TrackWiggles gcProfile= gc.getGCProfile();
 	}
 	
 	/*   M e t h o d s   */
@@ -337,6 +335,19 @@ public class TrackSet {
 				tr.setPrintMode(switchTo);
 			}
         }
+        
+        // Update
+//        this.regexForPrintMode.clear();
+//        for(String x : trackNameRegex){
+//        	try{
+//        		this.regexForPrintMode.add(Pattern.compile(x));
+//        	} catch(PatternSyntaxException e){
+//        		System.err.println("Command: " + tokens);
+//        		System.err.println("Invalid regex in: " + x);
+//		    	System.err.println(e.getDescription());
+//        		throw new InvalidCommandLineException();
+//        	}
+//        }
 	}
 	
 	public void setBisulfiteModeForRegex(List<String> tokens) throws InvalidCommandLineException {
@@ -825,6 +836,45 @@ public class TrackSet {
 		
 	}
 	
+	/** Drop from TrackSet the track with given hashcode. 
+	 * Return true if the track was found and dropped, false otherwise. 
+	 * If trackHashCode do nothing and return false.  
+	 * */
+	public boolean dropTrackWithHashCode(Integer trackHashCode){
+		
+		if(trackHashCode == null){
+			return false;
+		}
+		
+		for(int i= 0; i < this.trackList.size(); i++){
+			if(this.trackList.get(i).hashCode() == trackHashCode){
+				this.trackList.remove(i);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/** Drop from TrackSet the track with given tag. 
+	 * Return true if the track was found and dropped, false otherwise. 
+	 * If trackTag is null do nothing and return false.  
+	 * */
+	public boolean dropTrackWithTrackTag(String trackTag){
+		
+		if(trackTag == null){
+			return false;
+		}
+		
+		for(int i= 0; i < this.trackList.size(); i++){
+			if(this.trackList.get(i).getTrackTag().equals(trackTag)){
+				this.trackList.remove(i);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
 	/*   S e t t e r s   and   G e t t e r s  */
 	//public LinkedHashMap<String, Track> getTrackSet_DEPRECATED() {
 	//	return trackSet_DEPRECATED;
@@ -837,10 +887,11 @@ public class TrackSet {
 	public List<Pattern> getRegexForTrackHeight() {
 		return regexForTrackHeight;
 	}
+	
 	public int getTrackHeightForRegex() {
 		return trackHeightForRegex;
 	}
-
+	
 	/*
 	public void addBookmark_IN_PREP(GenomicCoords gc, String name) throws IOException, InvalidGenomicCoordsException {
 		
@@ -972,7 +1023,7 @@ public class TrackSet {
 			}
         }
 	}
-
+	
 	@Override
 	/** For debugging and convenience only. This method not to be used for seriuous stuff. 
 	 * */
@@ -982,40 +1033,15 @@ public class TrackSet {
 			x += tr.toString() + "\n";
 		}
 		return x;
-	} 
-	
-	/*
-	public void set_f_flagForRegex(ArrayList<String> tokens) throws InvalidCommandLineException {
-		// MEMO of subcommand syntax:
-		// 0 -F
-		// 1 INT
-		// 2... Regexes
+	}
 
-		if(tokens.size() < 2){
-			System.err.println("Expected at least two arguments. Got: " + tokens);
-			throw new InvalidCommandLineException();
-		}
+	/** Iterate through track list and set regex to the track TrackSeqRegex.
+	 * */
+	public void setSeqRegexForTracks(String seqRegex) {
 		
-		int flag= 0; // Null will follow default 
-		try{
-			flag= Integer.parseInt(tokens.get(1));
-		} catch(NumberFormatException e){
-			System.err.println("Number format exception: " + tokens.get(1));
-			throw new InvalidCommandLineException();
+		for(Track tr : this.getTrackList()){
+				tr.setSeqRegex(seqRegex);
 		}
-		
-        // Regex
-        List<String> trackNameRegex= new ArrayList<String>();
-        if(tokens.size() >= 3){
-            trackNameRegex= tokens.subList(2, tokens.size());
-        } else {
-            trackNameRegex.add(".*"); // Default: Capture everything
-        }
-        // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-        for(Track tr : tracksToReset){
-        	tr.set_f_flag(flag);
-        }			
-	}*/
-	
+	}
+
 }

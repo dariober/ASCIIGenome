@@ -1,14 +1,10 @@
 package samTextViewer;
 
-import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import exceptions.InvalidGenomicCoordsException;
-import exceptions.InvalidRecordException;
-import tracks.TrackIntervalFeature;
 
 public class GenomicCoordsHistory {
 
@@ -18,7 +14,7 @@ public class GenomicCoordsHistory {
 	/** List index stating where we are in history */
 	private int positionTracker= -1;
 
-	private String seqRegex= ""; 
+//	private String seqRegex= ""; 
 	
 	/* Constructor */
 	public GenomicCoordsHistory(){}
@@ -78,27 +74,27 @@ public class GenomicCoordsHistory {
 		return history;
 	}
 
-	public TrackIntervalFeature findRegex() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-
-		int prevHeight;
-		TrackIntervalFeature prevRegexMatchTrack= null;
-		if(this.getHistory().size() >= 1){
-			prevRegexMatchTrack = this.getHistory().get(this.getHistory().size()-1).getRegexMatchTrack();
-		} 
-		if(prevRegexMatchTrack == null){
-			 prevHeight= 10;
-		} else {
-			prevHeight= prevRegexMatchTrack.getyMaxLines();
-		}
-		TrackIntervalFeature seqRegexTrack = this.current().findRegex(this.seqRegex);
-		seqRegexTrack.setyMaxLines(prevHeight);
-
-		// Track is created, delete tmp files.
-		new File(seqRegexTrack.getFilename()).delete();
-		new File(seqRegexTrack.getFilename() + ".tbi").delete();
-		
-		return seqRegexTrack;
-	}
+//	public TrackIntervalFeature findRegex() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+//
+//		int prevHeight;
+//		TrackIntervalFeature prevRegexMatchTrack= null;
+//		if(this.getHistory().size() >= 1){
+//			prevRegexMatchTrack = this.getHistory().get(this.getHistory().size()-1).getRegexMatchTrack();
+//		} 
+//		if(prevRegexMatchTrack == null){
+//			 prevHeight= 10;
+//		} else {
+//			prevHeight= prevRegexMatchTrack.getyMaxLines();
+//		}
+//		TrackIntervalFeature seqRegexTrack = this.current().findRegex(this.seqRegex);
+//		seqRegexTrack.setyMaxLines(prevHeight);
+//
+//		// Track is created, delete tmp files.
+//		new File(seqRegexTrack.getFilename()).delete();
+//		new File(seqRegexTrack.getFilename() + ".tbi").delete();
+//		
+//		return seqRegexTrack;
+//	}
 
 	/** Reset window size according to current terminal screen. 
 	 * If the user reshapes the terminal window size or the font size, 
@@ -119,15 +115,5 @@ public class GenomicCoordsHistory {
 					new GenomicCoords(newRegion, this.current().getSamSeqDict(), currentWindowSize, this.current().getFastaFile())
 			);
 		}
-	}
-
-	
-	public String getSeqRegex() {
-		return seqRegex;
-	}
-
-	public void setSeqRegex(String seqRegex) {
-		this.seqRegex = seqRegex;
-	}
-	
+	}	
 }

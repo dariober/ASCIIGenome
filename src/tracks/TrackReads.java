@@ -75,13 +75,13 @@ public class TrackReads extends Track{
 			/*  ------------------------------------------------------ */
 			
 			this.nRecsInWindow= Utils.countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
-			float probSample= (float) this.MAX_READS_STACK / this.nRecsInWindow;
+			float probSample= (float) TrackReads.MAX_READS_STACK / this.nRecsInWindow;
 			
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 			List<TextRead> textReads= new ArrayList<TextRead>();
 			AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
 			
-			while(sam.hasNext() && textReads.size() < this.MAX_READS_STACK){
+			while(sam.hasNext() && textReads.size() < TrackReads.MAX_READS_STACK){
 	
 				SAMRecord rec= sam.next();
 				if( !rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec) ){

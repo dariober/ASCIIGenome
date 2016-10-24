@@ -91,7 +91,6 @@ public class TrackCoverage extends Track {
 			}
 			this.nRecsInWindow= Utils.countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
 			samLocIter.close();
-			// samReader.close();	
 		}
 		
 		this.getFilename();

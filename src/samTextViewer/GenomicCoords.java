@@ -13,8 +13,10 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,8 +61,8 @@ public class GenomicCoords implements Cloneable {
 	private SAMSequenceDictionary samSeqDict; // Can be null
 	private int userWindowSize; // Size of the screen window
 	private String fastaFile= null;
-	final public static String gcProfileFileTag= "CG_percent";
-	private TrackIntervalFeature regexMatchTrack;
+	// final public static String gcProfileFileTag= "CG_percent";
+	// private TrackIntervalFeature regexMatchTrack;
 	
 	/* Constructors */
 	public GenomicCoords(String chrom, Integer from, Integer to, SAMSequenceDictionary samSeqDict, int windowSize, String fastaFile) 
@@ -124,10 +126,10 @@ public class GenomicCoords implements Cloneable {
 		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
 			return null;
 		}
-		return getSequenceFromFasta(); // this.refSeq;
+		return this.getSequenceFromFasta(); // this.refSeq;
 	}
 	
-	private byte[] getSequenceFromFasta() throws IOException{
+	public byte[] getSequenceFromFasta() throws IOException{
 		IndexedFastaSequenceFile faSeqFile = null;
 		try {
 			faSeqFile = new IndexedFastaSequenceFile(new File(this.fastaFile));
@@ -697,101 +699,14 @@ public class GenomicCoords implements Cloneable {
 		new File(cgWiggle.getFilename()).delete();
 		new File(cgWiggle.getFilename() + ".tbi").delete();
 
-		cgWiggle.setTrackTag(GenomicCoords.gcProfileFileTag);
-		cgWiggle.setyMaxLines(0);
+//		cgWiggle.setTrackTag(GenomicCoords.gcProfileFileTag);
 		cgWiggle.setYLimitMin(0);
 		cgWiggle.setYLimitMax(100);
 		
 		return cgWiggle;
 	}
 
-	protected TrackIntervalFeature findRegex(String regex) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
-		
-		// * If a regexTrack already exists, overwrite it. otherwise iinitialize one.
-		String regexMatchFile;
-		if(this.regexMatchTrack != null){
-			regexMatchFile= this.regexMatchTrack.getFilename().replaceAll("\\.gz$", "");
-		} else {
-			File tmpfile= File.createTempFile("asciigenome.regexMatchTrack", ".tmp.bed");
-		    String tmpname= tmpfile.getAbsolutePath(); 
-		    
-		    // This is a hack: Copy the newly created tmp file to another file. This overcomes some 
-		    // permission (?) problems later with the tabix indexing.
-			regexMatchFile= tmpname.replaceAll("\\.tmp\\.bed$", ".bed");
-			FileUtils.copyFile(new File(tmpname), new File(regexMatchFile));
-			new File(tmpname).delete();
-			new File(regexMatchFile).deleteOnExit();		    
-		}
-		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(regexMatchFile))); 
-		
-		// * Write matches to file as bed format
-		if (regex == null || regex.isEmpty() || this.fastaFile == null){
-			// Nothing to be done
-			wr.close();
-		} else {
-			// Find matches
-			byte[] seq= this.getSequenceFromFasta();
-			
-			Pattern pattern= Pattern.compile(regex);
-			Matcher matcher = pattern.matcher(new String(seq));
 
-			// One list for matches on forward, one for reverse, one for palindromic
-			List<String> regionListPos= new ArrayList<String>();
-			List<String> regionListNeg= new ArrayList<String>();
-			List<String> regionListPalind= new ArrayList<String>();
-
-			// Forward match
-			while (matcher.find()) {
-				int matchStart= this.from + matcher.start() - 1;
-				int matchEnd= this.from + matcher.end() - 1;
-			    String reg= this.chrom + "\t" + matchStart + "\t" + matchEnd;
-			    regionListPos.add(reg);
-			}
-			// Reverse comp match
-			SequenceUtil.reverseComplement(seq);
-			matcher = pattern.matcher(new String(seq));
-			while (matcher.find()) {
-				int matchStart= this.to - matcher.end();
-				int matchEnd= this.to - matcher.start();
-				String reg= this.chrom + "\t" + matchStart + "\t" + matchEnd; 
-			    if(regionListPos.contains(reg)){
-			    	regionListPos.remove(reg);
-			    	regionListPalind.add(reg);
-			    } else {
-			    	regionListNeg.add(reg);
-			    }
-			}
-			// Write lists of matches to file		
-			for(String reg : regionListPos){
-				wr.write(reg + "\t.\t.\t+\n");
-			}
-			for(String reg : regionListNeg){
-				wr.write(reg + "\t.\t.\t-\n");			
-			}
-			for(String reg : regionListPalind){
-				wr.write(reg + "\t.\t.\t.\n");
-			}
-			wr.close();
-		}
-		
-		File regexMatchBgzip= new File(regexMatchFile + ".gz");
-		File regexMatchIndex= new File(regexMatchFile + ".gz.tbi");
-		regexMatchBgzip.deleteOnExit();
-		regexMatchIndex.deleteOnExit();
-
-		new MakeTabixIndex(regexMatchFile, regexMatchBgzip, TabixFormat.BED);
-		new File(regexMatchFile).delete();
-		
-		this.regexMatchTrack= new TrackIntervalFeature(regexMatchBgzip.getAbsolutePath(), this);
-		this.regexMatchTrack.setTrackTag("seqRegex");
-		
-		return this.regexMatchTrack;
-	}
-	
-	public TrackIntervalFeature getRegexMatchTrack(){
-		return this.regexMatchTrack;
-	}
-	
 	public void centerAndExtendGenomicCoords(GenomicCoords gc, int size, double slop) throws InvalidGenomicCoordsException {
 		
 		if(size <= 0){
@@ -861,9 +776,4 @@ public class GenomicCoords implements Cloneable {
 	public String getFastaFile(){
 		return this.fastaFile;
 	}
-
-	public String getGcProfileFileTag(){
-		return GenomicCoords.gcProfileFileTag;
-	}
-
 }

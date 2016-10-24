@@ -4,14 +4,12 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import tracks.TrackIntervalFeature;
 import tracks.TrackWiggles;
 
 import org.junit.Test;
@@ -53,39 +51,39 @@ public class GenomicCoordsTest {
 		assertEquals("1-****----110M--", chromMap);
 	}
 	
-	@Test
-	public void canReturnTrackFromMatchingRegex() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
-		GenomicCoords gc= new GenomicCoords("seq", 1, 100, null, 100, "test_data/seq_cg.fa");
-		TrackIntervalFeature reSet= gc.findRegex("(?i)atc"); // revcomp GAT
-		reSet.setNoFormat(true);
-		System.out.println(reSet.printToScreen());
-		System.out.println(gc.printableRefSeq(true));
-		assertTrue(reSet.printToScreen().startsWith(">>>"));
-		
-		
-		// Match not found
-		reSet= gc.findRegex("FOOBAR");
-		assertTrue(reSet.printToScreen().isEmpty());
-		
-		// Regex not given
-		reSet= gc.findRegex(null);
-		assertTrue(reSet.printToScreen().isEmpty());
-		reSet= gc.findRegex("");
-		assertTrue(reSet.printToScreen().isEmpty());
-		
-		// Ref Sequence not given 
-		gc= new GenomicCoords("seq", 1, 100, null, 100, null);
-		reSet= gc.findRegex("ACTG");
-		assertTrue(reSet.printToScreen().isEmpty());
-		
-		// Palindromic
-		gc= new GenomicCoords("seq", 1, 100, null, 100, "test_data/seq_cg.fa");
-		reSet= gc.findRegex("CG");
-		reSet.setNoFormat(true);
-		assertTrue(reSet.printToScreen().trim().startsWith("|"));
-		System.out.println(reSet.printToScreen());
-		System.out.println(gc.printableRefSeq(true));
-	}
+//	@Test
+//	public void canReturnTrackFromMatchingRegex() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+//		GenomicCoords gc= new GenomicCoords("seq", 1, 100, null, 100, "test_data/seq_cg.fa");
+//		TrackIntervalFeature reSet= gc.findRegex("(?i)atc"); // revcomp GAT
+//		reSet.setNoFormat(true);
+//		System.out.println(reSet.printToScreen());
+//		System.out.println(gc.printableRefSeq(true));
+//		assertTrue(reSet.printToScreen().startsWith(">>>"));
+//		
+//		
+//		// Match not found
+//		reSet= gc.findRegex("FOOBAR");
+//		assertTrue(reSet.printToScreen().isEmpty());
+//		
+//		// Regex not given
+//		reSet= gc.findRegex(null);
+//		assertTrue(reSet.printToScreen().isEmpty());
+//		reSet= gc.findRegex("");
+//		assertTrue(reSet.printToScreen().isEmpty());
+//		
+//		// Ref Sequence not given 
+//		gc= new GenomicCoords("seq", 1, 100, null, 100, null);
+//		reSet= gc.findRegex("ACTG");
+//		assertTrue(reSet.printToScreen().isEmpty());
+//		
+//		// Palindromic
+//		gc= new GenomicCoords("seq", 1, 100, null, 100, "test_data/seq_cg.fa");
+//		reSet= gc.findRegex("CG");
+//		reSet.setNoFormat(true);
+//		assertTrue(reSet.printToScreen().trim().startsWith("|"));
+//		System.out.println(reSet.printToScreen());
+//		System.out.println(gc.printableRefSeq(true));
+//	}
 	
 	@Test
 	public void printRefSeq() throws InvalidGenomicCoordsException, IOException{
@@ -292,6 +290,7 @@ public class GenomicCoordsTest {
 		assertEquals(exp, gcCnt.printToScreen());
 		System.out.println(gcCnt.getTitle());
 		System.out.println(gcCnt.printToScreen());
+		
 	}
 
 	@Test

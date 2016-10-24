@@ -3,15 +3,12 @@ package samTextViewer;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.regex.Pattern;
-
 import coloring.Png;
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import tracks.Track;
-import tracks.TrackIntervalFeature;
 import tracks.TrackSet;
-import tracks.TrackWiggles;
 
 /** Process a TrackSet given the necessary elements
  * */
@@ -22,7 +19,6 @@ public class TrackProcessor {
 	private GenomicCoordsHistory genomicCoordsHistory; 
 	private String snapshotFile= null;
 	int windowSize= 160;
-	private int gcProfileHashCode;
 	
 	/* C O N S T R U C T O R S */
 	
@@ -31,27 +27,22 @@ public class TrackProcessor {
 		this.genomicCoordsHistory= genomicCoordsHistory;
 		
 		/* Initialize GC profile */
-		if(genomicCoordsHistory.current().getFastaFile() != null){
-			TrackWiggles gcProfile = genomicCoordsHistory.current().getGCProfile();
-			this.gcProfileHashCode= gcProfile.hashCode();
-			this.getTrackSet().add(gcProfile, "gcProfile");
-		}		
+		//if(genomicCoordsHistory.current().getFastaFile() != null){
+		//	TrackWiggles gcProfile = genomicCoordsHistory.current().getGCProfile();
+		//	this.gcProfileHashCode= gcProfile.hashCode();
+		//	this.getTrackSet().add(gcProfile, "gcProfile");
+		//}		
 	}
 	
 	/* M E T H O D S */
 
-	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
+	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException{
 		
 		if(this.genomicCoordsHistory.current().getChromIdeogram(20, this.noFormat) != null){
 			Utils.printer(this.genomicCoordsHistory.current().getChromIdeogram(20, this.noFormat) + "\n", this.snapshotFile);
 		}			
 
 		for(Track track : trackSet.getTrackList()){
-			
-			if(track.hashCode() == this.gcProfileHashCode){
-				System.out.println("GC PROF !");
-				track.update();
-			}
 			
 			track.setNoFormat(this.noFormat);
 
@@ -65,34 +56,6 @@ public class TrackProcessor {
 			}
 		}
 
-		//if(genomicCoordsHistory.current().getFastaFile() != null){
-		//	for(Track tr : this.getTrackSet().getTrackList()){
-		//		if(tr.hashCode() == this.gcProfileHashCode){
-		//			System.out.println("GC PROF !");
-		//			tr.update();
-		//		}
-		//	}
-		//}
-		
-		// Track for regex: This should go in the constructor and the track be part of the trackSet
-		// ----------------------------------------------------------------------------------------
-		TrackIntervalFeature seqRegexTrack = this.genomicCoordsHistory.findRegex();
-		seqRegexTrack.setNoFormat(noFormat);
-		
-		// See if we need to change height
-		for(Pattern p : trackSet.getRegexForTrackHeight()){
-			if(p.matcher(seqRegexTrack.getTrackTag()).find()){
-				seqRegexTrack.setyMaxLines(trackSet.getTrackHeightForRegex());
-				break;
-			}
-		}
-		String seqPattern= seqRegexTrack.printToScreen();
-		if(!seqPattern.isEmpty()){
-			seqPattern += "\n";
-		} 
-
-		Utils.printer(seqPattern, snapshotFile);
-		
 		// Ruler and sequence
 		// ------------------
 		Utils.printer(this.genomicCoordsHistory.current().printableRefSeq(noFormat), snapshotFile);

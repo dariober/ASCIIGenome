@@ -52,6 +52,26 @@ public class TrackSetTest {
 		System.out.println("END");
 	}
 	
+	@Test
+	public void canDropTrackByHashCode() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		List<String> inputFileList= new ArrayList<String>();
+		inputFileList.add("test_data/hg19_genes.gtf.gz");
+		inputFileList.add("test_data/posNeg.bedGraph.gz");
+		inputFileList.add("test_data/posNeg.bedGraph.gz");
+		
+		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
+		TrackSet trackSet= new TrackSet(inputFileList, gc);
+		assertTrue(trackSet.getTrackList().size() == 3);
+		
+		int hc= trackSet.getTrackList().get(0).hashCode();
+		assertTrue(trackSet.dropTrackWithHashCode(hc));
+		assertTrue(trackSet.getTrackList().size() == 2);
+		
+		assertTrue(!trackSet.dropTrackWithHashCode(null));
+		
+	}
+	
 	/*//@Test
 	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException{
 

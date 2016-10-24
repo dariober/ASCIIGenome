@@ -2,6 +2,7 @@ package tracks;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,6 @@ public class Track {
 
 	private String gtfAttributeForName= null;
 	/** Should features on with same coords be squashed into a single one? */
-	// protected boolean squash= false;
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
 	private int gap= 1;
@@ -41,7 +41,6 @@ public class Track {
 	private int f_flag= 0;
 	private int F_flag= 4;
 	private int mapq= 0;
-	// private boolean printPileup= false;
 	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
 	
 	/* Min value of screen scores. Not to be confused with the y limit **/
@@ -205,7 +204,7 @@ public class Track {
 		return printMode;
 	}
 
-	protected void setPrintMode(PrintRawLine printMode) {
+	public void setPrintMode(PrintRawLine printMode) {
 		this.printMode = printMode;
 	}
 
@@ -289,9 +288,16 @@ public class Track {
 		this.id = id;
 	}
 
-	public void update() throws MalformedURLException, IOException, InvalidGenomicCoordsException, InvalidRecordException {
+	public void update() throws MalformedURLException, IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException {
 		// TODO Auto-generated method stub
-		
+	}
+
+	public String getSeqRegex() {
+		return null;
+	}
+
+	public void setSeqRegex(String seqRegex) {
+		//
 	}
 	
 }

@@ -19,6 +19,7 @@ import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
+import tracks.TrackSeqRegex;
 import tracks.TrackSet;
 
 /**
@@ -95,6 +96,11 @@ public class Main {
 		gch.add(new GenomicCoords(region, samSeqDict, windowSize, fasta));
 
 		TrackProcessor proc= new TrackProcessor(new TrackSet(inputFileList, gch.current()), gch);
+		if(proc.getGenomicCoordsHistory().current().getFastaFile() != null){
+			TrackSeqRegex re= new TrackSeqRegex(proc.getGenomicCoordsHistory().current());
+			proc.getTrackSet().add(re, "regex_seq_matches");;
+		}
+		
 		proc.setWindowSize(windowSize);
 		proc.setNoFormat(opts.getBoolean("noFormat"));
 		
@@ -150,6 +156,7 @@ public class Main {
 			if(itr.getInteractiveInputExitCode() == 0){
 				proc.iterateTracks();
 				Utils.printer("\n", proc.getSnapshotFile());
+				proc.setSnapshotFile(null);
 			}
 			proc.getGenomicCoordsHistory().resetWindowSize();
 			
@@ -168,6 +175,7 @@ public class Main {
 			console.flush();
 			
 			proc.iterateTracks();
+			proc.setSnapshotFile(null); // This is to prevent taking screenshots one after another. It's a hack and should be changed
 
 			// *** START processing interactive input
 			String cmdConcatInput= ""; // String like "zi && -F 16 && mapq 10"

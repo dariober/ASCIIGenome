@@ -477,13 +477,11 @@ public class CommandList {
 				+ "Features are filtered in/out according to the `filter` command. Applies only to annotation tracks");
 		cmdList.add(cmd);
 
-		//cmd= new CommandHelp();
-		//cmd.setName("windowSize"); cmd.setArgs("[INT = auto-fit terminal]"); cmd.inSection= Section.GENERAL; 
-		//cmd.setBriefDescription("Set window size to auto-fit the terminal or set size to INT characters. ");
-		//cmd.setAdditionalDescription("windowSize is useful to resize the view after you make the font of your terminal smaller or bigger. "
-		//		+ "For example, to temporarily view more tracks and larger genomic windows you can reduce the font size and "
-		//		+ "call windowSize to refit the width of the view to fit the terminal.");
-		//cmdList.add(cmd);
+//		cmd= new CommandHelp();
+//		cmd.setName("gcProfile"); cmd.setArgs(""); cmd.inSection= Section.DISPLAY; 
+//		cmd.setBriefDescription("Toggle display of GC content profile.");
+//		cmd.setAdditionalDescription("The GC content profile is shown if the reference fasta sequence is available.");
+//		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
 		cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
@@ -657,12 +655,12 @@ public class CommandList {
 		paramList.add("-");
 		paramList.add("p");
 		paramList.add("n");
-		// paramList.add("windowSize");
 		paramList.add("next");
 		paramList.add("next_start");
 		paramList.add("find_first");
 		paramList.add("find_all");
 		paramList.add("seqRegex");
+		// paramList.add("gcProfile");
 		paramList.add("filter");
 		paramList.add("gffNameAttr");
 		paramList.add("squash");

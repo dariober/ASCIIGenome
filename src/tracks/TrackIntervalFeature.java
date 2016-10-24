@@ -14,7 +14,7 @@ import samTextViewer.Utils;
 
 public class TrackIntervalFeature extends Track {
  
-	private List<IntervalFeature> intervalFeatureList= new ArrayList<IntervalFeature>();  
+	protected List<IntervalFeature> intervalFeatureList= new ArrayList<IntervalFeature>();  
 	/**For GTF/GFF data: Use this attribute to get the feature names 
 	 * */
 	protected IntervalFeatureSet intervalFeatureSet;
@@ -26,17 +26,16 @@ public class TrackIntervalFeature extends Track {
 		this.setFilename(filename);
 		this.intervalFeatureSet= new IntervalFeatureSet(filename);
 		this.update();
+		
 	}
 	
-	public TrackIntervalFeature(IntervalFeatureSet intervalFeatureSet, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException{
-		this.setGc(gc);
-		this.intervalFeatureSet= intervalFeatureSet;
-		this.update();
+	protected TrackIntervalFeature(GenomicCoords gc){
+		
 	}
 	
 	/* M e t h o d s */
 	
-	public void update() throws IOException, InvalidGenomicCoordsException{
+	public void update() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		this.intervalFeatureList = this.intervalFeatureSet.getFeaturesInInterval(
 				this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
 		for(IntervalFeature ift : intervalFeatureList){
@@ -79,6 +78,7 @@ public class TrackIntervalFeature extends Track {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 		return StringUtils.join(printable, "\n");
 	}
 	
@@ -263,10 +263,24 @@ public class TrackIntervalFeature extends Track {
 		return sb.toString(); // NB: Leave last trailing /n
 	}
 
-	protected IntervalFeatureSet getIntervalFeatureSet() { return intervalFeatureSet; }
-
-	protected void setIntervalFeatureSet(IntervalFeatureSet intervalFeatureSet2) {
-		
+	protected IntervalFeatureSet getIntervalFeatureSet() { 
+		return intervalFeatureSet; 
 	}
+
+	protected List<IntervalFeature> getIntervalFeatureList() {
+		return intervalFeatureList;
+	}
+
+	protected void setIntervalFeatureList(List<IntervalFeature> intervalFeatureList) {
+		this.intervalFeatureList = intervalFeatureList;
+	}
+
+	protected void setIntervalFeatureSet(IntervalFeatureSet intervalFeatureSet) {
+		this.intervalFeatureSet = intervalFeatureSet;
+	}
+
+	//protected void setIntervalFeatureSet(IntervalFeatureSet intervalFeatureSet2) {
+		//
+	// }
 
 }
