@@ -18,6 +18,8 @@ public class TrackIntervalFeature extends Track {
 	/**For GTF/GFF data: Use this attribute to get the feature names 
 	 * */
 	protected IntervalFeatureSet intervalFeatureSet;
+	protected String hideRegex= "^$";
+	protected String showRegex= ".*";
 	
 	/* C o n s t r u c t o r */
 
@@ -125,6 +127,11 @@ public class TrackIntervalFeature extends Track {
 	
 	@Override
 	public String getTitle(){
+		
+		if(this.isHideTitle()){
+			return "";
+		}
+		
 		String sq= "";
 		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.SQUASHED)){
 			sq= "; squashed";

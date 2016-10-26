@@ -2,8 +2,11 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -374,6 +377,42 @@ public class TrackSet {
         }
 	}
 
+	public void setHideTitleForRegex(List<String> tokens) throws InvalidCommandLineException {
+
+		// MEMO of subcommand syntax:
+		// 0 hideTitle
+		// 1 Regex
+		
+		if(tokens.size() == 2 && tokens.get(1).equals("/hide_all/")){
+			for(Track tr : this.getTrackList()){
+				tr.setHideTitle(true);
+			}
+			return;
+		}
+		if(tokens.size() == 2 && tokens.get(1).equals("/show_all/")){
+			for(Track tr : this.getTrackList()){
+				tr.setHideTitle(false);
+			}
+			return;
+		}		
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(tokens.size() >= 2){
+            trackNameRegex= tokens.subList(1, tokens.size());
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+			if(tr.isHideTitle()){ // Invert setting
+				tr.setHideTitle(false);
+			} else {
+				tr.setHideTitle(true);
+			}
+        }
+	}
+	
 	/*
 	public void setPrintPileupForRegex(List<String> tokens) throws InvalidCommandLineException {
 
@@ -776,7 +815,12 @@ public class TrackSet {
 	 * @throws InvalidCommandLineException 
 	 * */
 	public void orderTracks(List<String> newOrder) throws InvalidCommandLineException {
-
+	
+		if(newOrder.size() == 0){
+			this.sortTracksByTagName();
+			return;
+		}
+		
 		// Create a new list that will have the new order
 		List<Track> newTrackList= new ArrayList<Track>();
 		
@@ -810,6 +854,16 @@ public class TrackSet {
 		
 		// Replace old with new hashmap
 		this.trackList= newTrackList;
+	}
+	
+	private void sortTracksByTagName(){
+		
+		Collections.sort(this.trackList, new Comparator<Track>() {
+		    @Override
+		    public int compare(Track o1, Track o2) {
+		        return o1.getTrackTag().compareTo(o2.getTrackTag());
+		    }
+		});
 	}
 	
 	/** Simple method to get list of track tags
@@ -1023,6 +1077,22 @@ public class TrackSet {
 			}
         }
 	}
+	
+	/** Call the update method for all tracks in trackset. Updating can be time
+	 * consuming especially for tracks associated to bam files. But be careful when 
+	 * avoiding updating as it can lead to catastrophic out of sync data. 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 * @throws MalformedURLException */
+//	public void setGenomicCoordsAndUpdateTracks(GenomicCoords gc) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+//		for(Track tr : this.getTrackList()){
+//			tr.setGc(gc);
+//			tr.update();
+//		}
+//	}
 	
 	@Override
 	/** For debugging and convenience only. This method not to be used for seriuous stuff. 

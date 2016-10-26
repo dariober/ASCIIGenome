@@ -58,6 +58,11 @@ public class TrackReads extends Track{
 	
 	public void update() throws MalformedURLException{
 		
+//		if(this.isSkipUpdate()){
+//			System.err.println(this.getTrackTag() + " not updated");
+//			return;
+//		}
+		
 		this.readStack= new ArrayList<List<TextRead>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
 
@@ -245,6 +250,11 @@ public class TrackReads extends Track{
 	
 	@Override
 	public String getTitle(){
+		
+		if(this.isHideTitle()){
+			return "";
+		}
+		
 		String title= this.getTrackTag() 
 				+ "; -F" + this.get_F_flag() 
 				+ " -f" + this.get_f_flag() 

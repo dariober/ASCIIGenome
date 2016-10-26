@@ -454,6 +454,18 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
+		cmd.setName("hideTitle"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Toggle the display of the title line matched by track_regex.");
+		cmd.setAdditionalDescription("Use /hide_all/ and /show_all/ to hide all tracks or show all tracks instead "
+				+ "of toggling their mode. Examples:\n"
+				+ "```\n"
+				+ "hideTitle~~~~~~~~~~~~-> Toggle all tracks, same as hideTitle .*\n"
+				+ "hideTitle~bam~bed~~~~-> Toggle all tracks matched by 'bam' or 'bed'\n"
+				+ "hideTitle~/hide_all/~-> Hide all tracks\n"
+				+ "```");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
 		cmd.setName("dataCol"); cmd.setArgs("[index = 4] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Select data column for bedgraph tracks containing regex. ");
 		cmd.setAdditionalDescription("index: 1-based column index. This command applies only to "
@@ -521,14 +533,15 @@ public class CommandList {
 		
 		cmd= new CommandHelp();
 		cmd.setName("orderTracks"); cmd.setArgs("[track_regex]..."); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("Reorder tracks according to the list of regexes.");
+		cmd.setBriefDescription("Reorder tracks according to the list of regexes or sort by name.");
 		cmd.setAdditionalDescription("Not all the tracks need to be listed, the missing ones "
-				+ "follow the listed ones in unchanged order.\n"
+				+ "follow the listed ones in unchanged order. Without arguments sort track by tag name.\n"
 				+ "For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]`:\n\n"
 				+ "```\n"
-				+ "orderTracks #2 #1~~~new order: [hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]\n"
-				+ "orderTracks bam bed~new order: [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]\n"
-				+ "```\n");
+				+ "orderTracks #2 #1~~~new order:~[hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]\n"
+				+ "orderTracks bam bed~new order:~[hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]\n"
+				+ "orderTracks~~~~~~~~~sort by tag~[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]\n"
+				+ "```");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
@@ -668,6 +681,7 @@ public class CommandList {
 		paramList.add("gap");
 		paramList.add("trackHeight");
 		paramList.add("colorTrack");
+		paramList.add("hideTitle");
 		paramList.add("ylim");
 		paramList.add("dataCol");
 		paramList.add("print");

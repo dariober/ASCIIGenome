@@ -47,7 +47,7 @@ public class TrackProcessor {
 			track.setNoFormat(this.noFormat);
 
 			track.setGc(this.genomicCoordsHistory.current());
-			if(track.getyMaxLines() > 0){
+			if(track.getyMaxLines() > 0 && !track.isHideTrack()){
 				track.update();
 				Utils.printer(track.getTitle(), this.snapshotFile);
 				Utils.printer(track.printToScreen() + "\n", this.snapshotFile);

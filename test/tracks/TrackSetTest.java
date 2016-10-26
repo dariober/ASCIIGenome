@@ -138,6 +138,11 @@ public class TrackSetTest {
 		ts.orderTracks(newOrder);
 		assertEquals("foo.txt#2", ts.getTrackTags().get(0));
 		assertEquals("bla.gz#3", ts.getTrackTags().get(1));
+		
+		ts.orderTracks(new ArrayList<String>());
+		assertEquals("bla.gz#3", ts.getTrackTags().get(0));
+		assertEquals("foo.gz#1", ts.getTrackTags().get(1));
+
 	}
 	
 	@Test

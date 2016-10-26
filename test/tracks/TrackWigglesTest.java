@@ -183,16 +183,16 @@ public class TrackWigglesTest {
 	@Test
 	/** Snippet to extract totalCount from TDF, useful for normalizing signal. 
 	 * */
-	public void getAttributesFromTDF(){
-		
-		String path= "test_data/ear045.oxBS.actb.tdf";
-		ResourceLocator resourceLocator= new ResourceLocator(path);
-		
-		TDFReader reader= new TDFReader(resourceLocator);
-		TDFGroup rootGroup= reader.getGroup("/");
-		System.out.println(rootGroup.getAttribute("totalCount"));
-		assertEquals("63476", rootGroup.getAttribute("totalCount"));
-		// System.out.println(rootGroup.getAttributeNames());
+	public void canNomrmalizeTDFtoRPM() throws InvalidGenomicCoordsException, IOException, InvalidRecordException{
+
+		System.out.println("START");
+		GenomicCoords gc= new GenomicCoords("chr7", 5540000, 5570000, null, 100, null);
+		TrackWiggles tw= new TrackWiggles("test_data/ear045.oxBS.actb.tdf", gc, 4);
+		Double raw= tw.getScreenScores().get(0);
+		tw.setRpm(true);
+		tw.update();
+		Double rpm= tw.getScreenScores().get(0);
+		assertTrue(rpm > raw);
 	}
 		
 }

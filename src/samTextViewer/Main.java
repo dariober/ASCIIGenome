@@ -168,7 +168,6 @@ public class Main {
 
 		/* Set up done, start processing */
 		/* ============================= */
-		// final boolean nonInteractive= opts.getBoolean("nonInteractive");
 		while(true){ 
 			
 			console.clearScreen();

@@ -67,6 +67,11 @@ public class TrackCoverage extends Track {
 	
 	public void update() throws IOException{
 		
+//		if(this.isSkipUpdate()){
+//			System.err.println(this.getTrackTag() + " not updated");
+//			return;
+//		}
+		
 		this.screenLocusInfoList= new ArrayList<ScreenLocusInfo>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
 			
@@ -155,7 +160,11 @@ public class TrackCoverage extends Track {
 
 	@Override
 	public String getTitle(){
-				
+		
+		if(this.isHideTitle()){
+			return "";
+		}
+		
 		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
 		String rpmTag= this.isRpm() ? "; rpm" : "";
 		String xtitle= this.getTrackTag() 

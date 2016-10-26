@@ -21,7 +21,7 @@ import sortBgzipIndex.MakeTabixIndex;
 
 public class TrackSeqRegex extends TrackIntervalFeature {
 
-	private String seqRegex; // Match nothing
+	private String seqRegex= "a^"; // Match nothing
 	final private String noRe= "a^";
 	
 	
@@ -31,7 +31,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		this.setGc(gc);
 		this.setFilename(gc.getFastaFile());
 		this.setTrackTag(new File(gc.getFastaFile()).getName());
-		this.setyMaxLines(0);
+		this.setHideTrack(true);
 	} 
 	
 	@Override
@@ -128,9 +128,9 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		
 		TrackIntervalFeature regexMatchTrack = new TrackIntervalFeature(regexMatchBgzip.getAbsolutePath(), this.getGc());
 		regexMatchBgzip.delete();
-		regexMatchIndex.deleteOnExit();
+		regexMatchIndex.delete();
 		
-		this.intervalFeatureSet= regexMatchTrack.getIntervalFeatureSet();
+		this.intervalFeatureSet= regexMatchTrack.getIntervalFeatureSet();		
 		this.intervalFeatureList= regexMatchTrack.getIntervalFeatureList(); 
 	}
 
@@ -149,11 +149,14 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 	}
 
 	@Override
-	public void setSeqRegex(String seqRegex) {
-		if(seqRegex.isEmpty()){
-			seqRegex= noRe; // Match nothing
+	public void setSeqRegex(String regex) {
+		if(regex.isEmpty()){
+			this.setHideTrack(true);
+			regex= noRe; // Match nothing
+		} else {
+			this.setHideTrack(false);
 		}
-		this.seqRegex = seqRegex;
+		this.seqRegex = regex;
 	}
 
 }

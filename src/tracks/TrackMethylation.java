@@ -179,6 +179,10 @@ public class TrackMethylation extends Track {
     
     @Override
     public String getTitle(){
+    
+		if(this.isHideTitle()){
+			return "";
+		}
 
         double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
         

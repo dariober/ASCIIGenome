@@ -42,7 +42,13 @@ public class Track {
 	private int F_flag= 4;
 	private int mapq= 0;
 	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
+	private boolean hideTrack= false; 
+	private boolean hideTitle= false;
 	
+	/**Use with care: if true the .update() is effectively not called.
+	 * Useful to save time with methods that do not change the genomic coordinates or the data, E.g.
+	 * colorTrack.
+	 * */
 	/* Min value of screen scores. Not to be confused with the y limit **/
 	public double getMinScreenScores(){
 		Double ymin= Double.NaN;
@@ -145,10 +151,10 @@ public class Track {
 	public boolean isNoFormat() { return noFormat; }
 	public void setNoFormat(boolean noFormat) { this.noFormat = noFormat; }
 
-	public double getYLimitMin() { return yLimitMin;}
+	public Double getYLimitMin() { return yLimitMin;}
 	public void setYLimitMin(double ymin) { this.yLimitMin = ymin;}
 
-	public double getYLimitMax() { return yLimitMax; }
+	public Double getYLimitMax() { return yLimitMax; }
 	public void setYLimitMax(double ymax) { this.yLimitMax = ymax; }
 
 	/** Return filter making sure the AlignedFilter to discard unmapped is set.
@@ -298,6 +304,22 @@ public class Track {
 
 	public void setSeqRegex(String seqRegex) {
 		//
+	}
+
+	public boolean isHideTrack() {
+		return hideTrack;
+	}
+
+	protected void setHideTrack(boolean hideTrack) {
+		this.hideTrack = hideTrack;
+	}
+
+	public boolean isHideTitle() {
+		return hideTitle;
+	}
+
+	public void setHideTitle(boolean hideTitle) {
+		this.hideTitle = hideTitle;
 	}
 	
 }

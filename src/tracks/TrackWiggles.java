@@ -8,7 +8,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
+import org.broad.igv.tdf.TDFGroup;
+import org.broad.igv.tdf.TDFReader;
 import org.broad.igv.tdf.TDFUtils;
+import org.broad.igv.util.ResourceLocator;
 
 import utils.IOUtils;
 import utils.BedLine;
@@ -35,6 +38,7 @@ public class TrackWiggles extends Track {
 	private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList;
 	private int bdgDataColIdx= 4; 
 	private BBFileReader bigWigReader;
+	
 	
 	/* C o n s t r u c t o r s */
 
@@ -76,16 +80,8 @@ public class TrackWiggles extends Track {
 			bigWigToScores(this.bigWigReader);
 			
 		} else if(Utils.getFileTypeFromName(this.getFilename()).equals(TrackFormat.TDF)){
-
-			this.screenWiggleLocusInfoList= 
-					TDFUtils.tdfRangeToScreen(this.getFilename(), this.getGc().getChrom(), 
-							this.getGc().getFrom(), this.getGc().getTo(), this.getGc().getMapping());
 			
-			ArrayList<Double> screenScores= new ArrayList<Double>();
-			for(ScreenWiggleLocusInfo x : screenWiggleLocusInfoList){
-				screenScores.add((double)x.getMeanScore());
-			}
-			this.setScreenScores(screenScores);	
+			this.updateTDF();
 			
 		} else if(Utils.getFileTypeFromName(this.getFilename()).equals(TrackFormat.BEDGRAPH)){
 
@@ -106,6 +102,23 @@ public class TrackWiggles extends Track {
 		this.setYLimitMax(this.getYLimitMax());
 	}
 
+	private void updateTDF(){
+		
+		this.screenWiggleLocusInfoList= 
+				TDFUtils.tdfRangeToScreen(this.getFilename(), this.getGc().getChrom(), 
+						this.getGc().getFrom(), this.getGc().getTo(), this.getGc().getMapping());
+		
+		ArrayList<Double> screenScores= new ArrayList<Double>();
+		for(ScreenWiggleLocusInfo x : screenWiggleLocusInfoList){
+			screenScores.add((double)x.getMeanScore());
+		}
+		if(this.isRpm()){
+			screenScores= this.normalizeToRpm(screenScores);
+		}
+		this.setScreenScores(screenScores);	
+
+	}
+	
 	@Override
 	public String printToScreen(){
 	
@@ -176,10 +189,17 @@ public class TrackWiggles extends Track {
 	@Override
 	public String getTitle(){
 
+		if(this.isHideTitle()){
+			return "";
+		}
+		
 		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
 		
+		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
+		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
+		
 		String xtitle= this.getTrackTag() 
-				+ "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
+				+ "; ylim[" + ymin + " " + ymax + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]\n";
 		return this.formatTitle(xtitle);
 	}
@@ -274,14 +294,40 @@ public class TrackWiggles extends Track {
 		this.setScreenScores(screenScores);
 		return;
 	}
+	
+	private ArrayList<Double> normalizeToRpm(ArrayList<Double> yValues){
+		ArrayList<Double> rpmed= new ArrayList<Double>();
+		String x= this.getAttributesFromTDF("totalCount");
+		if(x == null){
+			System.err.println("Warning: Cannot get total counts for " + this.getFilename());
+			return yValues;
+		}
+		Integer totalCount= Integer.parseInt(x);
+		for(int i= 0; i < yValues.size(); i++){
+			rpmed.add(yValues.get(i) / totalCount * 1000000.0);
+		}
+		return rpmed;
+	}
+	
+	private String getAttributesFromTDF(String attr){
 		
+		String path= this.getFilename();
+		
+		try{
+			ResourceLocator resourceLocator= new ResourceLocator(path);
+			TDFReader reader= new TDFReader(resourceLocator);
+			TDFGroup rootGroup= reader.getGroup("/");
+			return rootGroup.getAttribute(attr);
+		} catch(Exception e){
+			return null;
+		}
+	}
+	
+	
 	/*   S e t t e r s   and   G e t t e r s */
 	
-	// public double getScorePerDot() {
-	// 	return scorePerDot;
-	//}
-
 	protected int getBdgDataColIdx() { return bdgDataColIdx; }
 	protected void setBdgDataColIdx(int bdgDataColIdx) { this.bdgDataColIdx = bdgDataColIdx; }
-	
+
+
 }

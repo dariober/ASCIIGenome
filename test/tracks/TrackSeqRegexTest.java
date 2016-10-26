@@ -53,6 +53,13 @@ public class TrackSeqRegexTest {
 		
 		// Test title
 		assertTrue(!trackSeqRegex.getTitle().isEmpty());
+		
+		// FIXME: Filters
+		// trackSeqRegex.setHideRegex("FOO");
+		// trackSeqRegex.update();
+		// System.out.println(trackSeqRegex.getTitle().contains("FOO"));
+		// assertTrue(trackSeqRegex.getTitle().contains("FOO"));
+		
 	}
 	
 	@Test
