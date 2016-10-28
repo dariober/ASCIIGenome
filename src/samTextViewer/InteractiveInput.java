@@ -1,5 +1,6 @@
 package samTextViewer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -10,6 +11,7 @@ import com.google.common.base.Splitter;
 
 import commandHelp.CommandList;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMSequenceDictionary;
 
 /** Class to process input from console
@@ -18,14 +20,16 @@ public class InteractiveInput {
 
 	private boolean nonInteractive;
 	private int interactiveInputExitCode= 0;
-	
+	private List<String> cmdHistory= new ArrayList<String>();
 	public InteractiveInput(){
 		
 	}
 	
 	/** Parse the input list of commands to print information or modify the input TrackProcessor.  
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc){
+	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException{
 
 		// cmdInputList: List of individual commands in tokens to be issued. 
 		// E.g.: [ ["zi"], 
@@ -35,7 +39,7 @@ public class InteractiveInput {
 		// reset interactiveInputExitCode = 1 (or else other than 0) so that console input is asked again. Of course, what is executed is not 
 		// rolled back.
 		List<List<String>> cmdInputList= new ArrayList<List<String>>();
-
+		
 		for(String cmd : Splitter.on("&&").trimResults().omitEmptyStrings().split(cmdConcatInput)){
 			cmdInputList.add(Utils.tokenize(cmd, " "));
 		}
@@ -65,6 +69,10 @@ public class InteractiveInput {
 					}
 					this.interactiveInputExitCode= 1;
 
+				} else if(cmdInput.get(0).equals("cmdHistory")){
+					Utils.printer(this.cmdHistoryToString() + "\n", proc.getSnapshotFile());
+					this.interactiveInputExitCode= 1;
+					
 				} else if(cmdInput.get(0).equals("showGenome")) {
 					System.out.println(Utils.printSamSeqDict(proc.getGenomicCoordsHistory().current().getSamSeqDict(), 30));
 					this.interactiveInputExitCode= 1;
@@ -90,20 +98,20 @@ public class InteractiveInput {
 						// FIXME: You shouldn't join the list of args back to string. You should refactor parseConsoleInput! 
 						String newRegion= Utils.parseConsoleInput(Joiner.on(" ").join(cmdInput), proc.getGenomicCoordsHistory().current()).trim();
 						proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, samSeqDict, windowSize, fasta));
-						// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+						proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 						
 				} else if(cmdInput.get(0).equals("goto") || cmdInput.get(0).startsWith(":")){
 					String reg= Joiner.on(" ").join(cmdInput).replaceFirst("goto|:", "").trim();
 					proc.getGenomicCoordsHistory().add(new GenomicCoords(reg, samSeqDict, windowSize, fasta));
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if (cmdInput.get(0).equals("p")) {
 					proc.getGenomicCoordsHistory().previous();
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if (cmdInput.get(0).equals("n")) {
 					proc.getGenomicCoordsHistory().next();
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("zo")){
 					int nz= Utils.parseZoom(Joiner.on(" ").join(cmdInput), 1);
@@ -112,7 +120,7 @@ public class InteractiveInput {
 						gc.zoomOut();
 					}
 					proc.getGenomicCoordsHistory().add(gc);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("zi")){
 					int nz= Utils.parseZoom(Joiner.on(" ").join(cmdInput), 1);
@@ -121,20 +129,20 @@ public class InteractiveInput {
 						gc.zoomIn();
 					}
 					proc.getGenomicCoordsHistory().add(gc);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				// * These commands change the Tracks but do not touch the GenomicCoordinates.
 				} else if(cmdInput.get(0).equals("dataCol")){
 					proc.getTrackSet().setDataColForRegex(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("ylim") && cmdInput.size() > 1){
 					proc.getTrackSet().setTrackYlimitsForRegex(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("trackHeight") && cmdInput.size() > 1){
 					proc.getTrackSet().setTrackHeightForRegex(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if((cmdInput.get(0).equals("colorTrack") || cmdInput.get(0).equals("colourTrack")) && cmdInput.size() > 1){
 					proc.getTrackSet().setTrackColourForRegex(cmdInput); 
@@ -149,19 +157,19 @@ public class InteractiveInput {
 						continue;
 					}
 					proc.getTrackSet().setBisulfiteModeForRegex(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals("merge")){
 					proc.getTrackSet().setFeatureDisplayModeForRegex(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if (cmdInput.get(0).equals("gap")){
 					proc.getTrackSet().setFeatureGapForRegex(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("gffNameAttr")) {
 					proc.getTrackSet().setAttributeForGFFName(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("addTracks") && cmdInput.size() > 1){
 					cmdInput.remove(0);
@@ -189,23 +197,23 @@ public class InteractiveInput {
 
 				} else if(cmdInput.get(0).equals("filter")){
 					proc.getTrackSet().setFilterForTrackIntervalFeature(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("rpm")) {
 					proc.getTrackSet().setRpmForRegex(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("-F")) {               //
 					proc.getTrackSet().setFilterFlagForRegex(cmdInput); //	
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());          	    //
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());          	    //
 																		//
 				} else if(cmdInput.get(0).equals("-f")) {       		//
 					proc.getTrackSet().setFilterFlagForRegex(cmdInput); //  -F -f mapq are processed by the same method!
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());					//
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());					//
 																		//
 				} else if(cmdInput.get(0).equals("mapq")) {     		//
 					proc.getTrackSet().setFilterFlagForRegex(cmdInput); //
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());					//	
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());					//	
 
 				// * These commands change both the Tracks and the GenomicCoordinates
 				} else if(cmdInput.get(0).equals("next_start") || cmdInput.get(0).equals("next")){
@@ -219,7 +227,7 @@ public class InteractiveInput {
 					} else {
 						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, 5.0));
 					}
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("find_first") || 
 						  cmdInput.get(0).equals("find_all")) {  
@@ -235,7 +243,7 @@ public class InteractiveInput {
 					// Determine whether we match first or all
 					boolean all= (cmdInput.get(0).equals("find_all")) ? true : false;
 					proc.getGenomicCoordsHistory().add(proc.getTrackSet().findNextMatchOnTrack(cmdInput.get(1), cmdInput.get(2), gc, all));
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if (cmdInput.get(0).equals("seqRegex")){
 					if( proc.getGenomicCoordsHistory().current().getFastaFile() == null ){
@@ -258,7 +266,7 @@ public class InteractiveInput {
 						}
 					}
 					proc.getTrackSet().setSeqRegexForTracks(seqRegex);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
+					proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("bookmark")){
 					// TODO
@@ -285,11 +293,34 @@ public class InteractiveInput {
 		return proc;
 	}
 
+	private String cmdHistoryToString() {
+		List<String> cmd= new ArrayList<String>();
+		int i = 1;
+		for(String x : cmdHistory){
+			cmd.add(i + ": \t" + x);
+			i++;
+		}
+		List<String> cmdTab= Utils.tabulateList(cmd);
+		String tab= "";
+		for(String x : cmdTab){
+			tab += (x + "\n");
+		}
+		return tab.trim();
+	}
+
 	public int getInteractiveInputExitCode() {
 		return interactiveInputExitCode;
 	}
 
 	public void setInteractiveInputExitCode(int exitCode) {
 		this.interactiveInputExitCode= exitCode;
+	}
+
+	protected List<String> getCmdHistory() {
+		return cmdHistory;
+	}
+
+	protected void setCmdHistory(List<String> cmdHistory) {
+		this.cmdHistory = cmdHistory;
 	}
 }

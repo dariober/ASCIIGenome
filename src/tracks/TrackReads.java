@@ -12,6 +12,7 @@ import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
+import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
@@ -41,8 +42,9 @@ public class TrackReads extends Track{
 	 * @bs Should the track be displayed as BS-Seq data
 	 * @param maxReadsStack Accumulate at most this many reads.
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	public TrackReads(String bam, GenomicCoords gc) throws IOException{
+	public TrackReads(String bam, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException{
 
 		if(!Utils.bamHasIndex(bam)){
 			System.err.println("\nAlignment file " + bam + " has no index.\n");
@@ -56,7 +58,7 @@ public class TrackReads extends Track{
 	
 	/* M e t h o d s */
 	
-	public void update() throws MalformedURLException{
+	public void update() throws InvalidGenomicCoordsException, IOException{
 		
 //		if(this.isSkipUpdate()){
 //			System.err.println(this.getTrackTag() + " not updated");
@@ -104,9 +106,10 @@ public class TrackReads extends Track{
 	}
 	
 	/** 
-	 * Printable track on screen. This is what should be called by Main */
+	 * Printable track on screen. This is what should be called by Main 
+	 * @throws InvalidGenomicCoordsException */
 	@Override
-	public String printToScreen(){
+	public String printToScreen() throws InvalidGenomicCoordsException{
 		
 		int yMaxLines= (this.getyMaxLines() < 0) ? Integer.MAX_VALUE : this.getyMaxLines();;
 		
@@ -143,8 +146,10 @@ public class TrackReads extends Track{
 	 * Output, each line is a list of TextRead:
      [AAAAAAAAAAAA TTTTTTTTTTT  GGGGGGGGGGG]       
 	 [ CCCCCCCCCCCC                     AAAAAAAA]
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<List<TextRead>> stackReads(List<TextRead> textReads){
+	private List<List<TextRead>> stackReads(List<TextRead> textReads) throws InvalidGenomicCoordsException, IOException{
 		
 		List<List<TextRead>> listOfLines= new ArrayList<List<TextRead>>();
 		if(textReads.size() == 0){
@@ -186,8 +191,9 @@ public class TrackReads extends Track{
 	 * @param noFormat Do not format reads.
 	 * @return
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private String linePrinter(List<TextRead> textReads, boolean bs, boolean noFormat, boolean withReadName) throws IOException{
+	private String linePrinter(List<TextRead> textReads, boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException{
 		StringBuilder sb= new StringBuilder();
 
 		int curPos= 0; // Position on the line, needed to pad with blanks btw reads.

@@ -157,15 +157,17 @@ public class TrackWigglesTest {
 	public void canPrintFromTdf() throws IOException, InvalidGenomicCoordsException, InvalidRecordException{
 
 		GenomicCoords gc= new GenomicCoords("chr8", 1, 100, null, 100, null);
+		int userWindowSize= gc.getUserWindowSize();
 		String tdfFile= "test_data/hg18_var_sample.wig.v2.1.30.tdf";
 		List<ScreenWiggleLocusInfo> screenLocInfo = 
-		TDFUtils.tdfRangeToScreen(tdfFile, gc.getChrom(), gc.getFrom(), gc.getTo(), gc.getMapping());
+		TDFUtils.tdfRangeToScreen(tdfFile, gc.getChrom(), gc.getFrom(), gc.getTo(), gc.getMapping(userWindowSize));
 		// assertEquals(0.925, screenLocInfo.get(1).getMeanScore(), 0.1);
 
 	
 		gc= new GenomicCoords("chrM:1-16000", null, 100, null);
+		userWindowSize= gc.getUserWindowSize();
 		tdfFile= "/Volumes/My_Passport_for_Mac/tmp/rhh_hacat_0508-1406_FAIRE.tdf";
-		screenLocInfo = TDFUtils.tdfRangeToScreen(tdfFile, gc.getChrom(), gc.getFrom(), gc.getTo(), gc.getMapping());
+		screenLocInfo = TDFUtils.tdfRangeToScreen(tdfFile, gc.getChrom(), gc.getFrom(), gc.getTo(), gc.getMapping(userWindowSize));
 		int i= 1;
 		for(ScreenWiggleLocusInfo x : screenLocInfo){
 			//System.out.println(i + " " + x);

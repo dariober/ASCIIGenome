@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -46,17 +48,27 @@ public class MakeTabixIndex {
 	 * @throws ClassNotFoundException 
 	 * */
 	public MakeTabixIndex(String intab, File bgzfOut, TabixFormat fmt) throws IOException, InvalidRecordException, ClassNotFoundException, SQLException{
-
+		
+		File tmp = File.createTempFile("asciigenome", "makeTabixIndex.tmp.gz");
+		File tmpTbi= new File(tmp.getAbsolutePath() + ".tbi");
+		
 		try{
 			// Try to block compress and create index assuming the file is sorted
-			blockCompressAndIndex(intab, bgzfOut, fmt);
+			blockCompressAndIndex(intab, tmp, fmt);
 		} catch(IllegalArgumentException e){
 			// If intab is not sorted, sort it first. 
 			File sorted= File.createTempFile("asciigenome.", ".sorted.tmp");
 			sortByChromThenPos(intab, sorted, fmt);
-			blockCompressAndIndex(sorted.getAbsolutePath(), bgzfOut, fmt);
+			blockCompressAndIndex(sorted.getAbsolutePath(), tmp, fmt);
 			sorted.delete();
 		}
+		
+		// This renaming and the use of File tmp allows to block compress and index an inout file in place.
+		// Original intab file is overwritten of course!
+		tmp.renameTo(bgzfOut);
+		File bgzfOutTbi= new File(bgzfOut.getAbsolutePath() + ".tbi");
+		tmpTbi.renameTo(bgzfOutTbi);
+		
 	}
 
 	/**

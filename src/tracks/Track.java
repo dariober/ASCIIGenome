@@ -282,7 +282,7 @@ public class Track {
 		return new ArrayList<String>();
 	}
 	
-	public String getPrintableConsensusSequence() throws IOException{
+	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException{
 		return "";
 	}
 

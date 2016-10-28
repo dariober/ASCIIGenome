@@ -18,7 +18,7 @@ public class TrackProcessor {
 	private boolean noFormat= false;
 	private GenomicCoordsHistory genomicCoordsHistory; 
 	private String snapshotFile= null;
-	int windowSize= 160;
+	// int windowSize= 160;
 	
 	/* C O N S T R U C T O R S */
 	
@@ -38,34 +38,36 @@ public class TrackProcessor {
 
 	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException{
 		
-		if(this.genomicCoordsHistory.current().getChromIdeogram(20, this.noFormat) != null){
-			Utils.printer(this.genomicCoordsHistory.current().getChromIdeogram(20, this.noFormat) + "\n", this.snapshotFile);
+		GenomicCoords currentGC= this.genomicCoordsHistory.current();
+		
+		if(currentGC.getChromIdeogram(20, this.noFormat) != null){
+			Utils.printer(currentGC.getChromIdeogram(20, this.noFormat) + "\n", this.snapshotFile);
 		}			
 
 		for(Track track : trackSet.getTrackList()){
 			
 			track.setNoFormat(this.noFormat);
 
-			track.setGc(this.genomicCoordsHistory.current());
+			track.setGc(currentGC);
 			if(track.getyMaxLines() > 0 && !track.isHideTrack()){
-				track.update();
+				// track.update();
 				Utils.printer(track.getTitle(), this.snapshotFile);
 				Utils.printer(track.printToScreen() + "\n", this.snapshotFile);
 				Utils.printer(track.getPrintableConsensusSequence(), this.snapshotFile);
-				Utils.printer(track.printFeatures(this.windowSize), this.snapshotFile);
+				Utils.printer(track.printFeatures(currentGC.getUserWindowSize()), this.snapshotFile);
 			}
 		}
 
 		// Ruler and sequence
 		// ------------------
-		Utils.printer(this.genomicCoordsHistory.current().printableRefSeq(noFormat), snapshotFile);
-		String ruler= this.genomicCoordsHistory.current().printableRuler(10, noFormat);
-		Utils.printer(ruler.substring(0, ruler.length() <= windowSize ? ruler.length() : windowSize) + "\n", snapshotFile);
+		Utils.printer(currentGC.printableRefSeq(noFormat), snapshotFile);
+		String ruler= currentGC.printableRuler(10, noFormat);
+		Utils.printer(ruler + "\n", snapshotFile);
 
 		// Position, memory, etc
 		// ---------------------
-		String footer= this.genomicCoordsHistory.current().toString() + "; " + 
-				Math.rint(this.genomicCoordsHistory.current().getBpPerScreenColumn() * 10d)/10d + " bp/char; " + this.getMemoryStat();
+		String footer= currentGC.toString() + "; " + 
+				Math.rint(currentGC.getBpPerScreenColumn() * 10d)/10d + " bp/char; " + this.getMemoryStat();
 		if(!noFormat){
 			Utils.printer("\033[48;5;231;34m" + footer + "\033[48;5;231;30m; \n", this.snapshotFile);
 		} else {
@@ -117,11 +119,11 @@ public class TrackProcessor {
 		this.snapshotFile = snapshotFile;
 	}
 
-	protected int getWindowSize() {
-		return windowSize;
+	protected int getWindowSize() throws InvalidGenomicCoordsException, IOException {
+		return this.genomicCoordsHistory.current().getUserWindowSize();
 	}
 
-	protected void setWindowSize(int windowSize) {
-		this.windowSize = windowSize;
-	}
+//	protected void setWindowSize(int windowSize) {
+//		this.windowSize = windowSize;
+//	}
 }

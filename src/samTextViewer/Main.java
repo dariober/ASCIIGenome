@@ -96,12 +96,12 @@ public class Main {
 		gch.add(new GenomicCoords(region, samSeqDict, windowSize, fasta));
 
 		TrackProcessor proc= new TrackProcessor(new TrackSet(inputFileList, gch.current()), gch);
+
 		if(proc.getGenomicCoordsHistory().current().getFastaFile() != null){
 			TrackSeqRegex re= new TrackSeqRegex(proc.getGenomicCoordsHistory().current());
 			proc.getTrackSet().add(re, "regex_seq_matches");;
 		}
 		
-		proc.setWindowSize(windowSize);
 		proc.setNoFormat(opts.getBoolean("noFormat"));
 		
 		// Put here the previous command so that it is re-issued if no imput is given
@@ -138,7 +138,7 @@ public class Main {
 					proc.iterateTracks();
 					Utils.printer("\n", proc.getSnapshotFile());
 				}
-				proc.getGenomicCoordsHistory().resetWindowSize();
+				//proc.getGenomicCoordsHistory().resetWindowSize();
 			}
 			br.close();
 			System.exit(0);
@@ -158,7 +158,6 @@ public class Main {
 				Utils.printer("\n", proc.getSnapshotFile());
 				proc.setSnapshotFile(null);
 			}
-			proc.getGenomicCoordsHistory().resetWindowSize();
 			
 			if(opts.getBoolean("nonInteractive")){
 				System.out.print("\033[0m");
@@ -168,6 +167,7 @@ public class Main {
 
 		/* Set up done, start processing */
 		/* ============================= */
+		List<String> cmdHistory= new ArrayList<String>();
 		while(true){ 
 			
 			console.clearScreen();
@@ -178,26 +178,23 @@ public class Main {
 
 			// *** START processing interactive input
 			String cmdConcatInput= ""; // String like "zi && -F 16 && mapq 10"
-
 			InteractiveInput interactiveInput= new InteractiveInput();
 			interactiveInput.setInteractiveInputExitCode(9);
-
+			
 			while(interactiveInput.getInteractiveInputExitCode() != 0){
 				
 				console.setPrompt("[h] for help: ");
 				cmdConcatInput= console.readLine().trim();
-				
 				if (cmdConcatInput.isEmpty()){
 					// Repeat previous command
 					cmdConcatInput= currentCmdConcatInput;
 				}
-
+				cmdHistory.add(cmdConcatInput);
+				interactiveInput.setCmdHistory(cmdHistory);
 				proc= interactiveInput.processInput(cmdConcatInput, proc);
 				currentCmdConcatInput= cmdConcatInput;
 			}
 			// *** END processing interactive input 
-			
-			proc.getGenomicCoordsHistory().resetWindowSize();
 			
 		} // End while loop keep going until quit or if no interactive input set
 	}

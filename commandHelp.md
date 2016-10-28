@@ -43,6 +43,7 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
   - [trackHeight](#trackheight)
   - [ylim](#ylim)
   - [colorTrack](#colortrack)
+  - [hideTitle](#hidetitle)
   - [dataCol](#datacol)
   - [print](#print)
   - [printFull](#printfull)
@@ -58,6 +59,7 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
   - [addTracks](#addtracks)
   - [orderTracks](#ordertracks)
   - [history](#history)
+  - [cmdHistory](#cmdhistory)
   - [save](#save)
   - [q](#q)
   - [h](#h)
@@ -301,6 +303,17 @@ colorTrack light_blue ts.*gtf ts.*bam
 ```
 
 
+### hideTitle
+
+**Usage: hideTitle [track_regex = .*]...**
+
+Toggle the display of the title line matched by track_regex. Use /hide_all/ and /show_all/ to hide all tracks or show all tracks instead of toggling their mode. Examples:
+```
+hideTitle            -> Toggle all tracks, same as hideTitle .*
+hideTitle bam bed    -> Toggle all tracks matched by 'bam' or 'bed'
+hideTitle /hide_all/ -> Hide all tracks
+```
+
 ### dataCol
 
 **Usage: dataCol [index = 4] [track_regex = .*]...**
@@ -397,20 +410,26 @@ addTracks http://remote/host/peaks.bed
 
 **Usage: orderTracks [track_regex]...**
 
-Reorder tracks according to the list of regexes. Not all the tracks need to be listed, the missing ones follow the listed ones in unchanged order.
+Reorder tracks according to the list of regexes or sort by name. Not all the tracks need to be listed, the missing ones follow the listed ones in unchanged order. Without arguments sort track by tag name.
 For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]`:
 
 ```
 orderTracks #2 #1   new order: [hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]
 orderTracks bam bed new order: [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]
+orderTracks         sort by tag [hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]
 ```
-
 
 ### history
 
 **Usage: history**
 
 Show the list of visited positions. 
+
+### cmdHistory
+
+**Usage: cmdHistory**
+
+Show the list of executed commands. 
 
 ### save
 

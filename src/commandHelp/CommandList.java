@@ -551,6 +551,12 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
+		cmd.setName("cmdHistory"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Show the list of executed commands.");
+		cmd.setAdditionalDescription("");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
 		cmd.setName("rpm"); cmd.setArgs("[track_regex = .*]"); cmd.inSection= Section.ALIGNMENTS; 
 		cmd.setBriefDescription("Toggle read coverage from raw count to reads per million.");
 		cmd.setAdditionalDescription("");
@@ -691,6 +697,7 @@ public class CommandList {
 		paramList.add("addTracks");
 		paramList.add("orderTracks");
 		paramList.add("history");
+		paramList.add("cmdHistory");
 		paramList.add("rpm");
 		// paramList.add("pileup");
 		paramList.add("-f");

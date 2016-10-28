@@ -51,6 +51,7 @@ public class TrackSet {
 				
 				/* Coverage track */
 				TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
+
 				trackCoverage.setId(this.getMaxTrackId() + 1);
 				trackCoverage.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId() + 1));
 				this.trackList.add(trackCoverage);
@@ -131,7 +132,7 @@ public class TrackSet {
 		}
 	}
 	
-	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidRecordException{
+	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
 		
 		int idForTrack= this.getMaxTrackId() + 1;
 		String trackId= new File(sourceName).getName() + "#" + idForTrack;
@@ -153,7 +154,7 @@ public class TrackSet {
 		this.trackList.add(tif);
 	}
 	
-	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException{
+	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException{
 
 		int idForTrack= this.getMaxTrackId() + 1;
 		
@@ -642,9 +643,9 @@ public class TrackSet {
 		}
 		TrackIntervalFeature tif= (TrackIntervalFeature) tr;
 		if(slop < 0){
-			return tif.getIntervalFeatureSet().coordsOfNextFeature(currentGc);
+			return tif.coordsOfNextFeature(currentGc);
 		} else {
-			GenomicCoords featureGc= tif.getIntervalFeatureSet().startEndOfNextFeature(currentGc);
+			GenomicCoords featureGc= tif.startEndOfNextFeature(currentGc);
 			if(featureGc.equalCoords(currentGc)){ // No "next feature" found.
 				return currentGc;
 			} else {
@@ -756,9 +757,9 @@ public class TrackSet {
 		System.err.println("Matching on " + tif.getTrackTag());
 		
 		if(all){
-			return tif.getIntervalFeatureSet().genomicCoordsAllChromMatchInGenome(query, currentGc);
+			return tif.genomicCoordsAllChromMatchInGenome(query, currentGc);
 		} else {
-			return tif.getIntervalFeatureSet().findNextMatch(currentGc, query);
+			return tif.findNextMatch(currentGc, query);
 		}
 	}
 
@@ -946,52 +947,6 @@ public class TrackSet {
 		return trackHeightForRegex;
 	}
 	
-	/*
-	public void addBookmark_IN_PREP(GenomicCoords gc, String name) throws IOException, InvalidGenomicCoordsException {
-		
-		String raw= (gc.getChrom() + "\t" + (gc.getFrom()-1) + "\t" + gc.getTo() + "\t" + name).trim();
-		
-		IntervalFeature interval= new IntervalFeature(raw, TrackFormat.BED);
-		// This is the map of intervalFeatures that will be used to construct the bookamrk track.
-		TrackIntervalFeature bookmarkTrack;
-		if(!this.trackSet.containsKey(TrackSet.BOOKMARK_TAG)){
-		
-			List<IntervalFeature> xl= new ArrayList<IntervalFeature>();
-			xl.add(interval);
-			Map<String, List<IntervalFeature>> map= new HashMap<String, List<IntervalFeature>>();
-			map.put(gc.getChrom(), xl); 
-			bookmarkTrack = new TrackIntervalFeature(new IntervalFeatureSet(map, TrackFormat.BED), gc);
-			bookmarkTrack.setFileTag(TrackSet.BOOKMARK_TAG);
-		
-		} else {
-			
-			// Get the map of the IntervalFeature bookmarks
-			Map<String, List<IntervalFeature>> map= new HashMap<String, List<IntervalFeature>>();
-			map = ((TrackIntervalFeature)this.trackSet.get(TrackSet.BOOKMARK_TAG)).
-					getIntervalFeatureSet().
-					getIntervalMap();
-
-			// Get the list of bookmarks on this chrom
-			List<IntervalFeature> xlist= new ArrayList<IntervalFeature>();
-			if(map.containsKey(interval.getChrom())){
-				xlist = map.get(interval.getChrom());
-			}
-			// Add the new bookmark
-			xlist.add(interval);
-
-			// Update map with augmented list 
-			map.put(interval.getChrom(), xlist);
-
-			// Recreate the IntervalFeatureSet. You HAVE TO recreate it in order to have the list sorted.
-			IntervalFeatureSet intervalFeatureSet= new IntervalFeatureSet(map, TrackFormat.BED);
-
-			// In the existing bookmark track, replace the old intervalset with the newly created one
-			bookmarkTrack = (TrackIntervalFeature) this.trackSet.get(TrackSet.BOOKMARK_TAG);
-			bookmarkTrack.setIntervalFeatureSet(intervalFeatureSet);
-		}
-		this.trackSet.put(TrackSet.BOOKMARK_TAG, bookmarkTrack);
-	} */
-
 	/** Method to set any of the three alignment filters: -F,-f, mapq */
 	public void setFilterFlagForRegex(List<String> tokens) throws InvalidCommandLineException {
 		// MEMO of subcommand syntax:
@@ -1087,12 +1042,13 @@ public class TrackSet {
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
 	 * @throws MalformedURLException */
-//	public void setGenomicCoordsAndUpdateTracks(GenomicCoords gc) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-//		for(Track tr : this.getTrackList()){
-//			tr.setGc(gc);
-//			tr.update();
-//		}
-//	}
+	public void setGenomicCoordsAndUpdateTracks(GenomicCoords gc) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+
+		for(Track tr : this.getTrackList()){
+			tr.setGc(gc);
+			tr.update();
+		}
+	}
 	
 	@Override
 	/** For debugging and convenience only. This method not to be used for seriuous stuff. 

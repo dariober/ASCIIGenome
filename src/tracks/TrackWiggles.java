@@ -18,6 +18,7 @@ import utils.BedLine;
 import utils.BedLineCodec;
 import com.google.common.base.Joiner;
 
+import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.tribble.index.Index;
@@ -47,8 +48,9 @@ public class TrackWiggles extends Track {
 	 * @param filename Filename or URL to access 
 	 * @param gc Query coordinates and size of printable window 
 	 * @throws IOException 
-	 * @throws InvalidRecordException */
-	public TrackWiggles(String filename, GenomicCoords gc, int bdgDataColIdx) throws IOException, InvalidRecordException{
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException */
+	public TrackWiggles(String filename, GenomicCoords gc, int bdgDataColIdx) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
 
 		this.setGc(gc);
 		this.setFilename(filename);
@@ -68,7 +70,7 @@ public class TrackWiggles extends Track {
 
 	/*  M e t h o d s  */
 	
-	public void update() throws IOException, InvalidRecordException {
+	public void update() throws IOException, InvalidRecordException, InvalidGenomicCoordsException {
 
 		if(this.bdgDataColIdx < 4){
 			System.err.println("Invalid index for bedgraph column of data value. Resetting to 4. Expected >=4. Got " + this.bdgDataColIdx);
@@ -102,11 +104,12 @@ public class TrackWiggles extends Track {
 		this.setYLimitMax(this.getYLimitMax());
 	}
 
-	private void updateTDF(){
+	private void updateTDF() throws InvalidGenomicCoordsException, IOException{
 		
+		int userWndowSize= this.getGc().getUserWindowSize();
 		this.screenWiggleLocusInfoList= 
 				TDFUtils.tdfRangeToScreen(this.getFilename(), this.getGc().getChrom(), 
-						this.getGc().getFrom(), this.getGc().getTo(), this.getGc().getMapping());
+						this.getGc().getFrom(), this.getGc().getTo(), this.getGc().getMapping(userWndowSize));
 		
 		ArrayList<Double> screenScores= new ArrayList<Double>();
 		for(ScreenWiggleLocusInfo x : screenWiggleLocusInfoList){
@@ -226,20 +229,23 @@ public class TrackWiggles extends Track {
 		return true;
 	}
 	
-	/** Populate object using bigWig data */
-	private void bigWigToScores(BBFileReader reader){
+	/** Populate object using bigWig data 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException */
+	private void bigWigToScores(BBFileReader reader) throws InvalidGenomicCoordsException, IOException{
 
 		// List of length equal to screen size. Each inner map contains info about the screen locus 
 		List<ScreenWiggleLocusInfo> screenWigLocInfoList= new ArrayList<ScreenWiggleLocusInfo>();
 		for(int i= 0; i < getGc().getUserWindowSize(); i++){
 			screenWigLocInfoList.add(new ScreenWiggleLocusInfo());
 		}
-		
+
+		int userWndowSize= this.getGc().getUserWindowSize();
 		BigWigIterator iter = reader.getBigWigIterator(getGc().getChrom(), getGc().getFrom(), getGc().getChrom(), getGc().getTo(), false);
 		while(iter.hasNext()){
 			WigItem bw = iter.next();
 			for(int i= bw.getStartBase(); i <= bw.getEndBase(); i++){
-				int idx= Utils.getIndexOfclosestValue(i, getGc().getMapping()); // Where should this position be mapped on screen?
+				int idx= Utils.getIndexOfclosestValue(i, this.getGc().getMapping(userWndowSize)); // Where should this position be mapped on screen?
 				screenWigLocInfoList.get(idx).increment(bw.getWigValue());
 			} 
 		}
@@ -252,8 +258,9 @@ public class TrackWiggles extends Track {
 	
 	/** Get values for bedgraph
 	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	private void bedGraphToScores(String fileName) throws IOException, InvalidRecordException{
+	private void bedGraphToScores(String fileName) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
 		
 		List<ScreenWiggleLocusInfo> screenWigLocInfoList= new ArrayList<ScreenWiggleLocusInfo>();
 		for(int i= 0; i < getGc().getUserWindowSize(); i++){
@@ -273,8 +280,9 @@ public class TrackWiggles extends Track {
 					throw new InvalidRecordException();
 				}
 				String[] tokens= q.split("\t");
-				int screenFrom= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[1])+1, this.getGc().getMapping());
-				int screenTo= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[2]), this.getGc().getMapping());
+				int userWndowSize= this.getGc().getUserWindowSize();
+				int screenFrom= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[1])+1, this.getGc().getMapping(userWndowSize));
+				int screenTo= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[2]), this.getGc().getMapping(userWndowSize));
 				float value= Float.valueOf(tokens[this.bdgDataColIdx-1]);
 				for(int i= screenFrom; i <= screenTo; i++){
 					screenWigLocInfoList.get(i).increment(value);

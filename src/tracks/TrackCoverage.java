@@ -11,6 +11,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
 
+import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -43,8 +44,9 @@ public class TrackCoverage extends Track {
 	 * @param windowSize The size of the screen in number of characters.
 	 * @param bs Should loci be parsed also as BS-Seq data? 
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	public TrackCoverage(String bam, GenomicCoords gc, boolean bs) throws IOException{
+	public TrackCoverage(String bam, GenomicCoords gc, boolean bs) throws IOException, InvalidGenomicCoordsException{
 		this.setGc(gc);
 		this.setFilename(bam);
 		this.setBisulf(bs);
@@ -65,7 +67,7 @@ public class TrackCoverage extends Track {
 	
 	/* M e t h o d s */
 	
-	public void update() throws IOException{
+	public void update() throws IOException, InvalidGenomicCoordsException{
 		
 //		if(this.isSkipUpdate()){
 //			System.err.println(this.getTrackTag() + " not updated");
@@ -81,13 +83,16 @@ public class TrackCoverage extends Track {
 			samLocIter.setSamFilters(this.getSamRecordFilter());
 			Iterator<samTextViewer.SamLocusIterator.LocusInfo> iter= samLocIter.iterator();
 		
-			for(int i= 0; i < this.getGc().getMapping().size(); i++){
+			
+			int userWindowSize= this.getGc().getUserWindowSize();
+			
+			for(int i= 0; i < this.getGc().getMapping(userWindowSize).size(); i++){
 				this.screenLocusInfoList.add(new ScreenLocusInfo());	
 			}
-		
-			while(iter.hasNext()){			
+			
+			while(iter.hasNext()){
 				samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
-				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), this.getGc().getMapping());
+				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), this.getGc().getMapping(userWindowSize));
 				byte refBase= '\0';
 				if(this.getGc().getRefSeq() != null){
 					refBase= this.getGc().getRefSeq()[screenPos];
@@ -212,7 +217,7 @@ public class TrackCoverage extends Track {
 	}
 
 	@Override
-	public String getPrintableConsensusSequence() throws IOException{
+	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException{
 		if(this.getGc().getBpPerScreenColumn() > 1){
 			return "";
 		}

@@ -40,14 +40,10 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 	public void update() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
 		this.findRegex();
-		for(IntervalFeature ift : this.intervalFeatureList){
-			ift.mapToScreen(this.getGc().getMapping());
+		int windowSize= this.getGc().getUserWindowSize();
+		for(IntervalFeature ift : this.getIntervalFeatureList()){
+			ift.mapToScreen(this.getGc().getMapping(windowSize));
 		}
-		//if(this.seqRegex == null || this.seqRegex.equals(noRe)){
-		//	this.setyMaxLines(0);
-		//} else {
-		//	this.setyMaxLines(10);
-		//}
 	}
 	
 	/**
@@ -130,7 +126,6 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		regexMatchBgzip.delete();
 		regexMatchIndex.delete();
 		
-		this.intervalFeatureSet= regexMatchTrack.getIntervalFeatureSet();		
 		this.intervalFeatureList= regexMatchTrack.getIntervalFeatureList(); 
 	}
 

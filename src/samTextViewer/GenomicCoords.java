@@ -10,17 +10,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
@@ -33,11 +26,7 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
-import htsjdk.samtools.util.SequenceUtil;
-import htsjdk.tribble.index.tabix.TabixFormat;
-import sortBgzipIndex.MakeTabixIndex;
 import tracks.TrackFormat;
-import tracks.TrackIntervalFeature;
 import tracks.TrackWiggles;
 
 /**
@@ -59,7 +48,10 @@ public class GenomicCoords implements Cloneable {
 	private Integer from;
 	private Integer to;
 	private SAMSequenceDictionary samSeqDict; // Can be null
-	private int userWindowSize; // Size of the screen window
+	/** Size of the screen window 
+	 * Only user getUserWindowSize() to access it after init at constructor.
+	 */
+	final private int userWindowSize; 
 	private String fastaFile= null;
 	// final public static String gcProfileFileTag= "CG_percent";
 	// private TrackIntervalFeature regexMatchTrack;
@@ -85,14 +77,10 @@ public class GenomicCoords implements Cloneable {
 				throw e;
 			}
 		}
-		if(windowSize < 1){
-			InvalidGenomicCoordsException e = new InvalidGenomicCoordsException();
-			throw e;			
-		}
+		this.userWindowSize= windowSize;
 		this.chrom= chrom;
 		this.from= from;
 		this.to= to;
-		this.userWindowSize= windowSize;
 		this.samSeqDict= samSeqDict;
 		if(this.samSeqDict != null && this.samSeqDict.size() > 0){
 			correctCoordsAgainstSeqDict(samSeqDict);
@@ -109,20 +97,23 @@ public class GenomicCoords implements Cloneable {
 		this.chrom= gc.chrom;
 		this.from= gc.from;
 		this.to= gc.to;
-		this.userWindowSize= gc.userWindowSize;
-		this.samSeqDict= gc.samSeqDict;
-		this.fastaFile= fastaFile;
+		this.userWindowSize= gc.getUserWindowSize();
+		this.samSeqDict= gc.getSamSeqDict();
+		this.fastaFile= gc.getFastaFile();
 		
 		// this.setRefSeq();
 	}
 		
-	private GenomicCoords(){ };
+	private GenomicCoords(){ 
+		this.userWindowSize= -1;
+	};
 	
 	/* Methods */
 	
 	/** Get sequence from fasta, but only if it can fit the screen. Null otherwise. 
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public byte[] getRefSeq() throws IOException {
+	public byte[] getRefSeq() throws IOException, InvalidGenomicCoordsException {
 		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
 			return null;
 		}
@@ -286,8 +277,9 @@ public class GenomicCoords implements Cloneable {
 	/**
 	 * Zoom into range. 
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	public void zoomIn() throws IOException{
+	public void zoomIn() throws IOException, InvalidGenomicCoordsException{
 		float zoom= (float) (1/4.0);
 		// * Get size of window (to - from + 1)
 		int range= this.to - this.from + 1;
@@ -299,8 +291,8 @@ public class GenomicCoords implements Cloneable {
 		int extendBy= (int) Math.rint(range * zoom);
 		int newFrom= midpoint - extendBy;
 		int newTo= midpoint + extendBy;
-		if((newTo - newFrom + 1) < userWindowSize){ // Reset new coords to be at least windowSize in span
-			int diff= userWindowSize - (newTo - newFrom + 1);
+		if((newTo - newFrom + 1) < this.getUserWindowSize()){ // Reset new coords to be at least windowSize in span
+			int diff= this.getUserWindowSize() - (newTo - newFrom + 1);
 			if(diff % 2 == 0){
 				newFrom -= diff/2;
 				newTo += diff/2;
@@ -322,13 +314,21 @@ public class GenomicCoords implements Cloneable {
 	
 	/**
 	 * Same as R seq(from to, length.out). See also func in Utils
-	 * @param from
-	 * @param to
-	 * @param lengthOut Length of sequence, effectively the desired screen width.
 	 * @return
+	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<Double> seqFromToLenOut() {
+	//private List<Double> seqFromToLenOut() throws InvalidGenomicCoordsException, IOException {
+	//	return seqFromToLenOut(this.getUserWindowSize());
+	//}
+	
+	/**
+	 * Same as R seq(from to, length.out). See also func in Utils
+	 * @return
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 */
+	private List<Double> seqFromToLenOut(int size) throws InvalidGenomicCoordsException, IOException {
 		
 		List<Double> mapping= new ArrayList<Double>();
 		
@@ -344,16 +344,16 @@ public class GenomicCoords implements Cloneable {
 		int span= to - from + 1;
 		// If the genomic span is less then screen size, reduce screen size to.
 		// If genomic span == screenSize then you have a mapping one to one.
-		if(span <= this.userWindowSize){ 
+		if(span <= size){ 
 			for(int i= from; i <= to; i++){
 				mapping.add((double)i);
 			}
 			return mapping;
 		}
 		
-		double step= ((double)span - 1)/(this.userWindowSize - 1);
+		double step= ((double)span - 1)/(size - 1);
 		mapping.add((double)from);
-		for(int i= 1; i < this.userWindowSize; i++){
+		for(int i= 1; i < size; i++){
 			mapping.add((double)mapping.get(i-1)+step);
 		}
 		
@@ -370,17 +370,17 @@ public class GenomicCoords implements Cloneable {
 		}
 		
 		double diffFrom= Math.abs(mapping.get(0) - from);		
-		if(diffFrom > 0.01 || mapping.size() != this.userWindowSize){
+		if(diffFrom > 0.01 || mapping.size() != size){
 			System.err.println("Error generating sequence:");
-			System.err.println("Expected size: " + this.userWindowSize + "; Effective: " + mapping.size());
+			System.err.println("Expected size: " + size + "; Effective: " + mapping.size());
 			System.err.println("From diff: " + diffFrom);
 			System.exit(1);
 		}
 		return mapping;
-	}
+	}	
 	
-	public double getBpPerScreenColumn(){
-		List<Double> mapping = seqFromToLenOut();
+	public double getBpPerScreenColumn() throws InvalidGenomicCoordsException, IOException{
+		List<Double> mapping = seqFromToLenOut(this.getUserWindowSize());
 		double bpPerScreenColumn= (to - from + 1) / (double)mapping.size();
 		return bpPerScreenColumn;
 	}
@@ -388,12 +388,14 @@ public class GenomicCoords implements Cloneable {
 	/**
 	 * Produce a string representation of the current position on the chromosome
 	 * @param nDist: Distance between labels   
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public String getChromIdeogram(int nDist, boolean noFormat) {
+	public String getChromIdeogram(int nDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException {
 		if(this.samSeqDict == null || this.samSeqDict.size() == 0){
 			return null;
 		}
-		List<Double> positionMap = Utils.seqFromToLenOut(1, this.samSeqDict.getSequence(this.chrom).getSequenceLength(), this.userWindowSize);
+		List<Double> positionMap = Utils.seqFromToLenOut(1, this.samSeqDict.getSequence(this.chrom).getSequenceLength(), this.getUserWindowSize());
 		// This code taken from printableRuler() above.
 		String numberLine= "";
     	int prevLen= 0;
@@ -434,8 +436,8 @@ public class GenomicCoords implements Cloneable {
 		}
 		map.set(lastTick, TICKED);
 		String ideogram= StringUtils.join(map, "");
-		if(ideogram.length() > this.userWindowSize){
-			ideogram= ideogram.substring(0, this.userWindowSize);
+		if(ideogram.length() > this.getUserWindowSize()){
+			ideogram= ideogram.substring(0, this.getUserWindowSize());
 		}
 		if(!noFormat){
 			ideogram= "\033[30m" + ideogram + "\033[48;5;231m";
@@ -443,9 +445,11 @@ public class GenomicCoords implements Cloneable {
 		return ideogram;
 	}
 	
-	/** For debugging only */
-	public String toStringVerbose(int windowSize){
-		List<Double> mapping = seqFromToLenOut();
+	/** For debugging only 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException */
+	public String toStringVerbose(int windowSize) throws InvalidGenomicCoordsException, IOException{
+		List<Double> mapping = seqFromToLenOut(this.getUserWindowSize());
 		String str= "Genome coords: " + from + "-" + to 
 				+ "; screen width: " + mapping.size()
 				+ "; scale: " + this.getBpPerScreenColumn() + " bp/column" 
@@ -455,8 +459,8 @@ public class GenomicCoords implements Cloneable {
 		return str;
 	}
 	
-	public String printableRuler(int markDist, boolean noFormat){
-		List<Double> mapping = this.seqFromToLenOut();
+	public String printableRuler(int markDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException{
+		List<Double> mapping = this.seqFromToLenOut(this.getUserWindowSize());
     	String numberLine= "";
     	int prevLen= 0;
     	int i= 0;
@@ -478,6 +482,7 @@ public class GenomicCoords implements Cloneable {
 				i++;
 			}
 		}
+		numberLine= numberLine.substring(0, this.getUserWindowSize());
 		if(!noFormat){
 			numberLine= "\033[30m" + numberLine + "\033[48;5;231m";
 		}
@@ -485,8 +490,9 @@ public class GenomicCoords implements Cloneable {
     }
 	
 	/** Ref sequence usable for print on screen. 
-	 * @throws IOException */
-	public String printableRefSeq(boolean noFormat) throws IOException{
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException */
+	public String printableRefSeq(boolean noFormat) throws IOException, InvalidGenomicCoordsException{
 
 		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
 			return "";
@@ -645,8 +651,9 @@ public class GenomicCoords implements Cloneable {
 	/** Return GC profile in region by sliding window of given step size 
 	 * @throws IOException 
 	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public TrackWiggles getGCProfile() throws IOException, InvalidRecordException {
+	public TrackWiggles getGCProfile() throws IOException, InvalidRecordException, InvalidGenomicCoordsException {
 		if(this.fastaFile == null){
 			return null; 
 		}
@@ -707,7 +714,7 @@ public class GenomicCoords implements Cloneable {
 	}
 
 
-	public void centerAndExtendGenomicCoords(GenomicCoords gc, int size, double slop) throws InvalidGenomicCoordsException {
+	public void centerAndExtendGenomicCoords(GenomicCoords gc, int size, double slop) throws InvalidGenomicCoordsException, IOException {
 		
 		if(size <= 0){
 			System.err.println("Invalid feature size. Must be > 0, got " + size);
@@ -718,9 +725,9 @@ public class GenomicCoords implements Cloneable {
 		gc.from= (int)Math.rint(center - (size * slop));
 		gc.to= (int)Math.rint(center + (size * slop));
 		
-		if(((gc.to - gc.from)+1) < gc.userWindowSize){
+		if(((gc.to - gc.from)+1) < gc.getUserWindowSize()){
 			int span= (gc.to - gc.from);
-			int extendBy= (int)Math.rint((gc.userWindowSize / 2.0) - (span / 2.0));
+			int extendBy= (int)Math.rint((gc.getUserWindowSize() / 2.0) - (span / 2.0));
 			gc.from -= extendBy;
 			gc.to += extendBy;
 		}
@@ -728,12 +735,26 @@ public class GenomicCoords implements Cloneable {
 		
 	}
 
+	/** Reset window size according to current terminal screen. 
+	 * If the user reshapes the terminal window size or the font size, 
+	 * detect the new size and add it to the history. 
+	 * */
+	private int getTerminalWindowSize() throws InvalidGenomicCoordsException, IOException{
+		return jline.TerminalFactory.get().getWidth() - 1;
+	}	
+
 	
 	/* Getters and setters */
+
+	public List<Double> getMapping(int size) throws InvalidGenomicCoordsException, IOException {
+		return seqFromToLenOut(size);
+	}
 	
-	public List<Double> getMapping() {
-		return seqFromToLenOut();
-	}	
+	/** Map using this.getUserWindowSize() as window size. Consider using 
+	 * getMapping(int size) to avoid computing the terminal width for each call. */
+	//public List<Double> getMapping() throws InvalidGenomicCoordsException, IOException {
+	//	return seqFromToLenOut(this.getUserWindowSize());
+	//}	
 	
 	public String getChrom() {
 		return chrom;
@@ -748,16 +769,16 @@ public class GenomicCoords implements Cloneable {
 	}
 	
 	/** Width of the terminal screen window in number of characters. 
-	 * Not to be confused with the genomic window size (as in bp) */
-	public int getUserWindowSize(){
-		return this.userWindowSize;
+	 * Not to be confused with the genomic window size (as in bp) 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException */
+	public int getUserWindowSize() throws InvalidGenomicCoordsException, IOException{
+		if(this.userWindowSize <= 0){
+			return this.getTerminalWindowSize();
+		} else {
+			return this.userWindowSize;
+		}
 	}
-
-	//public void setUserWindowSize(int windowSize) {
-	//	this.windowSize= windowSize; 
-	//	this.refSeq= this.getRefSeq();
-	//}
-
 	
 	/** Size of genomic interval. Can be smaller than windowSize set by user. 
 	 * Not to be confused with userWindowSize. */

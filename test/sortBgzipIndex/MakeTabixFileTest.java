@@ -5,14 +5,16 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+
 import org.junit.Test;
+
+import com.google.common.io.Files;
 
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
-import tracks.IntervalFeatureSet;
 
 public class MakeTabixFileTest {
 
@@ -94,7 +96,7 @@ public class MakeTabixFileTest {
 		
 	}
 	
-	@Test
+	//@Test
 	public void canCompressAndIndexSortedURL() throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
 		
 		String infile= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz";
@@ -113,7 +115,7 @@ public class MakeTabixFileTest {
 		
 	}
 	
-	@Test
+	// @Test
 	public void canCompressAndIndexUnsortedURL() throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
 		
 		String infile= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/wgEncodeSydhTfbsGm12878P300bStdPk.narrowPeak.gz";
@@ -152,6 +154,26 @@ public class MakeTabixFileTest {
 		TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
 		Iterator x = tbx.query("1", 20000000, 30000000);
 		assertTrue(x.next().startsWith("1"));
+
+	}
+	
+	@Test
+	public void blockCompressFileInPlace() throws IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		// Test we can compress and index a file and overwrite the original file. 
+		
+		File testFile= new File("deleteme.bed.gz");
+		testFile.deleteOnExit();
+		Files.copy(new File("test_data/refSeq.hg19.bed.gz"), testFile);
+		
+		File expectedTbi= new File(testFile.getAbsolutePath() + ".tbi"); 
+		expectedTbi.deleteOnExit();
+		
+		new MakeTabixIndex(testFile.getAbsolutePath(), testFile, TabixFormat.BED);
+		
+		assertTrue(testFile.exists());
+		assertTrue(testFile.length() > 200000);
+		assertTrue(expectedTbi.exists());
+		assertTrue(expectedTbi.length() > 100000);
 
 	}
 	

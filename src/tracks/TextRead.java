@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.google.common.base.Joiner;
 
+import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.CigarOperator;
 import htsjdk.samtools.SAMRecord;
@@ -58,7 +59,7 @@ class TextRead {
 	
 	/*    C o n s t r u c t o r s    */
 		
-	public TextRead(SAMRecord rec, GenomicCoords gc){
+	public TextRead(SAMRecord rec, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
 		// At least part of the read must be in the window
 		//            |  window  |
 		//                         |------| read
@@ -96,8 +97,9 @@ class TextRead {
 	 * @param withReadName Print the read name instead of the bases.
 	 * @return
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName) throws IOException{
+	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException{
 		List<Character> unformatted;
 		if(!bs){
 			unformatted= this.getConsRead();
@@ -132,8 +134,10 @@ class TextRead {
 	 * @param read
 	 * @param noFormat
 	 * @return
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private String readFormatter(List<Character> read, boolean noFormat, boolean bs){
+	private String readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException{
 
 		if(noFormat){ // Essentially nothing to do in this case
 			return Joiner.on("").join(read);
@@ -174,23 +178,25 @@ class TextRead {
 	/**
 	 * Obtain the start position of the read on screen. Screen positions are 1-based. 
 	 * @return
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private void setTextStart(){		
+	private void setTextStart() throws InvalidGenomicCoordsException, IOException{		
 		if(rec.getAlignmentStart() <= gc.getFrom()){ // Read starts right at the window start or even earlier
 			this.textStart= 1;
 			return;
 		}		
-		this.textStart= Utils.getIndexOfclosestValue(rec.getAlignmentStart(), gc.getMapping()) + 1;
+		this.textStart= Utils.getIndexOfclosestValue(rec.getAlignmentStart(), gc.getMapping(gc.getUserWindowSize())) + 1;
 		return;
 	}
 	
-	private void setTextEnd(){
-		if(rec.getAlignmentEnd() >= gc.getTo()){
-			this.textEnd= gc.getUserWindowSize() < gc.getGenomicWindowSize() ?  
-					gc.getUserWindowSize() : gc.getGenomicWindowSize();
-			return;
-		}
-		this.textEnd= Utils.getIndexOfclosestValue(rec.getAlignmentEnd(), gc.getMapping()) + 1;
+	private void setTextEnd() throws InvalidGenomicCoordsException, IOException{
+		//if(rec.getAlignmentEnd() >= gc.getTo()){
+		//	this.textEnd= gc.getUserWindowSize() < gc.getGenomicWindowSize() ?  
+		//			gc.getUserWindowSize() : gc.getGenomicWindowSize();
+		//	return;
+		//}
+		this.textEnd= Utils.getIndexOfclosestValue(rec.getAlignmentEnd(), gc.getMapping(gc.getUserWindowSize())) + 1;
 		return;
 	}
 	
@@ -215,8 +221,10 @@ class TextRead {
 	 * I.e. clipped ends omitted and deletions appearing as gaps (empty byte).
 	 * Only the portion contained between the genomic coords from:to is returned.
 	 * @return
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<Character> getDnaRead() {
+	private List<Character> getDnaRead() throws InvalidGenomicCoordsException, IOException {
 
 		if(this.gc.getBpPerScreenColumn() > 1){
 			return this.getSquashedRead();
@@ -285,8 +293,9 @@ class TextRead {
 	 * @param refSeq The reference sequence spanning the window.
 	 * @return
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<Character> getConsRead() throws IOException {
+	private List<Character> getConsRead() throws IOException, InvalidGenomicCoordsException {
 		
 		List<Character> dnaRead= this.getDnaRead();
 		if(this.gc.getRefSeq() == null){
@@ -325,8 +334,9 @@ class TextRead {
 	 * @param refSeq
 	 * @return
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<Character> convertDnaReadToTextReadBS() throws IOException{
+	private List<Character> convertDnaReadToTextReadBS() throws IOException, InvalidGenomicCoordsException{
 	
 		if(this.gc.getRefSeq() == null){ // Effectively don't convert 
 			return this.getConsRead();
@@ -398,6 +408,9 @@ class TextRead {
 		try {
 			txt = this.getPrintableTextRead(false, true, false);
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InvalidGenomicCoordsException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		

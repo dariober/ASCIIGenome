@@ -38,7 +38,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -61,9 +60,8 @@ import org.broad.igv.tdf.TDFReader;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
-import exceptions.InvalidRecordException;
 import filter.FirstOfPairFilter;
-import tracks.IntervalFeatureSet;
+// import tracks.IntervalFeatureSet;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
 import tracks.UcscFetch;
@@ -414,19 +412,19 @@ public class Utils {
 		}
 	}
 	
-	public static LinkedHashMap<String, IntervalFeatureSet> createIntervalFeatureSets(List<String> fileNames) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
-		LinkedHashMap<String, IntervalFeatureSet> ifsets= new LinkedHashMap<String, IntervalFeatureSet>();
-		for(String x : fileNames){
-			String f= x;
-			if(getFileTypeFromName(x).equals(TrackFormat.BED) || getFileTypeFromName(x).equals(TrackFormat.GFF)){
-				if(!ifsets.containsKey(x)){ // If the input has duplicates, do not reload duplicates!
-					IntervalFeatureSet ifs= new IntervalFeatureSet(f);
-					ifsets.put(x, ifs);
-				}
-			}
-		}
-		return ifsets;
-	}
+//	public static LinkedHashMap<String, IntervalFeatureSet> createIntervalFeatureSets(List<String> fileNames) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+//		LinkedHashMap<String, IntervalFeatureSet> ifsets= new LinkedHashMap<String, IntervalFeatureSet>();
+//		for(String x : fileNames){
+//			String f= x;
+//			if(getFileTypeFromName(x).equals(TrackFormat.BED) || getFileTypeFromName(x).equals(TrackFormat.GFF)){
+//				if(!ifsets.containsKey(x)){ // If the input has duplicates, do not reload duplicates!
+//					IntervalFeatureSet ifs= new IntervalFeatureSet(f);
+//					ifsets.put(x, ifs);
+//				}
+//			}
+//		}
+//		return ifsets;
+//	}
 	
     /** 
      * Transpose list of list as if they were a table. No empty cells should be present. 
@@ -546,8 +544,10 @@ public class Utils {
 	 * to move.
 	 * @param bam 
 	 * @return
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	public static String parseConsoleInput(String rawInput, GenomicCoords gc){
+	public static String parseConsoleInput(String rawInput, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
 		
 		String region= "";
 		String chrom= gc.getChrom();

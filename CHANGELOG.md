@@ -17,7 +17,9 @@ This should address almost completely [issue 18](https://github.com/dariober/ASC
 
 * `ASCIIGenome` can start without any input file.
 
-* Major refactoring should make further devlopment easier.
+* TDF files can switch to be normalized to reads per million. 
+
+* Major refactoring should make further development easier.
 
 New in 0.2.0
 =============

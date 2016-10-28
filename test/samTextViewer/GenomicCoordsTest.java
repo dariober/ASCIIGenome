@@ -249,10 +249,11 @@ public class GenomicCoordsTest {
 	@Test
 	public void canPrepareRuler() throws InvalidGenomicCoordsException, IOException{
 		GenomicCoords gc= new GenomicCoords("chr1:101-110", samSeqDict, 7, null);
-		assertEquals(7, gc.getMapping().size());
-		assertEquals(101.0, gc.getMapping().get(0), 0.01);
-		assertEquals(102.5, gc.getMapping().get(1), 0.01);
-		assertEquals(102.5, gc.getMapping().get(1), 0.01);
+		int userWindowSize= gc.getUserWindowSize();
+		assertEquals(7, gc.getMapping(userWindowSize).size());
+		assertEquals(101.0, gc.getMapping(userWindowSize).get(0), 0.01);
+		assertEquals(102.5, gc.getMapping(userWindowSize).get(1), 0.01);
+		assertEquals(102.5, gc.getMapping(userWindowSize).get(1), 0.01);
 		assertEquals(1.42857142, gc.getBpPerScreenColumn(), 0.01);
 	}
 	
