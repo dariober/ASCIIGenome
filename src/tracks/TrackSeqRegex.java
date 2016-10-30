@@ -35,7 +35,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 	} 
 	
 	@Override
-	/** Find regex matches and update the screen map.
+	/** Find regex matches and update the screen map. See alos parent method.
 	 * */
 	public void update() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
@@ -144,7 +144,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 	}
 
 	@Override
-	public void setSeqRegex(String regex) {
+	public void setSeqRegex(String regex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		if(regex.isEmpty()){
 			this.setHideTrack(true);
 			regex= noRe; // Match nothing
@@ -152,6 +152,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 			this.setHideTrack(false);
 		}
 		this.seqRegex = regex;
+		this.update();
 	}
 
 }

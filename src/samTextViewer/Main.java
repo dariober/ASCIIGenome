@@ -83,17 +83,10 @@ public class Main {
 			}
 		}
 		
-		int windowSize= 160;
-		try{
-			windowSize= jline.TerminalFactory.get().getWidth() - 1;			
-		} catch(Exception e){
-			e.printStackTrace();
-		}
-
 		/* Initialize trackSet */
 		/* ------------------- */
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		gch.add(new GenomicCoords(region, samSeqDict, windowSize, fasta));
+		gch.add(new GenomicCoords(region, samSeqDict, fasta));
 
 		TrackProcessor proc= new TrackProcessor(new TrackSet(inputFileList, gch.current()), gch);
 
@@ -138,7 +131,6 @@ public class Main {
 					proc.iterateTracks();
 					Utils.printer("\n", proc.getSnapshotFile());
 				}
-				//proc.getGenomicCoordsHistory().resetWindowSize();
 			}
 			br.close();
 			System.exit(0);

@@ -319,7 +319,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("seqRegex"); cmd.setArgs("regex"); cmd.inSection= Section.FIND; 
+		cmd.setName("seqRegex"); cmd.setArgs("[regex]"); cmd.inSection= Section.FIND; 
 		cmd.setBriefDescription("Find regex in reference sequence and show matches as and additional track. ");
 		cmd.setAdditionalDescription(""
 				+ "Useful to show restriction enzyme sites, "
@@ -530,6 +530,17 @@ public class CommandList {
 				+ "addTracks http://remote/host/peaks.bed\n"
 				+ "```");
 		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
+		cmd.setName("dropTracks"); cmd.setArgs("track_regex [track_regex]..."); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Drop tracks matching any of the listed regexes.");
+		cmd.setAdditionalDescription("\n"
+				+ "Examples:\n"
+				+ "```\n"
+				+ "dropTracks bam\n"
+				+ "```");
+		cmdList.add(cmd);
+
 		
 		cmd= new CommandHelp();
 		cmd.setName("orderTracks"); cmd.setArgs("[track_regex]..."); cmd.inSection= Section.GENERAL; 
@@ -695,6 +706,7 @@ public class CommandList {
 		paramList.add("showGenome");
 		paramList.add("infoTracks");
 		paramList.add("addTracks");
+		paramList.add("dropTracks");
 		paramList.add("orderTracks");
 		paramList.add("history");
 		paramList.add("cmdHistory");

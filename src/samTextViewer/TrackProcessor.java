@@ -47,10 +47,10 @@ public class TrackProcessor {
 		for(Track track : trackSet.getTrackList()){
 			
 			track.setNoFormat(this.noFormat);
-
-			track.setGc(currentGC);
+			if( ! track.getGc().equalCoordsAndWindowSize(currentGC) ){
+				track.setGc(currentGC);
+			}
 			if(track.getyMaxLines() > 0 && !track.isHideTrack()){
-				// track.update();
 				Utils.printer(track.getTitle(), this.snapshotFile);
 				Utils.printer(track.printToScreen() + "\n", this.snapshotFile);
 				Utils.printer(track.getPrintableConsensusSequence(), this.snapshotFile);

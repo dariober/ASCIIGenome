@@ -25,7 +25,6 @@ public class TrackBookmark extends TrackIntervalFeature {
 	public TrackBookmark(GenomicCoords gc, String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
 		super(gc);
 				
-		this.setGc(gc);
 		this.setTrackTag("Bookmarks");
 		
 		
@@ -35,7 +34,8 @@ public class TrackBookmark extends TrackIntervalFeature {
 		File bookmarkPlain= File.createTempFile("asciigenome.bookmarks.", ".bed"); // new File("bookmark");
 		bookmarkPlain.deleteOnExit();
 		BufferedWriter wr = new BufferedWriter(new FileWriter(bookmarkPlain));
-		wr.write(this.positionToBedLine(nameForBookmark) + "\n");
+		wr.write(gc.getChrom() + "\t" + (gc.getFrom() - 1) + "\t" + 
+				gc.getTo() + "\t" + nameForBookmark + "\n");
 		wr.close();
 
 		File bookmark= new File(bookmarkPlain + ".gz");
@@ -48,7 +48,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		
 		this.tabixReader= new TabixReader(bookmark.getAbsolutePath());
 		this.setType(TrackFormat.BED);
-		this.update();
+		this.setGc(gc);
 	}
 		
 	/** Add current genomic position to track.  

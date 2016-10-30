@@ -13,11 +13,11 @@ public class GenomicCoordsHistoryTest {
 	public void canMoveBackAndForthInHistory() throws InvalidGenomicCoordsException, IOException{
 
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		GenomicCoords g1= new GenomicCoords("chr7:1-100", null, 100, null);
-		GenomicCoords g2= new GenomicCoords("chr7:2-100", null, 100, null);
-		GenomicCoords g3= new GenomicCoords("chr7:3-100", null, 100, null);
-		GenomicCoords g4= new GenomicCoords("chr7:4-100", null, 100, null);
-		GenomicCoords g5= new GenomicCoords("chr7:5-100", null, 100, null);
+		GenomicCoords g1= new GenomicCoords("chr7:1-100", null, null);
+		GenomicCoords g2= new GenomicCoords("chr7:2-100", null, null);
+		GenomicCoords g3= new GenomicCoords("chr7:3-100", null, null);
+		GenomicCoords g4= new GenomicCoords("chr7:4-100", null, null);
+		GenomicCoords g5= new GenomicCoords("chr7:5-100", null, null);
 		gch.add(g1);
 		gch.add(g2);
 		gch.add(g3);
@@ -50,14 +50,14 @@ public class GenomicCoordsHistoryTest {
 		gch.previous();
 		gch.previous();
 		gch.previous();
-		GenomicCoords g6= new GenomicCoords("chr7:6-100", null, 100, null);
+		GenomicCoords g6= new GenomicCoords("chr7:6-100", null, null);
 		gch.add(g6);
 		assertTrue(g6.equalCoords(gch.current()));
 		
 		// Adding same pos more than once has no effect:
-		GenomicCoords g7= new GenomicCoords("chr7:6-100", null, 100, null);
+		GenomicCoords g7= new GenomicCoords("chr7:6-100", null, null);
 		gch.add(g7);
-		GenomicCoords g8= new GenomicCoords("chr7:6-100", null, 100, null);
+		GenomicCoords g8= new GenomicCoords("chr7:6-100", null, null);
 		gch.add(g8);
 		// System.out.println(gch.getHistory());
 		
@@ -71,7 +71,7 @@ public class GenomicCoordsHistoryTest {
 	@Test
 	public void getAndPutItems() throws InvalidGenomicCoordsException, IOException{
 		
-		GenomicCoords g1= new GenomicCoords("chr7:1-100", null, 100, null);
+		GenomicCoords g1= new GenomicCoords("chr7:1-100", null, null);
 		
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		gch.add(g1);

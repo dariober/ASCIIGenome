@@ -16,22 +16,19 @@ public class TrackBookmarkTest {
 	@Test
 	public void canAddIntervalsToTrackBookmark() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, -1, null);
+		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, null);
 		TrackBookmark bm= new TrackBookmark(gc, "book1");
 		bm.setNoFormat(true);
 		
-		gc= new GenomicCoords("chr1", 200, 300, null, -1, null);
+		gc= new GenomicCoords("chr1", 200, 300, null, null);
 		bm.setGc(gc);
-		bm.update();
 		bm.add("book2");
 		
-		gc= new GenomicCoords("chr1", 400, 500, null, -1, null);
+		gc= new GenomicCoords("chr1", 400, 500, null, null);
 		bm.setGc(gc); // Set it but do not add to bookamrks
-		bm.update();
 		
-		gc= new GenomicCoords("chr1", 1, 1000, null, -1, null);
+		gc= new GenomicCoords("chr1", 1, 1000, null, null);
 		bm.setGc(gc);
-		bm.update();
 		
 		assertTrue(bm.getIntervalFeatureList().size() == 2);
 		

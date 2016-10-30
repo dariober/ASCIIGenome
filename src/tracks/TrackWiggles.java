@@ -2,6 +2,7 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
@@ -49,10 +50,11 @@ public class TrackWiggles extends Track {
 	 * @param gc Query coordinates and size of printable window 
 	 * @throws IOException 
 	 * @throws InvalidRecordException 
-	 * @throws InvalidGenomicCoordsException */
-	public TrackWiggles(String filename, GenomicCoords gc, int bdgDataColIdx) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws ClassNotFoundException */
+	public TrackWiggles(String filename, GenomicCoords gc, int bdgDataColIdx) throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException{
 
-		this.setGc(gc);
 		this.setFilename(filename);
 		this.bdgDataColIdx= bdgDataColIdx;
 
@@ -62,15 +64,14 @@ public class TrackWiggles extends Track {
 				throw new RuntimeException("Invalid file type " + this.getFilename());
 			}
 		}
-		
-		this.update();
+		this.setGc(gc);
 		
 	};
 	
 
 	/*  M e t h o d s  */
-	
-	public void update() throws IOException, InvalidRecordException, InvalidGenomicCoordsException {
+	@Override
+	protected void update() throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException {
 
 		if(this.bdgDataColIdx < 4){
 			System.err.println("Invalid index for bedgraph column of data value. Resetting to 4. Expected >=4. Got " + this.bdgDataColIdx);
@@ -100,8 +101,6 @@ public class TrackWiggles extends Track {
 		} else {
 			throw new RuntimeException("Extension (i.e. file type) not recognized for " + this.getFilename());
 		}
-		this.setYLimitMin(this.getYLimitMin());
-		this.setYLimitMax(this.getYLimitMax());
 	}
 
 	private void updateTDF() throws InvalidGenomicCoordsException, IOException{
@@ -121,6 +120,19 @@ public class TrackWiggles extends Track {
 		this.setScreenScores(screenScores);	
 
 	}
+	
+	@Override
+	protected void updateToRPM(){
+		if(Utils.getFileTypeFromName(this.getFilename()).equals(TrackFormat.TDF)){
+			// Re-run update only for track types that can be converted to RPM
+			try {
+				this.update();
+			} catch (ClassNotFoundException | IOException | InvalidRecordException | InvalidGenomicCoordsException | SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	
 	@Override
 	public String printToScreen(){
@@ -196,8 +208,9 @@ public class TrackWiggles extends Track {
 			return "";
 		}
 		
-		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
-		
+		Double[] range = Utils.range(this.getScreenScores());
+		double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
+
 		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
 		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
 		
@@ -335,7 +348,10 @@ public class TrackWiggles extends Track {
 	/*   S e t t e r s   and   G e t t e r s */
 	
 	protected int getBdgDataColIdx() { return bdgDataColIdx; }
-	protected void setBdgDataColIdx(int bdgDataColIdx) { this.bdgDataColIdx = bdgDataColIdx; }
+	protected void setBdgDataColIdx(int bdgDataColIdx) throws ClassNotFoundException, IOException, InvalidRecordException, InvalidGenomicCoordsException, SQLException { 
+		this.bdgDataColIdx = bdgDataColIdx; 
+		this.update();
+	}
 
 
 }

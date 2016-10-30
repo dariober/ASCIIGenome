@@ -16,18 +16,16 @@ public class TrackSeqRegexTest {
 	@Test
 	public void canInitializeTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		
-		GenomicCoords gc= new GenomicCoords("chr7:8000000-8001000", null, 80, "test_data/chr7.fa");
+		GenomicCoords gc= new GenomicCoords("chr7:8000000-8001000", null, "test_data/chr7.fa");
 		
 		TrackSeqRegex trackSeqRegex= new TrackSeqRegex(gc); 
 		trackSeqRegex.setSeqRegex("(?i)CC");
-		trackSeqRegex.update();
 		trackSeqRegex.setNoFormat(true);
 		assertTrue(trackSeqRegex.getIntervalFeatureList().size() > 30);
 		assertTrue(trackSeqRegex.getIntervalFeatureList().size() < 300);
 		
-		gc= new GenomicCoords("chr7:8000000-8000050", null, 80, "test_data/chr7.fa");
+		gc= new GenomicCoords("chr7:8000000-8000050", null, "test_data/chr7.fa");
 		trackSeqRegex.setGc(gc);
-		trackSeqRegex.update();
 		assertTrue(trackSeqRegex.getIntervalFeatureList().size() < 30);
 		assertTrue(trackSeqRegex.getIntervalFeatureList().size() > 5);
 		
@@ -36,11 +34,10 @@ public class TrackSeqRegexTest {
 	@Test
 	public void methodsWork() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		GenomicCoords gc= new GenomicCoords("chr7:8000000-8001000", null, 80, "test_data/chr7.fa");
+		GenomicCoords gc= new GenomicCoords("chr7:8000000-8001000", null, "test_data/chr7.fa");
 		
 		TrackSeqRegex trackSeqRegex= new TrackSeqRegex(gc);
 		trackSeqRegex.setSeqRegex("(?i)CC");		
-		trackSeqRegex.update();
 		trackSeqRegex.setNoFormat(true);
 		trackSeqRegex.setGap(0); // Set gap mode
 		
@@ -55,48 +52,40 @@ public class TrackSeqRegexTest {
 		assertTrue(!trackSeqRegex.getTitle().isEmpty());
 		
 		// FIXME: Filters
-		// trackSeqRegex.setHideRegex("FOO");
-		// trackSeqRegex.update();
-		// System.out.println(trackSeqRegex.getTitle().contains("FOO"));
-		// assertTrue(trackSeqRegex.getTitle().contains("FOO"));
+//		trackSeqRegex.setHideRegex("chr7");
+//		trackSeqRegex.setPrintMode(PrintRawLine.CLIP);
+//		System.out.println(trackSeqRegex.printFeatures(100));
 		
 	}
 	
 	@Test
 	public void canReturnTrackFromMatchingRegex() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		GenomicCoords gc= new GenomicCoords("seq", 1, 100, null, 100, "test_data/seq_cg.fa");
+		GenomicCoords gc= new GenomicCoords("seq", 1, 100, null, "test_data/seq_cg.fa");
 		TrackSeqRegex trackSeqRegex= new TrackSeqRegex(gc);
-		trackSeqRegex.setSeqRegex("(?i)atc");
 		trackSeqRegex.setNoFormat(true);
-		trackSeqRegex.update();
+		trackSeqRegex.setSeqRegex("(?i)atc");
 		
 		assertTrue(trackSeqRegex.printToScreen().startsWith(">>>"));
 		
 		
 		// Match not found
 		trackSeqRegex.setSeqRegex("FOOBAR");
-		trackSeqRegex.update();
 		assertTrue(trackSeqRegex.printToScreen().isEmpty());
 		
 		// Regex not given
 		trackSeqRegex.setSeqRegex("");
-		trackSeqRegex.update();
 		assertTrue(trackSeqRegex.printToScreen().isEmpty());
 		
 		// Regex unset at init
 		trackSeqRegex= new TrackSeqRegex(gc);
-		trackSeqRegex.update();
 		trackSeqRegex.setNoFormat(true);
 		
 		// Palindromic
-		gc= new GenomicCoords("seq", 1, 100, null, 100, "test_data/seq_cg.fa");
+		gc= new GenomicCoords("seq", 1, 100, null, "test_data/seq_cg.fa");
 		trackSeqRegex.setSeqRegex("CG");
 		trackSeqRegex.setNoFormat(true);
-		trackSeqRegex.update();
 		assertTrue(trackSeqRegex.printToScreen().trim().startsWith("|"));
-//		System.out.println(trackSeqRegex.printToScreen());
-//		System.out.println(gc.printableRefSeq(true));
 	}
 	
 	@Test 
@@ -104,7 +93,7 @@ public class TrackSeqRegexTest {
 		// Ref Sequence not given 
 		boolean passed= false;
 		try{
-			new TrackSeqRegex(new GenomicCoords("seq", 1, 100, null, 100, null));
+			new TrackSeqRegex(new GenomicCoords("seq", 1, 100, null, null));
 		} catch (NullPointerException e) {
 			passed= true;
 		}

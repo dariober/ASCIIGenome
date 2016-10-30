@@ -132,7 +132,7 @@ public class TrackSet {
 		}
 	}
 	
-	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
+	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException{
 		
 		int idForTrack= this.getMaxTrackId() + 1;
 		String trackId= new File(sourceName).getName() + "#" + idForTrack;
@@ -154,7 +154,7 @@ public class TrackSet {
 		this.trackList.add(tif);
 	}
 	
-	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException{
+	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		int idForTrack= this.getMaxTrackId() + 1;
 		
@@ -223,8 +223,14 @@ public class TrackSet {
 	/** From cmdInput extract regex and yMaxLines then iterate through the tracks list to set 
 	 * the yMaxLines in the tracks whose filename matches the regex.
 	 * The input list is updated in place! 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 * @throws MalformedURLException 
 	*/
-	public void setTrackHeightForRegex(List<String> tokens) throws InvalidCommandLineException{
+	public void setTrackHeightForRegex(List<String> tokens) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
 		// MEMO of subcommand syntax:
 		// 0 trackHeight
@@ -440,7 +446,7 @@ public class TrackSet {
 	} */
 	
 	
-	public void setRpmForRegex(List<String> tokens) throws InvalidCommandLineException {
+	public void setRpmForRegex(List<String> tokens) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 
 		// MEMO of subcommand syntax:
 		// 0 rpm
@@ -529,8 +535,14 @@ public class TrackSet {
 	/** From cmdInput extract regex and ylimits then iterate through the tracks list to set 
 	 * the ylimits in the tracks whose filename matches the regex.
 	 * The input list is updated in place! 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 * @throws MalformedURLException 
 	*/
-	public void setTrackYlimitsForRegex(List<String> tokens) throws InvalidCommandLineException{
+	public void setTrackYlimitsForRegex(List<String> tokens) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
 		// MEMO of subcommand syntax:
 		// 0 cmdName
@@ -578,8 +590,13 @@ public class TrackSet {
 	}
 
 	/** Set filter for IntervalFeature tracks. 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
 	*/
-	public void setFilterForTrackIntervalFeature(List<String> tokens) throws InvalidCommandLineException{
+	public void setFilterForTrackIntervalFeature(List<String> tokens) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
 		// 0 cmdName
 		// 1 showRe
@@ -775,20 +792,19 @@ public class TrackSet {
 		return ifSet;
 	}
 	
-	public void setDataColForRegex(List<String> tokens) throws InvalidCommandLineException{
+	public void setDataColForRegex(List<String> tokens) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidRecordException, InvalidGenomicCoordsException, SQLException {
 
 		// MEMO of subcommand syntax:
 		// 0 gffNameAttr
 		// 1 attrName
 		// 2 Regex
 
-		int dataCol; // Null will follow default 
+		int dataCol = 0; // Null will follow default 
 		if(tokens.size() >= 2){
 			try{
 				dataCol= Integer.parseInt(tokens.get(1));
 			} catch(NumberFormatException e){
 				System.err.println("Number format exception: " + tokens.get(1));
-				throw new InvalidCommandLineException();
 			}
 		} else {
 			dataCol= 4;
@@ -891,25 +907,6 @@ public class TrackSet {
 		
 	}
 	
-	/** Drop from TrackSet the track with given hashcode. 
-	 * Return true if the track was found and dropped, false otherwise. 
-	 * If trackHashCode do nothing and return false.  
-	 * */
-	public boolean dropTrackWithHashCode(Integer trackHashCode){
-		
-		if(trackHashCode == null){
-			return false;
-		}
-		
-		for(int i= 0; i < this.trackList.size(); i++){
-			if(this.trackList.get(i).hashCode() == trackHashCode){
-				this.trackList.remove(i);
-				return true;
-			}
-		}
-		return false;
-	}
-	
 	/** Drop from TrackSet the track with given tag. 
 	 * Return true if the track was found and dropped, false otherwise. 
 	 * If trackTag is null do nothing and return false.  
@@ -947,8 +944,14 @@ public class TrackSet {
 		return trackHeightForRegex;
 	}
 	
-	/** Method to set any of the three alignment filters: -F,-f, mapq */
-	public void setFilterFlagForRegex(List<String> tokens) throws InvalidCommandLineException {
+	/** Method to set any of the three alignment filters: -F,-f, mapq 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 * @throws MalformedURLException */
+	public void setFilterFlagForRegex(List<String> tokens) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		// MEMO of subcommand syntax:
 		// 0 -F
 		// 1 INT
@@ -1046,7 +1049,7 @@ public class TrackSet {
 
 		for(Track tr : this.getTrackList()){
 			tr.setGc(gc);
-			tr.update();
+			// tr.update();
 		}
 	}
 	
@@ -1062,12 +1065,31 @@ public class TrackSet {
 	}
 
 	/** Iterate through track list and set regex to the track TrackSeqRegex.
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
 	 * */
-	public void setSeqRegexForTracks(String seqRegex) {
+	public void setSeqRegexForTracks(String seqRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		
 		for(Track tr : this.getTrackList()){
 				tr.setSeqRegex(seqRegex);
 		}
+	}
+
+	public void dropTracksWithRegex(List<String> cmdInput) throws InvalidCommandLineException {
+
+		List<String> trackNameRegex= cmdInput.subList(1, cmdInput.size());
+       
+        List<Track> tracksToDrop= this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToDrop){
+        	boolean removed= this.trackList.remove(tr);
+        	if(removed){
+        		System.err.println("Dropped: " + tr.getTrackTag());
+        	}
+        }
+        
 	}
 
 }

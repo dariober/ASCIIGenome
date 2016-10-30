@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,18 +52,19 @@ public class GenomicCoords implements Cloneable {
 	/** Size of the screen window 
 	 * Only user getUserWindowSize() to access it after init at constructor.
 	 */
-	final private int userWindowSize; 
 	private String fastaFile= null;
-	// final public static String gcProfileFileTag= "CG_percent";
-	// private TrackIntervalFeature regexMatchTrack;
 	
 	/* Constructors */
-	public GenomicCoords(String chrom, Integer from, Integer to, SAMSequenceDictionary samSeqDict, int windowSize, String fastaFile) 
+	public GenomicCoords(String chrom, Integer from, Integer to, SAMSequenceDictionary samSeqDict, String fastaFile) 
 			throws InvalidGenomicCoordsException, IOException{
+
+		if(from == null){ 
+			from= 1; 
+		}
 		
-		if(from == null){ from= 1; }
-		
-		if(to == null){ to= from + windowSize - 1; }
+		if(to == null){ 
+			to= from + this.getTerminalWindowSize() - 1; 
+		}
 		
 		// Check valid input
 		if(chrom == null || (to != null && from == null) || (from > to) || from < 1 || to < 1){
@@ -77,7 +79,6 @@ public class GenomicCoords implements Cloneable {
 				throw e;
 			}
 		}
-		this.userWindowSize= windowSize;
 		this.chrom= chrom;
 		this.from= from;
 		this.to= to;
@@ -87,25 +88,26 @@ public class GenomicCoords implements Cloneable {
 		}
 		this.fastaFile= fastaFile;
 		
-		//this.setRefSeq();
-		
 	}
 	
-	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, int windowSize, String fastaFile) throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords xgc= parseStringToGenomicCoords(region, windowSize);
-		GenomicCoords gc= new GenomicCoords(xgc.chrom, xgc.from, xgc.to, samSeqDict, windowSize, fastaFile);
+	/** This constructor should be deprecated.
+	 * */
+	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
+
+		GenomicCoords xgc= parseStringToGenomicCoords(region);
+
+		GenomicCoords gc= new GenomicCoords(xgc.chrom, xgc.from, xgc.to, samSeqDict, fastaFile);
 		this.chrom= gc.chrom;
 		this.from= gc.from;
 		this.to= gc.to;
-		this.userWindowSize= gc.getUserWindowSize();
 		this.samSeqDict= gc.getSamSeqDict();
 		this.fastaFile= gc.getFastaFile();
 		
-		// this.setRefSeq();
 	}
 		
 	private GenomicCoords(){ 
-		this.userWindowSize= -1;
+//		this.userWindowSize= -1;
+//		this.useFixedUserWindowSize= false;
 	};
 	
 	/* Methods */
@@ -146,8 +148,9 @@ public class GenomicCoords implements Cloneable {
 	 * This object can't be used as such as there is no check for valid input. It should be used only by the constructor.
 	 * @return
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
 	 */
-	private GenomicCoords parseStringToGenomicCoords(String x, int windowSize) throws InvalidGenomicCoordsException{
+	private GenomicCoords parseStringToGenomicCoords(String x) throws InvalidGenomicCoordsException, IOException{
 
 		Integer from= 1; // Default start/end coords.
 		Integer to= 1;
@@ -159,7 +162,7 @@ public class GenomicCoords implements Cloneable {
 		if(nsep == 0){ // Only chrom present. It will not handle well chrom names containing ':'
 			xgc.chrom= x.trim();
 			xgc.from= from;
-			xgc.to= to + windowSize - 1;
+			xgc.to= to + this.getTerminalWindowSize() - 1;
 			if(xgc.samSeqDict != null && xgc.to > samSeqDict.getSequence(xgc.chrom).getSequenceLength()){
 				xgc.to= samSeqDict.getSequence(xgc.chrom).getSequenceLength(); 
 			}
@@ -172,7 +175,7 @@ public class GenomicCoords implements Cloneable {
 			nsep= StringUtils.countMatches(fromTo, "-");
 			if(nsep == 0){ // Only start position given
 				xgc.from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
-				xgc.to= xgc.from + windowSize -1;
+				xgc.to= xgc.from + this.getTerminalWindowSize() - 1;
 			} else if(nsep == 1){
 				xgc.from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
 				xgc.to= Integer.parseInt(StringUtils.substringAfter(fromTo, "-").trim());
@@ -186,7 +189,7 @@ public class GenomicCoords implements Cloneable {
 		return xgc;
 	} 
 
-	public void correctCoordsAgainstSeqDict(SAMSequenceDictionary samSeqDict){
+	public void correctCoordsAgainstSeqDict(SAMSequenceDictionary samSeqDict) throws InvalidGenomicCoordsException, IOException{
 		
 		if(samSeqDict == null || samSeqDict.size() == 0){
 			// Just check start pos
@@ -395,7 +398,8 @@ public class GenomicCoords implements Cloneable {
 		if(this.samSeqDict == null || this.samSeqDict.size() == 0){
 			return null;
 		}
-		List<Double> positionMap = Utils.seqFromToLenOut(1, this.samSeqDict.getSequence(this.chrom).getSequenceLength(), this.getUserWindowSize());
+		List<Double> positionMap = Utils.seqFromToLenOut(1, this.samSeqDict.getSequence(this.chrom).getSequenceLength(), 
+				this.getUserWindowSize());
 		// This code taken from printableRuler() above.
 		String numberLine= "";
     	int prevLen= 0;
@@ -639,6 +643,14 @@ public class GenomicCoords implements Cloneable {
 		return this.chrom.equals(other.chrom) && this.from.equals(other.from) && this.to.equals(other.to); 
 	}
 	
+	/** True if all fileds in this object equla those in the other
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException */
+	public boolean equalCoordsAndWindowSize(GenomicCoords other) throws InvalidGenomicCoordsException, IOException{
+		return this.equalCoords(other) && 
+				this.getUserWindowSize() == other.getUserWindowSize();
+	}
+	
 	public Object clone() {
 	//shallow copy
 		try {
@@ -652,8 +664,10 @@ public class GenomicCoords implements Cloneable {
 	 * @throws IOException 
 	 * @throws InvalidRecordException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws ClassNotFoundException 
 	 * */
-	public TrackWiggles getGCProfile() throws IOException, InvalidRecordException, InvalidGenomicCoordsException {
+	public TrackWiggles getGCProfile() throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException {
 		if(this.fastaFile == null){
 			return null; 
 		}
@@ -773,16 +787,20 @@ public class GenomicCoords implements Cloneable {
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException */
 	public int getUserWindowSize() throws InvalidGenomicCoordsException, IOException{
-		if(this.userWindowSize <= 0){
-			return this.getTerminalWindowSize();
+
+		int userWindowSize= this.getTerminalWindowSize();
+		if(userWindowSize > this.getGenomicWindowSize()){
+			return this.getGenomicWindowSize();
 		} else {
-			return this.userWindowSize;
+			return userWindowSize;
 		}
 	}
 	
 	/** Size of genomic interval. Can be smaller than windowSize set by user. 
-	 * Not to be confused with userWindowSize. */
-	public int getGenomicWindowSize(){
+	 * Not to be confused with userWindowSize. 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException */
+	public int getGenomicWindowSize() throws InvalidGenomicCoordsException, IOException{
 		return this.to - this.from + 1;
 	}
 

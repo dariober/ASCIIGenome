@@ -1238,4 +1238,29 @@ public class Utils {
 		
 	}
 	
+	/** Same as R range(..., na.rm= TRUE) function: Return min and max of 
+	 * list of values ignoring NaNs.
+	 * */
+	public static Double[] range(List<Double> y){
+		Double[] range= new Double[2];
+		
+		Double ymin= Double.NaN;
+		Double ymax= Double.NaN;
+		for(Double x : y){
+			if(!x.isNaN()){
+				if(x > ymax || ymax.isNaN()){
+					ymax= x;
+				} 
+				if(x < ymin || ymin.isNaN()){
+					ymin= x;
+				}
+			}
+		}
+		range[0]= ymin;
+		range[1]= ymax;
+		return range;
+	}
+	
+
+	
 }

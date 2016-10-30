@@ -10,7 +10,6 @@ import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
 import samTextViewer.GenomicCoords;
 import tracks.TextRead;
 
@@ -73,7 +72,7 @@ public class TextReadTest {
 		
 		int from= 5566778;
 		int to= 5566798;
-		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, 100, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, fastaFile);
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(5566780);
 		rec.setCigarString("24M");
@@ -91,11 +90,11 @@ public class TextReadTest {
 		assertEquals("a,ccgg,t,uccmgtt,ac", textRead.getPrintableTextRead(true, true, false));
 
 
-		gc= new GenomicCoords("chr7", from, to, samSeqDict, 100, null);
+		gc= new GenomicCoords("chr7", from, to, samSeqDict, null);
 		textRead= new TextRead(rec, gc);
 		assertEquals("aaccggttaaccggttaac", textRead.getPrintableTextRead(false, true, false));
 
-		gc= new GenomicCoords("chr7", 5566780, 5566780+2, samSeqDict, 100, fastaFile);
+		gc= new GenomicCoords("chr7", 5566780, 5566780+2, samSeqDict, fastaFile);
 		textRead= new TextRead(rec, gc);
 		System.out.println(textRead.getPrintableTextRead(true, true, false));
 		System.out.println(textRead.getPrintableTextRead(true, false, false));		
@@ -105,7 +104,7 @@ public class TextReadTest {
 	public void canPrintSquashedRead() throws InvalidGenomicCoordsException, IOException{
 		int from= 5566778;
 		int to= from + 200;
-		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, 100, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, fastaFile);
 		
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(5566780);
@@ -113,10 +112,10 @@ public class TextReadTest {
 		rec.setReadBases("AACCGGTTAACCGGTTAACCGGTT".getBytes());
 		
 		TextRead textRead= new TextRead(rec, gc);
-		assertEquals(textRead.getTextStart(), 2);
-		assertEquals(textRead.getTextEnd(), 13);
-		assertEquals(">>>>>>>>>>>>".length(), textRead.getTextEnd() - textRead.getTextStart() + 1);
-		assertEquals(">>>>>>>>>>>>", textRead.getPrintableTextRead(false, true, false));
+		assertEquals(2, textRead.getTextStart());
+		assertEquals(11, textRead.getTextEnd());
+		assertEquals(textRead.getTextEnd() - textRead.getTextStart() + 1, ">>>>>>>>>>".length());
+		assertEquals(textRead.getPrintableTextRead(false, true, false), ">>>>>>>>>>");
 		// System.out.println(textRead);
 	}
 	
@@ -125,7 +124,7 @@ public class TextReadTest {
 
 		int from= 5566778;
 		int to= from + 200;
-		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, 100, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, fastaFile);
 		
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(5566780);
@@ -134,14 +133,14 @@ public class TextReadTest {
 		rec.setReadName("Read1");
 		
 		TextRead textRead= new TextRead(rec, gc);
-		assertEquals("Read1/>>>>>>", textRead.getPrintableTextRead(false, true, true));
+		assertEquals("Read1/>>>>", textRead.getPrintableTextRead(false, true, true));
 		
 		rec.setReadName("VeryLongReadNameMoreThanReadSequence");
 		textRead= new TextRead(rec, gc);
-		assertEquals("VeryLongRead", textRead.getPrintableTextRead(false, true, true));
+		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
 		
 		rec.setReadName("VeryLongRead");
 		textRead= new TextRead(rec, gc);
-		assertEquals("VeryLongRead", textRead.getPrintableTextRead(false, true, true));
+		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
 	}
 }

@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -28,6 +29,7 @@ import com.google.common.base.Joiner;
 
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import filter.FirstOfPairFilter;
 import filter.FlagToFilter;
 import filter.ReadNegativeStrandFilter;
@@ -40,6 +42,37 @@ public class UtilsTest {
 	
 	public static String fastaFile= "test_data/chr7.fa";
 
+	@Test
+	public void canGetRangeOfListOfValues(){
+		List<Double> y= new ArrayList<Double>();
+		y.add(1.0);
+		y.add(10.0);
+		y.add(3.0);
+		y.add(Double.NaN);
+		assertEquals(1.0, Utils.range(y)[0], 0.0001); // Min
+		assertEquals(10.0, Utils.range(y)[1], 0.0001); // Max
+		
+		// Only NaN
+		List<Double> nan= new ArrayList<Double>();
+		nan.add(Double.NaN);
+		nan.add(Double.NaN);
+		nan.add(Double.NaN);
+		assertTrue(Utils.range(nan)[0].isNaN());
+		assertTrue(Utils.range(nan)[1].isNaN());
+		
+		// Length of one
+		List<Double> y1= new ArrayList<Double>();
+		y1.add(1.0);
+		assertEquals(1.0, Utils.range(y1)[0], 0.0001);
+		assertEquals(1.0, Utils.range(y1)[1], 0.0001);
+		
+		// Zero length
+		List<Double> y0= new ArrayList<Double>();
+		assertTrue(Utils.range(y0)[0].isNaN());
+		assertTrue(Utils.range(y0)[1].isNaN());
+		
+	}
+	
 	@Test
 	public void testSortByValueReverse(){
 		
@@ -185,7 +218,7 @@ public class UtilsTest {
 
 	@Test
 	public void canCountReadsInWindow2() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, 200, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, fastaFile);
 		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 		
 		assertEquals(100377, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
@@ -215,7 +248,7 @@ public class UtilsTest {
 	
 	@Test
 	public void canCountReadsInWindow() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:5522436-5613572", samSeqDict, 200, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5522436-5613572", samSeqDict, fastaFile);
 		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 		
 		filters.add(new MappingQualityFilter(30)); // Same as   
@@ -228,7 +261,7 @@ public class UtilsTest {
 		long t1= System.currentTimeMillis();
 		System.out.println("TIME TO FILTER: " + (t1-t0));
 		
-		gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, 200, fastaFile);
+		gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, fastaFile);
 		
 	}
 	
@@ -314,7 +347,7 @@ public class UtilsTest {
 	
 	@Test
 	public void canParseInputAndUpdateGenomicCoords() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, 100, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, fastaFile);
 
 		//String region= Utils.parseConsoleInput("-r chr8:1-1000", gc);
 		//assertEquals("chr8:1-1000", region);
@@ -338,7 +371,7 @@ public class UtilsTest {
 	
 	@Test
 	public void canGetGoToRegionString() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, 100, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, fastaFile);
 		String rawInput= "1000";
 		assertEquals("chr7:1000", Utils.parseConsoleInput(rawInput, gc));
 		
@@ -466,9 +499,9 @@ public class UtilsTest {
 	}
 	
 	@Test
-	public void canPrintToStdoutOrFile() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintToStdoutOrFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, 101, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, fastaFile);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		
 		File filename= new File("tmp.txt");
@@ -480,7 +513,7 @@ public class UtilsTest {
 	
 	@Test
 	public void canGetWritableFileOrNull() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 200, samSeqDict, 100, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7", 1, 200, samSeqDict, fastaFile);
 		String x= Utils.parseCmdinputToGetSnapshotFile("save", gc);
 		assertEquals("chr7_1-200.txt", x);
 		x= Utils.parseCmdinputToGetSnapshotFile("save /tmp/foo.txt", gc);

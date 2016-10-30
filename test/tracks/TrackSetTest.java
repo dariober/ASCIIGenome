@@ -3,6 +3,7 @@ package tracks;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,10 +19,31 @@ import samTextViewer.Utils;
 
 public class TrackSetTest {
 
+	@Test
+	public void canDropTracks() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
+
+		GenomicCoords gc= new GenomicCoords("chr7", 1, 100, null, null);
+		
+		TrackSet trackSet= new TrackSet();
+		trackSet.add("test_data/hg19_genes.gtf.gz", gc);
+		trackSet.add("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc);
+		trackSet.add("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc);
+		
+		ArrayList<String> cmdInput = Utils.tokenize("dropTracks gtf.gz", " ");
+		trackSet.dropTracksWithRegex(cmdInput);
+		assertEquals(2, trackSet.getTrackList().size());
+		
+		// Drop all
+		cmdInput = Utils.tokenize("dropTracks .*", " ");
+		trackSet.dropTracksWithRegex(cmdInput);
+		assertEquals(0, trackSet.getTrackList().size());
+
+	}
+	
 	@Test // Disable to save time
 	public void canAddTrackFromSourcename() throws InvalidGenomicCoordsException, IOException, BamIndexNotFoundException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 100, null, 100, null);
+		GenomicCoords gc= new GenomicCoords("chr7", 1, 100, null, null);
 		
 		TrackSet trackSet= new TrackSet();
 		trackSet.add("test_data/hg19_genes.gtf.gz", gc);
@@ -41,7 +63,7 @@ public class TrackSetTest {
 		inputFileList.add("test_data/hg19_genes.gtf.gz");
 		inputFileList.add("test_data/posNeg.bedGraph.gz");
 		
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
+		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, null);
 		TrackSet trackSet= new TrackSet(inputFileList, gc);
 
 		assertEquals(4, trackSet.getTrackList().size()); // MEMO: BAM files add 2 tracks. 
@@ -50,26 +72,6 @@ public class TrackSetTest {
 		System.out.println(trackSet.getTrackList().size());
 		System.out.println(trackSet);
 		System.out.println("END");
-	}
-	
-	@Test
-	public void canDropTrackByHashCode() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
-
-		List<String> inputFileList= new ArrayList<String>();
-		inputFileList.add("test_data/hg19_genes.gtf.gz");
-		inputFileList.add("test_data/posNeg.bedGraph.gz");
-		inputFileList.add("test_data/posNeg.bedGraph.gz");
-		
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
-		TrackSet trackSet= new TrackSet(inputFileList, gc);
-		assertTrue(trackSet.getTrackList().size() == 3);
-		
-		int hc= trackSet.getTrackList().get(0).hashCode();
-		assertTrue(trackSet.dropTrackWithHashCode(hc));
-		assertTrue(trackSet.getTrackList().size() == 2);
-		
-		assertTrue(!trackSet.dropTrackWithHashCode(null));
-		
 	}
 	
 	/*//@Test
@@ -149,7 +151,7 @@ public class TrackSetTest {
 	public void canSetFilterForTrackIntervalFeature() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 				
 		TrackSet ts= new TrackSet();
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
+		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, null);
 		Track t1= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc); ts.add(t1, "x");
 		Track t2= new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc); ts.add(t2, "x");
 		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.add(t3, "x");
@@ -195,7 +197,7 @@ public class TrackSetTest {
 	}
 
 	@Test
-	public void canSetRpmForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+	public void canSetRpmForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		TrackSet ts= new TrackSet();
 		Track t1= new Track(); ts.add(t1, "x");
@@ -213,14 +215,13 @@ public class TrackSetTest {
 	}
 
 	@Test
-	public void canSetFilterFlagForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+	public void canSetFilterFlagForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, SQLException, InvalidRecordException, ClassNotFoundException{
 				
 		TrackSet ts= new TrackSet();
 		Track t1= new Track(); ts.add(t1, "x");
 		Track t2= new Track(); ts.add(t2, "x");
 		Track t3= new Track(); ts.add(t3, "x");
 
-		
 		String cmdInput= "-F 1024 #1 #3";
 		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));
 		assertEquals(1024+4, ts.getTrack(t1).get_F_flag());
@@ -340,7 +341,7 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canSetTrackHeight() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+	public void canSetTrackHeight() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 				
 		TrackSet ts= new TrackSet();
 		Track t1= new Track(); ts.add( t1, "x");
@@ -363,7 +364,7 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canSetYlimits() throws InvalidCommandLineException{
+	public void canSetYlimits() throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 				
 		TrackSet ts= new TrackSet();
 		Track t1= new Track(); ts.add(t1, "x");

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
@@ -43,8 +45,11 @@ public class TrackReads extends Track{
 	 * @param maxReadsStack Accumulate at most this many reads.
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws ClassNotFoundException 
 	 */
-	public TrackReads(String bam, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException{
+	public TrackReads(String bam, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		if(!Utils.bamHasIndex(bam)){
 			System.err.println("\nAlignment file " + bam + " has no index.\n");
@@ -52,18 +57,12 @@ public class TrackReads extends Track{
 		}
 		this.setFilename(bam);
 		this.setGc(gc);
-		this.update();
 
 	}
 	
 	/* M e t h o d s */
 	
 	public void update() throws InvalidGenomicCoordsException, IOException{
-		
-//		if(this.isSkipUpdate()){
-//			System.err.println(this.getTrackTag() + " not updated");
-//			return;
-//		}
 		
 		this.readStack= new ArrayList<List<TextRead>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){

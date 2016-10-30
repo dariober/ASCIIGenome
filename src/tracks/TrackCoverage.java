@@ -2,7 +2,9 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -12,10 +14,12 @@ import org.apache.commons.validator.routines.UrlValidator;
 import com.google.common.base.Joiner;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.samtools.util.Interval;
 import htsjdk.samtools.util.IntervalList;
@@ -45,9 +49,11 @@ public class TrackCoverage extends Track {
 	 * @param bs Should loci be parsed also as BS-Seq data? 
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws ClassNotFoundException 
 	 */
-	public TrackCoverage(String bam, GenomicCoords gc, boolean bs) throws IOException, InvalidGenomicCoordsException{
-		this.setGc(gc);
+	public TrackCoverage(String bam, GenomicCoords gc, boolean bs) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		this.setFilename(bam);
 		this.setBisulf(bs);
 		this.alnRecCnt= Utils.getAlignedReadCount(new File(bam));
@@ -62,17 +68,12 @@ public class TrackCoverage extends Track {
 			this.samReader= srf.open(new File(bam));
 		}
 		/*  ------------------------------------------------------ */
-		this.update();
+		this.setGc(gc);
 	}
 	
 	/* M e t h o d s */
-	
-	public void update() throws IOException, InvalidGenomicCoordsException{
-		
-//		if(this.isSkipUpdate()){
-//			System.err.println(this.getTrackTag() + " not updated");
-//			return;
-//		}
+	@Override
+	protected void update() throws IOException, InvalidGenomicCoordsException{
 		
 		this.screenLocusInfoList= new ArrayList<ScreenLocusInfo>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
@@ -82,7 +83,6 @@ public class TrackCoverage extends Track {
 			SamLocusIterator samLocIter= new SamLocusIterator(samReader, il, true);
 			samLocIter.setSamFilters(this.getSamRecordFilter());
 			Iterator<samTextViewer.SamLocusIterator.LocusInfo> iter= samLocIter.iterator();
-		
 			
 			int userWindowSize= this.getGc().getUserWindowSize();
 			
@@ -90,26 +90,58 @@ public class TrackCoverage extends Track {
 				this.screenLocusInfoList.add(new ScreenLocusInfo());	
 			}
 			
+			List<Double> mapping = this.getGc().getMapping(userWindowSize);
 			while(iter.hasNext()){
 				samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
-				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), this.getGc().getMapping(userWindowSize));
+				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), mapping);
 				byte refBase= '\0';
 				if(this.getGc().getRefSeq() != null){
 					refBase= this.getGc().getRefSeq()[screenPos];
 				}
 				this.screenLocusInfoList.get(screenPos).increment(locusInfo, refBase);
 			}
+			
 			this.nRecsInWindow= Utils.countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
 			samLocIter.close();
 		}
-		
-		this.getFilename();
-		this.getGc();
-		this.getSamRecordFilter();
-		
-		this.setYLimitMin(this.getYLimitMin());
-		this.setYLimitMax(this.getYLimitMax());
+
+		ArrayList<Double> yValues = new ArrayList<Double>();
+		for(ScreenLocusInfo x : this.screenLocusInfoList){
+			yValues.add(x.getMeanDepth());
+		}
+		this.setScreenScores(yValues);
+			
+		if(this.isRpm()){
+			this.rpm();
+		}		
 	}
+
+	/** Convert screen scores to RPM. Raw values overwritten.
+	 * */
+	private void rpm(){
+		ArrayList<Double> rpm = new ArrayList<Double>();	
+		// long libSize= Utils.getAlignedReadCount(new File(this.getFilename()));
+		for(Double y : this.getScreenScores()){
+			rpm.add(y / this.alnRecCnt * 1000000.0);
+		}		
+		this.setScreenScores(rpm);
+	} 
+	
+	@Override
+	protected void updateToRPM(){
+		try {
+			this.update(); // It shouldn't be necessary to go for full update!!!
+		} catch (IOException | InvalidGenomicCoordsException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	protected void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.samRecordFilter = samRecordFilter;
+		this.update();
+	}
+
 	
 	/**
 	 * Printable coverage track. The height of the track in lines is `yMaxLines`.
@@ -117,9 +149,12 @@ public class TrackCoverage extends Track {
 	 * @param yMaxLines
 	 * @param rpm Should read counts be normalized by library size as Reads Per Million
 	 * @return HashMapwith with keys/values the printable characteristics of the track. 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
 	@Override
-	public String printToScreen(){
+	public String printToScreen() throws InvalidGenomicCoordsException, IOException{
+		 //This method should not do any computation like RPM etc. Just print stuff.
 				
 		if(this.getyMaxLines() == 0){
 			return "";
@@ -130,20 +165,7 @@ public class TrackCoverage extends Track {
 			return "";
 		}
 		
-		List<Double> yValues= new ArrayList<Double>();
-		for(ScreenLocusInfo x : this.screenLocusInfoList){
-			yValues.add(x.getMeanDepth());
-		}
-		this.setScreenScores(yValues);
-			
-		if(this.isRpm()){
-			// long libSize= Utils.getAlignedReadCount(new File(this.getFilename()));
-			for(int i= 0; i < yValues.size(); i++){
-				yValues.set(i, yValues.get(i)/this.alnRecCnt * 1000000.0);
-			}
-		}
-
-		TextProfile textProfile= new TextProfile(yValues, this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
+		TextProfile textProfile= new TextProfile(this.getScreenScores(), this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
 		ArrayList<String> lineStrings= new ArrayList<String>();
 		for(int i= (textProfile.getProfile().size() - 1); i >= 0; i--){
 			List<String> xl= textProfile.getProfile().get(i);
@@ -170,15 +192,20 @@ public class TrackCoverage extends Track {
 			return "";
 		}
 		
-		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
+		Double[] range = Utils.range(this.getScreenScores());
+		double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
 		String rpmTag= this.isRpm() ? "; rpm" : "";
+
+		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
+		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
+		
 		String xtitle= this.getTrackTag() 
-				+ "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
+				+ "; ylim[" + ymin + " " + ymax + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
 				+ "; -F" + this.get_F_flag() 
 				+ " -f" + this.get_f_flag() 
 				+ " -q" + this.getMapq()
-				+ "; N. recs here/all: " + this.nRecsInWindow + "/" + this.alnRecCnt
+				+ "; Recs here/all: " + this.nRecsInWindow + "/" + this.alnRecCnt
 				+ rpmTag
 				+ "\n";
 		return this.formatTitle(xtitle);

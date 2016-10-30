@@ -4,10 +4,12 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -25,9 +27,9 @@ public class TrackReadsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
-	public void canGetTitle() throws InvalidGenomicCoordsException, IOException{
+	public void canGetTitle() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		String bam= "test_data/adjacent.bam";
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 100, samSeqDict, 100, null);
+		GenomicCoords gc= new GenomicCoords("chr7", 1, 100, samSeqDict, null);
 		TrackReads tr= new TrackReads(bam, gc);
 		System.out.println("TITLE");
 		tr.setNoFormat(true);
@@ -36,15 +38,14 @@ public class TrackReadsTest {
 	}
 	
 	@Test
-	public void testOneLineStack() throws InvalidGenomicCoordsException, IOException{
+	public void testOneLineStack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		String bam= "test_data/adjacent.bam";
 		int yMaxLines= 10;
 		boolean bs= false;
 		boolean noFormat= true;
-		int windowSize= 100;
 		int from= 1;
-		int to= 100;
-		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, windowSize, null);
+		int to= 50;
+		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, null);
 			
 		TrackReads tr= new TrackReads(bam, gc);
 		tr.setBisulf(bs);
@@ -57,26 +58,23 @@ public class TrackReadsTest {
 		
 		System.out.println(tr.printToScreen());
 		
-		windowSize= 99;
-		gc= new GenomicCoords("chr7", from, to, samSeqDict, windowSize, null);
+		gc= new GenomicCoords("chr7", 1, 100, samSeqDict, null);
 		tr= new TrackReads(bam, gc);
 		tr.setBisulf(bs);
 		tr.setNoFormat(noFormat);
 		tr.setyMaxLines(yMaxLines);
-		assertEquals(">>>>>>>>>>>>>>>>>>>> >>>>>>>>>> >>>>>>>>>>", tr.printToScreen());
+		assertTrue(tr.printToScreen().split("\n").length == 1);
 	}
-	String exp= "AAAAAAAAAA           GGGGGGGGGG TTTTTTTTTT\n"+
-	"          CCCCCCCCCC";
+
 	@Test
-	public void test() throws InvalidGenomicCoordsException, IOException {
+	public void test() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		String bam= "test_data/ds051.actb.bam";
 		int yMaxLines= 50;
 		boolean bs= false;
 		boolean noFormat= true;
-		int windowSize= 200;
 		int from= 5566770;
 		int to= from + 100;
-		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, windowSize, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, fastaFile);
 			
 		TrackReads tr= new TrackReads(bam, gc);
 		tr.setBisulf(bs);
@@ -86,15 +84,14 @@ public class TrackReadsTest {
 	}
 
 	@Test
-	public void testNoReadsInRegion() throws InvalidGenomicCoordsException, IOException {
+	public void testNoReadsInRegion() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		String bam= "test_data/ds051.actb.bam";
 		int yMaxLines= 50;
 		boolean bs= false;
 		boolean noFormat= true;
-		int windowSize= 200;
 		int from= 1;
 		int to= from + 100;
-		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, windowSize, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, fastaFile);
 			
 		TrackReads tr= new TrackReads(bam, gc);
 		tr.setyMaxLines(yMaxLines);
@@ -104,9 +101,9 @@ public class TrackReadsTest {
 	}
 	
 	@Test
-	public void canResetToZeroLargeWindow() throws IOException, InvalidGenomicCoordsException {
+	public void canResetToZeroLargeWindow() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException {
 		// If the genomic window is too large do not process the bam file and return zero height track.
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 100000000, samSeqDict, 100, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7", 1, 100000000, samSeqDict, fastaFile);
 		TrackReads tr= new TrackReads("test_data/ds051.actb.bam", gc);
 		assertEquals("", tr.printToScreen());
 	}

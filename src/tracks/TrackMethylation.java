@@ -184,10 +184,14 @@ public class TrackMethylation extends Track {
 			return "";
 		}
 
-        double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
-        
+		Double[] range = Utils.range(this.getScreenScores());
+		double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
+
+		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
+		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
+		
         String xtitle= this.getTrackTag() 
-                + "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
+                + "; ylim[" + ymin + " " + ymax + "]" 
                 + "; range[" + rounded[0] + " " + rounded[1] + "]\n";
 		return this.formatTitle(xtitle);
     }

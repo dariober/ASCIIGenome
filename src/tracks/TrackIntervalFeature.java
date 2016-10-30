@@ -32,8 +32,6 @@ public class TrackIntervalFeature extends Track {
 	/* C o n s t r u c t o r */
 
 	public TrackIntervalFeature(String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
-		this.setGc(gc);
-		this.setFilename(filename);
 		
 	    // ----------------------------------------------------------
 		this.type= Utils.getFileTypeFromName(new File(filename).getName());
@@ -55,8 +53,8 @@ public class TrackIntervalFeature extends Track {
 		} 
 		this.tabixReader= new TabixReader(new File(sourceFile).getAbsolutePath());
 		// ----------------------------------------------------------
-		
-		this.update();
+		this.setGc(gc);
+		this.setFilename(filename);
 		
 	}
 	
@@ -65,9 +63,15 @@ public class TrackIntervalFeature extends Track {
 	}
 	
 	/* M e t h o d s */
-	
-	public void update() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
-		
+	@Override
+	/** Collect features mapping to the current genomic coordinates and update the list of interval features
+	 * for the track. Also update the mapping of features to the terminal screen.
+	 * This method should be called only from within methods that change the features being displayed. 
+	 * E.g. setGc(), which changes the coordinates, or setHideRegex() & setShowRegex() which change the visible 
+	 * features. 
+	 * update() should not change anything other than the list of features and the mapping. 
+	 * */
+	protected void update() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		this.intervalFeatureList = this.getFeaturesInInterval(
 				this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
 		
@@ -142,7 +146,6 @@ public class TrackIntervalFeature extends Track {
 				nextFeature.getFrom(), 
 				nextFeature.getFrom() + currentGc.getGenomicWindowSize() -1, 
 				currentGc.getSamSeqDict(),
-				currentGc.getUserWindowSize(),
 				currentGc.getFastaFile());
 		return nextGc;
 	}
@@ -176,7 +179,6 @@ public class TrackIntervalFeature extends Track {
 				nextFeature.getFrom(), 
 				nextFeature.getTo(), 
 				currentGc.getSamSeqDict(),
-				currentGc.getUserWindowSize(),
 				currentGc.getFastaFile());
 		return nextGc;		
 	}
@@ -192,7 +194,6 @@ public class TrackIntervalFeature extends Track {
 				nextFeature.getFrom(), 
 				nextFeature.getFrom() + currentGc.getGenomicWindowSize() - 1, 
 				currentGc.getSamSeqDict(),
-				currentGc.getUserWindowSize(),
 				currentGc.getFastaFile());
 		return nextGc;
 	}
@@ -215,7 +216,6 @@ public class TrackIntervalFeature extends Track {
 				startFrom, 
 				endTo, 
 				currentGc.getSamSeqDict(),
-				currentGc.getUserWindowSize(),
 				currentGc.getFastaFile());
 		return allMatchesGc;
 		
@@ -545,8 +545,9 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
-	public void setHideRegex(String hideRegex) {
+	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		this.hideRegex= hideRegex;
+		this.update();
 	}
 	@Override
 	public String getHideRegex() {
@@ -554,8 +555,9 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
-	public void setShowRegex(String showRegex) {
+	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		this.showRegex= showRegex;
+		this.update();
 	}
 	@Override
 	public String getShowRegex() {

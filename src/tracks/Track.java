@@ -14,6 +14,7 @@ import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
+// TODO: This class should be abstract 
 public class Track {
 
 	private String title= "";
@@ -41,39 +42,35 @@ public class Track {
 	private int f_flag= 0;
 	private int F_flag= 4;
 	private int mapq= 0;
-	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
+	protected List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
 	private boolean hideTrack= false; 
 	private boolean hideTitle= false;
 	
-	/**Use with care: if true the .update() is effectively not called.
-	 * Useful to save time with methods that do not change the genomic coordinates or the data, E.g.
-	 * colorTrack.
-	 * */
-	/* Min value of screen scores. Not to be confused with the y limit **/
-	public double getMinScreenScores(){
-		Double ymin= Double.NaN;
-	 	for(Double x : this.screenScores){
-	 		if(ymin.isNaN() && !x.isNaN()){
-	 			ymin= x;
-	 		} else if (x < ymin){
-	 			ymin= x;
-	 		}
-	 	}
-	 	return ymin;
-	}
-	
-	/* Max value of screen scores. Not to be confused with the y limit **/
-	public double getMaxScreenScores(){
-		Double ymax= Double.NaN;
-	 	for(Double x : this.screenScores){
-	 		if(ymax.isNaN() && !x.isNaN()){
-	 			ymax= x;
-	 		} else if (x > ymax){
-	 			ymax= x;
-	 		}
-	 	}
-	 	return ymax;
-	}
+//	/** Min value of screen scores. Not to be confused with the y limit */
+//	public double getMinScreenScores(){
+//		Double ymin= Double.NaN;
+//	 	for(Double x : this.screenScores){
+//	 		if(ymin.isNaN() && !x.isNaN()){
+//	 			ymin= x;
+//	 		} else if (x < ymin){
+//	 			ymin= x;
+//	 		}
+//	 	}
+//	 	return ymin;
+//	}
+//	
+//	/** Max value of screen scores. Not to be confused with the y limit **/
+//	public double getMaxScreenScores(){
+//		Double ymax= Double.NaN;
+//	 	for(Double x : this.screenScores){
+//	 		if(ymax.isNaN() && !x.isNaN()){
+//	 			ymax= x;
+//	 		} else if (x > ymax){
+//	 			ymax= x;
+//	 		}
+//	 	}
+//	 	return ymax;
+//	}
 	
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
@@ -88,7 +85,7 @@ public class Track {
 	}
 	
 	/* Printers */
-	public String printToScreen() throws InvalidGenomicCoordsException{
+	public String printToScreen() throws InvalidGenomicCoordsException, IOException{
 		return null;
 	}
 
@@ -115,8 +112,9 @@ public class Track {
 	public int getyMaxLines() {
 		return yMaxLines;
 	}
-	public void setyMaxLines(int yMaxLines) {
+	public void setyMaxLines(int yMaxLines) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		this.yMaxLines = yMaxLines;
+		this.update();
 	}
 	public String getFilename() {
 		return filename;
@@ -144,18 +142,35 @@ public class Track {
 		return gc;
 	}
 
-	public void setGc(GenomicCoords gc) {
+	/** Set the GenomicCoords object AND update the track by calling the update method.
+	 * */
+	public void setGc(GenomicCoords gc) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		this.gc = gc;
+		this.update();
 	}
 
-	public boolean isNoFormat() { return noFormat; }
-	public void setNoFormat(boolean noFormat) { this.noFormat = noFormat; }
+	public boolean isNoFormat() { 
+		return noFormat; 
+	}
+	
+	public void setNoFormat(boolean noFormat) { 
+		this.noFormat = noFormat; 
+	}
 
-	public Double getYLimitMin() { return yLimitMin;}
-	public void setYLimitMin(double ymin) { this.yLimitMin = ymin;}
+	public Double getYLimitMin() { 
+		return yLimitMin;
+	}
+	
+	public void setYLimitMin(double ymin) { 
+		this.yLimitMin = ymin;
+	}
 
-	public Double getYLimitMax() { return yLimitMax; }
-	public void setYLimitMax(double ymax) { this.yLimitMax = ymax; }
+	public Double getYLimitMax() { 
+		return yLimitMax; 
+	}
+	public void setYLimitMax(double ymax) { 
+		this.yLimitMax = ymax; 
+	}
 
 	/** Return filter making sure the AlignedFilter to discard unmapped is set.
 	 * */
@@ -167,17 +182,18 @@ public class Track {
 		return this.samRecordFilter; 
 	}
 
-	protected void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) {
+	protected void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		this.samRecordFilter = samRecordFilter;
+		this.update();
 	}
 	
 	public boolean isBisulf() { return this.bisulf; }
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
-	public void setHideRegex(String hideRegex) { }
+	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { }
 	public String getHideRegex() { return ""; }
 	
-	public void setShowRegex(String showRegex) { }
+	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { }
 	public String getShowRegex() { return ""; }
 	
 	public String getTitleColour() {
@@ -233,20 +249,18 @@ public class Track {
 		this.gap = gap;
 	}
 
-	public void setRpm(boolean rpm) {
+	public void setRpm(boolean rpm) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		this.rpm = rpm;
+		this.updateToRPM();
 	}
 	public boolean isRpm(){
 		return this.rpm;
 	}
 
-	//public void setPrintPileup(boolean printPileup) {
-	//	this.printPileup = printPileup;
-	//}
-	//public boolean isPrintPileup(){
-	//	return this.printPileup;
-	//}
-
+	/** Update scores to RPM. Do nothing if RPM transformation is not applicable.*/ 
+	protected void updateToRPM(){
+		// 
+	}
 	
 	/** This int is just a setting but is NOT translated to a filter! */
 	protected int get_f_flag() {
@@ -294,7 +308,7 @@ public class Track {
 		this.id = id;
 	}
 
-	public void update() throws MalformedURLException, IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException {
+	protected void update() throws MalformedURLException, IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException {
 		// TODO Auto-generated method stub
 	}
 
@@ -302,7 +316,7 @@ public class Track {
 		return null;
 	}
 
-	public void setSeqRegex(String seqRegex) {
+	public void setSeqRegex(String seqRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		//
 	}
 
