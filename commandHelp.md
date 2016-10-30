@@ -57,6 +57,7 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
   - [showGenome](#showgenome)
   - [infoTracks](#infotracks)
   - [addTracks](#addtracks)
+  - [dropTracks](#droptracks)
   - [orderTracks](#ordertracks)
   - [history](#history)
   - [cmdHistory](#cmdhistory)
@@ -197,7 +198,7 @@ E.g. `find_all ACTB genes.gtf` will find the entire ACTB gene (provided the rege
 
 ### seqRegex
 
-**Usage: seqRegex regex**
+**Usage: seqRegex [regex]**
 
 Find regex in reference sequence and show matches as and additional track.  Useful to show restriction enzyme sites, transcription factor motifs, etc. The tag of this track is `seqRegex` and it is not displayed. To adjust its height use `trackHeight 10 seqRegex`. If regex is omitted the matching is disabled Matching is case sensitive, to ignore case use the regex syntax `(?i)`. Example
 ```
@@ -404,6 +405,16 @@ Examples:
 ```
 addTracks peaks.bed gene.gtf
 addTracks http://remote/host/peaks.bed
+```
+
+### dropTracks
+
+**Usage: dropTracks track_regex [track_regex]...**
+
+Drop tracks matching any of the listed regex. 
+Examples:
+```
+dropTracks bam
 ```
 
 ### orderTracks

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -38,57 +39,67 @@ public class TrackSet {
 	public TrackSet(List<String> inputFileList, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
 		for(String sourceName : inputFileList){
-
-			if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
-				//
-				// BAM FILE
-				//
-				if(!Utils.bamHasIndex(sourceName)){
-					System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
-					System.err.println("samtools index '" + sourceName + "'\n");
-					System.exit(1);
+			try{
+				if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
+					//
+					// BAM FILE
+					//
+					if(!Utils.bamHasIndex(sourceName)){
+						System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
+						System.err.println("samtools index '" + sourceName + "'\n");
+						throw new BamIndexNotFoundException();
+					}
+					
+					/* Coverage track */
+					TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
+	
+					trackCoverage.setId(this.getMaxTrackId() + 1);
+					trackCoverage.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId() + 1));
+					this.trackList.add(trackCoverage);
+					
+					/* Read track */
+					TrackReads trackReads= new TrackReads(sourceName, gc);
+					trackReads.setId(this.getMaxTrackId() + 1);
+					trackReads.setTrackTag(new File(sourceName).getName() + "@" + (this.getMaxTrackId() + 1));
+					this.trackList.add(trackReads);
 				}
 				
-				/* Coverage track */
-				TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
-
-				trackCoverage.setId(this.getMaxTrackId() + 1);
-				trackCoverage.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId() + 1));
-				this.trackList.add(trackCoverage);
-				
-				/* Read track */
-				TrackReads trackReads= new TrackReads(sourceName, gc);
-				trackReads.setId(this.getMaxTrackId() + 1);
-				trackReads.setTrackTag(new File(sourceName).getName() + "@" + (this.getMaxTrackId() + 1));
-				this.trackList.add(trackReads);
+				else if(    Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
+			        || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
+				    || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
+					//
+					// Annotatation
+					//
+					TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
+					//tif.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId()+1));
+					//tif.setId(this.getMaxTrackId() + 1);
+					this.add(tif, new File(sourceName).getName());
+				} 
+	
+				else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG) 
+						|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.TDF) 
+						|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)){
+					//
+					// Wiggles
+					//
+					TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
+					//tw.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId()+1));
+					//tw.setId(this.getMaxTrackId()+1);
+					this.add(tw, new File(sourceName).getName());
+					
+				} else {
+					// NB: You never get here because Uteils.getFileTypeFromName returns
+					// BED for any file that cannot be classified.
+					System.err.println("Unable to classify " + sourceName + "; skipping"); 								
+				}
+			} catch(Exception e){
+				System.err.println("Unable to classify " + sourceName + "; skipping");
+				try {
+					TimeUnit.SECONDS.sleep(3);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
 			}
-			
-			else if(    Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
-		        || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
-			    || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
-				//
-				// Annotatation
-				//
-				TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
-				//tif.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId()+1));
-				//tif.setId(this.getMaxTrackId() + 1);
-				this.add(tif, new File(sourceName).getName());
-			} 
-
-			else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG) 
-					|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.TDF) 
-					|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)){
-				//
-				// Wiggles
-				//
-				TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
-				//tw.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId()+1));
-				//tw.setId(this.getMaxTrackId()+1);
-				this.add(tw, new File(sourceName).getName());
-				
-			} else {
-				System.err.println("Unable to classify " + sourceName + "; skipping"); 								
-			}			
 		}		
 		// TrackWiggles gcProfile= gc.getGCProfile();
 	}

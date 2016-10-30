@@ -110,21 +110,21 @@ public class TrackIntervalFeature extends Track {
 		// Remove hidden features
 		List<IntervalFeature> xFeaturesFiltered= new ArrayList<IntervalFeature>();
 		for(IntervalFeature x : xFeatures){
-			if(this.featureIsVisible(x)){
+			if(this.featureIsVisible(x.getRaw())){
 				xFeaturesFiltered.add(x);
 			}
 		}
 		return xFeaturesFiltered;
 	}
 
-	/** Return true if a feature is visible, i.e. it
+	/** Return true if string is visible, i.e. it
 	 * passes the regex filters. Note that regex filters are applied to the raw string.
 	 * */
-	private boolean featureIsVisible(IntervalFeature x){
-		boolean showIt= Pattern.compile(this.showRegex).matcher(x.getRaw()).find();
+	protected boolean featureIsVisible(String x){
+		boolean showIt= Pattern.compile(this.showRegex).matcher(x).find();
 		boolean hideIt= false;
 		if(!this.hideRegex.isEmpty()){
-			hideIt= Pattern.compile(this.hideRegex).matcher(x.getRaw()).find();	
+			hideIt= Pattern.compile(this.hideRegex).matcher(x).find();	
 		}
 		if(showIt && !hideIt){
 			return true;
@@ -163,7 +163,7 @@ public class TrackIntervalFeature extends Track {
 				return null;
 			} 
 			IntervalFeature x= new IntervalFeature(line, this.type);
-			if(x.getFrom() > from && this.featureIsVisible(x)){
+			if(x.getFrom() > from && this.featureIsVisible(x.getRaw())){
 				return x;
 			}
 		}
@@ -245,7 +245,7 @@ public class TrackIntervalFeature extends Track {
 				boolean matched= Pattern.compile(query).matcher(line).find();
 				if(matched){
 					IntervalFeature x= new IntervalFeature(line, this.type);
-					if(this.featureIsVisible(x)){
+					if(this.featureIsVisible(x.getRaw())){
 						matchedFeatures.add(x);
 					}
 				}
@@ -496,7 +496,7 @@ public class TrackIntervalFeature extends Track {
 				boolean matched= Pattern.compile(query).matcher(line).find();
 				if(matched){
 					IntervalFeature x= new IntervalFeature(line, this.getType());
-					if(x.getFrom() > startingPoint && this.featureIsVisible(x)){
+					if(x.getFrom() > startingPoint && this.featureIsVisible(x.getRaw())){
 						return x;
 					}
 				} 

@@ -18,6 +18,18 @@ import htsjdk.tribble.readers.TabixReader.Iterator;
 
 public class MakeTabixFileTest {
 
+	// @Test
+	public void handlingInvalidFile() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
+		
+		String infile= "test_data/chr7.fa";
+		File outfile= new File("deleteme.gtf.gz");
+		outfile.deleteOnExit();
+		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		expectedTbi.deleteOnExit();
+		
+		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+	}
+	
 	@Test 
 	public void canHandleEmptyFile() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
 		String infile= "test_data/empty.bed";
@@ -96,7 +108,7 @@ public class MakeTabixFileTest {
 		
 	}
 	
-	//@Test
+	@Test
 	public void canCompressAndIndexSortedURL() throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
 		
 		String infile= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz";
@@ -139,10 +151,10 @@ public class MakeTabixFileTest {
 
 		String infile= "test_data/CHD.exon.2010_03.sites.unsorted.vcf";
 		File outfile= new File("test_data/tmp6.bed.gz");
-		//outfile.deleteOnExit();
+		outfile.deleteOnExit();
 		
 		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
-		//expectedTbi.deleteOnExit();
+		expectedTbi.deleteOnExit();
 
 		new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
 		

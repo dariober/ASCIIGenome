@@ -11,8 +11,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -51,6 +49,8 @@ public class MakeTabixIndex {
 		
 		File tmp = File.createTempFile("asciigenome", "makeTabixIndex.tmp.gz");
 		File tmpTbi= new File(tmp.getAbsolutePath() + ".tbi");
+		tmp.deleteOnExit();
+		tmpTbi.deleteOnExit();
 		
 		try{
 			// Try to block compress and create index assuming the file is sorted
@@ -115,9 +115,9 @@ public class MakeTabixIndex {
 			
 			BedLineCodec bedCodec= new BedLineCodec();
 			BedLine bed = bedCodec.decode(line);
-			if(bed == null) {
-				return;
-			}
+			//if(bed == null) {
+			//	return;
+			//}
 			indexCreator.addFeature(bed, filePosition);
 		
 		} else if(fmt.equals(TabixFormat.GFF)){

@@ -121,16 +121,12 @@ public class Main {
 			BufferedReader br= new BufferedReader(new FileReader(new File(batchFile)));
 			String line = null;  
 			while ((line = br.readLine()) != null){
-
+				// Start processing intervals one by one
 				IntervalFeature target= new IntervalFeature(line, TrackFormat.BED);
 				String reg= target.getChrom() + ":" + target.getFrom() + "-" + target.getTo();
 				String gotoAndExec= ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
 				InteractiveInput itr = new InteractiveInput();
 				proc= itr.processInput(gotoAndExec, proc);
-				if(itr.getInteractiveInputExitCode() == 0){
-					proc.iterateTracks();
-					Utils.printer("\n", proc.getSnapshotFile());
-				}
 			}
 			br.close();
 			System.exit(0);
@@ -138,19 +134,13 @@ public class Main {
 
 		// See if we need to process the exec arg before going to interactive mode. 
 		// Also if we are in non-interactive mode, we process the track set now and later exit 
+		console.clearScreen();
+		console.flush();
+		proc.iterateTracks();
 		if(!exec.isEmpty() || opts.getBoolean("nonInteractive")){
 
-			console.clearScreen();
-			console.flush();
-			
 			InteractiveInput itr = new InteractiveInput();
 			proc= itr.processInput(exec, proc);
-			if(itr.getInteractiveInputExitCode() == 0){
-				proc.iterateTracks();
-				Utils.printer("\n", proc.getSnapshotFile());
-				proc.setSnapshotFile(null);
-			}
-			
 			if(opts.getBoolean("nonInteractive")){
 				System.out.print("\033[0m");
 				System.exit(0);
@@ -162,12 +152,6 @@ public class Main {
 		List<String> cmdHistory= new ArrayList<String>();
 		while(true){ 
 			
-			console.clearScreen();
-			console.flush();
-			
-			proc.iterateTracks();
-			proc.setSnapshotFile(null); // This is to prevent taking screenshots one after another. It's a hack and should be changed
-
 			// *** START processing interactive input
 			String cmdConcatInput= ""; // String like "zi && -F 16 && mapq 10"
 			InteractiveInput interactiveInput= new InteractiveInput();

@@ -9,7 +9,11 @@ This should address almost completely [issue 18](https://github.com/dariober/ASC
 
 * **Colours II** ASCIIGenome sets the background colour of the terminal to white, unless started with `--noFormat`. In this way the visual look of ASCIIGenome should be independent of the user's colour scheme of the terminal.
 
-* **Memory** Memory footprint is now even smaller since files are never fully read in memory now. Bed or gff files without tabix index are sorted, block compressed and indexed as needed to temporary files. 
+* **Performance **
+
+** **Memory** Memory footprint is now even smaller since files are never fully read in memory now. Bed or gff files without tabix index are sorted, block compressed and indexed as needed to temporary files. 
+
+** **Speed** Operation that don't change the underlying data, e.g. track color and order do not parse the raw files again, which can be quite time consuming. 
 
 * Fixed [issue 20](https://github.com/dariober/ASCIIGenome/issues/20) (remember to close it on merge with trunk). 
 

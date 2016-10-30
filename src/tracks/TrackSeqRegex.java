@@ -101,14 +101,24 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 
 		// Write sets of matches to file	
 		// =============================
+					
 		for(String reg : regionListPos){
-			wr.write(reg + "\t.\t+\n");
+			reg += "\t.\t+\n";
+			if(this.featureIsVisible(reg)){
+				wr.write(reg);
+			}
 		}
 		for(String reg : regionListNeg){
-			wr.write(reg + "\t.\t-\n");			
+			reg += "\t.\t-\n";
+			if(this.featureIsVisible(reg)){
+				wr.write(reg);
+			}
 		}
 		for(String reg : regionListPalind){
-			wr.write(reg + "\t.\t.\n");
+			reg += "\t.\t.\n";
+			if(this.featureIsVisible(reg)){
+				wr.write(reg);
+			}
 		}
 		wr.close();
 		

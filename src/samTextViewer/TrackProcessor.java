@@ -123,7 +123,4 @@ public class TrackProcessor {
 		return this.genomicCoordsHistory.current().getUserWindowSize();
 	}
 
-//	protected void setWindowSize(int windowSize) {
-//		this.windowSize = windowSize;
-//	}
 }

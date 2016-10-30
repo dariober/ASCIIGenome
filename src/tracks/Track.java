@@ -190,11 +190,21 @@ public class Track {
 	public boolean isBisulf() { return this.bisulf; }
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
-	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { }
-	public String getHideRegex() { return ""; }
+	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { 
 	
-	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { }
-	public String getShowRegex() { return ""; }
+	}
+	
+	public String getHideRegex() { 
+		return ""; 
+	}
+	
+	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { 
+
+	}
+	
+	public String getShowRegex() { 
+		return ""; 
+	}
 	
 	public String getTitleColour() {
 		return this.titleColour;

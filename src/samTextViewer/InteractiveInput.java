@@ -15,6 +15,7 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
+import jline.console.ConsoleReader;
 
 /** Class to process input from console
  * */
@@ -37,6 +38,8 @@ public class InteractiveInput {
 	 * */
 	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
+		ConsoleReader console = CommandList.initConsole();
+		
 		// cmdInputList: List of individual commands in tokens to be issued. 
 		// E.g.: [ ["zi"], 
 		//         ["-F", "16"], 
@@ -54,7 +57,9 @@ public class InteractiveInput {
 		SAMSequenceDictionary samSeqDict = proc.getGenomicCoordsHistory().current().getSamSeqDict();
 		
 		for(List<String> cmdInput : cmdInputList){
-			// REMEMBER TO CALL TrackSet.update() AFTER METHODS THAT CHANGE THE DATA!!
+
+			console.clearScreen();
+			console.flush();
 			
 			this.interactiveInputExitCode= 0; // If something goes wrong this will change to != 0
 			try {
@@ -306,6 +311,11 @@ public class InteractiveInput {
 					System.exit(1);
 				} 
 				break;
+			}
+			if(this.interactiveInputExitCode == 0){
+				proc.iterateTracks();
+				Utils.printer("\n", proc.getSnapshotFile());
+				proc.setSnapshotFile(null); // This is to prevent taking screenshots one after another. It's a hack and should be changed
 			}
 		} // END OF LOOP THOURGH LIST OF INPUT
 		return proc;
