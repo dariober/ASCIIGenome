@@ -22,7 +22,7 @@ public class TrackSetTest {
 	@Test
 	public void canDropTracks() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 100, null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1-100", null, null);
 		
 		TrackSet trackSet= new TrackSet();
 		trackSet.add("test_data/hg19_genes.gtf.gz", gc);
@@ -43,7 +43,7 @@ public class TrackSetTest {
 	@Test // Disable to save time
 	public void canAddTrackFromSourcename() throws InvalidGenomicCoordsException, IOException, BamIndexNotFoundException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 100, null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1-100", null, null);
 		
 		TrackSet trackSet= new TrackSet();
 		trackSet.add("test_data/hg19_genes.gtf.gz", gc);
@@ -63,7 +63,7 @@ public class TrackSetTest {
 		inputFileList.add("test_data/hg19_genes.gtf.gz");
 		inputFileList.add("test_data/posNeg.bedGraph.gz");
 		
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, null);
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", null, null);
 		TrackSet trackSet= new TrackSet(inputFileList, gc);
 
 		assertEquals(4, trackSet.getTrackList().size()); // MEMO: BAM files add 2 tracks. 
@@ -151,7 +151,7 @@ public class TrackSetTest {
 	public void canSetFilterForTrackIntervalFeature() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 				
 		TrackSet ts= new TrackSet();
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, null);
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", null, null);
 		Track t1= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc); ts.add(t1, "x");
 		Track t2= new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc); ts.add(t2, "x");
 		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.add(t3, "x");
@@ -159,7 +159,8 @@ public class TrackSetTest {
 		// MEMO: Track tags:
 		// [hg19_genes_head.gtf#1, hg19_genes_head.gtf.gz#2, refSeq.bed#3]
 		
-		String cmdInput= "filter exon intron #1"; // Set for #1...
+		String cmdInput= "grep -i exon -e intron #1"; // Set for #1...
+		//String cmdInput= "filter exon intron #1"; // Set for #1...
 		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
 
 		assertEquals("exon", ts.getTrack(t1).getShowRegex());
@@ -167,12 +168,13 @@ public class TrackSetTest {
 		assertEquals(".*", ts.getTrack(t3).getShowRegex()); // As default
 		assertEquals("^$", ts.getTrack(t3).getHideRegex());
 
-		cmdInput= "filter exon intron #1 #3"; // Set for #1...
+		// cmdInput= "filter exon intron #1 #3"; // Set for #1...
+		cmdInput= "grep -i exon -e intron #1 #3"; // Set for #1...
 		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
 		assertEquals("exon", ts.getTrack(t3).getShowRegex());
 		assertEquals("intron", ts.getTrack(t3).getHideRegex());
 
-		cmdInput= "filter"; // Reset all to default
+		cmdInput= "grep"; // Reset all to default
 		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
 		assertEquals(".*", ts.getTrack(t3).getShowRegex()); // As default
 		assertEquals("^$", ts.getTrack(t3).getHideRegex());
@@ -222,25 +224,33 @@ public class TrackSetTest {
 		Track t2= new Track(); ts.add(t2, "x");
 		Track t3= new Track(); ts.add(t3, "x");
 
-		String cmdInput= "-F 1024 #1 #3";
-		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));
+		// String cmdInput= "-F 1024 #1 #3";
+		// Reset all three filters
+		String cmdInput= "samtools -q 10 -F 1024 -f 16 #1 #3";
+		System.out.println("FILTERS:");
+		ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
 		assertEquals(1024+4, ts.getTrack(t1).get_F_flag());
+		assertEquals(16, ts.getTrack(t1).get_f_flag());
+		assertEquals(10, ts.getTrack(t1).getMapq());
+		// Not changed
 		assertEquals(4, ts.getTrack(t2).get_F_flag());
+		assertEquals(0, ts.getTrack(t2).getMapq());
+		// assertEquals(4, ts.getTrack(t2).get_F_flag());
 		
-		cmdInput= "-F 16";
-		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));
-		cmdInput= "-f 1024 #1 #3";
-		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));		
-		cmdInput= "mapq 30 #1 #3";
-		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));		
-		
-		assertEquals(16+4, ts.getTrack(t1).get_F_flag());
-		assertEquals(16+4, ts.getTrack(t2).get_F_flag());
-		assertEquals(16+4, ts.getTrack(t3).get_F_flag());
+		// Set one filter for all tracks, the others return to zero:
+		cmdInput= "samtools -f 16";
+		ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
+		assertEquals(16, ts.getTrack(t1).get_f_flag());
+		assertEquals(16, ts.getTrack(t2).get_f_flag());
+		assertEquals(16, ts.getTrack(t3).get_f_flag());
 
-		assertEquals(1024, ts.getTrack(t1).get_f_flag());
-		assertEquals(0, ts.getTrack(t2).get_f_flag());
-		assertEquals(30, ts.getTrack(t3).getMapq());
+		assertEquals(4, ts.getTrack(t1).get_F_flag()); // Set to 4 (unmapped)
+		assertEquals(4, ts.getTrack(t2).get_F_flag());
+		assertEquals(4, ts.getTrack(t3).get_F_flag());
+
+		assertEquals(0, ts.getTrack(t1).getMapq());
+		assertEquals(0, ts.getTrack(t2).getMapq());
+		assertEquals(0, ts.getTrack(t3).getMapq());
 		
 	}
 	
@@ -289,10 +299,10 @@ public class TrackSetTest {
 		ts.setPrintModeForRegex(Utils.tokenize("print #1", " "));
 		assertEquals(PrintRawLine.CLIP, t1.getPrintMode());
 		
-		ts.setPrintModeForRegex(Utils.tokenize("printFull #1", " "));
+		ts.setPrintModeForRegex(Utils.tokenize("print -full #1", " "));
 		assertEquals(PrintRawLine.FULL, t1.getPrintMode());
 		
-		ts.setPrintModeForRegex(Utils.tokenize("printFull #1", " "));
+		ts.setPrintModeForRegex(Utils.tokenize("print -full #1", " "));
 		assertEquals(PrintRawLine.OFF, t1.getPrintMode());
 	}
 	
@@ -403,5 +413,16 @@ public class TrackSetTest {
 		assertTrue(ts.showTrackInfo().endsWith("BED"));
 
 	}
+
+//	@Test
+//	public void canSaveTrackSettings(){
+//		
+//		TrackSet ts= new TrackSet();
+//
+//		Track t1= new Track(); t1.setFilename("/path/to/foo.gz"); ts.add(t1, "foo.gz");
+//		Track t2= new Track(); t2.setFilename("/path/to/foo.vcf"); ts.add(t2, "foo.vcf");
+//		Track t3= new Track(); t3.setFilename("/path/to/bla.gz"); ts.add(t3, "bla.gz");
+//		
+//	}
 	
 }

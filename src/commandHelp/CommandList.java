@@ -167,23 +167,23 @@ public class CommandList {
 		List<CommandHelp> cmdList= new ArrayList<CommandHelp>();
 		CommandHelp cmd= new CommandHelp();		
 
-		cmd.setName("f"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION;
-		cmd.setBriefDescription("Move forward by 1/10 of a window");  
+		cmd.setName("f"); cmd.setArgs("[NUM=0.1]"); cmd.inSection= Section.NAVIGATION;
+		cmd.setBriefDescription("Move forward NUM times the size of the current window, 1/10 by default.");  
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp(); 
-		cmd.setName("b"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
-		cmd.setBriefDescription("Move backward by 1/10 of a window"); 
+		cmd.setName("b"); cmd.setArgs("[NUM=0.1]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Move backward NUM times the size of the current window, 1/10 by default"); 
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
 		cmd.setName("ff"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION;
-		cmd.setBriefDescription("Move forward by 1/2 of a window");  
+		cmd.setBriefDescription("Move forward by 1/2 of a window. A shortcut for `f 0.5`");  
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
 		cmd.setName("bb"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
-		cmd.setBriefDescription("Move backward by 1/2 of a window"); 
+		cmd.setBriefDescription("Move backward by 1/2 of a window. A shortcut for `b 0.5`"); 
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
@@ -258,13 +258,13 @@ public class CommandList {
 		
 
 		cmd= new CommandHelp();
-		cmd.setName("next"); cmd.setArgs("[track_id]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("next"); cmd.setArgs("[-start] [track_id]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Move to the next feature on track_id on *current* chromosome. "); 
 		cmd.setAdditionalDescription(""
 				+ "`next` centers the window on the found feature and zooms out. "
 				+ "This is useful for quickly browsing through annotation files of genes or ChIP-Seq "
 				+ "peaks in combination with read coverage tracks (bigwig, tdf, etc.). "
-				+ "`next_start` instead sets the window right at the start of the feature.\n "
+				+ "The `-start` flag sets the window right at the start of the feature, without centering and zooming out.\n"
 				+ "\n"
 				+ "The `next` command does exactly that, it moves to the next feature. "
 				+ "If there are no more features after the current position it doesn't rewind to the beginning "
@@ -276,86 +276,70 @@ public class CommandList {
 
 		cmdList.add(cmd);
 
-		cmd= new CommandHelp();
-		cmd.setName("next_start"); cmd.setArgs("[track_id]"); cmd.inSection= Section.NAVIGATION; 
-		cmd.setBriefDescription("Move to the next feature on track_id on *current* chromosome. "); 
-		cmd.setAdditionalDescription(""
-				+ "`next` centers the window on the found feature and zooms out. "
-				+ "This is useful for quickly browsing through annotation files of genes or ChIP-Seq "
-				+ "peaks in combination with read coverage tracks (bigwig, tdf, etc.). "
-				+ "`next_start` instead sets the window right at the start of the feature.\n "
-				+ "\n"
-				+ "The `next` command does exactly that, it moves to the next feature. "
-				+ "If there are no more features after the current position it doesn't rewind to the beginning "
-				+ "(use `1` for that) and it doesn't move to another chromosome, "
-				+ "use `goto chrom` for that.\n "
-				+ "\n"
-				+ "If `track_id` is omitted, the first annotation track is used. "
-				+ "If track_id is not a feature track (bed, gtf, etc) a more or less ugly warning is issued."); 
-
-		cmdList.add(cmd);
+//		cmd= new CommandHelp();
+//		cmd.setName("next_start"); cmd.setArgs("[track_id]"); cmd.inSection= Section.NAVIGATION; 
+//		cmd.setBriefDescription("Move to the next feature on track_id on *current* chromosome. "); 
+//		cmd.setAdditionalDescription(""
+//				+ "`next` centers the window on the found feature and zooms out. "
+//				+ "This is useful for quickly browsing through annotation files of genes or ChIP-Seq "
+//				+ "peaks in combination with read coverage tracks (bigwig, tdf, etc.). "
+//				+ "`next_start` instead sets the window right at the start of the feature.\n "
+//				+ "\n"
+//				+ "The `next` command does exactly that, it moves to the next feature. "
+//				+ "If there are no more features after the current position it doesn't rewind to the beginning "
+//				+ "(use `1` for that) and it doesn't move to another chromosome, "
+//				+ "use `goto chrom` for that.\n "
+//				+ "\n"
+//				+ "If `track_id` is omitted, the first annotation track is used. "
+//				+ "If track_id is not a feature track (bed, gtf, etc) a more or less ugly warning is issued."); 
+//
+//		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("find_first"); cmd.setArgs("regex [track_id]"); cmd.inSection= Section.FIND; 
+		cmd.setName("find"); cmd.setArgs("[-all] regex [track_id]"); cmd.inSection= Section.FIND; 
 		cmd.setBriefDescription("Find the first record in track_id containing regex."); 
 		cmd.setAdditionalDescription(""
-				+ "The search starts from the *end* of the current window "
+				+ "The regex search starts from the *end* of the current window "
 				+ "(so the current window is not searched) and moves forward on the current chromosome. "
 				+ "At the end  of the current chromosome move to the next chromosomes and then restart at "
-				+ " the start of the initial one. The search stops at the first match found."); 
+				+ " the start of the initial one. The search stops at the first match found. If track_id is omitted "
+				+ "the first interval track found is searched. "
+				+ "The `-all` flag will return the region conatining all the regex matches.\nExamples:\n"
+				+ "find -all ACTB genes.gtf -> Find the region containing all the matches of ACTB, including e.g. LACTB\n"
+				+ "find 'ACTB gene' -> Find the first match of 'ACTB gene' (note single quotes)"); 
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("find_all"); cmd.setArgs("regex [track_id]"); cmd.inSection= Section.FIND; 
-		cmd.setBriefDescription("Find the region containing *all* the records on chromosome containing regex. "); 
-		cmd.setAdditionalDescription(""
-				+ "The search starts at the current chromosome before moving to the other ones. "
-				+ "It stops at the first chromosome returning one or more hits. "
-				+ "Useful to get all gtf records of a gene.\n"
-				+ "\n"
-				+ "E.g. `find_all ACTB genes.gtf` will find the entire ACTB gene "
-				+ "(provided the regex is specific enough of course)."); 
-
-		cmdList.add(cmd);
-
-		cmd= new CommandHelp();
-		cmd.setName("seqRegex"); cmd.setArgs("[regex]"); cmd.inSection= Section.FIND; 
+		cmd.setName("seqRegex"); cmd.setArgs("[-c] [regex]"); cmd.inSection= Section.FIND; 
 		cmd.setBriefDescription("Find regex in reference sequence and show matches as and additional track. ");
 		cmd.setAdditionalDescription(""
+				+ "By default matching is irrespective of case unless the flag `-c` is set. "
 				+ "Useful to show restriction enzyme sites, "
-				+ "transcription factor motifs, etc. The tag of this track is "
-				+ "`seqRegex` and it is not displayed. To adjust its height use "
-				+ "`trackHeight~10~seqRegex`. If regex is omitted the matching is disabled Matching is case sensitive, "
-				+ "to ignore case use the regex syntax "
-				+ "`(?i)`. Example\n"
+				+ "transcription factor motifs, etc. If the regex is omitted the matching "
+				+ "is disabled. Examples\n"
 				+ "```\n"
-				+ "seqRegex~(?i)ACTG\n"
+				+ "seqRegex~ACTG~~~~-> Case insensitive, actg matched\n"
+				+ "seqRegex -c ACTG -> Case sensitive, will not match actg\n"
+				+ "seqRegex~~~~~~~~~-> Disable regex matching track\n"
 				+ "```\n"
-				+ "This command is ignored if the reference fasta file is missing. Example output, "
-				+ "finding the string `aaa` with `seqRegex aaa` will show something like:\n"
-				+ "```\n"
-				+ "*-------------------48M-----------------96M-----------------140M---\n"
-				+ "  >>>            >>>       <<<                  >>> >>>         <<<\n"
-				+ "                              >>>                                  \n"
-				+ "ggaaattcatagaggtgaaaacttacatttaaaaagaagatggatctcaaataaacaacctaacttt\n"
-				+ "100172    100182    100192    100202    100212    100222    100232 \n"
-				+ "chr7:100172-100238; 67 bp; 1.0 bp/char; Mem: 288 MB;               \n"
-				+ "```\n"
+				+ "This command is ignored if the reference fasta file is missing."
 				+ "");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("filter"); cmd.setArgs("[incl_regex = .*] [excl_regex = ''] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("Filter for features matching incl_regex, hide those matching excl_regex. Apply to tracks matched by track_regex.");
+		cmd.setName("grep"); cmd.setArgs("[-i = .*] [-e = ''] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Similar to grep command, filter for features matching "
+				+ "`-i` regex, hide those matching `-e` regex. "
+				+ "Apply to tracks matched by track_regex.");
 		cmd.setAdditionalDescription(""
 				+ "This command is useful to filter the annotation in GTF or BED files, for example:\n"
 				+ "```\n"
-				+ "filter~RNA~mRNA~gtf~gff\n"
+				+ "grep -i RNA -e mRNA gtf gff\n"
 				+ "```\n"
 				+ "Will show the rows containing 'RNA' but will hide those containing 'mRNA', applies "
 				+ "to tracks whose name matches 'gtf' or 'gff'."
 				+ ""
-				+ "\nWith no arguments reset to default: `filter~.*~^$~.*` which means show everything, hide nothing, apply to all tracks. "
+				+ "\nWith no arguments reset to default: `grep -i .* -e ^$ .*` which means show everything, hide nothing, apply to all tracks."
 				);
 		cmdList.add(cmd);		
 
@@ -476,24 +460,35 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("print"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("Toggle the printing of lines in the tracks matched by track_regex. Long lines clipped. ");
+		cmd.setName("print"); cmd.setArgs("[-full] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Toggle the printing of lines for the tracks matched by track_regex. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
-				+ "Features are filtered in/out according to the `filter` command. Applies only to annotation tracks");
+				+ "Features are filtered in/out according to the `grep` command. Applies only to annotation tracks. "
+				+ "Lines extending beyond the screen width are clipped for readability unless the  "
+				+ "the flag `-full` is enabled.");
 		cmdList.add(cmd);
 
-		cmd= new CommandHelp();
-		cmd.setName("printFull"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("Toggle the printing of lines in the tracks matched by track_regex. Long lines wrapped. ");
-		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
-				+ "Features are filtered in/out according to the `filter` command. Applies only to annotation tracks");
-		cmdList.add(cmd);
-
+//		cmd= new CommandHelp();
+//		cmd.setName("printFull"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+//		cmd.setBriefDescription("Toggle the printing of lines in the tracks matched by track_regex. Long lines wrapped. ");
+//		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
+//				+ "Features are filtered in/out according to the `grep` command. Applies only to annotation tracks");
+//		cmdList.add(cmd);
+//
 //		cmd= new CommandHelp();
 //		cmd.setName("gcProfile"); cmd.setArgs(""); cmd.inSection= Section.DISPLAY; 
 //		cmd.setBriefDescription("Toggle display of GC content profile.");
 //		cmd.setAdditionalDescription("The GC content profile is shown if the reference fasta sequence is available.");
 //		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
+		cmd.setName("setGenome"); cmd.setArgs("fasta|bam|genome"); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Set genome and reference sequence.");
+		cmd.setAdditionalDescription("The genome, i.e. the list of contig and names and sizes, "
+				+ "can be extracted from the indexed fasta reference, from a bam file or from "
+				+ "a genome identifier (e.g. hg19). If a fasta file is used also the "
+				+ "reference sequence becomes available.");
+		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
 		cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
@@ -574,25 +569,21 @@ public class CommandList {
 		cmdList.add(cmd);		
 
 		cmd= new CommandHelp();
-		cmd.setName("-f"); cmd.setArgs("INT [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
-		cmd.setBriefDescription("Include reads with INT bits set in tracks matched by regexes.");
-		cmd.setAdditionalDescription("Same as in `samtools view`. Note that the flag 4096 "
-				+ "can be used to filter in or out reads on top strand, this is useful in bisulfite mode.");
+		cmd.setName("samtools"); cmd.setArgs("[-f INT=0] [-F INT=4] [-q INT=0] [track_re = .*] ..."); cmd.inSection= Section.ALIGNMENTS; 
+		cmd.setBriefDescription("Apply samtools filters to alignment tracks captured by the list of track regexes.");
+		cmd.setAdditionalDescription("As *samtools view*, this command filters alignment records on the basis "
+				+ "of the given flags:\n"
+				+ "-F: Filter out flags with these bits set. NB: 4 is always set.\n"
+				+ "-f: Require alignment to have these bits sets.\n"
+				+ "-q: Require alignments to have MAPQ >= than this."
+				+ " Examples:\n"
+				+ "```\n"
+				+ "samtools -q 10~~~~~~~~~~~-> Set mapq for all tracks. -f and -F reset to default\n"
+				+ "samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar\n"
+				+ "samtools~~~~~~~~~~~~~~~~~-> Reset all to default.\n"
+				+ "```");
 		cmdList.add(cmd);		
 
-		cmd= new CommandHelp();
-		cmd.setName("-F"); cmd.setArgs("INT [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
-		cmd.setBriefDescription("Exclude reads with INT bits set in tracks matched by regexes.");
-		cmd.setAdditionalDescription("Same as in `samtools view`. Note that the flag 4096 "
-				+ "can be used to filter in or out reads on top strand, this is useful in bisulfite mode.");
-		cmdList.add(cmd);
-
-		cmd= new CommandHelp();
-		cmd.setName("mapq"); cmd.setArgs("INT [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
-		cmd.setBriefDescription("Include reads with mapq >= INT in tracks matched by regexes");
-		cmd.setAdditionalDescription("For example: mapq 30 aln1.bam aln2.bam");
-		cmdList.add(cmd);
-		
 		cmd= new CommandHelp();
 		cmd.setName("BSseq"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
 		cmd.setBriefDescription("Toggle bisulfite mode for read tracks matched by regex.");
@@ -686,12 +677,10 @@ public class CommandList {
 		paramList.add("p");
 		paramList.add("n");
 		paramList.add("next");
-		paramList.add("next_start");
-		paramList.add("find_first");
-		paramList.add("find_all");
+		paramList.add("find");
 		paramList.add("seqRegex");
 		// paramList.add("gcProfile");
-		paramList.add("filter");
+		paramList.add("grep");
 		paramList.add("gffNameAttr");
 		paramList.add("squash");
 		paramList.add("merge");
@@ -702,7 +691,7 @@ public class CommandList {
 		paramList.add("ylim");
 		paramList.add("dataCol");
 		paramList.add("print");
-		paramList.add("printFull");
+		paramList.add("setGenome");
 		paramList.add("showGenome");
 		paramList.add("infoTracks");
 		paramList.add("addTracks");
@@ -712,9 +701,7 @@ public class CommandList {
 		paramList.add("cmdHistory");
 		paramList.add("rpm");
 		// paramList.add("pileup");
-		paramList.add("-f");
-		paramList.add("-F");
-		paramList.add("mapq");
+		paramList.add("samtools");
 		paramList.add("BSseq");
 		paramList.add("save");
 	

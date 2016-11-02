@@ -21,7 +21,6 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 
 import java.sql.PreparedStatement;

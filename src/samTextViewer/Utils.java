@@ -61,10 +61,8 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import filter.FirstOfPairFilter;
-// import tracks.IntervalFeatureSet;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
-import tracks.UcscFetch;
 
 /**
  * @author berald01
@@ -547,7 +545,7 @@ public class Utils {
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 */
-	public static String parseConsoleInput(String rawInput, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
+	public static String parseConsoleInput(List<String> tokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
 		
 		String region= "";
 		String chrom= gc.getChrom();
@@ -556,7 +554,7 @@ public class Utils {
 		
 		int windowSize= to - from + 1;
 		int halfWindow= (int)Math.rint(windowSize / 2d);
-		if(rawInput.trim().equals("ff")){				
+		if(tokens.get(0).equals("ff")){				
 			from += halfWindow; 
 			to += halfWindow;
 			if(!gc.getSamSeqDict().isEmpty()){
@@ -567,7 +565,7 @@ public class Utils {
 				}
 			}			
 			return chrom + ":" + from + "-" + to;
-		} else if(rawInput.trim().equals("bb")) {
+		} else if(tokens.get(0).equals("bb")) {
 			from -= halfWindow;
 			to -= halfWindow; 
 			if(from < 1){
@@ -575,9 +573,16 @@ public class Utils {
 				to= from + gc.getUserWindowSize() - 1;
 			}
 			return chrom + ":" + from + "-" + to;
-		} else if(rawInput.trim().equals("f")){
+		} else if(tokens.get(0).equals("f")){
 			int step= (int)Math.rint(windowSize / 10d);
-
+			if(tokens.size() > 1){
+				try{
+					step= (int)Math.rint(windowSize * Double.parseDouble(tokens.get(1)));
+				} catch(NumberFormatException e){
+					System.err.println("Cannot parse " + tokens.get(1) + " to numeric.");
+					step= 0;
+				} 
+			}			
 			from += step; 
 			to += step;
 			if(!gc.getSamSeqDict().isEmpty()){
@@ -588,8 +593,17 @@ public class Utils {
 				}
 			}			
 			return chrom + ":" + from + "-" + to;
-		} else if(rawInput.trim().equals("b")){
+			
+		} else if(tokens.get(0).equals("b")){
 			int step= (int)Math.rint(windowSize / 10d);
+			if(tokens.size() > 1){
+				try{
+					step= (int)Math.rint(windowSize * Double.parseDouble(tokens.get(1)));
+				} catch(NumberFormatException e){
+					System.err.println("Cannot parse " + tokens.get(1) + " to numeric.");
+					step= 0;
+				} 
+			}						
 			from -= step;
 			to -= step; 
 			if(from < 1){
@@ -597,11 +611,11 @@ public class Utils {
 				to= from + gc.getUserWindowSize() - 1;
 			}
 			return chrom + ":" + from + "-" + to;
-		} else if(rawInput.trim().matches("\\d+.*")) { // You might want to be more specific
-			return chrom + ":" + parseGoToRegion(rawInput);
-		} else if(rawInput.trim().startsWith("+") 
-				|| rawInput.trim().startsWith("-")){
-			int offset= parseStringToIntWithUnits(rawInput.trim());
+		} else if(tokens.get(0).matches("\\d+.*")) { // You might want to be more specific
+			return chrom + ":" + parseGoToRegion(tokens.get(0));
+		} else if(tokens.get(0).startsWith("+") 
+				|| tokens.get(0).startsWith("-")){
+			int offset= parseStringToIntWithUnits(tokens.get(0));
 			from += offset;
 			if(from <= 0){
 				from= 1;
@@ -610,10 +624,10 @@ public class Utils {
 				to += offset;
 			}
 			return chrom + ":" + from + "-" + to;
-		}else if (rawInput.equals("q")) {
+		}else if (tokens.equals("q")) {
 			System.exit(0);	
 		} else {
-			throw new RuntimeException("Invalid input for " + rawInput);
+			throw new RuntimeException("Invalid input for " + tokens);
 		}
 		return region;
 	}
@@ -929,14 +943,16 @@ public class Utils {
 			x= x.trim();
 			if(!new File(x).exists() && !Utils.urlFileExists(x)){
 				dropMe.add(x);
-				try{
-					// This is not a local file, see if you can download it from ucsc
-					UcscFetch ucsc= new UcscFetch(x);
-					addMe.add(ucsc.genePredToGtf().getAbsolutePath());
-				} catch(Exception e){
-					System.err.println("Unable to fecth " + x);
-					// throw new InvalidCommandLineException();
-				}
+				System.err.println("Unable to add " + x);
+//				throw new InvalidCommandLineException();
+//				try{
+//					// This is not a local file, see if you can download it from ucsc
+//					UcscFetch ucsc= new UcscFetch(x);
+//					addMe.add(ucsc.genePredToGtf().getAbsolutePath());
+//				} catch(Exception e){
+//					System.err.println("Unable to fecth " + x);
+//					// throw new InvalidCommandLineException();
+//				}
 			} 
 		}
 		for(String x : dropMe){
@@ -1001,8 +1017,9 @@ public class Utils {
 		return nz;
 	}
 
-	/** Split string x in tokens. Effectively just a friendly wrapper around StrTokenizer
-	 * */
+	/** Split string x in tokens. Effectively just a friendly wrapper around StrTokenizer.
+	 * Use *single* quotes for avoiding splitting. 
+	 */
 	public static ArrayList<String> tokenize(String x, String delimiterString){
 		
 		if(x == null){
@@ -1013,7 +1030,7 @@ public class Utils {
 		StrTokenizer str= new StrTokenizer(x);
     	str.setTrimmerMatcher(StrMatcher.spaceMatcher()); 
 		str.setDelimiterString(delimiterString);
-		str.setQuoteChar('\"');
+		str.setQuoteChar('\'');
 		ArrayList<String> tokens= (ArrayList<String>) str.getTokenList();
 		for(int i= 0; i < tokens.size(); i++){
 			String tok= tokens.get(i).trim();
@@ -1261,6 +1278,31 @@ public class Utils {
 		return range;
 	}
 	
-
+	/** Convert coordinates to string suitable for initializing GenomicCoords object.
+	 * See tests for handling odd cases.
+	 * */
+	public static String coordinatesToString(String chrom, Integer from, Integer to){
+		
+		if(from == null){
+			from = -1;
+		}
+		if(to == null){
+			to = -1;
+		}
+		
+		String xfrom;
+		if(from <= 0){
+			xfrom= "1";
+		} else {
+			xfrom= from.toString();
+		}
+		String xto;
+		if(to <= 0 || to < from){
+			xto= "";
+		} else {
+			xto= "-" + to.toString();
+		}
+		return chrom + ":" + xfrom + xto;
+	} 
 	
 }

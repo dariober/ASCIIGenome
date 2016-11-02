@@ -142,9 +142,9 @@ public class TrackIntervalFeature extends Track {
 			return currentGc;
 		}
 		GenomicCoords nextGc= new GenomicCoords(
-				nextFeature.getChrom(), 
-				nextFeature.getFrom(), 
-				nextFeature.getFrom() + currentGc.getGenomicWindowSize() -1, 
+				Utils.coordinatesToString(nextFeature.getChrom(), 
+						                  nextFeature.getFrom(), 
+						                  nextFeature.getFrom() + currentGc.getGenomicWindowSize() -1),  
 				currentGc.getSamSeqDict(),
 				currentGc.getFastaFile());
 		return nextGc;
@@ -175,10 +175,7 @@ public class TrackIntervalFeature extends Track {
 			return currentGc;
 		}
 		GenomicCoords nextGc= new GenomicCoords(
-				nextFeature.getChrom(), 
-				nextFeature.getFrom(), 
-				nextFeature.getTo(), 
-				currentGc.getSamSeqDict(),
+				Utils.coordinatesToString(nextFeature.getChrom(), nextFeature.getFrom(), nextFeature.getTo()), currentGc.getSamSeqDict(),
 				currentGc.getFastaFile());
 		return nextGc;		
 	}
@@ -190,9 +187,9 @@ public class TrackIntervalFeature extends Track {
 			return currentGc;
 		}
 		GenomicCoords nextGc= new GenomicCoords(
-				nextFeature.getChrom(), 
-				nextFeature.getFrom(), 
-				nextFeature.getFrom() + currentGc.getGenomicWindowSize() - 1, 
+				Utils.coordinatesToString(nextFeature.getChrom(), 
+						                  nextFeature.getFrom(), 
+						                  nextFeature.getFrom() + currentGc.getGenomicWindowSize() - 1),
 				currentGc.getSamSeqDict(),
 				currentGc.getFastaFile());
 		return nextGc;
@@ -211,10 +208,7 @@ public class TrackIntervalFeature extends Track {
 		String chrom= matchedFeatures.get(0).getChrom();
 		int startFrom= matchedFeatures.get(0).getFrom();
 		int endTo= matchedFeatures.get(matchedFeatures.size()-1).getTo();
-		GenomicCoords allMatchesGc= new GenomicCoords(
-				chrom, 
-				startFrom, 
-				endTo, 
+		GenomicCoords allMatchesGc= new GenomicCoords(Utils.coordinatesToString(chrom, startFrom, endTo),
 				currentGc.getSamSeqDict(),
 				currentGc.getFastaFile());
 		return allMatchesGc;

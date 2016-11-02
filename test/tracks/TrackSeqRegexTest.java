@@ -61,7 +61,7 @@ public class TrackSeqRegexTest {
 	@Test
 	public void canReturnTrackFromMatchingRegex() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		GenomicCoords gc= new GenomicCoords("seq", 1, 100, null, "test_data/seq_cg.fa");
+		GenomicCoords gc= new GenomicCoords("seq:1-100", null, "test_data/seq_cg.fa");
 		TrackSeqRegex trackSeqRegex= new TrackSeqRegex(gc);
 		trackSeqRegex.setNoFormat(true);
 		trackSeqRegex.setSeqRegex("(?i)atc");
@@ -82,10 +82,15 @@ public class TrackSeqRegexTest {
 		trackSeqRegex.setNoFormat(true);
 		
 		// Palindromic
-		gc= new GenomicCoords("seq", 1, 100, null, "test_data/seq_cg.fa");
-		trackSeqRegex.setSeqRegex("CG");
+		gc= new GenomicCoords("seq:1-100", null, "test_data/seq_cg.fa");
 		trackSeqRegex.setNoFormat(true);
+		trackSeqRegex.setSeqRegex("cG"); // Case insensitive
 		assertTrue(trackSeqRegex.printToScreen().trim().startsWith("|"));
+		
+		// Case sensitive
+		trackSeqRegex.setCaseSensitive(true);
+		trackSeqRegex.setSeqRegex("cG");
+		assertTrue(trackSeqRegex.getIntervalFeatureList().size() == 0);
 	}
 	
 	@Test 
@@ -93,7 +98,7 @@ public class TrackSeqRegexTest {
 		// Ref Sequence not given 
 		boolean passed= false;
 		try{
-			new TrackSeqRegex(new GenomicCoords("seq", 1, 100, null, null));
+			new TrackSeqRegex(new GenomicCoords("seq:1-100", null, null));
 		} catch (NullPointerException e) {
 			passed= true;
 		}

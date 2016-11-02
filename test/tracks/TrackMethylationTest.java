@@ -31,7 +31,7 @@ public class TrackMethylationTest {
 
 		// IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File("test_data/chr7.fa"));
 		// faSeqFile.close();
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		
 		int yMaxLines= 5;
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, true);
@@ -43,7 +43,7 @@ public class TrackMethylationTest {
 		// System.out.println(tm.getScorePerDot());
 	
 		yMaxLines= 25;
-		gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, fastaFile);
+		gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		tc= new TrackCoverage("test_data/ds051.short.bam", gc, true);
 		tm= new TrackMethylation(tc.getFilename(), tc.getScreenLocusInfoList());
 		tm.setyMaxLines(yMaxLines);

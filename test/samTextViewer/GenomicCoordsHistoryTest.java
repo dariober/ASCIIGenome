@@ -3,8 +3,12 @@ package samTextViewer;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 
 public class GenomicCoordsHistoryTest {
@@ -82,5 +86,28 @@ public class GenomicCoordsHistoryTest {
 		gch.add(g1z);
 		assertEquals(2, gch.getHistory().size());
 		// System.out.println(gch.getHistory());
+	}
+	
+	@Test
+	public void canSetGenome() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
+		
+		GenomicCoordsHistory gch= new GenomicCoordsHistory();
+		gch.add(new GenomicCoords("chr7:1-100", null, null));
+		List<String> cmdInput= new ArrayList<String>();
+		cmdInput.add("test_data/chr7.fa");
+		gch.setGenome(cmdInput);
+		assertEquals("test_data/chr7.fa", gch.current().getFastaFile());
+		assertTrue(gch.current().getSamSeqDict().toString().length() > 10);
+		
+		gch= new GenomicCoordsHistory();
+		gch.add(new GenomicCoords("chr7:1-100", null, null));
+		gch.add(new GenomicCoords("chr7:1-1000", null, null));
+		gch.add(new GenomicCoords("chr7:1-10000", null, null));
+		cmdInput= new ArrayList<String>();
+		cmdInput.add("hg19");
+		gch.setGenome(cmdInput);
+		assertTrue(gch.current().getSamSeqDict().toString().length() > 10);
+		assertTrue(gch.getHistory().get(0).getSamSeqDict().toString().length() > 10);
+
 	}
 }

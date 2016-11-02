@@ -29,20 +29,20 @@ public class GenomicCoordsTest {
 	@Test
 	public void canPrintChromMap() throws InvalidGenomicCoordsException, IOException{
 			
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 100, samSeqDict, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1-100", samSeqDict, null);
 		
 		String chromMap= gc.getChromIdeogram(10, true);		
 		assertTrue(chromMap.startsWith("*---------"));
 
-		gc= new GenomicCoords("chr7", 1, 100, samSeqDict, null);
+		gc= new GenomicCoords("chr7:1-100", samSeqDict, null);
 		chromMap= gc.getChromIdeogram(10, true);
 		assertEquals(79, chromMap.length()); // 79 Should be the size of eclipse's terminal
 		
-		gc= new GenomicCoords("chr7", 1, 1000000000, samSeqDict, null);
+		gc= new GenomicCoords("chr7:1-1000000000", samSeqDict, null);
 		chromMap= gc.getChromIdeogram(10, true);		
 		assertTrue(chromMap.startsWith("**********"));
 		
-		gc= new GenomicCoords("chr7", 200000000, 300000000, samSeqDict, null);
+		gc= new GenomicCoords("chr7:200000000-300000000", samSeqDict, null);
 		chromMap= gc.getChromIdeogram(10, true);		
 		assertTrue(chromMap.startsWith("1--------"));
 		
@@ -50,21 +50,21 @@ public class GenomicCoordsTest {
 	
 	@Test
 	public void printRefSeq() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7", 5540580, 5540590, null, "test_data/chr7.fa");
+		GenomicCoords gc= new GenomicCoords("chr7:5540580-5540590", null, "test_data/chr7.fa");
 		assertEquals("ggccggctggg\n", gc.printableRefSeq(true));
 	}
 	
 	@Test
 	public void canTestForEqualCoords() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 10, null, null);
-		GenomicCoords other= new GenomicCoords("chr1", 1, 10, null, null);
+		GenomicCoords gc= new GenomicCoords("chr1:1-10", null, null);
+		GenomicCoords other= new GenomicCoords("chr1:1-10", null, null);
 		assertTrue(gc.equalCoords(other));
 		
-		GenomicCoords other2= new GenomicCoords("chr2", 1, 10, null, null);
+		GenomicCoords other2= new GenomicCoords("chr2:1-10", null, null);
 		assertTrue(!gc.equalCoords(other2));
-		other2= new GenomicCoords("chr1", 2, 10, null, null);
+		other2= new GenomicCoords("chr1:2-10", null, null);
 		assertTrue(!gc.equalCoords(other2));
-		other2= new GenomicCoords("chr1", 1, 100, null, null);
+		other2= new GenomicCoords("chr1:1-100", null, null);
 		assertTrue(!gc.equalCoords(other2));
 		
 		GenomicCoords gc2= (GenomicCoords) gc.clone();
@@ -103,17 +103,17 @@ public class GenomicCoordsTest {
 	
 	@Test
 	public void canPrintRefSeq() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566790, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566790", samSeqDict, fastaFile);
 		assertEquals("CACTTGGCCTCATTTTTAAGG\n", gc.printableRefSeq(true));
 		// with format
-		gc= new GenomicCoords("chr7", 5566770, 5566772, samSeqDict, fastaFile);
+		gc= new GenomicCoords("chr7:5566770-5566772", samSeqDict, fastaFile);
 		assertTrue(gc.printableRefSeq(false).contains("["));
 	}
 	
 	@Test
 	public void canConstructGenomicCoords() throws InvalidGenomicCoordsException, IOException{
 		
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 100, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:1-100", samSeqDict, fastaFile);
 		assertEquals("chr7", gc.getChrom());
 		assertEquals(1, (int)gc.getFrom());
 		assertEquals(100, (int)gc.getTo());
@@ -123,14 +123,14 @@ public class GenomicCoordsTest {
 		assertEquals(1, (int)gc.getFrom());
 		assertEquals(100, (int)gc.getTo());
 
-		gc= new GenomicCoords("chr7", 11, null, samSeqDict, fastaFile);		
+		gc= new GenomicCoords("chr7:11", samSeqDict, fastaFile);		
 		assertEquals(11 + 79 - 1, (int)gc.getTo());
 
-		gc= new GenomicCoords("chr7", null, null, samSeqDict, fastaFile);		
+		gc= new GenomicCoords("chr7", samSeqDict, fastaFile);		
 		assertEquals(1, (int)gc.getFrom());
 		assertEquals(79, (int)gc.getTo());
 
-		gc= new GenomicCoords("chr7", 1000000000, 1000000000, samSeqDict, fastaFile); // Reset to size of chrom
+		gc= new GenomicCoords("chr7:1000000000-1000000000", samSeqDict, fastaFile); // Reset to size of chrom
 		assertEquals(159138663, (int)gc.getFrom());
 
 		gc= new GenomicCoords("chr7:100", samSeqDict, fastaFile);
@@ -149,28 +149,28 @@ public class GenomicCoordsTest {
 	
 	@Test
 	public void canGetRefSeq() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566790, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566790", samSeqDict, fastaFile);
 		assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
-		gc= new GenomicCoords("chr7", 1, 79 + 1, samSeqDict, fastaFile);
+		gc= new GenomicCoords("chr7:1-80", samSeqDict, fastaFile);
 		assertEquals(null, gc.getRefSeq());
 	
 		// Return seq even if len(seq) > windowSize
 		//assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
 	}
 	
-	@Test(expected = InvalidGenomicCoordsException.class)
-	public void canThrowNullChrom() throws InvalidGenomicCoordsException, IOException {
-		new GenomicCoords(null, 1, 100, samSeqDict, fastaFile);
-	}
+//	@Test(expected = InvalidGenomicCoordsException.class)
+//	public void canThrowNullChrom() throws InvalidGenomicCoordsException, IOException {
+//		new GenomicCoords(null, samSeqDict, fastaFile);
+//	}
 	
-	@Test(expected = InvalidGenomicCoordsException.class)
-	public void canThrowInvalidCoords() throws InvalidGenomicCoordsException, IOException {
-		new GenomicCoords("chr7", -1, 100, samSeqDict, fastaFile);
-	}
+//	@Test(expected = InvalidGenomicCoordsException.class)
+//	public void canThrowInvalidCoords() throws InvalidGenomicCoordsException, IOException {
+//		new GenomicCoords("chr7", -1, 100, samSeqDict, fastaFile);
+//	}
 	
 	@Test(expected = InvalidGenomicCoordsException.class)
 	public void canThrowChromNotInDict() throws InvalidGenomicCoordsException, IOException {
-		new GenomicCoords("nonsense", 1, 100, samSeqDict, fastaFile);
+		new GenomicCoords("nonsense:1-100", samSeqDict, fastaFile);
 	}
 	
 	@Test
@@ -229,15 +229,15 @@ public class GenomicCoordsTest {
 	// @Test // Do not test until gcProfile is sorted
 	public void canGetGCProfileInRegion() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException{
 				
-		GenomicCoords gc= new GenomicCoords("chr7", 1000000, 1000500, samSeqDict, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1000000-1000500", samSeqDict, null);
 		assertEquals(null, gc.getGCProfile()); // null fasta
 		
-		gc= new GenomicCoords("chr7", 1, 100, samSeqDict, fastaFile);
+		gc= new GenomicCoords("chr7:1-100", samSeqDict, fastaFile);
 		System.out.println("START");
 		System.out.println(gc.getGCProfile().getTrackTag());
 		System.out.println(gc.getGCProfile().printToScreen());
 		
-		gc= new GenomicCoords("seq", 1, 120, null, "test_data/seq_cg.fa");
+		gc= new GenomicCoords("seq:1-120", null, "test_data/seq_cg.fa");
 		TrackWiggles gcCnt= gc.getGCProfile();
 		gcCnt.setyMaxLines(2);
 		String exp= "                                  ::::::::::::::::\n" +
@@ -252,19 +252,19 @@ public class GenomicCoordsTest {
 
 	@Test
 	public void canCenterAndExtendGenomicCoords() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr1", 10000, 20000, null, null);
+		GenomicCoords gc= new GenomicCoords("chr1:10000-20000", null, null);
 		int size= 100;
 		double slop= 5.0;
 		gc.centerAndExtendGenomicCoords(gc, size, slop);
 		assertEquals(9550, (int)gc.getFrom());
 		assertEquals(10550, (int)gc.getTo());
 		
-		gc= new GenomicCoords("chr1", 10000, 20000, null, null);
+		gc= new GenomicCoords("chr1:10000-20000", null, null);
 		size= 3;
 		gc.centerAndExtendGenomicCoords(gc, size, 3.3); // Extended size smaller then windowSize
 		assertTrue(gc.getUserWindowSize() <= gc.getGenomicWindowSize());
 		
-		gc= new GenomicCoords("chr1", 1, 300, null, null);
+		gc= new GenomicCoords("chr1:1-300", null, null);
 		size= 100;
 		gc.centerAndExtendGenomicCoords(gc, size, 5.0); 
 		assertEquals(1, (int)gc.getFrom());

@@ -70,9 +70,7 @@ public class TextReadTest {
 	@Test
 	public void canPrintDNARead() throws InvalidGenomicCoordsException, IOException{
 		
-		int from= 5566778;
-		int to= 5566798;
-		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566798", samSeqDict, fastaFile);
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(5566780);
 		rec.setCigarString("24M");
@@ -90,11 +88,11 @@ public class TextReadTest {
 		assertEquals("a,ccgg,t,uccmgtt,ac", textRead.getPrintableTextRead(true, true, false));
 
 
-		gc= new GenomicCoords("chr7", from, to, samSeqDict, null);
+		gc= new GenomicCoords("chr7:5566778-5566798", samSeqDict, null);
 		textRead= new TextRead(rec, gc);
 		assertEquals("aaccggttaaccggttaac", textRead.getPrintableTextRead(false, true, false));
 
-		gc= new GenomicCoords("chr7", 5566780, 5566780+2, samSeqDict, fastaFile);
+		gc= new GenomicCoords("chr7:5566780-5566782", samSeqDict, fastaFile);
 		textRead= new TextRead(rec, gc);
 		System.out.println(textRead.getPrintableTextRead(true, true, false));
 		System.out.println(textRead.getPrintableTextRead(true, false, false));		
@@ -102,9 +100,7 @@ public class TextReadTest {
 
 	@Test
 	public void canPrintSquashedRead() throws InvalidGenomicCoordsException, IOException{
-		int from= 5566778;
-		int to= from + 200;
-		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", samSeqDict, fastaFile);
 		
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(5566780);
@@ -122,9 +118,7 @@ public class TextReadTest {
 	@Test
 	public void canPrintWithReadName() throws InvalidGenomicCoordsException, IOException{
 
-		int from= 5566778;
-		int to= from + 200;
-		GenomicCoords gc= new GenomicCoords("chr7", from, to, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", samSeqDict, fastaFile);
 		
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(5566780);

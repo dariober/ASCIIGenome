@@ -55,9 +55,14 @@ public class GenomicCoords implements Cloneable {
 	private String fastaFile= null;
 	
 	/* Constructors */
-	public GenomicCoords(String chrom, Integer from, Integer to, SAMSequenceDictionary samSeqDict, String fastaFile) 
-			throws InvalidGenomicCoordsException, IOException{
+	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
 
+		GenomicCoords xgc= parseStringToGenomicCoords(region);
+
+		this.chrom= xgc.getChrom();
+		this.from= xgc.getFrom();
+		this.to= xgc.getTo();
+		
 		if(from == null){ 
 			from= 1; 
 		}
@@ -74,34 +79,16 @@ public class GenomicCoords implements Cloneable {
 		}
 		if(samSeqDict != null && samSeqDict.size() > 0){ // If dict is present, check against it
 			if(samSeqDict.getSequence(chrom) == null){
-				System.err.println("\nCannot find chromosome '" + chrom + "' in sequence dictionary.\n");
+				System.err.println("\nCannot find chromosome '" + chrom + "' in sequence dictionary.");
 				InvalidGenomicCoordsException e = new InvalidGenomicCoordsException();
 				throw e;
 			}
 		}
-		this.chrom= chrom;
-		this.from= from;
-		this.to= to;
 		this.samSeqDict= samSeqDict;
 		if(this.samSeqDict != null && this.samSeqDict.size() > 0){
 			correctCoordsAgainstSeqDict(samSeqDict);
 		}
 		this.fastaFile= fastaFile;
-		
-	}
-	
-	/** This constructor should be deprecated.
-	 * */
-	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
-
-		GenomicCoords xgc= parseStringToGenomicCoords(region);
-
-		GenomicCoords gc= new GenomicCoords(xgc.chrom, xgc.from, xgc.to, samSeqDict, fastaFile);
-		this.chrom= gc.chrom;
-		this.from= gc.from;
-		this.to= gc.to;
-		this.samSeqDict= gc.getSamSeqDict();
-		this.fastaFile= gc.getFastaFile();
 		
 	}
 		
@@ -111,6 +98,33 @@ public class GenomicCoords implements Cloneable {
 	};
 	
 	/* Methods */
+	
+	/** Set genome dictionary and fasta file ref if available. See 
+	 * GenomicCoords.getSamSeqDictFromAnyFile() for available inputs.
+	 * */
+	public void setGenome(List<String> input) throws IOException {
+//		List<String> insam= new ArrayList<String>();
+//		insam.add(input);
+		
+		// Set Dictionary
+		SAMSequenceDictionary samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(input, input.get(0), input.get(0));
+		this.setSamSeqDict(samSeqDict);
+		
+		// Set Source
+		// this.setGenomeSource();
+		
+		// Try to set fasta sequence
+		try{
+			IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(input.get(0)));
+			if(fa.isIndexed()){
+				this.setFastaFile(input.get(0));
+			}
+			fa.close();
+		} catch(FileNotFoundException e){
+			//
+		}
+	}
+
 	
 	/** Get sequence from fasta, but only if it can fit the screen. Null otherwise. 
 	 * @throws InvalidGenomicCoordsException 
@@ -153,7 +167,7 @@ public class GenomicCoords implements Cloneable {
 	private GenomicCoords parseStringToGenomicCoords(String x) throws InvalidGenomicCoordsException, IOException{
 
 		Integer from= 1; // Default start/end coords.
-		Integer to= 1;
+		Integer to= this.getTerminalWindowSize();
 		
 		GenomicCoords xgc= new GenomicCoords();
 		
@@ -162,7 +176,7 @@ public class GenomicCoords implements Cloneable {
 		if(nsep == 0){ // Only chrom present. It will not handle well chrom names containing ':'
 			xgc.chrom= x.trim();
 			xgc.from= from;
-			xgc.to= to + this.getTerminalWindowSize() - 1;
+			xgc.to= to;
 			if(xgc.samSeqDict != null && xgc.to > samSeqDict.getSequence(xgc.chrom).getSequenceLength()){
 				xgc.to= samSeqDict.getSequence(xgc.chrom).getSequenceLength(); 
 			}
@@ -176,7 +190,7 @@ public class GenomicCoords implements Cloneable {
 			if(nsep == 0){ // Only start position given
 				xgc.from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
 				xgc.to= xgc.from + this.getTerminalWindowSize() - 1;
-			} else if(nsep == 1){
+			} else if(nsep == 1){ // From and To positions given.
 				xgc.from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
 				xgc.to= Integer.parseInt(StringUtils.substringAfter(fromTo, "-").trim());
 			} else {
@@ -535,7 +549,7 @@ public class GenomicCoords implements Cloneable {
 	 * @return
 	 * @throws IOException 
 	 */
-	public static SAMSequenceDictionary getSamSeqDictFromAnyFile(List<String> insam, String fasta, String genome) throws IOException{
+	static SAMSequenceDictionary getSamSeqDictFromAnyFile(List<String> insam, String fasta, String genome) throws IOException{
 
 		SAMSequenceDictionary seqDict= new SAMSequenceDictionary(); // null;
 
@@ -567,7 +581,7 @@ public class GenomicCoords implements Cloneable {
 				}
 			}
 		}
-		if(fasta != null){ // Try getting from fasta
+		try{ // Try getting from fasta
 			IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(fasta));
 			if(fa.isIndexed()){
 				BufferedReader br= new BufferedReader(new FileReader(new File(fasta + ".fai")));
@@ -582,9 +596,16 @@ public class GenomicCoords implements Cloneable {
 					seqDict.addSequence(ssqRec);
 				}
 				br.close();
+				fa.close();
+				return seqDict;
 			}
 			fa.close();
+		} catch(NullPointerException e){
+			//
+		} catch(FileNotFoundException e){
+			//
 		}
+		
 		if(genome != null && !genome.isEmpty()){ // Try genome file as last option
 			seqDict= getSamSeqDictFromGenomeFile(genome);
 			return seqDict;
@@ -621,8 +642,7 @@ public class GenomicCoords implements Cloneable {
 				// Read from local file
 				reader= new BufferedReader(new FileReader(new File(genome)));
 			} catch (FileNotFoundException ex){
-				System.err.println("\nGenome file not found: " + genome + "\n");
-				ex.printStackTrace();
+				System.err.println("\nGenome file not found: " + genome);
 			}
 		}
 		
@@ -814,5 +834,9 @@ public class GenomicCoords implements Cloneable {
 	
 	public String getFastaFile(){
 		return this.fastaFile;
+	}
+
+	protected void setFastaFile(String fastaFile) {
+		this.fastaFile = fastaFile;
 	}
 }

@@ -23,13 +23,13 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 
 	private String seqRegex= "a^"; // Match nothing
 	final private String noRe= "a^";
-	
+	private boolean isCaseSensitive= false;
 	
 	public TrackSeqRegex(GenomicCoords gc) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		super(gc);
 		
 		this.setGc(gc);
-		this.setFilename(gc.getFastaFile());
+		this.setFilename(new File(gc.getFastaFile()).getAbsolutePath());
 		this.setTrackTag(new File(gc.getFastaFile()).getName());
 		this.setHideTrack(true);
 	} 
@@ -39,7 +39,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 	 * */
 	public void update() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
-		this.findRegex();
+		this.findRegex(this.isCaseSensitive);
 		int windowSize= this.getGc().getUserWindowSize();
 		for(IntervalFeature ift : this.getIntervalFeatureList()){
 			ift.mapToScreen(this.getGc().getMapping(windowSize));
@@ -49,13 +49,25 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 	/**
 	 * Find regex matches in current genomic interval and update the IntervalFeature set and list.
 	 * */
-	private void findRegex() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+	private void findRegex(boolean isCaseSensitive) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		// Find matches
 		// ============
+		// String seq= new String(this.getGc().getSequenceFromFasta());
 		byte[] seq= this.getGc().getSequenceFromFasta();
-				
 		Pattern pattern= Pattern.compile(this.seqRegex);
+		
+		if( ! this.isCaseSensitive ){
+			if( this.seqRegex.contains("\\W") // It's unlikely you will use this chars for FASTA seqs.
+                || this.seqRegex.contains("\\S")
+				|| this.seqRegex.contains("\\D") ){
+				System.err.println("This pattern is not supported in case insensitive mode.");
+				throw new IOException(); // It doesn't make sense to throw this exception but let's keep it like this now.  
+			}
+			seq= (new String(seq)).toLowerCase().getBytes();
+			pattern= Pattern.compile(this.seqRegex.toLowerCase());
+		}
+		
 		Matcher matcher = pattern.matcher(new String(seq));
 		
 		// One list for matches on forward, one for reverse, one for palindromic
@@ -67,7 +79,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		while (matcher.find()) {
 			int matchStart= this.getGc().getFrom() + matcher.start() - 1;
 			int matchEnd= this.getGc().getFrom() + matcher.end() - 1;
-			String reg= this.getGc().getChrom() + "\t" + matchStart + "\t" + matchEnd + "\t" + this.trimMatch(matcher.group(), 100);
+			String reg= this.getGc().getChrom() + "\t" + matchStart + "\t" + matchEnd + "\t" + this.trimMatch(matcher.group(), 100).toUpperCase();
 		    regionListPos.add(reg);
 		}
 		// Reverse comp match
@@ -78,7 +90,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		while (matcher.find()) {
 			int matchStart= this.getGc().getTo() - matcher.end();
 			int matchEnd= this.getGc().getTo() - matcher.start();
-			String reg= this.getGc().getChrom() + "\t" + matchStart + "\t" + matchEnd + "\t" + this.trimMatch(matcher.group(), 100);
+			String reg= this.getGc().getChrom() + "\t" + matchStart + "\t" + matchEnd + "\t" + this.trimMatch(matcher.group(), 100).toUpperCase();
 		    if(regionListPos.contains(reg)){
 		    	regionListPos.remove(reg);
 		    	regionListPalind.add(reg);
@@ -163,6 +175,14 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		}
 		this.seqRegex = regex;
 		this.update();
+	}
+
+	protected boolean isCaseSensitive() {
+		return isCaseSensitive;
+	}
+
+	protected void setCaseSensitive(boolean isCaseSensitive) {
+		this.isCaseSensitive = isCaseSensitive;
 	}
 
 }

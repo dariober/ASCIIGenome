@@ -1,10 +1,15 @@
 package tracks;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.validator.routines.UrlValidator;
+
+import com.google.common.base.Joiner;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
@@ -84,6 +89,22 @@ public class Track {
 		}
 	}
 	
+	/** Returns a string that parsed by `-exec` loads the current track with 
+	 * the current settings (color, height, etc...).
+	 * This method is currently quite approximative and it doesn't reproduce carefully all the settings.
+	 * */
+	public String settingsToString(){
+		String name= this.getTrackTag().replaceAll("#\\d+$", ""); 
+		List<String> set= new ArrayList<String>(); 
+		set.add("addTracks " + this.getFilename());
+		set.add("colorTrack " + this.getTitleColour() + " " + name);
+		set.add("trackHeight " + this.getyMaxLines() + " " + name);
+		set.add("ylim " + this.getYLimitMin() + " " + this.getYLimitMax() + " " + name);
+		set.add("samtools -q " + this.getMapq() + " -f " + this.get_f_flag() + " -F " + this.get_F_flag() + " " + name);
+		set.add("grep -i " + this.getShowRegex() + " -e " + this.getHideRegex() + " " + name);
+		return Joiner.on(" && ").join(set);
+	}
+	
 	/* Printers */
 	public String printToScreen() throws InvalidGenomicCoordsException, IOException{
 		return null;
@@ -120,7 +141,12 @@ public class Track {
 		return filename;
 	}
 	public void setFilename(String filename) {
-		this.filename = filename;
+		UrlValidator urlValidator = new UrlValidator();
+		if(urlValidator.isValid(filename)){
+			this.filename = filename;
+		} else {
+			this.filename = new File(filename).getAbsolutePath();
+		}
 	}
 
 	public String getTrackTag() { 
@@ -282,6 +308,8 @@ public class Track {
 		this.f_flag = f_flag;
 	}
 
+	/** You should use a converter to get int from list of filters. 
+	 * */
 	/** This int is just a setting but is NOT translated to a filter! */
 	protected int get_F_flag() {
 		return F_flag;

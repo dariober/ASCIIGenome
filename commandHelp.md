@@ -29,13 +29,11 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
   - [p](#p)
   - [n](#n)
   - [next](#next)
-  - [next_start](#next_start)
 - [Find](#find)
-  - [find_first](#find_first)
-  - [find_all](#find_all)
+  - [find](#find)
   - [seqRegex](#seqregex)
 - [Display](#display)
-  - [filter](#filter)
+  - [grep](#grep)
   - [squash](#squash)
   - [merge](#merge)
   - [gap](#gap)
@@ -46,14 +44,12 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
   - [hideTitle](#hidetitle)
   - [dataCol](#datacol)
   - [print](#print)
-  - [printFull](#printfull)
 - [Alignments](#alignments)
   - [rpm](#rpm)
-  - [-f](#-f)
-  - [-F](#-f)
-  - [mapq](#mapq)
+  - [samtools](#samtools)
   - [BSseq](#bsseq)
 - [General](#general)
+  - [setGenome](#setgenome)
   - [showGenome](#showgenome)
   - [infoTracks](#infotracks)
   - [addTracks](#addtracks)
@@ -70,27 +66,27 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
 
 ### f
 
-**Usage: f**
+**Usage: f [NUM=0.1]**
 
-Move forward by 1/10 of a window 
+Move forward NUM times the size of the current window, 1/10 by default. 
 
 ### b
 
-**Usage: b**
+**Usage: b [NUM=0.1]**
 
-Move backward by 1/10 of a window 
+Move backward NUM times the size of the current window, 1/10 by default 
 
 ### ff
 
 **Usage: ff**
 
-Move forward by 1/2 of a window 
+Move forward by 1/2 of a window. A shortcut for `f 0.5` 
 
 ### bb
 
 **Usage: bb**
 
-Move backward by 1/2 of a window 
+Move backward by 1/2 of a window. A shortcut for `b 0.5` 
 
 ### goto
 
@@ -162,71 +158,49 @@ Go to the next visited position. Similar to the back and forward arrows of an In
 
 ### next
 
-**Usage: next [track_id]**
+**Usage: next [-start] [track_id]**
 
-Move to the next feature on track_id on *current* chromosome.  `next` centers the window on the found feature and zooms out. This is useful for quickly browsing through annotation files of genes or ChIP-Seq peaks in combination with read coverage tracks (bigwig, tdf, etc.). `next_start` instead sets the window right at the start of the feature.
- 
+Move to the next feature on track_id on *current* chromosome.  `next` centers the window on the found feature and zooms out. This is useful for quickly browsing through annotation files of genes or ChIP-Seq peaks in combination with read coverage tracks (bigwig, tdf, etc.). The `-start` flag sets the window right at the start of the feature, without centering and zooming out.
+
 The `next` command does exactly that, it moves to the next feature. If there are no more features after the current position it doesn't rewind to the beginning (use `1` for that) and it doesn't move to another chromosome, use `goto chrom` for that.
  
 If `track_id` is omitted, the first annotation track is used. If trackId is not a feature track (bed, gtf, etc) a more or less ugly warning is issued.
 
-### next_start
-
-**Usage: next_start [track_id]**
-
-Move to the next feature on track_id on *current* chromosome.  `next` centers the window on the found feature and zooms out. This is useful for quickly browsing through annotation files of genes or ChIP-Seq peaks in combination with read coverage tracks (bigwig, tdf, etc.). `next_start` instead sets the window right at the start of the feature.
- 
-The `next` command does exactly that, it moves to the next feature. If there are no more features after the current position it doesn't rewind to the beginning (use `1` for that) and it doesn't move to another chromosome, use `goto chrom` for that.
- 
-If `track_id` is omitted, the first annotation track is used. If track_id is not a feature track (bed, gtf, etc) a more or less ugly warning is issued.
-
 ## Find
 
-### find_first
+### find
 
-**Usage: find_first regex [track_id]**
+**Usage: find [-all] regex [track_id]**
 
-Find the first record in track_id containing regex. The search starts from the *end* of the current window (so the current window is not searched) and moves forward on the current chromosome. At the end  of the current chromosome move to the next chromosomes and then restart at  the start of the initial one. The search stops at the first match found.
-
-### find_all
-
-**Usage: find_all regex [track_id]**
-
-Find the region containing *all* the records on chromosome containing regex.  The search starts at the current chromosome before moving to the other ones. It stops at the first chromosome returning one or more hits. Useful to get all gtf records of a gene.
-
-E.g. `find_all ACTB genes.gtf` will find the entire ACTB gene (provided the regex is specific enough of course).
+Find the first record in track_id containing regex. The regex search starts from the *end* of the current window (so the current window is not searched) and moves forward on the current chromosome. At the end  of the current chromosome move to the next chromosomes and then restart at  the start of the initial one. The search stops at the first match found. If track_id is omitted the first interval track found is searched. The `-all` flag will return the region conatining all the regex matches.
+Examples:
+find -all ACTB genes.gtf -> Find the region containing all the matches of ACTB, including e.g. LACTB
+find 'ACTB gene' -> Find the first match of 'ACTB gene' (note single quotes)
 
 ### seqRegex
 
-**Usage: seqRegex [regex]**
+**Usage: seqRegex [-c] [regex]**
 
-Find regex in reference sequence and show matches as and additional track.  Useful to show restriction enzyme sites, transcription factor motifs, etc. The tag of this track is `seqRegex` and it is not displayed. To adjust its height use `trackHeight 10 seqRegex`. If regex is omitted the matching is disabled Matching is case sensitive, to ignore case use the regex syntax `(?i)`. Example
+Find regex in reference sequence and show matches as and additional track.  By default matching is irrespective of case unless the flag `-c` is set. Useful to show restriction enzyme sites, transcription factor motifs, etc. If the regex is omitted the matching is disabled. Examples
 ```
-seqRegex (?i)ACTG
+seqRegex ACTG    -> Case insensitive, actg matched
+seqRegex -c ACTG -> Case sensitive, will not match actg
+seqRegex         -> Disable regex matching track
 ```
-This command is ignored if the reference fasta file is missing. Example output, finding the string `aaa` with `seqRegex aaa` will show something like:
-```
-*-------------------48M-----------------96M-----------------140M---
-  >>>            >>>       <<<                  >>> >>>         <<<
-                              >>>                                  
-ggaaattcatagaggtgaaaacttacatttaaaaagaagatggatctcaaataaacaacctaacttt
-100172    100182    100192    100202    100212    100222    100232 
-chr7:100172-100238; 67 bp; 1.0 bp/char; Mem: 288 MB;               
-```
-
+This command is ignored if the reference fasta file is missing.
 
 ## Display
 
-### filter
+### grep
 
-**Usage: filter [incl_regex = .\*] [excl_regex = ''] [track_regex = .*]...**
+**Usage: grep [-i = .*] [-e = ''] [track_regex = .*]...**
 
-Filter for features matching incl_regex, hide those matching excl_regex. Apply to tracks matched by track_regex. This command is useful to filter the annotation in GTF or BED files, for example:
+Similar to grep command, filter for features matching `-i` regex, hide those matching `-e` regex. Apply to tracks matched by track_regex. This command is useful to filter the annotation in GTF or BED files, for example:
 ```
-filter RNA mRNA gtf gff
+grep -i RNA -e mRNA gtf gff
 ```
 Will show the rows containing 'RNA' but will hide those containing 'mRNA', applies to tracks whose name matches 'gtf' or 'gff'.
-With no arguments reset to default: `filter .* ^$ .*` which means show everything, hide nothing, apply to all tracks. 
+With no arguments reset to default: `grep -i .* -e ^$ .*` which means show everything, hide nothing, apply to all tracks.
 
 ### squash
 
@@ -328,15 +302,9 @@ dataCol 5 #1 #3
 
 ### print
 
-**Usage: print [track_regex = .*]...**
+**Usage: print [-full] [track_regex = .*]...**
 
-Toggle the printing of lines in the tracks matched by track_regex. Long lines clipped.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the `filter` command. Applies only to annotation tracks
-
-### printFull
-
-**Usage: printFull [track_regex = .*]...**
-
-Toggle the printing of lines in the tracks matched by track_regex. Long lines wrapped.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the `filter` command. Applies only to annotation tracks
+Toggle the printing of lines for the tracks matched by track_regex.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the `grep` command. Applies only to annotation tracks. Lines extending beyond the screen width are clipped for readability unless the  the flag `-full` is enabled.
 
 ## Alignments
 
@@ -346,23 +314,19 @@ Toggle the printing of lines in the tracks matched by track_regex. Long lines wr
 
 Toggle read coverage from raw count to reads per million. 
 
-### -f
+### samtools
 
-**Usage: -f INT [track_regex = .*]...**
+**Usage: samtools [-f INT=0] [-F INT=4] [-q INT=0] [track_re = .*] ...**
 
-Include reads with INT bits set in tracks matched by regexes. Same as in `samtools view`. Note that the flag 4096 can be used to filter in or out reads on top strand, this is useful in bisulfite mode.
-
-### -F
-
-**Usage: -F INT [track_regex = .*]...**
-
-Exclude reads with INT bits set in tracks matched by regexes. Same as in `samtools view`. Note that the flag 4096 can be used to filter in or out reads on top strand, this is useful in bisulfite mode.
-
-### mapq
-
-**Usage: mapq INT [track_regex = .*]...**
-
-Include reads with mapq >= INT in tracks matched by regexes For example: mapq 30 aln1.bam aln2.bam
+Apply samtools filters to alignment tracks captured by the list of track regexes. As *samtools view*, this command filters alignment records on the basis of the given flags:
+-F: Filter out flags with these bits set. NB: 4 is always set.
+-f: Require alignment to have these bits sets.
+-q: Require alignments to have MAPQ >= than this. Examples:
+```
+samtools -q 10           -> Set mapq for all tracks. -f and -F reset to default
+samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar
+samtools                 -> Reset all to default.
+```
 
 ### BSseq
 
@@ -371,6 +335,12 @@ Include reads with mapq >= INT in tracks matched by regexes For example: mapq 30
 Toggle bisulfite mode for read tracks matched by regex. In bisulfite mode, the characters M and m mark methylated bases (i.e. unconverted C to T) and U and u are used for unmethylated bases (i.e. C converted to T). Upper case is used for reads on  forward strand, small case for reverse. Ignored without reference fasta sequence.
 
 ## General
+
+### setGenome
+
+**Usage: setGenome fasta|bam|genome**
+
+Set genome and reference sequence. The genome, i.e. the list of contig and names and sizes, can be extracted from the indexed fasta reference, from a bam file or from a genome identifier (e.g. hg19). If a fasta file is used also the reference sequence becomes available.
 
 ### showGenome
 
@@ -411,7 +381,7 @@ addTracks http://remote/host/peaks.bed
 
 **Usage: dropTracks track_regex [track_regex]...**
 
-Drop tracks matching any of the listed regex. 
+Drop tracks matching any of the listed regexes. 
 Examples:
 ```
 dropTracks bam

@@ -98,7 +98,7 @@ public class TrackWigglesTest {
 		
 		String url= "test_data/test.bedGraph.gz";
 		int yMaxLines= 5;
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 22, null, null);
+		GenomicCoords gc= new GenomicCoords("chr1:1-22", null, null);
 		TrackWiggles tw= new TrackWiggles(url, gc, 4);
 		tw.setYLimitMax(Double.NaN);
 		tw.setYLimitMin(Double.NaN);
@@ -121,7 +121,7 @@ public class TrackWigglesTest {
 
 		System.out.println(prof);
 		
-		gc= new GenomicCoords("chr1", 1, 52, null, null);
+		gc= new GenomicCoords("chr1:1-52", null, null);
 		tw= new TrackWiggles("test_data/posNeg.bedGraph.gz", gc, 4);
 		tw.setYLimitMax(Double.NaN);
 		tw.setYLimitMin(Double.NaN);
@@ -137,7 +137,7 @@ public class TrackWigglesTest {
 		// String url= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12892R2x75Th1014Il200SigRep3V4.bigWig";
 		String url= "/Users/berald01/Downloads/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig";
 		
-		GenomicCoords gc= new GenomicCoords("chrM", 1, 1000, null, null);
+		GenomicCoords gc= new GenomicCoords("chrM:1-1000", null, null);
 		
 		TrackWiggles tw= new TrackWiggles(url, gc, 4);
 		// System.out.println(tw.printToScreen(yMaxLines));
@@ -150,7 +150,7 @@ public class TrackWigglesTest {
 	// @Test
 	public void canPrintFromTdf() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
 
-		GenomicCoords gc= new GenomicCoords("chr8", 1, 100, null, null);
+		GenomicCoords gc= new GenomicCoords("chr8:1-100", null, null);
 		int userWindowSize= gc.getUserWindowSize();
 		String tdfFile= "test_data/hg18_var_sample.wig.v2.1.30.tdf";
 		List<ScreenWiggleLocusInfo> screenLocInfo = 
@@ -182,7 +182,7 @@ public class TrackWigglesTest {
 	public void canNomrmalizeTDFtoRPM() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException{
 
 		System.out.println("START");
-		GenomicCoords gc= new GenomicCoords("chr7", 5540000, 5570000, null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5540000-5570000", null, null);
 		TrackWiggles tw= new TrackWiggles("test_data/ear045.oxBS.actb.tdf", gc, 4);
 		Double raw= tw.getScreenScores().get(0);
 		tw.setRpm(true);

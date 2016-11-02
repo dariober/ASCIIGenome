@@ -49,7 +49,7 @@ public class TrackCoverageTest {
 		tc.setSamRecordFilter(filter);
 		System.out.println(tc.getSamRecordFilter());
 		System.out.println(tc.printToScreen());
-
+		
 	}
 	
 	@Test
@@ -121,7 +121,7 @@ public class TrackCoverageTest {
 	@Test
 	public void canPrintTitleWithColour() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		assertEquals("[", tc.getTitle().trim().substring(0, 1)); // default col
 		tc.setTitleColour("black");
@@ -137,7 +137,7 @@ public class TrackCoverageTest {
 		
 		int yMaxLines= 11;
 		
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		tc.setyMaxLines(yMaxLines);
 		tc.setRpm(true);
@@ -148,7 +148,7 @@ public class TrackCoverageTest {
 	public void canPrintCoverageTrack() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException {
 		int yMaxLines= 11;
 		
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		tc.setyMaxLines(yMaxLines);
 		System.out.println(gc.toString());
@@ -190,7 +190,7 @@ public class TrackCoverageTest {
 	public void canPrintCoverageTrackWithZeroHeight() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException {
 		int yMaxLines= 0;
 		
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		tc.setyMaxLines(yMaxLines);
 		assertEquals("", tc.printToScreen());
@@ -199,7 +199,7 @@ public class TrackCoverageTest {
 	@Test
 	public void canResetToZeroLargeWindow() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException {
 		// If the genomic window is too large do not process the bam file and return zero height track.
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 100000000, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:1-100000000", samSeqDict, fastaFile);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.actb.bam", gc, false);
 		assertEquals(0, tc.getScreenLocusInfoList().size());
 		assertTrue(tc.printToScreen().startsWith("Track"));
@@ -208,7 +208,7 @@ public class TrackCoverageTest {
 	@Test 
 	public void testWithZeroReadsRegion() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		GenomicCoords  gc= new GenomicCoords("chr7", 1, 1000, samSeqDict, null);
+		GenomicCoords  gc= new GenomicCoords("chr7:1-1000", samSeqDict, null);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		tc.setNoFormat(true);
 		tc.setyMaxLines(2);

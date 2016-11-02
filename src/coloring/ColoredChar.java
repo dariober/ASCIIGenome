@@ -1,7 +1,6 @@
 package coloring;
 
 import java.awt.Color;
-import java.util.Arrays;
 
 public class ColoredChar {
 	

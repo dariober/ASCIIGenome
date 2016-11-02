@@ -56,37 +56,17 @@ public class Main {
 			//
 		}	
 		
-		if((region == null || region.isEmpty()) && fasta != null){ // Try to initilize from fasta
-			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
-			region= faSeqFile.nextSequence().getName();
-			faSeqFile.close();
-		}
-
-		SAMSequenceDictionary samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(inputFileList, fasta, genome);
-		
-		/* Prepare genomic coordinates to fetch. This should probably be a function in itself */
-		if(region.isEmpty()){
-			System.err.print("Initializing coordinates... ");
-			if(!samSeqDict.isEmpty()){
-				region= samSeqDict.getSequence(0).getSequenceName();
-				System.err.println("");
-			} else {
-				for(String x : inputFileList){
-					try {
-						region= Utils.initRegionFromFile(x);
-						System.err.println("Done from: " + x);
-						break;
-					} catch(Exception e){
-						System.err.println("\nCould not initilize from file " + x);
-					}
-				}
-			}
-		}
-		
 		/* Initialize trackSet */
 		/* ------------------- */
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		gch.add(new GenomicCoords(region, samSeqDict, fasta));
+		
+		region= initRegion(region, inputFileList, fasta, genome);
+		gch.add(new GenomicCoords(region, null, null));
+		List<String>initGenomeList= new ArrayList<String>();
+		initGenomeList.addAll(inputFileList);
+		initGenomeList.add(fasta);
+		initGenomeList.add(genome);
+		gch.current().setGenome(initGenomeList);
 
 		TrackProcessor proc= new TrackProcessor(new TrackSet(inputFileList, gch.current()), gch);
 
@@ -127,6 +107,10 @@ public class Main {
 				String gotoAndExec= ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
 				InteractiveInput itr = new InteractiveInput();
 				proc= itr.processInput(gotoAndExec, proc);
+				if (itr.getInteractiveInputExitCode() != 0){
+					System.err.println("Error processing '" + gotoAndExec + "' at line '" + line + "'");
+					System.exit(1);
+				}
 			}
 			br.close();
 			System.exit(0);
@@ -173,6 +157,43 @@ public class Main {
 			// *** END processing interactive input 
 			
 		} // End while loop keep going until quit or if no interactive input set
+	}
+
+	/** Return a suitable region to start. If a region is alreay given, do nothing.
+	 * This method is a mess and should be cleaned up together with GenomicCoords class.
+	 * */
+	private static String initRegion(String region, List<String> inputFileList, String fasta, String genome) throws IOException{
+
+		if( ! region.isEmpty() ){
+			return region;
+		}
+
+		if((region == null || region.isEmpty()) && fasta != null){ // Try to initilize from fasta
+			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
+			region= faSeqFile.nextSequence().getName();
+			faSeqFile.close();
+			return region;
+		}
+		
+		/* Prepare genomic coordinates to fetch. This should probably be a function in itself */
+		SAMSequenceDictionary samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(inputFileList, fasta, genome);
+
+		System.err.print("Initializing coordinates... ");
+		if(!samSeqDict.isEmpty()){
+			region= samSeqDict.getSequence(0).getSequenceName();
+			System.err.println("");
+		} else {
+			for(String x : inputFileList){
+				try {
+					region= Utils.initRegionFromFile(x);
+					System.err.println("Done from: " + x);
+					break;
+				} catch(Exception e){
+					System.err.println("\nCould not initilize from file " + x);
+				}
+			}
+		}
+		return region;
 	}
 	
 }

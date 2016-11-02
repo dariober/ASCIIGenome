@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -357,33 +356,33 @@ public class UtilsTest {
 
 		//region= Utils.parseConsoleInput("-r chr8", gc);
 		//assertEquals("chr8", region);
-		
-		String region= Utils.parseConsoleInput("+10", gc);
+		List<String> tokens= new ArrayList<String>();
+		tokens.add("+10");
+		String region= Utils.parseConsoleInput(tokens, gc);
 		assertEquals("chr7:110-210", region);
 
-		region= Utils.parseConsoleInput("-1000", gc);
+		tokens.set(0, "-1000");
+		region= Utils.parseConsoleInput(tokens, gc);
 		// assertEquals("chr7:110-210", region);
 		
-		String rawInput= "-r chr10 -F 1024";
-		List<String> clArgs= Arrays.asList(rawInput.split("\\s+"));
-		// System.out.println(clArgs.indexOf("-R"));		
 	}
 	
 	@Test
 	public void canGetGoToRegionString() throws InvalidGenomicCoordsException, IOException{
 		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, fastaFile);
-		String rawInput= "1000";
-		assertEquals("chr7:1000", Utils.parseConsoleInput(rawInput, gc));
+		List<String> tokens= new ArrayList<String>();
+		tokens.add("1000");
+		assertEquals("chr7:1000", Utils.parseConsoleInput(tokens, gc));
 		
-		rawInput= "1000-10000";
-		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(rawInput, gc));
+		tokens.set(0, "1000-10000");
+		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(tokens, gc));
+
+		tokens.set(0, "1,000 - 10,000");
+		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(tokens, gc));
 		
-		rawInput= " 1,000 - 10,000";
-		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(rawInput, gc));
-		
-		rawInput= ":foo"; // Must fail
+		tokens.set(0, ":foo");
 		try{
-			System.err.println(Utils.parseConsoleInput(rawInput, gc));
+			System.err.println(Utils.parseConsoleInput(tokens, gc));
 			fail();
 		} catch (Exception e) {
 			
@@ -467,13 +466,18 @@ public class UtilsTest {
 	@Test
 	public void canSplitStringInTokens(){
 
-		assertEquals("bar", Utils.tokenize("foo    bar    baz   ", " ").get(1));
+		String str= "foo    bar    baz   ";
+		assertTrue(Utils.tokenize(str, " ").contains("bar"));
+		assertTrue(Utils.tokenize(str, " ").contains("baz"));
+		// assertEquals("bar", Utils.tokenize(str, " ").get(1));
 		
-		ArrayList<String> xx= Utils.tokenize("\"foo && bar\" "
+		
+		// Note use of quotes
+		ArrayList<String> xx= Utils.tokenize("'foo && bar' "
 				+ "&& bar"
 				+ "&&baz "
-				+ "&& \"foo && biz\""
-				+ "&& \"foo && ' biz\"", "&&");
+				+ "&& 'foo && biz'"
+				+ "&& 'foo && \' biz'", "&&");
 		for (String token : xx) {
 			System.out.println(token);
 		}
@@ -501,7 +505,7 @@ public class UtilsTest {
 	@Test
 	public void canPrintToStdoutOrFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		
 		File filename= new File("tmp.txt");
@@ -513,7 +517,7 @@ public class UtilsTest {
 	
 	@Test
 	public void canGetWritableFileOrNull() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 200, samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:1-200", samSeqDict, fastaFile);
 		String x= Utils.parseCmdinputToGetSnapshotFile("save", gc);
 		assertEquals("chr7_1-200.txt", x);
 		x= Utils.parseCmdinputToGetSnapshotFile("save /tmp/foo.txt", gc);
@@ -524,5 +528,16 @@ public class UtilsTest {
 	public void testPng() throws IOException{
 		Utils.convertTextFileToGraphic(new File("test_data/chr7_5564857-5570489.txt"), new File("tmp.png"));
 	}
+	
+	@Test
+	public void canConvertCoordsToString(){
+		assertEquals("chr1:1-100", Utils.coordinatesToString("chr1", 1, 100));
+		assertEquals("chr1:1", Utils.coordinatesToString("chr1", 1, null));
+		assertEquals("chr1:1", Utils.coordinatesToString("chr1", 1, null));
+		assertEquals("chr1:1", Utils.coordinatesToString("chr1", null, null));
+		assertEquals("chr1:1", Utils.coordinatesToString("chr1", null, -1));
+		assertEquals("chr1:10", Utils.coordinatesToString("chr1", 10, 9));
+	}
+	
 	
 }

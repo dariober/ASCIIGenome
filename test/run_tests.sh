@@ -23,10 +23,10 @@ echo "CAN LOAD BAM FILES"
 java -Xmx500m -jar $stvExe -r chr7:5598650-5601530 ds051.actb.bam ear045.oxBS.actb.bam -ni
 java -Xmx500m -jar $stvExe -r chr7:5598650-5601530 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -ni 
 java -Xmx500m -jar $stvExe -rpm -r chr7:5598650-5601530 ds051.actb.bam ear045.oxBS.actb.bam -ni 
-java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x 'mapq 10 && -f 16' -ni 
+java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x 'samtools -q 10 -F 16' -ni 
 
 echo "CAN SHOW BS DATA"
-java -Xmx500m -jar $stvExe -r chr7:5600000-5600179 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -x 'mapq 10 && BSseq' -ni 
+java -Xmx500m -jar $stvExe -r chr7:5600000-5600179 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -x 'samtools -q 10 && BSseq' -ni 
 
 echo "HANDLE NO READS IN INPUT"
 java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x ' -f 16 && -F 16' -ni # Note space between quote and -f

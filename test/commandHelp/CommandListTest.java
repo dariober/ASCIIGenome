@@ -17,12 +17,6 @@ public class CommandListTest {
 	}
 	
 	@Test
-	public void canPrintFullHelp() throws InvalidCommandLineException {
-		System.out.println("FULL HELP");
-		System.out.println(CommandList.fullHelp());
-	}
-
-	@Test
 	public void canPrintBriefHelp() throws InvalidCommandLineException {
 		System.out.println("BRIEF HELP");
 		System.out.println(CommandList.briefHelp());

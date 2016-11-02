@@ -1,7 +1,10 @@
 package samTextViewer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import exceptions.InvalidCommandLineException;
 
 public class GenomicCoordsHistory {
 
@@ -11,8 +14,6 @@ public class GenomicCoordsHistory {
 	/** List index stating where we are in history */
 	private int positionTracker= -1;
 
-//	private String seqRegex= ""; 
-	
 	/* Constructor */
 	public GenomicCoordsHistory(){}
 	
@@ -69,6 +70,33 @@ public class GenomicCoordsHistory {
 	
 	protected List<GenomicCoords> getHistory() {
 		return history;
+	}
+
+	/** Set sequence dictionary and fasta ref, if available for all the genomic coords in this 
+	 * history. 
+	 * */
+	public void setGenome(List<String> tokens) throws InvalidCommandLineException, IOException {
+		if(tokens.size() == 0){
+			throw new InvalidCommandLineException();
+		}
+		for(GenomicCoords gc : this.getHistory()){
+			gc.setGenome(tokens);
+		}
+//		List<String> insam= new ArrayList<String>();
+//		insam.add(cmdInput.get(1));
+//		SAMSequenceDictionary samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(insam, cmdInput.get(1), cmdInput.get(1));
+//		this.current().setSamSeqDict(samSeqDict);
+//		
+//		// Try to set fasta sequence
+//		try{
+//			IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(cmdInput.get(1)));
+//			if(fa.isIndexed()){
+//				this.current().setFastaFile(cmdInput.get(1));
+//			}
+//			fa.close();
+//		} catch(FileNotFoundException e){
+//			//
+//		}
 	}
 
 //	public TrackIntervalFeature findRegex() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
