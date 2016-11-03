@@ -448,6 +448,24 @@ public class CommandList {
 				+ "hideTitle~/hide_all/~-> Hide all tracks\n"
 				+ "```");
 		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
+		cmd.setName("editNames"); cmd.setArgs("<pattern> <replacement> [track_re=.*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Edit track names by substituting regex pattern with replacement.");
+		cmd.setAdditionalDescription("Pattern and replacement are required arguments, "
+				+ "the default regex for track is '.*' (i.e. all tracks). "
+				+ "Use \"\" (empty double quotes) to replace pattern with nothing. "
+				+ "Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'\n"
+				+ "```\n"
+				+ "editNames fk123_ \"\"~~~~-~> hela.bam#1, hela.bed#2\n"
+				+ "editNames fk123_ \"\" bam -> hela.bam#1, fk123_hela.bed#2\n"
+				+ "editNames _ ' ' ~~~~~~~~~~-> fk123 hela.bam#1,  fk123 hela.bed#2\n"
+				+ "editNames ^.*# cells ~~~~~-> cells#1, cells#2\n"
+				+ "editNames ^ xx_ ~~~~~~~~~~-> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2"
+				+ "```");
+		cmdList.add(cmd);
+
+		
 		
 		cmd= new CommandHelp();
 		cmd.setName("dataCol"); cmd.setArgs("[index = 4] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
@@ -616,6 +634,21 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
+		cmd.setName("sessionSave"); cmd.setArgs("filename"); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Experimental: Save the current settings to file suitable to be reloaded by ASCIIGenome.");
+		cmd.setAdditionalDescription("`sessionSave` writes to file a set of commands to reproduce the current "
+				+ "settings: tracks, colors, heights etc. It's not meant to be a perfect replica, rather it's a "
+				+ "shortcut to avoid re-typing commands. Example:\n"
+				+ "```\n"
+				+ "sessionSave session.txt\n"
+				+ "```\n"
+				+ "Quit session and reload with:\n"
+				+ "```\n"
+				+ "ASCIIGenome -x session.txt\n"
+				+ "```");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
 		cmd.setName("q"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Quit");
 		cmd.setAdditionalDescription("");
@@ -688,6 +721,7 @@ public class CommandList {
 		paramList.add("trackHeight");
 		paramList.add("colorTrack");
 		paramList.add("hideTitle");
+		paramList.add("editNames");
 		paramList.add("ylim");
 		paramList.add("dataCol");
 		paramList.add("print");
@@ -704,6 +738,7 @@ public class CommandList {
 		paramList.add("samtools");
 		paramList.add("BSseq");
 		paramList.add("save");
+		paramList.add("sessionSave");
 	
 		return paramList;
 	}

@@ -9,25 +9,20 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.UrlValidator;
-
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
-import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
-import tracks.TrackFormat;
 import tracks.TrackWiggles;
 
 /**
@@ -53,6 +48,7 @@ public class GenomicCoords implements Cloneable {
 	 * Only user getUserWindowSize() to access it after init at constructor.
 	 */
 	private String fastaFile= null;
+	private String samSeqDictSource= null; // Source of the sequence dictionary. Can be path to file of fasta, bam, genome. Or genome tag e.g. hg19. 
 	
 	/* Constructors */
 	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
@@ -92,9 +88,8 @@ public class GenomicCoords implements Cloneable {
 		
 	}
 		
-	private GenomicCoords(){ 
-//		this.userWindowSize= -1;
-//		this.useFixedUserWindowSize= false;
+	GenomicCoords(){ 
+
 	};
 	
 	/* Methods */
@@ -103,25 +98,31 @@ public class GenomicCoords implements Cloneable {
 	 * GenomicCoords.getSamSeqDictFromAnyFile() for available inputs.
 	 * */
 	public void setGenome(List<String> input) throws IOException {
-//		List<String> insam= new ArrayList<String>();
-//		insam.add(input);
 		
+		List<String> cleanList= new ArrayList<String>(); 
+		for(String x : input){
+			if(x != null  && ! x.trim().isEmpty()){
+				cleanList.add(x);
+			}
+		}		
+		if(cleanList.size() == 0){
+			return;
+		}		
+
 		// Set Dictionary
-		SAMSequenceDictionary samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(input, input.get(0), input.get(0));
-		this.setSamSeqDict(samSeqDict);
-		
-		// Set Source
-		// this.setGenomeSource();
+		this.setSamSeqDictFromAnySource(cleanList);
 		
 		// Try to set fasta sequence
-		try{
-			IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(input.get(0)));
-			if(fa.isIndexed()){
-				this.setFastaFile(input.get(0));
+		for(String x : cleanList){
+			try{
+				IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(x));
+				if(fa.isIndexed()){
+					this.setFastaFile(x);
+				}
+				fa.close();
+			} catch(FileNotFoundException e){
+				//
 			}
-			fa.close();
-		} catch(FileNotFoundException e){
-			//
 		}
 	}
 
@@ -245,6 +246,11 @@ public class GenomicCoords implements Cloneable {
 	public String toString(){
 		int range= this.to - this.from + 1;
 		return this.chrom + ":" + this.from + "-" + this.to + "; " + NumberFormat.getNumberInstance(Locale.UK).format(range) + " bp";
+	}
+	
+	/** Retunr current position in the form chrom:start-end */
+	public String toStringRegion(){
+		return this.getChrom() + ":" + this.getFrom() + "-" + this.getTo();
 	}
 	
 	private int getMidpoint(){
@@ -543,95 +549,97 @@ public class GenomicCoords implements Cloneable {
 
 	/**
 	 * Get a SAMSequenceDictionary by querying the input files, if there is any bam, or from the indexed fasta file or from genome files.
-	 * @param insam List of input files
+	 * @param testfiles List of input files
 	 * @param fasta Reference sequence
 	 * @param genome 
 	 * @return
 	 * @throws IOException 
 	 */
-	static SAMSequenceDictionary getSamSeqDictFromAnyFile(List<String> insam, String fasta, String genome) throws IOException{
+	private boolean setSamSeqDictFromAnySource(List<String> testfiles) throws IOException{
 
-		SAMSequenceDictionary seqDict= new SAMSequenceDictionary(); // null;
-
-		if(insam != null){
-			for(String x : insam){ // Get sequence dict from bam, if any				
-				if(Utils.getFileTypeFromName(x).equals(TrackFormat.BAM)){
-					
-					/*  ------------------------------------------------------ */
-					/* This chunk prepares SamReader from local bam or URL bam */
-					UrlValidator urlValidator = new UrlValidator();
-					SamReaderFactory srf=SamReaderFactory.make();
-					srf.validationStringency(ValidationStringency.SILENT);
-					SamReader samReader;
-					if(urlValidator.isValid(x)){
-						samReader = srf.open(SamInputResource.of(new URL(x)).index(new URL(x + ".bai")));
-					} else {
-						samReader= srf.open(new File(x));
-					}
-					/*  ------------------------------------------------------ */
-					
-					//SamReaderFactory srf=SamReaderFactory.make();
-					//srf.validationStringency(ValidationStringency.SILENT);
-					//SamReader samReader= srf.open(new File(x));
-					
-					seqDict= samReader.getFileHeader().getSequenceDictionary();
-					if(!seqDict.isEmpty()){
-						return seqDict;
-					}
+		boolean isSet= false;
+		for(String testfile : testfiles){ // Get sequence dict from bam, if any				
+			try{
+				isSet= this.setSamSeqDictFromBam(testfile);
+				if(isSet){
+					return isSet;
 				}
+			} catch(Exception e){
+				//
+			}
+			try{
+				isSet= this.setSamSeqDictFromFasta(testfile);
+				if(isSet){
+					return isSet;
+				}
+			} catch(Exception e){
+				//
+			}
+			try{
+				isSet= this.setSamSeqDictFromGenomeFile(testfile);
+				if(isSet){
+					return isSet;
+				}
+			} catch(Exception e){
+				//
 			}
 		}
-		try{ // Try getting from fasta
-			IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(fasta));
-			if(fa.isIndexed()){
-				BufferedReader br= new BufferedReader(new FileReader(new File(fasta + ".fai")));
-				while(true){
-					String line= br.readLine();
-					if(line == null){
-						break;
-					}
-					SAMSequenceRecord ssqRec= new SAMSequenceRecord(
-							line.split("\t")[0], 
-							Integer.parseInt(line.split("\t")[1]));
-					seqDict.addSequence(ssqRec);
-				}
-				br.close();
-				fa.close();
-				return seqDict;
-			}
-			fa.close();
-		} catch(NullPointerException e){
-			//
-		} catch(FileNotFoundException e){
-			//
-		}
+		return isSet;
+	}
+
+	private boolean setSamSeqDictFromFasta(String fasta) throws IOException{
 		
-		if(genome != null && !genome.isEmpty()){ // Try genome file as last option
-			seqDict= getSamSeqDictFromGenomeFile(genome);
-			return seqDict;
+		IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(fasta));
+		if(fa.isIndexed()){
+			BufferedReader br= new BufferedReader(new FileReader(new File(fasta + ".fai")));
+			SAMSequenceDictionary seqDict= new SAMSequenceDictionary(); // null;
+			while(true){
+				String line= br.readLine();
+				if(line == null){
+					break;
+				}
+				SAMSequenceRecord ssqRec= new SAMSequenceRecord(
+						line.split("\t")[0], 
+						Integer.parseInt(line.split("\t")[1]));
+				seqDict.addSequence(ssqRec);
+			}
+			br.close();
+			fa.close();
+			this.setSamSeqDictSource(new File(fasta).getAbsolutePath());
+			this.setSamSeqDict(seqDict);
+			return true;
 		}
-		return seqDict;
+		fa.close();
+		return false;
+	}
+	
+	private boolean setSamSeqDictFromBam(String bamfile) {
+
+		/*  ------------------------------------------------------ */
+		/* This chunk prepares SamReader from local bam            */
+		SamReaderFactory srf=SamReaderFactory.make();
+		srf.validationStringency(ValidationStringency.SILENT);
+		SamReader samReader;
+		samReader= srf.open(new File(bamfile));
+		/*  ------------------------------------------------------ */
+		
+		SAMSequenceDictionary seqDict = samReader.getFileHeader().getSequenceDictionary();
+		if(seqDict != null && !seqDict.isEmpty()){
+			this.setSamSeqDictSource(new File(bamfile).getAbsolutePath());
+			this.setSamSeqDict(seqDict);
+			return true;
+		}
+		return false;
 	}
 	
 	/** Get SamSequenceDictionary either from local file or from built-in resources.
 	 * If reading from resources, "genome" is the tag before '.genome'. E.g. 
 	 * 'hg19' will read file hg19.genome  
 	 * */
-	private static SAMSequenceDictionary getSamSeqDictFromGenomeFile(String genome) throws IOException {
+	private boolean setSamSeqDictFromGenomeFile(String genome) throws IOException {
 
 		SAMSequenceDictionary samSeqDict= new SAMSequenceDictionary();
 
-		if(Utils.getFileTypeFromName(genome).equals(TrackFormat.BAM)){
-			// If genome is a bam file, get header from there.
-			SamReaderFactory srf=SamReaderFactory.make();
-			srf.validationStringency(ValidationStringency.SILENT);
-			SamReader samReader= srf.open(new File(genome));
-			samSeqDict= samReader.getFileHeader().getSequenceDictionary();
-			if(!samSeqDict.isEmpty()){
-				return samSeqDict;
-			}
-		}
-		
 		BufferedReader reader=null;
 		try{
 			// Attempt to read from resource
@@ -642,7 +650,8 @@ public class GenomicCoords implements Cloneable {
 				// Read from local file
 				reader= new BufferedReader(new FileReader(new File(genome)));
 			} catch (FileNotFoundException ex){
-				System.err.println("\nGenome file not found: " + genome);
+				return false; 
+				// System.err.println("\nGenome file not found: " + genome);
 			}
 		}
 		
@@ -656,7 +665,9 @@ public class GenomicCoords implements Cloneable {
 			samSeqDict.addSequence(sequenceRecord);
 		}
 		reader.close();
-		return samSeqDict;
+		this.setSamSeqDictSource(genome);
+		this.setSamSeqDict(samSeqDict);
+		return true;
 	}
 
 	public boolean equalCoords(GenomicCoords other){
@@ -837,6 +848,18 @@ public class GenomicCoords implements Cloneable {
 	}
 
 	protected void setFastaFile(String fastaFile) {
+		this.setSamSeqDictSource(fastaFile);
 		this.fastaFile = fastaFile;
+	}
+
+	public String getSamSeqDictSource() {
+		if(this.getFastaFile() != null){
+			return this.getFastaFile();
+		}
+		return samSeqDictSource;
+	}
+
+	public void setSamSeqDictSource(String samSeqDictSource) {
+		this.samSeqDictSource = samSeqDictSource;
 	}
 }

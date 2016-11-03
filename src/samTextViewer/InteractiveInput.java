@@ -60,7 +60,7 @@ public class InteractiveInput {
 			try {
 				
 				// * These commands only print info or do stuff without editing the GenomicCoordinates or the Tracks:
-				if(cmdInput.get(0).equals("h")){  
+				if(cmdInput.get(0).equals("h") || cmdInput.get(0).equals("-h")){  
 					Utils.printer(CommandList.briefHelp(), proc.getSnapshotFile());
 					this.interactiveInputExitCode= 1;
 					
@@ -88,6 +88,14 @@ public class InteractiveInput {
 				
 				} else if(cmdInput.get(0).equals("save")) {
 					proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(cmdInput), proc.getGenomicCoordsHistory().current()) );
+					
+				} else if(cmdInput.get(0).equals("sessionSave")) {
+					if(cmdInput.size() < 2){
+						System.err.println("Output file name is missing!");
+						this.interactiveInputExitCode= 1;
+					} else {
+						proc.exportTrackSetSettings(cmdInput.get(1));
+					}
 
 				} else if(cmdInput.get(0).equals("q")){
 					System.exit(0);
@@ -185,10 +193,9 @@ public class InteractiveInput {
 					
 					Utils.addSourceName(inputFileList, cmdInput);
 
-					if(proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
-						// samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(inputFileList, null, null);
+					if(proc.getGenomicCoordsHistory().current().getSamSeqDict() == null || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
 						GenomicCoords gc= proc.getGenomicCoordsHistory().current();
-						gc.setGenome(inputFileList);;
+						gc.setGenome(inputFileList);
 					}
 					
 					for(String sourceName : cmdInput){
@@ -206,7 +213,10 @@ public class InteractiveInput {
 				} else if(cmdInput.get(0).equals("orderTracks")){
 					cmdInput.remove(0);
 					proc.getTrackSet().orderTracks(cmdInput);
-									
+				
+				} else if(cmdInput.get(0).equals("editNames")){
+					proc.getTrackSet().editNamesForRegex(cmdInput);
+					
 				} else if(cmdInput.get(0).equals("print")){
 					proc.getTrackSet().setPrintModeForRegex(cmdInput);
 

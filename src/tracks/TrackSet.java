@@ -1,15 +1,15 @@
 package tracks;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -32,7 +32,7 @@ public class TrackSet {
 	private List<Track> trackList= new ArrayList<Track>();
 	private List<Pattern> regexForTrackHeight= new ArrayList<Pattern>();
 	private int trackHeightForRegex= -1;
-	public static final String BOOKMARK_TAG= "bookmark";
+// 	public static final String BOOKMARK_TAG= "bookmark";
 	
 	/*   C o n s t r u c t o r s   */
 	
@@ -55,14 +55,12 @@ public class TrackSet {
 					/* Coverage track */
 					TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
 	
-					trackCoverage.setId(this.getMaxTrackId() + 1);
-					trackCoverage.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId() + 1));
+					trackCoverage.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
 					this.trackList.add(trackCoverage);
 					
 					/* Read track */
 					TrackReads trackReads= new TrackReads(sourceName, gc);
-					trackReads.setId(this.getMaxTrackId() + 1);
-					trackReads.setTrackTag(new File(sourceName).getName() + "@" + (this.getMaxTrackId() + 1));
+					trackReads.setTrackTag(new File(sourceName).getName() + "@" + this.getNextTrackId());
 					this.trackList.add(trackReads);
 				}
 				
@@ -73,8 +71,6 @@ public class TrackSet {
 					// Annotatation
 					//
 					TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
-					//tif.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId()+1));
-					//tif.setId(this.getMaxTrackId() + 1);
 					this.add(tif, new File(sourceName).getName());
 				} 
 	
@@ -85,12 +81,10 @@ public class TrackSet {
 					// Wiggles
 					//
 					TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
-					//tw.setTrackTag(new File(sourceName).getName() + "#" + (this.getMaxTrackId()+1));
-					//tw.setId(this.getMaxTrackId()+1);
 					this.add(tw, new File(sourceName).getName());
 					
 				} else {
-					// NB: You never get here because Uteils.getFileTypeFromName returns
+					// NB: You never get here because Utils.getFileTypeFromName returns
 					// BED for any file that cannot be classified.
 					System.err.println("Unable to classify " + sourceName + "; skipping"); 								
 				}
@@ -113,10 +107,9 @@ public class TrackSet {
 	 * NB: Adding a track resets the track's ID
 	 * */
 	public void add(Track track, String baseTag) {
-		int idForTrack= this.getMaxTrackId() + 1;
+		int idForTrack= this.getNextTrackId();
 		String trackTag= baseTag + "#" + idForTrack;
 		track.setTrackTag(trackTag);
-		track.setId(idForTrack);
 		this.trackList.add(track);
 	}
 
@@ -147,29 +140,26 @@ public class TrackSet {
 	
 	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException{
 		
-		int idForTrack= this.getMaxTrackId() + 1;
+		int idForTrack= this.getNextTrackId();
 		String trackId= new File(sourceName).getName() + "#" + idForTrack;
 		
 		TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
-		tw.setId(idForTrack);
 		tw.setTrackTag(trackId);
 		this.trackList.add(tw);
 	}
 	
 	private void addIntervalFeatureTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		int idForTrack= this.getMaxTrackId() + 1;
-		
-		String trackId= new File(sourceName).getName() + "#" + (idForTrack);
+		int idForTrack= this.getNextTrackId();
+		String trackId= new File(sourceName).getName() + "#" + idForTrack;
 		TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
 		tif.setTrackTag(trackId);
-		tif.setId(idForTrack);
 		this.trackList.add(tif);
 	}
 	
 	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		int idForTrack= this.getMaxTrackId() + 1;
+		int idForTrack= this.getNextTrackId();
 		
 		if(!Utils.bamHasIndex(sourceName)){
 			System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
@@ -178,38 +168,45 @@ public class TrackSet {
 		}
 		
 		/* BAM Coverage track */
-		String coverageTrackId= new File(sourceName).getName() + "#" + (idForTrack);
+		String coverageTrackId= new File(sourceName).getName() + "#" + idForTrack;
 		
 		TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
-		trackCoverage.setId(idForTrack);
 		trackCoverage.setTrackTag(coverageTrackId);
 		this.trackList.add(trackCoverage);
 		
 		/* Reads */
-		idForTrack= this.getMaxTrackId() + 1;
-		String trackId= new File(sourceName).getName() + "@" + (idForTrack+1);
+		idForTrack= this.getNextTrackId();
+		String trackId= new File(sourceName).getName() + "@" + idForTrack;
 
 		TrackReads trackReads= new TrackReads(sourceName, gc);
 		trackReads.setTrackTag(trackId);
-		trackReads.setId(idForTrack);
 		trackReads.setTrackTag(trackId);
 
 		this.trackList.add(trackReads);
 	} 
 	
-	private int getMaxTrackId(){
+	private Integer getNextTrackId(){
 		
-		if(this.trackList.size() == 0){
-			return 0;
-		}
-		
-		int id= Integer.MIN_VALUE;
-		for(Track tr : this.trackList){
-			if(tr.getId() > id){
-				id= tr.getId();
+		Integer id= 1;
+		for(Track tr : this.getTrackList()){
+			Integer x= this.getIdOfTrackName(tr.getTrackTag());
+			if(x != null && x >= id){
+				id= x + 1;
 			}
 		}
 		return id; 
+	}
+	
+	/** Oarse the track name to extract the ID suffix. Typically in the form
+	 * name#1 or name@1 -> 1
+	 * */
+	private Integer getIdOfTrackName(String trackName){
+		String x= trackName.trim().replaceAll(".*(@|#)", "");
+		try{
+			return Integer.parseInt(x);
+		} catch (NumberFormatException e){
+			return null;
+		}
 	}
 	
 	/** Show track info as nicely printable string.  
@@ -326,21 +323,26 @@ public class TrackSet {
         }
 	}
 	
-	public void setPrintModeForRegex(List<String> tokens) throws InvalidCommandLineException {
+	public void setPrintModeForRegex(List<String> cmdInput) throws InvalidCommandLineException {
 		// MEMO of subcommand syntax:
 		// 0 print/printFull
 		// 1 Regex
 		
+		List<String> args= new ArrayList<String>();
+		for(String x : cmdInput){
+			args.add(x);
+		}		
+		
 		boolean printFull= false;
-		if(tokens.contains("-full")){
+		if(args.contains("-full")){
 			printFull= true;
-			tokens.remove("-full");
+			args.remove("-full");
 		}
 		
         // Regex
         List<String> trackNameRegex= new ArrayList<String>();
-        if(tokens.size() >= 2){
-            trackNameRegex= tokens.subList(1, tokens.size());
+        if(args.size() >= 2){
+            trackNameRegex= args.subList(1, args.size());
         } else {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
@@ -599,29 +601,33 @@ public class TrackSet {
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
 	*/
-	public void setFilterForTrackIntervalFeature(List<String> tokens) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+	public void setFilterForTrackIntervalFeature(List<String> cmdInput) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
-		tokens.remove(0); // Remove command name
+		List<String> args= new ArrayList<String>();
+		for(String x : cmdInput){
+			args.add(x);
+		}		
+		args.remove(0); // Remove command name
 
 		String showRegex= ".*";  // Show all
 		String hideRegex= "^$";  // Hide nothing
 		
 		// Get args:
-		if(tokens.contains("-i")){
-			int idx= tokens.indexOf("-i") + 1; 
-			showRegex= tokens.get(idx);
-			tokens.remove(idx);
-			tokens.remove("-i");
+		if(args.contains("-i")){
+			int idx= args.indexOf("-i") + 1; 
+			showRegex= args.get(idx);
+			args.remove(idx);
+			args.remove("-i");
 		}
-		if(tokens.contains("-e")){
-			int idx= tokens.indexOf("-e") + 1; 
-			hideRegex= tokens.get(idx);
-			tokens.remove(idx);
-			tokens.remove("-e");
+		if(args.contains("-e")){
+			int idx= args.indexOf("-e") + 1; 
+			hideRegex= args.get(idx);
+			args.remove(idx);
+			args.remove("-e");
 		}
 		// What is left is positional args of regexes
 		List<String> trackNameRegex= new ArrayList<String>();
-		trackNameRegex.addAll(tokens);
+		trackNameRegex.addAll(args);
 		if(trackNameRegex.size() == 0){
 			trackNameRegex.add(".*"); // Default regex for matching tracks
 		}		
@@ -630,7 +636,7 @@ public class TrackSet {
 		try{
 			Pattern.compile(showRegex);
 		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + tokens);
+	    	System.err.println("Invalid regex in: " + args);
 	    	System.err.println("showRegex: " + showRegex);
 	    	throw new InvalidCommandLineException();
 		}
@@ -639,7 +645,7 @@ public class TrackSet {
 		try{
 			Pattern.compile(hideRegex); 
 		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + tokens);
+	    	System.err.println("Invalid regex in: " + args);
 	    	System.err.println("hideRegex: " + hideRegex);
 	    	throw new InvalidCommandLineException();
 	    }
@@ -941,6 +947,32 @@ public class TrackSet {
 		return false;
 	}
 	
+	/** Stub: Add current position to bookmarks. Book
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 * */
+	public void addBookmark(GenomicCoords gc, String nameForBookmark) throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
+		
+		// Check there isn't a bookmark track already:
+		boolean addbm = true;
+		for(Track tr : this.getTrackList()){
+			if(tr instanceof TrackBookmark){
+ 				tr.addBookmark(nameForBookmark);
+ 				tr.setGc(gc);
+ 				addbm= false;
+				break;
+			}
+		}
+		if(addbm){
+			TrackBookmark tr= new TrackBookmark(gc, nameForBookmark);
+			this.add(tr, "Bookmarks");
+			tr.setGc(gc);
+		}		
+	} 
+	
 	
 	/*   S e t t e r s   and   G e t t e r s  */
 	//public LinkedHashMap<String, Track> getTrackSet_DEPRECATED() {
@@ -966,12 +998,15 @@ public class TrackSet {
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
 	 * @throws MalformedURLException */
-	public void setSamFilterForRegex(List<String> tokens) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+	public void setSamFilterForRegex(List<String> cmdInput) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		// MEMO of subcommand syntax:
 		// "-F INT -f INT -q INT re1 re2 ..."
 		// * All optional. But -F, -f, -q are given they take one INT as arg.
-
-		tokens.remove(0); // Remove name of command
+		List<String> args= new ArrayList<String>();
+		for(String x : cmdInput){
+			args.add(x);
+		}
+		args.remove(0); // Remove name of command
 		
 		// Defaults:
 		int f= 0;
@@ -979,37 +1014,41 @@ public class TrackSet {
 		int q= 0;
 		
 		// Get args:
-		if(tokens.contains("-f")){
-			int idx= tokens.indexOf("-f") + 1; 
-			f= Integer.parseInt(tokens.get(idx));
-			tokens.remove(idx);
-			tokens.remove("-f");
+		if(args.contains("-f")){
+			int idx= args.indexOf("-f") + 1; 
+			f= Integer.parseInt(args.get(idx));
+			args.remove(idx);
+			args.remove("-f");
 		}
-		if(tokens.contains("-F")){
-			int idx= tokens.indexOf("-F") + 1; 
-			F= Integer.parseInt(tokens.get(idx));
+		if(args.contains("-F")){
+			int idx= args.indexOf("-F") + 1; 
+			F= Integer.parseInt(args.get(idx));
 			if((4 & F) == 0){
 				F += 4;
 			}
-			tokens.remove(idx);
-			tokens.remove("-F");
+			args.remove(idx);
+			args.remove("-F");
 		}
-		if(tokens.contains("-q")){
-			int idx= tokens.indexOf("-q") + 1; 
-			q= Integer.parseInt(tokens.get(idx));
-			tokens.remove(idx);
-			tokens.remove("-q");
+		if(args.contains("-q")){
+			int idx= args.indexOf("-q") + 1; 
+			q= Integer.parseInt(args.get(idx));
+			args.remove(idx);
+			args.remove("-q");
 		}
 		// What is left is positional args of regexes
 		List<String> trackNameRegex= new ArrayList<String>();
-		trackNameRegex.addAll(tokens);
+		trackNameRegex.addAll(args);
 		if(trackNameRegex.size() == 0){
 			trackNameRegex.add(".*"); // Default regex for matching tracks
 		}
 		
         // Get tracks to reset:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-
+        
+        if(tracksToReset.size() == 0){
+        	System.err.println("No track matching regex " + trackNameRegex);
+        }
+        
         for(Track tr : tracksToReset){
             
         	tr.set_f_flag(f);
@@ -1021,6 +1060,60 @@ public class TrackSet {
         	filters.add(new MappingQualityFilter(q));
         	tr.setSamRecordFilter(filters);
         }		
+	}
+	
+	public void editNamesForRegex(List<String> cmdInput) throws InvalidCommandLineException {
+		// API:
+		// editNames <patterns> <replacement> [track_re] ...
+		List<String> args= new ArrayList<String>();
+		for(String x : cmdInput){
+			args.add(x);
+		}
+		args.remove(0); // Remove name of command
+		
+		if(args.size() < 2){
+			System.err.println("Expected at least two arguments. Got " + cmdInput);
+			throw new InvalidCommandLineException();
+		}
+		
+		String pattern= args.get(0); args.remove(0);
+		String replacement= args.get(0); args.remove(0);
+		if(replacement.equals("\"\"")){
+			replacement= "";
+		}
+		if(args.size() == 0){ // What is left is pos args. Set to .* if nothing left.
+			args.add(".*");
+		}
+		
+        // Get tracks to reset:
+        List<Track> tracksToReset = this.matchTracks(args, true);
+        
+        // Dry-run: See if it duplicate or empty names are generated: 
+        // These are the track tags that would be generated. Including the edited ones and the untouched ones. 
+        List<String> testNames= new ArrayList<String>(); 
+        for(Track tr : this.getTrackList()){
+        	if(tracksToReset.contains(tr)){
+	        	String newTag= tr.getTrackTag().replaceAll(pattern, replacement);
+	        	if(newTag.isEmpty()){
+	    			System.err.println("Empty tag is not allowed. Empty for " + tr.getTrackTag());
+	    			throw new InvalidCommandLineException();
+	        	}
+	        	testNames.add(newTag);
+        	} else {
+        		testNames.add(tr.getTrackTag());
+        	}
+        }
+        Set<String> set = new HashSet<String>(testNames);
+        if(set.size() < testNames.size() ){
+        	System.err.println("Edit not allowed: It generates duplicate tags.");
+        	throw new InvalidCommandLineException();
+        }
+        
+        // Now change for real
+        for(Track tr : tracksToReset){
+        	String newTag= tr.getTrackTag().replaceAll(pattern, replacement);
+        	tr.setTrackTag(newTag);
+        }
 	}
 	
 	public void setFeatureGapForRegex(List<String> tokens) throws InvalidCommandLineException {
@@ -1084,22 +1177,27 @@ public class TrackSet {
 	 * */
 	public void setSeqRegexForTracks(List<String> cmdInput) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 
-		cmdInput.remove("seqRegex");
+		List<String> args= new ArrayList<String>();
+		for(String x : cmdInput){
+			args.add(x);
+		}		
+		args.remove(0); // Remove command name
+		
 		boolean isCaseSensisitive= false;
-		if(cmdInput.contains("-c")){
+		if(args.contains("-c")){
 			isCaseSensisitive= true;
-			cmdInput.remove("-c");
+			args.remove("-c");
 		}
 		
 		String seqRegex= null;
-		if(cmdInput.size() == 0){
+		if(args.size() == 0){
 			seqRegex= "";
 		} else {
-			seqRegex= cmdInput.get(0);
+			seqRegex= args.get(0);
 			try{
 				Pattern.compile(seqRegex);
 			} catch(PatternSyntaxException e){
-		    	System.err.println("Invalid seqRegex in: " + cmdInput);
+		    	System.err.println("Invalid seqRegex in: " + args);
 		    	System.err.println(e.getDescription());
 			}
 		}
@@ -1126,17 +1224,24 @@ public class TrackSet {
         
 	}
 
-	public void exportTrackSetSettings(String filename) throws IOException{
-		
-		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename)));
-		if(this.getTrackList().size() == 0){
-			System.err.println("No track found. Nothing exported.");
-			wr.close();
-			return;
-		}
-		GenomicCoords gc = this.getTrackList().get(0).getGc();
-		String position= "setGenome";
-		
-	} 
+	
+//	/** Attempt to collect source of sequence dictionary 
+//	 * */
+//	private String getSamSeqDictSource(){
+//		String samSeqDictSource= null;
+//		// First try to find fasta
+//		for(Track tr : this.getTrackList()){
+//			if(tr.getGc().getFastaFile() != null){
+//				return tr.getGc().getFastaFile();
+//			}
+//		}
+//		// Try directly the get method:
+//		for(Track tr : this.getTrackList()){
+//			if(tr.getGc().getSamSeqDictSource() != null){
+//				return tr.getGc().getSamSeqDictSource();
+//			}
+//		}
+//		return samSeqDictSource;
+//	}
 	
 }

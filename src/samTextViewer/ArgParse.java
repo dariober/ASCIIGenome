@@ -59,7 +59,7 @@ public class ArgParse {
 		parser.addArgument("--exec", "-x")
 			.type(String.class)
 			.setDefault("")
-			.help("Commands to be executed at the prompt. Must be a single string. E.g. 'goto chr1 && next && seqRegex ACTG'");
+			.help("Commands to be executed at the prompt. Either a single string, e.g. 'goto chr1 && next && seqRegex ACTG' or a file with one command per line.");
 
 		
 		//parser.addArgument("--maxReadsStack", "-M")

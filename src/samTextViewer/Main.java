@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.base.Joiner;
+
 import commandHelp.CommandList;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidCommandLineException;
@@ -39,7 +41,7 @@ public class Main {
 		final String genome= opts.getString("genome");
 		final String fasta= opts.getString("fasta");
 		String exec= opts.getString("exec");
-
+		exec= parseExec(exec);
 		// Init console right at start so if something goes wrong the user's terminal is reset to 
 		// initial defaults with the shutdown hook. This could be achieved in cleaner way probably.
 		ConsoleReader console = CommandList.initConsole();
@@ -55,26 +57,27 @@ public class Main {
 		} catch(InvalidCommandLineException e){
 			//
 		}	
-		
+
 		/* Initialize trackSet */
 		/* ------------------- */
-		GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		
+		final GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		region= initRegion(region, inputFileList, fasta, genome);
 		gch.add(new GenomicCoords(region, null, null));
 		List<String>initGenomeList= new ArrayList<String>();
-		initGenomeList.addAll(inputFileList);
+		for(String x : inputFileList){
+			initGenomeList.add(x);
+		}
 		initGenomeList.add(fasta);
 		initGenomeList.add(genome);
 		gch.current().setGenome(initGenomeList);
-
-		TrackProcessor proc= new TrackProcessor(new TrackSet(inputFileList, gch.current()), gch);
-
+		final TrackSet trackSet= new TrackSet(inputFileList, gch.current());
+		final TrackProcessor proc= new TrackProcessor(trackSet, gch);
+		
 		if(proc.getGenomicCoordsHistory().current().getFastaFile() != null){
 			TrackSeqRegex re= new TrackSeqRegex(proc.getGenomicCoordsHistory().current());
 			proc.getTrackSet().add(re, "regex_seq_matches");;
 		}
-		
+
 		proc.setNoFormat(opts.getBoolean("noFormat"));
 		
 		// Put here the previous command so that it is re-issued if no imput is given
@@ -106,7 +109,7 @@ public class Main {
 				String reg= target.getChrom() + ":" + target.getFrom() + "-" + target.getTo();
 				String gotoAndExec= ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
 				InteractiveInput itr = new InteractiveInput();
-				proc= itr.processInput(gotoAndExec, proc);
+				itr.processInput(gotoAndExec, proc);
 				if (itr.getInteractiveInputExitCode() != 0){
 					System.err.println("Error processing '" + gotoAndExec + "' at line '" + line + "'");
 					System.exit(1);
@@ -124,7 +127,7 @@ public class Main {
 		if(!exec.isEmpty() || opts.getBoolean("nonInteractive")){
 
 			InteractiveInput itr = new InteractiveInput();
-			proc= itr.processInput(exec, proc);
+			itr.processInput(exec, proc);
 			if(opts.getBoolean("nonInteractive")){
 				System.out.print("\033[0m");
 				System.exit(0);
@@ -151,7 +154,7 @@ public class Main {
 				}
 				cmdHistory.add(cmdConcatInput);
 				interactiveInput.setCmdHistory(cmdHistory);
-				proc= interactiveInput.processInput(cmdConcatInput, proc);
+				interactiveInput.processInput(cmdConcatInput, proc);
 				currentCmdConcatInput= cmdConcatInput;
 			}
 			// *** END processing interactive input 
@@ -159,7 +162,7 @@ public class Main {
 		} // End while loop keep going until quit or if no interactive input set
 	}
 
-	/** Return a suitable region to start. If a region is alreay given, do nothing.
+	/** Return a suitable region to start. If a region is already given, do nothing.
 	 * This method is a mess and should be cleaned up together with GenomicCoords class.
 	 * */
 	private static String initRegion(String region, List<String> inputFileList, String fasta, String genome) throws IOException{
@@ -168,7 +171,8 @@ public class Main {
 			return region;
 		}
 
-		if((region == null || region.isEmpty()) && fasta != null){ // Try to initilize from fasta
+		// Try to initialize from fasta
+		if((region == null || region.isEmpty()) && fasta != null){ 
 			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
 			region= faSeqFile.nextSequence().getName();
 			faSeqFile.close();
@@ -176,14 +180,29 @@ public class Main {
 		}
 		
 		/* Prepare genomic coordinates to fetch. This should probably be a function in itself */
-		SAMSequenceDictionary samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(inputFileList, fasta, genome);
+		// Create a dummy gc object just to get the sequence dict.
+		GenomicCoords gc= new GenomicCoords();
+		
+		List<String>initGenomeList= new ArrayList<String>();
+		for(String x : inputFileList){
+			initGenomeList.add(x);
+		}
+		
+		if(fasta != null && ! fasta.trim().isEmpty()){
+			initGenomeList.add(fasta);
+		}
+		if(genome != null && ! genome.trim().isEmpty()){
+			initGenomeList.add(genome);
+		}
+		gc.setGenome(initGenomeList);
+		SAMSequenceDictionary samSeqDict = gc.getSamSeqDict();
 
 		System.err.print("Initializing coordinates... ");
-		if(!samSeqDict.isEmpty()){
+		if(samSeqDict != null && ! samSeqDict.isEmpty()){
 			region= samSeqDict.getSequence(0).getSequenceName();
 			System.err.println("");
 		} else {
-			for(String x : inputFileList){
+			for(String x : initGenomeList){
 				try {
 					region= Utils.initRegionFromFile(x);
 					System.err.println("Done from: " + x);
@@ -194,6 +213,24 @@ public class Main {
 			}
 		}
 		return region;
+	}
+	
+	/** If exec is a file, parse it to return a string suitable for execution.  
+	 * @throws IOException 
+	 * */
+	private static String parseExec(String exec) throws IOException{
+		if(new File(exec).isFile()){
+			BufferedReader br= new BufferedReader(new FileReader(new File(exec)));
+			List<String> x = new ArrayList<String>();
+			String line= "";
+			while((line = br.readLine()) != null){
+				x.add(line.trim());
+			}
+			br.close();
+			return Joiner.on(" && ").skipNulls().join(x);
+		} else {
+			return exec;
+		}
 	}
 	
 }

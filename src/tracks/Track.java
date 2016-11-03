@@ -26,7 +26,7 @@ public class Track {
 	protected int yMaxLines= 10;
 	private String filename= "N/A"; // File name as given in input
 	private String trackTag= "N/A"; // Tag name for title
-	private int id= 1;              // A unique identifier for the track. Changed when the track is added to a TrackSet. 
+	// private int id= 1;              // A unique identifier for the track. Changed when the track is added to a TrackSet. 
 	private List<Double> screenScores= new ArrayList<Double>();
 	private GenomicCoords gc;
 	private boolean noFormat= false; 
@@ -94,14 +94,23 @@ public class Track {
 	 * This method is currently quite approximative and it doesn't reproduce carefully all the settings.
 	 * */
 	public String settingsToString(){
-		String name= this.getTrackTag().replaceAll("#\\d+$", ""); 
-		List<String> set= new ArrayList<String>(); 
+		String name= "^" + this.getTrackTag().replaceAll("(#|@)\\d+$", "");
+		List<String> set= new ArrayList<String>();
 		set.add("addTracks " + this.getFilename());
 		set.add("colorTrack " + this.getTitleColour() + " " + name);
 		set.add("trackHeight " + this.getyMaxLines() + " " + name);
 		set.add("ylim " + this.getYLimitMin() + " " + this.getYLimitMax() + " " + name);
 		set.add("samtools -q " + this.getMapq() + " -f " + this.get_f_flag() + " -F " + this.get_F_flag() + " " + name);
 		set.add("grep -i " + this.getShowRegex() + " -e " + this.getHideRegex() + " " + name);
+		if(this.isRpm()){
+			set.add("rpm " + name);
+		}
+		if(this.isBisulf()){
+			set.add("BSseq " + name);
+		}
+		if(this.isHideTitle()){
+			set.add("hideTitle " + name);
+		}
 		return Joiner.on(" && ").join(set);
 	}
 	
@@ -338,13 +347,13 @@ public class Track {
 		return "";
 	}
 
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
+//	public int getId() {
+//		return id;
+//	}
+//
+//	public void setId(int id) {
+//		this.id = id;
+//	}
 
 	protected void update() throws MalformedURLException, IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException {
 		// TODO Auto-generated method stub
@@ -372,6 +381,11 @@ public class Track {
 
 	public void setHideTitle(boolean hideTitle) {
 		this.hideTitle = hideTitle;
+	}
+
+	public void addBookmark(String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

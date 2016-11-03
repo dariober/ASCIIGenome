@@ -42,6 +42,7 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
   - [ylim](#ylim)
   - [colorTrack](#colortrack)
   - [hideTitle](#hidetitle)
+  - [editNames](#editnames)
   - [dataCol](#datacol)
   - [print](#print)
 - [Alignments](#alignments)
@@ -58,6 +59,7 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
   - [history](#history)
   - [cmdHistory](#cmdhistory)
   - [save](#save)
+  - [sessionSave](#sessionsave)
   - [q](#q)
   - [h](#h)
 
@@ -289,6 +291,15 @@ hideTitle bam bed    -> Toggle all tracks matched by 'bam' or 'bed'
 hideTitle /hide_all/ -> Hide all tracks
 ```
 
+### editNames
+
+**Usage: editNames <pattern> <replacement> [track_re=.*]...**
+
+Edit track names by substituting regex pattern with replacement. Pattern and replacement are required arguments, the default regex for track is '.*' (i.e. all tracks). Use "" (empy double quotes) to replace pattern with nothing. Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'
+```
+editNames fk123_ ""    - > hela.bam#1, hela.bed#2
+editNames fk123_ "" bam -> hela.bam#1, fk123_hela.bed#2```
+
 ### dataCol
 
 **Usage: dataCol [index = 4] [track_regex = .*]...**
@@ -424,6 +435,19 @@ save .png       ## Save to chrom_start-end.png as png
 save mygene.%r.png ## Save to mygene.chr1_100-200.png as png
 ```
 
+
+### sessionSave
+
+**Usage: sessionSave filename**
+
+Experimental: Save the current settings to file suitable to be reloaded by ASCIIGenome. `sessionSave` writes to file a set of commands to reproduce the current settings: tracks, colors, heights etc. It's not meant to be a perfect replica, rather it's a shortcut to avoid re-typing commands. Example:
+```
+sessionSave session.txt
+```
+Quit session and reload with:
+```
+ASCIIGenome -x session.txt
+```
 
 ### q
 

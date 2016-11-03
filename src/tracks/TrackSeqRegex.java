@@ -53,21 +53,12 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		
 		// Find matches
 		// ============
-		// String seq= new String(this.getGc().getSequenceFromFasta());
-		byte[] seq= this.getGc().getSequenceFromFasta();
-		Pattern pattern= Pattern.compile(this.seqRegex);
-		
-		if( ! this.isCaseSensitive ){
-			if( this.seqRegex.contains("\\W") // It's unlikely you will use this chars for FASTA seqs.
-                || this.seqRegex.contains("\\S")
-				|| this.seqRegex.contains("\\D") ){
-				System.err.println("This pattern is not supported in case insensitive mode.");
-				throw new IOException(); // It doesn't make sense to throw this exception but let's keep it like this now.  
-			}
-			seq= (new String(seq)).toLowerCase().getBytes();
-			pattern= Pattern.compile(this.seqRegex.toLowerCase());
+		Pattern pattern= Pattern.compile(this.seqRegex, Pattern.CASE_INSENSITIVE);
+		if(this.isCaseSensitive){
+			pattern= Pattern.compile(this.seqRegex);
 		}
 		
+		byte[] seq= this.getGc().getSequenceFromFasta();
 		Matcher matcher = pattern.matcher(new String(seq));
 		
 		// One list for matches on forward, one for reverse, one for palindromic
@@ -79,7 +70,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		while (matcher.find()) {
 			int matchStart= this.getGc().getFrom() + matcher.start() - 1;
 			int matchEnd= this.getGc().getFrom() + matcher.end() - 1;
-			String reg= this.getGc().getChrom() + "\t" + matchStart + "\t" + matchEnd + "\t" + this.trimMatch(matcher.group(), 100).toUpperCase();
+			String reg= this.getGc().getChrom() + "\t" + matchStart + "\t" + matchEnd + "\t" + this.trimMatch(matcher.group(), 100);
 		    regionListPos.add(reg);
 		}
 		// Reverse comp match
@@ -90,7 +81,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		while (matcher.find()) {
 			int matchStart= this.getGc().getTo() - matcher.end();
 			int matchEnd= this.getGc().getTo() - matcher.start();
-			String reg= this.getGc().getChrom() + "\t" + matchStart + "\t" + matchEnd + "\t" + this.trimMatch(matcher.group(), 100).toUpperCase();
+			String reg= this.getGc().getChrom() + "\t" + matchStart + "\t" + matchEnd + "\t" + this.trimMatch(matcher.group(), 100);
 		    if(regionListPos.contains(reg)){
 		    	regionListPos.remove(reg);
 		    	regionListPalind.add(reg);

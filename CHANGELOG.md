@@ -3,23 +3,23 @@ New in 0.4.0
 
 * **Batch processing** with `--batchFile` option: ASCIIGenome will iterate through each interval in a batch file in bed or gff format. This is super useful to generate a gallery of screenshots in target regions (e.g. genes, peaks, etc). Much much faster then 
 iterating ASCIIGenome in a for-loop since the JVM and files are loaded only once!
-This should address almost completely [issue 18](https://github.com/dariober/ASCIIGenome/issues/18) (remember to close on merge)
 
-* **Colours** Now the png output has colours.
+* **Colours** 
 
-* **Colours II** ASCIIGenome sets the background colour of the terminal to white, unless started with `--noFormat`. In this way the visual look of ASCIIGenome should be independent of the user's colour scheme of the terminal.
+  * Now the png output has colours.
+
+  * ASCIIGenome sets the background colour of the terminal to white, unless started with `--noFormat`. In this way the visual look of ASCIIGenome should be independent of the user's colour scheme of the terminal.
+
+* **Save session** Session settings can be saved to file to be reloaded in a new run of ASCIIGenome (*Experimental*).
+
+* **New commands and better API** Some new commands not listed above: `cmdHistory` shows the list of executed commands, `hideTitle` for more compact view, `dropTracks`. Some commands renamed and improved API. Some examples: `filter` now is `grep -i incl_regex -e excl_re <tracks>`; commands `mapq -f -F` have been grouped in the single `samtools` command.
+
 
 * **Performance **
 
-** **Memory** Memory footprint is now even smaller since files are never fully read in memory now. Bed or gff files without tabix index are sorted, block compressed and indexed as needed to temporary files. 
+  * **Memory** Memory footprint is now even smaller since files are never fully read in memory now. Bed or gff files without tabix index are sorted, block compressed and indexed as needed to temporary files. 
 
-** **Speed** Operation that don't change the underlying data, e.g. track color and order do not parse the raw files again, which can be quite time consuming. 
-
-* Fixed [issue 20](https://github.com/dariober/ASCIIGenome/issues/20) (remember to close it on merge with trunk). 
-
-* Fixed [issue 23](https://github.com/dariober/ASCIIGenome/issues/23) (remember to close it on merge with trunk).
-
-* `ASCIIGenome` can start without any input file.
+  * **Speed** Operation that don't change the underlying data, *e.g.* change colour, do not parse the raw files again.
 
 * TDF files can switch to be normalized to reads per million. 
 

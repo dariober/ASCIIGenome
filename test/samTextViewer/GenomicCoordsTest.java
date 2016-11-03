@@ -77,29 +77,38 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
-	public void canInitializeSamSeqDictFromGenomeFile() throws IOException{
+	public void canInitializeSamSeqDictFromGenomeFile() throws IOException, InvalidGenomicCoordsException{
 	
 		List<String> insam= new ArrayList<String>();
+		insam.add("hg19");
 		// From resource:
-		assertEquals(93, GenomicCoords.getSamSeqDictFromAnyFile(insam, null, "hg19").size());
+		GenomicCoords gc= new GenomicCoords("chr1", null, null);
+		gc.setGenome(insam);
+		assertEquals(93, gc.getSamSeqDict().size());
 		// From bam header:
-		assertEquals(25, GenomicCoords.getSamSeqDictFromAnyFile(insam, null, "test_data/ds051.short.bam").size());
+		insam.set(0, "test_data/ds051.short.bam");
+		gc.setGenome(insam);
+		assertEquals(25, gc.getSamSeqDict().size());
+		
+		// Check we get the full path to source file.
+		assertTrue(gc.getSamSeqDictSource().length() > "test_data/ds051.short.bam".length());
+		
 	}
 	
-	@Test
-	public void canGetSamSeqDict() throws IOException{
-		List<String> insam= new ArrayList<String>();
-		insam.add("test_data/ds051.short.bam.bai"); // This will not produce anything
-		insam.add("test_data/ds051.short.bam");
-		SAMSequenceDictionary ssd = GenomicCoords.getSamSeqDictFromAnyFile(insam, null, null);
-		assertEquals(25, ssd.size());
-		
-		// From indexed fasta
-		insam= new ArrayList<String>();
-		insam.add("test_data/ds051.short.bam.bai"); // This will not produce anything
-		ssd = GenomicCoords.getSamSeqDictFromAnyFile(null, fastaFile, null);
-		assertEquals(1, ssd.size());		
-	}
+//	@Test
+//	public void canGetSamSeqDict() throws IOException{
+//		List<String> insam= new ArrayList<String>();
+//		insam.add("test_data/ds051.short.bam.bai"); // This will not produce anything
+//		insam.add("test_data/ds051.short.bam");
+//		SAMSequenceDictionary ssd = GenomicCoords.getSamSeqDictFromAnyFile(insam, null, null);
+//		assertEquals(25, ssd.size());
+//		
+//		// From indexed fasta
+//		insam= new ArrayList<String>();
+//		insam.add("test_data/ds051.short.bam.bai"); // This will not produce anything
+//		ssd = GenomicCoords.getSamSeqDictFromAnyFile(null, fastaFile, null);
+//		assertEquals(1, ssd.size());		
+//	}
 	
 	@Test
 	public void canPrintRefSeq() throws InvalidGenomicCoordsException, IOException{

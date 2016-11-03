@@ -557,7 +557,7 @@ public class Utils {
 		if(tokens.get(0).equals("ff")){				
 			from += halfWindow; 
 			to += halfWindow;
-			if(!gc.getSamSeqDict().isEmpty()){
+			if(gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()){
 				int chromLen= gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
 				if(to > chromLen){
 					to= chromLen;
@@ -585,7 +585,7 @@ public class Utils {
 			}			
 			from += step; 
 			to += step;
-			if(!gc.getSamSeqDict().isEmpty()){
+			if(gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()){
 				int chromLen= gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
 				if(to > chromLen){
 					to= chromLen;

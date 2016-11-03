@@ -66,6 +66,9 @@ echo "BATCH FILE"
 java -Xmx500m -jar $stvExe -b batch_actb.bed -x 'zo 3 && save deleteme.%r.png' -g hg19 ear045.oxBS.actb.tdf hg19.gencode_genes_v19.gtf.gz batch_actb.bed > /dev/null
 rm deleteme*
 
+echo "SAVING AND LOADING SESSION"
+java -Xmx500m -jar $stvExe -x 'sessionSave deleteme.txt' -ni -g hg19 ear045.oxBS.actb.tdf hg19.gencode_genes_v19.gtf.gz batch_actb.bed > /dev/null
+
 echo -e "\n\nDONE\n\n"
 
 echo -e "PRINT HELP"

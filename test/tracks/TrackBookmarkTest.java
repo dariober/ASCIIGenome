@@ -22,7 +22,7 @@ public class TrackBookmarkTest {
 		
 		gc= new GenomicCoords("chr1:200-300", null, null);
 		bm.setGc(gc);
-		bm.add("book2");
+		bm.addBookmark("book2");
 		
 		gc= new GenomicCoords("chr1:400-500", null, null);
 		bm.setGc(gc); // Set it but do not add to bookamrks

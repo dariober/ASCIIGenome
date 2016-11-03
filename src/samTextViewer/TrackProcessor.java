@@ -1,6 +1,8 @@
 package samTextViewer;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import coloring.Png;
@@ -8,6 +10,7 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import tracks.Track;
+import tracks.TrackReads;
 import tracks.TrackSet;
 
 /** Process a TrackSet given the necessary elements
@@ -80,6 +83,26 @@ public class TrackProcessor {
 			(new Png(new File(this.snapshotFile))).convert(new File(this.snapshotFile));
 		} 	
 	}
+	
+	public void exportTrackSetSettings(String filename) throws IOException{
+		
+		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename)));
+		if(this.getTrackSet().getTrackList().size() == 0){
+			System.err.println("No track found. Nothing exported.");
+			wr.close();
+			return;
+		}
+		wr.write("goto " + this.getGenomicCoordsHistory().current().toStringRegion() + "\n");
+		wr.write("setGenome " + this.getGenomicCoordsHistory().current().getSamSeqDictSource() + "\n");
+		for(Track tr : this.getTrackSet().getTrackList()){
+			if( ! (tr instanceof TrackReads) ){ // Track reads excluded as they are part of TrackCoverage. 
+				                                // This is wrong as you could have one without the other!
+				wr.write(tr.settingsToString() + "\n");
+			}
+		}
+		wr.close();
+	} 
+
 	
 	private String getMemoryStat(){
 		float mem= (float) ((float)Runtime.getRuntime().totalMemory() / 1000000d);

@@ -58,7 +58,8 @@ public class TrackBookmark extends TrackIntervalFeature {
 	 * @throws ClassNotFoundException 
 	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public void add(String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
+	@Override
+	public void addBookmark(String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
 		
 		// Stub
 		File plainNew= new File(this.getFilename() + "2");

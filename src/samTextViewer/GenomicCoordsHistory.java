@@ -80,47 +80,16 @@ public class GenomicCoordsHistory {
 			throw new InvalidCommandLineException();
 		}
 		for(GenomicCoords gc : this.getHistory()){
-			gc.setGenome(tokens);
+			try{
+				gc.setGenome(tokens);
+			} catch (Exception e){
+				// e.printStackTrace();
+			}
 		}
-//		List<String> insam= new ArrayList<String>();
-//		insam.add(cmdInput.get(1));
-//		SAMSequenceDictionary samSeqDict = GenomicCoords.getSamSeqDictFromAnyFile(insam, cmdInput.get(1), cmdInput.get(1));
-//		this.current().setSamSeqDict(samSeqDict);
-//		
-//		// Try to set fasta sequence
-//		try{
-//			IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(cmdInput.get(1)));
-//			if(fa.isIndexed()){
-//				this.current().setFastaFile(cmdInput.get(1));
-//			}
-//			fa.close();
-//		} catch(FileNotFoundException e){
-//			//
-//		}
 	}
 
-//	public TrackIntervalFeature findRegex() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-//
-//		int prevHeight;
-//		TrackIntervalFeature prevRegexMatchTrack= null;
-//		if(this.getHistory().size() >= 1){
-//			prevRegexMatchTrack = this.getHistory().get(this.getHistory().size()-1).getRegexMatchTrack();
-//		} 
-//		if(prevRegexMatchTrack == null){
-//			 prevHeight= 10;
-//		} else {
-//			prevHeight= prevRegexMatchTrack.getyMaxLines();
-//		}
-//		TrackIntervalFeature seqRegexTrack = this.current().findRegex(this.seqRegex);
-//		seqRegexTrack.setyMaxLines(prevHeight);
-//
-//		// Track is created, delete tmp files.
-//		new File(seqRegexTrack.getFilename()).delete();
-//		new File(seqRegexTrack.getFilename() + ".tbi").delete();
-//		
-//		return seqRegexTrack;
-//	}
 
+	
 	/** Reset window size according to current terminal screen. 
 	 * If the user reshapes the terminal window size or the font size, 
 	 * detect the new size and add it to the history. 
