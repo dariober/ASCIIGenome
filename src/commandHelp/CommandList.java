@@ -310,21 +310,44 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("seqRegex"); cmd.setArgs("[-c] [regex]"); cmd.inSection= Section.FIND; 
-		cmd.setBriefDescription("Find regex in reference sequence and show matches as and additional track. ");
+		cmd.setName("seqRegex"); cmd.setArgs("[regex] [-c] | [>|>> [file]]"); cmd.inSection= Section.FIND; 
+		cmd.setBriefDescription("Find regex in reference sequence and show matches as an additional track. ");
 		cmd.setAdditionalDescription(""
 				+ "By default matching is irrespective of case unless the flag `-c` is set. "
-				+ "Useful to show restriction enzyme sites, "
-				+ "transcription factor motifs, etc. If the regex is omitted the matching "
-				+ "is disabled. Examples\n"
+				+ "If the regex is omitted the matching "
+				+ "is disabled. To save the matches in the current coordinates to file in bed format use `>`, or "
+				+ "`>>` to append to existing file. "
+				+ "Without arguments `>` and `>>` write to file named after the current coordinates. The "
+				+ "place holder %r in the file name is expanded to the current coordinates "
+				+ "`<chrom>_<start>_<end>`. "
+				+ "Examples\n"
 				+ "```\n"
-				+ "seqRegex~ACTG~~~~-> Case insensitive, actg matched\n"
-				+ "seqRegex -c ACTG -> Case sensitive, will not match actg\n"
-				+ "seqRegex~~~~~~~~~-> Disable regex matching track\n"
+				+ "seqRegex~ACTG~~~~~~~-> Case insensitive, actg matched\n"
+				+ "seqRegex -c ACTG ~~~-> Case sensitive, will not match actg\n"
+				+ "seqRegex >> %r.bed ~-> Save and append to file chrom_start_end.bed.\n"
+				+ "seqRegex~~~~~~~~~~~~-> Disable regex matching track\n"
 				+ "```\n"
 				+ "This command is ignored if the reference fasta file is missing."
 				+ "");
 		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
+		cmd.setName("bookmark"); cmd.setArgs("[name] | [-rm] | [> [file]]"); cmd.inSection= Section.FIND; 
+		cmd.setBriefDescription("Add, remove and save positions to bookmark track. ");
+		cmd.setAdditionalDescription("`bookmark` creates a track to save positions of interest. "
+				+ "Without arguments, add the current position to the bookmarks, use the argument "
+				+ "`name` to assign a name to the feature. `-rm` removes the bookmark "
+				+ "matching exactly the current position. `>` saves to <file> the bookmark "
+				+ "track in bed format. Examples\n"
+				+ "```\n"
+				+ "bookmark~~~~~~~~~~~~~~~~-> Add the current position to bookmarks.\n"
+				+ "bookmark myGene ~~~~~~~~-> Add the current position with name myGene\n"
+				+ "bookmark -rm ~~~~~~~~~~~-> Remove the bookmark exactly in this position\n"
+				+ "bookmark > books.txt -> Save to file books.txt\n"
+				+ "```"
+				+ "");
+		cmdList.add(cmd);
+
 		
 		cmd= new CommandHelp();
 		cmd.setName("grep"); cmd.setArgs("[-i = .*] [-e = ''] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
@@ -450,10 +473,11 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("editNames"); cmd.setArgs("<pattern> <replacement> [track_re=.*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("editNames"); cmd.setArgs("-t <pattern> <replacement> [track_re=.*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Edit track names by substituting regex pattern with replacement.");
 		cmd.setAdditionalDescription("Pattern and replacement are required arguments, "
-				+ "the default regex for track is '.*' (i.e. all tracks). "
+				+ "the default regex for track is '.*' (i.e. all tracks). The -t (test) flag "
+				+ "shows what renaming would be done without actually editing the names. "
 				+ "Use \"\" (empty double quotes) to replace pattern with nothing. "
 				+ "Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'\n"
 				+ "```\n"
@@ -461,7 +485,7 @@ public class CommandList {
 				+ "editNames fk123_ \"\" bam -> hela.bam#1, fk123_hela.bed#2\n"
 				+ "editNames _ ' ' ~~~~~~~~~~-> fk123 hela.bam#1,  fk123 hela.bed#2\n"
 				+ "editNames ^.*# cells ~~~~~-> cells#1, cells#2\n"
-				+ "editNames ^ xx_ ~~~~~~~~~~-> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2"
+				+ "editNames ^ xx_ ~~~~~~~~~~-> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)"
 				+ "```");
 		cmdList.add(cmd);
 
@@ -545,9 +569,10 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("dropTracks"); cmd.setArgs("track_regex [track_regex]..."); cmd.inSection= Section.GENERAL; 
+		cmd.setName("dropTracks"); cmd.setArgs("[-t] track_regex [track_regex]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Drop tracks matching any of the listed regexes.");
-		cmd.setAdditionalDescription("\n"
+		cmd.setAdditionalDescription("The -t (test) flag only shows what tarcks would be removed without "
+				+ "actually removing them.\n"
 				+ "Examples:\n"
 				+ "```\n"
 				+ "dropTracks bam\n"
@@ -712,6 +737,7 @@ public class CommandList {
 		paramList.add("next");
 		paramList.add("find");
 		paramList.add("seqRegex");
+		paramList.add("bookmark");
 		// paramList.add("gcProfile");
 		paramList.add("grep");
 		paramList.add("gffNameAttr");

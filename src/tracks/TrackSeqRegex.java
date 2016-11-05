@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.io.FileUtils;
 
 import exceptions.InvalidGenomicCoordsException;
@@ -150,7 +149,22 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		}
 		return x;
 	}
+	
+	/**  
+	 * @param append Append to existing file.
+	 * @throws IOException 
+	 * */
+	protected void saveIntervalsToFile(String filename, boolean append) throws IOException{
 		
+		BufferedWriter wr = new BufferedWriter(new FileWriter(filename, append));
+		
+		for(IntervalFeature feature : this.getIntervalFeatureList()){
+			wr.write(feature.getRaw() + "\n");
+		}
+		wr.close();
+	}
+
+	
 	@Override
 	public String getSeqRegex() {
 		return seqRegex;

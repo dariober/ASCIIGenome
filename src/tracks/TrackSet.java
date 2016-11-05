@@ -71,7 +71,7 @@ public class TrackSet {
 					// Annotatation
 					//
 					TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
-					this.add(tif, new File(sourceName).getName());
+					this.addTrack(tif, new File(sourceName).getName());
 				} 
 	
 				else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG) 
@@ -81,7 +81,7 @@ public class TrackSet {
 					// Wiggles
 					//
 					TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
-					this.add(tw, new File(sourceName).getName());
+					this.addTrack(tw, new File(sourceName).getName());
 					
 				} else {
 					// NB: You never get here because Utils.getFileTypeFromName returns
@@ -106,7 +106,7 @@ public class TrackSet {
 	 * Add this track with given baseTag. The suffix "#id" will be appended to the baseTag string. 
 	 * NB: Adding a track resets the track's ID
 	 * */
-	public void add(Track track, String baseTag) {
+	public void addTrack(Track track, String baseTag) {
 		int idForTrack= this.getNextTrackId();
 		String trackTag= baseTag + "#" + idForTrack;
 		track.setTrackTag(trackTag);
@@ -121,24 +121,24 @@ public class TrackSet {
 	 * @throws SQLException 
 	 * @throws ClassNotFoundException 
 	 * */
-	public void add(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
+	public void addTrackFromSource(String sourceName, GenomicCoords gc, String trackTag) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
 
 		if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
-			this.addBamTrackFromSourceName(sourceName, gc);
+			this.addBamTrackFromSourceName(sourceName, gc, trackTag);
 		
 		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
 		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
 			      || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
-			this.addIntervalFeatureTrackFromSourceName(sourceName, gc);
+			this.addIntervalFeatureTrackFromSourceName(sourceName, gc, trackTag);
 		
 		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG) 
 				|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.TDF) 
 				|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)){
-			this.addWiggleTrackFromSourceName(sourceName, gc);
+			this.addWiggleTrackFromSourceName(sourceName, gc, trackTag);
 		}
 	}
 	
-	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException{
+	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException{
 		
 		int idForTrack= this.getNextTrackId();
 		String trackId= new File(sourceName).getName() + "#" + idForTrack;
@@ -148,7 +148,7 @@ public class TrackSet {
 		this.trackList.add(tw);
 	}
 	
-	private void addIntervalFeatureTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+	private void addIntervalFeatureTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		int idForTrack= this.getNextTrackId();
 		String trackId= new File(sourceName).getName() + "#" + idForTrack;
@@ -157,10 +157,8 @@ public class TrackSet {
 		this.trackList.add(tif);
 	}
 	
-	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		int idForTrack= this.getNextTrackId();
-		
 		if(!Utils.bamHasIndex(sourceName)){
 			System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
 			System.err.println("samtools index '" + sourceName + "'\n");
@@ -168,6 +166,7 @@ public class TrackSet {
 		}
 		
 		/* BAM Coverage track */
+		int idForTrack= this.getNextTrackId();
 		String coverageTrackId= new File(sourceName).getName() + "#" + idForTrack;
 		
 		TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
@@ -770,15 +769,15 @@ public class TrackSet {
 
 	/** Get track given a track tag. See also this.getTrack. Returns null if trackTag not found.
 	 * */
-	public Track getTrackFromTag(String trackTag){
-		
-		for(Track track : this.getTrackList()){
-			if(track.getTrackTag().equals(trackTag)){
-				return track;
-			}
-		}
-		return null;
-	}
+//	public Track getTrackFromTag(String trackTag){
+//		
+//		for(Track track : this.getTrackList()){
+//			if(track.getTrackTag().equals(trackTag)){
+//				return track;
+//			}
+//		}
+//		return null;
+//	}
 
 	
 	public GenomicCoords findNextMatchOnTrack(String query, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
@@ -804,9 +803,6 @@ public class TrackSet {
 		
 		for(Track tr : this.getTrackList()){
 			if(tr instanceof TrackIntervalFeature){
-//			if(Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.BED) 
-//			   || Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.GFF)
-//			   || Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.VCF)){
 				ifSet.add((TrackIntervalFeature) tr);
 			}
 		}
@@ -922,7 +918,7 @@ public class TrackSet {
 		
 		List<String> filenames= new ArrayList<String>();
 		for(Track tr : this.getTrackList()){
-			filenames.add(tr.getTrackTag());
+			filenames.add(tr.getFilename());
 		}
 		return filenames;
 		
@@ -954,25 +950,62 @@ public class TrackSet {
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
 	 * */
-	public void addBookmark(GenomicCoords gc, String nameForBookmark) throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
+	public void bookmark(GenomicCoords gc, List<String> cmdInput) throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
 		
+		List<String> args= new ArrayList<String>(cmdInput);
+		args.remove(0); // Remove command name
+
+		if(args.size() == 1 && args.get(0).equals("-rm")){
+			for(Track tr : this.getTrackList()){
+				if(tr instanceof TrackBookmark){
+					((TrackBookmark)tr).removeBookmark();
+	 				return;
+				}
+			}
+			return;
+		}
+		
+		if(args.size() == 2 && (args.get(0).equals(">") || args.get(0).equals(">>"))){
+			for(Track tr : this.getTrackList()){
+				if(tr instanceof TrackBookmark){
+					boolean append= false;
+					if(args.get(0).equals(">>")){
+						append= true; // Not sure when you want to append, since you generate duplicate entries. 
+						              // Left for consistency with seqRegex where instead it is quite useful to append. 
+					}
+					((TrackBookmark)tr).save(args.get(1), append);
+	 				return;
+				}
+			}
+			return;
+		}
+		
+		String nameForBookmark= ".";
+		if(args.size() > 0){
+			nameForBookmark= args.get(0);
+		}
+		this.addBookmark(gc, nameForBookmark);
+		
+	}
+	
+	/** Add position gc to bookmark track. Track created if it does not exist. 
+	 * */
+	private void addBookmark(GenomicCoords gc, String nameForBookmark) throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
+
 		// Check there isn't a bookmark track already:
-		boolean addbm = true;
 		for(Track tr : this.getTrackList()){
-			if(tr instanceof TrackBookmark){
- 				tr.addBookmark(nameForBookmark);
+			if(tr instanceof TrackBookmark){ // A Bookmark track exists, add position to it
+				tr.addBookmark(nameForBookmark);
  				tr.setGc(gc);
- 				addbm= false;
-				break;
+ 				return;
 			}
 		}
-		if(addbm){
-			TrackBookmark tr= new TrackBookmark(gc, nameForBookmark);
-			this.add(tr, "Bookmarks");
-			tr.setGc(gc);
-		}		
-	} 
-	
+		// We need to create the bookmark track.
+		TrackBookmark tr= new TrackBookmark(gc, nameForBookmark);
+		this.addTrack(tr, "Bookmarks");
+		tr.setGc(gc);
+		
+	}
 	
 	/*   S e t t e r s   and   G e t t e r s  */
 	//public LinkedHashMap<String, Track> getTrackSet_DEPRECATED() {
@@ -1062,14 +1095,17 @@ public class TrackSet {
         }		
 	}
 	
-	public void editNamesForRegex(List<String> cmdInput) throws InvalidCommandLineException {
+	public String editNamesForRegex(List<String> cmdInput) throws InvalidCommandLineException {
 		// API:
 		// editNames <patterns> <replacement> [track_re] ...
-		List<String> args= new ArrayList<String>();
-		for(String x : cmdInput){
-			args.add(x);
-		}
+		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove name of command
+		
+		boolean test= false;
+		if(args.contains("-t")){
+			test= true;
+			args.remove("-t");
+		}
 		
 		if(args.size() < 2){
 			System.err.println("Expected at least two arguments. Got " + cmdInput);
@@ -1105,15 +1141,20 @@ public class TrackSet {
         }
         Set<String> set = new HashSet<String>(testNames);
         if(set.size() < testNames.size() ){
-        	System.err.println("Edit not allowed: It generates duplicate tags.");
+        	System.err.println("Edit not allowed as it generates duplicate tags.");
         	throw new InvalidCommandLineException();
         }
         
         // Now change for real
+        String messages= "";
         for(Track tr : tracksToReset){
         	String newTag= tr.getTrackTag().replaceAll(pattern, replacement);
-        	tr.setTrackTag(newTag);
+        	messages += "Renaming " + tr.getTrackTag() + " to " + newTag + "\n";
+        	if( ! test ){
+        		tr.setTrackTag(newTag);
+        	}
         }
+        return messages;
 	}
 	
 	public void setFeatureGapForRegex(List<String> tokens) throws InvalidCommandLineException {
@@ -1177,11 +1218,29 @@ public class TrackSet {
 	 * */
 	public void setSeqRegexForTracks(List<String> cmdInput) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 
-		List<String> args= new ArrayList<String>();
-		for(String x : cmdInput){
-			args.add(x);
-		}		
+		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove command name
+
+		if(args.size() > 0 && (args.get(0).equals(">") || args.get(0).equals(">>"))){
+
+			for(Track tr : this.getTrackList()){
+				if(tr instanceof TrackSeqRegex){
+					String reg= tr.getGc().getChrom() + "_" + tr.getGc().getFrom() + "_" + tr.getGc().getTo();
+					String outfile= reg + ".seqregex.bed";
+					if(args.size() > 1){
+						outfile= args.get(1).replace("%r", reg);
+					}
+					boolean append= false;
+					if(args.get(0).equals(">>")){
+						append= true;
+					}
+					System.err.println("Saving regex matches to " + outfile);
+					((TrackSeqRegex) tr).saveIntervalsToFile(outfile, append);
+					return;
+				}
+			}
+			return;
+		}
 		
 		boolean isCaseSensisitive= false;
 		if(args.contains("-c")){
@@ -1210,17 +1269,26 @@ public class TrackSet {
 		}
 	}
 
-	public void dropTracksWithRegex(List<String> cmdInput) throws InvalidCommandLineException {
+	public String dropTracksWithRegex(List<String> cmdInput) throws InvalidCommandLineException {
 
-		List<String> trackNameRegex= cmdInput.subList(1, cmdInput.size());
+		List<String> args= new ArrayList<String>(cmdInput);
+		args.remove(0); //Remove cmd name
+		boolean test= false;
+		if(args.contains("-t")){
+			test= true;
+			args.remove("-t");
+		}
+		List<String> trackNameRegex= new ArrayList<String>(args);
        
+		String messages= "";
         List<Track> tracksToDrop= this.matchTracks(trackNameRegex, true);
         for(Track tr : tracksToDrop){
-        	boolean removed= this.trackList.remove(tr);
-        	if(removed){
-        		System.err.println("Dropped: " + tr.getTrackTag());
+        	messages += "Dropping: " + tr.getTrackTag() + "\n";
+        	if( ! test){
+        		this.trackList.remove(tr);
         	}
         }
+        return messages;
         
 	}
 

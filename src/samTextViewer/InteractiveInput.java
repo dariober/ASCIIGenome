@@ -45,17 +45,18 @@ public class InteractiveInput {
 		// Don't check the validity of each cmd now. Execute one by one and if anything goes wrong
 		// reset interactiveInputExitCode = 1 (or else other than 0) so that console input is asked again. Of course, what is executed is not 
 		// rolled back.
-		List<List<String>> cmdInputList= new ArrayList<List<String>>();
+		List<List<String>> cmdInputChainList= new ArrayList<List<String>>();
 		
 		for(String cmd : Splitter.on("&&").trimResults().omitEmptyStrings().split(cmdConcatInput)){
-			cmdInputList.add(Utils.tokenize(cmd, " "));
+			cmdInputChainList.add(Utils.tokenize(cmd, " "));
 		}
 
 		String fasta= proc.getGenomicCoordsHistory().current().getFastaFile();
 		SAMSequenceDictionary samSeqDict = proc.getGenomicCoordsHistory().current().getSamSeqDict();
-		
-		for(List<String> cmdInput : cmdInputList){
 
+		String messages= ""; // Messages that may be sent from the various methods.
+		for(List<String> cmdInput : cmdInputChainList){
+			
 			this.interactiveInputExitCode= 0; // If something goes wrong this will change to != 0
 			try {
 				
@@ -199,7 +200,16 @@ public class InteractiveInput {
 					}
 					
 					for(String sourceName : cmdInput){
-						proc.getTrackSet().add(sourceName, proc.getGenomicCoordsHistory().current());
+						try{
+							proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
+						} catch(IllegalArgumentException e){
+							// It may be that you are in position that doesn't exist in the sequence dictionary that
+							// came with this new file. To recover, find an existing position, move there and try to reload the 
+							// file. This fixes issue#23
+							String region= Main.initRegion(null, cmdInput, null, null);
+							proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
+							proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
+						}
 					}
 				
 				}else if(cmdInput.get(0).equals("dropTracks")){
@@ -208,14 +218,14 @@ public class InteractiveInput {
 						this.interactiveInputExitCode= 1;
 						continue;
 					}
-					proc.getTrackSet().dropTracksWithRegex(cmdInput);
+					messages += proc.getTrackSet().dropTracksWithRegex(cmdInput);
 					
 				} else if(cmdInput.get(0).equals("orderTracks")){
 					cmdInput.remove(0);
 					proc.getTrackSet().orderTracks(cmdInput);
 				
 				} else if(cmdInput.get(0).equals("editNames")){
-					proc.getTrackSet().editNamesForRegex(cmdInput);
+					messages += proc.getTrackSet().editNamesForRegex(cmdInput);
 					
 				} else if(cmdInput.get(0).equals("print")){
 					proc.getTrackSet().setPrintModeForRegex(cmdInput);
@@ -275,13 +285,13 @@ public class InteractiveInput {
 					proc.getTrackSet().setSeqRegexForTracks(cmdInput);
 					
 				} else if(cmdInput.get(0).equals("bookmark")){
-					// TODO
+					proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdInput);
 					
 				} else {
 					System.err.println("Unrecognized argument: " + cmdInput);
 					throw new InvalidCommandLineException();
 				}
-				
+			
 			} catch(Exception e){ // You shouldn't catch anything! Be more specific.
 				System.err.println("\nError processing input: " + cmdInput + "\n");
 				this.interactiveInputExitCode= 1; 
@@ -293,8 +303,15 @@ public class InteractiveInput {
 					console.clearScreen();
 					console.flush();
 					proc.iterateTracks();
-					Utils.printer("\n", proc.getSnapshotFile());
+					Utils.printer("", proc.getSnapshotFile());
 					proc.setSnapshotFile(null); // This is to prevent taking screenshots one after another. It's a hack and should be changed
+
+				} catch (InvalidGenomicCoordsException e){
+					
+					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null);
+					proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
+					System.err.println("Invalid genomic coordinates found. Resetting to "  + region);
+					
 				} catch (Exception e){
 					System.err.println("Error processing tracks with input " + cmdInput);
 					this.interactiveInputExitCode= 1;
@@ -307,8 +324,10 @@ public class InteractiveInput {
 					System.exit(1);
 				} 
 				break;
-			} 
-		} // END OF LOOP THOURGH LIST OF INPUT
+			}
+		} // END OF LOOP THROUGH CHAIN OF INPUT COMMANDS
+		System.err.print(messages); 
+		messages= "";
 		return proc;
 	}
 

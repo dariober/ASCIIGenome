@@ -2,8 +2,10 @@ package samTextViewer;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,12 +77,12 @@ public class Main {
 		
 		if(proc.getGenomicCoordsHistory().current().getFastaFile() != null){
 			TrackSeqRegex re= new TrackSeqRegex(proc.getGenomicCoordsHistory().current());
-			proc.getTrackSet().add(re, "regex_seq_matches");;
+			proc.getTrackSet().addTrack(re, "regex_seq_matches");
 		}
 
 		proc.setNoFormat(opts.getBoolean("noFormat"));
 		
-		// Put here the previous command so that it is re-issued if no imput is given
+		// Put here the previous command so that it is re-issued if no input is given
 		// You have to initialize this var outside the while loop that processes input files.
 		String currentCmdConcatInput= ""; 
 
@@ -90,18 +92,12 @@ public class Main {
 
 		// Batch processing file of regions
 		final String batchFile= opts.getString("batchFile");
-		if(! batchFile.isEmpty()){
-
-			if(! new File(batchFile).exists()){
-				System.err.print("\033[0m");
-				System.err.println("File " + batchFile + " does not exist.");
-				System.exit(1);
-			}
+		if(batchFile != null && ! batchFile.isEmpty()){
 
 			console.clearScreen();
 			console.flush();
 
-			BufferedReader br= new BufferedReader(new FileReader(new File(batchFile)));
+			BufferedReader br= batchFileReader(batchFile); // new BufferedReader(new FileReader(new File(batchFile)));
 			String line = null;  
 			while ((line = br.readLine()) != null){
 				// Start processing intervals one by one
@@ -165,14 +161,14 @@ public class Main {
 	/** Return a suitable region to start. If a region is already given, do nothing.
 	 * This method is a mess and should be cleaned up together with GenomicCoords class.
 	 * */
-	private static String initRegion(String region, List<String> inputFileList, String fasta, String genome) throws IOException{
+	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome) throws IOException{
 
-		if( ! region.isEmpty() ){
+		if( region != null && ! region.isEmpty() ){
 			return region;
 		}
 
 		// Try to initialize from fasta
-		if((region == null || region.isEmpty()) && fasta != null){ 
+		if(fasta != null && ! fasta.trim().isEmpty()){ 
 			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
 			region= faSeqFile.nextSequence().getName();
 			faSeqFile.close();
@@ -183,20 +179,15 @@ public class Main {
 		// Create a dummy gc object just to get the sequence dict.
 		GenomicCoords gc= new GenomicCoords();
 		
-		List<String>initGenomeList= new ArrayList<String>();
-		for(String x : inputFileList){
-			initGenomeList.add(x);
-		}
+		List<String>initGenomeList= new ArrayList<String>(inputFileList);
 		
-		if(fasta != null && ! fasta.trim().isEmpty()){
-			initGenomeList.add(fasta);
-		}
 		if(genome != null && ! genome.trim().isEmpty()){
 			initGenomeList.add(genome);
 		}
+		
 		gc.setGenome(initGenomeList);
 		SAMSequenceDictionary samSeqDict = gc.getSamSeqDict();
-
+		
 		System.err.print("Initializing coordinates... ");
 		if(samSeqDict != null && ! samSeqDict.isEmpty()){
 			region= samSeqDict.getSequence(0).getSequenceName();
@@ -219,6 +210,11 @@ public class Main {
 	 * @throws IOException 
 	 * */
 	private static String parseExec(String exec) throws IOException{
+		
+		if(exec == null){
+			return "";
+		}
+		
 		if(new File(exec).isFile()){
 			BufferedReader br= new BufferedReader(new FileReader(new File(exec)));
 			List<String> x = new ArrayList<String>();
@@ -232,5 +228,21 @@ public class Main {
 			return exec;
 		}
 	}
-	
+
+	private static BufferedReader batchFileReader(String batchFile) throws FileNotFoundException {
+
+		if(batchFile.equals("-")){
+			return new BufferedReader(new InputStreamReader(System.in));
+		}
+		
+		if(! new File(batchFile).exists()){
+			System.err.print("\033[0m");
+			System.err.println("File " + batchFile + " does not exist.");
+			System.exit(1);
+		}
+		
+		return new BufferedReader(new FileReader(new File(batchFile)));
+		
+	}
+
 }

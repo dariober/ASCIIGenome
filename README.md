@@ -124,7 +124,6 @@ Open with a reference genome (reference must be indexed, see [Supported input](#
 ASCIIGenome -fa genome.fa aln.bam
 ```
 
-
 ### Open and browse 
 
 Open some peak and bigWig files from
@@ -172,7 +171,7 @@ At command prompt issue the following commands:
 
 ```
 [h] for help: goto 36:1-2682151
-[h] for help: filter \ttranscript\t
+[h] for help: grep -i \ttranscript\t
 [h] for help: trackHeight 100
 ```
 
@@ -183,7 +182,7 @@ print it to screen:
 
 ```
 [h] for help: 1
-[h] for help: find_first LmjF.36.TRNAGLN.01
+[h] for help: find LmjF.36.TRNAGLN.01
 [h] for help: print 
 ```
 
@@ -198,19 +197,15 @@ convenient than executing commands one by one and it is also faster as tracks ar
 could be executed in one pass as
 
 ```
-goto 36:1-2682151 && filter \ttranscript\t && trackHeight 100
+goto 36:1-2682151 && grep -i \ttranscript\t && trackHeight 100
 ```
 
 In addition, the same could be achieved at the start via the `--exec/-x` option:
 
 ```
-ASCIIGenome -x 'goto 36:1-2682151 && filter \ttranscript\t && trackHeight 100' \
+ASCIIGenome -x 'goto 36:1-2682151 && grep -i \ttranscript\t && trackHeight 100' \
     ftp://ftp.ensemblgenomes.org/pub/release-31/protists/gtf/leishmania_major/Leishmania_major.ASM272v2.31.gtf.gz
 ```
-
-Note that if the first option passed to `-exec/-x` starts with `-` you need to add a space between 
-the opening quote and the option itself. For example do  `ASCIIGenome -x ' -F 16' ...` instead of
-`ASCIIGenome -x '-F 16' ...`.
 
 ### Batch processing
 
@@ -274,7 +269,6 @@ guidelines on the choice of format see [IGV
 recommendations](https://www.broadinstitute.org/igv/RecommendedFileFormats).
 
 **Fasta reference**: The reference sequence should be uncompressed and indexed, with *e.g.* [samtools faidx](http://www.htslib.org/doc/samtools.html):
-
 
 ```
 samtools faidx genome.fa

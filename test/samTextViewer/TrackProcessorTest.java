@@ -29,9 +29,9 @@ public class TrackProcessorTest {
 		gch.add(gc);
 		
 		TrackSet trackSet= new TrackSet();
-		trackSet.add("test_data/hg19_genes.gtf.gz", gc);
-		trackSet.add("test_data/ear045.oxBS.actb.bam", gc);
-		trackSet.add("test_data/ear045.oxBS.actb.tdf", gc);
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/ear045.oxBS.actb.bam", gc, null);
+		trackSet.addTrackFromSource("test_data/ear045.oxBS.actb.tdf", gc, null);
 		
 		TrackProcessor tp= new TrackProcessor(trackSet, gch); 
 		

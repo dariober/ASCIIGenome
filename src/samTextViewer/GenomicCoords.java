@@ -172,6 +172,10 @@ public class GenomicCoords implements Cloneable {
 		
 		GenomicCoords xgc= new GenomicCoords();
 		
+		if(x == null || x.isEmpty()){
+			x= "Undefined_contig";
+		}
+		
 		x= x.trim();
 		int nsep= StringUtils.countMatches(x, ":");
 		if(nsep == 0){ // Only chrom present. It will not handle well chrom names containing ':'
@@ -418,8 +422,13 @@ public class GenomicCoords implements Cloneable {
 		if(this.samSeqDict == null || this.samSeqDict.size() == 0){
 			return null;
 		}
-		List<Double> positionMap = Utils.seqFromToLenOut(1, this.samSeqDict.getSequence(this.chrom).getSequenceLength(), 
-				this.getUserWindowSize());
+		List<Double> positionMap = null;
+		try{
+			positionMap = Utils.seqFromToLenOut(1, this.samSeqDict.getSequence(this.chrom).getSequenceLength(), 
+					this.getUserWindowSize());
+		} catch (NullPointerException e){
+			throw new InvalidGenomicCoordsException();
+		}
 		// This code taken from printableRuler() above.
 		String numberLine= "";
     	int prevLen= 0;

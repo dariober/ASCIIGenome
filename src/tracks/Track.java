@@ -2,6 +2,7 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -92,8 +93,10 @@ public class Track {
 	/** Returns a string that parsed by `-exec` loads the current track with 
 	 * the current settings (color, height, etc...).
 	 * This method is currently quite approximative and it doesn't reproduce carefully all the settings.
+	 * @throws IOException 
+	 * @throws UnsupportedEncodingException 
 	 * */
-	public String settingsToString(){
+	public String settingsToString() throws UnsupportedEncodingException, IOException{
 		String name= "^" + this.getTrackTag().replaceAll("(#|@)\\d+$", "");
 		List<String> set= new ArrayList<String>();
 		set.add("addTracks " + this.getFilename());

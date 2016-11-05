@@ -2,6 +2,7 @@ package tracks;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -105,5 +106,17 @@ public class TrackSeqRegexTest {
 		assertTrue(passed);
 	}
 
-	
+	@Test
+	public void canSaveMatchesToFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("seq:1-100", null, "test_data/seq_cg.fa");
+		TrackSeqRegex trackSeqRegex= new TrackSeqRegex(gc);
+		trackSeqRegex.setNoFormat(true);
+		trackSeqRegex.setSeqRegex("atc");
+
+		trackSeqRegex.saveIntervalsToFile("test_data/deleteme.txt", false);
+		assertTrue(new File("test_data/deleteme.txt").length() > 200);
+		
+		new File("test_data/deleteme.txt").deleteOnExit();
+	}
 }

@@ -57,6 +57,8 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.tdf.TDFReader;
 
+import com.google.common.base.Joiner;
+
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -612,7 +614,7 @@ public class Utils {
 			}
 			return chrom + ":" + from + "-" + to;
 		} else if(tokens.get(0).matches("\\d+.*")) { // You might want to be more specific
-			return chrom + ":" + parseGoToRegion(tokens.get(0));
+			return chrom + ":" + parseGoToRegion(Joiner.on(" ").join(tokens)); // You shouldn't return to string!
 		} else if(tokens.get(0).startsWith("+") 
 				|| tokens.get(0).startsWith("-")){
 			int offset= parseStringToIntWithUnits(tokens.get(0));

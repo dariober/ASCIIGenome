@@ -36,19 +36,16 @@ public class ArgParse {
 		parser.addArgument("--batchFile", "-b")
 			.type(String.class)
 			.required(false)
-			.setDefault("")
-			.help("Bed or gff file of regions to process in batch. "
+			.help("Bed or gff file of regions to process in batch. Use - to read from stdin. "
 					+ "ASCIIGenome will iterate through the regions in this file");
 
 		parser.addArgument("--region", "-r")
 			.type(String.class)
 			.required(false)
-			.setDefault("")
 			.help("Go to region. Format 1-based as 'chrom:start-end' or 'chrom:start' or 'chrom'. E.g. chr1:1-1000");
 
 		parser.addArgument("--genome", "-g")
 			.type(String.class)
-			.setDefault("")
 			.help("A genome file or a tag identifying a genome build (e.g. hg19), or bam file with suitable header");
 		
 		parser.addArgument("--fasta", "-fa")
@@ -58,7 +55,6 @@ public class ArgParse {
 
 		parser.addArgument("--exec", "-x")
 			.type(String.class)
-			.setDefault("")
 			.help("Commands to be executed at the prompt. Either a single string, e.g. 'goto chr1 && next && seqRegex ACTG' or a file with one command per line.");
 
 		

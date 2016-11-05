@@ -10,6 +10,7 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import tracks.Track;
+import tracks.TrackBookmark;
 import tracks.TrackReads;
 import tracks.TrackSet;
 
@@ -92,9 +93,19 @@ public class TrackProcessor {
 			wr.close();
 			return;
 		}
+		// First we write the bookmark track, if any. Doing it first avoids moving around heavy files.
+		for(Track tr : this.getTrackSet().getTrackList()){
+			if( tr instanceof TrackBookmark ){
+				wr.write(tr.settingsToString() + "\n");
+			}
+		}
+		
 		wr.write("goto " + this.getGenomicCoordsHistory().current().toStringRegion() + "\n");
 		wr.write("setGenome " + this.getGenomicCoordsHistory().current().getSamSeqDictSource() + "\n");
 		for(Track tr : this.getTrackSet().getTrackList()){
+			if(tr instanceof TrackBookmark){
+				continue; // Already done.
+			}
 			if( ! (tr instanceof TrackReads) ){ // Track reads excluded as they are part of TrackCoverage. 
 				                                // This is wrong as you could have one without the other!
 				wr.write(tr.settingsToString() + "\n");
