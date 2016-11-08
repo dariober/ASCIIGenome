@@ -51,6 +51,8 @@ public class TrackProcessor {
 			Utils.printer(currentGC.getChromIdeogram(20, this.noFormat) + "\n", this.snapshotFile);
 		}			
 
+		this.getTrackSet().setAutoYLimits();
+		
 		for(Track track : trackSet.getTrackList()){
 			
 			track.setNoFormat(this.noFormat);
@@ -118,7 +120,9 @@ public class TrackProcessor {
 		
 		wr.write("goto " + this.getGenomicCoordsHistory().current().toStringRegion() + "\n");
 		wr.write("setGenome " + this.getGenomicCoordsHistory().current().getSamSeqDictSource() + "\n");
+		String orderTracks= "orderTracks ";
 		for(Track tr : this.getTrackSet().getTrackList()){
+			orderTracks += tr.getTrackTag().replaceAll("(#|@)\\d+$", "") + " ";
 			if(tr instanceof TrackBookmark){
 				continue; // Already done.
 			}
@@ -127,9 +131,9 @@ public class TrackProcessor {
 				wr.write(tr.settingsToString() + "\n");
 			}
 		}
+		wr.write(orderTracks + "\n"); // Note that re-ordering may be different from original as the ID part was stripped! 
 		wr.close();
 	} 
-
 	
 	private String getMemoryStat() throws InvalidGenomicCoordsException, IOException{
 		float mem= (float) ((float)Runtime.getRuntime().totalMemory() / 1000000d);

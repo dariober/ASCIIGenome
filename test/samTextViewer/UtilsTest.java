@@ -396,7 +396,7 @@ public class UtilsTest {
 		double x= 1000.123456789;
 		double y= 1001.123456789;
 		int nSignif= 3;
-		double[] rounded= Utils.roundToSignificantDigits(x, y, nSignif);
+		Double[] rounded= Utils.roundToSignificantDigits(x, y, nSignif);
 		assertEquals(1000.123, rounded[0], 0.001); // Regular rounding
 		assertEquals(1001.123, rounded[1], 0.001);
 		

@@ -56,6 +56,7 @@ public class TrackReads extends Track{
 			throw new RuntimeException();
 		}
 		this.setFilename(bam);
+		this.setWorkFilename(bam);
 		this.setGc(gc);
 
 	}
@@ -73,14 +74,14 @@ public class TrackReads extends Track{
 			SamReaderFactory srf=SamReaderFactory.make();
 			srf.validationStringency(ValidationStringency.SILENT);
 			SamReader samReader;
-			if(urlValidator.isValid(this.getFilename())){
-				samReader = srf.open(SamInputResource.of(new URL(this.getFilename())).index(new URL(this.getFilename() + ".bai")));
+			if(urlValidator.isValid(this.getWorkFilename())){
+				samReader = srf.open(SamInputResource.of(new URL(this.getWorkFilename())).index(new URL(this.getWorkFilename() + ".bai")));
 			} else {
-				samReader= srf.open(new File(this.getFilename()));
+				samReader= srf.open(new File(this.getWorkFilename()));
 			}
 			/*  ------------------------------------------------------ */
 			
-			this.nRecsInWindow= Utils.countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
+			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
 			float probSample= (float) TrackReads.MAX_READS_STACK / this.nRecsInWindow;
 			
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);

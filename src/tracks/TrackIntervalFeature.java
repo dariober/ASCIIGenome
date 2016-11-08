@@ -34,13 +34,14 @@ public class TrackIntervalFeature extends Track {
 
 	public TrackIntervalFeature(final String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		String sourceFile= filename; // sourceFile is what is actually used to construct the tabix file. 
+		// String sourceFile= filename; // sourceFile is what is actually used to construct the tabix file. 
+		this.setWorkFilename(filename);
 		
 		if(Utils.isUcscGenePredSource(filename)){
 			UcscGenePred ucsc = null;
 			try {
 				ucsc = new UcscGenePred(filename, -1);
-				sourceFile= ucsc.getTabixFile();
+				this.setWorkFilename(ucsc.getTabixFile());
 				this.type= TrackFormat.GFF;
 			} catch (InvalidCommandLineException e) {
 				//
@@ -54,14 +55,14 @@ public class TrackIntervalFeature extends Track {
 				if( ! suffix.endsWith(".gz")){
 					suffix += ".gz";
 				}
-				sourceFile= File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath();
-				new File(sourceFile).deleteOnExit();
-				new File(sourceFile + ".tbi").deleteOnExit();
+				this.setWorkFilename(File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath());
+				new File(this.getWorkFilename()).deleteOnExit();
+				new File(this.getWorkFilename() + ".tbi").deleteOnExit();
 	
-				new MakeTabixIndex(filename, new File( sourceFile ), Utils.trackFormatToTabixFormat(this.type));	
+				new MakeTabixIndex(filename, new File( this.getWorkFilename() ), Utils.trackFormatToTabixFormat(this.type));	
 			} 
 		}
-		this.tabixReader= new TabixReader(new File(sourceFile).getAbsolutePath());
+		this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
 		this.setGc(gc);
 		this.setFilename(filename);		
 	}

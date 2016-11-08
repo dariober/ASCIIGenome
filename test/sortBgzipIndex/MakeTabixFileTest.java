@@ -15,6 +15,7 @@ import exceptions.InvalidRecordException;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
+import htsjdk.tribble.util.TabixUtils;
 
 public class MakeTabixFileTest {
 
@@ -24,7 +25,7 @@ public class MakeTabixFileTest {
 		String infile= "test_data/chr7.fa";
 		File outfile= new File("deleteme.gtf.gz");
 		outfile.deleteOnExit();
-		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
@@ -35,7 +36,7 @@ public class MakeTabixFileTest {
 		String infile= "test_data/empty.bed";
 		File outfile= new File("test_data/empty.tmp.bed.gz");
 		outfile.deleteOnExit();
-		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
@@ -49,7 +50,7 @@ public class MakeTabixFileTest {
 		File outfile= new File("test_data/tmp.bed.gz");
 		outfile.deleteOnExit();
 		
-		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
@@ -72,7 +73,7 @@ public class MakeTabixFileTest {
 		File outfile= new File("test_data/tmp2.bed.gz");
 		outfile.deleteOnExit();
 		
-		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(infile, outfile, TabixFormat.GFF);
@@ -96,7 +97,7 @@ public class MakeTabixFileTest {
 		File outfile= new File("test_data/tmp3.bed.gz");
 		outfile.deleteOnExit();
 		
-		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
@@ -115,7 +116,7 @@ public class MakeTabixFileTest {
 		File outfile= new File("test_data/tmp4.bed.gz");
 		outfile.deleteOnExit();
 		
-		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
@@ -134,7 +135,7 @@ public class MakeTabixFileTest {
 		File outfile= new File("test_data/tmp5.bed.gz");
 		outfile.deleteOnExit();
 		
-		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
@@ -153,7 +154,7 @@ public class MakeTabixFileTest {
 		File outfile= new File("test_data/tmp6.bed.gz");
 		outfile.deleteOnExit();
 		
-		File expectedTbi= new File(outfile.getAbsolutePath() + ".tbi"); 
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
 
 		new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
@@ -177,7 +178,7 @@ public class MakeTabixFileTest {
 		testFile.deleteOnExit();
 		Files.copy(new File("test_data/refSeq.hg19.bed.gz"), testFile);
 		
-		File expectedTbi= new File(testFile.getAbsolutePath() + ".tbi"); 
+		File expectedTbi= new File(testFile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(testFile.getAbsolutePath(), testFile, TabixFormat.BED);
@@ -187,6 +188,21 @@ public class MakeTabixFileTest {
 		assertTrue(expectedTbi.exists());
 		assertTrue(expectedTbi.length() > 100000);
 
+	}
+	
+	@Test
+	public void canProcessBedgraphWithTrackLine() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
+
+		String testFile= "test_data/test2.bedGraph";
+
+		String outfile= testFile + ".tmp.bedGraph.gz";
+		File expectedTbi= new File(outfile + TabixUtils.STANDARD_INDEX_EXTENSION); 
+		new File(outfile).deleteOnExit();
+		expectedTbi.deleteOnExit();
+		
+		new MakeTabixIndex(testFile, new File(outfile), TabixFormat.BED);
+		assertTrue(expectedTbi.exists());
+		assertTrue(expectedTbi.length() > 50);
 	}
 	
 }

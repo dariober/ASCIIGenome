@@ -24,6 +24,7 @@ public class TrackMethylation extends Track {
     /* C o n s t r u c t o r s */
     public TrackMethylation(String filename, List<ScreenLocusInfo> screenLocusInfoList){        
         this.setFilename(filename);
+        this.setWorkFilename(filename);
         this.screenLocusInfoList= screenLocusInfoList;
         
         List<Double> mValues= new ArrayList<Double>();
@@ -185,7 +186,7 @@ public class TrackMethylation extends Track {
 		}
 
 		Double[] range = Utils.range(this.getScreenScores());
-		double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
+		Double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
 
 		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
 		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();

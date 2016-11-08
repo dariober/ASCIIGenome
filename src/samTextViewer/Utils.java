@@ -322,7 +322,7 @@ public class Utils {
 			String line;
 			while ((line = br.readLine()) != null){
 				line= line.trim();
-				if(line.startsWith("#") || line.isEmpty()){
+				if(line.startsWith("#") || line.isEmpty() || line.startsWith("track ")){
 					continue;
 				}
 				IntervalFeature feature= new IntervalFeature(line, fmt);
@@ -875,9 +875,9 @@ public class Utils {
 	/** Function to round x and y to a number of digits enough to show the difference in range
 	 * This is for pretty printing only.
 	 * */
-	public static double[] roundToSignificantDigits(double x, double y, int nSignif) {
+	public static Double[] roundToSignificantDigits(double x, double y, int nSignif) {
 
-		double[] rounded= new double[2];
+		Double[] rounded= new Double[2];
 		
 	    double diff= Math.abs(x - y);
 	    if (diff < 1e-16){

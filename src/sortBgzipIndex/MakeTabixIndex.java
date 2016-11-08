@@ -26,6 +26,7 @@ import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndexCreator;
 import htsjdk.tribble.readers.LineIterator;
+import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFHeader;
@@ -48,7 +49,7 @@ public class MakeTabixIndex {
 	public MakeTabixIndex(String intab, File bgzfOut, TabixFormat fmt) throws IOException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
 		File tmp = File.createTempFile("asciigenome", "makeTabixIndex.tmp.gz");
-		File tmpTbi= new File(tmp.getAbsolutePath() + ".tbi");
+		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
 		tmp.deleteOnExit();
 		tmpTbi.deleteOnExit();
 		
@@ -66,7 +67,7 @@ public class MakeTabixIndex {
 		// This renaming and the use of File tmp allows to block compress and index an inout file in place.
 		// Original intab file is overwritten of course!
 		tmp.renameTo(bgzfOut);
-		File bgzfOutTbi= new File(bgzfOut.getAbsolutePath() + ".tbi");
+		File bgzfOutTbi= new File(bgzfOut.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
 		tmpTbi.renameTo(bgzfOutTbi);
 		
 	}
@@ -88,7 +89,7 @@ public class MakeTabixIndex {
 		while(lin.hasNext()){
 			
 			String line = lin.next().trim();
-			if(line.isEmpty() || line.startsWith("#")){
+			if(line.isEmpty() || line.startsWith("#") || line.startsWith("track ")){
 				continue;
 			}
 			if(line.startsWith("##FASTA")){

@@ -151,7 +151,7 @@ public class InteractiveInput {
 				} else if(cmdInput.get(0).equals("setGenome")){
 					cmdInput.remove(0);
 					proc.getGenomicCoordsHistory().setGenome(cmdInput);
-					
+
 				// * These commands change the Tracks but do not touch the GenomicCoordinates.
 				} else if(cmdInput.get(0).equals("dataCol")){
 					try{
@@ -287,15 +287,17 @@ public class InteractiveInput {
 					proc.getGenomicCoordsHistory().add(proc.getTrackSet().findNextMatchOnTrack(cmdInput.get(1), cmdInput.get(2), gc, all));
 					
 				} else if (cmdInput.get(0).equals("seqRegex")){
-					if( proc.getGenomicCoordsHistory().current().getFastaFile() == null ){
+					try{
+						proc.getTrackSet().setRegexForTrackSeqRegex(cmdInput, proc.getGenomicCoordsHistory().current());
+					} catch( InvalidCommandLineException e){
 						System.err.println("Cannot find regex in sequence without fasta reference!");
 						this.interactiveInputExitCode= 1;
-						continue;
+						continue;						
 					}
-					proc.getTrackSet().setSeqRegexForTracks(cmdInput);
+					
 					
 				} else if(cmdInput.get(0).equals("bookmark")){
-					proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdInput);
+					messages += proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdInput);
 					
 				} else {
 					System.err.println("Unrecognized argument: " + cmdInput);

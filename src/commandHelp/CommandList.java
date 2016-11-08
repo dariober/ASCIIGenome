@@ -20,13 +20,6 @@ public class CommandList {
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 		    public void run() {
 		    	System.out.print("\033[0m"); // On exit turn off all formatting
-		    	//try {
-				//	ConsoleReader x= new ConsoleReader();
-				//	x.clearScreen();
-				//	x.flush();
-		    	//} catch (IOException e) {
-				//	e.printStackTrace();
-				//}
 		    }
 		}));
 		
@@ -325,18 +318,20 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("bookmark"); cmd.setArgs("[name] | [-rm] | [> [file]]"); cmd.inSection= Section.FIND; 
+		cmd.setName("bookmark"); cmd.setArgs("[name] | [-rm] | [-print] | [> [file]]"); cmd.inSection= Section.FIND; 
 		cmd.setBriefDescription("Add, remove and save positions to bookmark track. ");
 		cmd.setAdditionalDescription("`bookmark` creates a track to save positions of interest. "
 				+ "Without arguments, add the current position to the bookmarks, use the argument "
 				+ "`name` to assign a name to the feature. `-rm` removes the bookmark "
 				+ "matching exactly the current position. `>` saves to <file> the bookmark "
-				+ "track in bed format. Examples\n"
+				+ "track in bed format. `-print` prints to screen the list of current bookmarks. "
+				+ "Examples:\n"
 				+ "```\n"
-				+ "bookmark~~~~~~~~~~~~~~~~-> Add the current position to bookmarks.\n"
-				+ "bookmark myGene ~~~~~~~~-> Add the current position with name myGene\n"
-				+ "bookmark -rm ~~~~~~~~~~~-> Remove the bookmark exactly in this position\n"
-				+ "bookmark > books.txt -> Save to file books.txt\n"
+				+ "bookmark~~~~~~~~~~~~~~-> Add the current position to bookmarks.\n"
+				+ "bookmark myGene ~~~~~~-> Add the current position with name myGene\n"
+				+ "bookmark -rm ~~~~~~~~~-> Remove the bookmark exactly in this position\n"
+				+ "bookmark > books.txt~~-> Save to file books.txt\n"
+				+ "bookmark -print ~~~~~~-> Show table of bookmarks\n"
 				+ "```"
 				+ "");
 		cmdList.add(cmd);
@@ -427,16 +422,22 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("ylim"); cmd.setArgs("min max [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("ylim"); cmd.setArgs("<NUM|min|na> <NUM|min|na> [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set the y-axis limit for all tracks matched by regexes.");
-		cmd.setAdditionalDescription("Use `na` to autoscale to min and/or max. "
+		cmd.setAdditionalDescription("The first two arguments set the min and max limits. The 3rd "
+				+ "argument is a list of regexes to capture the tracks to reset. "
+				+ "Argument min and max can be:\n"
+				+ "* Numeric to fix the limits exactly to these values\n"
+				+ "* `na` to scale tracks to their individual min and/or max\n"
+				+ "* `min` and `max` to set to the min and max of all tracks.\n"
 				+ "This command applies only to tracks displaying quantitative data on y-axis (e.g. bigwig, tdf), "
 				+ "the other tracks are unaffected.\n"
 				+ "Examples:\n"
 				+ "```\n"
-				+ "ylim 0 50~~~~~~## Set min= 0 and max= 50 in all tracks.\n"
-				+ "ylim 0 na~~~~~~## Set min to 0 and autoscale the max. Apply to all tracks\n"
-				+ "ylim na na tdf~## Autoscale min and max. Apply to all tracks matching 'tdf'\n"
+				+ "ylim 0 50~~~~~~-> Set min= 0 and max= 50 in all tracks.\n"
+				+ "ylim 0 na~~~~~~-> Set min to 0 and autoscale the max. Apply to all tracks\n"
+				+ "ylim na na tdf~-> Autoscale min and max. Apply to all tracks matching 'tdf'\n"
+				+ "ylim min max~~~-> Set to the min and max of all tracks\n"
 				+ "```\n");
 		cmdList.add(cmd);
 

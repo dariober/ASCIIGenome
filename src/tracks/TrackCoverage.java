@@ -55,6 +55,7 @@ public class TrackCoverage extends Track {
 	 */
 	public TrackCoverage(String bam, GenomicCoords gc, boolean bs) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		this.setFilename(bam);
+		this.setWorkFilename(bam);
 		this.setBisulf(bs);
 		this.alnRecCnt= Utils.getAlignedReadCount(new File(bam));
 		/*  ------------------------------------------------------ */
@@ -62,7 +63,7 @@ public class TrackCoverage extends Track {
 		UrlValidator urlValidator = new UrlValidator();
 		SamReaderFactory srf=SamReaderFactory.make();
 		srf.validationStringency(ValidationStringency.SILENT);
-		if(urlValidator.isValid(this.getFilename())){
+		if(urlValidator.isValid(this.getWorkFilename())){
 			this.samReader = srf.open(SamInputResource.of(new URL(bam)).index(new URL(bam + ".bai")));
 		} else {
 			this.samReader= srf.open(new File(bam));
@@ -101,7 +102,7 @@ public class TrackCoverage extends Track {
 				this.screenLocusInfoList.get(screenPos).increment(locusInfo, refBase);
 			}
 			
-			this.nRecsInWindow= Utils.countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
+			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
 			samLocIter.close();
 		}
 
@@ -193,7 +194,7 @@ public class TrackCoverage extends Track {
 		}
 		
 		Double[] range = Utils.range(this.getScreenScores());
-		double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
+		Double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
 		String rpmTag= this.isRpm() ? "; rpm" : "";
 
 		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();

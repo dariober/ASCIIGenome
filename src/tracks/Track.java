@@ -26,6 +26,7 @@ public class Track {
 	private String title= "";
 	protected int yMaxLines= 10;
 	private String filename= "N/A"; // File name as given in input
+	private String workFilename= "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files 
 	private String trackTag= "N/A"; // Tag name for title
 	// private int id= 1;              // A unique identifier for the track. Changed when the track is added to a TrackSet. 
 	private List<Double> screenScores= new ArrayList<Double>();
@@ -160,7 +161,7 @@ public class Track {
 			this.filename = new File(filename).getAbsolutePath();
 		}
 	}
-
+	
 	public String getTrackTag() { 
 		return trackTag; 
 	}
@@ -389,6 +390,14 @@ public class Track {
 	public void addBookmark(String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public String getWorkFilename() {
+		return workFilename;
+	}
+
+	public void setWorkFilename(String workFilename) {
+		this.workFilename = workFilename;
 	}
 	
 }

@@ -75,10 +75,10 @@ public class Main {
 		final TrackSet trackSet= new TrackSet(inputFileList, gch.current());
 		final TrackProcessor proc= new TrackProcessor(trackSet, gch);
 		
-		if(proc.getGenomicCoordsHistory().current().getFastaFile() != null){
-			TrackSeqRegex re= new TrackSeqRegex(proc.getGenomicCoordsHistory().current());
-			proc.getTrackSet().addTrack(re, "regex_seq_matches");
-		}
+//		if(proc.getGenomicCoordsHistory().current().getFastaFile() != null){
+//			TrackSeqRegex re= new TrackSeqRegex(proc.getGenomicCoordsHistory().current());
+//			proc.getTrackSet().addTrack(re, "regex_seq_matches");
+//		}
 
 		proc.setNoFormat(opts.getBoolean("noFormat"));
 		

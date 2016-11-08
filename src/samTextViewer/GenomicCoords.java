@@ -348,15 +348,19 @@ public class GenomicCoords implements Cloneable {
 		int w= this.getUserWindowSize();
 		this.to= this.getMidpoint();
 		if((this.to - this.from) < w){
-			this.to += (w - (this.to - this.from));  
+			this.to += (w - (this.to - this.from) - 1);  
 		}
 	}
 	
+	/** Move coordinates to the right hand side of the current window
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * */
 	public void right() throws InvalidGenomicCoordsException, IOException{
 		int w= this.getUserWindowSize();
 		this.from= this.getMidpoint();
 		if((this.to - this.from) < w){
-			this.from -= (w - (this.to - this.from));  
+			this.from -= (w - (this.to - this.from) - 1);  
 		}
 		
 	}

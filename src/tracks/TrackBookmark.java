@@ -50,6 +50,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		bookmark.deleteOnExit();
 		(new File(bookmark.getAbsolutePath() + ".tbi")).deleteOnExit();
 		this.setFilename(bookmark.getAbsolutePath());
+		this.setWorkFilename(bookmark.getAbsolutePath());
 		
 		new MakeTabixIndex(bookmarkPlain.getAbsolutePath(), bookmark, TabixFormat.BED);
 		bookmarkPlain.delete();
@@ -73,11 +74,11 @@ public class TrackBookmark extends TrackIntervalFeature {
 		
 		// First write the current position to a new tmp file, then append to this file
 		// all the bookmarks previously added. Then bgzip and compress replacing the old bookmark file.
-		File plainNew= new File(this.getFilename() + ".add");
+		File plainNew= new File(this.getWorkFilename() + ".add");
 		plainNew.deleteOnExit();
 		BufferedWriter wr = new BufferedWriter(new FileWriter(plainNew));
 		
-		InputStream fileStream = new FileInputStream(this.getFilename());
+		InputStream fileStream = new FileInputStream(this.getWorkFilename());
 		Reader decoder = new InputStreamReader(new GZIPInputStream(fileStream), "UTF-8");
 		BufferedReader br= new BufferedReader(decoder);
 
@@ -91,9 +92,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 		wr.close();
 
 		// Recompress and index replacing the original bgzip file
-		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getFilename()), TabixFormat.BED);
+		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.BED);
 		plainNew.delete();
-		this.tabixReader= new TabixReader(this.getFilename());
+		this.tabixReader= new TabixReader(this.getWorkFilename());
 		// Update track.
 		this.update();
 	}
@@ -117,11 +118,11 @@ public class TrackBookmark extends TrackIntervalFeature {
 		// To remove a bookmark, iterate through the bgzip file writing records to a tmp file.
 		// The record(s) matching this position is not written. 
 		// 
-		File plainNew= new File(this.getFilename() + ".remove");
+		File plainNew= new File(this.getWorkFilename() + ".remove");
 		plainNew.deleteOnExit();
 		BufferedWriter wr = new BufferedWriter(new FileWriter(plainNew));
 		
-		InputStream fileStream = new FileInputStream(this.getFilename());
+		InputStream fileStream = new FileInputStream(this.getWorkFilename());
 		Reader decoder = new InputStreamReader(new GZIPInputStream(fileStream), "UTF-8");
 		BufferedReader br= new BufferedReader(decoder);
 
@@ -143,9 +144,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 		br.close();
 		
 		// Recompress and index replacing the original bgzip file
-		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getFilename()), TabixFormat.BED);
+		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.BED);
 		plainNew.delete();
-		this.tabixReader= new TabixReader(this.getFilename());
+		this.tabixReader= new TabixReader(this.getWorkFilename());
 		// Update track.
 		this.update();
 	}
@@ -158,7 +159,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		
 		BufferedWriter wr = new BufferedWriter(new FileWriter(filename, append));
 		
-		InputStream fileStream = new FileInputStream(this.getFilename());
+		InputStream fileStream = new FileInputStream(this.getWorkFilename());
 		Reader decoder = new InputStreamReader(new GZIPInputStream(fileStream), "UTF-8");
 		BufferedReader br= new BufferedReader(decoder);
 
@@ -179,7 +180,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 	public String settingsToString() throws UnsupportedEncodingException, IOException{
 		List<String> set= new ArrayList<String>();
 
-		InputStream fileStream = new FileInputStream(this.getFilename());
+		InputStream fileStream = new FileInputStream(this.getWorkFilename());
 		Reader decoder = new InputStreamReader(new GZIPInputStream(fileStream), "UTF-8");
 		BufferedReader br= new BufferedReader(decoder);
 
@@ -207,5 +208,27 @@ public class TrackBookmark extends TrackIntervalFeature {
 		String cmd= "goto " + line.get(0) + ":" + (Integer.parseInt(line.get(1))+1) + "-" + line.get(2) + " && ";
 		cmd += "bookmark " + line.get(3);
 		return cmd;
+	}
+
+	public List<String> asList() throws UnsupportedEncodingException, IOException {
+		List<String> marks= new ArrayList<String>();
+		
+		InputStream fileStream = new FileInputStream(this.getWorkFilename());
+		Reader decoder = new InputStreamReader(new GZIPInputStream(fileStream), "UTF-8");
+		BufferedReader br= new BufferedReader(decoder);
+
+		String line;
+		int i= 1;
+		while( (line = br.readLine()) != null) {
+			List<String> lst= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(line));
+			String reg= lst.get(0) + ":" + lst.get(1) + "-" + lst.get(2); 
+			line= i + ":\t" + reg + "\t" + line;
+			marks.add(line + "\t");
+			i++;
+		}
+		br.close();
+
+		return marks;
+		
 	}
 }

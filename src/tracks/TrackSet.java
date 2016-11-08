@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -13,6 +14,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import com.google.common.base.Joiner;
 
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidCommandLineException;
@@ -32,7 +35,8 @@ public class TrackSet {
 	private List<Track> trackList= new ArrayList<Track>();
 	private List<Pattern> regexForTrackHeight= new ArrayList<Pattern>();
 	private int trackHeightForRegex= -1;
-// 	public static final String BOOKMARK_TAG= "bookmark";
+	private String[] yStrLimits= new String[2];
+	private List<String> regexForYLimits= new ArrayList<String>();
 	
 	/*   C o n s t r u c t o r s   */
 	
@@ -96,7 +100,10 @@ public class TrackSet {
 					e1.printStackTrace();
 				}
 			}
-		}		
+		}	
+		this.regexForYLimits.add(".*");
+		this.yStrLimits[0]= "na";
+		this.yStrLimits[1]= "na";
 		// TrackWiggles gcProfile= gc.getGCProfile();
 	}
 	
@@ -215,19 +222,20 @@ public class TrackSet {
 		
 		for(Track track : this.getTrackList()){
 			String hd= track.getyMaxLines() <= 0 ? "*" : "";
-			trackInfo.add(track.getTrackTag() + "\t" 
-					+ track.getFilename() + "\t" 
-					+ Utils.getFileTypeFromName(track.getFilename()) + "\t"
-					+ hd);		
+			trackInfo.add(
+					  "------\n"
+					+ "Track tag:    " + track.getTrackTag() + "\n" 
+					+ "Input source: " + track.getFilename() + "\n"
+					+ "Working file: " + track.getWorkFilename() + "\n"
+					+ "Track type:   " + Utils.getFileTypeFromName(track.getFilename()) + " " + hd);		
 		}
 		
 		StringBuilder sb= new StringBuilder();
-		for(String str : Utils.tabulateList(trackInfo)){
+		for(String str : trackInfo){
 			sb.append(str + "\n");
 		}
 		return sb.toString().trim();
 	}
-
 
 	/** From cmdInput extract regex and yMaxLines then iterate through the tracks list to set 
 	 * the yMaxLines in the tracks whose filename matches the regex.
@@ -536,6 +544,62 @@ public class TrackSet {
         }		
 	}
 	
+	/** Set ylimits for all tracks using private attributes of ylim and track regex.
+	 * @throws InvalidCommandLineException 
+	 * */
+	public void setAutoYLimits() throws InvalidCommandLineException {
+
+		// Tracks to reset
+        List<Track> tracksToReset = this.matchTracks(this.getRegexForYLimits(), true);
+		
+        String yStrMin= this.getYStringLimits()[0];
+        String yStrMax= this.getYStringLimits()[1];
+        
+		Double[] yrange= {Double.NaN, Double.NaN};
+		if(yStrMin.equals("min") || yStrMax.equals("max")){
+			yrange= this.yRangeOfTracks(tracksToReset);
+		}
+
+		// Parse min
+		double ymin= Double.NaN;
+		if(yStrMin.equals("min")){
+			ymin= yrange[0];
+		} else {
+			try{
+				ymin= Double.parseDouble(yStrMin);
+			} catch(NumberFormatException e){
+				ymin= Double.NaN;
+			}
+		}
+
+		// Parse max
+		double ymax= Double.NaN;
+		if(yStrMax.equals("max")){
+			ymax= yrange[1];
+		} else { 
+			try{
+				ymax= Double.parseDouble(yStrMax);
+			} catch(NumberFormatException e){
+				ymax= Double.NaN;
+			}
+		}
+		// Swap
+		if(ymin > ymax){
+			Double newMax= ymin;
+			ymin= ymax;
+			ymax= newMax;			
+		}
+
+		Double[] yy = Utils.roundToSignificantDigits(ymin, ymax, 2);
+		
+        for(Track tr : tracksToReset){
+    		tr.setYLimitMin(yy[0]);
+			tr.setYLimitMax(yy[1]);
+        }    
+
+	}
+
+	
 	/** From cmdInput extract regex and ylimits then iterate through the tracks list to set 
 	 * the ylimits in the tracks whose filename matches the regex.
 	 * The input list is updated in place! 
@@ -558,41 +622,76 @@ public class TrackSet {
 			System.err.println("Error in ylim subcommand. Expected at least 2 args got: " + tokens);
 			throw new InvalidCommandLineException();
 		}
-		// Parse min and max
-		double ymin= Double.NaN;
-		try{
-			ymin= Double.parseDouble(tokens.get(1));
-		} catch(NumberFormatException e){
-			ymin= Double.NaN;
-		}
-		double ymax= Double.NaN;
-		try{
-			ymax= Double.parseDouble(tokens.get(2));
-		} catch(NumberFormatException e){
-			ymax= Double.NaN;
-		}
 
-		if(ymin > ymax){ // Swap
-			Double newMax= ymin;
-			ymin= ymax;
-			ymax= newMax;			
-		}
-
-        // Regex
-        List<String> trackNameRegex= new ArrayList<String>();
+        // Set regex attribute catching tracks
         if(tokens.size() >= 4){
-            trackNameRegex= tokens.subList(2, tokens.size());
+        	this.setRegexForYLimits(tokens.subList(2, tokens.size()));
         } else {
-            trackNameRegex.add(".*"); // Default: Capture everything
+        	this.setRegexForYLimits(Arrays.asList(".*"));
         }
-        // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-        for(Track tr : tracksToReset){
-    		tr.setYLimitMin(ymin);
-			tr.setYLimitMax(ymax);
-        }
+
+        // Set ylimits attribute
+        String[] yStrLimits= {tokens.get(1), tokens.get(2)};
+        this.setYStrLimits(yStrLimits);
+        
+        // Reset ylimits as required
+        this.setAutoYLimits();
+        
+//        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+//
+//		double ymin= Double.NaN;
+//		double ymax= Double.NaN;
+//		if(tokens.get(1).toLowerCase().equals("min") || tokens.get(2).toLowerCase().equals("max")){
+//		
+//			Double[] yrange= this.yRangeOfTracks(tracksToReset);
+//			if(tokens.get(1).toLowerCase().equals("min")){
+//				ymin= yrange[0];
+//			}
+//			if(tokens.get(2).toLowerCase().equals("max")){
+//				ymax= yrange[1];
+//			}
+//		} 
+//		else {
+//			// Parse min
+//			try{
+//				ymin= Double.parseDouble(tokens.get(1));
+//			} catch(NumberFormatException e){
+//				ymin= Double.NaN;
+//			}
+//			
+//			// Parse max
+//			try{
+//				ymax= Double.parseDouble(tokens.get(2));
+//			} catch(NumberFormatException e){
+//				ymax= Double.NaN;
+//			}
+//		}
+//		// Swap
+//		if(ymin > ymax){
+//			Double newMax= ymin;
+//			ymin= ymax;
+//			ymax= newMax;			
+//		}
+//
+//		double[] yy = Utils.roundToSignificantDigits(ymin, ymax, 2);
+//		
+//        for(Track tr : tracksToReset){
+//    		tr.setYLimitMin(yy[0]);
+//			tr.setYLimitMax(yy[1]);
+//        }    
 	}
 
+	/** Get the range of all the screen scores of this list of tracks. I.e. the global min and max.
+	 * */
+	private Double[] yRangeOfTracks(List<Track> tracks){
+		
+		List<Double> yall= new ArrayList<Double>();
+		for(Track tr : tracks){
+			yall.addAll(tr.getScreenScores());
+		}		
+		return Utils.range(yall);
+	}
+	
 	/** Set filter for IntervalFeature tracks. 
 	 * @throws SQLException 
 	 * @throws InvalidRecordException 
@@ -943,14 +1042,16 @@ public class TrackSet {
 		return false;
 	}
 	
-	/** Stub: Add current position to bookmarks. Book
+	/** Handle bookmarks by processing cmd line args.
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws SQLException 
 	 * @throws InvalidRecordException 
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
 	 * */
-	public void bookmark(GenomicCoords gc, List<String> cmdInput) throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
+	public String bookmark(GenomicCoords gc, List<String> cmdInput) throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
+		
+		String messages= "";
 		
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove command name
@@ -959,10 +1060,21 @@ public class TrackSet {
 			for(Track tr : this.getTrackList()){
 				if(tr instanceof TrackBookmark){
 					((TrackBookmark)tr).removeBookmark();
-	 				return;
+	 				return messages;
 				}
 			}
-			return;
+			return messages;
+		}
+		
+		if(args.size() == 1 && args.get(0).equals("-print")){
+			for(Track tr : this.getTrackList()){
+				if(tr instanceof TrackBookmark){
+					List<String> marks= Utils.tabulateList(((TrackBookmark)tr).asList());
+					messages= Joiner.on("\n").join(marks);
+					return messages + "\n";
+				}
+			}
+			return messages;
 		}
 		
 		if(args.size() == 2 && (args.get(0).equals(">") || args.get(0).equals(">>"))){
@@ -974,10 +1086,10 @@ public class TrackSet {
 						              // Left for consistency with seqRegex where instead it is quite useful to append. 
 					}
 					((TrackBookmark)tr).save(args.get(1), append);
-	 				return;
+	 				return messages;
 				}
 			}
-			return;
+			return messages;
 		}
 		
 		String nameForBookmark= ".";
@@ -985,7 +1097,7 @@ public class TrackSet {
 			nameForBookmark= args.get(0);
 		}
 		this.addBookmark(gc, nameForBookmark);
-		
+		return messages;
 	}
 	
 	/** Add position gc to bookmark track. Track created if it does not exist. 
@@ -1008,10 +1120,7 @@ public class TrackSet {
 	}
 	
 	/*   S e t t e r s   and   G e t t e r s  */
-	//public LinkedHashMap<String, Track> getTrackSet_DEPRECATED() {
-	//	return trackSet_DEPRECATED;
-	//}
-	
+
 	public List<Track> getTrackList() {
 		return trackList;
 	}
@@ -1210,17 +1319,21 @@ public class TrackSet {
 	}
 
 	/** Iterate through track list and set regex to the track TrackSeqRegex.
+	 * @param genomicCoords 
 	 * @throws SQLException 
 	 * @throws InvalidRecordException 
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
+	 * @throws InvalidCommandLineException 
 	 * */
-	public void setSeqRegexForTracks(List<String> cmdInput) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+	public void setRegexForTrackSeqRegex(List<String> cmdInput, GenomicCoords genomicCoords) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidCommandLineException {
 
+		initTrackSeqRegex(genomicCoords);
+		
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove command name
-
+		
 		if(args.size() > 0 && (args.get(0).equals(">") || args.get(0).equals(">>"))){
 
 			for(Track tr : this.getTrackList()){
@@ -1265,7 +1378,31 @@ public class TrackSet {
 			if(tr instanceof TrackSeqRegex){
 				((TrackSeqRegex) tr).setCaseSensitive(isCaseSensisitive);
 				tr.setSeqRegex(seqRegex);
-			}	
+			}
+		}
+	}
+
+	/** Initialize TrackSeqRegex for regex matches in fasta. Do nothing if track already exists. 
+	 * Throw exception if cannot set it.
+	 * This method only initializes the track. It doesn't set the regex or search for it.*/
+	private void initTrackSeqRegex(GenomicCoords genomicCoords) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		// See if a TrackSeqRegex exists.
+		boolean found= false;
+		for(Track tr : this.getTrackList()){
+			if(tr instanceof TrackSeqRegex){
+				found= true;
+			}
+		}
+		if( ! found){
+			// Not found: Try to create a new TrackSeqRegex
+			if(genomicCoords.getFastaFile() != null){
+				TrackSeqRegex re= new TrackSeqRegex(genomicCoords);
+				this.addTrack(re, "regex_seq_matches");
+				found= true;
+			}
+		}
+		if(! found){
+			throw new InvalidCommandLineException();
 		}
 	}
 
@@ -1292,7 +1429,22 @@ public class TrackSet {
         
 	}
 
-	
+	public List<String> getRegexForYLimits() {
+		return regexForYLimits;
+	}
+
+	public void setRegexForYLimits(List<String> regexForYLimits) {
+		this.regexForYLimits = regexForYLimits;
+	}
+
+	public String[] getYStringLimits() {
+		return yStrLimits;
+	}
+
+	public void setYStrLimits(String[] yStrLimits) {
+		this.yStrLimits = yStrLimits;
+	}
+
 //	/** Attempt to collect source of sequence dictionary 
 //	 * */
 //	private String getSamSeqDictSource(){
