@@ -256,13 +256,14 @@ public class GenomicCoords implements Cloneable {
 	public String toStringRegion(){
 		return this.getChrom() + ":" + this.getFrom() + "-" + this.getTo();
 	}
-	
+
+	/** Get midpoint of genomic interval 
+	 * */
 	private int getMidpoint(){
 		int range= this.to - this.from + 1;
 		if(range % 2 == 1){
 			range--;
 		}
-		// * Get midpoint of genomic interval
 		int midpoint= range / 2 + this.from;
 		return midpoint;
 	}
@@ -337,6 +338,27 @@ public class GenomicCoords implements Cloneable {
 			this.to= this.from;
 		}
 		// this.setRefSeq();
+	}
+	
+	/** Move coordinates to the left hand side of the current window
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * */
+	public void left() throws InvalidGenomicCoordsException, IOException{
+		int w= this.getUserWindowSize();
+		this.to= this.getMidpoint();
+		if((this.to - this.from) < w){
+			this.to += (w - (this.to - this.from));  
+		}
+	}
+	
+	public void right() throws InvalidGenomicCoordsException, IOException{
+		int w= this.getUserWindowSize();
+		this.from= this.getMidpoint();
+		if((this.to - this.from) < w){
+			this.from -= (w - (this.to - this.from));  
+		}
+		
 	}
 	
 	/**

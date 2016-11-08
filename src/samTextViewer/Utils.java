@@ -38,6 +38,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -58,13 +59,17 @@ import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.tdf.TDFReader;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import filter.FirstOfPairFilter;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
+import ucsc.UcscGenePred;
 
 /**
  * @author berald01
@@ -251,8 +256,12 @@ public class Utils {
 	
 	/** Get the first chrom string from first line of input file. As you add support for more filetypes you should update 
 	 * this function. This method is very dirty and shouldn't be trusted 100% 
-	 * @throws InvalidGenomicCoordsException */
-	public static String initRegionFromFile(String x) throws IOException, InvalidGenomicCoordsException{
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidCommandLineException 
+	 * @throws ClassNotFoundException */
+	public static String initRegionFromFile(String x) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		UrlValidator urlValidator = new UrlValidator();
 		String region= "";
 		TrackFormat fmt= Utils.getFileTypeFromName(x); 
@@ -285,7 +294,10 @@ public class Utils {
 			} 
 			System.err.println("Cannot initialize from " + x);
 			throw new RuntimeException();
-		} else {
+		} else if(Utils.isUcscGenePredSource(x)){
+			return initRegionFromUcscGenePredSource(x);
+			
+		}else {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
 			BufferedReader br;
 			GZIPInputStream gzipStream;
@@ -323,6 +335,22 @@ public class Utils {
 		throw new RuntimeException();
 	}
 	
+	private static String initRegionFromUcscGenePredSource(String x) throws ClassNotFoundException, IOException, InvalidCommandLineException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		
+		String xfile= new UcscGenePred(x, 1).getTabixFile();
+		GZIPInputStream gzipStream;
+		InputStream fileStream = new FileInputStream(xfile);
+		gzipStream = new GZIPInputStream(fileStream);
+		Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+		BufferedReader br = new BufferedReader(decoder);
+		String line= br.readLine();
+		br.close();
+		List<String> xlist= Lists.newArrayList(Splitter.on("\t").split(line));
+		String region= xlist.get(0) + ":" + xlist.get(3) + "-" + xlist.get(4);
+		return region;
+		
+	}
+
 	public static boolean bamHasIndex(String bam) throws IOException{
 
 		/*  ------------------------------------------------------ */
@@ -943,18 +971,9 @@ public class Utils {
 		List<String> addMe= new ArrayList<String>();
 		for(String x : newFileNames){
 			x= x.trim();
-			if(!new File(x).exists() && !Utils.urlFileExists(x)){
+			if(!new File(x).isFile() && !Utils.urlFileExists(x) && !Utils.isUcscGenePredSource(x)){
 				dropMe.add(x);
 				System.err.println("Unable to add " + x);
-//				throw new InvalidCommandLineException();
-//				try{
-//					// This is not a local file, see if you can download it from ucsc
-//					UcscFetch ucsc= new UcscFetch(x);
-//					addMe.add(ucsc.genePredToGtf().getAbsolutePath());
-//				} catch(Exception e){
-//					System.err.println("Unable to fecth " + x);
-//					// throw new InvalidCommandLineException();
-//				}
 			} 
 		}
 		for(String x : dropMe){
@@ -1306,5 +1325,17 @@ public class Utils {
 		}
 		return chrom + ":" + xfrom + xto;
 	} 
+	
+	/** True if filename is a UCSC genePred file or a valid connection to database. 
+	 * */
+	public static boolean isUcscGenePredSource(String filename) {
+		try{
+			new UcscGenePred(filename, 1000);
+			return true;
+		} catch(Exception e) {
+			return false;
+		}
+	}
+
 	
 }

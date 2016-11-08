@@ -127,7 +127,7 @@ public class MakeTabixFileTest {
 		
 	}
 	
-	// @Test
+	@Test
 	public void canCompressAndIndexUnsortedURL() throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
 		
 		String infile= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/wgEncodeSydhTfbsGm12878P300bStdPk.narrowPeak.gz";

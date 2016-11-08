@@ -278,17 +278,18 @@ public class UtilsTest {
 	} 
 
 	@Test
-	public void canInitRegion() throws IOException, InvalidGenomicCoordsException{
+	public void canInitRegion() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		assertEquals("chrM", Utils.initRegionFromFile("test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
 		assertEquals("chr1", Utils.initRegionFromFile("/Users/berald01/Downloads/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
 		assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
 		assertEquals("chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
 		assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
+		assertTrue(Utils.initRegionFromFile("hg19:refGene").startsWith("chr1:"));
 	}
 	
 	@Test
-	public void canInitRegionFromURLBam() throws IOException, InvalidGenomicCoordsException{
+	public void canInitRegionFromURLBam() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		String reg= Utils.initRegionFromFile("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02AlnRep1.bam");
 		assertEquals("chr1", reg);
 	}
@@ -509,10 +510,10 @@ public class UtilsTest {
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		
 		File filename= new File("tmp.txt");
-		filename.delete();
-		Utils.printer(tc.getTitle(), "tmp.txt");
-		Utils.printer(tc.printToScreen(), "tmp.txt");
-		// Check tmp.txt looks ok.
+		filename.deleteOnExit();
+		Utils.printer(tc.getTitle(), filename.getAbsolutePath());
+		Utils.printer(tc.printToScreen(), filename.getAbsolutePath());
+		
 	}
 	
 	@Test
@@ -527,6 +528,7 @@ public class UtilsTest {
 	@Test
 	public void testPng() throws IOException{
 		Utils.convertTextFileToGraphic(new File("test_data/chr7_5564857-5570489.txt"), new File("tmp.png"));
+		new File("tmp.png").deleteOnExit();
 	}
 	
 	@Test
@@ -539,5 +541,11 @@ public class UtilsTest {
 		assertEquals("chr1:10", Utils.coordinatesToString("chr1", 10, 9));
 	}
 	
-	
+	@Test
+	public void canTestForUcscSource(){
+		assertTrue(Utils.isUcscGenePredSource("dm6:refGene"));
+		assertTrue(Utils.isUcscGenePredSource("test_data/refGene.hg19.chr7.txt.gz"));
+		assertTrue(Utils.isUcscGenePredSource("http://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/refGene.txt.gz"));
+		assertTrue(!Utils.isUcscGenePredSource("test_data/hg19_genes.gtf.gz"));
+	}
 }

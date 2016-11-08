@@ -1,24 +1,16 @@
 package tracks;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
-
 import org.apache.commons.lang3.StringUtils;
 
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.readers.TabixReader;
@@ -26,6 +18,7 @@ import htsjdk.tribble.readers.TabixReader.Iterator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
+import ucsc.UcscGenePred;
 
 public class TrackIntervalFeature extends Track {
  
@@ -39,33 +32,41 @@ public class TrackIntervalFeature extends Track {
 	
 	/* C o n s t r u c t o r */
 
-	public TrackIntervalFeature(String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public TrackIntervalFeature(final String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-	    // ----------------------------------------------------------
-		this.type= Utils.getFileTypeFromName(new File(filename).getName());
-		String sourceFile= filename;
+		String sourceFile= filename; // sourceFile is what is actually used to construct the tabix file. 
 		
-		if( ! Utils.hasTabixIndex(new File(filename).getAbsolutePath())){
-			// Tabix index not found for this file. Sort and index input to tmp.
-
-			String suffix= new File(filename).getName();
-			if( ! suffix.endsWith(".gz")){
-				suffix += ".gz";
-			}
-			sourceFile= File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath();
-			new File(sourceFile).deleteOnExit();
-			new File(sourceFile + ".tbi").deleteOnExit();
-
-			new MakeTabixIndex(filename, new File( sourceFile ), Utils.trackFormatToTabixFormat(this.type));
-			
-		} 
+		if(Utils.isUcscGenePredSource(filename)){
+			UcscGenePred ucsc = null;
+			try {
+				ucsc = new UcscGenePred(filename, -1);
+				sourceFile= ucsc.getTabixFile();
+				this.type= TrackFormat.GFF;
+			} catch (InvalidCommandLineException e) {
+				//
+			} 
+		} else {
+			this.type= Utils.getFileTypeFromName(new File(filename).getName());			
+			if( ! Utils.hasTabixIndex(new File(filename).getAbsolutePath())){
+				// Tabix index not found for this file. Sort and index input to tmp.
+	
+				String suffix= new File(filename).getName();
+				if( ! suffix.endsWith(".gz")){
+					suffix += ".gz";
+				}
+				sourceFile= File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath();
+				new File(sourceFile).deleteOnExit();
+				new File(sourceFile + ".tbi").deleteOnExit();
+	
+				new MakeTabixIndex(filename, new File( sourceFile ), Utils.trackFormatToTabixFormat(this.type));	
+			} 
+		}
 		this.tabixReader= new TabixReader(new File(sourceFile).getAbsolutePath());
-		// ----------------------------------------------------------
 		this.setGc(gc);
-		this.setFilename(filename);
-		
+		this.setFilename(filename);		
 	}
 	
+
 	protected TrackIntervalFeature(GenomicCoords gc){
 		
 	}

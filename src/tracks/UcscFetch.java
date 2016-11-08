@@ -42,7 +42,8 @@ import samTextViewer.ArgParse;
 import samTextViewer.Main;
 import utils.GtfLine;
 
-/** Class to extract annotation from UCSC Genome Browser using genePredToGtf.
+/** TO BE DEPRECATED --- 
+ * Class to extract annotation from UCSC Genome Browser using genePredToGtf.
  * */
 public class UcscFetch {
 

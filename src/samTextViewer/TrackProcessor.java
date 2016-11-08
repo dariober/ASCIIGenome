@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+
+import org.apache.commons.lang3.StringUtils;
+
 import coloring.Png;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -70,10 +73,9 @@ public class TrackProcessor {
 
 		// Position, memory, etc
 		// ---------------------
-		String footer= currentGC.toString() + "; " + 
-				Math.rint(currentGC.getBpPerScreenColumn() * 10d)/10d + " bp/char; " + this.getMemoryStat();
+		String footer= this.getFooter(currentGC);
 		if(!noFormat){
-			Utils.printer("\033[48;5;231;34m" + footer + "\033[48;5;231;30m; \n", this.snapshotFile);
+			Utils.printer("\033[48;5;231;34m" + footer + "\033[48;5;231;30m\n", this.snapshotFile);
 		} else {
 			Utils.printer(footer + "\n", this.snapshotFile);
 		}
@@ -85,6 +87,20 @@ public class TrackProcessor {
 		} 	
 	}
 	
+	private String getFooter(GenomicCoords currentGC) throws InvalidGenomicCoordsException, IOException {
+		String footer= currentGC.toString() + "; " + 
+				Math.rint(currentGC.getBpPerScreenColumn() * 10d)/10d + " bp/char; " + this.getMemoryStat();
+        // Add midpoint marker
+        int mid= (int) Math.rint(this.getWindowSize() / 2.0);
+        int npad= mid - footer.length();
+        if(npad > 1){
+            String pad= StringUtils.repeat(" ", npad - 1);
+            footer += pad;
+            footer += "/\\";
+        }
+		 return footer;
+	}
+
 	public void exportTrackSetSettings(String filename) throws IOException{
 		
 		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename)));
@@ -115,7 +131,7 @@ public class TrackProcessor {
 	} 
 
 	
-	private String getMemoryStat(){
+	private String getMemoryStat() throws InvalidGenomicCoordsException, IOException{
 		float mem= (float) ((float)Runtime.getRuntime().totalMemory() / 1000000d);
 		String memStats= "Mem: " +  Math.round(mem * 10)/10 + " MB";
 		return memStats;

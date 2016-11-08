@@ -16,22 +16,25 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
 
 
 - [Navigation](#navigation)
+  - [goto](#goto)
+  - [INT](#int)
+  - [+](#+)
+  - [-](#-)
   - [f](#f)
   - [b](#b)
   - [ff](#ff)
   - [bb](#bb)
-  - [goto](#goto)
   - [zi](#zi)
   - [zo](#zo)
-  - [INT](#int)
-  - [+](#+)
-  - [-](#-)
+  - [l](#l)
+  - [r](#r)
   - [p](#p)
   - [n](#n)
   - [next](#next)
 - [Find](#find)
   - [find](#find)
   - [seqRegex](#seqregex)
+  - [bookmark](#bookmark)
 - [Display](#display)
   - [grep](#grep)
   - [squash](#squash)
@@ -66,30 +69,6 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
 
 ## Navigation
 
-### f
-
-**Usage: f [NUM=0.1]**
-
-Move forward NUM times the size of the current window, 1/10 by default. 
-
-### b
-
-**Usage: b [NUM=0.1]**
-
-Move backward NUM times the size of the current window, 1/10 by default 
-
-### ff
-
-**Usage: ff**
-
-Move forward by 1/2 of a window. A shortcut for `f 0.5` 
-
-### bb
-
-**Usage: bb**
-
-Move backward by 1/2 of a window. A shortcut for `b 0.5` 
-
 ### goto
 
 **Usage: goto chrom:[from]-[to]**
@@ -106,18 +85,6 @@ Or the same
 :chr8:10 
 :chr8
 ```
-
-### zi
-
-**Usage: zi [INT = 1]**
-
-Zoom in INT times. Each zoom halves the window size.  To zoom quickly use INT= 5 or 10 e.g. `zi 10`
-
-### zo
-
-**Usage: zo [INT = 1]**
-
-Zoom out INT times. Each zoom doubles the window size.  To zoom quickly use INT= 5 or 10 e.g. `zo 10`
 
 ### INT
 
@@ -145,6 +112,54 @@ Move forward by INT bases. Suffixes k (kilo) and M (mega) are expanded to x1000 
 
 Move backwards by INT bases. Suffixes k (kilo) and M (mega) are expanded to x1000 and x1,000,000.
 Examples: `-100` or `-10k` or `-10.5m` 
+
+### f
+
+**Usage: f [NUM=0.1]**
+
+Move forward NUM times the size of the current window, 1/10 by default. 
+
+### b
+
+**Usage: b [NUM=0.1]**
+
+Move backward NUM times the size of the current window, 1/10 by default 
+
+### ff
+
+**Usage: ff**
+
+Move forward by 1/2 of a window. A shortcut for `f 0.5` 
+
+### bb
+
+**Usage: bb**
+
+Move backward by 1/2 of a window. A shortcut for `b 0.5` 
+
+### zi
+
+**Usage: zi [INT = 1]**
+
+Zoom in INT times. Each zoom halves the window size.  To zoom quickly use INT= 5 or 10 e.g. `zi 10`
+
+### zo
+
+**Usage: zo [INT = 1]**
+
+Zoom out INT times. Each zoom doubles the window size.  To zoom quickly use INT= 5 or 10 e.g. `zo 10`
+
+### l
+
+**Usage: l**
+
+Go to the Left half of the current window.  Alternate the left and right command to quickly focus on a point of interest. 
+
+### r
+
+**Usage: r**
+
+Go to the Right half of the current window.  Alternate the left and right command to quickly focus on a point of interest. 
 
 ### p
 
@@ -181,15 +196,28 @@ find 'ACTB gene' -> Find the first match of 'ACTB gene' (note single quotes)
 
 ### seqRegex
 
-**Usage: seqRegex [-c] [regex]**
+**Usage: seqRegex [regex] [-c] | [>|>> [file]]**
 
-Find regex in reference sequence and show matches as and additional track.  By default matching is irrespective of case unless the flag `-c` is set. Useful to show restriction enzyme sites, transcription factor motifs, etc. If the regex is omitted the matching is disabled. Examples
+Find regex in reference sequence and show matches as an additional track.  By default matching is irrespective of case unless the flag `-c` is set. If the regex is omitted the matching is disabled. To save the matches in the current coordinates to file in bed format use `>`, or `>>` to append to existing file. Without arguments `>` and `>>` write to file named after the current coordinates. The place holder %r in the file name is expanded to the current coordinates `<chrom>_<start>_<end>`. Examples
 ```
-seqRegex ACTG    -> Case insensitive, actg matched
-seqRegex -c ACTG -> Case sensitive, will not match actg
-seqRegex         -> Disable regex matching track
+seqRegex ACTG       -> Case insensitive, actg matched
+seqRegex -c ACTG    -> Case sensitive, will not match actg
+seqRegex >> %r.bed  -> Save and append to file chrom_start_end.bed.
+seqRegex            -> Disable regex matching track
 ```
 This command is ignored if the reference fasta file is missing.
+
+### bookmark
+
+**Usage: bookmark [name] | [-rm] | [> [file]]**
+
+Add, remove and save positions to bookmark track.  `bookmark` creates a track to save positions of interest. Without arguments, add the current position to the bookmarks, use the argument `name` to assign a name to the feature. `-rm` removes the bookmark matching exactly the current position. `>` saves to <file> the bookmark track in bed format. Examples
+```
+bookmark                -> Add the current position to bookmarks.
+bookmark myGene         -> Add the current position with name myGene
+bookmark -rm            -> Remove the bookmark exactly in this position
+bookmark > books.txt -> Save to file books.txt
+```
 
 ## Display
 
@@ -293,12 +321,15 @@ hideTitle /hide_all/ -> Hide all tracks
 
 ### editNames
 
-**Usage: editNames <pattern> <replacement> [track_re=.*]...**
+**Usage: editNames -t <pattern> <replacement> [track_re=.*]...**
 
-Edit track names by substituting regex pattern with replacement. Pattern and replacement are required arguments, the default regex for track is '.*' (i.e. all tracks). Use "" (empy double quotes) to replace pattern with nothing. Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'
+Edit track names by substituting regex pattern with replacement. Pattern and replacement are required arguments, the default regex for track is '.*' (i.e. all tracks). The -t (test) flag shows what renaming would be done without actually editing the names. Use "" (empty double quotes) to replace pattern with nothing. Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'
 ```
 editNames fk123_ ""    - > hela.bam#1, hela.bed#2
-editNames fk123_ "" bam -> hela.bam#1, fk123_hela.bed#2```
+editNames fk123_ "" bam -> hela.bam#1, fk123_hela.bed#2
+editNames _ ' '           -> fk123 hela.bam#1,  fk123 hela.bed#2
+editNames ^.*# cells      -> cells#1, cells#2
+editNames ^ xx_           -> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)```
 
 ### dataCol
 
@@ -390,9 +421,9 @@ addTracks http://remote/host/peaks.bed
 
 ### dropTracks
 
-**Usage: dropTracks track_regex [track_regex]...**
+**Usage: dropTracks [-t] track_regex [track_regex]...**
 
-Drop tracks matching any of the listed regexes. 
+Drop tracks matching any of the listed regexes. The -t (test) flag only shows what tarcks would be removed without actually removing them.
 Examples:
 ```
 dropTracks bam

@@ -138,6 +138,16 @@ public class InteractiveInput {
 					}
 					proc.getGenomicCoordsHistory().add(gc);
 				
+				} else if(cmdInput.get(0).equals("l")) {
+					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+					gc.left();
+					proc.getGenomicCoordsHistory().add(gc);
+				
+				} else if(cmdInput.get(0).equals("r")) {
+					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+					gc.right();
+					proc.getGenomicCoordsHistory().add(gc);
+					
 				} else if(cmdInput.get(0).equals("setGenome")){
 					cmdInput.remove(0);
 					proc.getGenomicCoordsHistory().setGenome(cmdInput);

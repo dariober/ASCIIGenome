@@ -12,7 +12,11 @@ iterating ASCIIGenome in a for-loop since the JVM and files are loaded only once
 
 * **Save session** Session settings can be saved to file to be reloaded in a new run of ASCIIGenome (*Experimental*).
 
-* **New commands and better API** Some new commands not listed above: `cmdHistory` shows the list of executed commands, `hideTitle` for more compact view, `dropTracks`. Some commands renamed and improved API. Some examples: `filter` now is `grep -i incl_regex -e excl_re <tracks>`; commands `mapq -f -F` have been grouped in the single `samtools` command.
+* **New commands and better API** Some new commands not listed above: 
+`bookmark` to mark positions of interest, `cmdHistory` shows the list of executed commands, 
+`hideTitle` for more compact view, `dropTracks`. Some commands renamed and improved API. 
+Some examples: `filter` now is `grep -i incl_regex -e excl_re <tracks>`; 
+commands `mapq -f -F` have been grouped in the single `samtools` command.
 
 
 * **Performance **

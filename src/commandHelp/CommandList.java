@@ -167,25 +167,6 @@ public class CommandList {
 		List<CommandHelp> cmdList= new ArrayList<CommandHelp>();
 		CommandHelp cmd= new CommandHelp();		
 
-		cmd.setName("f"); cmd.setArgs("[NUM=0.1]"); cmd.inSection= Section.NAVIGATION;
-		cmd.setBriefDescription("Move forward NUM times the size of the current window, 1/10 by default.");  
-		cmdList.add(cmd);
-		
-		cmd= new CommandHelp(); 
-		cmd.setName("b"); cmd.setArgs("[NUM=0.1]"); cmd.inSection= Section.NAVIGATION; 
-		cmd.setBriefDescription("Move backward NUM times the size of the current window, 1/10 by default"); 
-		cmdList.add(cmd);
-		
-		cmd= new CommandHelp();
-		cmd.setName("ff"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION;
-		cmd.setBriefDescription("Move forward by 1/2 of a window. A shortcut for `f 0.5`");  
-		cmdList.add(cmd);
-		
-		cmd= new CommandHelp();
-		cmd.setName("bb"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
-		cmd.setBriefDescription("Move backward by 1/2 of a window. A shortcut for `b 0.5`"); 
-		cmdList.add(cmd);
-		
 		cmd= new CommandHelp();
 		cmd.setName("goto"); cmd.setArgs("chrom:[from]-[to]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Go to region chrom:from-to or to chrom:from or to start of chrom. "); 
@@ -202,19 +183,7 @@ public class CommandList {
 				+ ":chr8"
 				+ "\n```");
 		cmdList.add(cmd);
-				
-		cmd= new CommandHelp();
-		cmd.setName("zi"); cmd.setArgs("[INT = 1]"); cmd.inSection= Section.NAVIGATION; 
-		cmd.setBriefDescription("Zoom in INT times. Each zoom halves the window size. "); 
-		cmd.setAdditionalDescription("To zoom quickly use INT=~5 or 10 e.g. `zi~10`");
-		cmdList.add(cmd);
-		
-		cmd= new CommandHelp();
-		cmd.setName("zo"); cmd.setArgs("[INT = 1]"); cmd.inSection= Section.NAVIGATION; 
-		cmd.setBriefDescription("Zoom out INT times. Each zoom doubles the window size. ");
-		cmd.setAdditionalDescription("To zoom quickly use INT=~5 or 10 e.g. `zo 10`");
-		cmdList.add(cmd);
-		
+
 		cmd= new CommandHelp();
 		cmd.setName("INT"); cmd.setArgs("[INT]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription(""
@@ -244,6 +213,50 @@ public class CommandList {
 				+ "Examples: `-100` or `-10k` or `-10.5m`"); 
 		cmdList.add(cmd);
 		
+		cmd= new CommandHelp(); 
+		cmd.setName("f"); cmd.setArgs("[NUM=0.1]"); cmd.inSection= Section.NAVIGATION;
+		cmd.setBriefDescription("Move forward NUM times the size of the current window, 1/10 by default.");  
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp(); 
+		cmd.setName("b"); cmd.setArgs("[NUM=0.1]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Move backward NUM times the size of the current window, 1/10 by default"); 
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
+		cmd.setName("ff"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION;
+		cmd.setBriefDescription("Move forward by 1/2 of a window. A shortcut for `f 0.5`");  
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
+		cmd.setName("bb"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Move backward by 1/2 of a window. A shortcut for `b 0.5`"); 
+		cmdList.add(cmd);
+						
+		cmd= new CommandHelp();
+		cmd.setName("zi"); cmd.setArgs("[INT = 1]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Zoom in INT times. Each zoom halves the window size. "); 
+		cmd.setAdditionalDescription("To zoom quickly use INT=~5 or 10 e.g. `zi~10`");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
+		cmd.setName("zo"); cmd.setArgs("[INT = 1]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Zoom out INT times. Each zoom doubles the window size. ");
+		cmd.setAdditionalDescription("To zoom quickly use INT=~5 or 10 e.g. `zo 10`");
+		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
+		cmd.setName("l"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Go to the Left half of the current window. ");
+		cmd.setAdditionalDescription("Alternate the left and right command to quickly focus on a point of interest. ");
+		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
+		cmd.setName("r"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Go to the Right half of the current window. ");
+		cmd.setAdditionalDescription("Alternate the left and right command to quickly focus on a point of interest. ");
+		cmdList.add(cmd);
+		
 		cmd= new CommandHelp();
 		cmd.setName("p"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Go to the previous visited position.");
@@ -255,7 +268,6 @@ public class CommandList {
 		cmd.setBriefDescription("Go to the next visited position.");
 		cmd.setAdditionalDescription("Similar to the back and forward arrows of an Internet browser.");
 		cmdList.add(cmd);
-		
 
 		cmd= new CommandHelp();
 		cmd.setName("next"); cmd.setArgs("[-start] [track_id]"); cmd.inSection= Section.NAVIGATION; 
@@ -276,25 +288,6 @@ public class CommandList {
 
 		cmdList.add(cmd);
 
-//		cmd= new CommandHelp();
-//		cmd.setName("next_start"); cmd.setArgs("[track_id]"); cmd.inSection= Section.NAVIGATION; 
-//		cmd.setBriefDescription("Move to the next feature on track_id on *current* chromosome. "); 
-//		cmd.setAdditionalDescription(""
-//				+ "`next` centers the window on the found feature and zooms out. "
-//				+ "This is useful for quickly browsing through annotation files of genes or ChIP-Seq "
-//				+ "peaks in combination with read coverage tracks (bigwig, tdf, etc.). "
-//				+ "`next_start` instead sets the window right at the start of the feature.\n "
-//				+ "\n"
-//				+ "The `next` command does exactly that, it moves to the next feature. "
-//				+ "If there are no more features after the current position it doesn't rewind to the beginning "
-//				+ "(use `1` for that) and it doesn't move to another chromosome, "
-//				+ "use `goto chrom` for that.\n "
-//				+ "\n"
-//				+ "If `track_id` is omitted, the first annotation track is used. "
-//				+ "If track_id is not a feature track (bed, gtf, etc) a more or less ugly warning is issued."); 
-//
-//		cmdList.add(cmd);
-		
 		cmd= new CommandHelp();
 		cmd.setName("find"); cmd.setArgs("[-all] regex [track_id]"); cmd.inSection= Section.FIND; 
 		cmd.setBriefDescription("Find the first record in track_id containing regex."); 
@@ -728,6 +721,8 @@ public class CommandList {
 		paramList.add("bb");
 		paramList.add("zi");
 		paramList.add("zo");
+		paramList.add("l");
+		paramList.add("r");
 		paramList.add("goto");
 		paramList.add("INT");
 		paramList.add("+");
