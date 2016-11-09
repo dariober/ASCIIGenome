@@ -484,7 +484,7 @@ public class CommandList {
 				+ "editNames fk123_ \"\" bam -> hela.bam#1, fk123_hela.bed#2\n"
 				+ "editNames _ ' ' ~~~~~~~~~~-> fk123 hela.bam#1,  fk123 hela.bed#2\n"
 				+ "editNames ^.*# cells ~~~~~-> cells#1, cells#2\n"
-				+ "editNames ^ xx_ ~~~~~~~~~~-> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)"
+				+ "editNames ^ xx_ ~~~~~~~~~~-> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)\n"
 				+ "```");
 		cmdList.add(cmd);
 

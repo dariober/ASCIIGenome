@@ -349,7 +349,8 @@ editNames fk123_ ""    - > hela.bam#1, hela.bed#2
 editNames fk123_ "" bam -> hela.bam#1, fk123_hela.bed#2
 editNames _ ' '           -> fk123 hela.bam#1,  fk123 hela.bed#2
 editNames ^.*# cells      -> cells#1, cells#2
-editNames ^ xx_           -> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)```
+editNames ^ xx_           -> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)
+```
 
 ### dataCol
 
