@@ -196,27 +196,42 @@ find 'ACTB gene' -> Find the first match of 'ACTB gene' (note single quotes)
 
 ### seqRegex
 
-**Usage: seqRegex [regex] [-c] | [>|>> [file]]**
+**Usage: seqRegex [-iupac] [-c] [regex] | [>|>> [file]]**
 
-Find regex in reference sequence and show matches as an additional track.  By default matching is irrespective of case unless the flag `-c` is set. If the regex is omitted the matching is disabled. To save the matches in the current coordinates to file in bed format use `>`, or `>>` to append to existing file. Without arguments `>` and `>>` write to file named after the current coordinates. The place holder %r in the file name is expanded to the current coordinates `<chrom>_<start>_<end>`. Examples
+Find regex in reference sequence and show matches as an additional track.  Options:
+`regex`
+Regex to search. If missing the seq regex track is removed.
+`-iupac`
+Enable the interpretation of the IUPAC ambiguity code. NB: This option simply converts IUPAC chracters in the pattern to the corresponding regex.
+`-c`
+Enable case-sensitive matching. Default is to ignore case.
+`>` and `>>`
+Send the matches in the current window to `file`. As in Shell, `>` overwrites existing file, `>>` append to file. Without arguments `>` and `>>` write to file named after the current coordinates. The place holder %r in the file name is expanded to the current coordinates `<chrom>_<start>_<end>`.
+Examples:
 ```
-seqRegex ACTG       -> Case insensitive, actg matched
-seqRegex -c ACTG    -> Case sensitive, will not match actg
-seqRegex >> %r.bed  -> Save and append to file chrom_start_end.bed.
-seqRegex            -> Disable regex matching track
+seqRegex ACTG        -> Case insensitive, actg matched
+seqRegex -c ACTG     -> Case sensitive, will not match actg
+seqRegex -iupac ARYG -> Interpret (converts) R as [AG] and Y as [CT]
+seqRegex >> %r.bed   -> Save and append to file chrom_start_end.bed
+seqRegex             -> Disable regex matching track
 ```
 This command is ignored if the reference fasta file is missing.
 
 ### bookmark
 
-**Usage: bookmark [name] | [-rm] | [> [file]]**
+**Usage: bookmark [name] | [-rm] | [-print] | [> [file]]**
 
-Add, remove and save positions to bookmark track.  `bookmark` creates a track to save positions of interest. Without arguments, add the current position to the bookmarks, use the argument `name` to assign a name to the feature. `-rm` removes the bookmark matching exactly the current position. `>` saves to <file> the bookmark track in bed format. Examples
+Add, remove and save positions to bookmark track.  `bookmark` creates a track to save positions of interest. Without arguments, add the current position to the bookmarks, use the argument `name` to assign a name to the feature.
+`-rm` removes the bookmark matching *exactly* the current position.
+`>` saves the bookmark to file.
+`-print` prints to screen the list of current bookmarks.
+Examples:
 ```
-bookmark                -> Add the current position to bookmarks.
-bookmark myGene         -> Add the current position with name myGene
-bookmark -rm            -> Remove the bookmark exactly in this position
-bookmark > books.txt -> Save to file books.txt
+bookmark              -> Add the current position to bookmarks.
+bookmark myGene       -> Add the current position with name myGene
+bookmark -rm          -> Remove the bookmark exactly in this position
+bookmark > books.txt  -> Save to file books.txt
+bookmark -print       -> Show table of bookmarks
 ```
 
 ## Display
@@ -287,14 +302,19 @@ Set track height to INT lines of text for all tracks matching regexes.  Setting 
 
 ### ylim
 
-**Usage: ylim min max [track_regex = .*]...**
+**Usage: ylim <NUM|min|na> <NUM|min|na> [track_regex = .*]...**
 
-Set the y-axis limit for all tracks matched by regexes. Use `na` to autoscale to min and/or max. This command applies only to tracks displaying quantitative data on y-axis (e.g. bigwig, tdf), the other tracks are unaffected.
+Set the y-axis limit for all tracks matched by regexes. The first two arguments set the min and max limits. The 3rd argument is a list of regexes to capture the tracks to reset. Argument min and max can be:
+* Numeric to fix the limits exactly to these values
+* `na` to scale tracks to their individual min and/or max
+* `min` and `max` to set to the min and max of all tracks.
+This command applies only to tracks displaying quantitative data on y-axis (e.g. bigwig, tdf), the other tracks are unaffected.
 Examples:
 ```
-ylim 0 50      ## Set min= 0 and max= 50 in all tracks.
-ylim 0 na      ## Set min to 0 and autoscale the max. Apply to all tracks
-ylim na na tdf ## Autoscale min and max. Apply to all tracks matching 'tdf'
+ylim 0 50      -> Set min= 0 and max= 50 in all tracks.
+ylim 0 na      -> Set min to 0 and autoscale the max. Apply to all tracks
+ylim na na tdf -> Autoscale min and max. Apply to all tracks matching 'tdf'
+ylim min max   -> Set to the min and max of all tracks
 ```
 
 

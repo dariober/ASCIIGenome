@@ -65,10 +65,10 @@ Installation quick start
 In the commands below replace version number with the latest from [releases](https://github.com/dariober/ASCIIGenome/releases):
 
 ```
-wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.2.0.zip
-unzip ASCIIGenome-0.2.0.zip
+wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.4.0.zip
+unzip ASCIIGenome-0.4.0.zip
 
-cd ASCIIGenome-0.2.0/
+cd ASCIIGenome-0.4.0/
 chmod a+x ASCIIGenome
 cp ASCIIGenome.jar /usr/local/bin/ # Or ~/bin/
 cp ASCIIGenome /usr/local/bin/     # Or ~/bin/ 
@@ -397,10 +397,12 @@ Tips gotchas and miscellanea
 ============================
 
 * **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow
-when the window size grows above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are
-loaded in memory unless they are indexed with `tabix`.
+when the window size grows above a few hundreds of kilobases.
 
-* **Regular expression** Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
+* **Regular expression** ASCIIGenome makes extensive use of regular expressions. 
+Most commands use regular expression in *case sensitive* mode. 
+Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i)bam' to capture 'foo.bam' and 'foo.BAM'. 
+Note that the command `seqRegex` by default is case insensitive, unless the `-c` is set.
 
 * When displaying bam files, `ASCIGenome` is hardcoded to disable the coverage and read tracks if
 the window size is >100,000 bp. This is to prevent the browsing to become horribly slow. To display

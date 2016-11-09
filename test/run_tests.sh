@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # These tests are far from comprehensive since they don't check the interactive session
-## MEMO: use `less -R -S` to view colours on terminal with less
 
 # Setup: Path to jar and data
 # ===========================
@@ -22,7 +21,6 @@ fi
 echo "CAN LOAD BAM FILES"
 java -Xmx500m -jar $stvExe -r chr7:5598650-5601530 ds051.actb.bam ear045.oxBS.actb.bam -ni
 java -Xmx500m -jar $stvExe -r chr7:5598650-5601530 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -ni 
-java -Xmx500m -jar $stvExe -rpm -r chr7:5598650-5601530 ds051.actb.bam ear045.oxBS.actb.bam -ni 
 java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x 'samtools -q 10 -F 16' -ni 
 
 echo "CAN SHOW BS DATA"
@@ -38,11 +36,8 @@ java -Xmx500m -jar $stvExe refSeq.hg19.short.sort.bed.gz -ni
 echo "FROM URL"
 java -Xmx500m -jar $stvExe http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/wgEncodeSydhTfbsGm12878P300bStdPk.narrowPeak.gz -ni
 
-echo "FROM UCSC"
-java -Xmx500m -jar $stvExe dm6:refGene -ni
-
-echo "TABIX FILES"
-java -Xmx500m -jar $stvExe test.bedGraph.gz -ni
+#echo "FROM UCSC"
+#java -Xmx500m -jar $stvExe dm6:refGene -ni
 
 echo "BIGWIG FROM URL"
 java -Xmx500m -jar $stvExe -r chr7:5494331-5505851 http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/wgEncodeSydhTfbsGm12878Nrf1IggmusSig.bigWig -ni
@@ -68,11 +63,12 @@ rm deleteme*
 
 echo "SAVING AND LOADING SESSION"
 java -Xmx500m -jar $stvExe -x 'sessionSave deleteme.txt' -ni -g hg19 ear045.oxBS.actb.tdf hg19.gencode_genes_v19.gtf.gz batch_actb.bed > /dev/null
+java -Xmx500m -jar $stvExe -x deleteme.txt
+rm deleteme.txt
 
 echo -e "\n\nDONE\n\n"
 
 echo -e "PRINT HELP"
-java -Xmx500m -jar $stvExe -h &&
-
+java -Xmx500m -jar $stvExe -h
 
 exit

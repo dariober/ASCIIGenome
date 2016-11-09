@@ -27,6 +27,17 @@ public class GenomicCoordsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void canGetStringRegion() throws InvalidGenomicCoordsException, IOException{
+		assertEquals("chr7:1-100", new GenomicCoords("chr7:1-100", null, null).toStringRegion());
+		
+		GenomicCoords gc= new GenomicCoords("chr7:1", null, null);
+		assertTrue(gc.toStringRegion().matches("^chr7:1-\\d+$")); // String region is something like chr7:1-79
+		
+		gc= new GenomicCoords("chr7", null, null);
+		assertTrue(gc.toStringRegion().matches("^chr7:1-\\d+$")); // chr7:1-79
+	}
+	
+	@Test
 	public void canPrintChromMap() throws InvalidGenomicCoordsException, IOException{
 			
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", samSeqDict, null);

@@ -23,7 +23,6 @@ import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
-import tracks.TrackSeqRegex;
 import tracks.TrackSet;
 
 /**
@@ -62,24 +61,27 @@ public class Main {
 
 		/* Initialize trackSet */
 		/* ------------------- */
-		final GenomicCoordsHistory gch= new GenomicCoordsHistory();
+		// This part only prepares a dummy GenomicCoords object to initialize the start position:
+		// ----------------------------
 		region= initRegion(region, inputFileList, fasta, genome);
-		gch.add(new GenomicCoords(region, null, null));
+		
+		GenomicCoords initGc= new GenomicCoords(region, null, null);
+		
 		List<String>initGenomeList= new ArrayList<String>();
 		for(String x : inputFileList){
 			initGenomeList.add(x);
 		}
 		initGenomeList.add(fasta);
 		initGenomeList.add(genome);
-		gch.current().setGenome(initGenomeList);
+		initGc.setGenome(initGenomeList);
+		// ----------------------------
+		// Genomic positions start here:
+		final GenomicCoordsHistory gch= new GenomicCoordsHistory();
+		gch.add(new GenomicCoords(initGc.toStringRegion(), initGc.getSamSeqDict(), initGc.getFastaFile()));
+
 		final TrackSet trackSet= new TrackSet(inputFileList, gch.current());
 		final TrackProcessor proc= new TrackProcessor(trackSet, gch);
 		
-//		if(proc.getGenomicCoordsHistory().current().getFastaFile() != null){
-//			TrackSeqRegex re= new TrackSeqRegex(proc.getGenomicCoordsHistory().current());
-//			proc.getTrackSet().addTrack(re, "regex_seq_matches");
-//		}
-
 		proc.setNoFormat(opts.getBoolean("noFormat"));
 		
 		// Put here the previous command so that it is re-issued if no input is given
@@ -118,7 +120,7 @@ public class Main {
 		// See if we need to process the exec arg before going to interactive mode. 
 		// Also if we are in non-interactive mode, we process the track set now and later exit 
 		console.clearScreen();
-		console.flush();
+		console.flush();		
 		proc.iterateTracks();
 		if(!exec.isEmpty() || opts.getBoolean("nonInteractive")){
 

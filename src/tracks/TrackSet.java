@@ -1360,6 +1360,12 @@ public class TrackSet {
 			isCaseSensisitive= true;
 			args.remove("-c");
 		}
+
+		boolean isIupac= false;
+		if(args.contains("-iupac")){
+			isIupac= true;
+			args.remove("-iupac");
+		}		
 		
 		String seqRegex= null;
 		if(args.size() == 0){
@@ -1377,6 +1383,7 @@ public class TrackSet {
 		for(Track tr : this.getTrackList()){
 			if(tr instanceof TrackSeqRegex){
 				((TrackSeqRegex) tr).setCaseSensitive(isCaseSensisitive);
+				((TrackSeqRegex) tr).setIupac(isIupac);
 				tr.setSeqRegex(seqRegex);
 			}
 		}
@@ -1397,7 +1404,7 @@ public class TrackSet {
 			// Not found: Try to create a new TrackSeqRegex
 			if(genomicCoords.getFastaFile() != null){
 				TrackSeqRegex re= new TrackSeqRegex(genomicCoords);
-				this.addTrack(re, "regex_seq_matches");
+				this.addTrack(re, "seqRegex");
 				found= true;
 			}
 		}

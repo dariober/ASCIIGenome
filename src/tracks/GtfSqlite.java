@@ -52,6 +52,7 @@ public class GtfSqlite {
 		
 	    // Get a tmp file name: Delete tmp file, keep the name.
 	    File tmpfile= File.createTempFile("gtf.", ".tmp.db");
+	    tmpfile.deleteOnExit();
 	    String sqlitedbName= tmpfile.getName();
 	    tmpfile.delete();
 	    

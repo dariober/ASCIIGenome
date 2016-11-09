@@ -93,6 +93,19 @@ public class TrackSeqRegexTest {
 		trackSeqRegex.setSeqRegex("cG");
 		assertTrue(trackSeqRegex.getIntervalFeatureList().size() == 0);
 	}
+
+	@Test
+	public void canIntrepretIupac() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("seq:1-100", null, "test_data/seq_cg.fa");
+		TrackSeqRegex trackSeqRegex= new TrackSeqRegex(gc);
+		trackSeqRegex.setNoFormat(true);
+		trackSeqRegex.setIupac(true); // NB: Must be set BEFORE setSeqRegex;
+		trackSeqRegex.setSeqRegex("atcKVNMNNNN");
+		
+		assertTrue(trackSeqRegex.getIntervalFeatureList().size() > 5 && trackSeqRegex.getIntervalFeatureList().size() < 100); 
+		assertTrue(trackSeqRegex.printToScreen().startsWith("ATCGAT"));
+	}
 	
 	@Test 
 	public void handlingMissingFastaFile() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{

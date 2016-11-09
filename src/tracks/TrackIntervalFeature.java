@@ -55,10 +55,11 @@ public class TrackIntervalFeature extends Track {
 				if( ! suffix.endsWith(".gz")){
 					suffix += ".gz";
 				}
-				this.setWorkFilename(File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath());
-				new File(this.getWorkFilename()).deleteOnExit();
-				new File(this.getWorkFilename() + ".tbi").deleteOnExit();
-	
+				String tmpWorkFile= File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath();
+				new File(tmpWorkFile).deleteOnExit();
+				new File(new File(tmpWorkFile).getAbsolutePath() + ".tbi").deleteOnExit();
+				this.setWorkFilename(tmpWorkFile);	
+				
 				new MakeTabixIndex(filename, new File( this.getWorkFilename() ), Utils.trackFormatToTabixFormat(this.type));	
 			} 
 		}
@@ -336,10 +337,9 @@ public class TrackIntervalFeature extends Track {
 		}
 		return StringUtils.join(printable, "");
 	}
-	
-	@Override
-	public String getTitle(){
-		
+
+	protected String getUnformattedTitle(){
+
 		if(this.isHideTitle()){
 			return "";
 		}
@@ -360,10 +360,13 @@ public class TrackIntervalFeature extends Track {
 	                 + " N: " + this.intervalFeatureList.size()
 	                 + sq
 	                 + gapped;
-		this.getHideRegex();
-		return this.formatTitle(title) + "\n";
+		return title;
 	}
-
+	
+	@Override
+	public String getTitle(){
+		return this.formatTitle(this.getUnformattedTitle()) + "\n";
+	}
 	
 	
 	/** Remove positional duplicates from list of interval features for more compact visualization. 

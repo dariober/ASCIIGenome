@@ -39,11 +39,10 @@ public class TrackBookmark extends TrackIntervalFeature {
 		// Prepare bookmark file
 		// =====================
 	    // First write out the current position as plain text. Then gzip and index.
-		File bookmarkPlain= File.createTempFile("asciigenome.bookmarks.", ".bed"); // new File("bookmark");
+		File bookmarkPlain= File.createTempFile("asciigenome.bookmarks.", ".gff"); // new File("bookmark");
 		bookmarkPlain.deleteOnExit();
 		BufferedWriter wr = new BufferedWriter(new FileWriter(bookmarkPlain));
-		wr.write(gc.getChrom() + "\t" + (gc.getFrom() - 1) + "\t" + 
-				gc.getTo() + "\t" + nameForBookmark + "\n");
+		wr.write(this.positionToGffLine(gc, nameForBookmark) + "\n"); // gc.getChrom() + "\t" + (gc.getFrom() - 1) + "\t" + gc.getTo() + "\t" + nameForBookmark + "\n");
 		wr.close();
 
 		File bookmark= new File(bookmarkPlain + ".gz");
@@ -52,11 +51,11 @@ public class TrackBookmark extends TrackIntervalFeature {
 		this.setFilename(bookmark.getAbsolutePath());
 		this.setWorkFilename(bookmark.getAbsolutePath());
 		
-		new MakeTabixIndex(bookmarkPlain.getAbsolutePath(), bookmark, TabixFormat.BED);
+		new MakeTabixIndex(bookmarkPlain.getAbsolutePath(), bookmark, TabixFormat.GFF);
 		bookmarkPlain.delete();
 		
 		this.tabixReader= new TabixReader(bookmark.getAbsolutePath());
-		this.setType(TrackFormat.BED);
+		this.setType(TrackFormat.GFF);
 		this.setGc(gc);
 	}
 		
@@ -87,25 +86,31 @@ public class TrackBookmark extends TrackIntervalFeature {
 			wr.write(line + "\n");
 		}
 		// Add new bookamrk
-		wr.write(this.positionToBedLine(nameForBookmark) + "\n");
+		wr.write(this.positionToGffLine(this.getGc(), nameForBookmark) + "\n");
 		br.close();
 		wr.close();
 
 		// Recompress and index replacing the original bgzip file
-		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.BED);
+		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.GFF);
 		plainNew.delete();
 		this.tabixReader= new TabixReader(this.getWorkFilename());
 		// Update track.
 		this.update();
 	}
 	
-	/** Convert current position to printable bed line with given feature name.
+	/** Convert current position to printable GFF line with given feature name.
 	 * */
-	private String positionToBedLine(String bedFeatureName){
-		return this.getGc().getChrom() + "\t" + (this.getGc().getFrom() - 1) + "\t" + this.getGc().getTo() + "\t" +
-				bedFeatureName;
+	private String positionToGffLine(GenomicCoords gc, String nameForBookmark){
+		
+		nameForBookmark= nameForBookmark.replaceAll("\"", "_"); // This is a hack to prevent troubles getting back name from GFF raw line.
+		
+		return gc.getChrom() 
+				+ "\tASCIIGenome\tbookmark\t" + gc.getFrom() + "\t" 
+				+ gc.getTo() 
+				+ "\t.\t+\t.\tID=\"" + nameForBookmark + "\"";
 	}
 
+	
 	/** Remove the bookmark matching the exact coordinates of the current position. 
 	 * Bookmarks partially overlapping are not removed. 
 	 * @throws IOException 
@@ -133,8 +138,8 @@ public class TrackBookmark extends TrackIntervalFeature {
 				List<String>pos= Lists.newArrayList(Splitter.on("\t").split(line));
 				
 				if(this.getGc().getChrom().equals(pos.get(0)) && 
-				   (this.getGc().getFrom() - 1) == Integer.parseInt(pos.get(1)) && 
-				   this.getGc().getTo() == Integer.parseInt(pos.get(2))){
+				   this.getGc().getFrom() == Integer.parseInt(pos.get(3)) && 
+				   this.getGc().getTo() == Integer.parseInt(pos.get(4))){
 					continue;
 				}
 			}
@@ -144,7 +149,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		br.close();
 		
 		// Recompress and index replacing the original bgzip file
-		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.BED);
+		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.GFF);
 		plainNew.delete();
 		this.tabixReader= new TabixReader(this.getWorkFilename());
 		// Update track.
@@ -200,12 +205,16 @@ public class TrackBookmark extends TrackIntervalFeature {
 		return Joiner.on(" && ").join(set);
 	}
 	
-	/** Parse a raw line read from bed file to return a command string that reproduces this 
+	/** Parse a raw line read from GFF file to return a command string that reproduces this 
 	 * bookmark entry. 
 	 * */
 	private String rawLineToBookmarkCmd(String rawLine){
 		List<String>line= Lists.newArrayList(Splitter.on("\t").split(rawLine));
-		String cmd= "goto " + line.get(0) + ":" + (Integer.parseInt(line.get(1))+1) + "-" + line.get(2) + " && ";
+		
+		// Get bookmark name. It will not cope well with double quotes in the name!!
+		String name= line.get(8).replaceAll(".*ID=\"", "").replaceAll("\".*", "");
+		
+		String cmd= "goto " + line.get(0) + ":" + line.get(3) + "-" + line.get(4) + " && ";
 		cmd += "bookmark " + line.get(3);
 		return cmd;
 	}
@@ -221,9 +230,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 		int i= 1;
 		while( (line = br.readLine()) != null) {
 			List<String> lst= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(line));
-			String reg= lst.get(0) + ":" + lst.get(1) + "-" + lst.get(2); 
+			String reg= lst.get(0) + ":" + Integer.parseInt(lst.get(3)) + "-" + lst.get(4); 
 			line= i + ":\t" + reg + "\t" + line;
-			marks.add(line + "\t");
+			marks.add(line);
 			i++;
 		}
 		br.close();

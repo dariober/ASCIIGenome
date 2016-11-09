@@ -64,7 +64,7 @@ public class GenomicCoords implements Cloneable {
 		}
 		
 		if(to == null){ 
-			to= from + this.getTerminalWindowSize() - 1; 
+			to= from + this.getTerminalWindowSize() - 1;
 		}
 		
 		// Check valid input
@@ -209,7 +209,7 @@ public class GenomicCoords implements Cloneable {
 	} 
 
 	public void correctCoordsAgainstSeqDict(SAMSequenceDictionary samSeqDict) throws InvalidGenomicCoordsException, IOException{
-		
+
 		if(samSeqDict == null || samSeqDict.size() == 0){
 			// Just check start pos
 			if (this.from <=0 ){
@@ -242,7 +242,7 @@ public class GenomicCoords implements Cloneable {
 				this.to= samSeqDict.getSequence(this.chrom).getSequenceLength();
 			}
 		}
-		if( this.to != null && this.to > samSeqDict.getSequence(this.chrom).getSequenceLength() ) {
+		if( this.to != null && this.to > samSeqDict.getSequence(this.chrom).getSequenceLength() ) {			
 			this.to= samSeqDict.getSequence(this.chrom).getSequenceLength();
 		}
 	}
@@ -252,7 +252,7 @@ public class GenomicCoords implements Cloneable {
 		return this.chrom + ":" + this.from + "-" + this.to + "; " + NumberFormat.getNumberInstance(Locale.UK).format(range) + " bp";
 	}
 	
-	/** Retunr current position in the form chrom:start-end */
+	/** Return current position in the form chrom:start-end */
 	public String toStringRegion(){
 		return this.getChrom() + ":" + this.getFrom() + "-" + this.getTo();
 	}

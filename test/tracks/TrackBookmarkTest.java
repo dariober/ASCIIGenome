@@ -50,7 +50,7 @@ public class TrackBookmarkTest {
 		
 		gc= new GenomicCoords("chr1:1-1000", null, null); // Zoom out to span both bookmarks.  
 		bm.setGc(gc);
-		// Just check we created a correct test object with tow intervals
+		// Just check we created a correct test object with two intervals
 		assertEquals(2, bm.getIntervalFeatureList().size());
 
 		// Partial overlap not touched 
@@ -89,6 +89,26 @@ public class TrackBookmarkTest {
 		assertTrue(bm.settingsToString().contains("goto chr2:2000-3000"));
 		
 		// System.out.println(bm.settingsToString());
+	}
+	
+	@Test
+	public void canPrintBookmarksAsList() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", null, null);
+		TrackBookmark bm= new TrackBookmark(gc, "book1");
+		bm.setNoFormat(true);
+		
+		gc= new GenomicCoords("chr1:200-300", null, null);
+		bm.setGc(gc);
+		bm.addBookmark("book2");
+
+		gc= new GenomicCoords("chr2:2000-3000", null, null);
+		bm.setGc(gc);
+		bm.addBookmark("foo bar");
+		
+		assertEquals(3, bm.asList().size());
+		assertTrue(bm.asList().get(1).contains("chr1:200-300"));
+		assertTrue(bm.asList().get(2).contains("foo bar"));
 	}
 	
 }

@@ -4,7 +4,7 @@ TODO
 Features
 --------
 
-* `export` command to write to file the data in the current interval. API:
+* `export` command to write to file the data in the current interval? API:
 
 ```
 export [track_regex = .*] > [outdir/]
@@ -14,18 +14,9 @@ Each track selected by regex will be written to outdir as `chrom_start-end.track
 Coverage and wiggle files will be bedgraph with the score column taken from the Track. Annotation files will bed or gtf
 with data taken from the raw. Reference sequence if available will be in fasta format.
 
-
-* Add a `bookmark` command create on the fly an IntervalFeatureTrack with bookmarked regions.  API:
-`bookmark`: Add current region to bookmarks; `bookmark show` print current bookmarked features;
-`bookmark clear`, etc.
-
 * Command to "go to other end" of feature? 
 
-* Add `hideTitle/showTitle trackRegex#1 trackRegex#2 ...` to hide the title line from selected
- tracks to allow more compact visualization?
-
-* `next` and `next_start` should say something when no feature track is available or there are no more
-features to move to.
+* `next` should say something when no feature track is available or there are no more features to move to.
 
 * Add a `nucPrint` command to print nucleotide counts at each position, a bit like pysamstats. API:
 `nucPrint INT [INT] [stranded] [pct]`

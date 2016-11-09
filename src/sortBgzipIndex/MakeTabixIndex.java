@@ -59,6 +59,7 @@ public class MakeTabixIndex {
 		} catch(IllegalArgumentException e){
 			// If intab is not sorted, sort it first. 
 			File sorted= File.createTempFile("asciigenome.", ".sorted.tmp");
+			sorted.deleteOnExit();
 			sortByChromThenPos(intab, sorted, fmt);
 			blockCompressAndIndex(sorted.getAbsolutePath(), tmp, fmt);
 			sorted.delete();
