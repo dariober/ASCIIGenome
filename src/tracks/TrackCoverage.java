@@ -2,7 +2,9 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -11,7 +13,8 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
 
-import filter.FirstOfPairFilter;
+import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -22,7 +25,6 @@ import htsjdk.samtools.util.Interval;
 import htsjdk.samtools.util.IntervalList;
 import samTextViewer.GenomicCoords;
 import samTextViewer.SamLocusIterator;
-import samTextViewer.SamLocusIterator.LocusInfo;
 import samTextViewer.Utils;
 
 public class TrackCoverage extends Track {
@@ -46,10 +48,14 @@ public class TrackCoverage extends Track {
 	 * @param windowSize The size of the screen in number of characters.
 	 * @param bs Should loci be parsed also as BS-Seq data? 
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws ClassNotFoundException 
 	 */
-	public TrackCoverage(String bam, GenomicCoords gc, boolean bs) throws IOException{
-		this.setGc(gc);
+	public TrackCoverage(String bam, GenomicCoords gc, boolean bs) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		this.setFilename(bam);
+		this.setWorkFilename(bam);
 		this.setBisulf(bs);
 		this.alnRecCnt= Utils.getAlignedReadCount(new File(bam));
 		/*  ------------------------------------------------------ */
@@ -57,18 +63,18 @@ public class TrackCoverage extends Track {
 		UrlValidator urlValidator = new UrlValidator();
 		SamReaderFactory srf=SamReaderFactory.make();
 		srf.validationStringency(ValidationStringency.SILENT);
-		if(urlValidator.isValid(this.getFilename())){
+		if(urlValidator.isValid(this.getWorkFilename())){
 			this.samReader = srf.open(SamInputResource.of(new URL(bam)).index(new URL(bam + ".bai")));
 		} else {
 			this.samReader= srf.open(new File(bam));
 		}
 		/*  ------------------------------------------------------ */
-		this.update();
+		this.setGc(gc);
 	}
 	
 	/* M e t h o d s */
-	
-	public void update() throws IOException{
+	@Override
+	protected void update() throws IOException, InvalidGenomicCoordsException{
 		
 		this.screenLocusInfoList= new ArrayList<ScreenLocusInfo>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
@@ -78,32 +84,65 @@ public class TrackCoverage extends Track {
 			SamLocusIterator samLocIter= new SamLocusIterator(samReader, il, true);
 			samLocIter.setSamFilters(this.getSamRecordFilter());
 			Iterator<samTextViewer.SamLocusIterator.LocusInfo> iter= samLocIter.iterator();
-		
-			for(int i= 0; i < this.getGc().getMapping().size(); i++){
+			
+			int userWindowSize= this.getGc().getUserWindowSize();
+			
+			for(int i= 0; i < this.getGc().getMapping(userWindowSize).size(); i++){
 				this.screenLocusInfoList.add(new ScreenLocusInfo());	
 			}
-		
-			while(iter.hasNext()){			
+			
+			List<Double> mapping = this.getGc().getMapping(userWindowSize);
+			while(iter.hasNext()){
 				samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
-				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), this.getGc().getMapping());
+				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), mapping);
 				byte refBase= '\0';
 				if(this.getGc().getRefSeq() != null){
 					refBase= this.getGc().getRefSeq()[screenPos];
 				}
 				this.screenLocusInfoList.get(screenPos).increment(locusInfo, refBase);
 			}
-			this.nRecsInWindow= Utils.countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
+			
+			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
 			samLocIter.close();
-			// samReader.close();	
 		}
-		
-		this.getFilename();
-		this.getGc();
-		this.getSamRecordFilter();
-		
-		this.setYLimitMin(this.getYLimitMin());
-		this.setYLimitMax(this.getYLimitMax());
+
+		ArrayList<Double> yValues = new ArrayList<Double>();
+		for(ScreenLocusInfo x : this.screenLocusInfoList){
+			yValues.add(x.getMeanDepth());
+		}
+		this.setScreenScores(yValues);
+			
+		if(this.isRpm()){
+			this.rpm();
+		}		
 	}
+
+	/** Convert screen scores to RPM. Raw values overwritten.
+	 * */
+	private void rpm(){
+		ArrayList<Double> rpm = new ArrayList<Double>();	
+		// long libSize= Utils.getAlignedReadCount(new File(this.getFilename()));
+		for(Double y : this.getScreenScores()){
+			rpm.add(y / this.alnRecCnt * 1000000.0);
+		}		
+		this.setScreenScores(rpm);
+	} 
+	
+	@Override
+	protected void updateToRPM(){
+		try {
+			this.update(); // It shouldn't be necessary to go for full update!!!
+		} catch (IOException | InvalidGenomicCoordsException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	protected void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.samRecordFilter = samRecordFilter;
+		this.update();
+	}
+
 	
 	/**
 	 * Printable coverage track. The height of the track in lines is `yMaxLines`.
@@ -111,9 +150,12 @@ public class TrackCoverage extends Track {
 	 * @param yMaxLines
 	 * @param rpm Should read counts be normalized by library size as Reads Per Million
 	 * @return HashMapwith with keys/values the printable characteristics of the track. 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
 	@Override
-	public String printToScreen(){
+	public String printToScreen() throws InvalidGenomicCoordsException, IOException{
+		 //This method should not do any computation like RPM etc. Just print stuff.
 				
 		if(this.getyMaxLines() == 0){
 			return "";
@@ -124,20 +166,7 @@ public class TrackCoverage extends Track {
 			return "";
 		}
 		
-		List<Double> yValues= new ArrayList<Double>();
-		for(ScreenLocusInfo x : this.screenLocusInfoList){
-			yValues.add(x.getMeanDepth());
-		}
-		this.setScreenScores(yValues);
-			
-		if(this.isRpm()){
-			// long libSize= Utils.getAlignedReadCount(new File(this.getFilename()));
-			for(int i= 0; i < yValues.size(); i++){
-				yValues.set(i, yValues.get(i)/this.alnRecCnt * 1000000.0);
-			}
-		}
-
-		TextProfile textProfile= new TextProfile(yValues, this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
+		TextProfile textProfile= new TextProfile(this.getScreenScores(), this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
 		ArrayList<String> lineStrings= new ArrayList<String>();
 		for(int i= (textProfile.getProfile().size() - 1); i >= 0; i--){
 			List<String> xl= textProfile.getProfile().get(i);
@@ -145,7 +174,7 @@ public class TrackCoverage extends Track {
 		}
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
-			printable= "\033[0;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[0m";
+			printable= "\033[48;5;231;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[48;5;231m";
 		}
 		return printable;
 	}
@@ -159,16 +188,25 @@ public class TrackCoverage extends Track {
 
 	@Override
 	public String getTitle(){
-				
-		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
+		
+		if(this.isHideTitle()){
+			return "";
+		}
+		
+		Double[] range = Utils.range(this.getScreenScores());
+		Double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
 		String rpmTag= this.isRpm() ? "; rpm" : "";
-		String xtitle= this.getFileTag() 
-				+ "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
+
+		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
+		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
+		
+		String xtitle= this.getTrackTag() 
+				+ "; ylim[" + ymin + " " + ymax + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
 				+ "; -F" + this.get_F_flag() 
 				+ " -f" + this.get_f_flag() 
 				+ " -q" + this.getMapq()
-				+ "; N. recs here/all: " + this.nRecsInWindow + "/" + this.alnRecCnt
+				+ "; Recs here/all: " + this.nRecsInWindow + "/" + this.alnRecCnt
 				+ rpmTag
 				+ "\n";
 		return this.formatTitle(xtitle);
@@ -207,7 +245,7 @@ public class TrackCoverage extends Track {
 	}
 
 	@Override
-	public String getPrintableConsensusSequence() throws IOException{
+	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException{
 		if(this.getGc().getBpPerScreenColumn() > 1){
 			return "";
 		}
@@ -222,10 +260,10 @@ public class TrackCoverage extends Track {
 			if(this.isNoFormat()){
 				faSeqStr += base;
 			} 
-			  else if(base == 'A') { faSeqStr += "\033[107;34m" + base + "\033[0m";} 
-			  else if(base == 'C') { faSeqStr += "\033[107;31m" + base + "\033[0m";} 
-			  else if(base == 'G') { faSeqStr += "\033[107;32m" + base + "\033[0m";} 
-			  else if(base == 'T') { faSeqStr += "\033[107;33m" + base + "\033[0m";} 
+			  else if(base == 'A') { faSeqStr += "\033[107;34m" + base + "\033[48;5;231m";} 
+			  else if(base == 'C') { faSeqStr += "\033[107;31m" + base + "\033[48;5;231m";} 
+			  else if(base == 'G') { faSeqStr += "\033[107;32m" + base + "\033[48;5;231m";} 
+			  else if(base == 'T') { faSeqStr += "\033[107;33m" + base + "\033[48;5;231m";} 
 			  else { faSeqStr += base; } 
 		}
 		if(allEmpty){
@@ -277,5 +315,5 @@ public class TrackCoverage extends Track {
 		}
 		return plist;
 	}
-	
+		
 }

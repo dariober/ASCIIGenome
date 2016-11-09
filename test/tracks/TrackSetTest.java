@@ -3,67 +3,128 @@ package tracks;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
 
+import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
 public class TrackSetTest {
 
 	@Test
-	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException{
+	public void canDropTracks() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
+		GenomicCoords gc= new GenomicCoords("chr7:1-100", null, null);
+		
+		TrackSet trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc, null);
+		trackSet.addTrackFromSource("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc, null);
+		
+		// Test only
+		ArrayList<String> cmdInput = Utils.tokenize("dropTracks -t .*", " ");
+		trackSet.dropTracksWithRegex(cmdInput);
+		assertEquals(3, trackSet.getTrackList().size());
+		
+		cmdInput = Utils.tokenize("dropTracks gtf.gz", " ");
+		trackSet.dropTracksWithRegex(cmdInput);
+		assertEquals(2, trackSet.getTrackList().size());
+		
+		// Drop all
+		cmdInput = Utils.tokenize("dropTracks .*", " ");
+		String msg= trackSet.dropTracksWithRegex(cmdInput);
+		assertEquals(0, trackSet.getTrackList().size());
+		assertTrue(msg.length() > 10);
+	}
+	
+	@Test // Disable to save time
+	public void canAddTrackFromSourcename() throws InvalidGenomicCoordsException, IOException, BamIndexNotFoundException, InvalidRecordException, ClassNotFoundException, SQLException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7:1-100", null, null);
+		
+		TrackSet trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc, null);
+		assertEquals(2, trackSet.getTrackList().size());
+		
+		trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
+		assertEquals(4, trackSet.getTrackList().size());
+		
+	}
+		
+	@Test // Disable to save time
+	public void canInitializeFromListOfFileNames() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException{
+		
+		List<String> inputFileList= new ArrayList<String>();
+		inputFileList.add("test_data/ear045.oxBS.actb.bam");
+		inputFileList.add("test_data/hg19_genes.gtf.gz");
+		inputFileList.add("test_data/posNeg.bedGraph.gz");
+		
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", null, null);
+		TrackSet trackSet= new TrackSet(inputFileList, gc);
+
+		assertEquals(4, trackSet.getTrackList().size()); // MEMO: BAM files add 2 tracks. 
+		
+	}
+	
+	@Test
+	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		List<String>cmdInput= new ArrayList<String>();
+		cmdInput.add("bookmark");
+		cmdInput.add("bookmark_1");
 		TrackSet ts= new TrackSet();
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
-		ts.addBookmark_IN_PREP(gc, "bookmark_n1");
-		assertTrue(ts.getTrackSet().containsKey(TrackSet.BOOKMARK_TAG));
-		TrackIntervalFeature tif= (TrackIntervalFeature) ts.getTrackSet().get(TrackSet.BOOKMARK_TAG);
-		assertEquals(1, tif.intervalFeatureSet.getIntervalMap().get("chr1").get(0).getFrom());
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", null, null);
 		
-		GenomicCoords gc2= new GenomicCoords("chr2", 90, 100, null, 100, null);
-		ts.addBookmark_IN_PREP(gc2, "bookmark_n2");
-		assertEquals(90, tif.intervalFeatureSet.getIntervalMap().get("chr2").get(0).getFrom());
+		ts.bookmark(gc, cmdInput);
+		assertTrue(ts.getTrackList().size() == 1);
 		
-		GenomicCoords gc3= new GenomicCoords("chr2", 2, 100, null, 100, null);
-		ts.addBookmark_IN_PREP(gc3, "bookmark_n3");
-		assertEquals(2, tif.intervalFeatureSet.getIntervalMap().get("chr2").get(0).getFrom());
-				
-		// System.out.println(tif.intervalFeatureSet.getIntervalMap().get("chr2"));
-		// System.out.println(tif.intervalFeatureSet.getIntervalMap().get("chr2").get(0).getRaw());
+		ts.getTrackList().get(0).setNoFormat(true);
+
+		GenomicCoords gc2 = new GenomicCoords("chr1:1-1000", null, null);
+		ts.bookmark(gc2, cmdInput);
+		
+		TrackBookmark bm = (TrackBookmark) ts.getTrackList().get(0);
+		assertTrue(bm.getIntervalFeatureList().size() == 2);
+
+		bm.setPrintMode(PrintRawLine.CLIP);
+		System.out.println(bm.printFeatures(100)); // NB: it prints twice the same gc becouse the position is nt changed
+		
 	}
 	
 	@Test
 	public void canReorderTracks() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 		TrackSet ts= new TrackSet();
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
-	
-		Track t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); t2.setFileTag("#2"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
-				
+		Track t1= new Track(); t1.setFilename("foo.gz");  ts.addTrack(t1, "foo.gz");
+		Track t2= new Track(); t2.setFilename("foo.txt"); ts.addTrack(t2, "foo.txt");
+		Track t3= new Track(); t3.setFilename("bla.gz"); ts.addTrack(t3, "bla.gz");
+
 		List<String> newOrder= new ArrayList<String>();
-		newOrder.add("#1");
-		newOrder.add("#2");
-		newOrder.add("#3");
+		newOrder.add("foo.gz#1");
+		newOrder.add("foo.txt#2");
+		newOrder.add("bla.gz#3");
 		ts.orderTracks(newOrder);
-		assertEquals(newOrder, new ArrayList<String>(ts.getTrackSet().keySet()));
+		assertEquals(newOrder, new ArrayList<String>(ts.getTrackTags()));
 
 		// Handle missing tracks in new order
 		newOrder= new ArrayList<String>();
-		newOrder.add("#3");
-		newOrder.add("#1");
+		newOrder.add("bla.gz#3");
+		newOrder.add("foo.txt#2");
 		ts.orderTracks(newOrder);
-		assertEquals(3, ts.getTrackSet().keySet().size());
+		assertEquals(3, ts.getTrackList().size());
 		
 		// Handle non existing tracks
 		newOrder= new ArrayList<String>();
 		ts.orderTracks(newOrder);
-		assertEquals(3, ts.getTrackSet().keySet().size());
+		assertEquals(3, ts.getTrackList().size());
 
 		newOrder= new ArrayList<String>();
 		newOrder.add("1");
@@ -73,113 +134,145 @@ public class TrackSetTest {
 		newOrder.add("3");
 		newOrder.add("foo!");
 		ts.orderTracks(newOrder);
-		assertEquals(3, ts.getTrackSet().keySet().size());
+		assertEquals(3, ts.getTrackList().size());
 
 		// Partial matches
-		ts= new TrackSet();
-		t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); t2.setFileTag("#2"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
-				
 		newOrder= new ArrayList<String>();
 		newOrder.add("2");
 		newOrder.add("3");
 		newOrder.add("1");
 		ts.orderTracks(newOrder);
-		assertEquals("#2", new ArrayList<String>(ts.getTrackSet().keySet()).get(0));
-		assertEquals("#3", new ArrayList<String>(ts.getTrackSet().keySet()).get(1));
+		assertEquals("foo.txt#2", ts.getTrackTags().get(0));
+		assertEquals("bla.gz#3", ts.getTrackTags().get(1));
+		
+		ts.orderTracks(new ArrayList<String>());
+		assertEquals("bla.gz#3", ts.getTrackTags().get(0));
+		assertEquals("foo.gz#1", ts.getTrackTags().get(1));
+
 	}
 	
 	@Test
-	public void canSetFilterForTrackIntervalFeature() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+	public void canSetFilterForTrackIntervalFeature() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 				
 		TrackSet ts= new TrackSet();
-		GenomicCoords gc= new GenomicCoords("chr1", 1, 100, null, 100, null);
-		Track t1= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc); t1.setFileTag("#10"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc); t2.setFileTag("#11"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); t3.setFileTag("#30"); ts.getTrackSet().put(t3.getFileTag(), t3);
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", null, null);
+		Track t1= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc); ts.addTrack(t1, "x");
+		Track t2= new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc); ts.addTrack(t2, "x");
+		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.addTrack(t3, "x");
 		
-		String cmdInput= "filter exon intron #1"; // Set for #1...
+		// MEMO: Track tags:
+		// [hg19_genes_head.gtf#1, hg19_genes_head.gtf.gz#2, refSeq.bed#3]
+		
+		String cmdInput= "grep -i exon -e intron #1"; // Set for #1...
+		//String cmdInput= "filter exon intron #1"; // Set for #1...
 		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
 
-		assertEquals("exon", ts.getTrackSet().get("#10").getShowRegex());
-		assertEquals("intron", ts.getTrackSet().get("#11").getHideRegex());
-		assertEquals(".*", ts.getTrackSet().get("#30").getShowRegex()); // As default
-		assertEquals("^$", ts.getTrackSet().get("#30").getHideRegex());
+		assertEquals("exon", ts.getTrack(t1).getShowRegex());
+		assertEquals("intron", ts.getTrack(t1).getHideRegex());
+		assertEquals(".*", ts.getTrack(t3).getShowRegex()); // As default
+		assertEquals("^$", ts.getTrack(t3).getHideRegex());
 
-		cmdInput= "filter exon intron #10 #3"; // Set for #1...
+		// cmdInput= "filter exon intron #1 #3"; // Set for #1...
+		cmdInput= "grep -i exon -e intron #1 #3"; // Set for #1...
 		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
-		assertEquals("exon", ts.getTrackSet().get("#30").getShowRegex()); // As default
-		assertEquals("intron", ts.getTrackSet().get("#30").getHideRegex());
+		assertEquals("exon", ts.getTrack(t3).getShowRegex());
+		assertEquals("intron", ts.getTrack(t3).getHideRegex());
 
-		cmdInput= "filter"; // Set for #1...
+		cmdInput= "grep"; // Reset all to default
 		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
-		assertEquals(".*", ts.getTrackSet().get("#30").getShowRegex()); // As default
-		assertEquals("^$", ts.getTrackSet().get("#30").getHideRegex());
+		assertEquals(".*", ts.getTrack(t3).getShowRegex()); // As default
+		assertEquals("^$", ts.getTrack(t3).getHideRegex());
 	}
 
 
 	@Test
 	public void canSetBSMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
-				
-		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.bam"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new Track(); t2.setFilename("foo.bam"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
 
-		String cmdInput= "bsMode #\\d$";
+		TrackSet ts= new TrackSet();
+		Track t1= new Track(); t1.setFilename("foo.bam");  ts.addTrack(t1, "foo.bam");
+		Track t2= new Track(); t2.setFilename("bar.bam"); ts.addTrack(t2, "bar.bam");
+		Track t3= new Track(); t3.setFilename("foo.bam"); ts.addTrack(t3, "foo.bam");
+		
+		String cmdInput= "bsMode foo.*#\\d";
 		ts.setBisulfiteModeForRegex(Utils.tokenize(cmdInput, " "));
-		assertTrue(ts.getTrackSet().get("#1").isBisulf());
-		assertTrue(! ts.getTrackSet().get("#20").isBisulf());
+		assertTrue(ts.getTrack(t1).isBisulf());
+		assertTrue(! ts.getTrack(t2).isBisulf());
 		
 		ts.setBisulfiteModeForRegex(Utils.tokenize(cmdInput, " ")); // Was set true, now becomes false
-		assertTrue(! ts.getTrackSet().get("#1").isBisulf());
+		assertTrue(! ts.getTrack(t1).isBisulf());
 	}
 
 	@Test
-	public void canSetRpmForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
-				
+	public void canSetRpmForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.bam"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new Track(); t2.setFilename("foo.bam"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new Track(); t3.setFilename("bla.txt"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+		Track t1= new Track(); ts.addTrack(t1, "x");
+		Track t2= new Track(); ts.addTrack(t2, "x");
+		Track t3= new Track(); ts.addTrack(t3, "x");
 
-		String cmdInput= "rpm #1 #3";
+		
+		String cmdInput= "bsMode #1 #3";
 		ts.setRpmForRegex(Utils.tokenize(cmdInput, " "));
-		assertTrue(ts.getTrackSet().get("#1").isRpm());
-		assertTrue(! ts.getTrackSet().get("#20").isRpm());
+		assertTrue(ts.getTrack(t1).isRpm());
+		assertTrue(! ts.getTrack(t2).isRpm());
 		
 		ts.setRpmForRegex(Utils.tokenize(cmdInput, " ")); // Was set true, now becomes false
-		assertTrue(! ts.getTrackSet().get("#1").isRpm());
+		assertTrue(! ts.getTrack(t1).isRpm());
 	}
 
 	@Test
-	public void canSetFilterFlagForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+	public void canEditTrackNamesForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, SQLException, InvalidRecordException, ClassNotFoundException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.bam"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new Track(); t2.setFilename("foo.bam"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new Track(); t3.setFilename("bla.txt"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
-
-		String cmdInput= "-F 1024 #1 #3";
-		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));
-		assertEquals(1024+4, ts.getTrackSet().get("#1").get_F_flag());
-		assertEquals(4, ts.getTrackSet().get("#20").get_F_flag());
+		Track t1= new Track(); ts.addTrack(t1, "foo.gff");
+		Track t2= new Track(); ts.addTrack(t2, "foo.bed");
+		Track t3= new Track(); ts.addTrack(t3, "baz.narrowPeak");
 		
-		cmdInput= "-F 16";
-		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));
-		cmdInput= "-f 1024 #1 #3";
-		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));		
-		cmdInput= "mapq 30 #1 #3";
-		ts.setFilterFlagForRegex(Utils.tokenize(cmdInput, " "));		
+		ts.editNamesForRegex(Utils.tokenize("editNames foo FOO", " "));
 		
-		assertEquals(16+4, ts.getTrackSet().get("#1").get_F_flag());
-		assertEquals(16+4, ts.getTrackSet().get("#20").get_F_flag());
-		assertEquals(16+4, ts.getTrackSet().get("#3").get_F_flag());
+		assertTrue(ts.getTrackList().get(0).getTrackTag().startsWith("FOO.gff"));
+		assertTrue(ts.getTrackList().get(1).getTrackTag().startsWith("FOO.bed"));
+		assertTrue(ts.getTrackList().get(2).getTrackTag().startsWith("baz"));
 
-		assertEquals(1024, ts.getTrackSet().get("#1").get_f_flag());
-		assertEquals(0, ts.getTrackSet().get("#20").get_f_flag());
-		assertEquals(30, ts.getTrackSet().get("#3").getMapq());
+		// Replace with nothing: ""
+		ts.editNamesForRegex(Utils.tokenize("editNames .bed \"\"", " "));
+		assertTrue(ts.getTrackList().get(1).getTrackTag().startsWith("FOO#"));
+	}
+	
+	@Test
+	public void canSetFilterFlagForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, SQLException, InvalidRecordException, ClassNotFoundException{
+				
+		TrackSet ts= new TrackSet();
+		Track t1= new Track(); ts.addTrack(t1, "x");
+		Track t2= new Track(); ts.addTrack(t2, "x");
+		Track t3= new Track(); ts.addTrack(t3, "x");
+
+		// String cmdInput= "-F 1024 #1 #3";
+		// Reset all three filters
+		String cmdInput= "samtools -q 10 -F 1024 -f 16 #1 #3";
+		ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
+		assertEquals(1024+4, ts.getTrack(t1).get_F_flag());
+		assertEquals(16, ts.getTrack(t1).get_f_flag());
+		assertEquals(10, ts.getTrack(t1).getMapq());
+		// Not changed
+		assertEquals(4, ts.getTrack(t2).get_F_flag());
+		assertEquals(0, ts.getTrack(t2).getMapq());
+		// assertEquals(4, ts.getTrack(t2).get_F_flag());
+		
+		// Set one filter for all tracks, the others return to zero:
+		cmdInput= "samtools -f 16";
+		ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
+		assertEquals(16, ts.getTrack(t1).get_f_flag());
+		assertEquals(16, ts.getTrack(t2).get_f_flag());
+		assertEquals(16, ts.getTrack(t3).get_f_flag());
+
+		assertEquals(4, ts.getTrack(t1).get_F_flag()); // Set to 4 (unmapped)
+		assertEquals(4, ts.getTrack(t2).get_F_flag());
+		assertEquals(4, ts.getTrack(t3).get_F_flag());
+
+		assertEquals(0, ts.getTrack(t1).getMapq());
+		assertEquals(0, ts.getTrack(t2).getMapq());
+		assertEquals(0, ts.getTrack(t3).getMapq());
 		
 	}
 	
@@ -187,9 +280,9 @@ public class TrackSetTest {
 	public void canSetFeatureDisplayModeForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+		Track t1= new Track(); ts.addTrack(t1, "x");
+		Track t2= new Track(); ts.addTrack(t2, "x");
+		Track t3= new Track(); ts.addTrack(t3, "x");
 
 		ts.setFeatureDisplayModeForRegex(Utils.tokenize("squash #1 #3", " "));
 		assertEquals(FeatureDisplayMode.SQUASHED, t1.getFeatureDisplayMode());
@@ -214,9 +307,9 @@ public class TrackSetTest {
 	public void canSetPrintMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+		Track t1= new Track(); ts.addTrack(t1, "x");
+		Track t2= new Track(); ts.addTrack(t2, "x");
+		Track t3= new Track(); ts.addTrack(t3, "x");
 
 		ts.setPrintModeForRegex(Utils.tokenize("print #1 #3", " "));
 		assertEquals(PrintRawLine.CLIP, t1.getPrintMode());
@@ -228,10 +321,10 @@ public class TrackSetTest {
 		ts.setPrintModeForRegex(Utils.tokenize("print #1", " "));
 		assertEquals(PrintRawLine.CLIP, t1.getPrintMode());
 		
-		ts.setPrintModeForRegex(Utils.tokenize("printFull #1", " "));
+		ts.setPrintModeForRegex(Utils.tokenize("print -full #1", " "));
 		assertEquals(PrintRawLine.FULL, t1.getPrintMode());
 		
-		ts.setPrintModeForRegex(Utils.tokenize("printFull #1", " "));
+		ts.setPrintModeForRegex(Utils.tokenize("print -full #1", " "));
 		assertEquals(PrintRawLine.OFF, t1.getPrintMode());
 	}
 	
@@ -240,92 +333,92 @@ public class TrackSetTest {
 	public void canSetTrackColour() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+		Track t1= new Track(); t1.setFilename("foo.gz");  ts.addTrack(t1, "foo.gz");
+		Track t2= new Track(); t2.setFilename("foo.txt"); ts.addTrack(t2, "foo.txt");
+		Track t3= new Track(); t3.setFilename("bla.gz"); ts.addTrack(t3, "bla.gz");
 
 		String defaultColour= (new Track()).getTitleColour();
-		
-		String cmdInput= "trackColour RED #\\d$";
+			
+		String cmdInput= "trackColour RED gz#\\d$";
 		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
-		assertEquals("red", ts.getTrackSet().get("#1").getTitleColour());
-		assertEquals(defaultColour, ts.getTrackSet().get("#20").getTitleColour());
-		assertEquals("red", ts.getTrackSet().get("#3").getTitleColour());
+		assertEquals("red", ts.getTrack(t1).getTitleColour());
+		assertEquals(defaultColour, ts.getTrack(t2).getTitleColour());
+		assertEquals("red", ts.getTrack(t3).getTitleColour());
 		
-		// Non-existant colour: Reset to default
+		// Non-existant colour: Throw exception
 		cmdInput= "trackColour foo .*";
-		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
-		assertEquals(defaultColour, ts.getTrackSet().get("#1").getTitleColour());
+		boolean passed= false;
+		try{
+			ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
+		} catch(InvalidCommandLineException e){
+			passed= true;
+		}
+		assertTrue(passed);
 		
 		// All reset to red
 		cmdInput= "trackColour red";
 		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
-		assertEquals("red", ts.getTrackSet().get("#1").getTitleColour());
+		assertEquals("red", ts.getTrack(t1).getTitleColour());
 		
 		// All reset to default
 		cmdInput= "trackColour";
 		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
-		assertEquals(defaultColour, ts.getTrackSet().get("#1").getTitleColour());
-		
-		// Multiple regexes
-		ts= new TrackSet();
-		t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+		assertEquals(defaultColour, ts.getTrack(t1).getTitleColour());
 		
 		cmdInput= "trackColour red #1 #3 #1";
 		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
-		assertEquals("red", ts.getTrackSet().get("#1").getTitleColour());
-		assertEquals(defaultColour, ts.getTrackSet().get("#20").getTitleColour());
-		assertEquals("red", ts.getTrackSet().get("#3").getTitleColour());
+		
+		assertEquals("red", ts.getTrack(t1).getTitleColour());
+		assertEquals(defaultColour, ts.getTrack(t2).getTitleColour());
+		assertEquals("red", ts.getTrack(t3).getTitleColour());
 	}
 	
 	@Test
-	public void canSetTrackHeight() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+	public void canSetTrackHeight() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+		Track t1= new Track(); ts.addTrack( t1, "x");
+		Track t2= new Track(); ts.addTrack(t2, "x");
+		Track t3= new Track(); ts.addTrack(t3, "x");
 
 		String cmdInput= "trackHeight 2 #1 #3";
 		ts.setTrackHeightForRegex(Utils.tokenize(cmdInput, " "));
-				
-		assertEquals(2, ts.getTrackSet().get("#1").getyMaxLines());
-		assertEquals(10, ts.getTrackSet().get("#20").getyMaxLines()); 
-		assertEquals(2, ts.getTrackSet().get("#3").getyMaxLines());
+
+		assertEquals(2, ts.getTrack(t1).getyMaxLines());
+		assertEquals(10, ts.getTrack(t2).getyMaxLines()); 
+		assertEquals(2, ts.getTrack(t3).getyMaxLines());
 		
 		cmdInput= "trackHeight 99"; // Defsult regex: All tracks captured 
 		ts.setTrackHeightForRegex(Utils.tokenize(cmdInput, " "));
-		assertEquals(99, ts.getTrackSet().get("#1").getyMaxLines());
-		assertEquals(99, ts.getTrackSet().get("#20").getyMaxLines()); 
-		assertEquals(99, ts.getTrackSet().get("#3").getyMaxLines());
+		assertEquals(99, ts.getTrack(t1).getyMaxLines());
+		assertEquals(99, ts.getTrack(t2).getyMaxLines()); 
+		assertEquals(99, ts.getTrack(t3).getyMaxLines());
 		
 	}
 	
 	@Test
-	public void canSetYlimits() throws InvalidCommandLineException{
+	public void canSetYlimits() throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 				
-		TrackSet ts= new TrackSet();	
-		Track t1= new Track(); t1.setFilename("foo.gz"); t1.setFileTag("#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new Track(); t2.setFilename("foo.txt"); t2.setFileTag("#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new Track(); t3.setFilename("bla.gz"); t3.setFileTag("#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+		TrackSet ts= new TrackSet();
+		Track t1= new Track(); ts.addTrack(t1, "x");
+		Track t2= new Track(); ts.addTrack(t2, "x");
+		Track t3= new Track(); ts.addTrack(t3, "x");
 		
 		String cmdInput= "ylim 10 20 #1 #2";
 		ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
-		assertEquals(10, ts.getTrackSet().get("#1").getYLimitMin(), 0.001);
-		assertEquals(20, ts.getTrackSet().get("#1").getYLimitMax(), 0.001);
-		assertEquals(10, ts.getTrackSet().get("#20").getYLimitMin(), 0.001);
-		assertEquals(20, ts.getTrackSet().get("#20").getYLimitMax(), 0.001);
+		assertEquals(10, ts.getTrack(t1).getYLimitMin(), 0.001);
+		assertEquals(20, ts.getTrack(t1).getYLimitMax(), 0.001);
+		assertEquals(10, ts.getTrack(t2).getYLimitMin(), 0.001);
+		assertEquals(20, ts.getTrack(t2).getYLimitMax(), 0.001);
 		
 		cmdInput= "ylim 90 99";
 		ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
-		assertEquals(90, ts.getTrackSet().get("#1").getYLimitMin(), 0.001);
-		assertEquals(99, ts.getTrackSet().get("#1").getYLimitMax(), 0.001);
-		assertEquals(90, ts.getTrackSet().get("#20").getYLimitMin(), 0.001);
-		assertEquals(99, ts.getTrackSet().get("#20").getYLimitMax(), 0.001);
-		assertEquals(90, ts.getTrackSet().get("#3").getYLimitMin(), 0.001);
-		assertEquals(99, ts.getTrackSet().get("#3").getYLimitMax(), 0.001);
+		assertEquals(90, ts.getTrack(t1).getYLimitMin(), 0.001);
+		assertEquals(99, ts.getTrack(t1).getYLimitMax(), 0.001);
+		assertEquals(90, ts.getTrack(t2).getYLimitMin(), 0.001);
+		assertEquals(99, ts.getTrack(t2).getYLimitMax(), 0.001);
+		assertEquals(90, ts.getTrack(t3).getYLimitMin(), 0.001);
+		assertEquals(99, ts.getTrack(t3).getYLimitMax(), 0.001);
 
 	}
 	
@@ -334,14 +427,14 @@ public class TrackSetTest {
 		
 		TrackSet ts= new TrackSet();
 		assertEquals("", ts.showTrackInfo());
-		
-		Track t1= new Track(); t1.setFilename("/path/to/foo.gz"); t1.setFileTag("foo#1"); ts.getTrackSet().put(t1.getFileTag(), t1);
-		Track t2= new Track(); t2.setFilename("/path/to/foo.vcf"); t2.setFileTag("bar#20"); ts.getTrackSet().put(t2.getFileTag(), t2);
-		Track t3= new Track(); t3.setFilename("/path/to/bla.gz"); t3.setFileTag("baz#3"); ts.getTrackSet().put(t3.getFileTag(), t3);
+
+		Track t1= new Track(); t1.setFilename("/path/to/foo.gz"); ts.addTrack(t1, "foo.gz");
+		Track t2= new Track(); t2.setFilename("/path/to/foo.vcf"); ts.addTrack(t2, "foo.vcf");
+		Track t3= new Track(); t3.setFilename("/path/to/bla.gz"); ts.addTrack(t3, "bla.gz");
 
 		assertTrue(ts.showTrackInfo().startsWith("foo"));
 		assertTrue(ts.showTrackInfo().endsWith("BED"));
-		
+
 	}
-	
+
 }

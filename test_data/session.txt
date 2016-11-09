@@ -1,0 +1,5 @@
+goto chr7:5566616-5570936
+setGenome test_data/chr7.fa
+addTracks /Users/berald01/svn_git/ASCIIGenome/branches/color_etc/test_data/ear045.oxBS.actb.tdf && colorTrack red ear045.oxBS.actb.tdf && trackHeight 5 ear045.oxBS.actb.tdf && ylim NaN NaN ear045.oxBS.actb.tdf && samtools -q 10 -f 16 -F 4 ear045.oxBS.actb.tdf && grep -i  -e  ear045.oxBS.actb.tdf
+addTracks /Users/berald01/svn_git/ASCIIGenome/branches/color_etc/test_data/ds051.actb.bam && colorTrack blue ds051.actb.bam && trackHeight 5 ds051.actb.bam && ylim NaN NaN ds051.actb.bam && samtools -q 10 -f 16 -F 4 ds051.actb.bam && grep -i  -e  ds051.actb.bam
+addTracks /Users/berald01/svn_git/ASCIIGenome/branches/color_etc/test_data/hg19.gencode_genes_v19.gtf.gz && colorTrack black hg19.gencode_genes_v19.gtf.gz && trackHeight 10 hg19.gencode_genes_v19.gtf.gz && ylim NaN NaN hg19.gencode_genes_v19.gtf.gz && samtools -q 10 -f 16 -F 4 hg19.gencode_genes_v19.gtf.gz && grep -i CDS -e ^$ hg19.gencode_genes_v19.gtf.gz

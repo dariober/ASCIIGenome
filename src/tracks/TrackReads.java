@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +13,8 @@ import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
+import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
@@ -31,7 +34,7 @@ public class TrackReads extends Track{
 	private List<List<TextRead>> readStack;
 	// private boolean bisulf= false;
 	private boolean withReadName= false;
-	private int maxReadStack;
+	private static int MAX_READS_STACK= 2000;
 	private long nRecsInWindow= -1;
 	/* C o n s t r u c t o r s */
 	/**
@@ -41,23 +44,26 @@ public class TrackReads extends Track{
 	 * @bs Should the track be displayed as BS-Seq data
 	 * @param maxReadsStack Accumulate at most this many reads.
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws ClassNotFoundException 
 	 */
-	public TrackReads(String bam, GenomicCoords gc, int maxReadStack) throws IOException{
+	public TrackReads(String bam, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		if(!Utils.bamHasIndex(bam)){
 			System.err.println("\nAlignment file " + bam + " has no index.\n");
 			throw new RuntimeException();
 		}
 		this.setFilename(bam);
+		this.setWorkFilename(bam);
 		this.setGc(gc);
-		this.maxReadStack= maxReadStack;
-		this.update();
 
 	}
 	
 	/* M e t h o d s */
 	
-	public void update() throws MalformedURLException{
+	public void update() throws InvalidGenomicCoordsException, IOException{
 		
 		this.readStack= new ArrayList<List<TextRead>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
@@ -68,21 +74,21 @@ public class TrackReads extends Track{
 			SamReaderFactory srf=SamReaderFactory.make();
 			srf.validationStringency(ValidationStringency.SILENT);
 			SamReader samReader;
-			if(urlValidator.isValid(this.getFilename())){
-				samReader = srf.open(SamInputResource.of(new URL(this.getFilename())).index(new URL(this.getFilename() + ".bai")));
+			if(urlValidator.isValid(this.getWorkFilename())){
+				samReader = srf.open(SamInputResource.of(new URL(this.getWorkFilename())).index(new URL(this.getWorkFilename() + ".bai")));
 			} else {
-				samReader= srf.open(new File(this.getFilename()));
+				samReader= srf.open(new File(this.getWorkFilename()));
 			}
 			/*  ------------------------------------------------------ */
 			
-			this.nRecsInWindow= Utils.countReadsInWindow(this.getFilename(), this.getGc(), this.getSamRecordFilter());
-			float probSample= (float) this.maxReadStack / this.nRecsInWindow;
+			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
+			float probSample= (float) TrackReads.MAX_READS_STACK / this.nRecsInWindow;
 			
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 			List<TextRead> textReads= new ArrayList<TextRead>();
 			AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
 			
-			while(sam.hasNext() && textReads.size() < this.maxReadStack){
+			while(sam.hasNext() && textReads.size() < TrackReads.MAX_READS_STACK){
 	
 				SAMRecord rec= sam.next();
 				if( !rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec) ){
@@ -100,9 +106,10 @@ public class TrackReads extends Track{
 	}
 	
 	/** 
-	 * Printable track on screen. This is what should be called by Main */
+	 * Printable track on screen. This is what should be called by Main 
+	 * @throws InvalidGenomicCoordsException */
 	@Override
-	public String printToScreen(){
+	public String printToScreen() throws InvalidGenomicCoordsException{
 		
 		int yMaxLines= (this.getyMaxLines() < 0) ? Integer.MAX_VALUE : this.getyMaxLines();;
 		
@@ -139,8 +146,10 @@ public class TrackReads extends Track{
 	 * Output, each line is a list of TextRead:
      [AAAAAAAAAAAA TTTTTTTTTTT  GGGGGGGGGGG]       
 	 [ CCCCCCCCCCCC                     AAAAAAAA]
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<List<TextRead>> stackReads(List<TextRead> textReads){
+	private List<List<TextRead>> stackReads(List<TextRead> textReads) throws InvalidGenomicCoordsException, IOException{
 		
 		List<List<TextRead>> listOfLines= new ArrayList<List<TextRead>>();
 		if(textReads.size() == 0){
@@ -182,8 +191,9 @@ public class TrackReads extends Track{
 	 * @param noFormat Do not format reads.
 	 * @return
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	private String linePrinter(List<TextRead> textReads, boolean bs, boolean noFormat, boolean withReadName) throws IOException{
+	private String linePrinter(List<TextRead> textReads, boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException{
 		StringBuilder sb= new StringBuilder();
 
 		int curPos= 0; // Position on the line, needed to pad with blanks btw reads.
@@ -246,7 +256,12 @@ public class TrackReads extends Track{
 	
 	@Override
 	public String getTitle(){
-		String title= this.getFileTag() 
+		
+		if(this.isHideTitle()){
+			return "";
+		}
+		
+		String title= this.getTrackTag() 
 				+ "; -F" + this.get_F_flag() 
 				+ " -f" + this.get_f_flag() 
 				+ " -q" + this.getMapq();

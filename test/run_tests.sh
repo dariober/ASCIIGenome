@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # These tests are far from comprehensive since they don't check the interactive session
-## MEMO: use `less -R -S` to view colours on terminal with less
 
 # Setup: Path to jar and data
 # ===========================
 stvExe=~/Dropbox/Public/ASCIIGenome.jar ## Path to jar 
-cd /Users/berald01/svn_git/ASCIIGenome/branches/toggle_print/test_data ## Path to test data
+cd /Users/berald01/svn_git/ASCIIGenome/branches/color_etc/test_data ## Path to test data
 
 # Get and prepare chr7.fa file, if not already available
 if [ ! -e chr7.fa ]
@@ -22,14 +21,13 @@ fi
 echo "CAN LOAD BAM FILES"
 java -Xmx500m -jar $stvExe -r chr7:5598650-5601530 ds051.actb.bam ear045.oxBS.actb.bam -ni
 java -Xmx500m -jar $stvExe -r chr7:5598650-5601530 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -ni 
-java -Xmx500m -jar $stvExe -rpm -r chr7:5598650-5601530 ds051.actb.bam ear045.oxBS.actb.bam -ni 
-java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x 'mapq 10 -f 16' -ni 
+java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x 'samtools -q 10 -F 16' -ni 
 
 echo "CAN SHOW BS DATA"
-java -Xmx500m -jar $stvExe -r chr7:5600000-5600179 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -x 'mapq 10 && BSseq' -ni 
+java -Xmx500m -jar $stvExe -r chr7:5600000-5600179 -fa chr7.fa ds051.actb.bam ear045.oxBS.actb.bam -x 'samtools -q 10 && BSseq' -ni 
 
 echo "HANDLE NO READS IN INPUT"
-java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x ' -f 16 && -F 16' -ni # Note space bebween quote and -f
+java -Xmx500m -jar $stvExe ds051.actb.bam -r chr7:5566860 -x ' -f 16 && -F 16' -ni # Note space between quote and -f
 
 echo "BED FILES"
 java -Xmx500m -jar $stvExe refSeq.hg19.short.bed -ni
@@ -38,8 +36,8 @@ java -Xmx500m -jar $stvExe refSeq.hg19.short.sort.bed.gz -ni
 echo "FROM URL"
 java -Xmx500m -jar $stvExe http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/wgEncodeSydhTfbsGm12878P300bStdPk.narrowPeak.gz -ni
 
-echo "TABIX FILES"
-java -Xmx500m -jar $stvExe test.bedGraph.gz -ni
+#echo "FROM UCSC"
+#java -Xmx500m -jar $stvExe dm6:refGene -ni
 
 echo "BIGWIG FROM URL"
 java -Xmx500m -jar $stvExe -r chr7:5494331-5505851 http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/wgEncodeSydhTfbsGm12878Nrf1IggmusSig.bigWig -ni
@@ -57,11 +55,20 @@ echo "GRACEFULLY HANDLE INVALID INPUT"
 java -Xmx500m -jar $stvExe refSeq.hg19.short.bed -x 'foo' -ni
 java -Xmx500m -jar $stvExe refSeq.hg19.short.bed -x 'ylim 0 10 *' -ni
 java -Xmx500m -jar $stvExe foo.bed -ni
+java -Xmx500m -jar $stvExe invalid-1.bedgraph -ni
+
+echo "BATCH FILE"
+java -Xmx500m -jar $stvExe -b batch_actb.bed -x 'zo 3 && save deleteme.%r.png' -g hg19 ear045.oxBS.actb.tdf hg19.gencode_genes_v19.gtf.gz batch_actb.bed > /dev/null
+rm deleteme*
+
+echo "SAVING AND LOADING SESSION"
+java -Xmx500m -jar $stvExe -x 'sessionSave deleteme.txt' -ni -g hg19 ear045.oxBS.actb.tdf hg19.gencode_genes_v19.gtf.gz batch_actb.bed > /dev/null
+java -Xmx500m -jar $stvExe -x deleteme.txt
+rm deleteme.txt
 
 echo -e "\n\nDONE\n\n"
 
 echo -e "PRINT HELP"
-java -Xmx500m -jar $stvExe -h &&
-
+java -Xmx500m -jar $stvExe -h
 
 exit

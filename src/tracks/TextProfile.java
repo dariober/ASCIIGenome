@@ -34,18 +34,22 @@ class TextProfile {
 	public TextProfile(List<Double> yValues, int yMaxLines, Double yMinUser, Double yMaxUser){
 				
 		// * Get ymin and ymax of input yValues
-		Double ymin= Double.NaN;
-		Double ymax= Double.NaN;
-		for(Double x : yValues){
-			if(!x.isNaN()){
-				if(x > ymax || ymax.isNaN()){
-					ymax= x;
-				} 
-				if(x < ymin || ymin.isNaN()){
-					ymin= x;
-				}
-			}
-		}
+		Double ymin= Utils.range(yValues)[0];
+		Double ymax= Utils.range(yValues)[1];
+		
+//		Double ymin= Double.NaN;
+//		Double ymax= Double.NaN;
+//		for(Double x : yValues){
+//			if(!x.isNaN()){
+//				if(x > ymax || ymax.isNaN()){
+//					ymax= x;
+//				} 
+//				if(x < ymin || ymin.isNaN()){
+//					ymin= x;
+//				}
+//			}
+//		}
+		
 		if(yMinUser.isNaN()){
 			yMinUser= ymin;
 		}

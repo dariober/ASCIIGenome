@@ -1,7 +1,10 @@
 package samTextViewer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import exceptions.InvalidCommandLineException;
 
 public class GenomicCoordsHistory {
 
@@ -10,7 +13,7 @@ public class GenomicCoordsHistory {
 	
 	/** List index stating where we are in history */
 	private int positionTracker= -1;
-	
+
 	/* Constructor */
 	public GenomicCoordsHistory(){}
 	
@@ -68,5 +71,43 @@ public class GenomicCoordsHistory {
 	protected List<GenomicCoords> getHistory() {
 		return history;
 	}
+
+	/** Set sequence dictionary and fasta ref, if available for all the genomic coords in this 
+	 * history. 
+	 * */
+	public void setGenome(List<String> tokens) throws InvalidCommandLineException, IOException {
+		if(tokens.size() == 0){
+			throw new InvalidCommandLineException();
+		}
+		for(GenomicCoords gc : this.getHistory()){
+			try{
+				gc.setGenome(tokens);
+			} catch (Exception e){
+				// e.printStackTrace();
+			}
+		}
+	}
+
+
 	
+	/** Reset window size according to current terminal screen. 
+	 * If the user reshapes the terminal window size or the font size, 
+	 * detect the new size and add it to the history. 
+	 * */
+//	public void resetWindowSize() throws InvalidGenomicCoordsException, IOException{
+//
+//		int currentWindowSize= this.current().getUserWindowSize(); 
+//		
+//		int newSize= jline.TerminalFactory.get().getWidth() - 1;
+//		if(newSize != this.current().getUserWindowSize()){
+//			// Replace the current genomicCoords obj with a new one having the same coordinates but different windowSize.
+//			// NB: The current genomic obj might not be the last one in the history list.
+//			currentWindowSize= newSize;
+//			String newRegion= this.current().getChrom() + ":" + this.current().getFrom() + "-" + this.current().getTo(); 
+//			this.getHistory().add(
+//					this.getHistory().indexOf(this.current()), 
+//					new GenomicCoords(newRegion, this.current().getSamSeqDict(), currentWindowSize, this.current().getFastaFile())
+//			);
+//		}
+//	}	
 }

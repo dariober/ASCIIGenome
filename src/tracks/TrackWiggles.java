@@ -2,28 +2,29 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
+import org.broad.igv.tdf.TDFGroup;
+import org.broad.igv.tdf.TDFReader;
 import org.broad.igv.tdf.TDFUtils;
+import org.broad.igv.util.ResourceLocator;
 
-import utils.IOUtils;
-import utils.BedLine;
-import utils.BedLineCodec;
 import com.google.common.base.Joiner;
-import htsjdk.samtools.util.BlockCompressedOutputStream;
-import htsjdk.tribble.index.Index;
+
+import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.index.tabix.TabixIndexCreator;
-import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
 import htsjdk.tribble.util.TabixUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import sortBgzipIndex.MakeTabixIndex;
 
 /** Process wiggle file formats. Mostly using IGV classes. 
  * bigBed, bigWig, */
@@ -34,74 +35,108 @@ public class TrackWiggles extends Track {
 	private int bdgDataColIdx= 4; 
 	private BBFileReader bigWigReader;
 	
+	
 	/* C o n s t r u c t o r s */
 
 	/**
 	 * Read bigWig from local file or remote URL.
 	 * @param filename Filename or URL to access 
 	 * @param gc Query coordinates and size of printable window 
-	 * @throws IOException */
-	public TrackWiggles(String filename, GenomicCoords gc, int bdgDataColIdx) throws IOException{
+	 * @throws IOException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws ClassNotFoundException */
+	public TrackWiggles(String filename, GenomicCoords gc, int bdgDataColIdx) throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException{
 
-		this.setGc(gc);
 		this.setFilename(filename);
+		this.setWorkFilename(filename);
+		
 		this.bdgDataColIdx= bdgDataColIdx;
 
-		if(Utils.getFileTypeFromName(this.getFilename()).equals(TrackFormat.BIGWIG)){
-			this.bigWigReader=new BBFileReader(this.getFilename()); // or url for remote access.
+		if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.BIGWIG)){
+			this.bigWigReader=new BBFileReader(this.getWorkFilename()); // or url for remote access.
 			if(!this.bigWigReader.getBBFileHeader().isBigWig()){
-				throw new RuntimeException("Invalid file type " + this.getFilename());
+				throw new RuntimeException("Invalid file type " + this.getWorkFilename());
 			}
+		} else if(Utils.getFileTypeFromName(filename).equals(TrackFormat.BEDGRAPH) && ! Utils.hasTabixIndex(filename)){
+			String tabixBdg= this.tabixBedgraphToTmpFile(filename);
+			this.setWorkFilename(tabixBdg);
 		}
-		
-		this.update();
+		this.setGc(gc);
 		
 	};
 	
 
 	/*  M e t h o d s  */
-	
-	public void update() throws IOException {
+	@Override
+	protected void update() throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException {
 
 		if(this.bdgDataColIdx < 4){
 			System.err.println("Invalid index for bedgraph column of data value. Resetting to 4. Expected >=4. Got " + this.bdgDataColIdx);
 			this.bdgDataColIdx= 4;
 		}
 
-		if(Utils.getFileTypeFromName(this.getFilename()).equals(TrackFormat.BIGWIG)){
+		if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.BIGWIG)){
 			
 			bigWigToScores(this.bigWigReader);
 			
-		} else if(Utils.getFileTypeFromName(this.getFilename()).equals(TrackFormat.TDF)){
-
-			this.screenWiggleLocusInfoList= 
-					TDFUtils.tdfRangeToScreen(this.getFilename(), this.getGc().getChrom(), 
-							this.getGc().getFrom(), this.getGc().getTo(), this.getGc().getMapping());
+		} else if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.TDF)){
 			
-			ArrayList<Double> screenScores= new ArrayList<Double>();
-			for(ScreenWiggleLocusInfo x : screenWiggleLocusInfoList){
-				screenScores.add((double)x.getMeanScore());
-			}
-			this.setScreenScores(screenScores);	
+			this.updateTDF();
 			
-		} else if(Utils.getFileTypeFromName(this.getFilename()).equals(TrackFormat.BEDGRAPH)){
+		} else if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.BEDGRAPH)){
 
-			// FIXME: Do not use hardcoded .samTextViewer.tmp.gz!
-			if(Utils.hasTabixIndex(this.getFilename())){
-				bedGraphToScores(this.getFilename());
-			} else if(Utils.hasTabixIndex(this.getFilename() + ".samTextViewer.tmp.gz")){
-				bedGraphToScores(this.getFilename() + ".samTextViewer.tmp.gz");
-			} else {
-				blockCompressAndIndex(this.getFilename(), this.getFilename() + ".samTextViewer.tmp.gz", true);
-				bedGraphToScores(this.getFilename() + ".samTextViewer.tmp.gz");
-			}
+			bedGraphToScores(this.getWorkFilename());
+			
 		} else {
-			throw new RuntimeException("Extension (i.e. file type) not recognized for " + this.getFilename());
+			throw new RuntimeException("Extension (i.e. file type) not recognized for " + this.getWorkFilename());
 		}
-		this.setYLimitMin(this.getYLimitMin());
-		this.setYLimitMax(this.getYLimitMax());
 	}
 
+	private String tabixBedgraphToTmpFile(String inBdg) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		File tmp = File.createTempFile("asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz");
+		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+		tmp.deleteOnExit();
+		tmpTbi.deleteOnExit();
+
+		new MakeTabixIndex(inBdg, tmp, TabixFormat.BED);
+		return tmp.getAbsolutePath();
+		
+	}
+	
+	private void updateTDF() throws InvalidGenomicCoordsException, IOException{
+		
+		int userWndowSize= this.getGc().getUserWindowSize();
+		this.screenWiggleLocusInfoList= 
+				TDFUtils.tdfRangeToScreen(this.getWorkFilename(), this.getGc().getChrom(), 
+						this.getGc().getFrom(), this.getGc().getTo(), this.getGc().getMapping(userWndowSize));
+		
+		ArrayList<Double> screenScores= new ArrayList<Double>();
+		for(ScreenWiggleLocusInfo x : screenWiggleLocusInfoList){
+			screenScores.add((double)x.getMeanScore());
+		}
+		if(this.isRpm()){
+			screenScores= this.normalizeToRpm(screenScores);
+		}
+		this.setScreenScores(screenScores);	
+
+	}
+	
+	@Override
+	protected void updateToRPM(){
+		if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.TDF)){
+			// Re-run update only for track types that can be converted to RPM
+			try {
+				this.update();
+			} catch (ClassNotFoundException | IOException | InvalidRecordException | InvalidGenomicCoordsException | SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	
 	@Override
 	public String printToScreen(){
 	
@@ -115,69 +150,38 @@ public class TrackWiggles extends Track {
 		}
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
-			printable= "\033[0;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[0m";
+			printable= "\033[48;5;231;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[48;5;231m";
 		}
 		return printable;
 	}
 	
-	/**
-	 * Block compress input file and create associated tabix index. Newly created file and index are
-	 * deleted on exit if deleteOnExit true.
-	 * @throws IOException 
-	 * */
-	private void blockCompressAndIndex(String in, String bgzfOut, boolean deleteOnExit) throws IOException {
-				
-		File inFile= new File(in);
-		File outFile= new File(bgzfOut);
-		
-		LineIterator lin= IOUtils.openURIForLineIterator(inFile.getAbsolutePath());
-
-		BlockCompressedOutputStream writer = new BlockCompressedOutputStream(outFile);
-		long filePosition= writer.getFilePointer();
-				
-		TabixIndexCreator indexCreator=new TabixIndexCreator(TabixFormat.BED);
-		BedLineCodec bedCodec= new BedLineCodec();
-		while(lin.hasNext()){
-			String line = lin.next();
-			BedLine bed = bedCodec.decode(line);
-			if(bed==null) continue;
-			writer.write(line.getBytes());
-			writer.write('\n');
-			indexCreator.addFeature(bed, filePosition);
-			filePosition = writer.getFilePointer();
-		}
-		writer.flush();
-				
-		File tbi= new File(bgzfOut + TabixUtils.STANDARD_INDEX_EXTENSION);
-		if(tbi.exists() && tbi.isFile()){
-			writer.close();
-			throw new RuntimeException("Index file exists: " + tbi);
-		}
-		Index index = indexCreator.finalizeIndex(writer.getFilePointer());
-		index.writeBasedOnFeatureFile(outFile);
-		writer.close();
-		
-		if(deleteOnExit){
-			outFile.deleteOnExit();
-			File idx= new File(outFile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
-			idx.deleteOnExit();
-		}
-	}
-
 	@Override
 	public String getTitle(){
 
-		double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
+		if(this.isHideTitle()){
+			return "";
+		}
 		
-		String xtitle= this.getFileTag() 
-				+ "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
+		Double[] range = Utils.range(this.getScreenScores());
+		Double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
+
+		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
+		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
+		
+		String xtitle= this.getTrackTag() 
+				+ "; ylim[" + ymin + " " + ymax + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]\n";
 		return this.formatTitle(xtitle);
 	}
 	
 	/** Return true if line looks like a valid bedgraph record  
 	 * */
-	public static boolean isValidBedGraphLine(String line){
+	private boolean isValidBedGraphLine(String line){
+		
+		if(line.trim().startsWith("#") || line.trim().startsWith("track ")){
+			return true;
+		}
+		
 		String[] bdg= line.split("\t");
 		if(bdg.length < 4){
 			return false;
@@ -185,26 +189,30 @@ public class TrackWiggles extends Track {
 		try{
 			Integer.parseInt(bdg[1]);
 			Integer.parseInt(bdg[2]);
+			Double.parseDouble(bdg[this.bdgDataColIdx - 1]);
 		} catch(NumberFormatException e){
 			return false;
 		}
 		return true;
 	}
 	
-	/** Populate object using bigWig data */
-	private void bigWigToScores(BBFileReader reader){
+	/** Populate object using bigWig data 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException */
+	private void bigWigToScores(BBFileReader reader) throws InvalidGenomicCoordsException, IOException{
 
 		// List of length equal to screen size. Each inner map contains info about the screen locus 
 		List<ScreenWiggleLocusInfo> screenWigLocInfoList= new ArrayList<ScreenWiggleLocusInfo>();
 		for(int i= 0; i < getGc().getUserWindowSize(); i++){
 			screenWigLocInfoList.add(new ScreenWiggleLocusInfo());
 		}
-		
+
+		int userWndowSize= this.getGc().getUserWindowSize();
 		BigWigIterator iter = reader.getBigWigIterator(getGc().getChrom(), getGc().getFrom(), getGc().getChrom(), getGc().getTo(), false);
 		while(iter.hasNext()){
 			WigItem bw = iter.next();
 			for(int i= bw.getStartBase(); i <= bw.getEndBase(); i++){
-				int idx= Utils.getIndexOfclosestValue(i, getGc().getMapping()); // Where should this position be mapped on screen?
+				int idx= Utils.getIndexOfclosestValue(i, this.getGc().getMapping(userWndowSize)); // Where should this position be mapped on screen?
 				screenWigLocInfoList.get(idx).increment(bw.getWigValue());
 			} 
 		}
@@ -216,8 +224,10 @@ public class TrackWiggles extends Track {
 	}
 	
 	/** Get values for bedgraph
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	private void bedGraphToScores(String fileName) throws IOException{
+	private void bedGraphToScores(String fileName) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
 		
 		List<ScreenWiggleLocusInfo> screenWigLocInfoList= new ArrayList<ScreenWiggleLocusInfo>();
 		for(int i= 0; i < getGc().getUserWindowSize(); i++){
@@ -232,9 +242,14 @@ public class TrackWiggles extends Track {
 				if(q == null){
 					break;
 				}
+				if ( !this.isValidBedGraphLine(q) ) {
+					System.err.println("\nInvalid record found: " + q + "\n");
+					throw new InvalidRecordException();
+				}
 				String[] tokens= q.split("\t");
-				int screenFrom= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[1])+1, this.getGc().getMapping());
-				int screenTo= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[2]), this.getGc().getMapping());
+				int userWndowSize= this.getGc().getUserWindowSize();
+				int screenFrom= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[1])+1, this.getGc().getMapping(userWndowSize));
+				int screenTo= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[2]), this.getGc().getMapping(userWndowSize));
 				float value= Float.valueOf(tokens[this.bdgDataColIdx-1]);
 				for(int i= screenFrom; i <= screenTo; i++){
 					screenWigLocInfoList.get(i).increment(value);
@@ -254,14 +269,43 @@ public class TrackWiggles extends Track {
 		this.setScreenScores(screenScores);
 		return;
 	}
+	
+	private ArrayList<Double> normalizeToRpm(ArrayList<Double> yValues){
+		ArrayList<Double> rpmed= new ArrayList<Double>();
+		String x= this.getAttributesFromTDF("totalCount");
+		if(x == null){
+			System.err.println("Warning: Cannot get total counts for " + this.getFilename());
+			return yValues;
+		}
+		Integer totalCount= Integer.parseInt(x);
+		for(int i= 0; i < yValues.size(); i++){
+			rpmed.add(yValues.get(i) / totalCount * 1000000.0);
+		}
+		return rpmed;
+	}
+	
+	private String getAttributesFromTDF(String attr){
 		
+		String path= this.getWorkFilename();
+		
+		try{
+			ResourceLocator resourceLocator= new ResourceLocator(path);
+			TDFReader reader= new TDFReader(resourceLocator);
+			TDFGroup rootGroup= reader.getGroup("/");
+			return rootGroup.getAttribute(attr);
+		} catch(Exception e){
+			return null;
+		}
+	}
+	
+	
 	/*   S e t t e r s   and   G e t t e r s */
 	
-	// public double getScorePerDot() {
-	// 	return scorePerDot;
-	//}
-
 	protected int getBdgDataColIdx() { return bdgDataColIdx; }
-	protected void setBdgDataColIdx(int bdgDataColIdx) { this.bdgDataColIdx = bdgDataColIdx; }
-	
+	protected void setBdgDataColIdx(int bdgDataColIdx) throws ClassNotFoundException, IOException, InvalidRecordException, InvalidGenomicCoordsException, SQLException { 
+		this.bdgDataColIdx = bdgDataColIdx; 
+		this.update();
+	}
+
+
 }

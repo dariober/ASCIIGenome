@@ -4,29 +4,19 @@ TODO
 Features
 --------
 
-* Add color to png output. It might not be too difficult: 1) Join the list of strings (lines) in a single 
-string; 2) split again the big string at the end-of-formatting escape code (now each string in the least 
-starts with the color of that string); 3) loop through the list and write each string using the color 
-code at the beginning of the string.
+* `export` command to write to file the data in the current interval? API:
 
-The methods to look for are : `Utils.ansiColourToGraphicsColor()` to convert ansi color number to
-graphics color; `Utils.convertTextFileToGraphic()` currently it strips the ansi escapes, it shouldn't if you 
-want color; `Utils.convertTextToGraphic()` which loops through the list of strings.
+```
+export [track_regex = .*] > [outdir/]
+```
 
-* Accept file of regions to create images from? See https://github.com/dariober/ASCIIGenome/issues/18 and 
-https://github.com/dariober/ASCIIGenome/issues/16
-
-* Add a `bookmark` command create on the fly an IntervalFeatureTrack with bookmarked regions.  API:
-`bookmark`: Add current region to bookmarks; `bookmark show` print current bookmarked features;
-`bookmark clear`, etc.
+Each track selected by regex will be written to outdir as `chrom_start-end.track_tag.ext` with appropriate `ext`ension.
+Coverage and wiggle files will be bedgraph with the score column taken from the Track. Annotation files will bed or gtf
+with data taken from the raw. Reference sequence if available will be in fasta format.
 
 * Command to "go to other end" of feature? 
 
-* Add `hideTitle/showTitle trackRegex#1 trackRegex#2 ...` to hide the title line from selected
- tracks to allow more compact visualization?
-
-* `next` and `next_start` should say something when no feature track is available or there are no more
-features to move to.
+* `next` should say something when no feature track is available or there are no more features to move to.
 
 * Add a `nucPrint` command to print nucleotide counts at each position, a bit like pysamstats. API:
 `nucPrint INT [INT] [stranded] [pct]`
@@ -34,8 +24,8 @@ features to move to.
 Refactor
 --------
 
-* Tracks CG_profile and seqRegex should be part of TrackSet like all the others. Currently they are treated 
-separately and this is a mess.
+* ~Tracks CG_profile and seqRegex should be part of TrackSet like all the others. Currently they are treated 
+separately and this is a mess.~
 
 * Each command in CommandHelp should be a class on its own extending CommandHelp. The super class command help
 should implement a `validate()` method which is customized to each sub class. `.validate()` should check e.g.

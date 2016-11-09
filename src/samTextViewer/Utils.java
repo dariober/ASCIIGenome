@@ -12,6 +12,7 @@ import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
 
 import java.awt.Color;
@@ -37,6 +38,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -56,12 +58,18 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.tdf.TDFReader;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
+
 import exceptions.InvalidColourException;
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import filter.FirstOfPairFilter;
-import tracks.IntervalFeatureSet;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
+import ucsc.UcscGenePred;
 
 /**
  * @author berald01
@@ -248,8 +256,12 @@ public class Utils {
 	
 	/** Get the first chrom string from first line of input file. As you add support for more filetypes you should update 
 	 * this function. This method is very dirty and shouldn't be trusted 100% 
-	 * @throws InvalidGenomicCoordsException */
-	public static String initRegionFromFile(String x) throws IOException, InvalidGenomicCoordsException{
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidCommandLineException 
+	 * @throws ClassNotFoundException */
+	public static String initRegionFromFile(String x) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		UrlValidator urlValidator = new UrlValidator();
 		String region= "";
 		TrackFormat fmt= Utils.getFileTypeFromName(x); 
@@ -282,7 +294,10 @@ public class Utils {
 			} 
 			System.err.println("Cannot initialize from " + x);
 			throw new RuntimeException();
-		} else {
+		} else if(Utils.isUcscGenePredSource(x)){
+			return initRegionFromUcscGenePredSource(x);
+			
+		}else {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
 			BufferedReader br;
 			GZIPInputStream gzipStream;
@@ -307,7 +322,7 @@ public class Utils {
 			String line;
 			while ((line = br.readLine()) != null){
 				line= line.trim();
-				if(line.startsWith("#") || line.isEmpty()){
+				if(line.startsWith("#") || line.isEmpty() || line.startsWith("track ")){
 					continue;
 				}
 				IntervalFeature feature= new IntervalFeature(line, fmt);
@@ -320,6 +335,22 @@ public class Utils {
 		throw new RuntimeException();
 	}
 	
+	private static String initRegionFromUcscGenePredSource(String x) throws ClassNotFoundException, IOException, InvalidCommandLineException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		
+		String xfile= new UcscGenePred(x, 1).getTabixFile();
+		GZIPInputStream gzipStream;
+		InputStream fileStream = new FileInputStream(xfile);
+		gzipStream = new GZIPInputStream(fileStream);
+		Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+		BufferedReader br = new BufferedReader(decoder);
+		String line= br.readLine();
+		br.close();
+		List<String> xlist= Lists.newArrayList(Splitter.on("\t").split(line));
+		String region= xlist.get(0) + ":" + xlist.get(3) + "-" + xlist.get(4);
+		return region;
+		
+	}
+
 	public static boolean bamHasIndex(String bam) throws IOException{
 
 		/*  ------------------------------------------------------ */
@@ -409,19 +440,19 @@ public class Utils {
 		}
 	}
 	
-	public static LinkedHashMap<String, IntervalFeatureSet> createIntervalFeatureSets(List<String> fileNames) throws IOException, InvalidGenomicCoordsException{
-		LinkedHashMap<String, IntervalFeatureSet> ifsets= new LinkedHashMap<String, IntervalFeatureSet>();
-		for(String x : fileNames){
-			String f= x;
-			if(getFileTypeFromName(x).equals(TrackFormat.BED) || getFileTypeFromName(x).equals(TrackFormat.GFF)){
-				if(!ifsets.containsKey(x)){ // If the input has duplicates, do not reload duplicates!
-					IntervalFeatureSet ifs= new IntervalFeatureSet(f);
-					ifsets.put(x, ifs);
-				}
-			}
-		}
-		return ifsets;
-	}
+//	public static LinkedHashMap<String, IntervalFeatureSet> createIntervalFeatureSets(List<String> fileNames) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+//		LinkedHashMap<String, IntervalFeatureSet> ifsets= new LinkedHashMap<String, IntervalFeatureSet>();
+//		for(String x : fileNames){
+//			String f= x;
+//			if(getFileTypeFromName(x).equals(TrackFormat.BED) || getFileTypeFromName(x).equals(TrackFormat.GFF)){
+//				if(!ifsets.containsKey(x)){ // If the input has duplicates, do not reload duplicates!
+//					IntervalFeatureSet ifs= new IntervalFeatureSet(f);
+//					ifsets.put(x, ifs);
+//				}
+//			}
+//		}
+//		return ifsets;
+//	}
 	
     /** 
      * Transpose list of list as if they were a table. No empty cells should be present. 
@@ -541,8 +572,10 @@ public class Utils {
 	 * to move.
 	 * @param bam 
 	 * @return
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	public static String parseConsoleInput(String rawInput, GenomicCoords gc){
+	public static String parseConsoleInput(List<String> tokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
 		
 		String region= "";
 		String chrom= gc.getChrom();
@@ -551,10 +584,10 @@ public class Utils {
 		
 		int windowSize= to - from + 1;
 		int halfWindow= (int)Math.rint(windowSize / 2d);
-		if(rawInput.trim().equals("ff")){				
+		if(tokens.get(0).equals("ff")){				
 			from += halfWindow; 
 			to += halfWindow;
-			if(!gc.getSamSeqDict().isEmpty()){
+			if(gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()){
 				int chromLen= gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
 				if(to > chromLen){
 					to= chromLen;
@@ -562,7 +595,7 @@ public class Utils {
 				}
 			}			
 			return chrom + ":" + from + "-" + to;
-		} else if(rawInput.trim().equals("bb")) {
+		} else if(tokens.get(0).equals("bb")) {
 			from -= halfWindow;
 			to -= halfWindow; 
 			if(from < 1){
@@ -570,12 +603,19 @@ public class Utils {
 				to= from + gc.getUserWindowSize() - 1;
 			}
 			return chrom + ":" + from + "-" + to;
-		} else if(rawInput.trim().equals("f")){
+		} else if(tokens.get(0).equals("f")){
 			int step= (int)Math.rint(windowSize / 10d);
-
+			if(tokens.size() > 1){
+				try{
+					step= (int)Math.rint(windowSize * Double.parseDouble(tokens.get(1)));
+				} catch(NumberFormatException e){
+					System.err.println("Cannot parse " + tokens.get(1) + " to numeric.");
+					step= 0;
+				} 
+			}			
 			from += step; 
 			to += step;
-			if(!gc.getSamSeqDict().isEmpty()){
+			if(gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()){
 				int chromLen= gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
 				if(to > chromLen){
 					to= chromLen;
@@ -583,8 +623,17 @@ public class Utils {
 				}
 			}			
 			return chrom + ":" + from + "-" + to;
-		} else if(rawInput.trim().equals("b")){
+			
+		} else if(tokens.get(0).equals("b")){
 			int step= (int)Math.rint(windowSize / 10d);
+			if(tokens.size() > 1){
+				try{
+					step= (int)Math.rint(windowSize * Double.parseDouble(tokens.get(1)));
+				} catch(NumberFormatException e){
+					System.err.println("Cannot parse " + tokens.get(1) + " to numeric.");
+					step= 0;
+				} 
+			}						
 			from -= step;
 			to -= step; 
 			if(from < 1){
@@ -592,11 +641,11 @@ public class Utils {
 				to= from + gc.getUserWindowSize() - 1;
 			}
 			return chrom + ":" + from + "-" + to;
-		} else if(rawInput.trim().matches("\\d+.*")) { // You might want to be more specific
-			return chrom + ":" + parseGoToRegion(rawInput);
-		} else if(rawInput.trim().startsWith("+") 
-				|| rawInput.trim().startsWith("-")){
-			int offset= parseStringToIntWithUnits(rawInput.trim());
+		} else if(tokens.get(0).matches("\\d+.*")) { // You might want to be more specific
+			return chrom + ":" + parseGoToRegion(Joiner.on(" ").join(tokens)); // You shouldn't return to string!
+		} else if(tokens.get(0).startsWith("+") 
+				|| tokens.get(0).startsWith("-")){
+			int offset= parseStringToIntWithUnits(tokens.get(0));
 			from += offset;
 			if(from <= 0){
 				from= 1;
@@ -605,10 +654,10 @@ public class Utils {
 				to += offset;
 			}
 			return chrom + ":" + from + "-" + to;
-		}else if (rawInput.equals("q")) {
+		}else if (tokens.equals("q")) {
 			System.exit(0);	
 		} else {
-			throw new RuntimeException("Invalid input for " + rawInput);
+			throw new RuntimeException("Invalid input for " + tokens);
 		}
 		return region;
 	}
@@ -826,9 +875,9 @@ public class Utils {
 	/** Function to round x and y to a number of digits enough to show the difference in range
 	 * This is for pretty printing only.
 	 * */
-	public static double[] roundToSignificantDigits(double x, double y, int nSignif) {
+	public static Double[] roundToSignificantDigits(double x, double y, int nSignif) {
 
-		double[] rounded= new double[2];
+		Double[] rounded= new Double[2];
 		
 	    double diff= Math.abs(x - y);
 	    if (diff < 1e-16){
@@ -906,23 +955,33 @@ public class Utils {
 	         return false;
 	      }
 	}
+
+//	public static List<String> checkAvailableInput(List<String> inputFileList){
+//		
+//	}
 	
 	/** Add track(s) to list of input files 
 	 * @param inputFileList Existing list of files to be extended
 	 * @param newFileNames List of files to append
+	 * @throws InvalidCommandLineException 
 	 */
-	public static void addTrack(List<String> inputFileList, List<String> newFileNames) {
+	public static void addSourceName(List<String> inputFileList, List<String> newFileNames) throws InvalidCommandLineException {
 
 		List<String> dropMe= new ArrayList<String>();
+		List<String> addMe= new ArrayList<String>();
 		for(String x : newFileNames){
 			x= x.trim();
-			if(!new File(x).exists() && !Utils.urlFileExists(x)){
+			if(!new File(x).isFile() && !Utils.urlFileExists(x) && !Utils.isUcscGenePredSource(x)){
 				dropMe.add(x);
+				System.err.println("Unable to add " + x);
 			} 
 		}
 		for(String x : dropMe){
-			System.err.println("\nWarning: Dropping file " + x + " as it does not exist.\n");
+			System.err.println("\nWarning: File " + x + " is not a local file.\n");
 			newFileNames.remove(x);
+		}
+		for(String x : addMe){
+			newFileNames.add(x);
 		}
 		inputFileList.addAll(newFileNames);
 		
@@ -979,8 +1038,9 @@ public class Utils {
 		return nz;
 	}
 
-	/** Split string x in tokens. Effectively just a friendly wrapper around StrTokenizer
-	 * */
+	/** Split string x in tokens. Effectively just a friendly wrapper around StrTokenizer.
+	 * Use *single* quotes for avoiding splitting. 
+	 */
 	public static ArrayList<String> tokenize(String x, String delimiterString){
 		
 		if(x == null){
@@ -991,7 +1051,7 @@ public class Utils {
 		StrTokenizer str= new StrTokenizer(x);
     	str.setTrimmerMatcher(StrMatcher.spaceMatcher()); 
 		str.setDelimiterString(delimiterString);
-		str.setQuoteChar('\"');
+		str.setQuoteChar('\'');
 		ArrayList<String> tokens= (ArrayList<String>) str.getTokenList();
 		for(int i= 0; i < tokens.size(); i++){
 			String tok= tokens.get(i).trim();
@@ -1010,12 +1070,13 @@ public class Utils {
 	 * untouched to print to stdout.
 	 * @throws IOException 
 	 * */
-	public static void printer(String xprint, String filename, boolean stripAnsi) throws IOException{
+	public static void printer(String xprint, String filename) throws IOException{
 		System.out.print(xprint);
 		if(filename == null){
 			return;
 		}
-		if(stripAnsi){
+		if(! filename.toLowerCase().endsWith(".png")){
+			// We write file as plain text so strip ansi codes.
 			xprint= stripAnsiCodes(xprint);
 		}
 		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename), true));
@@ -1024,15 +1085,25 @@ public class Utils {
 	}
 	
 	/** Get a filaname to write to. GenomicCoords obj is used to get current position and 
-	 * create a suitable filename from it, provided a filename is not given.  
+	 * create a suitable filename from it, provided a filename is not given.
+	 * The string '%r' in the file name, is replaced with the current position. Useful to construct
+	 * file names like myPeaks.%r.png -> myPeaks.chr1_1234-5000.png.
 	 * */
 	public static String parseCmdinputToGetSnapshotFile(String cmdInput, GenomicCoords gc) throws IOException{
-		String snapshotFile= cmdInput.replaceAll("^savef|^save", "").trim();
+		
+		final String REGVAR= "%r";
+		
+		String snapshotFile= cmdInput.trim().replaceAll("^save", "").trim();
+		
+		String region= gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo();
+		
 		if(snapshotFile.isEmpty()){
-			snapshotFile= gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".txt"; 
+			snapshotFile= REGVAR + ".txt"; 
 		} else if(snapshotFile.equals(".png")){
-			snapshotFile= gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".png";
-		}
+			snapshotFile= REGVAR + ".png";
+		} 
+		snapshotFile= snapshotFile.replace(REGVAR, region); // Special string '%r' is replaced with the region 
+		
 		File file = new File(snapshotFile);
 		if(file.exists() && !file.canWrite()){
 			System.err.println("Cannot write to " + snapshotFile);
@@ -1186,5 +1257,85 @@ public class Utils {
 		}
 		return cleanfilter;
 	} 
+	
+	public static TabixFormat trackFormatToTabixFormat(TrackFormat fmt){
+		
+		TabixFormat tbx= null;
+		if(fmt.equals(TrackFormat.BAM)){
+			tbx= TabixFormat.SAM; 
+		} else if (fmt.equals(TrackFormat.BED) || fmt.equals(TrackFormat.BEDGRAPH)){
+			tbx= TabixFormat.BED; 
+		} else if (fmt.equals(TrackFormat.GFF)){
+			tbx= TabixFormat.GFF;
+		} else if (fmt.equals(TrackFormat.VCF)){
+			tbx= TabixFormat.VCF;
+		} else {
+			throw new RuntimeException();
+		}
+		return tbx;
+		
+	}
+	
+	/** Same as R range(..., na.rm= TRUE) function: Return min and max of 
+	 * list of values ignoring NaNs.
+	 * */
+	public static Double[] range(List<Double> y){
+		Double[] range= new Double[2];
+		
+		Double ymin= Double.NaN;
+		Double ymax= Double.NaN;
+		for(Double x : y){
+			if(!x.isNaN()){
+				if(x > ymax || ymax.isNaN()){
+					ymax= x;
+				} 
+				if(x < ymin || ymin.isNaN()){
+					ymin= x;
+				}
+			}
+		}
+		range[0]= ymin;
+		range[1]= ymax;
+		return range;
+	}
+	
+	/** Convert coordinates to string suitable for initializing GenomicCoords object.
+	 * See tests for handling odd cases.
+	 * */
+	public static String coordinatesToString(String chrom, Integer from, Integer to){
+		
+		if(from == null){
+			from = -1;
+		}
+		if(to == null){
+			to = -1;
+		}
+		
+		String xfrom;
+		if(from <= 0){
+			xfrom= "1";
+		} else {
+			xfrom= from.toString();
+		}
+		String xto;
+		if(to <= 0 || to < from){
+			xto= "";
+		} else {
+			xto= "-" + to.toString();
+		}
+		return chrom + ":" + xfrom + xto;
+	} 
+	
+	/** True if filename is a UCSC genePred file or a valid connection to database. 
+	 * */
+	public static boolean isUcscGenePredSource(String filename) {
+		try{
+			new UcscGenePred(filename, 1000);
+			return true;
+		} catch(Exception e) {
+			return false;
+		}
+	}
+
 	
 }
