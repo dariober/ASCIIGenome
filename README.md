@@ -11,6 +11,7 @@ Text Only Genome Viewer!
     - [Open and browse](#open-and-browse)
     - [Finding & filtering stuff](#finding--filtering-stuff)
     - [Chaining commands](#chaining-commands)
+    - [Batch processing](#batch-processing)
 - [Supported input](#supported-input)
 - [Genome option](#genome-option)
 - [Formatting of reads and features](#formatting-of-reads-and-features)
@@ -18,7 +19,6 @@ Text Only Genome Viewer!
 - [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
 - [Interactive commands](#interactive-commands)
 - [Credits](#credits)
-
 
 
 <!-- 
@@ -65,10 +65,10 @@ Installation quick start
 In the commands below replace version number with the latest from [releases](https://github.com/dariober/ASCIIGenome/releases):
 
 ```
-wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.2.0.zip
-unzip ASCIIGenome-0.2.0.zip
+wget https://github.com/dariober/ASCIIGenome/releases/download/v0.1.0/ASCIIGenome-0.4.0.zip
+unzip ASCIIGenome-0.4.0.zip
 
-cd ASCIIGenome-0.2.0/
+cd ASCIIGenome-0.4.0/
 chmod a+x ASCIIGenome
 cp ASCIIGenome.jar /usr/local/bin/ # Or ~/bin/
 cp ASCIIGenome /usr/local/bin/     # Or ~/bin/ 
@@ -124,7 +124,6 @@ Open with a reference genome (reference must be indexed, see [Supported input](#
 ASCIIGenome -fa genome.fa aln.bam
 ```
 
-
 ### Open and browse 
 
 Open some peak and bigWig files from
@@ -172,7 +171,7 @@ At command prompt issue the following commands:
 
 ```
 [h] for help: goto 36:1-2682151
-[h] for help: filter \ttranscript\t
+[h] for help: grep -i \ttranscript\t
 [h] for help: trackHeight 100
 ```
 
@@ -183,7 +182,7 @@ print it to screen:
 
 ```
 [h] for help: 1
-[h] for help: find_first LmjF.36.TRNAGLN.01
+[h] for help: find LmjF.36.TRNAGLN.01
 [h] for help: print 
 ```
 
@@ -198,19 +197,43 @@ convenient than executing commands one by one and it is also faster as tracks ar
 could be executed in one pass as
 
 ```
-goto 36:1-2682151 && filter \ttranscript\t && trackHeight 100
+goto 36:1-2682151 && grep -i \ttranscript\t && trackHeight 100
 ```
 
 In addition, the same could be achieved at the start via the `--exec/-x` option:
 
 ```
-ASCIIGenome -x 'goto 36:1-2682151 && filter \ttranscript\t && trackHeight 100' \
+ASCIIGenome -x 'goto 36:1-2682151 && grep -i \ttranscript\t && trackHeight 100' \
     ftp://ftp.ensemblgenomes.org/pub/release-31/protists/gtf/leishmania_major/Leishmania_major.ASM272v2.31.gtf.gz
 ```
 
-Note that if the first option passed to `-exec/-x` starts with `-` you need to add a space between 
-the opening quote and the option itself. For example do  `ASCIIGenome -x ' -F 16' ...` instead of
-`ASCIIGenome -x '-F 16' ...`.
+### Batch processing
+
+Often you have a list of regions to visualize in batch for a one or more tracks. For example, you have a list of ChIP-Seq peaks or RNA-Seq genes and you want to see the coverage profiles together with an annotation file. `ASCIIGenome` allows easy batch processing 
+via the `--batchFile` option.
+
+This script iterates through the intervals in *peaks.bed*. For each interval, it displays two bigiwig, a gtf file and the peak file itself. 
+Each interval is zoomed out 3 times and the screenshot saved as png to `/tmp/peak.%r.png`, where `%r` is a special variable 
+expanded to the current coordinates as `chrom_start-end`.
+
+```
+ASCIIGenome -b peaks.bed \
+    -x 'zo 3 && save /tmp/peak.%r.png' \
+    chipseq.bigwig \
+    input.bigwig \
+    gencode_genes.gtf \
+    peaks.bed > /dev/null
+```
+
+[convert](http://www.imagemagick.org/script/convert.php) tools from ImageMagick is handy to concatenate png files and create 
+a gallery of screenshots in a single file: 
+
+```
+convert -append /tmp/peak.*.png myPeaks.png
+```
+
+A similar task may be achieved by wrapping ASCIIGenome in a for-loop but it would much slower and complicated since each iteration would
+require restarting the JVM and re-loading the tracks.
 
 Supported input
 ===============
@@ -246,7 +269,6 @@ guidelines on the choice of format see [IGV
 recommendations](https://www.broadinstitute.org/igv/RecommendedFileFormats).
 
 **Fasta reference**: The reference sequence should be uncompressed and indexed, with *e.g.* [samtools faidx](http://www.htslib.org/doc/samtools.html):
-
 
 ```
 samtools faidx genome.fa
@@ -375,10 +397,12 @@ Tips gotchas and miscellanea
 ============================
 
 * **Performance** Alignment files are typically accessed very quickly but `ASCIIGenome` becomes slow
-when the window size grows above a few hundreds of kilobases. Annotation files (bed, gff, gtf) are
-loaded in memory unless they are indexed with `tabix`.
+when the window size grows above a few hundreds of kilobases.
 
-* **Regular expression** Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i).*actb.*'
+* **Regular expression** ASCIIGenome makes extensive use of regular expressions. 
+Most commands use regular expression in *case sensitive* mode. 
+Use the `(?i)` modifier to match in case insensitve mode, e.g. '(?i)bam' to capture 'foo.bam' and 'foo.BAM'. 
+Note that the command `seqRegex` by default is case insensitive, unless the `-c` is set.
 
 * When displaying bam files, `ASCIGenome` is hardcoded to disable the coverage and read tracks if
 the window size is >100,000 bp. This is to prevent the browsing to become horribly slow. To display

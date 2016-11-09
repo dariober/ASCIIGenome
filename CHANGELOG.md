@@ -1,3 +1,39 @@
+New in 0.4.0
+=============
+
+This is a major upgrade. The code has been vastly reworked and improved. Lots of new features and commands have been added.
+This list below is quite incomplete:
+
+* **Batch processing** with `--batchFile` option: ASCIIGenome will iterate through each interval in a batch file in bed or gff format. This is super useful to generate a gallery of screenshots in target regions (e.g. genes, peaks, etc). Much much faster then 
+iterating ASCIIGenome in a for-loop since the JVM and files are loaded only once!
+
+* **Colours** 
+
+  * Now the png output has colours.
+
+  * ASCIIGenome sets the background colour of the terminal to white, unless started with `--noFormat`. In this way the visual look of ASCIIGenome should be independent of the user's colour scheme of the terminal.
+
+* **Save session** Session settings can be saved to file to be reloaded in a new run of ASCIIGenome (*Experimental*).
+
+* **New commands** Some new commands not listed above: 
+`bookmark` to mark positions of interest, `cmdHistory` shows the list of executed commands, 
+`hideTitle` for more compact view, `dropTracks`, `l` (left) and `r` (right) command. 
+
+* **Better API** Some commands have been renamed and improved in API. Some examples: `filter` now is `grep -i incl_regex -e excl_re <tracks>`; 
+commands `mapq -f -F` have been grouped in the single `samtools` command. Bookmarks and regex tracks can be saved to file with 
+the familiar *nix operators `>` and `>>`.
+
+
+* **Performance **
+
+  * **Memory** Memory footprint is now even smaller since files are never fully read in memory now. Bed or gff files without tabix index are sorted, block compressed and indexed as needed to temporary files. 
+
+  * **Speed** Operation that don't change the underlying data, *e.g.* change colour, do not parse the raw files again.
+
+* TDF files can switch to be normalized to reads per million. 
+
+* Major refactoring should make further development easier.
+
 New in 0.2.0
 =============
 

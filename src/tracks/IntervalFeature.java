@@ -466,4 +466,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return i;
 	}
 
+//	public void setTo(int to) {
+//		this.to= to;
+//	}
+//	public void setFrom(int from) {
+//		this.from= from;
+//	}
 }

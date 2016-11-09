@@ -24,6 +24,7 @@ public class TrackMethylation extends Track {
     /* C o n s t r u c t o r s */
     public TrackMethylation(String filename, List<ScreenLocusInfo> screenLocusInfoList){        
         this.setFilename(filename);
+        this.setWorkFilename(filename);
         this.screenLocusInfoList= screenLocusInfoList;
         
         List<Double> mValues= new ArrayList<Double>();
@@ -94,9 +95,9 @@ public class TrackMethylation extends Track {
             throw new RuntimeException();
         }
         
-        String charForM= (noFormat) ? "*" : "\033[31m*\033[0m"; // 107: white bg; 31: red text
-        String charForU= (noFormat) ? "." : "\033[34m.\033[0m"; // 107: white bg; 34: blue text
-        // String charForZero= (noFormat) ? "_" : "\033[_\033[0m"; // 107: white bg
+        String charForM= (noFormat) ? "*" : "\033[31m*\033[48;5;231m"; // 107: white bg; 31: red text
+        String charForU= (noFormat) ? "." : "\033[34m.\033[48;5;231m"; // 107: white bg; 34: blue text
+        // String charForZero= (noFormat) ? "_" : "\033[_\033[48;5;231m"; // 107: white bg
         String charForZero= "_";
         String charForNonCyt= " ";
         String charForFill= " ";
@@ -179,11 +180,19 @@ public class TrackMethylation extends Track {
     
     @Override
     public String getTitle(){
+    
+		if(this.isHideTitle()){
+			return "";
+		}
 
-        double[] rounded= Utils.roundToSignificantDigits(this.getMinScreenScores(), this.getMaxScreenScores(), 2);
-        
-        String xtitle= this.getFileTag() 
-                + "; ylim[" + this.getYLimitMin() + " " + this.getYLimitMax() + "]" 
+		Double[] range = Utils.range(this.getScreenScores());
+		Double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
+
+		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
+		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
+		
+        String xtitle= this.getTrackTag() 
+                + "; ylim[" + ymin + " " + ymax + "]" 
                 + "; range[" + rounded[0] + " " + rounded[1] + "]\n";
 		return this.formatTitle(xtitle);
     }

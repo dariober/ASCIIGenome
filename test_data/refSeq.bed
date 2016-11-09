@@ -1,5 +1,5 @@
 # comment line
-chrom	start	end
+# chrom	start	end
 chr1	0	10
 chr1	20	30
 chr10	0	5

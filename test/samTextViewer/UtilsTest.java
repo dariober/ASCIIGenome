@@ -5,8 +5,8 @@ import static org.hamcrest.CoreMatchers.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +26,9 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import filter.FirstOfPairFilter;
 import filter.FlagToFilter;
 import filter.ReadNegativeStrandFilter;
@@ -39,6 +41,37 @@ public class UtilsTest {
 	
 	public static String fastaFile= "test_data/chr7.fa";
 
+	@Test
+	public void canGetRangeOfListOfValues(){
+		List<Double> y= new ArrayList<Double>();
+		y.add(1.0);
+		y.add(10.0);
+		y.add(3.0);
+		y.add(Double.NaN);
+		assertEquals(1.0, Utils.range(y)[0], 0.0001); // Min
+		assertEquals(10.0, Utils.range(y)[1], 0.0001); // Max
+		
+		// Only NaN
+		List<Double> nan= new ArrayList<Double>();
+		nan.add(Double.NaN);
+		nan.add(Double.NaN);
+		nan.add(Double.NaN);
+		assertTrue(Utils.range(nan)[0].isNaN());
+		assertTrue(Utils.range(nan)[1].isNaN());
+		
+		// Length of one
+		List<Double> y1= new ArrayList<Double>();
+		y1.add(1.0);
+		assertEquals(1.0, Utils.range(y1)[0], 0.0001);
+		assertEquals(1.0, Utils.range(y1)[1], 0.0001);
+		
+		// Zero length
+		List<Double> y0= new ArrayList<Double>();
+		assertTrue(Utils.range(y0)[0].isNaN());
+		assertTrue(Utils.range(y0)[1].isNaN());
+		
+	}
+	
 	@Test
 	public void testSortByValueReverse(){
 		
@@ -184,7 +217,7 @@ public class UtilsTest {
 
 	@Test
 	public void canCountReadsInWindow2() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, 200, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, fastaFile);
 		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 		
 		assertEquals(100377, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
@@ -214,7 +247,7 @@ public class UtilsTest {
 	
 	@Test
 	public void canCountReadsInWindow() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:5522436-5613572", samSeqDict, 200, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5522436-5613572", samSeqDict, fastaFile);
 		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 		
 		filters.add(new MappingQualityFilter(30)); // Same as   
@@ -227,7 +260,7 @@ public class UtilsTest {
 		long t1= System.currentTimeMillis();
 		System.out.println("TIME TO FILTER: " + (t1-t0));
 		
-		gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, 200, fastaFile);
+		gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, fastaFile);
 		
 	}
 	
@@ -245,17 +278,18 @@ public class UtilsTest {
 	} 
 
 	@Test
-	public void canInitRegion() throws IOException, InvalidGenomicCoordsException{
+	public void canInitRegion() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		assertEquals("chrM", Utils.initRegionFromFile("test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
 		assertEquals("chr1", Utils.initRegionFromFile("/Users/berald01/Downloads/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
 		assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
 		assertEquals("chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
 		assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
+		assertTrue(Utils.initRegionFromFile("hg19:refGene").startsWith("chr1:"));
 	}
 	
 	@Test
-	public void canInitRegionFromURLBam() throws IOException, InvalidGenomicCoordsException{
+	public void canInitRegionFromURLBam() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		String reg= Utils.initRegionFromFile("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02AlnRep1.bam");
 		assertEquals("chr1", reg);
 	}
@@ -313,7 +347,7 @@ public class UtilsTest {
 	
 	@Test
 	public void canParseInputAndUpdateGenomicCoords() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, 100, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, fastaFile);
 
 		//String region= Utils.parseConsoleInput("-r chr8:1-1000", gc);
 		//assertEquals("chr8:1-1000", region);
@@ -323,33 +357,33 @@ public class UtilsTest {
 
 		//region= Utils.parseConsoleInput("-r chr8", gc);
 		//assertEquals("chr8", region);
-		
-		String region= Utils.parseConsoleInput("+10", gc);
+		List<String> tokens= new ArrayList<String>();
+		tokens.add("+10");
+		String region= Utils.parseConsoleInput(tokens, gc);
 		assertEquals("chr7:110-210", region);
 
-		region= Utils.parseConsoleInput("-1000", gc);
+		tokens.set(0, "-1000");
+		region= Utils.parseConsoleInput(tokens, gc);
 		// assertEquals("chr7:110-210", region);
 		
-		String rawInput= "-r chr10 -F 1024";
-		List<String> clArgs= Arrays.asList(rawInput.split("\\s+"));
-		// System.out.println(clArgs.indexOf("-R"));		
 	}
 	
 	@Test
 	public void canGetGoToRegionString() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, 100, fastaFile);
-		String rawInput= "1000";
-		assertEquals("chr7:1000", Utils.parseConsoleInput(rawInput, gc));
+		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, fastaFile);
+		List<String> tokens= new ArrayList<String>();
+		tokens.add("1000");
+		assertEquals("chr7:1000", Utils.parseConsoleInput(tokens, gc));
 		
-		rawInput= "1000-10000";
-		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(rawInput, gc));
+		tokens.set(0, "1000-10000");
+		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(tokens, gc));
+
+		tokens.set(0, "1,000 - 10,000");
+		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(tokens, gc));
 		
-		rawInput= " 1,000 - 10,000";
-		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(rawInput, gc));
-		
-		rawInput= ":foo"; // Must fail
+		tokens.set(0, ":foo");
 		try{
-			System.err.println(Utils.parseConsoleInput(rawInput, gc));
+			System.err.println(Utils.parseConsoleInput(tokens, gc));
 			fail();
 		} catch (Exception e) {
 			
@@ -362,7 +396,7 @@ public class UtilsTest {
 		double x= 1000.123456789;
 		double y= 1001.123456789;
 		int nSignif= 3;
-		double[] rounded= Utils.roundToSignificantDigits(x, y, nSignif);
+		Double[] rounded= Utils.roundToSignificantDigits(x, y, nSignif);
 		assertEquals(1000.123, rounded[0], 0.001); // Regular rounding
 		assertEquals(1001.123, rounded[1], 0.001);
 		
@@ -410,14 +444,14 @@ public class UtilsTest {
 	}
 	
 	@Test
-	public void canAddTracksToList() throws IOException, InvalidGenomicCoordsException{
+	public void canAddTracksToList() throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException{
 		List<String> inputFileList= new ArrayList<String>();
 		inputFileList.add("foo");
 		inputFileList.add("bar");
 		List<String> newFileNames= new ArrayList<String>();
 		newFileNames.add("test_data/ds051.actb.bam");
 		newFileNames.add("nonsense");
-		Utils.addTrack(inputFileList, newFileNames);
+		Utils.addSourceName(inputFileList, newFileNames);
 		assertEquals(3, inputFileList.size());
 	}
 	
@@ -433,13 +467,18 @@ public class UtilsTest {
 	@Test
 	public void canSplitStringInTokens(){
 
-		assertEquals("bar", Utils.tokenize("foo    bar    baz   ", " ").get(1));
+		String str= "foo    bar    baz   ";
+		assertTrue(Utils.tokenize(str, " ").contains("bar"));
+		assertTrue(Utils.tokenize(str, " ").contains("baz"));
+		// assertEquals("bar", Utils.tokenize(str, " ").get(1));
 		
-		ArrayList<String> xx= Utils.tokenize("\"foo && bar\" "
+		
+		// Note use of quotes
+		ArrayList<String> xx= Utils.tokenize("'foo && bar' "
 				+ "&& bar"
 				+ "&&baz "
-				+ "&& \"foo && biz\""
-				+ "&& \"foo && ' biz\"", "&&");
+				+ "&& 'foo && biz'"
+				+ "&& 'foo && \' biz'", "&&");
 		for (String token : xx) {
 			System.out.println(token);
 		}
@@ -465,21 +504,21 @@ public class UtilsTest {
 	}
 	
 	@Test
-	public void canPrintToStdoutOrFile() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintToStdoutOrFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, 101, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
 		
 		File filename= new File("tmp.txt");
-		filename.delete();
-		Utils.printer(tc.getTitle(), "tmp.txt", true);
-		Utils.printer(tc.printToScreen(), "tmp.txt", true);
-		// Check tmp.txt looks ok.
+		filename.deleteOnExit();
+		Utils.printer(tc.getTitle(), filename.getAbsolutePath());
+		Utils.printer(tc.printToScreen(), filename.getAbsolutePath());
+		
 	}
 	
 	@Test
 	public void canGetWritableFileOrNull() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7", 1, 200, samSeqDict, 100, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:1-200", samSeqDict, fastaFile);
 		String x= Utils.parseCmdinputToGetSnapshotFile("save", gc);
 		assertEquals("chr7_1-200.txt", x);
 		x= Utils.parseCmdinputToGetSnapshotFile("save /tmp/foo.txt", gc);
@@ -489,6 +528,24 @@ public class UtilsTest {
 	@Test
 	public void testPng() throws IOException{
 		Utils.convertTextFileToGraphic(new File("test_data/chr7_5564857-5570489.txt"), new File("tmp.png"));
+		new File("tmp.png").deleteOnExit();
 	}
 	
+	@Test
+	public void canConvertCoordsToString(){
+		assertEquals("chr1:1-100", Utils.coordinatesToString("chr1", 1, 100));
+		assertEquals("chr1:1", Utils.coordinatesToString("chr1", 1, null));
+		assertEquals("chr1:1", Utils.coordinatesToString("chr1", 1, null));
+		assertEquals("chr1:1", Utils.coordinatesToString("chr1", null, null));
+		assertEquals("chr1:1", Utils.coordinatesToString("chr1", null, -1));
+		assertEquals("chr1:10", Utils.coordinatesToString("chr1", 10, 9));
+	}
+	
+	@Test
+	public void canTestForUcscSource(){
+		assertTrue(Utils.isUcscGenePredSource("dm6:refGene"));
+		assertTrue(Utils.isUcscGenePredSource("test_data/refGene.hg19.chr7.txt.gz"));
+		assertTrue(Utils.isUcscGenePredSource("http://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/refGene.txt.gz"));
+		assertTrue(!Utils.isUcscGenePredSource("test_data/hg19_genes.gtf.gz"));
+	}
 }

@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "0.2.0";
+	public static String VERSION= "0.4.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	
 	public static LinkedHashMap<String, String> docstrings= new LinkedHashMap<String, String>(); 
@@ -32,16 +32,20 @@ public class ArgParse {
 			.required(false)
 			.nargs("*")
 			.help("Input files to be displayed: bam, bed, gtf, bigwig, bedgraph, etc");
-		
+
+		parser.addArgument("--batchFile", "-b")
+			.type(String.class)
+			.required(false)
+			.help("Bed or gff file of regions to process in batch. Use - to read from stdin. "
+					+ "ASCIIGenome will iterate through the regions in this file");
+
 		parser.addArgument("--region", "-r")
 			.type(String.class)
 			.required(false)
-			.setDefault("")
 			.help("Go to region. Format 1-based as 'chrom:start-end' or 'chrom:start' or 'chrom'. E.g. chr1:1-1000");
 
 		parser.addArgument("--genome", "-g")
 			.type(String.class)
-			.setDefault("")
 			.help("A genome file or a tag identifying a genome build (e.g. hg19), or bam file with suitable header");
 		
 		parser.addArgument("--fasta", "-fa")
@@ -51,15 +55,14 @@ public class ArgParse {
 
 		parser.addArgument("--exec", "-x")
 			.type(String.class)
-			.setDefault("")
-			.help("Commands to be executed at the prompt. Must be a single string. E.g. 'goto chr1 && next && seqRegex ACTG'");
+			.help("Commands to be executed at the prompt. Either a single string, e.g. 'goto chr1 && next && seqRegex ACTG' or a file with one command per line.");
 
 		
-		parser.addArgument("--maxReadsStack", "-M")
-			.type(Integer.class)
-			.setDefault(2000)
-			.help("Maximum number of reads to accumulate before printing. If more than this many reads map to the window\n"
-					+ "randomy select them");
+		//parser.addArgument("--maxReadsStack", "-M")
+		//	.type(Integer.class)
+		//	.setDefault(2000)
+		//	.help("Maximum number of reads to accumulate before printing. If more than this many reads map to the window\n"
+		//			+ "randomy select them");
 		
 		parser.addArgument("--noFormat", "-nf")
 			.action(Arguments.storeTrue())

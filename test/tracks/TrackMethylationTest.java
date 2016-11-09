@@ -4,11 +4,13 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Random;
 
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -25,13 +27,11 @@ public class TrackMethylationTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
-	public void canPrintMethylationProfile() throws IOException, InvalidGenomicCoordsException {
+	public void canPrintMethylationProfile() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException {
 
-		int windowSize= 10;
-		
 		// IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File("test_data/chr7.fa"));
 		// faSeqFile.close();
-		GenomicCoords gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, windowSize, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		
 		int yMaxLines= 5;
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, true);
@@ -43,8 +43,7 @@ public class TrackMethylationTest {
 		// System.out.println(tm.getScorePerDot());
 	
 		yMaxLines= 25;
-		windowSize= 101;
-		gc= new GenomicCoords("chr7", 5566770, 5566870, samSeqDict, windowSize, fastaFile);
+		gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
 		tc= new TrackCoverage("test_data/ds051.short.bam", gc, true);
 		tm= new TrackMethylation(tc.getFilename(), tc.getScreenLocusInfoList());
 		tm.setyMaxLines(yMaxLines);
