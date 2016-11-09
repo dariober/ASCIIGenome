@@ -21,10 +21,9 @@ iterating ASCIIGenome in a for-loop since the JVM and files are loaded only once
 
 * **Better API** Some commands have been renamed and improved in API. Some examples: `filter` now is `grep -i incl_regex -e excl_re <tracks>`; 
 commands `mapq -f -F` have been grouped in the single `samtools` command. Bookmarks and regex tracks can be saved to file with 
-the familiar *nix operators `>` and `>>`.
+the familiar *nix operators `>` and `>>`. 
 
-
-* **Performance **
+* **Performance**
 
   * **Memory** Memory footprint is now even smaller since files are never fully read in memory now. Bed or gff files without tabix index are sorted, block compressed and indexed as needed to temporary files. 
 
