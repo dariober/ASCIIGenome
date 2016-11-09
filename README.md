@@ -25,15 +25,19 @@ Text Only Genome Viewer!
 MEMO: Compile, package and upload to github releases
 - Write-out jar from Eclipse
 cd ~/svn_git/ASCIIGenome/trunk
-mkdir ASCIIGenome-0.2.0 # This should match the version in ArgParse
-cp ASCIIGenome ASCIIGenome-0.2.0/
-cp /Users/berald01/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-0.2.0/
-zip -r ASCIIGenome-0.2.0.zip ASCIIGenome-0.2.0
-rm -r ASCIIGenome-0.2.0
+mkdir ASCIIGenome-0.4.0 # This should match the version in ArgParse
+cp ASCIIGenome ASCIIGenome-0.4.0/
+cp /Users/berald01/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-0.4.0/
+zip -r ASCIIGenome-0.4.0.zip ASCIIGenome-0.4.0
+rm -r ASCIIGenome-0.4.0
 
-// Upload ASCIIGenome-0.2.0.zip to github releases and delete
+// Upload ASCIIGenome-0.4.0.zip to github releases and delete
 
- -->
+// Update brew formula 
+// Edit install/brew/asciigenome.rb to change release version and sha sum.
+shasum -a 256 ASCIIGenome-0.4.0.zip
+
+-->
 
 Description
 ===========
@@ -108,7 +112,8 @@ ASCIIGenome on MacOS, Ubuntu and CentOS with `bash 4.1`, white colour background
 Usage examples
 ==============
 
-These are just some functionalities to give an idea behind ASCIIGenome.
+These are just some functionalities to give an idea behind ASCIIGenome. See [command help](commandHelp.md) for 
+the individual commands available.
 
 ### Minimal example
 
