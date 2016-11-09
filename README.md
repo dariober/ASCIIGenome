@@ -375,28 +375,12 @@ png, depending on file name extension. For example:
 
 Without arguments, `save` writes to file named after the current  genomic position e.g.
 `chr1_1000-2000.txt`.  The ANSI formatting (*i.e.* colours) is stripped before saving so that files
-can be viewed on any text editor (use a monospace font like `courier`).
+can be viewed on any text editor (use a monospace font like `courier`). For convenience the 
+variable `%r` in the file name is expanded to the current genomic coordinates, for example 
+`save mygene.%r.png` is expanded to *e.g.* `mygene.chr1_1000_2000.png`. 
 
-Screenshots can be saved also in **non-interactive mode**. Since ASCIIGenome prints to stdout you just
-need to use the redirection operator `>` together with options `-ni` (non-interactive) and `-nf` (no
-formatting). For example: save to `view.txt` the region *chr1:100000-102000*, set mapping quality 
-threshold to 10 and track height to 5:
+See also [Batch processing](#batch-processing) for saving in batch.
 
-```
-ASCIIGenome -r chr1:100000-102000 -x 'mapq 10 && trackHeight 5' -nf -ni aln.bam dat.bigwig > view.txt
-```
-
-This is handy to embed ASCIIGenome in scripts or to generate several screenshots in batch. For example
-using for-loops.
-
-```
-for reg in chr1:1000-2000 chr18:2000-3000 chr21:5000-8000
-do
-    ASCIIGenome -r $reg -nf -ni input.bed input.bw >> regs.txt
-done
-```
-
-Alternatively images could be saved to png using `-x 'save .png'` option.
 
 Tips gotchas and miscellanea
 ============================
