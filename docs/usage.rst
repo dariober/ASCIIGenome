@@ -4,7 +4,7 @@ Usage
 Quick start
 -----------
 
-The interface to ASCIIGenome should look familiar to those used to command line programs.  To see
+The interface to *ASCIIGenome* should look familiar to those used to command line programs.  To see
 the command line options use the usual syntax :code:`-h/--help` as :code:`ASCIIGenome -h`.
 
 Open an indexed a bam file, as simple as::
@@ -59,5 +59,23 @@ When track names are passed as arguments, it is not necessary to give the full n
 partial matching is enabled. This is handy since track names have an ID appended as suffix which can
 be used in place of the full name, e.g. `next myLongfileName.bed#1` can be also typed as `next #1`.
 
-These are just some functionalities to give an idea behind ASCIIGenome. See [command help](commandHelp.md) for 
+These are just some functionalities to give an idea behind *ASCIIGenome*. See [command help](commandHelp.md) for 
 the individual commands available.
+
+Tips gotchas and miscellanea
+----------------------------
+
+* **Regular expression** *ASCIIGenome* makes extensive use of regular expressions. 
+  Most commands use regular expression in *case sensitive* mode. 
+  Use the :code:`(?i)` modifier to match in case insensitve mode, e.g. '(?i)bam' to capture 
+  'foo.bam' and 'foo.BAM'. Note that the command :code:`seqRegex` by default is case insensitive,
+  unless the flag :code:`-c` is set.
+
+* When displaying bam files, *ASCIGenome* is hardcoded to disable the coverage and read tracks if
+  the window size is >100,000 bp. This is to prevent the browsing to become horribly slow. To display
+  such large windows  consider bigWig or tdf file format. Also consider hiding the 
+  read track if not necessary with :code:`trackHeight 0 @*.bam` (or other suitable regex).
+
+* When opening bam files, the first chromosome is often the mitochondrial chromosome chrM (or chrMT) which
+  often has very high read depth (say 10,000x). This can make the opening slow. Consider using the :code:`-r`
+  option in these cases. E.g. :code:`ASCIIGenome -r chr1 file1.bam file2.bam ...`
