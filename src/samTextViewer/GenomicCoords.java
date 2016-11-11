@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
+
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
@@ -84,7 +86,10 @@ public class GenomicCoords implements Cloneable {
 		if(this.samSeqDict != null && this.samSeqDict.size() > 0){
 			correctCoordsAgainstSeqDict(samSeqDict);
 		}
-		this.fastaFile= fastaFile;
+		if(fastaFile != null){
+			this.setSamSeqDictFromFasta(fastaFile);
+			this.setFastaFile(fastaFile);
+		}
 		
 	}
 		
@@ -896,5 +901,61 @@ public class GenomicCoords implements Cloneable {
 
 	public void setSamSeqDictSource(String samSeqDictSource) {
 		this.samSeqDictSource = samSeqDictSource;
+	}
+
+	/** Extend genomic coordinates left and right by given bases. 
+	 * refpoint= "mid": The new coordinates are given by the midpoint of the current one +/- left and right.
+	 * refpoint= "window": The new coordinates are the given by the current window extended left and right. 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * */
+	private void extend(int left, int right, String refpoint) throws InvalidGenomicCoordsException, IOException {
+		int newFrom= 0;
+		int newTo= 0;
+		if(refpoint.equals("mid")){
+			int mid= this.getMidpoint();
+			newFrom= mid - left;
+			newTo= mid + right - 1; // -1 so the window size becomes exactly right-left
+		}
+		if(refpoint.equals("window")){
+			newFrom= this.getFrom() - left;
+			newTo= this.getTo() + right;
+		}
+		if(newFrom > newTo){
+			int tmp= newFrom;
+			newFrom= newTo;
+			newTo= tmp;
+		}
+		this.from= newFrom;
+		this.to= newTo;
+		this.correctCoordsAgainstSeqDict(this.getSamSeqDict());
+	}
+	
+	/** Apply this.extend() after having parsed cmd line args.  
+	 * @throws InvalidCommandLineException 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * */
+	public void cmdInputExtend(List<String> cmdInput) throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException{
+		List<String> args= new ArrayList<String>(cmdInput);
+		args.remove(0); // Remove cmd name
+		
+		String refpoint= "window";
+		if(args.contains("window")){
+			args.remove("window");
+		}
+		if(args.contains("mid")){
+			refpoint= "mid";
+			args.remove("mid");
+		} 
+		if(args.size() == 0){
+			throw new InvalidCommandLineException();
+		}
+		int left= Integer.parseInt(args.get(0));
+		int right= left;
+		if(args.size() > 1){
+			right= Integer.parseInt(args.get(1));
+		}
+		this.extend(left, right, refpoint);
 	}
 }

@@ -107,7 +107,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		return gc.getChrom() 
 				+ "\tASCIIGenome\tbookmark\t" + gc.getFrom() + "\t" 
 				+ gc.getTo() 
-				+ "\t.\t+\t.\tID=\"" + nameForBookmark + "\"";
+				+ "\t.\t.\t.\tID=\"" + nameForBookmark + "\"";
 	}
 
 	
@@ -215,7 +215,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		String name= line.get(8).replaceAll(".*ID=\"", "").replaceAll("\".*", "");
 		
 		String cmd= "goto " + line.get(0) + ":" + line.get(3) + "-" + line.get(4) + " && ";
-		cmd += "bookmark " + line.get(3);
+		cmd += "bookmark " + name;
 		return cmd;
 	}
 

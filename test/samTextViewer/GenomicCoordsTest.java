@@ -13,8 +13,12 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import tracks.TrackWiggles;
 
+import org.broad.igv.feature.genome.FastaIndexedSequence;
+import org.broad.igv.feature.genome.IGVSequence;
+import org.broad.igv.feature.genome.Sequence;
 import org.junit.Test;
 
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 
@@ -25,6 +29,50 @@ public class GenomicCoordsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void canExtendCoordinates() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7:1001-1009", null, null);
+		List<String> cmdInput= new ArrayList<String>();
+		cmdInput.add("extend"); 
+		cmdInput.add("20"); 
+		cmdInput.add("30");
+		cmdInput.add("mid");
+		gc.cmdInputExtend(cmdInput);
+		assertEquals(1005 - 20, (int)gc.getFrom());
+		assertEquals(1005 + 30 - 1, (int)gc.getTo());
+		
+		// Check left doesn't go negative
+		gc= new GenomicCoords("chr7:1-9", samSeqDict, null);
+		gc.cmdInputExtend(cmdInput);
+		assertEquals(1, (int)gc.getFrom());
+		assertEquals(5 + 30 - 1, (int)gc.getTo());
+		
+		// Check right doesn't go beyond fasta ref 
+		gc= new GenomicCoords("seq:101-109", null, "test_data/seq_cg.fa");
+		cmdInput.set(1, "50");
+		gc.cmdInputExtend(cmdInput);
+		assertEquals(120, (int)gc.getTo());		
+		
+		// Check window mode
+		gc= new GenomicCoords("seq:100-110", null, null);
+		cmdInput.set(1, "50");
+		cmdInput.set(2, "60");
+		cmdInput.set(3, "window");
+		gc.cmdInputExtend(cmdInput);
+		assertEquals(100-50, (int)gc.getFrom());
+		assertEquals(110+60, (int)gc.getTo());
+		
+		// Check odd input: From coords after to swaps left with right.
+		gc= new GenomicCoords("seq:100-200", null, null);
+		cmdInput.set(1, "-200");
+		cmdInput.set(2, "0");
+		cmdInput.set(3, "window");
+		gc.cmdInputExtend(cmdInput);
+		assertEquals(200, (int)gc.getFrom());
+		assertEquals(300, (int)gc.getTo());
+	}
 	
 	@Test
 	public void canGetStringRegion() throws InvalidGenomicCoordsException, IOException{

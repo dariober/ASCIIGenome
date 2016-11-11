@@ -83,10 +83,11 @@ public class TrackBookmarkTest {
 
 		gc= new GenomicCoords("chr2:2000-3000", null, null);
 		bm.setGc(gc);
-		bm.addBookmark(".");
+		bm.addBookmark("'foo bar'"); // Note use of single quotes.
 		
 		assertTrue(bm.settingsToString().contains("goto chr1:1-100"));
 		assertTrue(bm.settingsToString().contains("goto chr2:2000-3000"));
+		assertTrue(bm.settingsToString().contains("'foo bar'"));
 		
 		// System.out.println(bm.settingsToString());
 	}

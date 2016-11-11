@@ -26,6 +26,7 @@ Means that `ylim` takes two mandatory arguments, `min` and `max`. The optional a
   - [bb](#bb)
   - [zi](#zi)
   - [zo](#zo)
+  - [extend](#extend)
   - [l](#l)
   - [r](#r)
   - [p](#p)
@@ -148,6 +149,15 @@ Zoom in INT times. Each zoom halves the window size.  To zoom quickly use INT= 5
 **Usage: zo [INT = 1]**
 
 Zoom out INT times. Each zoom doubles the window size.  To zoom quickly use INT= 5 or 10 e.g. `zo 10`
+
+### extend
+
+**Usage: extend [mid|window] [INT left] [INT right]**
+
+Extend the current window by INT bases left and right.
+ mode `mid`: The new window is given by the center of the current one plus and minus left and right INT bases.
+mode `window` (default): Extend the current window left and right INT bases
+If only one INT is given it is applied to both left and right. Negative INTs will shrink instead of extend the window.
 
 ### l
 

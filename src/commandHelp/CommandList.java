@@ -239,6 +239,16 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
+		cmd.setName("extend"); cmd.setArgs("[mid|window] [INT left] [INT right]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Extend the current window by INT bases left and right.\n");
+		cmd.setAdditionalDescription("mode `mid`: The new window is given by the center of the current one "
+				+ "plus and minus left and right INT bases.\n"
+				+ "mode `window` (default): Extend the current window left and right INT bases\n"
+				+ "If only one INT is given it is applied to both left and right. Negative INTs will shrink "
+				+ "instead of extend the window.");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
 		cmd.setName("l"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Go to the Left half of the current window. ");
 		cmd.setAdditionalDescription("Alternate the left and right command to quickly focus on a point of interest. ");
@@ -727,6 +737,7 @@ public class CommandList {
 		paramList.add("bb");
 		paramList.add("zi");
 		paramList.add("zo");
+		paramList.add("extend");
 		paramList.add("l");
 		paramList.add("r");
 		paramList.add("goto");
