@@ -1,1 +1,5 @@
-test_data/delete.me
+ASCIIGenome -r 8:22155520-22173952 -fa /path/to/genome.fa \
+
+setGenome Homo_sapiens.GRCh38.dna.chromosome.8.fa
+addTracks ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.8.gff3.gz && colorTrack black ^Homo_sapiens.GRCh38.86.chromosome.8.gff3.gz && trackHeight 10 ^Homo_sapiens.GRCh38.86.chromosome.8.gff3.gz && ylim NaN NaN ^Homo_sapiens.GRCh38.86.chromosome.8.gff3.gz && samtools -q 0 -f 0 -F 4 ^Homo_sapiens.GRCh38.86.chromosome.8.gff3.gz && grep -i \tgene\t.*ENSG00000168487 -e ^$ ^Homo_sapiens.GRCh38.86.chromosome.8.gff3.gz
+addTracks /Users/berald01/Downloads/Homo_sapiens.GRCh38.dna.chromosome.8.fa && colorTrack black ^seqRegex && trackHeight 10 ^seqRegex && ylim NaN NaN ^seqRegex && samtools -q 0 -f 0 -F 4 ^seqRegex && grep -i .* -e ^$ ^seqRegex

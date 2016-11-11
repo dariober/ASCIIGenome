@@ -66,6 +66,24 @@ java -Xmx500m -jar $stvExe -x 'sessionSave deleteme.txt' -ni -g hg19 ear045.oxBS
 java -Xmx500m -jar $stvExe -x deleteme.txt
 rm deleteme.txt
 
+echo "TESTING PNG COLOURS"
+## Prepare a command string that will change the name and color of the 
+## loaded track and save the output as png
+cmd=""
+for x in red light_red green light_green blue light_blue magenta light_magenta cyan light_cyan yellow light_yellow grey light_grey white black
+do
+    cmd="${cmd} editNames ^.*$ ${x} && colorTrack $x && save tmp.${x}.png &&"
+done
+echo "$cmd" > /tmp/cmd.txt
+
+ASCIIGenome -ni -r chr7:5520653-5599501 -x /tmp/cmd.txt ear045.oxBS.actb.tdf
+convert -append tmp.*.png /tmp/cols.png
+rm tmp.*.png
+open /tmp/cols.png # This is a gallery of colours.
+rm /tmp/cols.png
+
+
+
 echo -e "\n\nDONE\n\n"
 
 echo -e "PRINT HELP"
