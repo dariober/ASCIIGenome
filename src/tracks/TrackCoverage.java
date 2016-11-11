@@ -77,7 +77,7 @@ public class TrackCoverage extends Track {
 	protected void update() throws IOException, InvalidGenomicCoordsException{
 		
 		this.screenLocusInfoList= new ArrayList<ScreenLocusInfo>();
-		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
+		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE * 5){
 			
 			IntervalList il= new IntervalList(samReader.getFileHeader());
 			il.add(new Interval(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));
@@ -160,7 +160,7 @@ public class TrackCoverage extends Track {
 		if(this.getyMaxLines() == 0){
 			return "";
 		} else if(this.screenLocusInfoList.size() == 0){
-			if(this.getGc().getGenomicWindowSize() >= this.MAX_REGION_SIZE){
+			if(this.getGc().getGenomicWindowSize() >= this.MAX_REGION_SIZE * 5){
 				return "Track not shown: Window is too large";
 			}
 			return "";
