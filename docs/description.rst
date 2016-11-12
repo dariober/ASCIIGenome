@@ -11,11 +11,11 @@ As far as I know, the closest program to `ASCIIGenome` is `samtools tview <http:
 
 Some key features:
 
-* Command line input and interaction, no graphical interface, minimal [installation and requirements](#requirements-and-installation)
-* Can load multiple files in various [formats](#supported-input)
-* Can access remote files via URL or ftp address
-* Easy [navigation](#navigation) and [searching](#find) of features and sequence motifs and filtering options
-* Support for BS-Seq alignment
+* Command line input and interaction, no graphical interface, minimal installation.
+* Can load multiple files in various [formats](#supported-input).
+* Can access remote files via URL or ftp address.
+* Easy navigation and searching of features and sequence motifs and filtering options.
+* Support for BS-Seq alignment.
 
 .. image:: screenshots/ex3.png 
 
