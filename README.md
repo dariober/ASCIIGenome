@@ -1,25 +1,6 @@
 Text Only Genome Viewer!
 ========================
 
-- [Description](#description)
-- [Requirements and Installation](#requirements-and-installation)
-    - [Installation quick start](#installation-quick-start)
-    - [Installation through Homebrew](#installation-through-homebrew)
-    - [A little more detail](#a-little-more-detail)
-- [Usage examples](#usage-examples)
-    - [Minimal example](#minimal-example)
-    - [Open and browse](#open-and-browse)
-    - [Finding & filtering stuff](#finding--filtering-stuff)
-    - [Chaining commands](#chaining-commands)
-    - [Batch processing](#batch-processing)
-- [Supported input](#supported-input)
-- [Genome option](#genome-option)
-- [Formatting of reads and features](#formatting-of-reads-and-features)
-- [Saving screenshots](#saving-screenshots)
-- [Tips gotchas and miscellanea](#tips-gotchas-and-miscellanea)
-- [Interactive commands](#interactive-commands)
-- [Credits](#credits)
-
 
 <!-- 
 MEMO: Compile, package and upload to github releases
@@ -39,15 +20,17 @@ shasum -a 256 ASCIIGenome-0.4.0.zip
 -->
 
 Description
-===========
+-----------
 
-`ASCIIGenome` is a command-line genome browser running from terminal window and solely based on
-ASCII characters. Since `ASCIIGenome` does not require a graphical interface it is particularly
-useful for  quickly visualizing genomic data on remote servers. The idea is to make `ASCIIGenome`
-the Vim  of genome viewers.
+`ASCIIGenome` is a genome browser based on command line interface and designed for
+running from console terminals.
 
-As far as I know, the closest program to `ASCIIGenome` is [samtools tview](http://samtools.sourceforge.net/tview.shtml) but 
-`ASCIIGenome` offers much more flexibility, similar to popular GUI viewers like [IGV](https://www.broadinstitute.org/igv/).
+Since `ASCIIGenome` does not require a graphical interface it is particularly
+useful for  quickly visualizing genomic data on remote servers while offering flexibility similar to popular GUI viewers like [IGV](https://www.broadinstitute.org/igv/).
+
+**Documentation** is at [readthedocs/asciigenome](http://asciigenome.readthedocs.io/en/latest/).
+
+**Support**: Bugs, comments and issues can be reported here on [GitHub](https://github.com/dariober/ASCIIGenome/issues) or on [Biostars.org](https://www.biostars.org/).
 
 Some key features:
 

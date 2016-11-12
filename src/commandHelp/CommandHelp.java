@@ -11,6 +11,7 @@ import exceptions.InvalidCommandLineException;
 public class CommandHelp {
 
 	private String name;
+	private String printName; // Name to use to print on screen or on docs.
 	private String args= "";
 	private String briefDescription;
 	private String additionalDescription= "";
@@ -37,20 +38,30 @@ public class CommandHelp {
 	
 	public String printCommandHelp(){
 	
-		String INDENT= "      ";
+		String INDENT= "    ";
 		
 		String helpStr= this.name + " " + this.args + "\n";
 		String fullDescr= this.briefDescription + " " + this.additionalDescription;
 		for(String line : this.wrapLines(fullDescr, 80 - INDENT.length())){
 			helpStr += (INDENT + line + "\n");
 		}
-		return helpStr;
+		return helpStr.trim() + "\n";
 		
+	}
+	
+	/** String some of the reStructuredText formatting from string x.
+	 * */
+	private String stripReStTextFormat(String x){
+		x= x.replaceAll("::\\s*\\n", ":");
+		x= x.replaceAll(":code:", "");
+		return x;
 	}
 	
 	/** Wrap lines once maxLen is exceeded.
 	 * Use ~ to separate words that should stay on the same line and to add spaces.*/
 	private List<String> wrapLines(String text, int maxLen){
+		
+		text= this.stripReStTextFormat(text);
 		
 		// Words separated by \n only are split into different words since we put a space after \n.
 		text= text.replaceAll("\n", "\n "); 
@@ -102,6 +113,17 @@ public class CommandHelp {
 	}
 	protected String getBriefDescription() {
 		return this.briefDescription;
+	}
+
+	protected String getPrintName() {
+		if(this.printName == null || this.printName.isEmpty()){
+			return this.getName();
+		}
+		return printName;
+	}
+
+	protected void setPrintName(String printName) {
+		this.printName = printName;
 	}
 
 

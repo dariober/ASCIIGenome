@@ -12,8 +12,8 @@ import exceptions.InvalidCommandLineException;
 public class CommandListTest {
 
 	@Test
-	public void updateMarkdownFile() throws InvalidCommandLineException, IOException{
-		CommandList.updateCommandHelpMdFile(new File("commandHelp.md"));
+	public void updateReStructuredFile() throws InvalidCommandLineException, IOException{
+		CommandList.updateCommandHelpMdFile(new File("docs/commandHelp.rst"));
 	}
 	
 	@Test
