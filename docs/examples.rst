@@ -113,13 +113,13 @@ Then at the command prompt issue these commands::
     seqRegex -iupac TATAWAA
     zo 8
     print seqRegex
-    seqRegex > matches.bed
+    print seqRegex > matches.bed
     save matches.png
 
 Explained: Find the gene ENSG00000168487, for clarity only show the "gene" feature (:code:`grep...`). 
 Then search the motif TATAWAA interpreted as iupac notation; zoom out *x* times (e.g. 8 times) to see some
 matches in the sequence.
 
-The matches here are shown on screen with :code:`print seqRegex` and then saved to file with :code:`seqRegex > matches.bed`. Finally save a picture as png, shown here:
+The matches here are shown on screen with :code:`print seqRegex` and then saved to file with :code:`print seqRegex > matches.bed`. Finally save a picture as png, shown here:
 
 .. image:: screenshots/matches.png

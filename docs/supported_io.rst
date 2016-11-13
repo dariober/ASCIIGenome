@@ -167,3 +167,8 @@ variable :code:`%r` in the file name is expanded to the current genomic coordina
 See also :ref:`Batch-processing` for saving screenshots in batch by iterating through a list of
 positions.
 
+This is a screenshots of bisulfite-seq data. The `BSseq` mode was set and methylated cytosines are shown in red while unmethylated cytosines in blue. 
+
+.. image:: screenshots/bs.chr7_5560313-5560467.png
+
+

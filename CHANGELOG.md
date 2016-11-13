@@ -1,3 +1,11 @@
+New in 0.5.0
+============
+
+* `print` command can redirect output to file. Add `-off` option to turn all 
+  printing modes off.
+
+* Redirection operators `>` and `>>` deprecated in `seqRegex` command, use `print` instead to save matches.
+
 New in 0.4.0
 =============
 

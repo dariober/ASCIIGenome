@@ -127,10 +127,11 @@ extend
 
 Extend the current window by `INT` bases left and right.
  
-* :code:`mid`: The new window is given by the midpoint of the current one plus and minus `INT` bases left and `INT` bases right.
-
 * :code:`window` (default): Extend the current window left and right by `INT` bases
-If only one INT is given it is applied to both left and right. Negative `INT`s will shrink instead of extend the window.
+
+* :code:`mid`: The new window is given by the midpoint of the current window plus and minus `INT` bases left and right.
+
+If only one INT is given it is applied to both left and right. Negative INTs will shrink instead of extend the window.
 
 l - left
 ++++++++
@@ -193,7 +194,7 @@ Use single quotes to define patterns containing spaces.
 seqRegex
 ++++++++
 
-:code:`seqRegex [-iupac] [-c] [regex] | [>|>> [file]]`
+:code:`seqRegex [-iupac] [-c] [regex]`
 
 Find regex in reference sequence and show matches as an additional track.  Options:
 
@@ -203,30 +204,30 @@ Find regex in reference sequence and show matches as an additional track.  Optio
 
 * :code:`-c`: Enable case-sensitive matching. Default is to ignore case.
 
-* :code:`>` and :code:`>>`: Send the matches in the current window to `file`. As in Shell, `>` overwrites existing file, `>>` append to file. Without arguments `>` and `>>` write to file named after the current coordinates. The place holder %r in the file name is expanded to the current coordinates `<chrom>_<start>_<end>`.
-
 Examples::
 
     seqRegex ACTG        -> Case insensitive, actg matched
     seqRegex -c ACTG     -> Case sensitive, will not match actg
     seqRegex -iupac ARYG -> Interpret (converts) R as [AG] and Y as [CT]
-    seqRegex >> %r.bed   -> Save and append to file chrom_start_end.bed
     seqRegex             -> Disable regex matching track
 
-This command is ignored if the reference fasta sequence is missing.
+To save matches to file, see the `print` command. This command is ignored if the reference fasta sequence is missing.
 
 bookmark
 ++++++++
 
 :code:`bookmark [name] | [-rm] | [-print] | [> [file]]`
 
-Add, remove and save positions to bookmark track.  `bookmark` creates a track to save positions of interest. Without arguments, add the current position to the bookmarks, use the argument `name` to assign a name to the feature.
+Creates a track to save positions of interest. Without arguments, add the current position to the bookmark track. Options:
 
-* :code:`-rm`: removes the bookmark matching *exactly* the current position.
+* :code:`name`: give this name to the new bookmark.
+
+* :code:`-rm`: remove the bookmark matching *exactly* the current position.
 
 * :code:`-print`: prints to screen the list of current bookmarks.
 
 * :code:`>`: saves the bookmark to file.
+
 Examples::
 
     bookmark              -> Add the current position to bookmarks.
@@ -245,7 +246,7 @@ grep
 
 :code:`grep [-i = .*] [-e = ''] [track_regex = .*]...`
 
-Similar to grep command, filter for features including or excluding patterns. Options
+Similar to grep command, filter for features including or excluding patterns. Options:
 
 * :code:`-i regex`:  Show features matching this regex.
 
@@ -396,9 +397,24 @@ Select data column for bedgraph tracks containing regex.  index: 1-based column 
 print
 +++++
 
-:code:`print [-full] [track_regex = .*]...`
+:code:`print [-full] [-off] [track_regex = .*]... [>|>> file]`
 
-Toggle the printing of lines for the tracks matched by `track_regex`.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the :code:`grep` command. Applies only to annotation tracks. Lines extending beyond the screen width are clipped for readability unless the  the flag :code:`-full` is set.
+Toggle the printing of lines for the tracks matched by `track_regex`.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the :code:`grep` command. Options:
+
+* :code:`track_regex`: Toggle printing of the tracks matched by one or more of these regexes.
+
+* :code:`-full`: Wrap lines longer than the screen width. Default is to clip them.
+
+* :code:`-off`: Turn off printing for *all* tracks, regardless of their current mode. The list of regexes is effectively ignored and set to '.*'.
+
+* :code:`>` and :code:`>>`: Send the output to `file` instead of to screen. `>` overwrites existing file, `>>` appends. Redirecting to file is probably not useful if more than track is selected as files will overwrite each other or be appended. The %r variable is expanded to the current genomic coordinates.
+
+Examples::
+    print                        -> Print all tracks, same as `print .*`
+    print -off                   -> Turn off printing for all tracks
+    print genes.bed >> genes.txt -> Append features in track(s) 'genes.bed' to file
+
+Currently `print` applies only to annotation tracks, other tracks are unaffected.
 
 Alignments
 ----------
@@ -471,7 +487,7 @@ infoTracks
 
 :code:`infoTracks`
 
-Print the name of the current tracks along with file name and format.  Hidden tracks are marked by *.
+Print the name of the current tracks along with file name and format.  Hidden tracks are marked by an asterisk.
 
 addTracks
 +++++++++

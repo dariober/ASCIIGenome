@@ -17,12 +17,12 @@ Some key features:
 * Easy navigation and searching of features and sequence motifs and filtering options.
 * Support for BS-Seq alignment.
 
-.. image:: screenshots/ex3.png 
-
 Support
 -------
 
-Any and all comments, bugs and issues can be reported on `GitHub <https://github.com/dariober/ASCIIGenome/issues>`_ or by posting a question on `Biostars.org <https://www.biostars.org/>`_.
+Any and all comments, bugs and issues can be reported on `GitHub <https://github.com/dariober/ASCIIGenome/issues>`_ or by posting a question on `Biostars.org <https://www.biostars.org/>`_ with tag ASCIIGenome.
+
+.. image:: screenshots/composite.png 
 
 How to cite
 -----------
@@ -38,3 +38,5 @@ Credits
 * Bigwig and tdf are processed with classes from `IGV <https://github.com/igvteam/igv>`_ source code.
 * Block compression and indexing done using `jvarkit <https://github.com/lindenb/jvarkit>`_.
 * Brew installation thanks to `dalloliogm <https://github.com/dalloliogm>`_.
+
+.. image:: screenshots/ex3.png 
