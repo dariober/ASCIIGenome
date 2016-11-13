@@ -40,5 +40,5 @@ Some key features:
 * Easy navigation and searching for features and sequence motifs and filtering options
 * Support for BS-Seq alignment
 
-<img src="screenshots/ex3.png" width="800">
+<img src="docs/screenshots/composite.png" width="800">
 
