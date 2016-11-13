@@ -330,30 +330,74 @@ public class TrackSet {
         }
 	}
 	
-	public void setPrintModeForRegex(List<String> cmdInput) throws InvalidCommandLineException {
-		// MEMO of subcommand syntax:
-		// 0 print/printFull
-		// 1 Regex
-		
-		List<String> args= new ArrayList<String>();
-		for(String x : cmdInput){
-			args.add(x);
-		}		
-		
+	public void setPrintModeAndPrintFeaturesForRegex(List<String> cmdInput) throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
+
+		// --------------------------------------------------------------------
+		// PARSE ARGUMENTS
+		List<String> args= new ArrayList<String>(cmdInput);
+		args.remove(0); // Remove cmd name.
+
+		// These are the parameters and thei default arguments
 		boolean printFull= false;
+		boolean allOff= false;
+		String printToFile= null;
+		boolean append= false;
+        List<String> trackNameRegex= new ArrayList<String>();
+		
 		if(args.contains("-full")){
 			printFull= true;
 			args.remove("-full");
 		}
+
+		if(args.contains("-off")){
+			allOff= true;
+			args.remove("-off");
+		}
 		
-        // Regex
-        List<String> trackNameRegex= new ArrayList<String>();
-        if(args.size() >= 2){
-            trackNameRegex= args.subList(1, args.size());
+		// Capture the redirection operator and remove operator and filename.
+		int idx= -1; // Position of the redirection operator, -1 if not present.
+		if(args.contains(">")){
+			idx= args.indexOf(">");
+		} else if(args.contains(">>")){
+			idx= args.indexOf(">>");
+			append= true;
+		}
+		if(idx >= 0){ // Redirection found, write to file, unless file is not given.
+			try{
+				printToFile= args.get(idx+1);
+				args.remove(idx);
+				args.remove(printToFile);
+			} catch(IndexOutOfBoundsException e){
+				System.err.println("No file found to write to.");
+			}
+		}
+		
+        // Get regex list for tracks to reset
+        if(allOff){
+        	trackNameRegex.add(".*"); // Capture everything regardless of given regexes.
+        }else if(args.size() >= 1){
+            trackNameRegex.addAll(args);
         } else {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
-                
+		// DONE
+		// --------------------------------------------------------------------
+		
+        // Tracks affected by this command:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+
+        // If we print to file just do that, do not touch printing modes:
+		if(printToFile != null && ! printToFile.isEmpty()){
+	        for(Track tr : tracksToReset){
+	        	tr.setExportFile(printToFile);
+	        	tr.setAppendToExportFile(append);
+	        	tr.printFeaturesToFile();
+	        	tr.setExportFile(null); // Reset to null so we don't keep writing to this file once we go to another position. 
+	        }
+	        return;
+		}
+        
+		// Set printing mode. Effectively ignored if -off option is set.
 		PrintRawLine switchTo; // If printing is OFF do we switch to CLIP or FULL?
 		if( printFull ){
 			switchTo = PrintRawLine.FULL;
@@ -361,15 +405,17 @@ public class TrackSet {
 			switchTo = PrintRawLine.CLIP;			
 		} 
 
-        // And set as required:
-		List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-        for(Track tr : tracksToReset){
-        	if(tr.getPrintMode().equals(switchTo)){ // Invert setting
+		// Process as required: Change mode
+		for(Track tr : tracksToReset){
+			if(allOff){
+				tr.setPrintMode(PrintRawLine.OFF);
+			} else if(tr.getPrintMode().equals(switchTo)){ // Invert setting
         		tr.setPrintMode(PrintRawLine.OFF);
 			} else {
 				tr.setPrintMode(switchTo);
 			}
         }
+        
 	}
 	
 	public void setBisulfiteModeForRegex(List<String> tokens) throws InvalidCommandLineException {
@@ -1083,7 +1129,6 @@ public class TrackSet {
 					boolean append= false;
 					if(args.get(0).equals(">>")){
 						append= true; // Not sure when you want to append, since you generate duplicate entries. 
-						              // Left for consistency with seqRegex where instead it is quite useful to append. 
 					}
 					((TrackBookmark)tr).save(args.get(1), append);
 	 				return messages;
@@ -1333,27 +1378,6 @@ public class TrackSet {
 		
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove command name
-		
-		if(args.size() > 0 && (args.get(0).equals(">") || args.get(0).equals(">>"))){
-
-			for(Track tr : this.getTrackList()){
-				if(tr instanceof TrackSeqRegex){
-					String reg= tr.getGc().getChrom() + "_" + tr.getGc().getFrom() + "_" + tr.getGc().getTo();
-					String outfile= reg + ".seqregex.bed";
-					if(args.size() > 1){
-						outfile= args.get(1).replace("%r", reg);
-					}
-					boolean append= false;
-					if(args.get(0).equals(">>")){
-						append= true;
-					}
-					System.err.println("Saving regex matches to " + outfile);
-					((TrackSeqRegex) tr).saveIntervalsToFile(outfile, append);
-					return;
-				}
-			}
-			return;
-		}
 		
 		boolean isCaseSensisitive= false;
 		if(args.contains("-c")){

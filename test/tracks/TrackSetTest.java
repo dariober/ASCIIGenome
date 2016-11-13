@@ -2,12 +2,14 @@ package tracks;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 import exceptions.BamIndexNotFoundException;
@@ -19,6 +21,51 @@ import samTextViewer.Utils;
 
 public class TrackSetTest {
 
+	@Test
+	public void canPrintFeaturesToFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
+		
+		// --------------------------------------------------------------------
+		// Prepare coords and trackSet
+		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", null, null);
+		
+		TrackSet trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		// --------------------------------------------------------------------
+
+		// No redirection file: Nothing done
+		List<String>cmdInput= Utils.tokenize("print #1 >", " ");
+		trackSet.setPrintModeAndPrintFeaturesForRegex(cmdInput);
+
+		// Invalid output: Non existent dir:
+		File ff= new File("test_data/foobar/delete.me");
+		ff.deleteOnExit();
+		cmdInput= Utils.tokenize("print #1 > test_data/foobar/delete.me", " ");
+		boolean failed= false;
+		try{
+			trackSet.setPrintModeAndPrintFeaturesForRegex(cmdInput);
+		} catch (IOException e){
+			failed= true;
+		}
+		assertTrue(failed);		
+		
+		// Now give an output file.
+		ff= new File("deleteme.gtf");
+		ff.deleteOnExit();
+		cmdInput= Utils.tokenize("print #1 > deleteme.gtf", " ");
+
+		trackSet.setPrintModeAndPrintFeaturesForRegex(cmdInput);
+		assertTrue(ff.exists());
+		assertTrue(ff.length() > 200);
+		assertEquals(13, FileUtils.readLines(ff).size());
+		
+		// Append to file
+		cmdInput= Utils.tokenize("print #1 >> deleteme.gtf", " ");
+		trackSet.setPrintModeAndPrintFeaturesForRegex(cmdInput);
+		assertEquals(26, FileUtils.readLines(ff).size());
+		
+	}
+	
 	@Test
 	public void canDropTracks() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
@@ -96,7 +143,7 @@ public class TrackSetTest {
 		assertTrue(bm.getIntervalFeatureList().size() == 2);
 
 		bm.setPrintMode(PrintRawLine.CLIP);
-		System.out.println(bm.printFeatures(100)); // NB: it prints twice the same gc becouse the position is nt changed
+		System.out.println(bm.printFeaturesToFile()); // NB: it prints twice the same gc becouse the position is nt changed
 		
 	}
 	
@@ -311,20 +358,20 @@ public class TrackSetTest {
 		Track t2= new Track(); ts.addTrack(t2, "x");
 		Track t3= new Track(); ts.addTrack(t3, "x");
 
-		ts.setPrintModeForRegex(Utils.tokenize("print #1 #3", " "));
+		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print #1 #3", " "));
 		assertEquals(PrintRawLine.CLIP, t1.getPrintMode());
 		assertEquals(PrintRawLine.CLIP, t3.getPrintMode());
 		
-		ts.setPrintModeForRegex(Utils.tokenize("print #1", " "));
+		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print #1", " "));
 		assertEquals(PrintRawLine.OFF, t1.getPrintMode());
 		
-		ts.setPrintModeForRegex(Utils.tokenize("print #1", " "));
+		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print #1", " "));
 		assertEquals(PrintRawLine.CLIP, t1.getPrintMode());
 		
-		ts.setPrintModeForRegex(Utils.tokenize("print -full #1", " "));
+		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print -full #1", " "));
 		assertEquals(PrintRawLine.FULL, t1.getPrintMode());
 		
-		ts.setPrintModeForRegex(Utils.tokenize("print -full #1", " "));
+		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print -full #1", " "));
 		assertEquals(PrintRawLine.OFF, t1.getPrintMode());
 	}
 	
@@ -432,8 +479,9 @@ public class TrackSetTest {
 		Track t2= new Track(); t2.setFilename("/path/to/foo.vcf"); ts.addTrack(t2, "foo.vcf");
 		Track t3= new Track(); t3.setFilename("/path/to/bla.gz"); ts.addTrack(t3, "bla.gz");
 
-		assertTrue(ts.showTrackInfo().startsWith("foo"));
-		assertTrue(ts.showTrackInfo().endsWith("BED"));
+		assertTrue(ts.showTrackInfo().contains("foo.gz"));
+		assertTrue(ts.showTrackInfo().contains("/path/to/foo.gz"));
+		assertTrue(ts.showTrackInfo().contains("BED"));
 
 	}
 

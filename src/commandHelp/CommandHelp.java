@@ -52,7 +52,7 @@ public class CommandHelp {
 	/** String some of the reStructuredText formatting from string x.
 	 * */
 	private String stripReStTextFormat(String x){
-		x= x.replaceAll("::\\s*\\n", ":");
+		x= x.replaceAll("::\\s*\\n", ":\n");
 		x= x.replaceAll(":code:", "");
 		return x;
 	}

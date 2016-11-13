@@ -52,6 +52,10 @@ public class Track {
 	protected List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
 	private boolean hideTrack= false; 
 	private boolean hideTitle= false;
+	/** A file to export track data
+	 * */
+	private String exportFile= null;
+	private boolean appendToExportFile= false;
 	
 //	/** Min value of screen scores. Not to be confused with the y limit */
 //	public double getMinScreenScores(){
@@ -123,9 +127,9 @@ public class Track {
 		return null;
 	}
 
-	public String printFeatures(int windowSize){
-		return "";
-	};
+//	public String printFeatures() throws InvalidGenomicCoordsException, IOException{
+//		return "";
+//	};
 	
 	/** Print track info - for debugging and development only.
 	 * */
@@ -351,14 +355,6 @@ public class Track {
 		return "";
 	}
 
-//	public int getId() {
-//		return id;
-//	}
-//
-//	public void setId(int id) {
-//		this.id = id;
-//	}
-
 	protected void update() throws MalformedURLException, IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException {
 		// TODO Auto-generated method stub
 	}
@@ -399,6 +395,33 @@ public class Track {
 	public void setWorkFilename(String workFilename) {
 		this.workFilename = workFilename;
 	}
-	
+
+	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException {
+		// TODO Auto-generated method stub
+		return "";
+	}
+
+	/**Return the export file name. The variable %r is expanded to coordinates. 
+	 * */
+	public String getExportFile() {
+		if(exportFile != null){
+			String x= exportFile.replaceAll("%r", this.getGc().getChrom() + "_" + this.getGc().getFrom() + "_" + this.getGc().getTo()); 
+			return x;
+		}
+		return exportFile;
+	}
+
+	public void setExportFile(String exportFile) {
+		this.exportFile = exportFile;
+	}
+
+	public boolean isAppendToExportFile() {
+		return appendToExportFile;
+	}
+
+	public void setAppendToExportFile(boolean appendToExportFile) {
+		this.appendToExportFile = appendToExportFile;
+	}
+
 }
 

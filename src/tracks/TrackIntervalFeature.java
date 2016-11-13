@@ -1,6 +1,8 @@
 package tracks;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -458,10 +460,12 @@ public class TrackIntervalFeature extends Track {
 	/**Print raw features under track. 
 	 * windowSize size the number of characters before clipping occurs. This is 
 	 * typically the window size for plotting. windowSize is used only by CLIP mode.  
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	@Override
-	public String printFeatures(int windowSize){
-		
+	private String printFeatures() throws InvalidGenomicCoordsException, IOException{
+
+		int windowSize= this.getGc().getUserWindowSize();
 		if(this.getPrintMode().equals(PrintRawLine.FULL)){
 			windowSize= Integer.MAX_VALUE;
 		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
@@ -485,6 +489,32 @@ public class TrackIntervalFeature extends Track {
 		return sb.toString(); // NB: Leave last trailing /n
 	}
 
+	@Override
+	/** Write the features in interval to file. if append is true append to existing file. 
+	 * If the file to write to null or empty, return the data that would be
+	 * written as string.
+	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
+	 * */
+	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException {
+		
+		if(this.getExportFile() == null || this.getExportFile().isEmpty()){
+			return this.printFeatures();
+		}
+		
+		BufferedWriter wr= null;
+		try{
+			wr = new BufferedWriter(new FileWriter(this.getExportFile(), this.isAppendToExportFile()));
+			for(IntervalFeature ift : intervalFeatureList){
+				wr.write(ift.getRaw() + "\n");
+			}
+			wr.close();
+		} catch(IOException e){
+			System.err.println("Cannot write to " + this.getExportFile());
+			throw e;
+		}
+		return "";
+	}
+	
 	/** Searching the current chrom starting at "from" to find the *next* feature matching the given string. 
 	 * If not found, search the other chroms, if not found restart from the beginning of
 	 * the current chrom until the "from" position is reached. 

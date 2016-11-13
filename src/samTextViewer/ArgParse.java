@@ -11,8 +11,9 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "0.4.1";
+	public static String VERSION= "0.5.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
+	public static String WEB_RTD= "http://asciigenome.readthedocs.io/";
 	
 	public static LinkedHashMap<String, String> docstrings= new LinkedHashMap<String, String>(); 
 	
@@ -24,9 +25,8 @@ public class ArgParse {
 				.defaultHelp(true)
 				.version("${prog} " + VERSION)
 				.description("DESCRIPTION\n"
-+ "Text viewer for genome alignment and annotation files.\n"
-+ "For details see " + WEB_ADDRESS + "\n"
-+ "");	
++ "Genome browser at the command line.\n"
++ "\nFor details see " + WEB_RTD);	
 		parser.addArgument("input")
 			.type(String.class)
 			.required(false)
@@ -57,13 +57,6 @@ public class ArgParse {
 			.type(String.class)
 			.help("Commands to be executed at the prompt. Either a single string, e.g. 'goto chr1 && next && seqRegex ACTG' or a file with one command per line.");
 
-		
-		//parser.addArgument("--maxReadsStack", "-M")
-		//	.type(Integer.class)
-		//	.setDefault(2000)
-		//	.help("Maximum number of reads to accumulate before printing. If more than this many reads map to the window\n"
-		//			+ "randomy select them");
-		
 		parser.addArgument("--noFormat", "-nf")
 			.action(Arguments.storeTrue())
 			.help("Do not format output with non ascii chars (colour, bold, etc.)");

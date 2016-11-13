@@ -14,6 +14,16 @@ import samTextViewer.GenomicCoords;
 
 public class TrackIntervalFeatureTest {
 	
+	@Test
+	public void stubTranscriptToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		String intervalFileName= "test_data/hg19_genes.gtf.gz";
+		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		assertTrue(tif.printToScreen().startsWith("EEEEE"));
+		
+	}
 	
 	@Test
 	public void canReadTabix() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{

@@ -15,7 +15,7 @@ import jline.console.completer.StringsCompleter;
 
 public class CommandList {
 	
-	private static String SEE_ALSO= "\nSee also and feel free to report issues to https://github.com/dariober/ASCIIGenome\n\n";
+	private static String SEE_ALSO= "\nFull documentation at: http://asciigenome.readthedocs.io/\n\n";
 	
 	public static ConsoleReader initConsole() throws IOException{
 		
@@ -248,11 +248,12 @@ public class CommandList {
 		cmd.setName("extend"); cmd.setArgs("[mid|window] [INT left] [INT right]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Extend the current window by `INT` bases left and right.\n");
 		cmd.setAdditionalDescription("\n"
-				+ "* :code:`mid`: The new window is given by the midpoint of the current one "
-				+ "plus and minus `INT` bases left and `INT` bases right.\n"
-				+ "\n"
 				+ "* :code:`window` (default): Extend the current window left and right by `INT` bases\n"
-				+ "If only one INT is given it is applied to both left and right. Negative `INT`s will shrink "
+				+ "\n"
+				+ "* :code:`mid`: The new window is given by the midpoint of the current window "
+				+ "plus and minus `INT` bases left and right.\n"
+				+ "\n"
+				+ "If only one INT is given it is applied to both left and right. Negative INTs will shrink "
 				+ "instead of extend the window.");
 		cmdList.add(cmd);
 		
@@ -318,7 +319,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("seqRegex"); cmd.setArgs("[-iupac] [-c] [regex] | [>|>> [file]]"); cmd.inSection= Section.FIND; 
+		cmd.setName("seqRegex"); cmd.setArgs("[-iupac] [-c] [regex]"); cmd.inSection= Section.FIND; 
 		cmd.setBriefDescription("Find regex in reference sequence and show matches as an additional track. ");
 		cmd.setAdditionalDescription("Options:\n"
 				+ "\n"
@@ -329,35 +330,31 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-c`: Enable case-sensitive matching. Default is to ignore case.\n"
 				+ "\n"
-				+ "* :code:`>` and :code:`>>`: Send the matches in the current window to `file`. As in Shell, `>` "
-				+ "overwrites existing file, `>>` append to file. Without arguments `>` and `>>` write to file "
-				+ "named after the current coordinates. "
-				+ "The place holder %r in the file name is expanded to the current coordinates `<chrom>_<start>_<end>`.\n"
-				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    seqRegex~ACTG~~~~~~~~-> Case insensitive, actg matched\n"
 				+ "    seqRegex -c ACTG ~~~~-> Case sensitive, will not match actg\n"
 				+ "    seqRegex -iupac ARYG~-> Interpret (converts) R as [AG] and Y as [CT]\n"
-				+ "    seqRegex >> %r.bed ~~-> Save and append to file chrom_start_end.bed\n"
 				+ "    seqRegex~~~~~~~~~~~~~-> Disable regex matching track\n"
 				+ "\n"
-				+ "This command is ignored if the reference fasta sequence is missing."
+				+ "To save matches to file, see the `print` command. This command is ignored if the reference fasta sequence is missing."
 				+ "");
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
 		cmd.setName("bookmark"); cmd.setArgs("[name] | [-rm] | [-print] | [> [file]]"); cmd.inSection= Section.FIND; 
-		cmd.setBriefDescription("Add, remove and save positions to bookmark track. ");
-		cmd.setAdditionalDescription("`bookmark` creates a track to save positions of interest. "
-				+ "Without arguments, add the current position to the bookmarks, use the argument "
-				+ "`name` to assign a name to the feature.\n"
+		cmd.setBriefDescription("Creates a track to save positions of interest.");
+		cmd.setAdditionalDescription(""
+				+ "Without arguments, add the current position to the bookmark track. Options:\n"
 				+ "\n"
-				+ "* :code:`-rm`: removes the bookmark matching *exactly* the current position.\n"
+				+ "* :code:`name`: give this name to the new bookmark.\n"
+				+ "\n"
+				+ "* :code:`-rm`: remove the bookmark matching *exactly* the current position.\n"
 				+ "\n"
 				+ "* :code:`-print`: prints to screen the list of current bookmarks.\n"
 				+ "\n"
-				+ "* :code:`>`: saves the bookmark to file.\n"
+				+ "* :code:`>`: saves the bookmark track to file.\n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    bookmark~~~~~~~~~~~~~~-> Add the current position to bookmarks.\n"
@@ -542,12 +539,27 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("print"); cmd.setArgs("[-full] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("print"); cmd.setArgs("[-full] [-off] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Toggle the printing of lines for the tracks matched by `track_regex`. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
-				+ "Features are filtered in/out according to the :code:`grep` command. Applies only to annotation tracks. "
-				+ "Lines extending beyond the screen width are clipped for readability unless the  "
-				+ "the flag :code:`-full` is set.");
+				+ "Features are filtered in/out according to the :code:`grep` command. Options:\n"
+				+ "\n"
+				+ "* :code:`track_regex`: Toggle printing of the tracks matched by one or more of these regexes.\n"
+				+ "\n"
+				+ "* :code:`-full`: Wrap lines longer than the screen width. Default is to clip them.\n"
+				+ "\n"
+				+ "* :code:`-off`: Turn off printing for *all* tracks, regardless of their current mode. The list of regexes is effectively ignored and set to '.*'.\n"
+				+ "\n"
+				+ "* :code:`>` and :code:`>>`: Send the output to `file` instead of to screen. `>` overwrites existing file, `>>` appends. "
+				+ "Redirecting to file is probably not useful if more than track is selected as files will overwrite each other or be appended. "
+				+ "The %r variable is expanded to the current genomic coordinates.\n"
+				+ "\n"
+				+ "Examples::\n"
+				+ "    print~~~~~~~~~~~~~~~~~~~~~~~~-> Print all tracks, same as `print .*`\n"
+				+ "    print -off~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
+				+ "    print genes.bed >> genes.txt~-> Append features in track(s) 'genes.bed' to file\n"
+				+ "\n"
+				+ "Currently `print` applies only to annotation tracks, other tracks are unaffected.");
 		cmdList.add(cmd);
 
 //		cmd= new CommandHelp();
@@ -586,7 +598,7 @@ public class CommandList {
 		cmd= new CommandHelp();
 		cmd.setName("infoTracks"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Print the name of the current tracks along with file name and format. ");
-		cmd.setAdditionalDescription("Hidden tracks are marked by *.");
+		cmd.setAdditionalDescription("Hidden tracks are marked by an asterisk.");
 		cmdList.add(cmd);
 
 		

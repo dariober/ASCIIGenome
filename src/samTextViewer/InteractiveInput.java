@@ -242,7 +242,7 @@ public class InteractiveInput {
 					messages += proc.getTrackSet().editNamesForRegex(cmdInput);
 					
 				} else if(cmdInput.get(0).equals("print")){
-					proc.getTrackSet().setPrintModeForRegex(cmdInput);
+					proc.getTrackSet().setPrintModeAndPrintFeaturesForRegex(cmdInput);
 
 				} else if(cmdInput.get(0).equals("grep")){
 					proc.getTrackSet().setFilterForTrackIntervalFeature(cmdInput);

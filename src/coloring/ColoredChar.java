@@ -61,12 +61,15 @@ public class ColoredChar {
 		
 		if(ansiColor == 40){ return Color.getHSBColor(0, 0, 0); } // black
 		if(ansiColor == 41){ return Color.getHSBColor(0, 1, 1); } // red
+		if(ansiColor == 101){ return Color.getHSBColor((float)(356.0/360.0), (float)0.90, (float)0.87); } // light_red
 		if(ansiColor == 42){ return Color.getHSBColor((float)0.3333, 1, 1); } // green
 		if(ansiColor == 43){ return Color.getHSBColor((float)0.14705883, 1, 1); } // yellow
 		if(ansiColor == 44){ return Color.getHSBColor((float)0.6667, 1, 1); } // blue
+		if(ansiColor == 104){ return Color.getHSBColor((float)(239.0/360.0), (float)0.88, (float)1.0); } // light_blue
 		
 		if(ansiColor == 47){ return Color.getHSBColor(0, 0, (float)0.7); } // light grey
 		if(ansiColor == 100){ return Color.getHSBColor(0, 0, (float)0.4); } // dark grey
+		
 		if(ansiColor == 107){ return Color.getHSBColor(0, 0, 1); } // white
 		
 		if(ansiColor == 147){ return Color.getHSBColor((float)(242.0/360.0), (float)0.39, 1); } // 147: Sort of lightblue

@@ -63,7 +63,7 @@ public class TrackProcessor {
 				Utils.printer(track.getTitle(), this.snapshotFile);
 				Utils.printer(track.printToScreen() + "\n", this.snapshotFile);
 				Utils.printer(track.getPrintableConsensusSequence(), this.snapshotFile);
-				Utils.printer(track.printFeatures(currentGC.getUserWindowSize()), this.snapshotFile);
+				Utils.printer(track.printFeaturesToFile(), this.snapshotFile);
 			}
 		}
 
