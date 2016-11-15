@@ -176,6 +176,12 @@ public class IntervalFeatureTest {
 		assertEquals(0, f.getScreenFrom());
 		assertEquals(2, f.getScreenTo());
 
+		// Feature is fully contained in just one text char on screen
+		f= new IntervalFeature("chrM\t10\t11", TrackFormat.BED);
+		f.mapToScreen(rulerMap);
+		assertEquals(0, f.getScreenFrom());
+		assertEquals(0, f.getScreenTo());
+		
 		// Feature is not part of ruler:
 		f= new IntervalFeature("chrM\t100\t500", TrackFormat.BED);
 		f.mapToScreen(rulerMap);

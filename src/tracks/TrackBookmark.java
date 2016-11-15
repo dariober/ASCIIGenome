@@ -22,13 +22,13 @@ import com.google.common.collect.Lists;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.readers.TabixReader;
 import samTextViewer.GenomicCoords;
 import sortBgzipIndex.MakeTabixIndex;
 
 public class TrackBookmark extends TrackIntervalFeature {
 	
 	private final String trackName= "Bookmarks"; 
+//	private TabixReader tabixReader;
 	
 	public TrackBookmark(GenomicCoords gc, String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
 		super(gc);
@@ -54,7 +54,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		new MakeTabixIndex(bookmarkPlain.getAbsolutePath(), bookmark, TabixFormat.GFF);
 		bookmarkPlain.delete();
 		
-		this.tabixReader= new TabixReader(bookmark.getAbsolutePath());
+		// this.tabixReader= new TabixReader(bookmark.getAbsolutePath());
 		this.setType(TrackFormat.GFF);
 		this.setGc(gc);
 	}
@@ -93,7 +93,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		// Recompress and index replacing the original bgzip file
 		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.GFF);
 		plainNew.delete();
-		this.tabixReader= new TabixReader(this.getWorkFilename());
+		// this.tabixReader= new TabixReader(this.getWorkFilename());
 		// Update track.
 		this.update();
 	}
@@ -151,7 +151,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		// Recompress and index replacing the original bgzip file
 		new MakeTabixIndex(plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.GFF);
 		plainNew.delete();
-		this.tabixReader= new TabixReader(this.getWorkFilename());
+		// this.tabixReader= new TabixReader(this.getWorkFilename());
 		// Update track.
 		this.update();
 	}

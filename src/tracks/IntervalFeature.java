@@ -53,7 +53,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * @throws InvalidGenomicCoordsException 
 	 */
 	public IntervalFeature(String line, TrackFormat type) throws InvalidGenomicCoordsException{
-		if(type.equals(TrackFormat.BED) || type.equals(TrackFormat.BEDGRAPH)){
+		if(type.equals(TrackFormat.BED) || type.equals(TrackFormat.BEDGRAPH) || type.equals(TrackFormat.BIGBED)){
 			this.intervalFeatureFromBedLine(line);
 			this.format= TrackFormat.BED;
 		} else if(type.equals(TrackFormat.GFF)){
@@ -237,7 +237,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		 }
 		 if(screenFrom == -1 || screenTo == -1){
 			 System.err.println("Unexpected mapping of features to ruler.");
-			 System.exit(1);
+			 throw new RuntimeException();
 		 }
 	}	
 
@@ -281,6 +281,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return (this.chrom.equals(x.chrom) && this.from == x.from && this.to == x.to && this.strand == x.strand);
 	}
 	
+	/** Returns the character to be used for this feature type and strand. E.g. 
+	 * if the feature is exon on reverse strand return "e", if want it formatted return
+	 *  "m31[e\033m" (or whatever formatting is needed). 
+	 * */
 	protected String assignTextToFeature(boolean noFormat) {
 		
 		if(this.format.equals(TrackFormat.VCF)){
@@ -315,9 +319,9 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	}
 
 	/** Get attribute value given key, e.g. transcript_id */
-	private String getAttribute(String attributeName){
+	protected String getAttribute(String attributeName){
 		// * Get attribute field,
-		if(!this.format.equals(TrackFormat.GFF)){
+		if( ! this.format.equals(TrackFormat.GFF)){
 			return null;
 		}
 		String[] line= this.raw.split("\t");
@@ -444,7 +448,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	public void setGtfAttributeForName(String gtfAttributeForName) {
 		this.gtfAttributeForName = gtfAttributeForName;
 	}
-	
+		
 	@Override
 	/**
 	 * Sort by chrom, start, end, strand. 

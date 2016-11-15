@@ -68,9 +68,10 @@ public class TrackSet {
 					this.trackList.add(trackReads);
 				}
 				
-				else if(    Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
+				else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
 			        || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
-				    || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
+				    || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)
+				    || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGBED)){
 					//
 					// Annotatation
 					//

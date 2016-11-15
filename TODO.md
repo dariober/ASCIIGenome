@@ -4,6 +4,12 @@ TODO
 Features
 --------
 
+* Fix `Could not initilize from file <bigBed>`
+
+* Show sequence dictionary for tabix/bigBed files. Use method getReader.getChromosomes()
+
+* `print` command with `-head` option to limit the number of rows returned.
+
 * `export` command to write to file the data in the current interval? API:
 
 ```

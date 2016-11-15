@@ -7,16 +7,17 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
-
+import org.broad.igv.bbfile.BBFileReader;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.readers.TabixReader;
-import htsjdk.tribble.readers.TabixReader.Iterator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -30,44 +31,61 @@ public class TrackIntervalFeature extends Track {
 	private String hideRegex= "^$";
 	private String showRegex= ".*";
 	private TrackFormat type;
-	protected TabixReader tabixReader;
+	private TabixReader tabixReader;
+	private BBFileReader bigBedReader;
 	
 	/* C o n s t r u c t o r */
 
 	public TrackIntervalFeature(final String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		// String sourceFile= filename; // sourceFile is what is actually used to construct the tabix file. 
-		this.setWorkFilename(filename);
-		
+		this.setFilename(filename);
+
 		if(Utils.isUcscGenePredSource(filename)){
 			UcscGenePred ucsc = null;
 			try {
 				ucsc = new UcscGenePred(filename, -1);
 				this.setWorkFilename(ucsc.getTabixFile());
 				this.type= TrackFormat.GFF;
+				this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
+
 			} catch (InvalidCommandLineException e) {
 				//
-			} 
-		} else {
-			this.type= Utils.getFileTypeFromName(new File(filename).getName());			
-			if( ! Utils.hasTabixIndex(new File(filename).getAbsolutePath())){
-				// Tabix index not found for this file. Sort and index input to tmp.
-	
-				String suffix= new File(filename).getName();
-				if( ! suffix.endsWith(".gz")){
-					suffix += ".gz";
-				}
-				String tmpWorkFile= File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath();
-				new File(tmpWorkFile).deleteOnExit();
-				new File(new File(tmpWorkFile).getAbsolutePath() + ".tbi").deleteOnExit();
-				this.setWorkFilename(tmpWorkFile);	
-				
-				new MakeTabixIndex(filename, new File( this.getWorkFilename() ), Utils.trackFormatToTabixFormat(this.type));	
-			} 
+			}
+		
+		} else if(Utils.getFileTypeFromName(filename).equals(TrackFormat.BIGBED)){
+			
+			this.bigBedReader = new BBFileReader(filename);  // or url for remote access.
+			if(!this.bigBedReader.getBBFileHeader().isBigBed()){
+				throw new RuntimeException("File " + filename + " is not bigBed.");
+			}
+			
+			this.setWorkFilename(filename);
+			this.type= TrackFormat.BIGBED;
+			
+		} else if( ! Utils.hasTabixIndex(new File(filename).getAbsolutePath())){
+			// Tabix index not found for this file. Sort and index input to tmp.
+
+			String suffix= new File(filename).getName();
+			if( ! suffix.endsWith(".gz")){
+				suffix += ".gz";
+			}
+			String tmpWorkFile= File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath();
+			new File(tmpWorkFile).deleteOnExit();
+			new File(new File(tmpWorkFile).getAbsolutePath() + ".tbi").deleteOnExit();
+			this.setWorkFilename(tmpWorkFile);
+
+			this.type= Utils.getFileTypeFromName(new File(filename).getName());
+			new MakeTabixIndex(filename, new File( this.getWorkFilename() ), Utils.trackFormatToTabixFormat(this.type));	
+
+			this.setWorkFilename(tmpWorkFile);
+			this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
+			
+		} else { // This means the input is tabix indexed.
+			this.setWorkFilename(filename);
+			this.type= Utils.getFileTypeFromName(new File(filename).getName());
+			this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
 		}
-		this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
 		this.setGc(gc);
-		this.setFilename(filename);		
 	}
 	
 
@@ -109,8 +127,8 @@ public class TrackIntervalFeature extends Track {
 			throw new InvalidGenomicCoordsException();
 		}		
 		List<IntervalFeature> xFeatures= new ArrayList<IntervalFeature>();
-		//if(isTabix){
-		Iterator qry = this.tabixReader.query(chrom,  from-1, to);
+
+		TabixBigBedIterator qry= this.getReader().query(chrom, from-1, to);
 		while(true){
 			String q = qry.next();
 			if(q == null){
@@ -129,6 +147,7 @@ public class TrackIntervalFeature extends Track {
 		}
 		return xFeaturesFiltered;
 	}
+
 
 	/** Return true if string is visible, i.e. it
 	 * passes the regex filters. Note that regex filters are applied to the raw string.
@@ -169,7 +188,8 @@ public class TrackIntervalFeature extends Track {
 	 * @throws InvalidGenomicCoordsException */
 	private IntervalFeature getNextFeatureOnChrom(String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
-		Iterator iter = this.tabixReader.query(chrom, from-1, Integer.MAX_VALUE);
+		TabixBigBedIterator iter= this.getReader().query(chrom, from-1, Integer.MAX_VALUE);
+		// Iterator iter = this.iteratorFromQuery(chrom, from-1, Integer.MAX_VALUE); // this.tabixReader.query(chrom, from-1, Integer.MAX_VALUE);
 		while(true){
 			String line= iter.next();
 			if(line == null){
@@ -240,12 +260,13 @@ public class TrackIntervalFeature extends Track {
 
 		// We start search from input chrom
 		List<String> chromSearchOrder= null;
-		chromSearchOrder = getChromListStartingAt(this.tabixReader.getChromosomes(), currentGc.getChrom());
+		chromSearchOrder = getChromListStartingAt(this.getReader().getChromosomes(), currentGc.getChrom());
 		
 		chromSearchOrder.add(currentGc.getChrom());		
 		for(String curChrom : chromSearchOrder){
 		
-			Iterator iter = this.tabixReader.query(curChrom , 0, Integer.MAX_VALUE);
+			TabixBigBedIterator iter = this.getReader().query(curChrom , 0, Integer.MAX_VALUE);
+			// Iterator iter = this.iteratorFromQuery(curChrom , 0, Integer.MAX_VALUE); // this.tabixReader.query(curChrom , 0, Integer.MAX_VALUE);
 			while(true){
 				String line= iter.next();
 				if(line == null) break;
@@ -273,8 +294,6 @@ public class TrackIntervalFeature extends Track {
 		return matchedFeatures;
 	}
 
-
-	
 	@Override
 	public String printToScreen() throws InvalidGenomicCoordsException {
 	
@@ -303,8 +322,10 @@ public class TrackIntervalFeature extends Track {
 	private String printToScreenOneLine(List<IntervalFeature> listToPrint) throws InvalidGenomicCoordsException, IOException {
 		
 		int windowSize= this.getGc().getUserWindowSize();
-		List<String> printable= new ArrayList<String>();
-		for(int i= 0; i < this.getGc().getMapping(windowSize).size(); i++){ // First create empty track
+
+		List<String> printable= new ArrayList<String>(); // Each item in this list occupies a character space in the terminal. 
+		                                                 // NB: Each item is String not char because it might contain the ansi formatting.
+		for(int i= 0; i < this.getGc().getMapping(windowSize).size(); i++){ // First create empty line
 			printable.add(" ");
 		}
 		for(IntervalFeature intervalFeature : listToPrint){
@@ -340,6 +361,36 @@ public class TrackIntervalFeature extends Track {
 		return StringUtils.join(printable, "");
 	}
 
+	/** Return a List of strings to represent the interval feature ready to be printed to
+	 * screen
+	 * */
+	private String[] featureAsTextForScreen(IntervalFeature intervalFeature){
+		
+		String[] textArray= new String[intervalFeature.getScreenTo() - intervalFeature.getScreenFrom() + 1];
+		String nameOnFeature= intervalFeature.getName().trim() + "_";
+		int relPos= 0;
+		for(int j= intervalFeature.getScreenFrom(); j <= intervalFeature.getScreenTo(); j++){
+			
+			// Default is to use the feature type as printable text, e.g. 'E', 'T', '>', '<', '|', etc.
+			String text= intervalFeature.assignTextToFeature(this.isNoFormat()); 
+
+			if((intervalFeature.getScreenTo() - intervalFeature.getScreenFrom() + 1) > 4
+					&& j < intervalFeature.getScreenTo() // Last char is feature type (E, C, etc.)
+					&& relPos < nameOnFeature.length() 
+					&& !nameOnFeature.equals("._")){
+				// If these conds are satisfied, use the chars in the name as printable chars. 
+				Character x= nameOnFeature.charAt(relPos); 
+				if(this.isNoFormat()){
+					text= Character.toString(x); 	
+				} else {
+					text= FormatGTF.format(x, intervalFeature.getStrand());
+				}
+				relPos += 1;
+			}
+		}
+		return textArray;
+	}
+	
 	protected String getUnformattedTitle(){
 
 		if(this.isHideTitle()){
@@ -522,11 +573,12 @@ public class TrackIntervalFeature extends Track {
 	protected IntervalFeature findNextRegexInGenome(String query, String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
 		int startingPoint= from-1; // -1 because tabix.query from is 0 based (seems so at least)
-		List<String> chromSearchOrder = this.getChromListStartingAt(this.getTabixReader().getChromosomes(), chrom);
+		List<String> chromSearchOrder = this.getChromListStartingAt(this.getReader().getChromosomes(), chrom);
 		chromSearchOrder.add(chrom);
 		for(String curChrom : chromSearchOrder){
 			
-			Iterator iter = this.getTabixReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
+			TabixBigBedIterator iter= this.getReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
+			// Iterator iter = this.iteratorFromQuery(curChrom , startingPoint, Integer.MAX_VALUE); // this.getTabixReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
 			while(true){
 				String line= iter.next();
 				if(line == null) break;
@@ -561,15 +613,25 @@ public class TrackIntervalFeature extends Track {
 		return chromsStartingAt;
 	}
 
+	/** Group the features in this genomic window by GFF attribute (typically a transcripts). 
+	 * Features that don't have the attribute make each a length=1 list.
+	 * */
+	private Map<String, List<IntervalFeature>> groupByGFFAttribute(String attribute){
+		
+		Map<String, List<IntervalFeature>> groups= new HashMap<String, List<IntervalFeature>>();
+		
+		for(IntervalFeature x : this.getIntervalFeatureList()){
+			String key= x.getAttribute(attribute);
+		}
+		
+		return groups;
+	}
+	
 	// SETTERS AND GETTERS
 	// -------------------
 	
 	private TrackFormat getType() {
 		return this.type;
-	}
-
-	private TabixReader getTabixReader() {
-		return this.tabixReader;
 	}
 
 	protected List<IntervalFeature> getIntervalFeatureList() {
@@ -603,5 +665,34 @@ public class TrackIntervalFeature extends Track {
 	protected void setType(TrackFormat type) {
 		this.type = type;
 	}
+	
+	private TabixBigBedReader getReader(){
+		
+		if(this.bigBedReader != null && this.tabixReader != null){
+			System.err.println("You cannot have tabix and bigBed readers bot set!");
+			throw new RuntimeException();
+		}
+	
+		if(this.bigBedReader != null){
+			return new TabixBigBedReader(this.bigBedReader);
+		} else if(this.tabixReader != null){
+			return new TabixBigBedReader(this.tabixReader);
+		} else {
+			throw new RuntimeException();
+		}
+	}
+	
+//	private BBFileReader getBigBedReader() {
+//		return this.bigBedReader;
+//	}
+//
+//	private TabixReader getTabixReader() {
+//		return this.tabixReader;
+//	}
+//
+//	private void setBigBedReader(BBFileReader bbFileReader) {
+//		this.bigBedReader= bbFileReader;
+//	}
 
+	
 }

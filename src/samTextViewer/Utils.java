@@ -428,6 +428,8 @@ public class Utils {
 			return TrackFormat.BAM;
 		} else if(fileName.endsWith(".bigwig") || fileName.endsWith(".bw")) {
 			return TrackFormat.BIGWIG;
+		} else if(fileName.endsWith(".bigbed") || fileName.endsWith(".bb")) {
+			return TrackFormat.BIGBED;
 		} else if(fileName.endsWith(".tdf")) {
 			return TrackFormat.TDF;
 		} else if(fileName.endsWith(".bedgraph.gz") || fileName.endsWith(".bedgraph")) {

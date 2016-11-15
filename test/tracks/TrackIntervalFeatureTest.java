@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
@@ -14,14 +15,27 @@ import samTextViewer.GenomicCoords;
 
 public class TrackIntervalFeatureTest {
 	
-	@Test
+	// @Test
 	public void stubTranscriptToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		String intervalFileName= "test_data/hg19_genes.gtf.gz";
 		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
-		assertTrue(tif.printToScreen().startsWith("EEEEE"));
+		assertTrue(tif.printToScreen().trim().startsWith("NM_001101_eeeeeeeeeeeeeeeeeeeeeeeeeeezcccccccc------cccccccccccc"));
+		
+	}
+	
+	@Test
+	public void canReadBigBed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		String filename= "test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb";
+
+		GenomicCoords gc= new GenomicCoords("chr1:1-800170", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(filename, gc);
+		tif.setNoFormat(true);
+		assertEquals(12, tif.getIntervalFeatureList().size());
+		assertEquals(564665+1, tif.getIntervalFeatureList().get(0).getFrom());
 		
 	}
 	

@@ -25,24 +25,27 @@ public class FormatGTF {
 		HashMap<String, Character> revFeature= new HashMap<String, Character>();
 		HashMap<String, Character> unstrFeature= new HashMap<String, Character>();
 		
-		fwdFeature.put("exon",        'E'); revFeature.put("exon",        'e');
-		fwdFeature.put("cds", 	      'C'); revFeature.put("cds",         'c');
-		fwdFeature.put("start_codon", 'A'); revFeature.put("start_codon", 'a');
-		fwdFeature.put("stop_codon",  'Z'); revFeature.put("stop_codon",  'z');
-		fwdFeature.put("utr",         'U'); revFeature.put("utr",         'u');
-		fwdFeature.put("3utr",        'U'); revFeature.put("3utr",        'u');
-		fwdFeature.put("5utr",        'W'); revFeature.put("5utr",        'w');
-		fwdFeature.put("gene",		  'G'); revFeature.put("gene",        'g');
-		fwdFeature.put("transcript",  'T'); revFeature.put("transcript",  't');
-		fwdFeature.put("mrna",        'M'); revFeature.put("mrna",        'm');
-		fwdFeature.put("trna",        'X'); revFeature.put("trna",        'x');
-		fwdFeature.put("rrna", 		  'R'); revFeature.put("rrna",        'r');
-		fwdFeature.put("mirna",       'I'); revFeature.put("mirna",       'i');
-		fwdFeature.put("ncrna",       'L'); revFeature.put("ncrna",       'l');
-		fwdFeature.put("lncrna",      'L'); revFeature.put("lncrna",      'l');
-		fwdFeature.put("sirna",       'S'); revFeature.put("sirna",       's');
-		fwdFeature.put("pirna",       'P'); revFeature.put("pirna",       'p');
-		fwdFeature.put("snorna",      'O'); revFeature.put("snorna",      'o');
+		// MEMO: Makr these case insensitive by writing them lowercase.
+		fwdFeature.put("exon",            'E'); revFeature.put("exon",            'e');
+		fwdFeature.put("cds", 	          'C'); revFeature.put("cds",             'c');
+		fwdFeature.put("start_codon",     'A'); revFeature.put("start_codon",     'a');
+		fwdFeature.put("stop_codon",      'Z'); revFeature.put("stop_codon",      'z');
+		fwdFeature.put("utr",             'U'); revFeature.put("utr",             'u');
+		fwdFeature.put("3utr",            'U'); revFeature.put("3utr",            'u');
+		fwdFeature.put("three_prime_utr", 'U'); revFeature.put("three_prime_utr", 'u');
+		fwdFeature.put("5utr",           'W'); revFeature.put("5utr",            'w');
+		fwdFeature.put("five_prime_utr", 'W'); revFeature.put("five_prime_utr",  'w');
+		fwdFeature.put("gene",		     'G'); revFeature.put("gene",            'g');
+		fwdFeature.put("transcript",     'T'); revFeature.put("transcript",      't');
+		fwdFeature.put("mrna",           'M'); revFeature.put("mrna",            'm');
+		fwdFeature.put("trna",           'X'); revFeature.put("trna",            'x');
+		fwdFeature.put("rrna", 		     'R'); revFeature.put("rrna",            'r');
+		fwdFeature.put("mirna",          'I'); revFeature.put("mirna",           'i');
+		fwdFeature.put("ncrna",          'L'); revFeature.put("ncrna",           'l');
+		fwdFeature.put("lncrna",         'L'); revFeature.put("lncrna",          'l');
+		fwdFeature.put("sirna",          'S'); revFeature.put("sirna",           's');
+		fwdFeature.put("pirna",          'P'); revFeature.put("pirna",           'p');
+		fwdFeature.put("snorna",         'O'); revFeature.put("snorna",          'o');
 		
 		// For feature with strand not available, use forward encoding, unless feature unknown
 		unstrFeature.putAll(fwdFeature);
