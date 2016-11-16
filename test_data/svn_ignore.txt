@@ -2,3 +2,4 @@ chr7.fa
 chr7.fa.fai
 refGene.hg19.chr7.txt.gz
 wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb
+Homo_sapiens.GRCh38.86.chromosome.7.gff3*

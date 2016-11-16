@@ -18,6 +18,8 @@ zcat refGene.txt.gz | grep '\tchr7\t' | gzip > refGene.hg19.chr7.txt.gz
 rm refGene.txt.gz
 
 wget http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/byDataType/openchrom/jan2011/fdrPeaks/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb
+
+wget ftp://ftp.ensembl.org/pub/current_gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz
 ```
 
 **Memo**:

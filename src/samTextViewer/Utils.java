@@ -56,6 +56,10 @@ import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
+import org.broad.igv.bbfile.BedFeature;
+import org.broad.igv.bbfile.BigBedIterator;
+import org.broad.igv.bbfile.BigWigIterator;
+import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
 
 import com.google.common.base.Joiner;
@@ -265,6 +269,7 @@ public class Utils {
 		UrlValidator urlValidator = new UrlValidator();
 		String region= "";
 		TrackFormat fmt= Utils.getFileTypeFromName(x); 
+		
 		if(fmt.equals(TrackFormat.BAM)){
 			
 			SamReader samReader;
@@ -278,12 +283,15 @@ public class Utils {
 			region= samReader.getFileHeader().getSequence(0).getSequenceName();
 			samReader.close();
 			return region;
+		
 		} else if(fmt.equals(TrackFormat.BIGWIG) && !urlValidator.isValid(x)){
 			// Loading from URL is painfully slow so do not initialize from URL
-			BBFileReader reader= new BBFileReader(x);
-			region= reader.getChromosomeNames().get(0);
-			reader.close();
-			return region;
+			return initRegionFromBigWig(x);
+			
+		} else if(fmt.equals(TrackFormat.BIGBED) && !urlValidator.isValid(x)){
+			// Loading from URL is painfully slow so do not initialize from URL
+			return initRegionFromBigBed(x);
+			
 		} else if(fmt.equals(TrackFormat.TDF)){
 			Iterator<String> iter = TDFReader.getReader(x).getChromosomeNames().iterator();
 			while(iter.hasNext()){
@@ -294,10 +302,11 @@ public class Utils {
 			} 
 			System.err.println("Cannot initialize from " + x);
 			throw new RuntimeException();
+		
 		} else if(Utils.isUcscGenePredSource(x)){
 			return initRegionFromUcscGenePredSource(x);
 			
-		}else {
+		} else {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
 			BufferedReader br;
 			GZIPInputStream gzipStream;
@@ -333,6 +342,50 @@ public class Utils {
 		} 
 		System.err.println("Cannot initialize from " + x);
 		throw new RuntimeException();
+	}
+	
+	private static String initRegionFromBigBed(String bigBedFile) throws IOException{
+		
+		BBFileReader reader= new BBFileReader(bigBedFile);
+		if(! reader.isBigBedFile()){
+			System.err.println("File " + bigBedFile + " is not bigBed.");
+			throw new RuntimeException();
+		}
+		String region= reader.getChromosomeNames().get(0); // Just get chrom to start with
+		
+		for(String chrom : reader.getChromosomeNames()){
+			BigBedIterator iter = reader.getBigBedIterator(chrom, 0, chrom, Integer.MAX_VALUE, false);
+			if(iter.hasNext()){
+				BedFeature x= (BedFeature) iter.next();
+				region= x.getChromosome() + ":" + (x.getStartBase() + 1);
+				reader.close();
+				return region;
+			}
+		}
+		reader.close();
+		return region;
+	}
+	
+	private static String initRegionFromBigWig(String bigWigFile) throws IOException{
+		
+		BBFileReader reader= new BBFileReader(bigWigFile);
+		if(! reader.isBigWigFile()){
+			System.err.println("File " + bigWigFile + " is not bigWig.");
+			throw new RuntimeException();
+		}
+		String region= reader.getChromosomeNames().get(0); // Just get chrom to start with
+		
+		for(String chrom : reader.getChromosomeNames()){
+			BigWigIterator iter = reader.getBigWigIterator(chrom, 0, chrom, Integer.MAX_VALUE, false);
+			if(iter.hasNext()){
+				WigItem x = iter.next();
+				region= x.getChromosome() + ":" + (x.getStartBase() + 1);
+				reader.close();
+				return region;
+			}
+		}
+		reader.close();
+		return region;
 	}
 	
 	private static String initRegionFromUcscGenePredSource(String x) throws ClassNotFoundException, IOException, InvalidCommandLineException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
@@ -992,7 +1045,8 @@ public class Utils {
 	public static String printSamSeqDict(SAMSequenceDictionary samSeqDict, int graphSize){
 		
 		if(samSeqDict == null || samSeqDict.isEmpty()){
-			return "Sequence dictionary not available.";
+			System.err.println("Sequence dictionary not available.");
+			return "";
 		}
 		
 		// Prepare a list of strings. Each string is a row tab separated
@@ -1077,7 +1131,7 @@ public class Utils {
 		if(filename == null){
 			return;
 		}
-		if(! filename.toLowerCase().endsWith(".png")){
+		if(! filename.toLowerCase().endsWith(".pdf")){
 			// We write file as plain text so strip ansi codes.
 			xprint= stripAnsiCodes(xprint);
 		}
@@ -1089,7 +1143,7 @@ public class Utils {
 	/** Get a filaname to write to. GenomicCoords obj is used to get current position and 
 	 * create a suitable filename from it, provided a filename is not given.
 	 * The string '%r' in the file name, is replaced with the current position. Useful to construct
-	 * file names like myPeaks.%r.png -> myPeaks.chr1_1234-5000.png.
+	 * file names like myPeaks.%r.pdf -> myPeaks.chr1_1234-5000.pdf.
 	 * */
 	public static String parseCmdinputToGetSnapshotFile(String cmdInput, GenomicCoords gc) throws IOException{
 		
@@ -1101,8 +1155,8 @@ public class Utils {
 		
 		if(snapshotFile.isEmpty()){
 			snapshotFile= REGVAR + ".txt"; 
-		} else if(snapshotFile.equals(".png")){
-			snapshotFile= REGVAR + ".png";
+		} else if(snapshotFile.equals(".pdf")){
+			snapshotFile= REGVAR + ".pdf";
 		} 
 		snapshotFile= snapshotFile.replace(REGVAR, region); // Special string '%r' is replaced with the region 
 		
@@ -1126,67 +1180,6 @@ public class Utils {
 		return snapshotFile;
 	}
 	
-	public static void convertTextFileToGraphic(File infile, File outfile) throws IOException{
-		String filename= infile.getAbsolutePath(); 
-		// Read back text file and remove ansi escapes
-		List<String> lines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
-		for(int i= 0; i < lines.size(); i++){
-			String x= stripAnsiCodes(lines.get(i));
-			lines.set(i, x);
-		}
-		BufferedImage image = convertTextToGraphic(lines);
-		ImageIO.write(image, "png", outfile);
-	}
-	
-	/** 
-	 * */
-    private static BufferedImage convertTextToGraphic(List<String> lines) {
-    // See http://stackoverflow.com/questions/23568114/converting-text-to-image-in-java
-        	       	
-    	BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = img.createGraphics();
-
-        Font font= new Font("Courier", Font.PLAIN, 32);
-        
-        g2d.setFont(font);
-        FontMetrics fm = g2d.getFontMetrics();
-    	/* Width of the image and number of lines */
-    	int width= -1;
-    	int height= 0;
-    	for(String text : lines){
-    		if(fm.stringWidth(text) > width){
-    			width= fm.stringWidth(text);
-    		}
-    		height += Math.round(fm.getAscent() * 1.5);
-    	}
-    	height += Math.round(fm.getAscent() * 0.2);
-        g2d.dispose();
-       
-        img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        g2d = img.createGraphics();
-        g2d.setColor(Color.WHITE); // Set background colour by filling a rect
-        g2d.fillRect(0, 0, width, height);
-
-        //g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-        //g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        //g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-        //g2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
-        //g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-        //g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        //g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        //g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g2d.setFont(font);
-        fm = g2d.getFontMetrics();
-        g2d.setColor(Color.BLACK);
-        for(int i= 0; i < lines.size(); i++){
-        	g2d.drawString(lines.get(i), 0, Math.round(fm.getAscent() * (i+1) * 1.5));
-        }
-        g2d.dispose();
-        return img;
-    }
-
-
 	/**
 	 * Count reads in interval using the given filters.
 	 * @param bam

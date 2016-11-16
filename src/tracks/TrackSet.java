@@ -1461,6 +1461,57 @@ public class TrackSet {
         
 	}
 
+	public GenomicCoords trimCoordsForTrack(List<String> cmdInput) throws InvalidGenomicCoordsException, IOException {
+
+		List<String> args= new ArrayList<String>(cmdInput);
+		args.remove(0); //Remove cmd name
+
+		String trackTag= "";
+		if(args.size() > 0){
+			trackTag= args.get(0);
+		}
+		
+		// Get track to trim: We get the first one matching the given tag.
+		for(Track tr : this.getTrackList()){
+			if(tr instanceof TrackIntervalFeature && tr.getTrackTag().contains(trackTag)){
+				return trimTrack((TrackIntervalFeature) tr);
+			}
+		}
+		return null;
+	}
+
+	private GenomicCoords trimTrack(TrackIntervalFeature tr) throws InvalidGenomicCoordsException, IOException{
+		GenomicCoords current = tr.getGc();
+		TrackIntervalFeature itr= (TrackIntervalFeature)tr;
+		List<IntervalFeature> features = itr.getIntervalFeatureList();
+		if(features.size() == 0){
+			return current;
+		}
+		
+		// Get the leftmost and rightmost coordinates of the feature set
+		// These might extend beyond the current window.
+		int left = Integer.MAX_VALUE;
+		int right= 0;
+		for(IntervalFeature f : features){
+			if(f.getFrom() < left){
+				left= f.getFrom(); 
+			}
+			if(f.getTo() > right){
+				right= f.getTo();
+			}
+		}
+		
+		// See if left and right need to be adjusted by window coordinates
+		if(left < current.getFrom()){
+			left= current.getFrom();
+		}
+		if(right > current.getTo()){
+			right= current.getTo();
+		}
+		return new GenomicCoords(current.getChrom() + ":" + left + "-" + right, 
+				current.getSamSeqDict(), current.getFastaFile());
+	}
+	
 	public List<String> getRegexForYLimits() {
 		return regexForYLimits;
 	}

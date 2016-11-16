@@ -145,6 +145,10 @@ public class InteractiveInput {
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
 					gc.cmdInputExtend(cmdInput);
 					proc.getGenomicCoordsHistory().add(gc);
+				
+				} else if(cmdInput.get(0).equals("trim")){
+					GenomicCoords gc = proc.getTrackSet().trimCoordsForTrack(cmdInput);
+					proc.getGenomicCoordsHistory().add(gc);
 					
 				} else if(cmdInput.get(0).equals("l")) {
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.common.base.Joiner;
+import com.itextpdf.text.DocumentException;
 
 import commandHelp.CommandList;
 import exceptions.BamIndexNotFoundException;
@@ -31,7 +32,7 @@ import tracks.TrackSet;
  */
 public class Main {
 	
-	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException {
+	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException {
 
 		/* Start parsing arguments * 
 		 * *** If you change something here change also in console input ***/

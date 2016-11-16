@@ -133,6 +133,13 @@ Extend the current window by `INT` bases left and right.
 
 If only one INT is given it is applied to both left and right. Negative INTs will shrink instead of extend the window.
 
+trim
+++++
+
+:code:`trim track_name`
+
+Trim current coordinates to remove empty regions around `track_name`.  With `track_name` missing trim on the first annotation track found. `track_name` can partially match the that actual, full track name; with multiple matches trim the first track found.
+
 l - left
 ++++++++
 
@@ -226,7 +233,7 @@ Creates a track to save positions of interest. Without arguments, add the curren
 
 * :code:`-print`: prints to screen the list of current bookmarks.
 
-* :code:`>`: saves the bookmark to file.
+* :code:`>`: saves the bookmark track to file.
 
 Examples::
 
@@ -295,9 +302,9 @@ Gap unset is preferable when the interest is in knowing which regions are covere
 gffNameAttr
 +++++++++++
 
-:code:`gffNameAttr [attribute_name = NULL] [track_regex = .*]...`
+:code:`gffNameAttr [attribute_name = NULL | -na] [track_regex = .*]...`
 
-For GTF/GFF tracks, choose the attribute to get the feature name from. Use attribute NULL to reset to default choice of attribute. Applies to all GFF/GTF tracks captured by the list of `track_regex`. Example, given the gtf feature::
+GTF/GFF attribute to set the feature name or `-na` to suppress name.  Use attribute NULL to reset to default choice of attribute. To suppress printing of the name use `-na`. Bed features get their name from the 4th column. Applies to annotation tracks captured by the list `track_regex`. Example, given the gtf feature::
 
     chr1 . CDS  10 99 . + 2 gene_id "PTGFRN"; transcript_id "NM_020440";
 
@@ -308,6 +315,9 @@ Use gene_name as feature name or transcript_id::
     
     gffNameAttr transcript_id genes.gtf .*gff
     NM_020440_CCCCCC
+    
+    gffNameAttr -na
+    CCCCCCCCCCCCCCCC <- Do not show name    
 
 
 
@@ -544,12 +554,12 @@ save
 
 :code:`save [filename = chrom_start_end.txt']`
 
-Save current screenshot to file in either text or png format. Default filename is generated from the current coordinates and the default format is txt. With filename .png save as png using current coordinates as filename. Use extension .png to save as png format. Colours are stripped from text output but they retainedin the png. The string `%r` in the file name is replaced with the current coordinates.Examples::
+Save current screenshot to file in either text or pdf format. Default filename is generated from the current coordinates and the default format is plain text. If filename has extension pdf then save as pdf. The string `%r` in the file name is replaced with the current coordinates. Examples::
 
     save mygene.txt    -> Save to mygene.txt as text
     save               -> Save to chrom_start-end.txt as text
-    save .png          -> Save to chrom_start-end.png as png
-    save mygene.%r.png -> Save to mygene.chr1_100-200.png as png
+    save .pdf          -> Save to chrom_start-end.png as pdf
+    save mygene.%r.pdf -> Save to mygene.chr1_100-200.png as pdf
 
 
 
@@ -579,6 +589,7 @@ h
 
 :code:`h -h`
 
-h and -h show this help. For help on specific commands use `command -h`, for example :code:`ylim -h` 
+h and -h show this help.
+For help on specific commands use `command -h`, for example :code:`ylim -h` 
 
 

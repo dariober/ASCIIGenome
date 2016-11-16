@@ -258,6 +258,15 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
+		cmd.setName("trim"); cmd.setArgs("track_name"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Trim current coordinates to remove empty regions around `track_name`. ");
+		cmd.setAdditionalDescription("With `track_name` missing trim on the first annotation track found. "
+				+ "`track_name` can partially match the that actual, full track name; with multiple "
+				+ "matches trim the first track found.");
+		cmdList.add(cmd);
+		
+		
+		cmd= new CommandHelp();
 		cmd.setName("l"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; cmd.setPrintName("l - left");
 		cmd.setBriefDescription("Go to the Left half of the current window. ");
 		cmd.setAdditionalDescription("Alternate the left and right command to quickly focus on a point of interest. ");
@@ -432,10 +441,11 @@ public class CommandList {
 
 		
 		cmd= new CommandHelp();
-		cmd.setName("gffNameAttr"); cmd.setArgs("[attribute_name = NULL] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("For GTF/GFF tracks, choose the attribute to get the feature name from.");
-		cmd.setAdditionalDescription("Use attribute NULL to reset to default choice of attribute. "
-				+ "Applies to all GFF/GTF tracks captured by the list of `track_regex`. Example, given "
+		cmd.setName("gffNameAttr"); cmd.setArgs("[attribute_name = NULL | -na] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("GTF/GFF attribute to set the feature name or `-na` to suppress name. ");
+		cmd.setAdditionalDescription("Use attribute NULL to reset to default choice of attribute. To suppress "
+				+ "printing of the name use `-na`. Bed features get their name from the 4th column. "
+				+ "Applies to annotation tracks captured by the list `track_regex`. Example, given "
 				+ "the gtf feature::\n"
 				+ "\n"
 				+ "    chr1 . CDS  10 99 . + 2 gene_id \"PTGFRN\"; transcript_id \"NM_020440\";\n"
@@ -447,6 +457,10 @@ public class CommandList {
 				+ "    \n"
 				+ "    gffNameAttr transcript_id genes.gtf .*gff\n"
 				+ "    NM_020440_CCCCCC\n"
+				+ "    \n"
+				+ "    gffNameAttr -na\n"
+				+ "    CCCCCCCCCCCCCCCC <- Do not show name"
+				+ "    \n"
 				+ "\n");
 		cmdList.add(cmd);
 
@@ -693,17 +707,16 @@ public class CommandList {
 		
 		cmd= new CommandHelp();
 		cmd.setName("save"); cmd.setArgs("[filename = chrom_start_end.txt']"); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("Save current screenshot to file in either text or png format.");
-		cmd.setAdditionalDescription("Default filename is generated from the current coordinates and the default format is txt. "
-				+ "With filename .png save as png using current coordinates as filename. "
-				+ "Use extension .png to save as png format. Colours are stripped from text output but they retained"
-				+ "in the png. The string `%r` in the file name is replaced with the current coordinates."
+		cmd.setBriefDescription("Save current screenshot to file in either text or pdf format.");
+		cmd.setAdditionalDescription("Default filename is generated from the current coordinates and the default format is plain text. "
+				+ "If filename has extension pdf then save as pdf. "
+				+ "The string `%r` in the file name is replaced with the current coordinates. "
 				+ "Examples::\n"
 				+ "\n"
 				+ "    save mygene.txt~~~~-> Save to mygene.txt as text\n"
 				+ "    save~~~~~~~~~~~~~~~-> Save to chrom_start-end.txt as text\n"
-				+ "    save .png~~~~~~~~~~-> Save to chrom_start-end.png as png\n"
-				+ "    save mygene.%r.png~-> Save to mygene.chr1_100-200.png as png\n"
+				+ "    save .pdf~~~~~~~~~~-> Save to chrom_start-end.png as pdf\n"
+				+ "    save mygene.%r.pdf~-> Save to mygene.chr1_100-200.png as pdf\n"
 				+ "\n");
 		cmdList.add(cmd);
 
@@ -730,8 +743,8 @@ public class CommandList {
 
 		cmd= new CommandHelp();
 		cmd.setName("h"); cmd.setArgs("-h"); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("h and -h show this help. For help on specific commands use `command -h`, for example "
-				+ ":code:`ylim -h`");
+		cmd.setBriefDescription("h and -h show this help.\n"
+				+ "For help on commands: `command -h`, e.g. :code:`ylim -h`");
 		cmd.setAdditionalDescription("");
 		cmdList.add(cmd);
 				
@@ -778,6 +791,7 @@ public class CommandList {
 		paramList.add("zi");
 		paramList.add("zo");
 		paramList.add("extend");
+		paramList.add("trim");
 		paramList.add("l");
 		paramList.add("r");
 		paramList.add("goto");

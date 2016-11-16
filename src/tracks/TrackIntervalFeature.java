@@ -8,6 +8,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +34,7 @@ public class TrackIntervalFeature extends Track {
 	private String hideRegex= "^$";
 	private String showRegex= ".*";
 	private TrackFormat type;
-	private TabixReader tabixReader;
+	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
 	
 	/* C o n s t r u c t o r */
@@ -616,7 +619,25 @@ public class TrackIntervalFeature extends Track {
 	/** Group the features in this genomic window by GFF attribute (typically a transcripts). 
 	 * Features that don't have the attribute make each a length=1 list.
 	 * */
-	private Map<String, List<IntervalFeature>> groupByGFFAttribute(String attribute){
+	private List<IntervalFeature> groupByGFFAttribute(String attribute){
+
+		// * First collect the IDs of the transcripts
+		// This are the feature names from which transcripts are defined.
+		final Set<String> txFeatures= new HashSet<String>();  
+		txFeatures.add("mrna");
+		txFeatures.add("transcript");
+		txFeatures.add("lincrna");
+		
+		// Collect unique IDs
+		Map<String, List<IntervalFeature>> txIds= new LinkedHashMap<String, List<IntervalFeature>>();
+		
+		txIds.put("_na_", new ArrayList<IntervalFeature>()); // List for records which are not transcripts
+		
+//		for(IntervalFeature x : this.getIntervalFeatureList()){
+//			if(txFeatures.contains(x.getFeature().toLowerCase())){
+//				txIds.add(x.getAttribute("ID"));
+//			}
+//		}
 		
 		Map<String, List<IntervalFeature>> groups= new HashMap<String, List<IntervalFeature>>();
 		
@@ -624,7 +645,7 @@ public class TrackIntervalFeature extends Track {
 			String key= x.getAttribute(attribute);
 		}
 		
-		return groups;
+		return null;
 	}
 	
 	// SETTERS AND GETTERS
@@ -678,21 +699,16 @@ public class TrackIntervalFeature extends Track {
 		} else if(this.tabixReader != null){
 			return new TabixBigBedReader(this.tabixReader);
 		} else {
+			System.err.println("Tabix and bigBed reader both null.");
 			throw new RuntimeException();
 		}
 	}
-	
-//	private BBFileReader getBigBedReader() {
-//		return this.bigBedReader;
-//	}
-//
-//	private TabixReader getTabixReader() {
-//		return this.tabixReader;
-//	}
-//
-//	private void setBigBedReader(BBFileReader bbFileReader) {
-//		this.bigBedReader= bbFileReader;
-//	}
 
-	
+	/** This setter is for TrackBookmark to work.*/
+	protected void setTabixReader(TabixReader tabixReader) {
+		this.tabixReader = tabixReader;
+	}
+	protected TabixReader getTabixReader() {
+		return this.tabixReader;
+	}
 }

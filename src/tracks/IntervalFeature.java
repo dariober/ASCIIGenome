@@ -43,6 +43,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * -1 if the feature is not part of the screenshot. */
 	private int screenFrom= -1;
 	private int screenTo= -1;
+	final private String NAME_NA= "-na"; // String to use to set the name field to missing when retrieving feature name.
 	
 	/* C o n s t r u c t o r s */
 		
@@ -348,28 +349,49 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	private String featureNameFromGTFAttribute(String attributeName){
 
 		String xname= this.name;
-		if(attributeName != null){
+		
+		if(attributeName == null){
+
+			// attribute name is null, assign default by Precedence to assign name 
+
+			if (this.getAttribute("Name") != null){ 
+				xname= this.getAttribute("Name");
+			
+			} else if (this.getAttribute("ID") != null){ 
+				xname= this.getAttribute("ID");
+	
+			} else if (this.getAttribute("transcript_name") != null){ 
+				xname= this.getAttribute("transcript_name");
+			
+			} else if (this.getAttribute("transcript_id") != null){ 
+				xname= this.getAttribute("transcript_id");
+			
+			} else if (this.getAttribute("gene_name") != null){ 
+				xname= this.getAttribute("gene_name");
+			
+			} else if (this.getAttribute("gene_id") != null){ 
+				xname= this.getAttribute("gene_id");
+			
+			} else {
+				// None of the above attributes found, leave as default
+			}
+			return xname;
+		}
+		
+		if(attributeName.equals(this.NAME_NA)){
+			return ".";
+		} 
+		else if(! this.format.equals(TrackFormat.GFF)){
+			// This is not a GFF/GTF file return default name without parsing attributes
+			return xname;
+		}				
+		else {
 			xname= this.getAttribute(attributeName);
 			if(xname == null){
 				xname= ".";
 			}
-		// Precedence to assign name 
-		} else if (this.getAttribute("Name") != null){ xname= this.getAttribute("Name");
-		
-		} else if (this.getAttribute("ID") != null){ xname= this.getAttribute("ID");
-
-		} else if (this.getAttribute("transcript_name") != null){ xname= this.getAttribute("transcript_name");
-		
-		} else if (this.getAttribute("transcript_id") != null){ xname= this.getAttribute("transcript_id");
-		
-		} else if (this.getAttribute("gene_name") != null){ xname= this.getAttribute("gene_name");
-		
-		} else if (this.getAttribute("gene_id") != null){ xname= this.getAttribute("gene_id");
-		
-		} else {
-			// Leave as default
+			return xname;
 		}
-		return xname;
 	}
 	
 	/*   S e t t e r s   and   G e t t e r s   */
@@ -388,10 +410,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 
 	/** Name be shown to the user */
 	public String getName() {
-		if(this.format.equals(TrackFormat.GFF)){
+//		if(this.format.equals(TrackFormat.GFF)){
 			return this.featureNameFromGTFAttribute(this.gtfAttributeForName);
-		}
-		return this.name;
+//		}
+//		return this.name;
 	}
 
 	public float getScore() {

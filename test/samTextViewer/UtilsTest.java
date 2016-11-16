@@ -22,6 +22,8 @@ import tracks.IntervalFeature;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
 
+import org.broad.igv.bbfile.BBFileReader;
+import org.broad.igv.bbfile.BedFeature;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -279,13 +281,16 @@ public class UtilsTest {
 
 	@Test
 	public void canInitRegion() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
+		
 		assertEquals("chrM", Utils.initRegionFromFile("test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
-		assertEquals("chr1", Utils.initRegionFromFile("/Users/berald01/Downloads/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
+		assertEquals("chr1:10536", Utils.initRegionFromFile("/Users/berald01/Downloads/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
 		assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
 		assertEquals("chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
 		assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
-		assertTrue(Utils.initRegionFromFile("hg19:refGene").startsWith("chr1:"));
+		assertEquals("chr1:564666", Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
+		
+		// assertTrue(Utils.initRegionFromFile("hg19:refGene").startsWith("chr1:"));
 	}
 	
 	@Test
@@ -460,8 +465,10 @@ public class UtilsTest {
 		assertTrue(Utils.printSamSeqDict(samSeqDict, 30).startsWith("chrM  16571"));
 		assertTrue(Utils.printSamSeqDict(samSeqDict, 30).endsWith("chrY  59373566  |||||||"));
 		SAMSequenceDictionary emptyDict= new SAMSequenceDictionary();
-		Utils.printSamSeqDict(emptyDict, 30);
-		Utils.printSamSeqDict(null, 30);
+		
+		// Empty dict -> Empty string
+		assertEquals("", Utils.printSamSeqDict(emptyDict, 30));
+		assertEquals("", Utils.printSamSeqDict(null, 30));
 	}
 	
 	@Test
@@ -525,11 +532,11 @@ public class UtilsTest {
 		assertEquals("/tmp/foo.txt", x);
 	}
 
-	@Test
-	public void testPng() throws IOException{
-		Utils.convertTextFileToGraphic(new File("test_data/chr7_5564857-5570489.txt"), new File("tmp.png"));
-		new File("tmp.png").deleteOnExit();
-	}
+//	@Test
+//	public void testPng() throws IOException{
+//		Utils.convertTextFileToGraphic(new File("test_data/chr7_5564857-5570489.txt"), new File("tmp.png"));
+//		new File("tmp.png").deleteOnExit();
+//	}
 	
 	@Test
 	public void canConvertCoordsToString(){

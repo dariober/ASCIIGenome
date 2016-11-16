@@ -30,19 +30,19 @@ public class Png {
 
 	/* M e t h o d s */
 
-	public void convert(File pngOut) throws IOException {
+	public void convert(File pngOut, int fontSize) throws IOException {
 		
 		List<ColoredChar> coloredList= this.ansiFileToColoredChar();
-		BufferedImage img= this.colorListToGraphics(coloredList);
+		BufferedImage img= this.colorListToGraphics(coloredList, fontSize);
 		ImageIO.write(img, "png", pngOut);
 	}
 
-	private BufferedImage colorListToGraphics(List<ColoredChar> coloredList) {
+	private BufferedImage colorListToGraphics(List<ColoredChar> coloredList, int fontSize) {
 
 		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = img.createGraphics();
 
-        Font font= new Font("Courier", Font.PLAIN, 32);
+        Font font= new Font("Courier", Font.BOLD, fontSize);
         
     	/* Width of the image and number of lines */
     	int width= -1;

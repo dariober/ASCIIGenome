@@ -105,7 +105,7 @@ public class UcscGenePred {
 		}
 		long t1= System.currentTimeMillis();
 		if(maxRecords == Integer.MAX_VALUE){
-			System.err.println(i + " genePred records converted to " + j + " GTF features (" + Math.rint((t1-t0) / 1000) + " s).");
+			// System.err.println(i + " genePred records converted to " + j + " GTF features (" + Math.rint((t1-t0) / 1000) + " s).");
 		}
 		br.close();
 		wr.close();

@@ -8,7 +8,9 @@ import java.sql.SQLException;
 
 import org.apache.commons.lang3.StringUtils;
 
-import coloring.Png;
+import com.itextpdf.text.DocumentException;
+
+import coloring.Pdf;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -43,7 +45,7 @@ public class TrackProcessor {
 	
 	/* M E T H O D S */
 
-	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException{
+	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, DocumentException{
 		
 		GenomicCoords currentGC= this.genomicCoordsHistory.current();
 		
@@ -82,10 +84,10 @@ public class TrackProcessor {
 			Utils.printer(footer + "\n", this.snapshotFile);
 		}
 
-		// Optionally convert to png
+		// Optionally convert to pdf
 		// -------------------------
-		if(this.snapshotFile != null && this.snapshotFile.endsWith("png")){
-			(new Png(new File(this.snapshotFile))).convert(new File(this.snapshotFile));
+		if(this.snapshotFile != null && this.snapshotFile.endsWith(".pdf")){
+			(new Pdf(new File(this.snapshotFile))).convert(new File(this.snapshotFile), 10);
 		} 	
 	}
 	

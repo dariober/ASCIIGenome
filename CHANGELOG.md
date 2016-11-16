@@ -1,3 +1,13 @@
+New in 0.6.0
+============
+
+* bigBed files supported.
+
+* Pdf output replaces png output to save screenshots. This makes a lot more sense since
+  we are saving text not paintings!
+
+* Add `trim` command
+
 New in 0.5.0
 ============
 

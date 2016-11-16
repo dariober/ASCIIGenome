@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.biojava.nbio.genome.parsers.gff.Feature;
+import org.biojava.nbio.genome.parsers.gff.Location;
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
@@ -30,14 +32,31 @@ public class IntervalFeatureTest {
 	@Test
 	public void canAssignNameToFeature() throws InvalidGenomicCoordsException{
 		
+		Location location= new Location(10, 100);
+		Feature gff= new Feature("chr1", "foo", "bar", location, (double) 0, 0, "ID=mirna");
+		System.out.println(gff.getAttribute(null));		
+		
 		String line; 
 		IntervalFeature f;
 
+		// Name not wanted to display:
+		line= "chr1 0 10 myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED);
+		f.setGtfAttributeForName("-na");
+		assertEquals(".", f.getName());
+		
+		// Do not use a name
+		line= "chr1 0 10 myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED);
+		f.setGtfAttributeForName(null);
+		assertEquals("myname", f.getName());
+		
 		//Custom name from BED: Has no effect
 		line= "chr1 0 10 myname".replaceAll(" ", "\t");
 		f= new IntervalFeature(line, TrackFormat.BED);
 		f.setGtfAttributeForName("ID");
 		assertEquals("myname", f.getName());
+
 		
 		//Custom name from GTF
 		line= "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");

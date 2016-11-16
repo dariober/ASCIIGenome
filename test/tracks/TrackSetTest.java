@@ -21,6 +21,45 @@ import samTextViewer.Utils;
 
 public class TrackSetTest {
 
+	@Test 
+	public void AAAcanTrimGenomicCoordinatesForTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", null, null);
+		
+		TrackSet trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		
+		GenomicCoords cropped= trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
+		assertEquals(5566778+1, (int)cropped.getFrom());
+		assertEquals(5567378, (int)cropped.getTo());
+		
+		// No feature in #1: What happens if we try to trim
+		gc= new GenomicCoords("chr7:5568506-5575414", null, null);
+		trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		// No change:
+		cropped= trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
+		assertEquals(5568506, (int)cropped.getFrom());
+		assertEquals(5575414, (int)cropped.getTo());
+		
+		// Trim when feature(s) extend beyond the current window: No cropping
+		gc= new GenomicCoords("chr7:5566843-5567275", null, null);
+		trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+
+		cropped= trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
+		assertEquals(5566843, (int)cropped.getFrom());
+		assertEquals(5567275, (int)cropped.getTo());
+
+		// Trim w/o tracks
+		trackSet= new TrackSet();
+		cropped= trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
+		assertEquals(null, cropped);
+	}
+	
 	@Test
 	public void canPrintFeaturesToFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 		
@@ -140,7 +179,7 @@ public class TrackSetTest {
 		ts.bookmark(gc2, cmdInput);
 		
 		TrackBookmark bm = (TrackBookmark) ts.getTrackList().get(0);
-		assertTrue(bm.getIntervalFeatureList().size() == 2);
+		assertEquals(2, bm.getIntervalFeatureList().size());
 
 		bm.setPrintMode(PrintRawLine.CLIP);
 		System.out.println(bm.printFeaturesToFile()); // NB: it prints twice the same gc becouse the position is nt changed
