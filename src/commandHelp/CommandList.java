@@ -27,6 +27,7 @@ public class CommandList {
 		
 		ConsoleReader console= new ConsoleReader(); 
 		try {
+			// Autcomplete commands with length > x 
 			for(CommandHelp x : CommandList.commandHelpList()){
 				if(x.getName().length() > 2){
 					console.addCompleter(new StringsCompleter(x.getName()));
@@ -257,14 +258,14 @@ public class CommandList {
 				+ "instead of extend the window.");
 		cmdList.add(cmd);
 		
-		cmd= new CommandHelp();
-		cmd.setName("trim"); cmd.setArgs("track_name"); cmd.inSection= Section.NAVIGATION; 
-		cmd.setBriefDescription("Trim current coordinates to remove empty regions around `track_name`. ");
-		cmd.setAdditionalDescription("With `track_name` missing trim on the first annotation track found. "
-				+ "`track_name` can partially match the that actual, full track name; with multiple "
-				+ "matches trim the first track found.");
-		cmdList.add(cmd);
-		
+//		cmd= new CommandHelp();
+//		cmd.setName("trim"); cmd.setArgs("track_name"); cmd.inSection= Section.NAVIGATION; 
+//		cmd.setBriefDescription("Trim current coordinates to remove empty regions around `track_name`. ");
+//		cmd.setAdditionalDescription("With `track_name` missing, trim on the first annotation track found. "
+//				+ "`track_name` can partially match the actual, full track name if multiple "
+//				+ "matches occur the first track matched is trimmed.\n"
+//				+ "Note that the window is not trimmed if the trimmed window is smaller than the user window size (e.g. trimmed 20bp with window 100bp).");
+//		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
 		cmd.setName("l"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; cmd.setPrintName("l - left");
@@ -292,20 +293,13 @@ public class CommandList {
 
 		cmd= new CommandHelp();
 		cmd.setName("next"); cmd.setArgs("[-start] [track]"); cmd.inSection= Section.NAVIGATION; 
-		cmd.setBriefDescription("Move to the next feature on `track` on current chromosome. "); 
+		cmd.setBriefDescription("Move to the next feature on `track`. "); 
 		cmd.setAdditionalDescription(""
-				+ "`next` centers the window on the found feature and zooms out. "
-				+ "This is useful for quickly browsing through annotation files of genes or ChIP-Seq "
-				+ "peaks in combination with read coverage tracks (bigwig, tdf, etc.).\n"
-				+ "\n"
+				+ "`next` centers the window on the next feature found and zooms out.\n"
 				+ "* :code:`-start`: Sets the window right at the start of the feature, without centering and zooming out.\n"
-				+ "\n"
-				+ "The `next` command does exactly that, it moves to the next feature. "
-				+ "If there are no more features after the current position it doesn't rewind to the beginning "
-				+ "(use `1` for that) and it doesn't move to another chromosome, "
-				+ "use `goto chrom` for that.\n "
-				+ "\n"
-				+ "If `track` is omitted, the first annotation track is used."); 
+				+ "* :code:`track`: Track to search for next feature. Default to firt annotation track found.\n"
+				+ "`next` starts searching immediately after the current window and loops thourgh each chromosome until a feature is found.");
+ 
 
 		cmdList.add(cmd);
 
@@ -389,7 +383,7 @@ public class CommandList {
 				+ "* :code:`track_regex`: Apply to tracks matched by `track_regex`.\n"
 				+ "\n"
 				+ "Regex `-i` and `-e` are applied to the raw lines as read from source file. "
-				+ "This command is useful to filter the annotation in GTF or BED files, for example::\n"
+				+ "This command is useful to filter the annotation in GTF or BED files. For example::\n"
 				+ "\n"
 				+ "    grep -i RNA -e mRNA gtf gff\n"
 				+ "\n"
@@ -618,11 +612,12 @@ public class CommandList {
 		
 		cmd= new CommandHelp();
 		cmd.setName("addTracks"); cmd.setArgs("[file or URL]..."); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("Add tracks from local or remote files.");
-		cmd.setAdditionalDescription("\n"
+		cmd.setBriefDescription("Add tracks from local or remote files. ");
+		cmd.setAdditionalDescription("For local files, glob characters (wildcard) are expanded as in Bash "
+				+ "(but note that currently globs in directory names are not expanded.)\n"
 				+ "Examples::\n"
 				+ "\n"
-				+ "    addTracks peaks.bed gene.gtf\n"
+				+ "    addTracks peaks.bed genes.*.gtf\n"
 				+ "    addTracks http://remote/host/peaks.bed\n"
 				+ "");
 		cmdList.add(cmd);
@@ -653,13 +648,13 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("history"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+		cmd.setName("posHistory"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Show the list of visited positions.");
 		cmd.setAdditionalDescription("");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("cmdHistory"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+		cmd.setName("history"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Show the list of executed commands.");
 		cmd.setAdditionalDescription("");
 		cmdList.add(cmd);
@@ -791,7 +786,7 @@ public class CommandList {
 		paramList.add("zi");
 		paramList.add("zo");
 		paramList.add("extend");
-		paramList.add("trim");
+//		paramList.add("trim");
 		paramList.add("l");
 		paramList.add("r");
 		paramList.add("goto");
@@ -823,8 +818,8 @@ public class CommandList {
 		paramList.add("addTracks");
 		paramList.add("dropTracks");
 		paramList.add("orderTracks");
+		paramList.add("posHistory");
 		paramList.add("history");
-		paramList.add("cmdHistory");
 		paramList.add("rpm");
 		// paramList.add("pileup");
 		paramList.add("samtools");

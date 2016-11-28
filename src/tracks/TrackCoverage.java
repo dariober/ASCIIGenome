@@ -15,6 +15,7 @@ import com.google.common.base.Joiner;
 
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -315,5 +316,4 @@ public class TrackCoverage extends Track {
 		}
 		return plist;
 	}
-		
 }

@@ -36,10 +36,17 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -467,18 +474,24 @@ public class Utils {
 		    || fileName.endsWith(".bed.gz") 
 		    || fileName.endsWith(".bed.gz.tbi")){
 			return TrackFormat.BED;
+		
 		} else if( fileName.endsWith(".gtf") 
 				|| fileName.endsWith(".gtf.gz")
-				|| fileName.endsWith(".gtf.gz.tbi")
-				|| fileName.endsWith(".gff") 
+				|| fileName.endsWith(".gtf.gz.tbi")){
+			return TrackFormat.GTF;
+			
+	    } else if(
+				fileName.endsWith(".gff") 
 				|| fileName.endsWith(".gff.gz") 
 				|| fileName.endsWith(".gff.gz.tbi")
 				|| fileName.endsWith(".gff3")
 				|| fileName.endsWith(".gff3.gz") 
 				|| fileName.endsWith(".gff3.gz.tbi")){
 			return TrackFormat.GFF;
+			
 		} else if(fileName.endsWith(".bam") || fileName.endsWith(".cram")){
 			return TrackFormat.BAM;
+			
 		} else if(fileName.endsWith(".bigwig") || fileName.endsWith(".bw")) {
 			return TrackFormat.BIGWIG;
 		} else if(fileName.endsWith(".bigbed") || fileName.endsWith(".bb")) {
@@ -1159,6 +1172,7 @@ public class Utils {
 			snapshotFile= REGVAR + ".pdf";
 		} 
 		snapshotFile= snapshotFile.replace(REGVAR, region); // Special string '%r' is replaced with the region 
+		snapshotFile= Utils.tildeToHomeDir(snapshotFile);
 		
 		File file = new File(snapshotFile);
 		if(file.exists() && !file.canWrite()){
@@ -1178,6 +1192,12 @@ public class Utils {
 		(new File(snapshotFile)).delete(); // Otherwise you keep appending.
 		System.err.println("Saving screenshot to " + snapshotFile);
 		return snapshotFile;
+	}
+	
+	/** Expand ~/ to user's home dir in file path name. See tests for behaviour
+	 * */
+	public static String tildeToHomeDir(String path){
+		return path.replaceAll("^~" + File.separator, System.getProperty("user.home") + File.separator);
 	}
 	
 	/**
@@ -1260,7 +1280,7 @@ public class Utils {
 			tbx= TabixFormat.SAM; 
 		} else if (fmt.equals(TrackFormat.BED) || fmt.equals(TrackFormat.BEDGRAPH)){
 			tbx= TabixFormat.BED; 
-		} else if (fmt.equals(TrackFormat.GFF)){
+		} else if (fmt.equals(TrackFormat.GFF) || fmt.equals(TrackFormat.GTF)){
 			tbx= TabixFormat.GFF;
 		} else if (fmt.equals(TrackFormat.VCF)){
 			tbx= TabixFormat.VCF;
@@ -1332,5 +1352,72 @@ public class Utils {
 		}
 	}
 
+	/** Return list of files matching the list of glob expressions. This method should behave
+	 * similarly to GNU `ls` command. 
+	 * 
+	 * * Directories are not returned 
+	 * 
+	 * Files are returned as they are matched, 
+	 * so not necessarily in alphabetical order.
+	 *  
+	 * */
+	public static List<String> globFiles(List<String> cmdInput) throws IOException {
+		
+		List<String> globbed= new ArrayList<String>();
+		
+		for(String x : cmdInput){
+			
+			if(Utils.urlFileExists(x)){
+				globbed.add(x);
+				continue;
+			}
+			x= Utils.tildeToHomeDir(x);
+			x= x.replaceAll(File.separator + "+$", ""); // Remove trailing dir sep
+			x= x.replaceAll(File.separator + "+", File.separator); // Remove double dir sep like "/foo//bar" -> /foo/bar 
+
+			String location;
+			if(new File(x).isDirectory()){
+				location= x;
+				x= x + File.separator + "*"; // From "my_dir" to "my_dir/*" 
+			} else {
+				location= new File(x).getParent();
+				if(location == null){
+					location= "";
+				}
+			} 
+			for(Path p : match(x, location)){
+				globbed.add(p.toString());
+			}
+		}		
+		return globbed;
+	}
+
+	/** Search for a glob pattern in a given directory and its sub directories
+	 * See http://javapapers.com/java/glob-with-java-nio/
+	 * */
+	private static List<Path> match(String glob, String location) throws IOException {
+		
+		final List<Path> globbed= new ArrayList<Path>();
+		
+		final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + glob);
+		
+		Files.walkFileTree(Paths.get(location), new SimpleFileVisitor<Path>() {
+			
+			@Override
+			public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+				if (pathMatcher.matches(path)) {
+					globbed.add(path);
+				}
+				return FileVisitResult.CONTINUE;
+			}
+
+			@Override
+			public FileVisitResult visitFileFailed(Path file, IOException exc)
+					throws IOException {
+				return FileVisitResult.CONTINUE;
+			}
+		});
+		return globbed;
+	}
 	
 }

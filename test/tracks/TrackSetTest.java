@@ -22,7 +22,7 @@ import samTextViewer.Utils;
 public class TrackSetTest {
 
 	@Test 
-	public void AAAcanTrimGenomicCoordinatesForTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException{
+	public void canTrimGenomicCoordinatesForTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException{
 		
 		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", null, null);
 		

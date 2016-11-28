@@ -24,6 +24,7 @@ import exceptions.InvalidRecordException;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
 import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
 
 public class TrackBookmark extends TrackIntervalFeature {
@@ -54,7 +55,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		bookmarkPlain.delete();
 		
 		this.setTabixReader(new TabixReader(bookmark.getAbsolutePath()));
-		this.setType(TrackFormat.GFF);
+		this.setTrackFormat(TrackFormat.GTF);
 		this.setGc(gc);
 	}
 		
@@ -160,6 +161,8 @@ public class TrackBookmark extends TrackIntervalFeature {
 	 * @throws IOException 
 	 * */
 	public void save(String filename, boolean append) throws IOException {
+		
+		filename= Utils.tildeToHomeDir(filename);
 		
 		BufferedWriter wr = new BufferedWriter(new FileWriter(filename, append));
 		

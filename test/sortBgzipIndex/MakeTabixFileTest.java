@@ -12,6 +12,7 @@ import com.google.common.io.Files;
 
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.tribble.index.IndexFactory;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;

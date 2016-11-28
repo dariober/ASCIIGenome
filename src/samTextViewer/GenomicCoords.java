@@ -107,7 +107,7 @@ public class GenomicCoords implements Cloneable {
 		List<String> cleanList= new ArrayList<String>(); 
 		for(String x : input){
 			if(x != null  && ! x.trim().isEmpty()){
-				cleanList.add(x);
+				cleanList.add(Utils.tildeToHomeDir(x));
 			}
 		}		
 		if(cleanList.size() == 0){
@@ -131,6 +131,11 @@ public class GenomicCoords implements Cloneable {
 		}
 	}
 
+	public void setGenome(String input) throws IOException{
+		List<String> x= new ArrayList<String>();
+		x.add(input);
+		setGenome(x);
+	}
 	
 	/** Get sequence from fasta, but only if it can fit the screen. Null otherwise. 
 	 * @throws InvalidGenomicCoordsException 

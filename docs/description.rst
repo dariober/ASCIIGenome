@@ -1,6 +1,11 @@
 Description
 ===========
 
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/vE58EOT7VKw?rel=0" frameborder="0" allowfullscreen></iframe>
+
+
 `ASCIIGenome` is a command-line genome browser running from terminal window and solely based on
 ASCII characters. Since `ASCIIGenome` does not require a graphical interface it is particularly
 useful for  quickly visualizing genomic data on remote servers. The idea is to make `ASCIIGenome`

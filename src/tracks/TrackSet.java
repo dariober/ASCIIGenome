@@ -70,6 +70,7 @@ public class TrackSet {
 				
 				else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
 			        || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
+			        || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)
 				    || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)
 				    || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGBED)){
 					//
@@ -136,6 +137,7 @@ public class TrackSet {
 		
 		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
 		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
+		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)
 			      || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
 			this.addIntervalFeatureTrackFromSourceName(sourceName, gc, trackTag);
 		
@@ -368,6 +370,7 @@ public class TrackSet {
 				printToFile= args.get(idx+1);
 				args.remove(idx);
 				args.remove(printToFile);
+				printToFile= Utils.tildeToHomeDir(printToFile);
 			} catch(IndexOutOfBoundsException e){
 				System.err.println("No file found to write to.");
 			}
@@ -683,49 +686,6 @@ public class TrackSet {
         
         // Reset ylimits as required
         this.setAutoYLimits();
-        
-//        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-//
-//		double ymin= Double.NaN;
-//		double ymax= Double.NaN;
-//		if(tokens.get(1).toLowerCase().equals("min") || tokens.get(2).toLowerCase().equals("max")){
-//		
-//			Double[] yrange= this.yRangeOfTracks(tracksToReset);
-//			if(tokens.get(1).toLowerCase().equals("min")){
-//				ymin= yrange[0];
-//			}
-//			if(tokens.get(2).toLowerCase().equals("max")){
-//				ymax= yrange[1];
-//			}
-//		} 
-//		else {
-//			// Parse min
-//			try{
-//				ymin= Double.parseDouble(tokens.get(1));
-//			} catch(NumberFormatException e){
-//				ymin= Double.NaN;
-//			}
-//			
-//			// Parse max
-//			try{
-//				ymax= Double.parseDouble(tokens.get(2));
-//			} catch(NumberFormatException e){
-//				ymax= Double.NaN;
-//			}
-//		}
-//		// Swap
-//		if(ymin > ymax){
-//			Double newMax= ymin;
-//			ymin= ymax;
-//			ymax= newMax;			
-//		}
-//
-//		double[] yy = Utils.roundToSignificantDigits(ymin, ymax, 2);
-//		
-//        for(Track tr : tracksToReset){
-//    		tr.setYLimitMin(yy[0]);
-//			tr.setYLimitMax(yy[1]);
-//        }    
 	}
 
 	/** Get the range of all the screen scores of this list of tracks. I.e. the global min and max.

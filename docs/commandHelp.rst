@@ -133,13 +133,6 @@ Extend the current window by `INT` bases left and right.
 
 If only one INT is given it is applied to both left and right. Negative INTs will shrink instead of extend the window.
 
-trim
-++++
-
-:code:`trim track_name`
-
-Trim current coordinates to remove empty regions around `track_name`.  With `track_name` missing trim on the first annotation track found. `track_name` can partially match the that actual, full track name; with multiple matches trim the first track found.
-
 l - left
 ++++++++
 
@@ -173,13 +166,10 @@ next
 
 :code:`next [-start] [track]`
 
-Move to the next feature on `track` on current chromosome.  `next` centers the window on the found feature and zooms out. This is useful for quickly browsing through annotation files of genes or ChIP-Seq peaks in combination with read coverage tracks (bigwig, tdf, etc.).
-
+Move to the next feature on `track`.  `next` centers the window on the next feature found and zooms out.
 * :code:`-start`: Sets the window right at the start of the feature, without centering and zooming out.
-
-The `next` command does exactly that, it moves to the next feature. If there are no more features after the current position it doesn't rewind to the beginning (use `1` for that) and it doesn't move to another chromosome, use `goto chrom` for that.
- 
-If `track` is omitted, the first annotation track is used.
+* :code:`track`: Track to search for next feature. Default to firt annotation track found.
+`next` starts searching immediately after the current window and loops thourgh each chromosome until a feature is found.
 
 Find
 ----
@@ -261,7 +251,7 @@ Similar to grep command, filter for features including or excluding patterns. Op
 
 * :code:`track_regex`: Apply to tracks matched by `track_regex`.
 
-Regex `-i` and `-e` are applied to the raw lines as read from source file. This command is useful to filter the annotation in GTF or BED files, for example::
+Regex `-i` and `-e` are applied to the raw lines as read from source file. This command is useful to filter the annotation in GTF or BED files. For example::
 
     grep -i RNA -e mRNA gtf gff
 
@@ -504,10 +494,10 @@ addTracks
 
 :code:`addTracks [file or URL]...`
 
-Add tracks from local or remote files. 
+Add tracks from local or remote files.  For local files, glob characters (wildcard) are expanded as in Bash (but note that currently globs in directory names are not expanded.)
 Examples::
 
-    addTracks peaks.bed gene.gtf
+    addTracks peaks.bed genes.*.gtf
     addTracks http://remote/host/peaks.bed
 
 
@@ -535,17 +525,17 @@ For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#
     orderTracks         -> name sort [hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]
 
 
+posHistory
+++++++++++
+
+:code:`posHistory`
+
+Show the list of visited positions. 
+
 history
 +++++++
 
 :code:`history`
-
-Show the list of visited positions. 
-
-cmdHistory
-++++++++++
-
-:code:`cmdHistory`
 
 Show the list of executed commands. 
 
@@ -590,6 +580,6 @@ h
 :code:`h -h`
 
 h and -h show this help.
-For help on specific commands use `command -h`, for example :code:`ylim -h` 
+For help on commands: `command -h`, e.g. :code:`ylim -h` 
 
 

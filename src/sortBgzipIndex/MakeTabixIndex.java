@@ -17,9 +17,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.validator.routines.UrlValidator;
+
+import com.google.common.base.Joiner;
+
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.tribble.index.Index;
@@ -90,6 +95,7 @@ public class MakeTabixIndex {
 		while(lin.hasNext()){
 			
 			String line = lin.next().trim();
+			
 			if(line.isEmpty() || line.startsWith("#") || line.startsWith("track ")){
 				continue;
 			}
@@ -117,9 +123,6 @@ public class MakeTabixIndex {
 			
 			BedLineCodec bedCodec= new BedLineCodec();
 			BedLine bed = bedCodec.decode(line);
-			//if(bed == null) {
-			//	return;
-			//}
 			indexCreator.addFeature(bed, filePosition);
 		
 		} else if(fmt.equals(TabixFormat.GFF)){
@@ -162,7 +165,7 @@ public class MakeTabixIndex {
 		}
 		
 		Connection conn= this.createSQLiteDb("data");
-		PreparedStatement stmtInsert= conn.prepareStatement("INSERT INTO data (contig, pos, line) VALUES (?, ?, ?)");
+		PreparedStatement stmtInsert= conn.prepareStatement("INSERT INTO data (contig, pos, posEnd, line) VALUES (?, ?, ?, ?)");
 		
 		BufferedReader br= null;
 		InputStream gzipStream= null;
@@ -196,13 +199,18 @@ public class MakeTabixIndex {
 			String[] tabs= line.split("\t"); 
 			stmtInsert.setString(1, tabs[chromIdx-1]);
 			stmtInsert.setInt(2, Integer.parseInt(tabs[posIdx-1]));
-			stmtInsert.setString(3, line.replaceAll("\n$", ""));
+			if(fmt.equals(TabixFormat.VCF)){
+				stmtInsert.setInt(3, 0);
+			} else {
+				stmtInsert.setInt(3, Integer.parseInt(tabs[posIdx]));
+			}
+			stmtInsert.setString(4, line.replaceAll("\n$", ""));
 			stmtInsert.executeUpdate();
 		}
 		stmtInsert.close();
 		br.close();
 
-		PreparedStatement stmtSelect= conn.prepareStatement("SELECT * FROM data ORDER BY contig, pos");
+		PreparedStatement stmtSelect= conn.prepareStatement("SELECT * FROM data ORDER BY contig, pos, posEnd");
 		
 		ResultSet rs= stmtSelect.executeQuery();
 		
@@ -215,6 +223,56 @@ public class MakeTabixIndex {
 		this.sqliteFile.delete();
 	}
 
+	/** Create a dummy line overcome the problem of first line ignored by tabix idnex creator.
+	 * This is a horrible hack and it should be fixed in Tabix.
+	 * */
+	private String makeDummyLine(String line, TabixFormat fmt){
+		
+		String[] feature= line.split("\t");
+		
+		List<String> dummy= new ArrayList<String>();
+		dummy.add(feature[0]); // chrom
+		
+//		int startIdx= -1;
+//		int endIdx= -1;
+		
+		if(fmt.equals(TabixFormat.BED)){
+			dummy.add("0");
+			dummy.add("1");
+			dummy.add("ignore_me");
+			//startIdx= 1;
+			//endIdx= 2;
+			
+		} else if(fmt.equals(TabixFormat.GFF)){
+			dummy.add("ignore_me");
+			dummy.add("ignore_me");
+			dummy.add("1");
+			dummy.add("2");
+			dummy.add(".");
+			dummy.add(".");
+			dummy.add(".");
+//			startIdx= 3;
+//			endIdx= 4;
+		
+		} else {
+			return "";
+		}
+		
+		return Joiner.on("\t").join(dummy);
+	}
+			
+//		int start= Integer.parseInt(dummy[startIdx]);
+//		int end= Integer.parseInt(dummy[endIdx]);
+//		
+//		if(start < 16384 && end > 16384){
+//			dummy[startIdx]= "1";
+//			dummy[endIdx]= "2";
+//			return Joiner.on("\t").join(dummy);
+//		} else {
+//			return "";
+//		}
+//	}
+	
 	/** Create a tmp sqlite db and return the connection to it. 
 	 */
 	private Connection createSQLiteDb(String tablename) throws IOException {
@@ -234,13 +292,14 @@ public class MakeTabixIndex {
 	        		   " (" +
 	                   "contig text, " +
 	        		   "pos int," +
+	        		   "posEnd int," +
 	                   "line text" + // This is the row line as read from input file
 	                   ")"; 
 	        stmt.executeUpdate(sql);
 	        stmt= conn.createStatement();
 
 	        // http://stackoverflow.com/questions/1711631/improve-insert-per-second-performance-of-sqlite
-	        stmt.execute("PRAGMA journal_mode = MEMORY"); // This is not to leave tmp journal file o disk
+	        stmt.execute("PRAGMA journal_mode = OFF"); // This is not to leave tmp journal file o disk
 			conn.setAutoCommit(false); // This is important: By default each insert is committed 
 						     		   // as it is executed, which is slow. Let's commit in bulk at the end instead.
 			stmt.close();

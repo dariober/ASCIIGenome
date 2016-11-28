@@ -6,7 +6,15 @@ New in 0.6.0
 * Pdf output replaces png output to save screenshots. This makes a lot more sense since
   we are saving text not paintings!
 
-* Add `trim` command
+* Command history is saved to `~/.asciigenome_history` and reloaded on next start,
+  so commands are "remembered", similar to shell history.
+
+* Track heights at start are set to fill the height of terminal.
+
+* `showGenome` is a bit more informative: It prints at least the known chromosomes if no 
+sequence dictionary is available.
+
+* `next` moves to other chroms once the current one doesn't have any more features.
 
 New in 0.5.0
 ============

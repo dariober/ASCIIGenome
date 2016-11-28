@@ -49,10 +49,10 @@ public class CommandHelp {
 		
 	}
 	
-	/** String some of the reStructuredText formatting from string x.
+	/** Strip some of the reStructuredText formatting from string x.
 	 * */
 	private String stripReStTextFormat(String x){
-		x= x.replaceAll("::\\s*\\n", ":\n");
+		x= x.replaceAll(":: *\\n", ":\n");
 		x= x.replaceAll(":code:", "");
 		return x;
 	}

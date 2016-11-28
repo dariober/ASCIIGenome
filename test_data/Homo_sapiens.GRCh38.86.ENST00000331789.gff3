@@ -1,0 +1,15 @@
+7	ensembl_havana	mRNA	5527151	5530709	.	-	.	ID=transcript:ENST00000331789;Parent=gene:ENSG00000075624;Name=ACTB-001;biotype=protein_coding;ccdsid=CCDS5341.1;havana_transcript=OTTHUMT00000059589;havana_version=4;tag=basic;transcript_id=ENST00000331789;transcript_support_level=1;version=9
+7	ensembl_havana	three_prime_UTR	5527151	5527747	.	-	.	Parent=transcript:ENST00000331789
+7	ensembl_havana	exon	5527151	5527891	.	-	.	Parent=transcript:ENST00000331789;Name=ENSE00001902654;constitutive=0;ensembl_end_phase=-1;ensembl_phase=0;exon_id=ENSE00001902654;rank=6;version=1
+7	ensembl_havana	CDS	5527748	5527891	.	-	0	ID=CDS:ENSP00000349960;Parent=transcript:ENST00000331789;protein_id=ENSP00000349960
+7	ensembl_havana	exon	5528004	5528185	.	-	.	Parent=transcript:ENST00000331789;Name=ENSE00003465957;constitutive=0;ensembl_end_phase=0;ensembl_phase=1;exon_id=ENSE00003465957;rank=5;version=1
+7	ensembl_havana	CDS	5528004	5528185	.	-	2	ID=CDS:ENSP00000349960;Parent=transcript:ENST00000331789;protein_id=ENSP00000349960
+7	ensembl_havana	exon	5528281	5528719	.	-	.	Parent=transcript:ENST00000331789;Name=ENSE00003614573;constitutive=0;ensembl_end_phase=1;ensembl_phase=0;exon_id=ENSE00003614573;rank=4;version=1
+7	ensembl_havana	CDS	5528281	5528719	.	-	0	ID=CDS:ENSP00000349960;Parent=transcript:ENST00000331789;protein_id=ENSP00000349960
+7	ensembl_havana	exon	5529161	5529400	.	-	.	Parent=transcript:ENST00000331789;Name=ENSE00003549974;constitutive=0;ensembl_end_phase=0;ensembl_phase=0;exon_id=ENSE00003549974;rank=3;version=1
+7	ensembl_havana	CDS	5529161	5529400	.	-	0	ID=CDS:ENSP00000349960;Parent=transcript:ENST00000331789;protein_id=ENSP00000349960
+7	ensembl_havana	CDS	5529535	5529657	.	-	0	ID=CDS:ENSP00000349960;Parent=transcript:ENST00000331789;protein_id=ENSP00000349960
+7	ensembl_havana	exon	5529535	5529663	.	-	.	Parent=transcript:ENST00000331789;Name=ENSE00003542066;constitutive=0;ensembl_end_phase=0;ensembl_phase=-1;exon_id=ENSE00003542066;rank=2;version=1
+7	ensembl_havana	five_prime_UTR	5529658	5529663	.	-	.	Parent=transcript:ENST00000331789
+7	ensembl_havana	exon	5530524	5530709	.	-	.	Parent=transcript:ENST00000331789;Name=ENSE00001821990;constitutive=0;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSE00001821990;rank=1;version=1
+7	ensembl_havana	five_prime_UTR	5530524	5530709	.	-	.	Parent=transcript:ENST00000331789

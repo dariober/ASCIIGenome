@@ -15,6 +15,7 @@ import com.google.common.base.Joiner;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
@@ -35,7 +36,7 @@ public class Track {
 	private double yLimitMin= Double.NaN; // Same as R ylim()
 	private double yLimitMax= Double.NaN;
 	/** Max size of genomic region before the track shuts down to prevent excessive slow down */
-	protected final int MAX_REGION_SIZE= 100000;   
+	protected final int MAX_REGION_SIZE= 100001;   
 	
 	protected String titleColour= "black";
 	protected boolean bisulf= false;
@@ -52,6 +53,8 @@ public class Track {
 	protected List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
 	private boolean hideTrack= false; 
 	private boolean hideTitle= false;
+	private TrackFormat trackFormat;
+	
 	/** A file to export track data
 	 * */
 	private String exportFile= null;
@@ -421,6 +424,18 @@ public class Track {
 
 	public void setAppendToExportFile(boolean appendToExportFile) {
 		this.appendToExportFile = appendToExportFile;
+	}
+
+	protected TrackFormat getTrackFormat() {
+		return trackFormat;
+	}
+
+	protected void setTrackFormat(TrackFormat trackFormat) {
+		this.trackFormat = trackFormat;
+	}
+
+	public List<String> getChromosomeNames() {
+		throw new RuntimeException("TO BE IMPLEMENTED");	
 	}
 
 }

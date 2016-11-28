@@ -5,39 +5,43 @@ public class FormatVCF {
 	public FormatVCF(){
 				
 	}
-	
+
 	/** Format alternative allele for text printing */
-	public static String format(String refAllele, String altAllele, boolean noFormat){
-		String text= "";
+	public static char textForVariant(String refAllele, String altAllele){
+		char text;
 		if(refAllele.length() == 1 && altAllele.length() == 1){
 			// SNP
-			text= altAllele;
+			text= altAllele.charAt(0);
 		} else if(refAllele.length() == 1 && altAllele.length() > 1){
 			// Insertion into the reference
-			text= "I";
+			text= 'I';
 		} else if(refAllele.length() > 1 && altAllele.length() == 1){
 			// Deletion into the reference
-			text= "D";
+			text= 'D';
+		} else {
+			throw new RuntimeException();
 		}
-		if(noFormat){
-			return text; 
-		}
+		return text; 
+	}
+
+	
+	/** Format alternative allele for text printing */
+	public static String format(char textForVariant){
+
 		// Format
 		String formattedText= "";
-		for(int i= 0; i < text.length(); i++){
-			// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
-			char base= text.charAt(i);
-			if(base == 'A' || base == 'a'){
-				formattedText += "\033[107;34m" + base + "\033[48;5;231m";
-			} else if(base == 'C' || base == 'c') {
-				formattedText += "\033[107;31m" + base + "\033[48;5;231m";
-			} else if(base == 'G' || base == 'g') {
-				formattedText += "\033[107;32m" + base + "\033[48;5;231m";
-			} else if(base == 'T' || base == 't') {
-				formattedText += "\033[107;33m" + base + "\033[48;5;231m";
-			} else {
-				formattedText += base;
-			} 
+		// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
+		
+		if(textForVariant == 'A' || textForVariant == 'a'){
+			formattedText += "\033[107;34m" + textForVariant + "\033[48;5;231m";
+		} else if(textForVariant == 'C' || textForVariant == 'c') {
+			formattedText += "\033[107;31m" + textForVariant + "\033[48;5;231m";
+		} else if(textForVariant == 'G' || textForVariant == 'g') {
+			formattedText += "\033[107;32m" + textForVariant + "\033[48;5;231m";
+		} else if(textForVariant == 'T' || textForVariant == 't') {
+			formattedText += "\033[107;33m" + textForVariant + "\033[48;5;231m";
+		} else {
+			formattedText += textForVariant;
 		}
 		return formattedText;
 	}

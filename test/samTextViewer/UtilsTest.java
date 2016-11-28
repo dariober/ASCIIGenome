@@ -5,6 +5,11 @@ import static org.hamcrest.CoreMatchers.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,6 +23,9 @@ import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import jline.console.ConsoleReader;
+import jline.console.history.History;
+import jline.console.history.MemoryHistory;
 import tracks.IntervalFeature;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
@@ -43,6 +51,51 @@ public class UtilsTest {
 	
 	public static String fastaFile= "test_data/chr7.fa";
 
+	
+	@Test
+	public void testHistory() throws IOException{
+		ConsoleReader console= new ConsoleReader();
+		//History history= new History(new File(System.getProperty("user.home") + File.separator + ".asciigenome_history"));
+		History history= new MemoryHistory();
+		history.add("foobar");
+		history.add("baz");
+		console.setHistory(history);
+		System.out.println(console.getHistory());
+	}
+	
+	@Test
+	public void canGlobFiles() throws IOException{
+
+		ArrayList<String> cmdInput = Utils.tokenize("test_data/ear*{bam,tdf} README.*", " ");
+		List<String> globbed= Utils.globFiles(cmdInput);
+		assertEquals(3, globbed.size());
+		
+		cmdInput = Utils.tokenize("test_data", " ");
+		globbed= Utils.globFiles(cmdInput);
+		assertTrue(globbed.size() > 10);
+		
+		cmdInput = Utils.tokenize("test_data/*", " ");
+		globbed= Utils.globFiles(cmdInput);
+		assertTrue(globbed.size() > 10);
+		
+		cmdInput = Utils.tokenize("test_data//*", " ");
+		globbed= Utils.globFiles(cmdInput);
+		assertTrue(globbed.size() > 10);
+		
+		cmdInput = Utils.tokenize("test_data/../test_data", " ");
+		globbed= Utils.globFiles(cmdInput);
+		assertTrue(globbed.size() > 10);
+		
+		cmdInput = Utils.tokenize("test_data/*.gtf.*", " ");
+		globbed= Utils.globFiles(cmdInput);
+		System.out.println(globbed);
+		
+		// With URLs
+		cmdInput = Utils.tokenize("ftp://ftp.ensembl.org/pub/current_gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz", " ");
+		globbed= Utils.globFiles(cmdInput);
+		assertEquals(1, globbed.size());
+	}
+	
 	@Test
 	public void canGetRangeOfListOfValues(){
 		List<Double> y= new ArrayList<Double>();
@@ -140,20 +193,20 @@ public class UtilsTest {
 
 		// Touching GFF feature 
 		intv.clear();
-		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
-		intv.add(new IntervalFeature("chr1 . . 11 20 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
+		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 11 20 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
 		assertEquals(1, Utils.mergeIntervalFeatures(intv).size());
 		assertEquals(1, Utils.mergeIntervalFeatures(intv).get(0).getFrom());
 		assertEquals(20, Utils.mergeIntervalFeatures(intv).get(0).getTo());
 
 		// Nothing to merge 
 		intv.clear();
-		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
-		intv.add(new IntervalFeature("chr1 . . 20 30 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
-		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
+		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 20 30 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
 		assertEquals(3, Utils.mergeIntervalFeatures(intv).size());
 		
-		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GFF));
+		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
 		assertEquals(3, Utils.mergeIntervalFeatures(intv).size());
 	
 	}
@@ -555,4 +608,27 @@ public class UtilsTest {
 		assertTrue(Utils.isUcscGenePredSource("http://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/refGene.txt.gz"));
 		assertTrue(!Utils.isUcscGenePredSource("test_data/hg19_genes.gtf.gz"));
 	}
+	
+	@Test
+	public void canExpandTildeToHomeDir(){
+		
+		//No change
+		assertEquals("/foo/bar/baz", Utils.tildeToHomeDir("/foo/bar/baz"));
+		
+		// Exand to home dir
+		assertTrue(Utils.tildeToHomeDir("~/foo/bar/baz").startsWith(File.separator));
+
+		// No change
+		assertEquals("/~foo/~bar/baz", Utils.tildeToHomeDir("/~foo/~bar/baz"));
+		
+		// No change
+		assertEquals("~foo", Utils.tildeToHomeDir("~foo"));
+		
+		//Expanded to /Users/berald01/
+		assertEquals(System.getProperty("user.home") + File.separator, Utils.tildeToHomeDir("~/"));
+		
+		// This will fail most likelly fail on systems other than *nix:
+		assertTrue(Utils.tildeToHomeDir("~/foo/bar/baz").startsWith("/Users/") || Utils.tildeToHomeDir("~/foo/bar/baz").startsWith("/home/"));
+	}
+	
 }
