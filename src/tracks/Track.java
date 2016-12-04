@@ -47,9 +47,9 @@ public class Track {
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
 	private int gap= 1;
 	private boolean rpm= false;
-	private int f_flag= 0;
-	private int F_flag= 4;
-	private int mapq= 0;
+	protected static final int f_FLAG= 0; private int f_flag= f_FLAG;
+	protected static final int F_FLAG= 4; private int F_flag= F_FLAG;
+	protected static final int MAPQ= 0; private int mapq= MAPQ;
 	protected List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
 	private boolean hideTrack= false; 
 	private boolean hideTitle= false;
@@ -58,33 +58,7 @@ public class Track {
 	/** A file to export track data
 	 * */
 	private String exportFile= null;
-	private boolean appendToExportFile= false;
-	
-//	/** Min value of screen scores. Not to be confused with the y limit */
-//	public double getMinScreenScores(){
-//		Double ymin= Double.NaN;
-//	 	for(Double x : this.screenScores){
-//	 		if(ymin.isNaN() && !x.isNaN()){
-//	 			ymin= x;
-//	 		} else if (x < ymin){
-//	 			ymin= x;
-//	 		}
-//	 	}
-//	 	return ymin;
-//	}
-//	
-//	/** Max value of screen scores. Not to be confused with the y limit **/
-//	public double getMaxScreenScores(){
-//		Double ymax= Double.NaN;
-//	 	for(Double x : this.screenScores){
-//	 		if(ymax.isNaN() && !x.isNaN()){
-//	 			ymax= x;
-//	 		} else if (x > ymax){
-//	 			ymax= x;
-//	 		}
-//	 	}
-//	 	return ymax;
-//	}
+//	private boolean appendToExportFile= false;
 	
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
@@ -418,13 +392,13 @@ public class Track {
 		this.exportFile = exportFile;
 	}
 
-	public boolean isAppendToExportFile() {
-		return appendToExportFile;
-	}
-
-	public void setAppendToExportFile(boolean appendToExportFile) {
-		this.appendToExportFile = appendToExportFile;
-	}
+//	public boolean isAppendToExportFile() {
+//		return appendToExportFile;
+//	}
+//
+//	public void setAppendToExportFile(boolean appendToExportFile) {
+//		this.appendToExportFile = appendToExportFile;
+//	}
 
 	protected TrackFormat getTrackFormat() {
 		return trackFormat;
@@ -436,6 +410,10 @@ public class Track {
 
 	public List<String> getChromosomeNames() {
 		throw new RuntimeException("TO BE IMPLEMENTED");	
+	}
+
+	protected void setPrintRawLineCount(int count) {
+
 	}
 
 }

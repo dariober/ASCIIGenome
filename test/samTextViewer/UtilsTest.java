@@ -1,15 +1,14 @@
 package samTextViewer;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,6 +16,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.junit.Test;
+
+import com.google.common.base.Joiner;
+
+import exceptions.InvalidCommandLineException;
+import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
+import filter.FirstOfPairFilter;
+import filter.FlagToFilter;
+import filter.ReadNegativeStrandFilter;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -30,19 +39,6 @@ import tracks.IntervalFeature;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
 
-import org.broad.igv.bbfile.BBFileReader;
-import org.broad.igv.bbfile.BedFeature;
-import org.junit.Test;
-
-import com.google.common.base.Joiner;
-
-import exceptions.InvalidCommandLineException;
-import exceptions.InvalidGenomicCoordsException;
-import exceptions.InvalidRecordException;
-import filter.FirstOfPairFilter;
-import filter.FlagToFilter;
-import filter.ReadNegativeStrandFilter;
-
 public class UtilsTest {
 
 	static SamReaderFactory srf=SamReaderFactory.make();
@@ -51,7 +47,6 @@ public class UtilsTest {
 	
 	public static String fastaFile= "test_data/chr7.fa";
 
-	
 	@Test
 	public void testHistory() throws IOException{
 		ConsoleReader console= new ConsoleReader();
@@ -144,7 +139,7 @@ public class UtilsTest {
 		assertEquals('G', (char)Utils.sortByValue(baseCount).keySet().iterator().next());
 	} 
 	
-	// @Test // Not run
+	@Test
 	public void throwsGentleMessageOnMissingFaIndex(){
 		String fastaFile= "test_data/noindex.fa";
 		Utils.checkFasta(fastaFile);
@@ -155,60 +150,77 @@ public class UtilsTest {
 		
 		// Zero len list
 		List<IntervalFeature> intv= new ArrayList<IntervalFeature>();
-		assertEquals(0, Utils.mergeIntervalFeatures(intv).size());
+		assertEquals(0, Utils.mergeIntervalFeatures(intv, false).size());
 		
+		// Fully contained feature
+		intv.clear();
+		intv.add(new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
+		assertEquals(100, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
+		assertEquals(1000, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
 		
-		/* MEME: Start of bed features must be augmented by 1 */
+		// Partial overlap contained feature
+		intv.clear();
+		intv.add(new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 500 5000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
+		assertEquals(100, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
+		assertEquals(5000, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
+		
+		/* MEMO: Start of bed features must be augmented by 1 */
 		// One feature
+		intv.clear();
 		intv.add(new IntervalFeature("chr1 0 10 x1".replaceAll(" ", "\t"), TrackFormat.BED));
-		assertEquals(1, Utils.mergeIntervalFeatures(intv).get(0).getFrom());
+		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
 		// Test the name is taken from the original feature since only one interval is merged (i.e. no merging at all)
-		assertEquals(intv.get(0).getName(), Utils.mergeIntervalFeatures(intv).get(0).getName());
+		assertEquals(intv.get(0).getName(), Utils.mergeIntervalFeatures(intv, false).get(0).getName());
 		
 		// One feature overalapping
 		intv.add(new IntervalFeature("chr1 5 10".replaceAll(" ", "\t"), TrackFormat.BED));
 		IntervalFeature expected= new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED);
 		
-		assertEquals(expected.getFrom(), Utils.mergeIntervalFeatures(intv).get(0).getFrom());
-		assertTrue(expected.equals(Utils.mergeIntervalFeatures(intv).get(0)));
+		assertEquals(expected.getFrom(), Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
+		assertTrue(expected.equals(Utils.mergeIntervalFeatures(intv, false).get(0)));
 
 		intv.add(new IntervalFeature("chr1 20 100".replaceAll(" ", "\t"), TrackFormat.BED));
-		assertEquals(2, Utils.mergeIntervalFeatures(intv).size());
-		assertEquals(21, Utils.mergeIntervalFeatures(intv).get(1).getFrom());
-		assertEquals(100, Utils.mergeIntervalFeatures(intv).get(1).getTo());
+		assertEquals(2, Utils.mergeIntervalFeatures(intv, false).size());
+		assertEquals(21, Utils.mergeIntervalFeatures(intv, false).get(1).getFrom());
+		assertEquals(100, Utils.mergeIntervalFeatures(intv, false).get(1).getTo());
 		
 		intv.add(new IntervalFeature("chr1 30 110".replaceAll(" ", "\t"), TrackFormat.BED));
 		intv.add(new IntervalFeature("chr1 50 110".replaceAll(" ", "\t"), TrackFormat.BED));
-		assertEquals(2, Utils.mergeIntervalFeatures(intv).size());
-		assertEquals(21, Utils.mergeIntervalFeatures(intv).get(1).getFrom());
-		assertEquals(110, Utils.mergeIntervalFeatures(intv).get(1).getTo());
+		assertEquals(2, Utils.mergeIntervalFeatures(intv, false).size());
+		assertEquals(21, Utils.mergeIntervalFeatures(intv, false).get(1).getFrom());
+		assertEquals(110, Utils.mergeIntervalFeatures(intv, false).get(1).getTo());
 		
 		// Touching features get merged into a single one
 		intv.clear();
 		intv.add(new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED));
 		intv.add(new IntervalFeature("chr1 10 20".replaceAll(" ", "\t"), TrackFormat.BED));
-		assertEquals(1, Utils.mergeIntervalFeatures(intv).size());
-		assertEquals(1, Utils.mergeIntervalFeatures(intv).get(0).getFrom());
-		assertEquals(20, Utils.mergeIntervalFeatures(intv).get(0).getTo());
+		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
+		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
+		assertEquals(20, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
 
 		// Touching GFF feature 
 		intv.clear();
 		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
 		intv.add(new IntervalFeature("chr1 . . 11 20 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
-		assertEquals(1, Utils.mergeIntervalFeatures(intv).size());
-		assertEquals(1, Utils.mergeIntervalFeatures(intv).get(0).getFrom());
-		assertEquals(20, Utils.mergeIntervalFeatures(intv).get(0).getTo());
+		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
+		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
+		assertEquals(20, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
 
 		// Nothing to merge 
 		intv.clear();
 		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
 		intv.add(new IntervalFeature("chr1 . . 20 30 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
 		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
-		assertEquals(3, Utils.mergeIntervalFeatures(intv).size());
+		assertEquals(3, Utils.mergeIntervalFeatures(intv, false).size());
 		
 		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
-		assertEquals(3, Utils.mergeIntervalFeatures(intv).size());
-	
+		assertEquals(3, Utils.mergeIntervalFeatures(intv, false).size());
+		
 	}
 	
 	@Test

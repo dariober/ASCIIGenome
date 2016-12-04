@@ -1,7 +1,5 @@
 package commandHelp;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.IOException;
 
@@ -25,7 +23,7 @@ public class CommandListTest {
 	@Test
 	public void canPrintDocstringForCommand() throws InvalidCommandLineException {
 		System.out.println("DOCSTRING");
-		System.out.println(CommandList.getHelpForCommand("ylim"));
+		System.out.println(CommandList.getHelpForCommand("featureDisplayMode"));
 	}
 
 }

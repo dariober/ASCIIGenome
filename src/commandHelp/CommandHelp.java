@@ -73,12 +73,16 @@ public class CommandHelp {
 		for(String w : words){
 			line += (w + " ");
 			if(line.trim().length() >= maxLen || w.endsWith("\n")){
-				lines.add(line.trim().replaceAll("~", " "));
+				// squiggle is used to mark consecutive spaces that should not be removed. To actually add a squiggle
+				// escape it with \~. Here we temprarrily replace \~ with something.
+				line= line.trim().replaceAll("\\\\~", "=squiggle=").replaceAll("~", " ").replaceAll("=squiggle=", "~");
+				lines.add(line);
 				line= "";
 			} 
 		}
 		if(!line.isEmpty()){
-			lines.add(line.trim().replaceAll("~", " "));
+			line= line.trim().replaceAll("\\\\~", "=squiggle=").replaceAll("~", " ").replaceAll("=squiggle=", "~");
+			lines.add(line);
 		}
 		return lines;
 	}

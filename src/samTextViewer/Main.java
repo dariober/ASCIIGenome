@@ -11,8 +11,10 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 import com.google.common.base.Joiner;
 import com.itextpdf.text.DocumentException;
@@ -33,7 +35,6 @@ import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackCoverage;
 import tracks.TrackFormat;
-import tracks.TrackReads;
 import tracks.TrackSet;
 
 /**
@@ -45,7 +46,7 @@ public class Main {
 	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException {
 
 		final String cmdHistoryFile= System.getProperty("user.home") + File.separator + ".asciigenome_history";  
-		
+		final String MARKER_FOR_HISTORY_FILE= "## file ##";
 		/* Start parsing arguments * 
 		 * *** If you change something here change also in console input ***/
 		Namespace opts= ArgParse.argParse(args);
@@ -93,6 +94,7 @@ public class Main {
 		gch.add(new GenomicCoords(initGc.toStringRegion(), initGc.getSamSeqDict(), initGc.getFastaFile()));
 
 		final TrackSet trackSet= new TrackSet(inputFileList, gch.current());
+		addHistoryFiles(trackSet, cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
 		
 		setDefaultTrackHeights(console.getTerminal().getHeight(), trackSet.getTrackList());
 		
@@ -150,9 +152,9 @@ public class Main {
 
 		/* Set up done, start processing */
 		/* ============================= */
-		History cmdHistory= initCmdHistory(cmdHistoryFile);
+		History cmdHistory= initCmdHistory(cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
 		console.setHistory(cmdHistory);
-		writeHistory(console.getHistory(), cmdHistoryFile, 500);
+		writeHistory(console.getHistory(), trackSet.getOpenedFiles(), cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
 		
 		while(true){  
 			// keep going until quit or if no interactive input set
@@ -171,7 +173,6 @@ public class Main {
 				}
 				interactiveInput.processInput(cmdConcatInput, proc);
 				currentCmdConcatInput= cmdConcatInput;
-				
 			}
 			// *** END processing interactive input 
 		}
@@ -267,12 +268,15 @@ public class Main {
 	/**Read the asciigenome history file and put it a list as current history. Or
 	 * return empty history file does not exist or can't be read. 
 	 * */
-	private static History initCmdHistory(String cmdHistoryFile){
+	private static History initCmdHistory(String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE){
 		History cmdHistory= new MemoryHistory();
 		try{
 			BufferedReader br= new BufferedReader(new FileReader(new File(cmdHistoryFile)));
 			String line;
 			while((line = br.readLine()) != null){
+				if(line.startsWith(MARKER_FOR_HISTORY_FILE)){
+					continue;
+				}
 				cmdHistory.add(line);
 			}
 			br.close();
@@ -282,6 +286,41 @@ public class Main {
 		return cmdHistory;
 	}	
 
+	/** Merge set of opened files in trackSet with the files found in the history file.
+	 * */
+	private static void addHistoryFiles(TrackSet trackSet, String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE){
+		LinkedHashSet<String> union= initRecentlyOpenedFiles(cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
+		LinkedHashSet<String> now= trackSet.getOpenedFiles();
+		for(String file : now){ // If a file is in the current track set and in the history file, put it last. I.e. last opened. 
+			if(union.contains(file)){
+				union.remove(file);
+			}
+			union.add(file);
+		}
+		trackSet.setOpenedFiles(union);
+		System.err.println(union);
+	}
+	
+	/**Read the asciigenome history file to extract the list of opened files 
+	 * */
+	private static LinkedHashSet<String> initRecentlyOpenedFiles(String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE){
+		LinkedHashSet<String> opened= new LinkedHashSet<String>();
+		try{
+			BufferedReader br= new BufferedReader(new FileReader(new File(cmdHistoryFile)));
+			String line;
+			while((line = br.readLine()) != null){
+				if(line.startsWith(MARKER_FOR_HISTORY_FILE)){
+					line= line.substring(MARKER_FOR_HISTORY_FILE.length(), line.length()).trim();
+					opened.add(line);
+				}
+			}
+			br.close();
+		} catch(IOException e){
+			//
+		}
+		return opened;
+	}	
+	
 	/** Set some sensible defaults for track heights 
 	 * @throws SQLException 
 	 * @throws InvalidRecordException 
@@ -347,20 +386,55 @@ public class Main {
 		}
 		
 		for(int i= 0; i < trackList.size(); i++){
-			trackList.get(i).setyMaxLines(trackHeights.get(i));
+			if(trackHeights.get(i) < 20){
+				trackList.get(i).setyMaxLines(trackHeights.get(i));
+			} else {
+				trackList.get(i).setyMaxLines(20);
+			}
 		}
 	}
+
+//	private static void writeFileHistory(final Set<String> fileHistory, final String cmdHistoryFile, final int nmax, final String MARKER_FOR_HISTORY_FILE){
+//		
+//		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+//			public void run() {
+//	            
+//				Iterator<String> iter= fileHistory.iterator();
+//				List<String>lastHist= new ArrayList<String>();
+//				int i= nmax;
+//				while(iter.hasNext()){
+//					if(i == 0){
+//						break;
+//					}
+//					i--;
+//					lastHist.add(MARKER_FOR_HISTORY_FILE + iter.next());
+//				}
+//				
+//				try {
+//					BufferedWriter wr= new BufferedWriter(new FileWriter(new File(cmdHistoryFile)));
+//					for(String cmd : lastHist){
+//						wr.write(cmd + "\n");
+//					}
+//					wr.close();
+//				} catch (IOException e) {
+//					System.err.println("Unable to write history to " + cmdHistoryFile);
+//				}
+//	        }
+//	    }, "Shutdown-thread"));
+//
+//	}
 	
 	/**Write the history of commands to given file.
 	 * */
-	private static void writeHistory(final History cmdHistory, final String cmdHistoryFile, final int nmax){
+	private static void writeHistory(final History cmdHistory, final Set<String> fileHistory, final String cmdHistoryFile, final String MARKER_FOR_HISTORY_FILE){
 		
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			public void run() {
 	            
+				// List of commands
 				ListIterator<Entry> iter = cmdHistory.entries();
 				List<String>lastHist= new ArrayList<String>();
-				int i= nmax;
+				int i= 500;
 				while(iter.hasNext()){
 					if(i == 0){
 						break;
@@ -369,10 +443,17 @@ public class Main {
 					lastHist.add(iter.next().value().toString());
 				}
 				
+				// List of files
+				List<String>lastFiles= new ArrayList<String>(fileHistory);
+				lastFiles= lastFiles.subList(Math.max(0, lastFiles.size() - 20), lastFiles.size());
+				
 				try {
 					BufferedWriter wr= new BufferedWriter(new FileWriter(new File(cmdHistoryFile)));
 					for(String cmd : lastHist){
 						wr.write(cmd + "\n");
+					}
+					for(String file : lastFiles){
+						wr.write(MARKER_FOR_HISTORY_FILE + file + "\n");
 					}
 					wr.close();
 				} catch (IOException e) {

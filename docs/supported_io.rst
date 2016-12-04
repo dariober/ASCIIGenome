@@ -12,9 +12,9 @@ insensitive mode. Reading remote files might require starting java with the opti
 
 Unless noted otherwise remote URL links are supported. 
 
-* **bam** files must be sorted and indexed, *e.g.* with :code:`samtools sort` and :code:`samtools index`. 
-  Paths to remote URLs are supported but painfully slow (*IGV seems to suffer of the same issue*). Loaded
-  bam files generate two tracks: One for read coverage profile and one for the aligned reads.
+* **bam** files must be sorted and indexed, *e.g.* with :code:`samtools sort` and :code:`samtools index`. Loaded
+  bam files generate two tracks: One for read coverage profile and one for the aligned reads. 
+  Paths to remote URLs are supported but painfully slow (*IGV seems to suffer of the same issue*). 
 
 * **bigWig** recognized by extension :code:`.bw` or :code:`.bigWig`.
 
@@ -24,17 +24,16 @@ Unless noted otherwise remote URL links are supported.
 
 * **tdf** This is very useful for quickly displaying very large intervals like tens of megabases or entire chromosomes (see `tdf here <https://www.broadinstitute.org/igv/TDF>`_).
 
-* **vcf** Supported but their representation is not too sophisticated representation. URL should be supported but it appears ftp from 1000genomes doesn't work (same for IGV).
+* **vcf** Supported but their representation is not too sophisticated. URL should be supported but it appears ftp from 1000genomes doesn't work (same for IGV).
 
 * All other file extensions (e.g. txt, narrowPeak) will be assumed to be bed formatted files.
 
 All plain text formats (bed, bedgraph, etc) can be read as gzipped and there is no need to decompress them.
 
-For input format specs see also `UCSC format <https://genome.ucsc.edu/FAQ/FAQformat.html>`_ and for
-guidelines on the choice of format see the `IGV recommendations <https://www.broadinstitute.org/igv/RecommendedFileFormats>`_.
+A notable format currently **not** supported is cram.
 
-Some notable formats currently **not** supported are cram and bigBed. bigBed files can be converted to bgzip format with :code:`bigBedToBed` from 
-`UCSC utilities <http://hgdownload.soe.ucsc.edu/admin/exe/>`_ and then indexed with tabix (see :ref:`handling_large_files`).
+.. tip:: For input format specs see also `UCSC format <https://genome.ucsc.edu/FAQ/FAQformat.html>`_ and 
+         for guidelines on the choice of format see the `IGV recommendations <https://www.broadinstitute.org/igv/RecommendedFileFormats>`_.
 
 .. _handling_large_files:
 
@@ -52,9 +51,6 @@ file::
     | bgzip > my.bed.gz
     tabix -p bed my.bed.gz
 
-Alternatively, the temporary block compressed files and their indexes created by ASCIIGenome can be saved
-by copying them from their temporary location. Use the command `infoTracks <link here>`_ to see where the
-tmp working files live.
 
 Setting a genome
 ----------------
@@ -86,8 +82,11 @@ The reference sequence, optional, should be uncompressed and indexed, with *e.g.
     samtools faidx genome.fa
 
 
-Output: Formatting of reads and features
-----------------------------------------
+Output
+------
+
+Formatting of reads and features
+++++++++++++++++++++++++++++++++
 
 When aligned reads are show at single base resolution, read bases follow the same convention as
 samtools:  Upper case letters and :code:`.` for read align to forward strand, lower case and
@@ -125,44 +124,94 @@ track the aligned reads and the bottom track the GTF features in this genomic wi
 
 .. image:: screenshots/actb_bam_gtf.png
 
-If available, the feature name is shown on the feature itself.  The feature name has a trailing
-underscore to separate it from the rest of the feature representation. The last character of the
-feature is always the feature type. For example, the feature named :code:`myGene` appears as::
-
-    myGene_EEEEEEEEE ## Enough space for the full name
-    myGenE           ## Not enough space, name truncated and last char is E
-
-For BED features, name is taken from column 4, if available. Default for GTF/GFF is to take name
+If available, the feature name is shown on the feature itself. For BED features, name is taken from column 4, if available. Default for GTF/GFF is to take name
 from attribute  :code:`Name`, if absent try: :code:`ID`, :code:`transcript_name`,
 :code:`transcript_id`, :code:`gene_id`, :code:`gene_name`.  To choose an attribute see command
 :code:`gffNameAttr`.
 
 Read coverage tracks at single base resolution show the consensus sequence obtained from the
 underlying reads. If the reference fasta file is present the :code:`=` symbol is used to denote a
-match. Heterozygote bases or variants are shown  using the [iupac ambiguity
-codes](http://www.bioinformatics.org/sms/iupac.html) for up to two variants (N otherwise). Variants
+match. Heterozygote bases or variants are shown  using the `iupac ambiguity codes <http://www.bioinformatics.org/sms/iupac.html>`_ for up to two variants (N otherwise). Variants
 are called with a not-too-sophisticated heuristics: Only base qualities >= 20 are considered, an
 alternative allele is called if supported by at least 3 reads and makes up at least 1% of the total
 reads. The first and second allele must make at least  98% of the total reads otherwise the base is
 N (see :code:`PileupLocus.getConsensus()` for exact implementation). Insertion/deletions are
 currently not considered.
 
+Title lines
++++++++++++
+
+The title lines contains information about the track and their content depends on the track type.
+
+For all tracks, the title line shows the file name (*e.g.* :code:`hg19_genes_head.gtf.gz`) with appended an identifier (*e.g.* :code:`#3`).
+The filename and the identifier together make the name of the track. All commands 
+operating on tracks use this name to select tracks. The suffix identifier is handy
+to capture tracks without giving the full track name.
+
+
+Annotation tracks (bed, gtf, gff, vcf)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example:
+
+:code:`hg19_genes_head.gtf.gz#1; N: 13; grep -i exon -e CDS`
+
+After the track name (:code:`hg19_genes_head.gtf.gz#1`), the title shows the number of features
+in the current window (:code:`N: 13`). Other information is shown depending on the track
+settings. In this example the title shows settings used to filter in and out features (:code:`grep ...`).
+
+Quantitative data
+^^^^^^^^^^^^^^^^^
+
+This title type applies to quantitative data such as bigwig and tdf and to the read 
+coverage track.
+
+Example:
+
+:code:`ear045.oxBS.actb.bam#2; ylim[0.0 auto]; range[44.0 78.0]; Recs here/all: 255/100265; samtools -q 10`
+
+Explanation:
+
+:code:`ear045.oxBS.actb.bam#2`: Track name as described above
+
+:code:`ylim[0.0 auto]` limits of the y-axis, here from 0 to the maximum of this window. 
+
+:code:`range[44.0 78.0]` Range of the data on the y-axis. 
+
+:code:`Recs here/all: 255/100265` number of alignments present in this window (255) versus the 
+total number in the file (100265). 
+
+:code:`samtools -q 10` information about mapping quality and bitwise filter set with the `samtools` command. 
+omitted if not applicable and if no filter is set. See also `explain sam flag <https://broadinstitute.github.io/picard/explain-flags.html>`_.
+
+Read track
+^^^^^^^^^^
+
+This is the track showing individual reads. Example:
+
+:code:`ear045.oxBS.actb.bam@3; samtools -q 10`
+
+:code:`ear045.oxBS.actb.bam@3` As before, this is the track name composed of file name and 
+track ID. In contrast to other tracks, the id starts with *@* instead of *#*. This is
+handy to capture all the read tracks but not the coverage tracks, for example *trackHeight 10 bam@* applies
+to all the read tracks but not to the coverage tracks.
+
 Saving screenshots
 ------------------
 
 Screenshots can be saved to file with the commands :code:`save`. Output format is either ASCII text or
-png, depending on file name extension. For example::
+pdf, depending on file name extension. For example::
 
     [h] for help: save mygene.txt ## Save to mygene.txt as text
     [h] for help: save            ## Save to chrom_start-end.txt as text
-    [h] for help: save .png       ## Save to chrom_start-end.png as png
-    [h] for help: save mygene.png ## Save to mygene.png as png
+    [h] for help: save .pdf       ## Save to chrom_start-end.pdf as pdf
+    [h] for help: save mygene.pdf ## Save to mygene.pdf as pdf
 
 Without arguments, :code:`save` writes to file named after the current  genomic position e.g.
 `chr1_1000-2000.txt`.  The ANSI formatting (*i.e.* colours) is stripped before saving so that files
 can be viewed on any text editor (use a monospace font like :code:`courier`). For convenience the 
 variable :code:`%r` in the file name is expanded to the current genomic coordinates, for example 
-`save mygene.%r.png` is expanded to *e.g.* :code:`mygene.chr1_1000_2000.png`. 
+`save mygene.%r.pdf` is expanded to *e.g.* :code:`mygene.chr1_1000_2000.pdf`. 
 
 See also :ref:`Batch-processing` for saving screenshots in batch by iterating through a list of
 positions.
@@ -170,5 +219,4 @@ positions.
 This is a screenshots of bisulfite-seq data. The `BSseq` mode was set and methylated cytosines are shown in red while unmethylated cytosines in blue. 
 
 .. image:: screenshots/bs.chr7_5560313-5560467.png
-
 

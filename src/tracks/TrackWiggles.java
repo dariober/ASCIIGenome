@@ -246,6 +246,9 @@ public class TrackWiggles extends Track {
 				if(q == null){
 					break;
 				}
+				if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+					continue;
+				}
 				if ( !this.isValidBedGraphLine(q) ) {
 					System.err.println("\nInvalid record found: " + q + "\n");
 					throw new InvalidRecordException();

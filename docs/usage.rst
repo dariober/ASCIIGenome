@@ -59,7 +59,7 @@ When track names are passed as arguments, it is not necessary to give the full n
 partial matching is enabled. This is handy since track names have an ID appended as suffix which can
 be used in place of the full name, e.g. `next myLongfileName.bed#1` can be also typed as `next #1`.
 
-These are just some functionalities to give an idea behind *ASCIIGenome*. See [command help](commandHelp.md) for 
+These are just some functionalities to give an idea behind *ASCIIGenome*. See :ref:`Supported_input_and_output2` for 
 the individual commands available.
 
 Tips gotchas and miscellanea

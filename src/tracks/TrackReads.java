@@ -260,11 +260,21 @@ public class TrackReads extends Track{
 		if(this.isHideTitle()){
 			return "";
 		}
-		
-		String title= this.getTrackTag() 
-				+ "; -F" + this.get_F_flag() 
-				+ " -f" + this.get_f_flag() 
-				+ " -q" + this.getMapq();
+		String samtools= "";
+		if( ! (this.get_F_flag() == Track.F_FLAG) ){
+			samtools += " -F " + this.get_F_flag();
+		}
+		if( ! (this.get_f_flag() == Track.f_FLAG) ){
+			samtools += " -f " + this.get_f_flag();
+		}
+		if( ! (this.getMapq() == Track.MAPQ) ){
+			samtools += " -q " + this.getMapq();
+		}
+		if( ! samtools.isEmpty()){
+			samtools= "; samtools" + samtools;
+		}
+		String title= this.getTrackTag()
+				+ samtools;
 		return this.formatTitle(title) + "\n";
 	}
 	

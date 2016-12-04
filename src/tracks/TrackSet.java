@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +37,8 @@ public class TrackSet {
 	private List<Pattern> regexForTrackHeight= new ArrayList<Pattern>();
 	private int trackHeightForRegex= -1;
 	private String[] yStrLimits= new String[2];
-	private List<String> regexForYLimits= new ArrayList<String>();
+	private List<String> regexForYLimits= new ArrayList<String>(); 
+	private LinkedHashSet<String> openedFiles= new LinkedHashSet<String>();
 	
 	/*   C o n s t r u c t o r s   */
 	
@@ -107,6 +109,9 @@ public class TrackSet {
 		this.yStrLimits[0]= "na";
 		this.yStrLimits[1]= "na";
 		// TrackWiggles gcProfile= gc.getGCProfile();
+		for(Track tr : this.getTrackList()){
+			this.addToOpenedFiles(tr.getFilename());
+		}
 	}
 	
 	/*   M e t h o d s   */
@@ -146,6 +151,18 @@ public class TrackSet {
 				|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)){
 			this.addWiggleTrackFromSourceName(sourceName, gc, trackTag);
 		}
+		
+		for(Track tr : this.getTrackList()){
+			this.addToOpenedFiles(tr.getFilename());
+		}	
+		
+	}
+	
+	private void addToOpenedFiles(String sourceName){
+		if(this.getOpenedFiles().contains(sourceName)){ // Remove and add as last opened
+			this.openedFiles.remove(sourceName);
+		} 
+		this.openedFiles.add(sourceName);
 	}
 	
 	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException{
@@ -300,36 +317,60 @@ public class TrackSet {
 	}
 
 	public void setFeatureDisplayModeForRegex(List<String> tokens) throws InvalidCommandLineException {
-		// MEMO of subcommand syntax:
-		// 0 squash/merge
-		// 1 Regex
+
+		List<String> args= new ArrayList<String>(tokens);
+		args.remove(0); // remove command name
+
+		// Display mode
+		FeatureDisplayMode mode= null;
+		if(args.contains("-collapsed")){
+			mode= FeatureDisplayMode.COLLAPSED;
+			args.remove("-collapsed");
+		}
+		if(args.contains("-c")){
+			mode= FeatureDisplayMode.COLLAPSED;
+			args.remove("-c");
+		}
 		
-        // Regex
+		if(args.contains("-expanded")){
+			mode= FeatureDisplayMode.EXPANDED;
+			args.remove("-expanded");
+		}
+		if(args.contains("-e")){
+			mode= FeatureDisplayMode.EXPANDED;
+			args.remove("-e");
+		}
+		
+		if(args.contains("-oneline")){
+			mode= FeatureDisplayMode.ONELINE;
+			args.remove("-oneline");
+		}
+		if(args.contains("-o")){
+			mode= FeatureDisplayMode.ONELINE;
+			args.remove("-o");
+		}
+        // Regex to capture tracks: Everything left after removing command name and args:
         List<String> trackNameRegex= new ArrayList<String>();
-        if(tokens.size() >= 2){
-            trackNameRegex= tokens.subList(1, tokens.size());
+        if(args.size() > 0){
+            trackNameRegex.addAll(args);
         } else {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
                 
-		FeatureDisplayMode switchTo;
-		if(tokens.get(0).equals("squash")){
-			switchTo = FeatureDisplayMode.SQUASHED;
-		} else if(tokens.get(0).equals("merge")){
-			switchTo = FeatureDisplayMode.MERGED;
-		} else {
-			System.err.println("Unexepected command: " + tokens);
-			throw new InvalidCommandLineException();
-		}
-		
         // And set as required:
 		List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
         for(Track tr : tracksToReset){
-        	if(tr.getFeatureDisplayMode().equals(switchTo)){ // Invert setting
-				tr.setFeatureDisplayMode(FeatureDisplayMode.EXPANDED);
-			} else {
-				tr.setFeatureDisplayMode(switchTo);
-			}
+        	if(mode == null){ // Toggle between expanded and collapsed
+        		if(tr.getFeatureDisplayMode().equals(FeatureDisplayMode.EXPANDED)){
+        			tr.setFeatureDisplayMode(FeatureDisplayMode.COLLAPSED);
+        		} else if(tr.getFeatureDisplayMode().equals(FeatureDisplayMode.COLLAPSED)){
+        			tr.setFeatureDisplayMode(FeatureDisplayMode.EXPANDED);
+        		} else if(tr.getFeatureDisplayMode().equals(FeatureDisplayMode.ONELINE)){
+        			tr.setFeatureDisplayMode(FeatureDisplayMode.EXPANDED);
+        		}
+        	} else {
+        		tr.setFeatureDisplayMode(mode);
+        	}
         }
 	}
 	
@@ -340,21 +381,41 @@ public class TrackSet {
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove cmd name.
 
-		// These are the parameters and thei default arguments
-		boolean printFull= false;
-		boolean allOff= false;
+		// Defaults if no args given
+		PrintRawLine printMode = null;
+        int count= 10; // Default number of lines to print
+        List<String> trackNameRegex= new ArrayList<String>(); trackNameRegex.add(".*");
 		String printToFile= null;
-		boolean append= false;
-        List<String> trackNameRegex= new ArrayList<String>();
+        boolean append= false;
 		
-		if(args.contains("-full")){
-			printFull= true;
+		// PARSE ARGS
+        // --------------------------------------------------------------------
+		if(args.contains("-clip")){
+			printMode= PrintRawLine.CLIP;
+			args.remove("-clip");
+		}
+        
+        if(args.contains("-full")){
+			printMode= PrintRawLine.FULL;
 			args.remove("-full");
 		}
 
 		if(args.contains("-off")){
-			allOff= true;
+			printMode= PrintRawLine.OFF;
 			args.remove("-off");
+		}
+		
+		if(args.contains("-n")){
+			printMode= PrintRawLine.NO_ACTION;
+			int idx= args.indexOf("-n") + 1; 
+			try{
+				count= Integer.parseInt(args.get(idx));
+				args.remove(idx);
+				args.remove("-n");
+			} catch (NumberFormatException e){
+				System.err.println("Invalid argument to -n. Expected INT. Got '" + args.get(idx) + "'");
+				throw new InvalidCommandLineException();
+			}
 		}
 		
 		// Capture the redirection operator and remove operator and filename.
@@ -373,113 +434,152 @@ public class TrackSet {
 				printToFile= Utils.tildeToHomeDir(printToFile);
 			} catch(IndexOutOfBoundsException e){
 				System.err.println("No file found to write to.");
+				throw new InvalidCommandLineException();
 			}
 		}
 		
-        // Get regex list for tracks to reset
-        if(allOff){
-        	trackNameRegex.add(".*"); // Capture everything regardless of given regexes.
-        }else if(args.size() >= 1){
-            trackNameRegex.addAll(args);
-        } else {
-            trackNameRegex.add(".*"); // Default: Capture everything
-        }
-		// DONE
+        // Everything left in arg list is positional args of regex for tracks
+		if(args.size() >= 1){
+            trackNameRegex= args;
+		}
+		// END PARSING ARGS. 
 		// --------------------------------------------------------------------
 		
         // Tracks affected by this command:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
 
-        // If we print to file just do that, do not touch printing modes:
+        // If we print to file just do that.
 		if(printToFile != null && ! printToFile.isEmpty()){
-	        for(Track tr : tracksToReset){
+	        if( ! append){
+	        	new File(printToFile).delete();
+	        }
+			for(Track tr : tracksToReset){
 	        	tr.setExportFile(printToFile);
-	        	tr.setAppendToExportFile(append);
 	        	tr.printFeaturesToFile();
+	        	tr.setPrintMode(PrintRawLine.OFF); // This is not ideal: redirecting to file also set mode to off
 	        	tr.setExportFile(null); // Reset to null so we don't keep writing to this file once we go to another position. 
 	        }
 	        return;
 		}
         
-		// Set printing mode. Effectively ignored if -off option is set.
-		PrintRawLine switchTo; // If printing is OFF do we switch to CLIP or FULL?
-		if( printFull ){
-			switchTo = PrintRawLine.FULL;
-		} else {
-			switchTo = PrintRawLine.CLIP;			
-		} 
-
 		// Process as required: Change mode
 		for(Track tr : tracksToReset){
-			if(allOff){
-				tr.setPrintMode(PrintRawLine.OFF);
-			} else if(tr.getPrintMode().equals(switchTo)){ // Invert setting
-        		tr.setPrintMode(PrintRawLine.OFF);
+			tr.setPrintRawLineCount(count);
+			if(printMode != null && printMode.equals(PrintRawLine.NO_ACTION)){
+				// 
+			} else if(printMode != null){
+				tr.setPrintMode(printMode);
+			} else if(tr.getPrintMode().equals(PrintRawLine.OFF)) { // Toggle
+				tr.setPrintMode(PrintRawLine.CLIP);
 			} else {
-				tr.setPrintMode(switchTo);
+				tr.setPrintMode(PrintRawLine.OFF);
 			}
-        }
-        
+        }        
 	}
 	
 	public void setBisulfiteModeForRegex(List<String> tokens) throws InvalidCommandLineException {
 
-		// MEMO of subcommand syntax:
-		// 0 BSseq
-		// 1 Regex
+		List<String> args= new ArrayList<String>(tokens);
+		args.remove(0);
+		
+		Boolean bisulf= null;
+		if(args.contains("-on")){
+			bisulf= true;
+			args.remove("-on");
+		}
+		if(args.contains("-off")){
+			bisulf= false;
+			args.remove("-off");
+		}
 		
         // Regex
         List<String> trackNameRegex= new ArrayList<String>();
-        if(tokens.size() >= 2){
-            trackNameRegex= tokens.subList(1, tokens.size());
+        if(args.size() > 0){
+            trackNameRegex= args;
         } else {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
+
         // And set as required:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
         for(Track tr : tracksToReset){
-			if(tr.isBisulf()){ // Invert setting
-				tr.setBisulf(false);
-			} else {
-				tr.setBisulf(true);
-			}
+        	if(bisulf == null){
+    			if(tr.isBisulf()){ // Invert setting
+    				tr.setBisulf(false);
+    			} else {
+    				tr.setBisulf(true);
+    			}
+        	} else {
+        		tr.setBisulf(bisulf);
+        	}
         }
 	}
 
 	public void setHideTitleForRegex(List<String> tokens) throws InvalidCommandLineException {
 
-		// MEMO of subcommand syntax:
-		// 0 hideTitle
-		// 1 Regex
+		List<String> args= new ArrayList<String>(tokens);
+		args.remove(0);
 		
-		if(tokens.size() == 2 && tokens.get(1).equals("/hide_all/")){
-			for(Track tr : this.getTrackList()){
-				tr.setHideTitle(true);
-			}
-			return;
+		Boolean hide= null;
+		if(args.contains("-on")){
+			hide= true;
+			args.remove("-on");
 		}
-		if(tokens.size() == 2 && tokens.get(1).equals("/show_all/")){
-			for(Track tr : this.getTrackList()){
-				tr.setHideTitle(false);
-			}
-			return;
-		}		
+		if(args.contains("-off")){
+			hide= false;
+			args.remove("-off");
+		}
+		
         // Regex
         List<String> trackNameRegex= new ArrayList<String>();
-        if(tokens.size() >= 2){
-            trackNameRegex= tokens.subList(1, tokens.size());
+        if(args.size() > 0){
+            trackNameRegex= args;
         } else {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
+
         // And set as required:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
         for(Track tr : tracksToReset){
-			if(tr.isHideTitle()){ // Invert setting
-				tr.setHideTitle(false);
-			} else {
-				tr.setHideTitle(true);
-			}
+        	if(hide == null){
+    			if(tr.isHideTitle()){ // Invert setting
+    				tr.setHideTitle(false);
+    			} else {
+    				tr.setHideTitle(true);
+    			}
+        	} else {
+        		tr.setHideTitle(hide);
+        	}
         }
+		
+//		if(tokens.size() == 2 && tokens.get(1).equals("/hide_all/")){
+//			for(Track tr : this.getTrackList()){
+//				tr.setHideTitle(true);
+//			}
+//			return;
+//		}
+//		if(tokens.size() == 2 && tokens.get(1).equals("/show_all/")){
+//			for(Track tr : this.getTrackList()){
+//				tr.setHideTitle(false);
+//			}
+//			return;
+//		}		
+//        // Regex
+//        List<String> trackNameRegex= new ArrayList<String>();
+//        if(tokens.size() >= 2){
+//            trackNameRegex= tokens.subList(1, tokens.size());
+//        } else {
+//            trackNameRegex.add(".*"); // Default: Capture everything
+//        }
+//        // And set as required:
+//        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+//        for(Track tr : tracksToReset){
+//			if(tr.isHideTitle()){ // Invert setting
+//				tr.setHideTitle(false);
+//			} else {
+//				tr.setHideTitle(true);
+//			}
+//        }
 	}
 	
 	/*
@@ -510,27 +610,42 @@ public class TrackSet {
 	
 	public void setRpmForRegex(List<String> tokens) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 
-		// MEMO of subcommand syntax:
-		// 0 rpm
-		// 1 Regex
+		List<String> args= new ArrayList<String>(tokens);
+		args.remove(0);
+		
+		Boolean rpm= null;
+		if(args.contains("-on")){
+			rpm= true;
+			args.remove("-on");
+		}
+		if(args.contains("-off")){
+			rpm= false;
+			args.remove("-off");
+		}
 		
         // Regex
         List<String> trackNameRegex= new ArrayList<String>();
-        if(tokens.size() >= 2){
-            trackNameRegex= tokens.subList(1, tokens.size());
+        if(args.size() > 0){
+            trackNameRegex= args;
         } else {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
+
         // And set as required:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
         for(Track tr : tracksToReset){
-			if(tr.isRpm()){ // Invert setting
-				tr.setRpm(false);
-			} else {
-				tr.setRpm(true);
-			}
+        	if(rpm == null){
+    			if(tr.isRpm()){ // Invert setting
+    				tr.setRpm(false);
+    			} else {
+    				tr.setRpm(true);
+    			}
+        	} else {
+        		tr.setRpm(rpm);
+        	}
         }
 	}
+	
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException{
 
 		// MEMO of subcommand syntax:
@@ -772,7 +887,7 @@ public class TrackSet {
 	 * are exactly spanning the feature. With slop < 0 the output coordinates have 
 	 * the feature right at the start.
 	 * */
-	public GenomicCoords goToNextFeatureOnFile(String trackId, GenomicCoords currentGc, double slop) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
+	public GenomicCoords goToNextFeatureOnFile(String trackId, GenomicCoords currentGc, double slop, boolean getPrevious) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
 		Track tr= this.matchIntervalFeatureTrack(trackId.trim());
 
@@ -782,9 +897,9 @@ public class TrackSet {
 		
 		TrackIntervalFeature tif= (TrackIntervalFeature) tr;
 		if(slop < 0){
-			return tif.coordsOfNextFeature(currentGc);
+			return tif.coordsOfNextFeature(currentGc, getPrevious);
 		} else {
-			GenomicCoords featureGc= tif.startEndOfNextFeature(currentGc);
+			GenomicCoords featureGc= tif.startEndOfNextFeature(currentGc, getPrevious);
 			if(featureGc.equalCoords(currentGc)){ // No "next feature" found.
 				return currentGc;
 			} else {
@@ -1274,13 +1389,23 @@ public class TrackSet {
 	
 	public void setFeatureGapForRegex(List<String> tokens) throws InvalidCommandLineException {
 
-		// MEMO of subcommand syntax:
-		// 0 gap
-		// 1 Regex
+		List<String> args= new ArrayList<String>(tokens);
+		args.remove(0);
 		
+		Boolean gap= null;
+		if(args.contains("-on")){
+			gap= true;
+			args.remove("-on");
+		}
+		if(args.contains("-off")){
+			gap= false;
+			args.remove("-off");
+		}
+		
+        // Regex
         List<String> trackNameRegex= new ArrayList<String>();
-        if(tokens.size() >= 2){
-            trackNameRegex= tokens.subList(1, tokens.size());
+        if(args.size() > 0){
+            trackNameRegex= args;
         } else {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
@@ -1288,12 +1413,36 @@ public class TrackSet {
         // And set as required:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
         for(Track tr : tracksToReset){
-			if(tr.getGap() == 0){ // Invert setting
-				tr.setGap(1);
-			} else {
-				tr.setGap(0);
-			}
+        	if(gap == null){
+    			if(tr.getGap() == 0){ // Invert setting
+    				tr.setGap(1);
+    			} else {
+    				tr.setGap(0);
+    			}
+        	} else if(gap) {
+        		tr.setGap(1);
+        	} else {
+        		tr.setGap(0);
+        	}
         }
+
+//		
+//        List<String> trackNameRegex= new ArrayList<String>();
+//        if(tokens.size() >= 2){
+//            trackNameRegex= tokens.subList(1, tokens.size());
+//        } else {
+//            trackNameRegex.add(".*"); // Default: Capture everything
+//        }
+//
+//        // And set as required:
+//        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+//        for(Track tr : tracksToReset){
+//			if(tr.getGap() == 0){ // Invert setting
+//				tr.setGap(1);
+//			} else {
+//				tr.setGap(0);
+//			}
+//        }
 	}
 	
 	/** Call the update method for all tracks in trackset. Updating can be time
@@ -1486,6 +1635,18 @@ public class TrackSet {
 
 	public void setYStrLimits(String[] yStrLimits) {
 		this.yStrLimits = yStrLimits;
+	}
+
+	public LinkedHashSet<String> getOpenedFiles() {
+		return openedFiles;
+	}
+
+	public void setOpenedFiles(LinkedHashSet<String> openedFiles) {
+		this.openedFiles = openedFiles;
+	}
+
+	public String showRecentlyOpened() {
+		return Joiner.on("\n").join(this.getOpenedFiles());
 	}
 
 //	/** Attempt to collect source of sequence dictionary 

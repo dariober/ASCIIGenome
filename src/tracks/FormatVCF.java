@@ -33,13 +33,13 @@ public class FormatVCF {
 		// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
 		
 		if(textForVariant == 'A' || textForVariant == 'a'){
-			formattedText += "\033[107;34m" + textForVariant + "\033[48;5;231m";
+			formattedText += "\033[34m" + textForVariant + "\033[48;5;231m";
 		} else if(textForVariant == 'C' || textForVariant == 'c') {
-			formattedText += "\033[107;31m" + textForVariant + "\033[48;5;231m";
+			formattedText += "\033[31m" + textForVariant + "\033[48;5;231m";
 		} else if(textForVariant == 'G' || textForVariant == 'g') {
-			formattedText += "\033[107;32m" + textForVariant + "\033[48;5;231m";
+			formattedText += "\033[32m" + textForVariant + "\033[48;5;231m";
 		} else if(textForVariant == 'T' || textForVariant == 't') {
-			formattedText += "\033[107;33m" + textForVariant + "\033[48;5;231m";
+			formattedText += "\033[33m" + textForVariant + "\033[48;5;231m";
 		} else {
 			formattedText += textForVariant;
 		}

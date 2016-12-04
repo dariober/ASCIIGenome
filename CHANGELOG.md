@@ -16,6 +16,12 @@ sequence dictionary is available.
 
 * `next` moves to other chroms once the current one doesn't have any more features.
 
+* `next` can move backwards.
+
+* `print` can use explicit setting. Add `-n` option to limit number of lines printed. 
+
+* Refactor feature display mode (add `featureDisplayMode` command). Fixed bug with fully overlapping features.
+
 New in 0.5.0
 ============
 

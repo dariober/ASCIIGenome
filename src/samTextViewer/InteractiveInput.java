@@ -10,6 +10,7 @@ import java.util.TreeSet;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 
+import commandHelp.Command;
 import commandHelp.CommandList;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -18,7 +19,6 @@ import htsjdk.samtools.SAMSequenceDictionary;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import tracks.Track;
-import tracks.TrackWiggles;
 
 /** Class to process input from console
  * */
@@ -93,6 +93,10 @@ public class InteractiveInput {
 					System.out.println(proc.getTrackSet().showTrackInfo());
 					this.interactiveInputExitCode= 1;
 				
+				} else if(cmdInput.get(0).equals("recentlyOpened")) {
+					System.out.println(proc.getTrackSet().showRecentlyOpened());
+					this.interactiveInputExitCode= 1;
+					
 				} else if(cmdInput.get(0).equals("save")) {
 					proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(cmdInput), proc.getGenomicCoordsHistory().current()) );
 					
@@ -194,7 +198,7 @@ public class InteractiveInput {
 				} else if(cmdInput.get(0).equals("hideTitle")){
 					proc.getTrackSet().setHideTitleForRegex(cmdInput); 
 					
-				} else if(cmdInput.get(0).equals("BSseq")) {
+				} else if(cmdInput.get(0).equals(Command.BSseq.getCmdDescr())) {
 					if( proc.getGenomicCoordsHistory().current().getFastaFile() == null ){
 						System.err.println("Cannot set BSseq mode without reference sequence");
 						this.interactiveInputExitCode= 1;
@@ -202,7 +206,7 @@ public class InteractiveInput {
 					}
 					proc.getTrackSet().setBisulfiteModeForRegex(cmdInput);
 					
-				} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals("merge")){
+				} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals(Command.featureDisplayMode.toString())){
 					proc.getTrackSet().setFeatureDisplayModeForRegex(cmdInput);
 					
 				} else if (cmdInput.get(0).equals("gap")){
@@ -255,13 +259,13 @@ public class InteractiveInput {
 				} else if(cmdInput.get(0).equals("editNames")){
 					messages += proc.getTrackSet().editNamesForRegex(cmdInput);
 					
-				} else if(cmdInput.get(0).equals("print")){
+				} else if(cmdInput.get(0).equals(Command.print.toString())){
 					proc.getTrackSet().setPrintModeAndPrintFeaturesForRegex(cmdInput);
 
 				} else if(cmdInput.get(0).equals("grep")){
 					proc.getTrackSet().setFilterForTrackIntervalFeature(cmdInput);
 					
-				} else if(cmdInput.get(0).equals("rpm")) {
+				} else if(cmdInput.get(0).equals(Command.rpm.getCmdDescr())) {
 					proc.getTrackSet().setRpmForRegex(cmdInput);
 
 				} else if(cmdInput.get(0).equals("samtools")){
@@ -276,13 +280,18 @@ public class InteractiveInput {
 						start= true;
 						cmdInput.remove("-start");
 					}
+					boolean getPrevious= false;
+					if(cmdInput.contains("-back")){
+						getPrevious= true;
+						cmdInput.remove("-back");
+					}
 					if(cmdInput.size() > 1){
 						trackId= cmdInput.get(1);
 					}
 					if(start){
-						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, -1.0));
+						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, -1.0, getPrevious));
 					} else {
-						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, 5.0));
+						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, 5.0, getPrevious));
 					}
 					
 				} else if(cmdInput.get(0).equals("find")) {  

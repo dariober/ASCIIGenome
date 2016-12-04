@@ -27,6 +27,7 @@ import com.google.common.base.Joiner;
 
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
+import htsjdk.samtools.util.CloserUtil;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndexCreator;
@@ -92,6 +93,7 @@ public class MakeTabixIndex {
 			
 		TabixIndexCreator indexCreator=new TabixIndexCreator(fmt);
 		
+		boolean first= true;
 		while(lin.hasNext()){
 			
 			String line = lin.next().trim();
@@ -102,6 +104,16 @@ public class MakeTabixIndex {
 			if(line.startsWith("##FASTA")){
 				break;
 			}			
+			
+			if(first && ! fmt.equals(TabixFormat.VCF)){
+				String dummy= this.makeDummyLine(line, fmt);
+				addLineToIndex(dummy, indexCreator, filePosition, fmt);
+				
+				writer.write(dummy.getBytes());
+				writer.write('\n');
+				filePosition = writer.getFilePointer();
+				first= false;
+			}
 			
 			addLineToIndex(line, indexCreator, filePosition, fmt);
 			
@@ -114,7 +126,7 @@ public class MakeTabixIndex {
 		Index index = indexCreator.finalizeIndex(writer.getFilePointer());
 		index.writeBasedOnFeatureFile(bgzfOut);
 		writer.close();
-		
+		CloserUtil.close(lin);
 	}
 
 	private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition, TabixFormat fmt) throws InvalidRecordException {
@@ -225,6 +237,7 @@ public class MakeTabixIndex {
 
 	/** Create a dummy line overcome the problem of first line ignored by tabix idnex creator.
 	 * This is a horrible hack and it should be fixed in Tabix.
+	 * See issue #38
 	 * */
 	private String makeDummyLine(String line, TabixFormat fmt){
 		
@@ -233,26 +246,19 @@ public class MakeTabixIndex {
 		List<String> dummy= new ArrayList<String>();
 		dummy.add(feature[0]); // chrom
 		
-//		int startIdx= -1;
-//		int endIdx= -1;
-		
 		if(fmt.equals(TabixFormat.BED)){
 			dummy.add("0");
 			dummy.add("1");
-			dummy.add("ignore_me");
-			//startIdx= 1;
-			//endIdx= 2;
+			dummy.add("__ignore_me__");
 			
 		} else if(fmt.equals(TabixFormat.GFF)){
-			dummy.add("ignore_me");
-			dummy.add("ignore_me");
+			dummy.add("__ignore_me__");
+			dummy.add("__ignore_me__");
 			dummy.add("1");
 			dummy.add("2");
 			dummy.add(".");
 			dummy.add(".");
 			dummy.add(".");
-//			startIdx= 3;
-//			endIdx= 4;
 		
 		} else {
 			return "";

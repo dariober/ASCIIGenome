@@ -83,6 +83,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 
 		String line;
 		while( (line = br.readLine()) != null) {
+			if(line.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+				continue;
+			}			
 			wr.write(line + "\n");
 		}
 		// Add new bookamrk
@@ -172,6 +175,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 
 		String line;
 		while( (line = br.readLine()) != null) {
+			if(line.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+				continue;
+			}
 			wr.write(line + "\n");
 		}
 		wr.close();
@@ -231,6 +237,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 		String line;
 		int i= 1;
 		while( (line = br.readLine()) != null) {
+			if(line.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+				continue;
+			}			
 			List<String> lst= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(line));
 			String reg= lst.get(0) + ":" + Integer.parseInt(lst.get(3)) + "-" + lst.get(4); 
 			line= i + ":\t" + reg + "\t" + line;

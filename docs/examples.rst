@@ -19,18 +19,18 @@ start Java with the option ` -Djava.net.useSystemProxies=true` (see also `issue#
 
 
 Find the first feature on the first file, then change colour of one of the tracks. Reset y axes to
-span 0 to 50, finally save as png to default file name::
+span 0 to 50, finally save as pdf to default file name::
 
     [h] for help: next #1
     [h] for help: colorTrack red wgEncodeSydhTfbsGm12892Pol2IggmusSig
     [h] for help: ylim 0 50
-    [h] for help: save %r.png
+    [h] for help: save %r.pdf
 
 Result on terminal screen should look like this:
 
 .. image:: screenshots/chr1_996137-1003137.png
 
-The file is to *chr1_996137-1003137.png*, note that the variable :code:`%r` is expanded to the genomic coordinates.
+The file is to *chr1_996137-1003137.pdf*, note that the variable :code:`%r` is expanded to the genomic coordinates.
 
 Finding & filtering stuff
 -------------------------
@@ -72,21 +72,20 @@ with an annotation file. :code:`ASCIIGenome` allows easy batch processing  via t
 
 This script iterates through the intervals in *peaks.bed*. For each interval, it displays two
 bigWig, a gtf file and the peak file itself.  Each interval is zoomed out 3 times and the screenshot
-saved as png to :code:`/tmp/peak.%r.png`, where `%r` is a special variable  expanded to the current
+saved as pdf to :code:`/tmp/peak.%r.pdf`, where `%r` is a special variable  expanded to the current
 coordinates as `chrom_start-end`.::
 
     ASCIIGenome -b peaks.bed \
-        -x 'zo 3 && save /tmp/peak.%r.png' \
+        -x 'zo 3 && save /tmp/peak.%r.pdf' \
         chipseq.bigwig \
         input.bigwig \
         gencode_genes.gtf \
         peaks.bed > /dev/null
 
+To concatenate several pdf files in a single one you can use ghostscript which should be 
+available on Unix/Linux systems as for example::
 
-`convert <http://www.imagemagick.org/script/convert.php>`_ tools from ImageMagick is handy to concatenate png files and create 
-a gallery of screenshots in a single file::
-
-    convert -append /tmp/peak.*.png myPeaks.png
+    gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=out.pdf in1.pdf in2.pdf
 
 A similar task may be achieved by wrapping ASCIIGenome in a for-loop but it would much slower and complicated since each iteration would
 require restarting the JVM and re-loading the tracks.

@@ -1,26 +1,6 @@
 package samTextViewer;
 
-import htsjdk.samtools.BAMIndex;
-import htsjdk.samtools.SAMFileReader;
-import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SAMSequenceDictionary;
-import htsjdk.samtools.SAMSequenceRecord;
-import htsjdk.samtools.SamInputResource;
-import htsjdk.samtools.SamReader;
-import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
-import htsjdk.samtools.filter.AggregateFilter;
-import htsjdk.samtools.filter.SamRecordFilter;
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
-import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.readers.TabixReader;
-
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,7 +15,6 @@ import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -46,17 +25,16 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
-
-import javax.imageio.ImageIO;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.text.StrMatcher;
@@ -78,6 +56,20 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import filter.FirstOfPairFilter;
+import htsjdk.samtools.BAMIndex;
+import htsjdk.samtools.SAMFileReader;
+import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
+import htsjdk.samtools.SamInputResource;
+import htsjdk.samtools.SamReader;
+import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.filter.AggregateFilter;
+import htsjdk.samtools.filter.SamRecordFilter;
+import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.tribble.index.tabix.TabixFormat;
+import htsjdk.tribble.readers.TabixReader;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
 import ucsc.UcscGenePred;
@@ -137,20 +129,23 @@ public class Utils {
 		return alnCount;
     }
 
-	
-	public static List<IntervalFeature> mergeIntervalFeatures(List<IntervalFeature> intervalList) throws InvalidGenomicCoordsException{
+	/** Merge overlapping features. If screenCoords is true, merge is based on the screen coordinates. Otherwise use
+	 * genomic coordinates.  
+	 * */
+	public static List<IntervalFeature> mergeIntervalFeatures(List<IntervalFeature> intervalList, boolean screenCoords) throws InvalidGenomicCoordsException{
 		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();		 
 		if(intervalList.size() == 0){
 			return mergedList;
 		}
 		
-		String chrom = null;
-		int from= -1;
-		int to= -1;
-		int screenFrom= -1;
-		int screenTo= -1;
+		String mergedChrom = null;
+		int mergedFrom= -1;
+		int mergedTo= -1;
+		int mergedScreenFrom= -1;
+		int mergedScreenTo= -1;
 		int numMrgIntv= 1; // Number of intervals in the merged one. 
-				
+		Set<Character> strand= new HashSet<Character>(); // Put here all the different strands found in the merged features.		
+
 		for(int i= 0; i < (intervalList.size()+1); i++){
 			// We do an additional loop to add to the mergedList the last interval.
 			// The last loop has interval == null so below you need to account for it
@@ -159,29 +154,44 @@ public class Utils {
 				interval= intervalList.get(i); 
 			}
 			
-			if(from < 0){ // Init interval
-				chrom= interval.getChrom(); 
-				from= interval.getFrom();
-				to= interval.getTo();
-				screenFrom= interval.getScreenFrom();
-				screenTo= interval.getScreenTo();
+			if(mergedFrom < 0){ // Init interval
+				mergedChrom= interval.getChrom(); 
+				mergedFrom= interval.getFrom();
+				mergedTo= interval.getTo();
+				mergedScreenFrom= interval.getScreenFrom();
+				mergedScreenTo= interval.getScreenTo();
 				continue;
 			}
 			// Sanity check: The list to be merged is on the same chrom and sorted by start pos.
-			if(i < intervalList.size() && (!chrom.equals(interval.getChrom()) || from > interval.getFrom() || from > to)){
-				System.err.println(chrom + " " + from + " " + to);
+			if(i < intervalList.size() && (!mergedChrom.equals(interval.getChrom()) || mergedFrom > interval.getFrom() || mergedFrom > mergedTo)){
+				System.err.println(mergedChrom + " " + mergedFrom + " " + mergedTo);
 				throw new RuntimeException();
 			} 
-			if(i < intervalList.size() && (from <= interval.getTo() && to >= (interval.getFrom()-1) )){ 
+			
+			boolean overlap= false; 
+			if( screenCoords && i < intervalList.size() && (mergedScreenFrom <= interval.getScreenTo() && mergedScreenTo >= (interval.getScreenFrom()-1)) ){ 
 				// Overlap: Extend <to> coordinate. See also http://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
-				to= interval.getTo();
-				screenTo= interval.getScreenTo();
+				overlap= true;
+			} else if(i < intervalList.size() && (mergedFrom <= interval.getTo() && mergedTo >= (interval.getFrom()-1) )){ 
+				// Overlap on genomic coordinates
+				overlap= true;
+			}
+			if(overlap){ // Overlap found in screen or genomic coords.  
+			    mergedTo= Math.max(interval.getTo(), mergedTo);
+			    mergedScreenTo= Math.max(interval.getScreenTo(), mergedScreenTo);
+				strand.add(interval.getStrand());
 				numMrgIntv++;
-			} else {
+				overlap= false;
+			} 
+			else {
 				// No overlap add merged interval to list and reset new merged interval
-				IntervalFeature x= new IntervalFeature(chrom + "\t" + (from-1) + "\t" + to, TrackFormat.BED);
-				x.setScreenFrom(screenFrom);
-				x.setScreenTo(screenTo);
+				IntervalFeature x= new IntervalFeature(mergedChrom + "\t" + (mergedFrom-1) + "\t" + mergedTo, TrackFormat.BED);
+				x.setScreenFrom(mergedScreenFrom);
+				x.setScreenTo(mergedScreenTo);
+				if(strand.size() == 1){
+					x.setStrand(strand.iterator().next());
+				} 
+				strand.clear();
 
 				if(x.equals(intervalList.get(i-1)) && numMrgIntv == 1){
 					mergedList.add(intervalList.get(i-1));
@@ -189,18 +199,13 @@ public class Utils {
 					mergedList.add(x);
 				}
 				
-				//if(i > 0 && x.equals(intervalList.get(i-1))){
-				//	mergedList.add(intervalList.get(i-1));
-				//} else {
-				//	mergedList.add(x);
-				//}
-				
 				if(i < intervalList.size()){
 					// Do not reset from/to if you are in extra loop.
-					from= interval.getFrom();
-					to= interval.getTo();
-					screenFrom= interval.getScreenFrom();
-					screenTo= interval.getScreenTo();
+					mergedFrom= interval.getFrom();
+					mergedTo= interval.getTo();
+					mergedScreenFrom= interval.getScreenFrom();
+					mergedScreenTo= interval.getScreenTo();
+					strand.add(interval.getStrand());
 					numMrgIntv= 1;
 				}
 			}
