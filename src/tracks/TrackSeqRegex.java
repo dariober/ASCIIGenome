@@ -34,6 +34,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		this.setWorkFilename(new File(gc.getFastaFile()).getAbsolutePath());
 		this.setTrackTag(new File(gc.getFastaFile()).getName());
 		this.setHideTrack(true);
+		this.setTrackFormat(TrackFormat.BED);
 	} 
 	
 	@Override

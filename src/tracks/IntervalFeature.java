@@ -1,5 +1,6 @@
 package tracks;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	private String feature= "."; // Gtf specific
 
 	private String raw; // Raw input string exactly as read from source.
-	private TrackFormat format= TrackFormat.BED;
+	private TrackFormat trackFormat= TrackFormat.BED;
 	/** Name to be displayed to the user */
 	private String name= ".";
 	/** Use this attribute to as key to assign the name field */
@@ -43,6 +44,11 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * -1 if the feature is not part of the screenshot. */
 	private int screenFrom= -1;
 	private int screenTo= -1;
+	final private String NAME_NA= "-na"; // String to use to set the name field to missing when retrieving feature name.
+	
+	// The feature as it would be represented on screen. Each String of the array
+	// is a character to be printed on screen (e.g. "E") possibly formatted (e.g. "\033[m5;45E\033")
+	private char[] ideogram;
 	
 	/* C o n s t r u c t o r s */
 		
@@ -53,34 +59,41 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * @throws InvalidGenomicCoordsException 
 	 */
 	public IntervalFeature(String line, TrackFormat type) throws InvalidGenomicCoordsException{
-		if(type.equals(TrackFormat.BED) || type.equals(TrackFormat.BEDGRAPH)){
+		if(type.equals(TrackFormat.BED) || type.equals(TrackFormat.BEDGRAPH) || type.equals(TrackFormat.BIGBED)){
 			this.intervalFeatureFromBedLine(line);
-			this.format= TrackFormat.BED;
-		} else if(type.equals(TrackFormat.GFF)){
+			this.trackFormat= TrackFormat.BED;
+		
+		} else if(type.equals(TrackFormat.GFF) || type.equals(TrackFormat.GTF)){
 			this.intervalFeatureFromGtfLine(line);
-			this.format= TrackFormat.GFF;
+			this.trackFormat= TrackFormat.GFF;
+					
 		} else if(type.equals(TrackFormat.VCF)) {
 			this.intervalFeatureFromVcfLine(line);
-			this.format= TrackFormat.VCF;
+			this.trackFormat= TrackFormat.VCF;
 		} else {
 			System.err.println("Format " + type + " not supported");
 			throw new RuntimeException();
 		}
 	}
 	
-	//public IntervalFeature(VariantContext variantContext){
+	public IntervalFeature(String chrom, int from, int to, TrackFormat format) throws InvalidGenomicCoordsException{
 
-	//	this.chrom= variantContext.getContig();
-	//	this.from= variantContext.getStart();
-	//	this.to= variantContext.getEnd();        
-    //
-	//	this.score= Float.NaN;
-	//	
-	//	this.raw= variantContext.toString();
-	//	this.format= TrackFormat.VCF;
-	//	
-	//}
-			
+		if(chrom == null || chrom.isEmpty()){
+			throw new InvalidGenomicCoordsException();
+		}
+		if(from < 0 || to < 0){
+			throw new InvalidGenomicCoordsException();
+		}
+		if(to < from){
+			throw new InvalidGenomicCoordsException();
+		}
+		
+		this.chrom= chrom;
+		this.from= from;
+		this.to= to;
+		this.trackFormat= format;
+	}
+	
 	/* M e t h o d s */
 	
 	private IntervalFeature intervalFeatureFromVcfLine(String vcfLine) throws InvalidGenomicCoordsException{
@@ -169,7 +182,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 				this.strand= '.';
 			}
 		}
-		this.name= this.featureNameFromGTFAttribute(null);
+		this.name= this.getNameForIdeogram(null);
 		this.validateIntervalFeature();
 		return this;
 	}
@@ -237,24 +250,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		 }
 		 if(screenFrom == -1 || screenTo == -1){
 			 System.err.println("Unexpected mapping of features to ruler.");
-			 System.exit(1);
+			 throw new RuntimeException();
 		 }
 	}	
 
-//	public String toGtfString(){
-//		String scoreStr= (Float.isNaN(this.score)) ? "." : String.valueOf(this.score);
-//		String feature= this.chrom + "\t" + 
-//					    this.source + "\t" +
-//					    this.feature + "\t" +
-//					    this.from + "\t" +
-//					    this.to + "\t" +
-//					    scoreStr + "\t" +
-//					    this.strand + "\t" +
-//					    this.frame + "\t" +
-//					    this.attribute;
-//		return feature;
-//	}
-	
 	/* For debugging only */
 	public String toString(){
 		String feature= this.chrom + ":" + this.from + "-" + this.to + ", " 
@@ -281,45 +280,119 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return (this.chrom.equals(x.chrom) && this.from == x.from && this.to == x.to && this.strand == x.strand);
 	}
 	
-	protected String assignTextToFeature(boolean noFormat) {
+	/** Returns array of characters to be used for this feature type and strand.
+	 * */
+	private char[] makeIdeogram() {
 		
-		if(this.format.equals(TrackFormat.VCF)){
+		char text;
+		if(this.trackFormat.equals(TrackFormat.VCF)){
 			List<String> vcfList = Lists.newArrayList(Splitter.on("\t").split(this.raw));
-			String text= FormatVCF.format(vcfList.get(3), vcfList.get(4), noFormat);
-			return text;
-		}
-		
-		// Get feature strand
-		char strand= '.'; // Default for NA
-		if(this.strand == '+'){
-			strand= '+';
-		} else if(this.strand == '-'){
-			strand= '-';
-		}
-		// Get feature type
-		String feature= this.getFeature().toLowerCase();
-		HashMap<Character, HashMap<String, Character>> featureToTextCharDict = FormatGTF.getFeatureToTextCharDict();
-		if(!featureToTextCharDict.get('.').containsKey(feature)){
-			feature= "other"; // Feature type NA or not found in dict
-		}
-		
-		// Now you have the right char to be used for this feature type and strand.
-		char text= featureToTextCharDict.get(strand).get(feature);
+			text= FormatVCF.textForVariant(vcfList.get(3), vcfList.get(4));
 
-		// Add formatting if required
-		if(noFormat){
-			return Character.toString(text);
 		} else {
-			return FormatGTF.format(text, strand);
+			// Get feature strand
+			char strand= '.'; // Default for NA
+			if(this.strand == '+'){
+				strand= '+';
+			} else if(this.strand == '-'){
+				strand= '-';
+			}
+			// Get feature type
+			String feature= this.getFeature().toLowerCase();
+			HashMap<Character, HashMap<String, Character>> featureToTextCharDict = FormatGTF.getFeatureToTextCharDict();
+			if(!featureToTextCharDict.get('.').containsKey(feature)){
+				feature= "other"; // Feature type NA or not found in dict
+			}
+			
+			// Now you have the right char to be used for this feature type and strand.
+			text= featureToTextCharDict.get(strand).get(feature);
 		}
+		char[] textArrayForScreen= new char[this.getScreenTo() - this.getScreenFrom() + 1];
+		for(int i= 0; i < textArrayForScreen.length; i++){
+			textArrayForScreen[i]= text;
+		}
+		return textArrayForScreen;
 	}
 
+	/** Returns a copy of input array with chars from feature name replaced */
+	private char[] addNameToIdeogram(char[] xIdeoagram){
+		
+		if(this.getName() == null || this.getName().trim().isEmpty() || this.getName().trim().equals(".")){
+			return xIdeoagram;
+		}
+		
+		char[] ideogramWithName= Arrays.copyOf(xIdeoagram, xIdeoagram.length);
+				
+		// Find longest run of the same char to make space for the name
+		int[] run= this.maxRun(ideogramWithName);
+		
+		// This is the amount of space (# chars) available to the name. Minus n because we leave some
+		// space left and right.
+		int space= run[1] - 1;
+		if(space < 4){ // If the name has left than this many chars do not return it at all. 
+			return ideogramWithName;
+		}
+						
+		// Name to print, maybe shorter than the full name:
+		String nameOnFeature= "_" + this.getName().trim() + "_";
+		nameOnFeature= nameOnFeature.substring(0, Math.min(nameOnFeature.length(), space - 1));
+		
+		// This is where the name will start and end.
+		int offset= (space - nameOnFeature.length())/2;
+		int start= run[0] + offset + 1;
+		int end= start + nameOnFeature.length();
+		
+		int j= 0;
+		for(int i= (start); i < (end); i++){
+			ideogramWithName[i]= nameOnFeature.charAt(j);
+			j++;
+		}
+		ideogramWithName[end-1]= '_'; // Always terminate name with underscore 
+		return ideogramWithName;
+	}
+	
+	protected String[] makeIdeogramFormatted(boolean noFormat){
+
+		char[] textArray;
+		if(this.ideogram == null){
+			// The array of chars has not been set from outside so create it:
+			textArray= this.makeIdeogram();
+		} else {
+			textArray= this.ideogram;
+		}
+		
+		textArray= this.addNameToIdeogram(textArray);
+		
+		String[] formattedTextForScreen= new String[textArray.length];
+		for(int i=0 ; i < textArray.length; i++){
+			char c= textArray[i];
+			if(noFormat){
+				formattedTextForScreen[i]= String.valueOf(c);
+				
+			} else if(this.trackFormat.equals(TrackFormat.GTF) 
+					  || this.trackFormat.equals(TrackFormat.GFF)
+					  || this.trackFormat.equals(TrackFormat.BED)){
+				// You may want to set up formatting for each of these TrackFormats
+				formattedTextForScreen[i]= FormatGTF.format(c, this.getStrand());
+			
+			} else if(this.trackFormat.equals(TrackFormat.VCF)){
+				formattedTextForScreen[i]= FormatVCF.format(c);
+			
+			} else {
+				System.out.println("I don't kknow how to format TrackFormat: " + this.trackFormat);
+				throw new RuntimeException();
+			}
+		}
+		return formattedTextForScreen;
+	}
+	
 	/** Get attribute value given key, e.g. transcript_id */
-	private String getAttribute(String attributeName){
+	protected String getGFFValueFromKey(String attributeName){
 		// * Get attribute field,
-		if(!this.format.equals(TrackFormat.GFF)){
+		if( ! (this.trackFormat.equals(TrackFormat.GFF) || this.trackFormat.equals(TrackFormat.GTF))){
 			return null;
 		}
+		
 		String[] line= this.raw.split("\t");
 		if(line.length < 9){
 			return null;
@@ -341,31 +414,86 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * @param attributeName: Attribute to use as key to get name from. E.g. gene_name. If null use 
 	 * the default precedence rule to find one. If attributeName is not found, set name to '.' (missing).
 	 * */
-	private String featureNameFromGTFAttribute(String attributeName){
+	private String getNameForIdeogram(String attributeKey){
 
 		String xname= this.name;
-		if(attributeName != null){
-			xname= this.getAttribute(attributeName);
+		
+		if(attributeKey == null){
+
+			// attribute name is null, assign default by Precedence to assign name 
+
+			if (this.getGFFValueFromKey("Name") != null){ 
+				xname= this.getGFFValueFromKey("Name");
+			
+			} else if (this.getGFFValueFromKey("ID") != null){ 
+				xname= this.getGFFValueFromKey("ID");
+	
+			} else if (this.getGFFValueFromKey("transcript_name") != null){ 
+				xname= this.getGFFValueFromKey("transcript_name");
+			
+			} else if (this.getGFFValueFromKey("transcript_id") != null){ 
+				xname= this.getGFFValueFromKey("transcript_id");
+			
+			} else if (this.getGFFValueFromKey("gene_name") != null){ 
+				xname= this.getGFFValueFromKey("gene_name");
+			
+			} else if (this.getGFFValueFromKey("gene_id") != null){ 
+				xname= this.getGFFValueFromKey("gene_id");
+			
+			} else {
+				// None of the above attributes found, leave as default
+			}
+			return xname;
+		}
+		
+		if(attributeKey.equals(this.NAME_NA)){
+			return ".";
+		} 
+		else if(! (this.trackFormat.equals(TrackFormat.GFF) || this.trackFormat.equals(TrackFormat.GTF))){
+			// This is not a GFF/GTF file return default name without parsing attributes
+			return xname;
+		}				
+		else {
+			xname= this.getGFFValueFromKey(attributeKey);
 			if(xname == null){
 				xname= ".";
 			}
-		// Precedence to assign name 
-		} else if (this.getAttribute("Name") != null){ xname= this.getAttribute("Name");
-		
-		} else if (this.getAttribute("ID") != null){ xname= this.getAttribute("ID");
-
-		} else if (this.getAttribute("transcript_name") != null){ xname= this.getAttribute("transcript_name");
-		
-		} else if (this.getAttribute("transcript_id") != null){ xname= this.getAttribute("transcript_id");
-		
-		} else if (this.getAttribute("gene_name") != null){ xname= this.getAttribute("gene_name");
-		
-		} else if (this.getAttribute("gene_id") != null){ xname= this.getAttribute("gene_id");
-		
-		} else {
-			// Leave as default
+			return xname;
 		}
-		return xname;
+	}
+
+	/**
+	 * Find the start index and length of the longest run of identical characters. Examples
+	 * AAAAAAzz   -> [0, 6]
+	 * xAAAAAAzz  -> [1, 6]
+	 * xxAAAAAAzz -> [2, 6]
+	 * with ties the index of the first run found is returned.
+	 * Modified from http://codereview.stackexchange.com/questions/75441/finding-the-length-of-the-largest-run
+	 */
+	private int[] maxRun(char[] seq) {
+		
+		if (seq == null || seq.length == 0) {
+			int[] posMaxRun= {0, 0};
+	    	return posMaxRun; 
+	    }
+
+		int maxStart= 0;
+	    int maxRun = 1;
+	    int currentRun = 1;
+
+	    for (int i = 1; i < seq.length; i++) {
+	        if (seq[i] == seq[i - 1]) {
+	            currentRun++;
+	            if (currentRun > maxRun) {
+	            	maxRun = currentRun;
+	            	maxStart= i - maxRun + 1;
+	            }
+	        } else {
+	            currentRun = 1;
+	        }
+	    }
+	    int[] posMaxRun= {maxStart, maxRun};
+	    return posMaxRun;
 	}
 	
 	/*   S e t t e r s   and   G e t t e r s   */
@@ -384,12 +512,16 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 
 	/** Name be shown to the user */
 	public String getName() {
-		if(this.format.equals(TrackFormat.GFF)){
-			return this.featureNameFromGTFAttribute(this.gtfAttributeForName);
-		}
-		return this.name;
+		if(this.name != null &&  ! this.name.equals(".") && ! this.name.isEmpty() || this.raw == null){
+			return this.name;
+		}		
+		return this.getNameForIdeogram(this.gtfAttributeForName);
 	}
 
+	public void setName(String name) {
+		this.name= name;
+	}
+	
 	public float getScore() {
 		return score;
 	}
@@ -444,7 +576,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	public void setGtfAttributeForName(String gtfAttributeForName) {
 		this.gtfAttributeForName = gtfAttributeForName;
 	}
-	
+		
 	@Override
 	/**
 	 * Sort by chrom, start, end, strand. 
@@ -466,10 +598,19 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return i;
 	}
 
-//	public void setTo(int to) {
-//		this.to= to;
-//	}
-//	public void setFrom(int from) {
-//		this.from= from;
-//	}
+	protected void setIdeogram(char[] ideogram) {
+
+		if(ideogram == null){
+			this.ideogram = null;
+			return;
+		}
+		
+		if((this.getScreenTo() - this.getScreenFrom() + 1) != ideogram.length){
+			System.err.println("Length of text for screen (" + ideogram.length + ") "
+					+ "does not equal feature length on screen from= " + this.getFrom() + " to= " + this.getScreenTo());
+			throw new RuntimeException();
+		}
+		this.ideogram = ideogram;
+	}
+	
 }

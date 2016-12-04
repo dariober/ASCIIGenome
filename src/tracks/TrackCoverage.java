@@ -199,14 +199,25 @@ public class TrackCoverage extends Track {
 
 		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
 		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
-		
+
+		String samtools= "";
+		if( ! (this.get_F_flag() == Track.F_FLAG) ){
+			samtools += " -F " + this.get_F_flag();
+		}
+		if( ! (this.get_f_flag() == Track.f_FLAG) ){
+			samtools += " -f " + this.get_f_flag();
+		}
+		if( ! (this.getMapq() == Track.MAPQ) ){
+			samtools += " -q " + this.getMapq();
+		}
+		if( ! samtools.isEmpty()){
+			samtools= "; samtools" + samtools;
+		}
 		String xtitle= this.getTrackTag() 
 				+ "; ylim[" + ymin + " " + ymax + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
-				+ "; -F" + this.get_F_flag() 
-				+ " -f" + this.get_f_flag() 
-				+ " -q" + this.getMapq()
 				+ "; Recs here/all: " + this.nRecsInWindow + "/" + this.alnRecCnt
+				+ samtools 
 				+ rpmTag
 				+ "\n";
 		return this.formatTitle(xtitle);
@@ -237,7 +248,11 @@ public class TrackCoverage extends Track {
 			if(refSeq != null){
 				ref= Character.toUpperCase((char) refSeq[locusInfo.getPosition() - this.getGc().getFrom()]);
 			}
-			consensusSequence[i]= (new PileupLocus(locusInfo, ref)).getConsensus();
+			if( ! this.isBisulf()){
+				consensusSequence[i]= (new PileupLocus(locusInfo, ref)).getConsensus();
+			} else {
+				// consensusSequence[i]= (new MethylLocus(locusInfo, ref)).getConsensus();
+			}
 			i++;
 		}
 		samLocIter.close();
@@ -246,7 +261,7 @@ public class TrackCoverage extends Track {
 
 	@Override
 	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException{
-		if(this.getGc().getBpPerScreenColumn() > 1){
+		if(this.getGc().getBpPerScreenColumn() > 1 || this.isBisulf()){
 			return "";
 		}
 		String faSeqStr= "";
@@ -260,11 +275,11 @@ public class TrackCoverage extends Track {
 			if(this.isNoFormat()){
 				faSeqStr += base;
 			} 
-			  else if(base == 'A') { faSeqStr += "\033[107;34m" + base + "\033[48;5;231m";} 
-			  else if(base == 'C') { faSeqStr += "\033[107;31m" + base + "\033[48;5;231m";} 
-			  else if(base == 'G') { faSeqStr += "\033[107;32m" + base + "\033[48;5;231m";} 
-			  else if(base == 'T') { faSeqStr += "\033[107;33m" + base + "\033[48;5;231m";} 
-			  else { faSeqStr += base; } 
+			  else if(base == 'A') { faSeqStr += "\033[34m" + base + "\033[0m";} // \033[48;5;231m 
+			  else if(base == 'C') { faSeqStr += "\033[31m" + base + "\033[0m";} 
+			  else if(base == 'G') { faSeqStr += "\033[32m" + base + "\033[0m";} 
+			  else if(base == 'T') { faSeqStr += "\033[33m" + base + "\033[0m";} 
+			  else { faSeqStr += base + "\033[0m"; } 
 		}
 		if(allEmpty){
 			return "";
@@ -315,5 +330,4 @@ public class TrackCoverage extends Track {
 		}
 		return plist;
 	}
-		
 }

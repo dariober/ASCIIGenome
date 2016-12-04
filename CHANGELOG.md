@@ -1,3 +1,29 @@
+New in 0.6.0
+============
+
+* bigBed files supported.
+
+* Pdf output replaces png output to save screenshots. This makes a lot more sense since
+  we are saving text not paintings!
+
+* Command history is saved to `~/.asciigenome_history` and reloaded on next start,
+  so commands are "remembered", similar to shell history.
+
+* Command `recentlyOpened` remembers files from previous sessions.
+
+* Track heights at start are set to fill the height of terminal.
+
+* `showGenome` is a bit more informative: It prints at least the known chromosomes if no 
+sequence dictionary is available.
+
+* `next` moves to other chroms once the current one doesn't have any more features.
+
+* `next` can move backwards.
+
+* `print` can use explicit setting. Add `-n` option to limit number of lines printed. 
+
+* Refactor feature display mode (add `featureDisplayMode` command). Fixed bug with fully overlapping features.
+
 New in 0.5.0
 ============
 

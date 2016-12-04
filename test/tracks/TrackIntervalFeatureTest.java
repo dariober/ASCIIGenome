@@ -1,11 +1,13 @@
 package tracks;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.junit.Test;
 
 import exceptions.InvalidGenomicCoordsException;
@@ -15,13 +17,59 @@ import samTextViewer.GenomicCoords;
 public class TrackIntervalFeatureTest {
 	
 	@Test
-	public void stubTranscriptToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void canPrintChromsomeNames() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		
 		String intervalFileName= "test_data/hg19_genes.gtf.gz";
-		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", null, null);
+		GenomicCoords gc= new GenomicCoords("7:5527151-5530709", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		
+		assertTrue(tif.getChromosomeNames().size() > 10);
+		
+		tif= new TrackIntervalFeature("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb", gc);
+		assertTrue(tif.getChromosomeNames().size() > 10);
+	}
+	
+	@Test
+	public void transcriptToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		String intervalFileName= "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3";
+		GenomicCoords gc= new GenomicCoords("7:5527151-5530709", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
-		assertTrue(tif.printToScreen().startsWith("EEEEE"));
+		assertTrue(tif.printToScreen().startsWith("uuuuu"));
+		assertTrue(tif.printToScreen().endsWith("www"));
+		System.out.println("PRINTING:" + tif.printToScreen());
+		
+		tif.setNoFormat(false);
+		assertTrue(tif.printToScreen().trim().startsWith("["));
+	}
+	
+	@Test
+	public void canAddNameToGFFTranscript() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		String intervalFileName= "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3";
+
+		GenomicCoords gc= new GenomicCoords("7:5527151-5530709", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		
+		assertTrue(tif.printToScreen().contains("ACTB-001"));
+		
+		tif.setNoFormat(false);
+		assertTrue(tif.printToScreen().trim().startsWith("["));
+
+		
+	}
+	
+	@Test
+	public void canReadBigBed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		String filename= "test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb";
+
+		GenomicCoords gc= new GenomicCoords("chr1:1-800170", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(filename, gc);
+		tif.setNoFormat(true);
+		assertEquals(12, tif.getIntervalFeatureList().size());
+		assertEquals(564665+1, tif.getIntervalFeatureList().get(0).getFrom());
 		
 	}
 	
@@ -42,8 +90,14 @@ public class TrackIntervalFeatureTest {
 		String intervalFileName= "test_data/refSeq.bed";
 		GenomicCoords gc= new GenomicCoords("chr1:1-70", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-		String gtfString= tif.toString();
-		System.out.println(gtfString);
+		tif.setNoFormat(true);
+		assertEquals(2, tif.getIntervalFeatureList().size());
+		
+		assertEquals("||||", tif.printToScreen().substring(0,  4));
+
+		tif.setNoFormat(false);
+		assertTrue(tif.printToScreen().trim().startsWith("[")); // trim is necessary to remove escape \033
+		assertTrue(tif.printToScreen().length() > 100);
 	}
 		
 	@Test
@@ -70,22 +124,10 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:11874-12227", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
-		tif.setGtfAttributeForName("N/A");
+		tif.setGtfAttributeForName("-na");
 		assertTrue(tif.printToScreen().startsWith("EEEEE"));
 	}
 
-	@Test
-	public void canPrintFeatureWithName() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
-		
-		String intervalFileName= "test_data/hg19_genes_head.gtf";
-		GenomicCoords gc= new GenomicCoords("chr1:11874-12052", null, null);
-		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-		tif.setNoFormat(true);
-		tif.setGtfAttributeForName(null);
-		assertTrue(tif.printToScreen().startsWith("NR_046018_1_EEEEEEEE"));
-		
-	}
-	
 	@Test
 	public void canStackFeatures() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		String intervalFileName= "test_data/overlapped.bed";
@@ -95,9 +137,23 @@ public class TrackIntervalFeatureTest {
 		assertEquals(70 * 2 + 1, tif.printToScreen().length());
 		
 		String exp= "" +
-"||||||||||     |||||||||||||||          ||||||||||                    \n" +
-"     |||||||||||||||                                                  ";
+">>>>>>>>>>     >>>>>>>>>>>>>>>          <<<<<<<<<<                    \n" +
+"     >>>>>>>>>>>>>>>                                                  ";
 		assertEquals(exp, tif.printToScreen());
+	
+	}
+
+	@Test
+	public void canStackFeaturesInOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		String intervalFileName= "test_data/overlapped.bed";
+		GenomicCoords gc= new GenomicCoords("chr1:1-70", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);  
+		tif.setFeatureDisplayMode(FeatureDisplayMode.ONELINE);
+		
+		String exp= ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          <<<<<<<<<<";
+
+		assertEquals(exp, tif.printToScreen().trim());
 	
 	}
 	
@@ -153,7 +209,7 @@ public class TrackIntervalFeatureTest {
 		
 		tif.setShowRegex(".*exon.*");
 		tif.setHideRegex(".*DDX11L1.*");
-		GenomicCoords curr = tif.coordsOfNextFeature(gc);
+		GenomicCoords curr = tif.coordsOfNextFeature(gc, false);
 		assertEquals(14362, (int) curr.getFrom());
 		
 	}
@@ -204,21 +260,55 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:8000000-20000000", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/refSeq.hg19.short.sort-2.bed", gc);
 		
-		GenomicCoords newGc= tif.coordsOfNextFeature(gc);
+		GenomicCoords newGc= tif.coordsOfNextFeature(gc, false);
 		assertEquals(25167428+1, (int)newGc.getFrom());
 		assertEquals(25167428+gc.getGenomicWindowSize(), (int)newGc.getTo());
 	
-		// Handling no next feature
-		gc= new GenomicCoords("chr2:8000000-20000000", null, null);
-		newGc= tif.coordsOfNextFeature(gc);
-		assertEquals(gc, newGc);
+		// Next feature is on next chrom, current chrom not in file at all.
+		gc= new GenomicCoords("foo:1-10000", null, null);
+		newGc= tif.coordsOfNextFeature(gc, false);
+		assertEquals("chr1", newGc.getChrom());
 		
 		gc= new GenomicCoords("chr1:100000000-101000000", null, null);
-		newGc= tif.coordsOfNextFeature(gc);
-		assertEquals(gc, newGc);
+		newGc= tif.coordsOfNextFeature(gc, false);
+		assertEquals("chr3", newGc.getChrom());
 		
+		gc= new GenomicCoords("chr1:10000000-10001000", null, null);
+		newGc= tif.coordsOfNextFeature(gc, true);
+		assertEquals(8404074, (int)newGc.getFrom());
+
+		newGc= tif.coordsOfNextFeature(newGc, true);
+		assertEquals(67208779, (int)newGc.getFrom());
 	}
 
+	@Test
+	public void canGetCoordsOfPreviousFeature() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("chr1:8000000-20000000", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/refSeq.hg19.short.sort-2.bed", gc);
+		
+		gc= new GenomicCoords("chr1:10000000-10001000", null, null);
+		GenomicCoords newGc= tif.coordsOfNextFeature(gc, true);
+		assertEquals(8404074, (int)newGc.getFrom());
+
+		newGc= tif.coordsOfNextFeature(newGc, true);
+		assertEquals(67208779, (int)newGc.getFrom());
+		
+		// Exactly at the start of a feature and move to previous one. This is the feature:
+		// chrM hg19_wgEncodeGencodeBasicV19 exon 15957 16024 ...
+		gc= new GenomicCoords("chrM:15957-17259", null, null);
+		tif= new TrackIntervalFeature("test_data/hg19.gencode_genes_v19.gtf.gz", gc);
+		newGc= tif.coordsOfNextFeature(gc, true);
+		assertEquals(15889, (int)newGc.getFrom()); // chrM hg19_wgEncodeGencodeBasicV19 exon 15889 15954
+		
+		gc= new GenomicCoords("chrM:14672-14898", null, null);
+		tif= new TrackIntervalFeature("test_data/hg19.gencode_genes_v19.gtf.gz", gc);
+		newGc= tif.coordsOfNextFeature(gc, true);
+		assertEquals(14150, (int)newGc.getFrom());
+
+	}
+
+	
 	@Test
 	public void canFindAllRegex() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
@@ -259,6 +349,21 @@ public class TrackIntervalFeatureTest {
 		
 	}
 
+	
+	@Test
+	public void canPrintRawLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr1:1-40000", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		tif.setPrintMode(PrintRawLine.CLIP);
+
+		tif.setPrintRawLineCount(-1);
+		assertEquals(20, tif.printFeaturesToFile().split("\n").length);
+
+		tif.setPrintRawLineCount(5);
+		assertEquals(5, tif.printFeaturesToFile().split("\n").length);
+		
+	}
+	
 	@Test
 	public void canPrintMappingOfFeaturesToScreen() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		List<Double> rulerMap= new ArrayList<Double>();
@@ -269,7 +374,6 @@ public class TrackIntervalFeatureTest {
 
 		GenomicCoords gc= new GenomicCoords("chr18:1-10000", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/refSeq.hg19.short.bed", gc);
-		
 		System.out.println(tif.getFeaturesInInterval("chr1", 0, 1000000000).get(0));
 	}
 
@@ -326,7 +430,7 @@ public class TrackIntervalFeatureTest {
 		
 	}
 
-	@Test
+	// @Test
 	public void canConstructFromUcscGenePred() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		// From database

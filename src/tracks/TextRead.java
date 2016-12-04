@@ -155,22 +155,22 @@ class TextRead {
 			} else if(Character.toUpperCase(c) == charU){
 				fmt += "97;104";
 			} else if(Character.toUpperCase(c) == 'A'){
-				fmt += "1;107;34";  //1: bold; 107: white bg
+				fmt += "1;34";  //1: bold; 107: white bg
 			} else if(Character.toUpperCase(c) == 'C') {
-				fmt += "1;107;31";
+				fmt += "1;31";
 			} else if(Character.toUpperCase(c) == 'G') {
-				fmt += "1;107;32";
+				fmt += "1;32";
 			} else if(Character.toUpperCase(c) == 'T') {
-				fmt += "1;107;33";
-			} else if(bs){
-				fmt += "38;5;0;48;5;231";
+				fmt += "1;33";
+			//} else if(bs){
+			//	fmt += "38;5;0;48;5;231";
 			} else if(!this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
 				fmt += "30;48;5;147"; // 105: light magenta; Test on terminal: echo -e "\033[48;5;225m <<<<<<<<<<<<<<<<<<<<<<<<<<< \033[48;5;231m"
 			} else if(this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
 				fmt += "30;48;5;225"; // 48;5;231: light cyan
 			}
 			// The formatted string will look like `echo -e "\033[4;1;107;31mACTGnnnnnACTG\033[48;5;231m"`
-			formatted += fmt + "m" + c + "\033[0m\033[48;5;231m"; // Clear all formatting
+			formatted += fmt + "m" + c + "\033[0m"; // Clear all formatting -- \033[0m\033[48;5;231m
 		}
 		return formatted;
 	}

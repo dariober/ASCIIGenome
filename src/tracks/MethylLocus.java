@@ -17,17 +17,32 @@ class MethylLocus {
 	private char refBase; // This going to be alwasy upper case
 	private Integer cntM= 0;
 	private Integer cntU= 0;
+
+	// Thresholds to call consensus
+//	private static final int MIN_BASE_QUAL= 20; // Min base quality for a read base to be counted
+//	private static final int MIN_DEPTH_ALT= 3; // Min read depth for alternative allele to be taken into account
+//	private static final double MIN_PCT_ALT= 0.01; // Min % of alternative allele to be taken into account  
+//	private static final double MIN_PCT_TOT= 0.98; // % (Reference + Alternative) must be above this otherwise set consensus to N.   
+
+	
 //	private int cntN;
 	
 	             /* C o n s t r u c t o r s */
-	
-	public MethylLocus(LocusInfo locus, IndexedFastaSequenceFile faSeqFile){
-		
-		String chrom= locus.getSequenceName();
-		this.refBase= Character.toUpperCase((char)faSeqFile.getSubsequenceAt(chrom, locus.getPosition(), locus.getPosition()).getBases()[0]);
-		
-		makeMethylLocus(locus, refBase);
+
+	protected MethylLocus(LocusInfo locus, char refBase){
+
+		this.locus= locus;
+		this.populateMethylLocus();
 	}
+
+	
+//	public MethylLocus(LocusInfo locus, IndexedFastaSequenceFile faSeqFile){
+//		
+//		String chrom= locus.getSequenceName();
+//		this.refBase= Character.toUpperCase((char)faSeqFile.getSubsequenceAt(chrom, locus.getPosition(), locus.getPosition()).getBases()[0]);
+//		
+//		makeMethylLocus(locus, refBase);
+//	}
 	
 	/**
 	 * Constructor based on locusInfo and reference sequence as byte[].
@@ -35,17 +50,22 @@ class MethylLocus {
 	 * subRefSeq starts from the start of the chrom. offset=n if byte[] is a substring
 	 * of reference chromosome starting at n.
 	 * */
-	public MethylLocus(LocusInfo locus, byte[] subRefSeq, int offset){
-		
-		if(locus.getPosition() < offset || locus.getPosition() > offset + subRefSeq.length){
-			System.err.println("Required position is not in the supplied reference sequence.");
-		}
-		int posOnSubRefSeq= (locus.getPosition() - offset);	
-		this.refBase= Character.toUpperCase((char)subRefSeq[posOnSubRefSeq]);
-		makeMethylLocus(locus, this.refBase);	
-	}
+//	public MethylLocus(LocusInfo locus, byte[] subRefSeq, int offset){
+//		
+//		if(locus.getPosition() < offset || locus.getPosition() > offset + subRefSeq.length){
+//			System.err.println("Required position is not in the supplied reference sequence.");
+//		}
+//		int posOnSubRefSeq= (locus.getPosition() - offset);	
+//		this.refBase= Character.toUpperCase((char)subRefSeq[posOnSubRefSeq]);
+//		makeMethylLocus(locus, this.refBase);	
+//	}
 	
 	                   /* M e t h o d s */
+	
+//	protected char getConsensus(){
+//		
+//	}
+	
 	/**
 	 * Fill up fields cntM, cntU etc
 	 */
@@ -87,12 +107,6 @@ class MethylLocus {
 		}		
 	}
 
-	private void makeMethylLocus(LocusInfo locus, char refBase){
-
-		this.locus= locus;
-		this.populateMethylLocus();
-	}
-
 	public String toString(){
 		StringBuilder sb= new StringBuilder();
 		sb.append("Locus: " + this.locus + "\n");
@@ -104,23 +118,23 @@ class MethylLocus {
 	
 	        /* S e t t e r s   and   G e t t e r s */
 	
-	public LocusInfo getLocus() {
-		return locus;
-	}
-
-	public void setLocus(LocusInfo locus) {
-		this.locus = locus;
-	}
-
-	public Integer getCntM() {
-		return cntM;
-	}
-
-	public Integer getCntU() {
-		return cntU;
-	}
-
-	public char getRefBase() {
-		return refBase;
-	}
+//	public LocusInfo getLocus() {
+//		return locus;
+//	}
+//
+//	public void setLocus(LocusInfo locus) {
+//		this.locus = locus;
+//	}
+//
+//	public Integer getCntM() {
+//		return cntM;
+//	}
+//
+//	public Integer getCntU() {
+//		return cntU;
+//	}
+//
+//	public char getRefBase() {
+//		return refBase;
+//	}
 }

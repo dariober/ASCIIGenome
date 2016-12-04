@@ -4,16 +4,21 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 
+import commandHelp.Command;
 import commandHelp.CommandList;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import jline.console.ConsoleReader;
+import jline.console.history.History.Entry;
+import tracks.Track;
 
 /** Class to process input from console
  * */
@@ -21,9 +26,9 @@ public class InteractiveInput {
 
 	private boolean nonInteractive;
 	private int interactiveInputExitCode= 0;
-	private List<String> cmdHistory= new ArrayList<String>();
-	public InteractiveInput(){
-		
+	private ConsoleReader console;
+	public InteractiveInput(ConsoleReader console){
+		this.console= console;
 	}
 	
 	/** Parse the input list of commands to print information or modify the input TrackProcessor.  
@@ -36,7 +41,7 @@ public class InteractiveInput {
 	 * */
 	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
-		ConsoleReader console = CommandList.initConsole();
+		// ConsoleReader console = CommandList.initConsole();
 		
 		// cmdInputList: List of individual commands in tokens to be issued. 
 		// E.g.: [ ["zi"], 
@@ -69,24 +74,29 @@ public class InteractiveInput {
 					Utils.printer("\n" + CommandList.getHelpForCommand(cmdInput.get(0)) + "\n", proc.getSnapshotFile());
 					this.interactiveInputExitCode= 1;
 				
-				} else if(cmdInput.get(0).equals("history")){
+				} else if(cmdInput.get(0).equals("posHistory")){
 					for(GenomicCoords xgc : proc.getGenomicCoordsHistory().getHistory()){
 						Utils.printer(xgc.toString() + "\n", proc.getSnapshotFile());
 					}
 					this.interactiveInputExitCode= 1;
 
-				} else if(cmdInput.get(0).equals("cmdHistory")){
+				} else if(cmdInput.get(0).equals("history")){
 					Utils.printer(this.cmdHistoryToString() + "\n", proc.getSnapshotFile());
 					this.interactiveInputExitCode= 1;
 					
 				} else if(cmdInput.get(0).equals("showGenome")) {
-					System.out.println(Utils.printSamSeqDict(proc.getGenomicCoordsHistory().current().getSamSeqDict(), 30));
+					this.showGenome(proc);
+					// System.out.println(Utils.printSamSeqDict(proc.getGenomicCoordsHistory().current().getSamSeqDict(), 30));
 					this.interactiveInputExitCode= 1;
 				
 				} else if(cmdInput.get(0).equals("infoTracks")) {
 					System.out.println(proc.getTrackSet().showTrackInfo());
 					this.interactiveInputExitCode= 1;
 				
+				} else if(cmdInput.get(0).equals("recentlyOpened")) {
+					System.out.println(proc.getTrackSet().showRecentlyOpened());
+					this.interactiveInputExitCode= 1;
+					
 				} else if(cmdInput.get(0).equals("save")) {
 					proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(cmdInput), proc.getGenomicCoordsHistory().current()) );
 					
@@ -145,6 +155,10 @@ public class InteractiveInput {
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
 					gc.cmdInputExtend(cmdInput);
 					proc.getGenomicCoordsHistory().add(gc);
+				
+				} else if(cmdInput.get(0).equals("trim")){
+					GenomicCoords gc = proc.getTrackSet().trimCoordsForTrack(cmdInput);
+					proc.getGenomicCoordsHistory().add(gc);
 					
 				} else if(cmdInput.get(0).equals("l")) {
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
@@ -184,7 +198,7 @@ public class InteractiveInput {
 				} else if(cmdInput.get(0).equals("hideTitle")){
 					proc.getTrackSet().setHideTitleForRegex(cmdInput); 
 					
-				} else if(cmdInput.get(0).equals("BSseq")) {
+				} else if(cmdInput.get(0).equals(Command.BSseq.getCmdDescr())) {
 					if( proc.getGenomicCoordsHistory().current().getFastaFile() == null ){
 						System.err.println("Cannot set BSseq mode without reference sequence");
 						this.interactiveInputExitCode= 1;
@@ -192,7 +206,7 @@ public class InteractiveInput {
 					}
 					proc.getTrackSet().setBisulfiteModeForRegex(cmdInput);
 					
-				} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals("merge")){
+				} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals(Command.featureDisplayMode.toString())){
 					proc.getTrackSet().setFeatureDisplayModeForRegex(cmdInput);
 					
 				} else if (cmdInput.get(0).equals("gap")){
@@ -204,29 +218,33 @@ public class InteractiveInput {
 				} else if(cmdInput.get(0).equals("addTracks") && cmdInput.size() > 1){
 					cmdInput.remove(0);
 					
-					List<String> inputFileList = proc.getTrackSet().getFilenameList();
+					List<String> globbed = Utils.globFiles(cmdInput);
 					
-					Utils.addSourceName(inputFileList, cmdInput);
+					for(String sourceName : globbed){
 
-					if(proc.getGenomicCoordsHistory().current().getSamSeqDict() == null || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
-						GenomicCoords gc= proc.getGenomicCoordsHistory().current();
-						gc.setGenome(inputFileList);
-					}
-					
-					for(String sourceName : cmdInput){
+						if(proc.getGenomicCoordsHistory().current().getSamSeqDict() == null || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
+							GenomicCoords gc= proc.getGenomicCoordsHistory().current();
+							gc.setGenome(sourceName);
+						}
+
+						System.err.println("Adding: " + sourceName);
 						try{
 							proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
-						} catch(IllegalArgumentException e){
-							// It may be that you are in position that doesn't exist in the sequence dictionary that
-							// came with this new file. To recover, find an existing position, move there and try to reload the 
-							// file. This fixes issue#23
-							String region= Main.initRegion(null, cmdInput, null, null);
-							proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
-							proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
+						} catch(Exception e){
+							try{
+								// It may be that you are in position that doesn't exist in the sequence dictionary that
+								// came with this new file. To recover, find an existing position, move there and try to reload the 
+								// file. This fixes issue#23
+								String region= Main.initRegion(null, globbed, null, null);
+								proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
+								proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
+							} catch (Exception x){
+								System.err.println("Failed to add: " + sourceName);
+							}
 						}
 					}
 				
-				}else if(cmdInput.get(0).equals("dropTracks")){
+				} else if(cmdInput.get(0).equals("dropTracks")){
 					if(cmdInput.size() <= 1){
 						System.err.println("List one or more tracks to drop or `dropTracks -h` for help.");
 						this.interactiveInputExitCode= 1;
@@ -241,13 +259,13 @@ public class InteractiveInput {
 				} else if(cmdInput.get(0).equals("editNames")){
 					messages += proc.getTrackSet().editNamesForRegex(cmdInput);
 					
-				} else if(cmdInput.get(0).equals("print")){
+				} else if(cmdInput.get(0).equals(Command.print.toString())){
 					proc.getTrackSet().setPrintModeAndPrintFeaturesForRegex(cmdInput);
 
 				} else if(cmdInput.get(0).equals("grep")){
 					proc.getTrackSet().setFilterForTrackIntervalFeature(cmdInput);
 					
-				} else if(cmdInput.get(0).equals("rpm")) {
+				} else if(cmdInput.get(0).equals(Command.rpm.getCmdDescr())) {
 					proc.getTrackSet().setRpmForRegex(cmdInput);
 
 				} else if(cmdInput.get(0).equals("samtools")){
@@ -262,13 +280,18 @@ public class InteractiveInput {
 						start= true;
 						cmdInput.remove("-start");
 					}
+					boolean getPrevious= false;
+					if(cmdInput.contains("-back")){
+						getPrevious= true;
+						cmdInput.remove("-back");
+					}
 					if(cmdInput.size() > 1){
 						trackId= cmdInput.get(1);
 					}
 					if(start){
-						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, -1.0));
+						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, -1.0, getPrevious));
 					} else {
-						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, 5.0));
+						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, 5.0, getPrevious));
 					}
 					
 				} else if(cmdInput.get(0).equals("find")) {  
@@ -347,11 +370,28 @@ public class InteractiveInput {
 		return proc;
 	}
 
+	private void showGenome(TrackProcessor proc) {
+		String genome= Utils.printSamSeqDict(proc.getGenomicCoordsHistory().current().getSamSeqDict(), 30);
+		if(genome != null && ! genome.isEmpty()){
+			System.err.println(genome);
+			return;
+		}
+		Set<String> chroms= new TreeSet<String>();
+		for(Track tr : proc.getTrackSet().getTrackList()){
+			chroms.addAll(tr.getChromosomeNames());
+		}
+		System.err.println("Known contigs:");
+		for(String x : chroms){
+			System.err.println(x);	
+		}
+		return;
+	}
+
 	private String cmdHistoryToString() {
 		List<String> cmd= new ArrayList<String>();
 		int i = 1;
-		for(String x : cmdHistory){
-			cmd.add(i + ": \t" + x);
+		for(Entry x : console.getHistory()){
+			cmd.add(i + ": \t" + x.value().toString());
 			i++;
 		}
 		List<String> cmdTab= Utils.tabulateList(cmd);
@@ -370,11 +410,11 @@ public class InteractiveInput {
 		this.interactiveInputExitCode= exitCode;
 	}
 
-	protected List<String> getCmdHistory() {
-		return cmdHistory;
-	}
-
-	protected void setCmdHistory(List<String> cmdHistory) {
-		this.cmdHistory = cmdHistory;
-	}
+//	protected List<String> getCmdHistory() {
+//		return cmdHistory;
+//	}
+//
+//	protected void setCmdHistory(List<String> cmdHistory) {
+//		this.cmdHistory = cmdHistory;
+//	}
 }

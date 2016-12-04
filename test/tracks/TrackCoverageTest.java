@@ -40,6 +40,14 @@ public class TrackCoverageTest {
 	public static String fastaFile= "test_data/chr7.fa";
 
 	@Test
+	public void canGetChromsomeNames() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr7:5568018-5568698", null, null);
+		TrackCoverage tc= new TrackCoverage("test_data/ds051.actb.bam", gc, false);
+		System.out.println(tc.getGc().getSamSeqDict());
+		System.out.println(tc.getChromosomeNames());
+	}
+	
+	@Test
 	public void canRecoverFromInappropriateCallIfNotPairedRead() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		GenomicCoords gc= new GenomicCoords("chr7:5568018-5568698", null, "test_data/chr7.fa");

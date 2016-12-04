@@ -35,7 +35,7 @@ public class ColoredChar {
 		Convert RGB to HSB:
 		System.out.println( Arrays.toString(Color.RGBtoHSB(255, 225, 0, null)));
 		*/
-		
+
 		if(ansiColor == 30){ return Color.getHSBColor(0, 0, 0); } // black
 		if(ansiColor == 31){ return Color.getHSBColor((float)(352.0/360.0), (float)0.76, (float)0.57); } // red
 		if(ansiColor == 91){ return Color.getHSBColor((float)(356.0/360.0), (float)0.90, (float)0.87); } // light_red

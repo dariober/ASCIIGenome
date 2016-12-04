@@ -140,10 +140,12 @@ public class GenomicCoordsTest {
 	
 		List<String> insam= new ArrayList<String>();
 		insam.add("hg19");
+		
 		// From resource:
 		GenomicCoords gc= new GenomicCoords("chr1", null, null);
 		gc.setGenome(insam);
 		assertEquals(93, gc.getSamSeqDict().size());
+		
 		// From bam header:
 		insam.set(0, "test_data/ds051.short.bam");
 		gc.setGenome(insam);
@@ -151,6 +153,11 @@ public class GenomicCoordsTest {
 		
 		// Check we get the full path to source file.
 		assertTrue(gc.getSamSeqDictSource().length() > "test_data/ds051.short.bam".length());
+	
+		// From single item as string
+		gc= new GenomicCoords("chr1", null, null);
+		gc.setGenome("test_data/ds051.short.bam");
+		assertEquals(25, gc.getSamSeqDict().size());
 		
 	}
 	

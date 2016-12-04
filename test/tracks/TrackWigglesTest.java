@@ -29,6 +29,20 @@ import samTextViewer.Utils;
 public class TrackWigglesTest {
 
 	@Test
+	public void canPrintChromosomeNames() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("chr7:5540000-5570000", null, null);
+		TrackWiggles tw= new TrackWiggles("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc, 4);
+		assertTrue(tw.getChromosomeNames().size() > 10);
+		
+		tw= new TrackWiggles("test_data/test.bedGraph", gc, 4);
+		assertTrue(tw.getChromosomeNames().size() > 0);
+		
+		tw= new TrackWiggles("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig", gc, 4);
+		assertTrue(tw.getChromosomeNames().size() > 10);
+	}
+	
+	@Test
 	public void canReadBigWigFromRemote() throws IOException{
 		// String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02RawRep1.bigWig";
 		String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig";

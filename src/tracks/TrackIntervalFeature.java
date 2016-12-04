@@ -7,16 +7,21 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.regex.Pattern;
+
 import org.apache.commons.lang3.StringUtils;
+import org.broad.igv.bbfile.BBFileReader;
+
+import com.google.common.collect.Lists;
 
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.readers.TabixReader;
-import htsjdk.tribble.readers.TabixReader.Iterator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -27,47 +32,68 @@ public class TrackIntervalFeature extends Track {
 	protected List<IntervalFeature> intervalFeatureList= new ArrayList<IntervalFeature>();  
 	/**For GTF/GFF data: Use this attribute to get the feature names 
 	 * */
-	private String hideRegex= "^$";
-	private String showRegex= ".*";
-	private TrackFormat type;
-	protected TabixReader tabixReader;
+	final static private String HIDE_REGEX= "^$";  private String hideRegex= HIDE_REGEX;
+	final static private String SHOW_REGEX= ".*"; 	private String showRegex= SHOW_REGEX;
+	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
+	private BBFileReader bigBedReader;
+	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
 	
 	/* C o n s t r u c t o r */
 
 	public TrackIntervalFeature(final String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		// String sourceFile= filename; // sourceFile is what is actually used to construct the tabix file. 
-		this.setWorkFilename(filename);
-		
+		this.setFilename(filename);
+
 		if(Utils.isUcscGenePredSource(filename)){
 			UcscGenePred ucsc = null;
 			try {
 				ucsc = new UcscGenePred(filename, -1);
 				this.setWorkFilename(ucsc.getTabixFile());
-				this.type= TrackFormat.GFF;
+				this.setTrackFormat(TrackFormat.GTF);
+				//this.type= TrackFormat.GTF;
+				this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
+
 			} catch (InvalidCommandLineException e) {
 				//
-			} 
-		} else {
-			this.type= Utils.getFileTypeFromName(new File(filename).getName());			
-			if( ! Utils.hasTabixIndex(new File(filename).getAbsolutePath())){
-				// Tabix index not found for this file. Sort and index input to tmp.
-	
-				String suffix= new File(filename).getName();
-				if( ! suffix.endsWith(".gz")){
-					suffix += ".gz";
-				}
-				String tmpWorkFile= File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath();
-				new File(tmpWorkFile).deleteOnExit();
-				new File(new File(tmpWorkFile).getAbsolutePath() + ".tbi").deleteOnExit();
-				this.setWorkFilename(tmpWorkFile);	
-				
-				new MakeTabixIndex(filename, new File( this.getWorkFilename() ), Utils.trackFormatToTabixFormat(this.type));	
-			} 
+			}
+		
+		} else if(Utils.getFileTypeFromName(filename).equals(TrackFormat.BIGBED)){
+			
+			this.bigBedReader = new BBFileReader(filename);  // or url for remote access.
+			if(!this.bigBedReader.getBBFileHeader().isBigBed()){
+				throw new RuntimeException("File " + filename + " is not bigBed.");
+			}
+			
+			this.setWorkFilename(filename);
+			this.setTrackFormat(TrackFormat.BIGBED);
+			//this.type= TrackFormat.BIGBED;
+			
+		} else if( ! Utils.hasTabixIndex(new File(filename).getAbsolutePath())){
+			// Tabix index not found for this file. Sort and index input to tmp.
+
+			String suffix= new File(filename).getName();
+			if( ! suffix.endsWith(".gz")){
+				suffix += ".gz";
+			}
+			String tmpWorkFile= File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath();
+			new File(tmpWorkFile).deleteOnExit();
+			new File(new File(tmpWorkFile).getAbsolutePath() + ".tbi").deleteOnExit();
+			this.setWorkFilename(tmpWorkFile);
+
+			this.setTrackFormat(Utils.getFileTypeFromName(new File(filename).getName()));
+			//this.type= Utils.getFileTypeFromName(new File(filename).getName());
+			new MakeTabixIndex(filename, new File( this.getWorkFilename() ), Utils.trackFormatToTabixFormat(this.getTrackFormat()));	
+
+			this.setWorkFilename(tmpWorkFile);
+			this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
+			
+		} else { // This means the input is tabix indexed.
+			this.setWorkFilename(filename);
+			this.setTrackFormat(Utils.getFileTypeFromName(new File(filename).getName()));
+			// this.type= Utils.getFileTypeFromName(new File(filename).getName());
+			this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
 		}
-		this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
 		this.setGc(gc);
-		this.setFilename(filename);		
 	}
 	
 
@@ -102,21 +128,25 @@ public class TrackIntervalFeature extends Track {
 		}
 		
 		if(from > to || to < 1){
-			System.err.println("Invalid coordinates: from: " + from + ";to: " + to 
-					+ "Resetting to initial 1-" + Integer.MAX_VALUE);
+			System.err.println("Invalid coordinates: from: " + from + "; to: " + to 
+					+ "; Resetting to initial 1-" + Integer.MAX_VALUE);
 			from= 1;
 			to= Integer.MAX_VALUE;
 			throw new InvalidGenomicCoordsException();
 		}		
 		List<IntervalFeature> xFeatures= new ArrayList<IntervalFeature>();
-		//if(isTabix){
-		Iterator qry = this.tabixReader.query(chrom,  from-1, to);
+
+		TabixBigBedIterator qry= this.getReader().query(chrom, from-1, to);
 		while(true){
 			String q = qry.next();
 			if(q == null){
 				break;
 			}
-			IntervalFeature intervalFeature= new IntervalFeature(q, this.type);
+			IntervalFeature intervalFeature= new IntervalFeature(q, this.getTrackFormat());
+
+			if(intervalFeature.getRaw().contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+				continue;
+			}
 			xFeatures.add(intervalFeature);
 		} 
 		
@@ -130,10 +160,16 @@ public class TrackIntervalFeature extends Track {
 		return xFeaturesFiltered;
 	}
 
+
 	/** Return true if string is visible, i.e. it
 	 * passes the regex filters. Note that regex filters are applied to the raw string.
 	 * */
 	protected boolean featureIsVisible(String x){
+		
+		if(x.contains("__ignore_me__")){
+			return false;
+		}
+		
 		boolean showIt= Pattern.compile(this.showRegex).matcher(x).find();
 		boolean hideIt= false;
 		if(!this.hideRegex.isEmpty()){
@@ -149,8 +185,14 @@ public class TrackIntervalFeature extends Track {
 	/**Return the coordinates of the next feature so that the start coincide with the start of the feature and
 	 * the end is the start + windowSize.  
 	 * */
-	public GenomicCoords coordsOfNextFeature(GenomicCoords currentGc) throws InvalidGenomicCoordsException, IOException {
-		IntervalFeature nextFeature= this.getNextFeatureOnChrom(currentGc.getChrom(), currentGc.getTo());
+	public GenomicCoords coordsOfNextFeature(GenomicCoords currentGc, boolean getPrevious) throws InvalidGenomicCoordsException, IOException {
+		
+		IntervalFeature nextFeature;
+		if(getPrevious){
+			nextFeature= this.getPreviousFeature(currentGc.getChrom(), currentGc.getFrom());
+		} else {
+			nextFeature= this.getNextFeature(currentGc.getChrom(), currentGc.getTo());
+		}
 		if(nextFeature == null){
 			return currentGc;
 		}
@@ -163,27 +205,116 @@ public class TrackIntervalFeature extends Track {
 		return nextGc;
 	}
 
+	private IntervalFeature getNextFeature(String startChrom, int from) throws IOException, InvalidGenomicCoordsException{
+		
+		IntervalFeature next = getNextFeatureOnChrom(startChrom, from);
+		if(next != null){
+			return next;
+		} // There is no feature left on the starting chrom at the given position.
+
+		// Search the remaining chroms in order starting from position 1:
+		List<String> chroms= this.getChromListStartingAt(startChrom);
+		if(chroms.contains(startChrom)){ 
+			// The start chroms is searched last. The `if` statement controls for the case where
+			// the startChrom is not present at all in this track.
+			chroms.remove(startChrom); 	
+			chroms.add(startChrom);			
+		}
+		for(String chrom : chroms){
+			next = getNextFeatureOnChrom(chrom, 1);
+			if(next != null){
+				return next;
+			}			
+		}
+		return null;
+	}
+
 	/** Get the next feature on chrom after "from" position or null if no 
-	 * feature found 
+	 * feature found. This function should be used only by getNextFeature() which is
+	 * more general since it searches all the chromosomes in turn.    
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException */
 	private IntervalFeature getNextFeatureOnChrom(String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
-		Iterator iter = this.tabixReader.query(chrom, from-1, Integer.MAX_VALUE);
+		TabixBigBedIterator iter= this.getReader().query(chrom, from-1, Integer.MAX_VALUE);
 		while(true){
 			String line= iter.next();
 			if(line == null){
 				return null;
 			} 
-			IntervalFeature x= new IntervalFeature(line, this.type);
+			IntervalFeature x= new IntervalFeature(line, this.getTrackFormat());
 			if(x.getFrom() > from && this.featureIsVisible(x.getRaw())){
 				return x;
 			}
 		}
 	}
 
-	protected GenomicCoords startEndOfNextFeature(GenomicCoords currentGc) throws InvalidGenomicCoordsException, IOException {
-		IntervalFeature nextFeature= getNextFeatureOnChrom(currentGc.getChrom(), currentGc.getTo());
+	private IntervalFeature getPreviousFeature(String startChrom, int pos) throws IOException, InvalidGenomicCoordsException{
+		
+		IntervalFeature prev = getPreviousFeatureOnChrom(startChrom, pos);
+		if(prev != null){
+			return prev;
+		} 
+		// There is no feature left on the starting chrom at the given position.
+
+		// Search the remaining chroms in order starting from last:
+		List<String> chroms= Lists.reverse(this.getChromListStartingAt(startChrom));
+		for(String chrom : chroms){
+			prev = getPreviousFeatureOnChrom(chrom, Integer.MAX_VALUE);
+			if(prev != null){
+				return prev;
+			}			
+		}
+		return null;
+	}
+	
+	/** Experimental method 
+	 * Find the previous feature relative to the given chrom-pos position.
+	 * Read the chunk of file *before* the pos position and return the last feature found. I.e. find the feature immediately to 
+	 * to left of pos and not overlapping pos.
+	 * */
+	private IntervalFeature getPreviousFeatureOnChrom(String chrom, int pos) throws IOException, InvalidGenomicCoordsException{
+		
+		int chunkFrom= Math.max(0, pos-1000000);
+		int chunkTo= pos - 1; // -1 because we don't include the current position
+		IntervalFeature last= null;
+
+		while(chunkTo > 0){
+			TabixBigBedIterator iter= this.getReader().query(chrom, chunkFrom, chunkTo);
+			while(true){
+				// Find the last feature in this chunk where end coordinate is less then pos
+				String line= iter.next();
+				if(line == null){
+					break;
+				} 
+				line= line.trim();
+				IntervalFeature candidate= new IntervalFeature(line, this.getTrackFormat());
+				if(candidate.getTo() < pos && this.featureIsVisible(line)){ 
+					// This is a candidate feature but we don't know yet of it's the last one
+					last= new IntervalFeature(line, this.getTrackFormat());
+				}
+			}
+			if(last != null){
+				break; // The last feature is not null and valid. Stop looking 
+			} else {
+				// Move to previous chunk;
+				chunkTo= chunkFrom; 
+				chunkFrom= Math.max(0, chunkFrom-1000000);
+			}
+		}
+		if(last == null || last.getTo() > pos || ! this.featureIsVisible(last.getRaw())){
+			return null; 
+		}
+		return last;
+	}
+		
+	protected GenomicCoords startEndOfNextFeature(GenomicCoords currentGc, boolean getPrevious) throws InvalidGenomicCoordsException, IOException {
+		IntervalFeature nextFeature;
+		if(getPrevious){
+			nextFeature= getPreviousFeature(currentGc.getChrom(), currentGc.getFrom());
+		} else {
+			nextFeature= getNextFeature(currentGc.getChrom(), currentGc.getTo());
+		}
 		if(nextFeature == null){
 			return currentGc;
 		}
@@ -240,18 +371,19 @@ public class TrackIntervalFeature extends Track {
 
 		// We start search from input chrom
 		List<String> chromSearchOrder= null;
-		chromSearchOrder = getChromListStartingAt(this.tabixReader.getChromosomes(), currentGc.getChrom());
+		chromSearchOrder = getChromListStartingAt(currentGc.getChrom());
 		
 		chromSearchOrder.add(currentGc.getChrom());		
 		for(String curChrom : chromSearchOrder){
 		
-			Iterator iter = this.tabixReader.query(curChrom , 0, Integer.MAX_VALUE);
+			TabixBigBedIterator iter = this.getReader().query(curChrom , 0, Integer.MAX_VALUE);
+			// Iterator iter = this.iteratorFromQuery(curChrom , 0, Integer.MAX_VALUE); // this.tabixReader.query(curChrom , 0, Integer.MAX_VALUE);
 			while(true){
 				String line= iter.next();
 				if(line == null) break;
 				boolean matched= Pattern.compile(query).matcher(line).find();
 				if(matched){
-					IntervalFeature x= new IntervalFeature(line, this.type);
+					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat());
 					if(this.featureIsVisible(x.getRaw())){
 						matchedFeatures.add(x);
 					}
@@ -273,8 +405,6 @@ public class TrackIntervalFeature extends Track {
 		return matchedFeatures;
 	}
 
-
-	
 	@Override
 	public String printToScreen() throws InvalidGenomicCoordsException {
 	
@@ -282,6 +412,7 @@ public class TrackIntervalFeature extends Track {
 		int nLines= 0;
 		try {
 			for(List<IntervalFeature> listToPrint : this.stackFeatures()){
+				
 				nLines++;
 				if(nLines > this.yMaxLines){
 					// Limit the number of lines in output
@@ -303,39 +434,25 @@ public class TrackIntervalFeature extends Track {
 	private String printToScreenOneLine(List<IntervalFeature> listToPrint) throws InvalidGenomicCoordsException, IOException {
 		
 		int windowSize= this.getGc().getUserWindowSize();
-		List<String> printable= new ArrayList<String>();
-		for(int i= 0; i < this.getGc().getMapping(windowSize).size(); i++){ // First create empty track
+
+		List<String> printable= new ArrayList<String>(); // Each item in this list occupies a character space in the terminal. 
+		                                                 // NB: Each item is String not char because it might contain the ansi formatting.
+		for(int i= 0; i < this.getGc().getMapping(windowSize).size(); i++){ // First create empty line
 			printable.add(" ");
 		}
 		for(IntervalFeature intervalFeature : listToPrint){
 			if(intervalFeature.getScreenFrom() == -1){
-				continue; // Feature doesn't map to screen, this shouldn't happen though
+				throw new RuntimeException(); // Feature doesn't map to screen, this shouldn't happen
 			}
-			intervalFeature.setGtfAttributeForName(this.getGtfAttributeForName());
-			String nameOnFeature= intervalFeature.getName().trim() + "_";
-			int relPos= 0;
+			intervalFeature.setGtfAttributeForName( this.getGtfAttributeForName() );
+			String[] text = intervalFeature.makeIdeogramFormatted(this.isNoFormat());
+			
+			int i= 0;
 			for(int j= intervalFeature.getScreenFrom(); j <= intervalFeature.getScreenTo(); j++){
-				
-				// Default is to use the feature type as printable text, e.g. 'E', 'T', '>', '<', '|', etc.
-				String text= intervalFeature.assignTextToFeature(this.isNoFormat()); 
- 
-				if((intervalFeature.getScreenTo() - intervalFeature.getScreenFrom() + 1) > 4
-						// (j - intervalFeature.getScreenFrom()) > 0 // First char is feature type (E, C, etc.)
-						&& j < intervalFeature.getScreenTo() // Last char is feature type (E, C, etc.)
-						&& relPos < nameOnFeature.length() 
-						&& !nameOnFeature.equals("._")){
-					// If these conds are satisfied, use the chars in the name as printable chars. 
-					Character x= nameOnFeature.charAt(relPos); 
-					if(this.isNoFormat()){
-						text= Character.toString(x); 	
-					} else {
-						text= FormatGTF.format(x, intervalFeature.getStrand());
-					}
-					relPos += 1;
-				}
-
-				printable.set(j, text);
+				printable.set(j, text[i]);
+				i++;
 			}
+			
 		}
 		return StringUtils.join(printable, "");
 	}
@@ -347,19 +464,27 @@ public class TrackIntervalFeature extends Track {
 		}
 		
 		String sq= "";
-		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.SQUASHED)){
-			sq= "; squashed";
-		} else if (this.getFeatureDisplayMode().equals(FeatureDisplayMode.MERGED)){
-			sq= "; merged";
+		if (this.getFeatureDisplayMode().equals(FeatureDisplayMode.COLLAPSED)){
+			sq= "; collapsed";
 		}
 		String gapped= "";
 		if(this.getGap() == 0){
 			gapped= "; ungapped";
 		}
-		String title=  this.getTrackTag() + "; " 
-	                 + "Incl " + this.getShowRegex()
-	                 + " Excl " + this.getHideRegex()
+		
+		String grep= "";
+		if( ! this.getShowRegex().equals(SHOW_REGEX) ){
+			grep += " -i " + this.getShowRegex(); 
+		}
+		if( ! this.getHideRegex().equals(HIDE_REGEX) ){
+			grep += " -e " + this.getHideRegex(); 
+		}
+		if( ! grep.isEmpty()){
+			grep= "; grep" + grep; 
+		}
+		String title=  this.getTrackTag() + ";" 
 	                 + " N: " + this.intervalFeatureList.size()
+					 + grep
 	                 + sq
 	                 + gapped;
 		return title;
@@ -371,27 +496,27 @@ public class TrackIntervalFeature extends Track {
 	}
 	
 	
-	/** Remove positional duplicates from list of interval features for more compact visualization. 
-	 * Squashing is done according to feature field which should be applicable to GTF/GFF only.*/
-	private List<IntervalFeature> squashFeatures(List<IntervalFeature> intervalList){
-
-		List<IntervalFeature> stack= new ArrayList<IntervalFeature>();
-		List<IntervalFeature> squashed= new ArrayList<IntervalFeature>();
-		for(IntervalFeature interval : intervalList){
-			if(stack.size() == 0 || stack.get(0).equalStranded(interval)){
-				// Accumulate features with same coords.
-				stack.add(interval);
-			} else {
-				squashed.add(stack.get(0));
-				stack.clear();
-				stack.add(interval);
-			}
-		}
-		if(stack.size() > 0){
-			squashed.add(stack.get(0));
-		}
-		return squashed;
-	}
+//	/** Remove positional duplicates from list of interval features for more compact visualization. 
+//	 * Squashing is done according to feature field which should be applicable to GTF/GFF only.*/
+//	private List<IntervalFeature> squashFeatures(List<IntervalFeature> intervalList){
+//
+//		List<IntervalFeature> stack= new ArrayList<IntervalFeature>();
+//		List<IntervalFeature> squashed= new ArrayList<IntervalFeature>();
+//		for(IntervalFeature interval : intervalList){
+//			if(stack.size() == 0 || stack.get(0).equalStranded(interval)){
+//				// Accumulate features with same coords.
+//				stack.add(interval);
+//			} else {
+//				squashed.add(stack.get(0));
+//				stack.clear();
+//				stack.add(interval);
+//			}
+//		}
+//		if(stack.size() > 0){
+//			squashed.add(stack.get(0));
+//		}
+//		return squashed;
+//	}
 	
 	/**		
 	 * Put in the same list reads that will go in the same line of text. 
@@ -402,24 +527,25 @@ public class TrackIntervalFeature extends Track {
 	 * compact view.  
 	 * See also TrackReads.stackReads();
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
 	 */
-	private List<List<IntervalFeature>> stackFeatures() throws InvalidGenomicCoordsException{
+	private List<List<IntervalFeature>> stackFeatures() throws InvalidGenomicCoordsException, IOException{
 		
 		List<IntervalFeature> intervals; 
-		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.SQUASHED)){
-			intervals = this.squashFeatures(this.intervalFeatureList);
-		} else if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.MERGED)) {
-			intervals = Utils.mergeIntervalFeatures(this.intervalFeatureList);
-		} else {
-			intervals = this.intervalFeatureList;
+		List<IntervalFeature> flatListOfTx = this.flatListOfPrintableFeatures();
+		if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.COLLAPSED)) {
+			intervals = Utils.mergeIntervalFeatures(flatListOfTx, false);
+		} 
+		else if(this.getFeatureDisplayMode().equals(FeatureDisplayMode.ONELINE)) {
+			intervals = Utils.mergeIntervalFeatures(flatListOfTx, true);
+		} 
+		else {
+			intervals = flatListOfTx;
 		}
 		
 		// Make a copy of the IntervalFeature list. Items will be popped out as they are 
 		// added to individual lines. 
-		List<IntervalFeature> flatList= new ArrayList<IntervalFeature>();
-		for(IntervalFeature x : intervals){ // this.intervalFeatureList
-			flatList.add(x);
-		}
+		List<IntervalFeature> flatList= new ArrayList<IntervalFeature>(intervals);
 				
 		List<List<IntervalFeature>> listOfLines= new ArrayList<List<IntervalFeature>>();
 		if(flatList.size() == 0){
@@ -475,8 +601,18 @@ public class TrackIntervalFeature extends Track {
 		} 
 		
 		List<String> featureList= new ArrayList<String>();
+		
+		int count= this.getPrintRawLineCount();
 		for(IntervalFeature ift : intervalFeatureList){
 			featureList.add(ift.getRaw());
+			count--;
+			if(count == 0){
+				int omitted= intervalFeatureList.size() - this.getPrintRawLineCount();
+				if(omitted > 0){
+					System.err.println("[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]");
+				}
+				break;
+			}
 		}
 		List<String> tabList= Utils.tabulateList(featureList);
 		StringBuilder sb= new StringBuilder();
@@ -490,7 +626,7 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
-	/** Write the features in interval to file. if append is true append to existing file. 
+	/** Write the features in interval to file by appending to existing file. 
 	 * If the file to write to null or empty, return the data that would be
 	 * written as string.
 	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
@@ -503,7 +639,7 @@ public class TrackIntervalFeature extends Track {
 		
 		BufferedWriter wr= null;
 		try{
-			wr = new BufferedWriter(new FileWriter(this.getExportFile(), this.isAppendToExportFile()));
+			wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
 			for(IntervalFeature ift : intervalFeatureList){
 				wr.write(ift.getRaw() + "\n");
 			}
@@ -522,17 +658,18 @@ public class TrackIntervalFeature extends Track {
 	protected IntervalFeature findNextRegexInGenome(String query, String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
 		int startingPoint= from-1; // -1 because tabix.query from is 0 based (seems so at least)
-		List<String> chromSearchOrder = this.getChromListStartingAt(this.getTabixReader().getChromosomes(), chrom);
+		List<String> chromSearchOrder = this.getChromListStartingAt(chrom);
 		chromSearchOrder.add(chrom);
 		for(String curChrom : chromSearchOrder){
 			
-			Iterator iter = this.getTabixReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
+			TabixBigBedIterator iter= this.getReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
+			// Iterator iter = this.iteratorFromQuery(curChrom , startingPoint, Integer.MAX_VALUE); // this.getTabixReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
 			while(true){
 				String line= iter.next();
 				if(line == null) break;
 				boolean matched= Pattern.compile(query).matcher(line).find();
 				if(matched){
-					IntervalFeature x= new IntervalFeature(line, this.getType());
+					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat());
 					if(x.getFrom() > startingPoint && this.featureIsVisible(x.getRaw())){
 						return x;
 					}
@@ -543,34 +680,273 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	/** Return the set chroms sorted but with and first chrom set to startChrom.
+	 * 	chroms:         chr1 chr2 chr3 chr4 chr5 chr6 chr7
+	 *	startChrom:     chr3
+	 *  return:         chr3 chr4 chr5 chr6 chr7 chr1 chr2
 	 *  */
-	protected List<String> getChromListStartingAt(Set<String> chroms, String startChrom){
-		// Set:            chr1 chr2 chr3 chr4 chr5 chr6 chr7
-		// StartChrom:     chr3
-		// Ordered chroms: chr3 chr4 chr5 chr6 chr7 chr1 chr2
-		List<String> orderedChroms= new ArrayList<String>();
-		orderedChroms.addAll(chroms);
-		Collections.sort(orderedChroms);
-		int idx= orderedChroms.indexOf(startChrom);
+	private List<String> getChromListStartingAt(String startChrom){
+		
+		List<String> chroms= this.getChromosomeNames();
+		
+		int idx= chroms.indexOf(startChrom);
 		if(idx == -1){ // If startChrom is not present at all in the bed/gtf file.
-			return orderedChroms;
+			return chroms;
 		}
 		List<String> chromsStartingAt= new ArrayList<String>();
-		chromsStartingAt.addAll(orderedChroms.subList(idx, orderedChroms.size()));
-		chromsStartingAt.addAll(orderedChroms.subList(0, idx));
+		chromsStartingAt.addAll(chroms.subList(idx, chroms.size()));
+		chromsStartingAt.addAll(chroms.subList(0, idx));
+		
+		// Sanity check
+		if(chroms.size() != chromsStartingAt.size()){ 
+			throw new RuntimeException("Error reordering chroms. Expected " + chroms.size() + " chroms got " + chromsStartingAt.size());
+		}
+		if(! (chromsStartingAt.containsAll(chroms) && chroms.containsAll(chromsStartingAt))){
+			throw new RuntimeException("Error re-ordering chromosomes");
+		}
 		return chromsStartingAt;
 	}
 
+	/** Group the features in this genomic window by GFF attribute (typically a transcripts). 
+	 * Features that don't have the attribute make each a length=1 list.
+	 * */
+	private Map<String, List<IntervalFeature>> groupByGFFAttribute(){
+
+		// * First collect the IDs of the transcripts
+				
+		// Key is transcript ID e.g. ENST00001234. 
+		// Values is all the IntervalFeatures captured by this ID and part of a transcript.
+		// I.e. their are in txFeature set, 
+		Map<String, List<IntervalFeature>> txIds= new LinkedHashMap<String, List<IntervalFeature>>();
+		
+		// This key:value is for records which are not part transcripts. E.g. features like "chromosome" or rRNA.
+		txIds.put("_na_", new ArrayList<IntervalFeature>()); 
+
+		// Now populate the lists of values by assigning to each key the transcript records:
+		for(IntervalFeature x : this.getIntervalFeatureList()){
+			
+			if(FormatGTF.getTxSuperFeatures().contains(x.getFeature().toLowerCase())){
+				// Transcript feature. E.g.
+				// 7 ensembl_havana mRNA 5527151 5530709 . - . ID=transcript:ENST00000331789;Parent=gene:ENSG00000075624;Name=ACTB-...
+				String txId= x.getGFFValueFromKey("ID");
+				if( ! txIds.containsKey(txId)){
+					txIds.put(txId, new ArrayList<IntervalFeature>());
+				}
+				txIds.get(txId).add(x);
+			} else if(FormatGTF.getTxSubFeatures().contains(x.getFeature().toLowerCase())){
+				// Part of transcript, e.g:
+				// 7 ensembl_havana exon 5527151 5527891 . - . Parent=transcript:ENST00000331789;Name=ENSE00001902654;constitutive=0;ensembl_end_pha
+				String txId= x.getGFFValueFromKey("Parent");
+				if( ! txIds.containsKey(txId)){
+					txIds.put(txId, new ArrayList<IntervalFeature>());
+				}
+				txIds.get(txId).add(x);				
+			} else {
+				// Not a transcript or part thereof. E.g.
+				// 7 . biological_region 5529708 5529709 0.999 - . logic_name=eponine
+				txIds.get("_na_").add(x);
+			}
+		}
+		// We don't need to return the full Map, only the list of lists (groups) would suffice.
+		// However, we need to separate the group of non-trascripts (_na_ key)
+		return txIds;
+				
+	}
+	
+	/** Collapse the list of features in a single IntervalFeature representing the transcript.
+	 * The elements of txFeatures are expected to represent the entire transcript, nothing more
+	 * (e.g. "chromosome"). The transcript may not be biologically complete as part of it
+	 * may be outside the current genomic coords. 
+	 *
+	 * mapToScreen: Mapping of genomic coordinates to screen coordinates. This could be obtained inside this
+	 * method but better to pass it from outside as it can take time to get the terminal window size several times.  
+	 * 
+	 * @throws InvalidGenomicCoordsException 
+	 * */
+	private IntervalFeature collapseGFFTranscript(List<IntervalFeature> txFeatures, List<Double> mapToScreen) throws InvalidGenomicCoordsException{
+		
+		if(txFeatures.size() == 0){
+			System.err.println("Unexpected transcript: Length zero!");
+			throw new RuntimeException();
+		}
+		
+		// Collect the genomic and screen coordinates of this transcript
+		int gFrom= Integer.MAX_VALUE;
+		int gTo= 0;
+		int screenFrom= Integer.MAX_VALUE;
+		int screenTo= 0;
+		for(IntervalFeature x : txFeatures){
+
+			if(x.getFrom() < gFrom){
+				gFrom= x.getFrom(); 
+			}
+			if(x.getTo() > gTo){
+				gTo= x.getTo(); 
+			}
+			if(x.getScreenFrom() < screenFrom){
+				screenFrom= x.getScreenFrom(); 
+			}
+			if(x.getScreenTo() > screenTo){
+				screenTo= x.getScreenTo();
+			}
+			x.setGtfAttributeForName( this.getGtfAttributeForName() );
+		}
+				
+		IntervalFeature transcript= new IntervalFeature(txFeatures.get(0).getChrom(), gFrom, gTo, TrackFormat.GFF); 
+		transcript.setStrand(txFeatures.get(0).getStrand());
+		transcript.mapToScreen(mapToScreen);
+		
+		// Now we need to prepare the ideogram
+		char[] ideogram= new char[screenTo - screenFrom + 1];
+		for(int i= 0; i < ideogram.length; i++){
+			ideogram[i]= '-'; // Deafult characater to print. Typically this should apply to introns only.
+		}
+		HashMap<String, Character> charDict = FormatGTF.getFeatureToTextCharDict().get(transcript.getStrand());
+
+		for(String txSubType : FormatGTF.getTxSubFeatures()){
+
+			for(IntervalFeature subFeature : txFeatures){
+				
+				if(subFeature.getFeature().toLowerCase().equals(txSubType)){
+
+					char c= charDict.get(subFeature.getFeature().toLowerCase());
+					
+					// Fill up text with this character
+					for(int i= subFeature.getScreenFrom(); i <= subFeature.getScreenTo(); i++){
+						ideogram[i - screenFrom]= c;
+					}
+				}
+			}			
+		}
+		transcript.setIdeogram(ideogram);
+		
+		//Now we get the name for this transcript
+		String txName= "."; // Default: No name
+		for(String txSuperType : FormatGTF.getTxSuperFeatures()){
+			for(IntervalFeature x : txFeatures){
+				if(x.getFeature().toLowerCase().equals(txSuperType)){
+					txName= x.getName();
+				}
+				if( txName != null  && ! txName.isEmpty() && ! txName.equals(".")){ break; } // A name found, break
+			}
+			if( txName != null  && ! txName.isEmpty() && ! txName.equals(".")){ break; }
+		}
+		transcript.setName(txName);
+		
+		// ideogram= transcript.addNameToIdeogram(ideogram);
+		// transcript.setIdeogram(ideogram);
+		return transcript;
+	}
+	
+	/** List where the original records have been grouped into transcripts, if there are 
+	 * transcripts. 
+	 * TODO: Process here also squash, merge and gap?
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * */
+	private List<IntervalFeature> flatListOfPrintableFeatures() throws InvalidGenomicCoordsException, IOException{
+		
+		List<IntervalFeature> flatList= new ArrayList<IntervalFeature>(); 
+
+		List<Double> mapToScreen = this.getGc().getMapping(this.getGc().getUserWindowSize());
+		
+		if(this.getTrackFormat().equals(TrackFormat.GFF)){
+		
+			Map<String, List<IntervalFeature>> tx = this.groupByGFFAttribute();
+			for(String txId : tx.keySet()){
+				if(txId.equals("_na_")){
+					flatList.addAll(tx.get(txId));
+				} else {
+					flatList.add(this.collapseGFFTranscript(tx.get(txId), mapToScreen));
+				}
+			}
+			
+		} else {
+			flatList.addAll(this.getIntervalFeatureList());
+		}
+		Collections.sort(flatList);
+		return flatList;
+	}
+	
+
+	/** Merge feature using the screen coordinates to establish overlap instead of the genomic coordinates
+	 * */
+//	private List<IntervalFeature> mergeIntervalFeaturesOnScreen(List<IntervalFeature> intervalList) throws InvalidGenomicCoordsException{
+//		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();		 
+//		if(intervalList.size() == 0){
+//			return mergedList;
+//		}
+//		
+//		String chrom = null;
+//		int from= -1;
+//		int to= -1;
+//		int screenFrom= -1;
+//		int screenTo= -1;
+//		int numMrgIntv= 1; // Number of intervals in the merged one. 
+//		Set<Character> strand= new HashSet<Character>(); // Put here all the different strands found in the merged features.		
+//		
+//		for(int i= 0; i < (intervalList.size()+1); i++){
+//			// We do an additional loop to add to the mergedList the last interval.
+//			// The last loop has interval == null so below you need to account for it
+//			IntervalFeature interval= null;
+//			if(i < intervalList.size()){
+//				interval= intervalList.get(i); 
+//			}
+//			
+//			if(from < 0){ // Init interval
+//				chrom= interval.getChrom(); 
+//				from= interval.getFrom();
+//				to= interval.getTo();
+//				screenFrom= interval.getScreenFrom();
+//				screenTo= interval.getScreenTo();
+//				continue;
+//			}
+//			// Sanity check: The list to be merged is on the same chrom and sorted by start pos.
+//			if(i < intervalList.size() && (!chrom.equals(interval.getChrom()) || from > interval.getFrom() || from > to)){
+//				System.err.println(chrom + " " + from + " " + to);
+//				throw new RuntimeException();
+//			} 
+//			if(i < intervalList.size() && (screenFrom <= interval.getScreenTo() && screenTo >= (interval.getScreenFrom()-1) )){ 
+//				// Overlap: Extend <to> coordinate. See also http://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
+//				to= interval.getTo();
+//				screenTo= interval.getScreenTo();
+//				strand.add(interval.getStrand());
+//				numMrgIntv++;
+//			} else {
+//				// No overlap add merged interval to list and reset new merged interval
+//				IntervalFeature x= new IntervalFeature(chrom + "\t" + (from-1) + "\t" + to, TrackFormat.BED);
+//				x.setScreenFrom(screenFrom);
+//				x.setScreenTo(screenTo);
+//				if(strand.size() == 1){
+//					x.setStrand(strand.iterator().next());
+//				} 
+//				strand.clear();
+//				
+//				if(x.equals(intervalList.get(i-1)) && numMrgIntv == 1){
+//					mergedList.add(intervalList.get(i-1));
+//				} else {
+//					mergedList.add(x);
+//				}
+//				
+//				if(i < intervalList.size()){
+//					// Do not reset from/to if you are in extra loop.
+//					from= interval.getFrom();
+//					to= interval.getTo();
+//					screenFrom= interval.getScreenFrom();
+//					screenTo= interval.getScreenTo();
+//					strand.add(interval.getStrand());
+//					numMrgIntv= 1;
+//				}
+//			}
+//		}
+//		return mergedList;
+//	}
+	
 	// SETTERS AND GETTERS
 	// -------------------
 	
-	private TrackFormat getType() {
-		return this.type;
-	}
-
-	private TabixReader getTabixReader() {
-		return this.tabixReader;
-	}
+//	private TrackFormat getType() {
+//		return this.type;
+//	}
 
 	protected List<IntervalFeature> getIntervalFeatureList() {
 		return intervalFeatureList;
@@ -600,8 +976,47 @@ public class TrackIntervalFeature extends Track {
 		return this.showRegex;
 	}
 
-	protected void setType(TrackFormat type) {
-		this.type = type;
+	@Override
+	public List<String> getChromosomeNames(){
+		ArrayList<String> x = new ArrayList<String>(this.getReader().getChromosomes());
+		Collections.sort(x);
+		return x;
+	}
+	
+	private TabixBigBedReader getReader(){
+		
+		if(this.bigBedReader != null && this.tabixReader != null){
+			System.err.println("You cannot have tabix and bigBed readers bot set!");
+			throw new RuntimeException();
+		}
+	
+		if(this.bigBedReader != null){
+			return new TabixBigBedReader(this.bigBedReader);
+		} else if(this.tabixReader != null){
+			return new TabixBigBedReader(this.tabixReader);
+		} else {
+			System.err.println("Tabix and bigBed reader both null.");
+			throw new RuntimeException();
+		}
 	}
 
+	@Override
+	protected void setPrintRawLineCount(int count) {
+		if(count <= 0){
+			count= Integer.MAX_VALUE;
+		}
+		this.printRawLineCount= count;
+	}
+
+	protected int getPrintRawLineCount() {
+		return this.printRawLineCount;
+	}
+	
+	/** This setter is for TrackBookmark to work.*/
+	protected void setTabixReader(TabixReader tabixReader) {
+		this.tabixReader = tabixReader;
+	}
+	protected TabixReader getTabixReader() {
+		return this.tabixReader;
+	}
 }

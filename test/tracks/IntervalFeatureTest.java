@@ -3,10 +3,15 @@ package tracks;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.biojava.nbio.genome.parsers.gff.Feature;
+import org.biojava.nbio.genome.parsers.gff.Location;
 import org.junit.Test;
+
+import com.google.common.base.Joiner;
 
 import exceptions.InvalidGenomicCoordsException;
 import tracks.IntervalFeature;
@@ -27,27 +32,96 @@ public class IntervalFeatureTest {
 		assertFalse(NumberUtils.isNumber("001.1"));
 	}
 	
+//	@Test
+//	public void longestRun() throws InvalidGenomicCoordsException{
+//		
+//		IntervalFeature plus= new IntervalFeature("chr1 0 10 x . +".replaceAll(" ", "\t"), TrackFormat.BED);
+//		System.out.println(Arrays.toString(plus.maxRun("zzBBBccc".toCharArray())));
+//		System.out.println(Arrays.toString(plus.maxRun("xAAAAAAzz".toCharArray())));
+//		System.out.println(Arrays.toString(plus.maxRun("xxAAAAAAzz".toCharArray())));
+//	}
+	
 	@Test
+	public void canMakeIdeogram() throws InvalidGenomicCoordsException{
+		
+		String line= "chr1 0 10".replaceAll(" ", "\t");
+		IntervalFeature f= new IntervalFeature(line, TrackFormat.BED);
+		f.setScreenFrom(0);
+		f.setScreenTo(9);
+
+		assertEquals("||||||||||", Joiner.on("").join(f.makeIdeogramFormatted(true)));
+
+		f.setStrand('+');
+		assertEquals(">>>>>>>>>>", Joiner.on("").join(f.makeIdeogramFormatted(true)));
+		
+		// Can add name
+		f.setName("foo");
+		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains("foo"));
+		assertTrue(f.makeIdeogramFormatted(false).length > 4);
+
+		// Set ideogram from outside and put name on it
+		f.setIdeogram("xxxxxxxxxx".toCharArray());
+		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains("x_foo_x"));
+		
+		f.setIdeogram(null);
+		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains(">_foo_>"));
+
+		// With GTF feature
+		line= "chr1 na exon 1 100 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.GTF);
+		f.setScreenFrom(0);
+		f.setScreenTo(9);
+		f.setGtfAttributeForName("foo");
+		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains("E_myname_E"));
+
+		// No key value found
+		f.setGtfAttributeForName("NOT");
+		assertEquals("EEEEEEEEEE", Joiner.on("").join(f.makeIdeogramFormatted(true)));
+
+		// Use default
+		f.setGtfAttributeForName(null);
+		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains("mrna"));
+		
+	}
+	
+	// @Test
 	public void canAssignNameToFeature() throws InvalidGenomicCoordsException{
+		
+		Location location= new Location(10, 100);
+		Feature gff= new Feature("chr1", "foo", "bar", location, (double) 0, 0, "ID=mirna");
+		System.out.println(gff.getAttribute(null));		
 		
 		String line; 
 		IntervalFeature f;
 
+		// Name not wanted to display:
+		line= "chr1 0 10 myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED);
+		f.setGtfAttributeForName("-na");
+		assertEquals(".", f.getName());
+		
+		// Do not use a name
+		line= "chr1 0 10 myname".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED);
+		f.setGtfAttributeForName(null);
+		assertEquals("myname", f.getName());
+		
 		//Custom name from BED: Has no effect
 		line= "chr1 0 10 myname".replaceAll(" ", "\t");
 		f= new IntervalFeature(line, TrackFormat.BED);
 		f.setGtfAttributeForName("ID");
 		assertEquals("myname", f.getName());
+
 		
 		//Custom name from GTF
 		line= "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
-		f= new IntervalFeature(line, TrackFormat.GFF);
+		f= new IntervalFeature(line, TrackFormat.GTF);
 		f.setGtfAttributeForName("foo");
 		assertEquals("myname", f.getName());
 		
 		//Custom name from GTF, with attribute not found
 		line= "chr1 na exon 1 10 . + . ID=mrna0001;Name=myname".replaceAll(" ", "\t");
-		f= new IntervalFeature(line, TrackFormat.GFF);
+		f= new IntervalFeature(line, TrackFormat.GTF);
 		f.setGtfAttributeForName("foo");
 		assertEquals(".", f.getName());
 		
@@ -62,31 +136,31 @@ public class IntervalFeatureTest {
 		
 		// GTF/GFF without attributes or without any valid filed to get name from
 		line= "chr1 na exon 1 10 . + .".replaceAll(" ", "\t");
-		f= new IntervalFeature(line, TrackFormat.GFF);
+		f= new IntervalFeature(line, TrackFormat.GTF);
 		assertEquals(".", f.getName());
 		
 		
 		line= "chr1 na exon 1 10 . + . foo=mrna0001;bar=myname".replaceAll(" ", "\t");
-		f= new IntervalFeature(line, TrackFormat.GFF);
+		f= new IntervalFeature(line, TrackFormat.GTF);
 		assertEquals(".", f.getName());
 		
 		// GFF with Name
 		line= "chr1 na exon 1 10 . + . ID=mrna0001;Name=myname".replaceAll(" ", "\t");
-		f= new IntervalFeature(line, TrackFormat.GFF);
+		f= new IntervalFeature(line, TrackFormat.GTF);
 		assertEquals("myname", f.getName());
 
 		// GFF use ID
 		line= "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");;
-		f= new IntervalFeature(line, TrackFormat.GFF);
+		f= new IntervalFeature(line, TrackFormat.GTF);
 		assertEquals("mrna0001", f.getName());
 		
 		//GTF
 		line= "chr1\tna\texon\t1\t10\t.\t+\t.\tgene_id \"mygene\"; transcript_id \"mytranx\";";
-		f= new IntervalFeature(line, TrackFormat.GFF);
+		f= new IntervalFeature(line, TrackFormat.GTF);
 		assertEquals("mytranx", f.getName());
 
 		line= "chr1\tna\texon\t1\t10\t.\t+\t.\tgene_id \"mygene\";";
-		f= new IntervalFeature(line, TrackFormat.GFF);
+		f= new IntervalFeature(line, TrackFormat.GTF);
 		assertEquals("mygene", f.getName());
 		
 	}
@@ -112,11 +186,11 @@ public class IntervalFeatureTest {
 	@Test
 	public void canCreateIntervalFromGtfString() throws InvalidGenomicCoordsException{
 		String gtfLine= "chr1\tunknown\texon\t11874\t12227\t.\t+\t.\tgene_id \"DDX11L1\"; transcript_id \"NR_046018_1\"; gene_name \"DDX11L1\"; tss_id \"TSS14523\";";
-		IntervalFeature f= new IntervalFeature(gtfLine, TrackFormat.GFF);
+		IntervalFeature f= new IntervalFeature(gtfLine, TrackFormat.GTF);
 		assertEquals(11874, f.getFrom());
 		assertEquals(12227, f.getTo());
 		assertEquals("exon", f.getFeature());
-		System.out.println(f.toString());
+
 	}
 	
 	@Test
@@ -126,10 +200,9 @@ public class IntervalFeatureTest {
 		
 		String gtfLine= "chr1\tunknown\texon\t11874\t12227\t.\t+\t.\tgene_id \"DDX11L1\"; transcript_id \"NR_046018_1\"; gene_name \"DDX11L1\"; tss_id \"TSS14523\";";	
 		
-		IntervalFeature f= new IntervalFeature(gtfLine, TrackFormat.GFF);
-		//String x= f.getAttribute("transcript_id");
-		//assertEquals("NR_046018_1", x);
-		//System.out.println(f.toString());
+		IntervalFeature f= new IntervalFeature(gtfLine, TrackFormat.GTF);
+		String x= f.getGFFValueFromKey("transcript_id");
+		assertEquals("NR_046018_1", x);
 	}
 
 	
@@ -145,8 +218,6 @@ public class IntervalFeatureTest {
 		assertEquals("gene", f.getName());
 		assertEquals('+', f.getStrand());
 
-		System.out.println(f.toString());
-		
 		bedLine= " chr1\t0\t1";
 		f= new IntervalFeature(bedLine, TrackFormat.BED); 
 		assertEquals("chr1", f.getChrom()); // NB: spaces in chrom stripped.
@@ -176,6 +247,12 @@ public class IntervalFeatureTest {
 		assertEquals(0, f.getScreenFrom());
 		assertEquals(2, f.getScreenTo());
 
+		// Feature is fully contained in just one text char on screen
+		f= new IntervalFeature("chrM\t10\t11", TrackFormat.BED);
+		f.mapToScreen(rulerMap);
+		assertEquals(0, f.getScreenFrom());
+		assertEquals(0, f.getScreenTo());
+		
 		// Feature is not part of ruler:
 		f= new IntervalFeature("chrM\t100\t500", TrackFormat.BED);
 		f.mapToScreen(rulerMap);
@@ -204,28 +281,46 @@ public class IntervalFeatureTest {
 	
 	@Test
 	public void canFormatVCFLine() throws InvalidGenomicCoordsException{
+		
+		List<Double> rulerMap= new ArrayList<Double>();
+		for(int i= 113054374; i < 113054580; i++){
+			rulerMap.add((double)i);
+		}
+		
 		String vcfLine= "1 113054374 . C G 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
-		assertEquals("G", ift.assignTextToFeature(true));		
-		assertTrue(ift.assignTextToFeature(false).trim().startsWith("["));
+		ift.mapToScreen(rulerMap);
+		assertEquals(1, ift.makeIdeogramFormatted(true).length);
+		assertEquals("G", ift.makeIdeogramFormatted(true)[0]);
+		assertTrue(ift.makeIdeogramFormatted(false)[0].contains("[")); // Just check there is a formatting char
 		
 		// Deletion
 		vcfLine= "1 113054374 . CTTG C 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
-		assertEquals("D", ift.assignTextToFeature(true));
+		ift.mapToScreen(rulerMap);
+		assertEquals("D", ift.makeIdeogramFormatted(true)[0]);
 		
 		// Insertion
 		vcfLine= "1 113054374 . C CTTG 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
-		assertEquals("I", ift.assignTextToFeature(true));
+		ift.mapToScreen(rulerMap);
+		assertEquals("I", ift.makeIdeogramFormatted(true)[0]);
 	}
 	
-	@Test
-	public void canFormatGTFLine() throws InvalidGenomicCoordsException{
-		String gtfLine= "36 GeneDB exon 4809 7349 . - . gene_id".replaceAll(" ", "\t");
-		IntervalFeature ift= new IntervalFeature(gtfLine, TrackFormat.GFF);
-		assertEquals("e", ift.assignTextToFeature(true));		
-		assertTrue(ift.assignTextToFeature(false).trim().startsWith("["));
-	}
+//	@Test
+//	public void canPrintNameOnFeature() throws InvalidGenomicCoordsException{
+//
+//		String bedLine= "chr1 0 50 ACTB".replaceAll(" ", "\t");
+//		IntervalFeature ift= new IntervalFeature(bedLine, TrackFormat.BED);
+//		ift.setScreenFrom(0);
+//		ift.setScreenTo(4);
+//		System.out.println(Arrays.toString(ift.makeIdeogramFormatted(true)));
+//
+//		
+//		String gtfLine= "36 GeneDB exon 4809 7349 . - . gene_id".replaceAll(" ", "\t");
+//		IntervalFeature ift= new IntervalFeature(gtfLine, TrackFormat.GTF);
+//		assertEquals("e", ift.getFormattedTextForScreen(true)[0]);		
+//		assertTrue(ift.getFormattedTextForScreen(false)[0].startsWith("["));
+//	}
 	
 }

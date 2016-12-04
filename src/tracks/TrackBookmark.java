@@ -24,6 +24,7 @@ import exceptions.InvalidRecordException;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
 import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
 
 public class TrackBookmark extends TrackIntervalFeature {
@@ -34,8 +35,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		super(gc);
 				
 		this.setTrackTag(trackName);
-		
-		
+				
 		// Prepare bookmark file
 		// =====================
 	    // First write out the current position as plain text. Then gzip and index.
@@ -54,8 +54,8 @@ public class TrackBookmark extends TrackIntervalFeature {
 		new MakeTabixIndex(bookmarkPlain.getAbsolutePath(), bookmark, TabixFormat.GFF);
 		bookmarkPlain.delete();
 		
-		this.tabixReader= new TabixReader(bookmark.getAbsolutePath());
-		this.setType(TrackFormat.GFF);
+		this.setTabixReader(new TabixReader(bookmark.getAbsolutePath()));
+		this.setTrackFormat(TrackFormat.GTF);
 		this.setGc(gc);
 	}
 		
@@ -83,6 +83,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 
 		String line;
 		while( (line = br.readLine()) != null) {
+			if(line.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+				continue;
+			}			
 			wr.write(line + "\n");
 		}
 		// Add new bookamrk
@@ -162,6 +165,8 @@ public class TrackBookmark extends TrackIntervalFeature {
 	 * */
 	public void save(String filename, boolean append) throws IOException {
 		
+		filename= Utils.tildeToHomeDir(filename);
+		
 		BufferedWriter wr = new BufferedWriter(new FileWriter(filename, append));
 		
 		InputStream fileStream = new FileInputStream(this.getWorkFilename());
@@ -170,6 +175,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 
 		String line;
 		while( (line = br.readLine()) != null) {
+			if(line.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+				continue;
+			}
 			wr.write(line + "\n");
 		}
 		wr.close();
@@ -229,6 +237,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 		String line;
 		int i= 1;
 		while( (line = br.readLine()) != null) {
+			if(line.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+				continue;
+			}			
 			List<String> lst= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(line));
 			String reg= lst.get(0) + ":" + Integer.parseInt(lst.get(3)) + "-" + lst.get(4); 
 			line= i + ":\t" + reg + "\t" + line;

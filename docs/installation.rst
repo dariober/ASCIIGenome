@@ -11,8 +11,8 @@ In the commands below replace version number with the latest from `releases <htt
 
     cd ASCIIGenome-x.y.z/
     chmod a+x ASCIIGenome
-    cp ASCIIGenome.jar /usr/local/bin/ # Or ~/bin/
-    cp ASCIIGenome /usr/local/bin/     # Or ~/bin/ 
+    cp ASCIIGenome.jar /usr/local/bin/ # Or else in your PATH e.g. ~/bin/
+    cp ASCIIGenome /usr/local/bin/     # Or else in your PATH e.g. ~/bin/
 
 With Homebrew
 ------------------------------

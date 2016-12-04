@@ -8,7 +8,9 @@ import java.sql.SQLException;
 
 import org.apache.commons.lang3.StringUtils;
 
-import coloring.Png;
+import com.itextpdf.text.DocumentException;
+
+import coloring.Pdf;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -43,7 +45,7 @@ public class TrackProcessor {
 	
 	/* M E T H O D S */
 
-	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException{
+	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, DocumentException{
 		
 		GenomicCoords currentGC= this.genomicCoordsHistory.current();
 		
@@ -51,14 +53,20 @@ public class TrackProcessor {
 			Utils.printer(currentGC.getChromIdeogram(20, this.noFormat) + "\n", this.snapshotFile);
 		}			
 
+		// Update tracks to new genomic coords
+		for(Track track : trackSet.getTrackList()){
+			if( ! track.getGc().equalCoordsAndWindowSize(currentGC) ){
+				track.setGc(currentGC);
+			}			
+		}
+		// Set new y limits as required. This step has to come after the positioning to new coordinates because
+		// we may need to autoscale to global min or max.
 		this.getTrackSet().setAutoYLimits();
-		
+
+		// Visualize as required
 		for(Track track : trackSet.getTrackList()){
 			
 			track.setNoFormat(this.noFormat);
-			if( ! track.getGc().equalCoordsAndWindowSize(currentGC) ){
-				track.setGc(currentGC);
-			}
 			if(track.getyMaxLines() > 0 && !track.isHideTrack()){
 				Utils.printer(track.getTitle(), this.snapshotFile);
 				Utils.printer(track.printToScreen() + "\n", this.snapshotFile);
@@ -82,10 +90,10 @@ public class TrackProcessor {
 			Utils.printer(footer + "\n", this.snapshotFile);
 		}
 
-		// Optionally convert to png
+		// Optionally convert to pdf
 		// -------------------------
-		if(this.snapshotFile != null && this.snapshotFile.endsWith("png")){
-			(new Png(new File(this.snapshotFile))).convert(new File(this.snapshotFile));
+		if(this.snapshotFile != null && this.snapshotFile.endsWith(".pdf")){
+			(new Pdf(new File(this.snapshotFile))).convert(new File(this.snapshotFile), 10);
 		} 	
 	}
 	
@@ -104,6 +112,8 @@ public class TrackProcessor {
 	}
 
 	public void exportTrackSetSettings(String filename) throws IOException{
+		
+		filename= Utils.tildeToHomeDir(filename);
 		
 		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename)));
 		if(this.getTrackSet().getTrackList().size() == 0){

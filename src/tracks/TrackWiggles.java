@@ -18,7 +18,9 @@ import com.google.common.base.Joiner;
 
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.tribble.index.IndexFactory;
 import htsjdk.tribble.index.tabix.TabixFormat;
+import htsjdk.tribble.index.tabix.TabixIndex;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
 import htsjdk.tribble.util.TabixUtils;
@@ -51,17 +53,19 @@ public class TrackWiggles extends Track {
 
 		this.setFilename(filename);
 		this.setWorkFilename(filename);
-		
 		this.bdgDataColIdx= bdgDataColIdx;
-
-		if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.BIGWIG)){
+		this.setTrackFormat(Utils.getFileTypeFromName(this.getWorkFilename()));
+		
+		if(this.getTrackFormat().equals(TrackFormat.BIGWIG)){
+			this.setTrackFormat(TrackFormat.BIGWIG);
 			this.bigWigReader=new BBFileReader(this.getWorkFilename()); // or url for remote access.
 			if(!this.bigWigReader.getBBFileHeader().isBigWig()){
 				throw new RuntimeException("Invalid file type " + this.getWorkFilename());
 			}
-		} else if(Utils.getFileTypeFromName(filename).equals(TrackFormat.BEDGRAPH) && ! Utils.hasTabixIndex(filename)){
-			String tabixBdg= this.tabixBedgraphToTmpFile(filename);
-			this.setWorkFilename(tabixBdg);
+			
+		} else if(this.getTrackFormat().equals(TrackFormat.BEDGRAPH) && ! Utils.hasTabixIndex(filename)){
+				String tabixBdg= this.tabixBedgraphToTmpFile(filename);
+				this.setWorkFilename(tabixBdg);
 		}
 		this.setGc(gc);
 		
@@ -77,15 +81,15 @@ public class TrackWiggles extends Track {
 			this.bdgDataColIdx= 4;
 		}
 
-		if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.BIGWIG)){
+		if(this.getTrackFormat().equals(TrackFormat.BIGWIG)){
 			
 			bigWigToScores(this.bigWigReader);
 			
-		} else if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.TDF)){
+		} else if(this.getTrackFormat().equals(TrackFormat.TDF)){
 			
 			this.updateTDF();
 			
-		} else if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.BEDGRAPH)){
+		} else if(this.getTrackFormat().equals(TrackFormat.BEDGRAPH)){
 
 			bedGraphToScores(this.getWorkFilename());
 			
@@ -126,7 +130,7 @@ public class TrackWiggles extends Track {
 	
 	@Override
 	protected void updateToRPM(){
-		if(Utils.getFileTypeFromName(this.getWorkFilename()).equals(TrackFormat.TDF)){
+		if(this.getTrackFormat().equals(TrackFormat.TDF)){
 			// Re-run update only for track types that can be converted to RPM
 			try {
 				this.update();
@@ -242,6 +246,9 @@ public class TrackWiggles extends Track {
 				if(q == null){
 					break;
 				}
+				if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+					continue;
+				}
 				if ( !this.isValidBedGraphLine(q) ) {
 					System.err.println("\nInvalid record found: " + q + "\n");
 					throw new InvalidRecordException();
@@ -292,12 +299,36 @@ public class TrackWiggles extends Track {
 			ResourceLocator resourceLocator= new ResourceLocator(path);
 			TDFReader reader= new TDFReader(resourceLocator);
 			TDFGroup rootGroup= reader.getGroup("/");
+			System.err.println(rootGroup.getAttributeNames());
 			return rootGroup.getAttribute(attr);
 		} catch(Exception e){
 			return null;
 		}
 	}
 	
+	@Override
+	public List<String> getChromosomeNames(){
+		
+		if(this.getTrackFormat().equals(TrackFormat.TDF)){
+
+			ResourceLocator resourceLocator= new ResourceLocator(this.getWorkFilename());
+			TDFReader reader= new TDFReader(resourceLocator);
+			List<String> chroms= new ArrayList<String>(reader.getChromosomeNames());
+			if(chroms.get(0).equals("All")){
+				chroms.remove(0);
+			}
+			return chroms;
+			// chroms.addAll();
+		}
+		if(this.getTrackFormat().equals(TrackFormat.BEDGRAPH)){
+			TabixIndex tbi= (TabixIndex) IndexFactory.loadIndex(this.getWorkFilename() + TabixUtils.STANDARD_INDEX_EXTENSION);
+			return tbi.getSequenceNames();
+		}
+		if(this.getTrackFormat().equals(TrackFormat.BIGWIG)){
+			return this.bigWigReader.getChromosomeNames();
+		}
+		return null;
+	}
 	
 	/*   S e t t e r s   and   G e t t e r s */
 	

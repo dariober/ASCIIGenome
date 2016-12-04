@@ -1,12 +1,16 @@
 Description
 ===========
 
+.. .. raw:: html
+
+..     <iframe width="560" height="315" src="https://www.youtube.com/embed/vE58EOT7VKw?rel=0" frameborder="0" allowfullscreen></iframe>
+
 `ASCIIGenome` is a command-line genome browser running from terminal window and solely based on
 ASCII characters. Since `ASCIIGenome` does not require a graphical interface it is particularly
 useful for  quickly visualizing genomic data on remote servers. The idea is to make `ASCIIGenome`
 the Vim  of genome viewers.
 
-As far as I know, the closest program to `ASCIIGenome` is `samtools tview <http://samtools.sourceforge.net/tview.shtml>`_ but 
+The closest program to `ASCIIGenome` is probably `samtools tview <http://samtools.sourceforge.net/tview.shtml>`_ but 
 `ASCIIGenome` offers much more flexibility, similar to popular GUI viewers like the `IGV browser <https://www.broadinstitute.org/igv/>`_.
 
 Some key features:
@@ -22,7 +26,7 @@ Support
 
 Any and all comments, bugs and issues can be reported on `GitHub <https://github.com/dariober/ASCIIGenome/issues>`_ or by posting a question on `Biostars.org <https://www.biostars.org/>`_ with tag ASCIIGenome.
 
-.. image:: screenshots/composite.png 
+.. image:: screenshots/composite.png
 
 How to cite
 -----------
@@ -39,4 +43,4 @@ Credits
 * Block compression and indexing done using `jvarkit <https://github.com/lindenb/jvarkit>`_.
 * Brew installation thanks to `dalloliogm <https://github.com/dalloliogm>`_.
 
-.. image:: screenshots/ex3.png 
+.. image:: screenshots/ex3.png

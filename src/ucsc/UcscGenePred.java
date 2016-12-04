@@ -105,7 +105,7 @@ public class UcscGenePred {
 		}
 		long t1= System.currentTimeMillis();
 		if(maxRecords == Integer.MAX_VALUE){
-			System.err.println(i + " genePred records converted to " + j + " GTF features (" + Math.rint((t1-t0) / 1000) + " s).");
+			// System.err.println(i + " genePred records converted to " + j + " GTF features (" + Math.rint((t1-t0) / 1000) + " s).");
 		}
 		br.close();
 		wr.close();
@@ -197,7 +197,7 @@ public class UcscGenePred {
 				"; transcript_id \"" + genePredList.get(0) + '"' + 
 				"; gene_name \"" + genePredList.get(11) + "\";";
 
-		IntervalFeature tx = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+		IntervalFeature tx = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 		return tx;
 	}
 	
@@ -238,7 +238,7 @@ public class UcscGenePred {
 					"; exon_number \"" + (j + 1) + '"' +
 					"; exon_id \"" + genePredList.get(0) + "." + (j + 1) + '"' + 
 					"; gene_name \"" + genePredList.get(11) + "\";";
-			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 			exons.add(x);
 		}
 		return exons;
@@ -282,7 +282,7 @@ public class UcscGenePred {
 			gff[6]= String.valueOf(exons.get(0).getStrand());
 			gff[7]= "."; // It's unclear to me how frames are assigned so leave it N/A.
 			gff[8]= attr;
-			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 			cds.add(x);
 		}
 		// Adjust end of CDS. 
@@ -313,7 +313,7 @@ public class UcscGenePred {
 			// We create an intervalFeature from scratch that will replace the old one.
 			List<String> raw= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().splitToList(stopCds.getRaw()));
 			raw.set(4, Integer.toString(newStop)); // Replace end coord
-			cds.set(cds.size()-1, new IntervalFeature(Joiner.on("\t").join(raw), TrackFormat.GFF)); // Replace last element.
+			cds.set(cds.size()-1, new IntervalFeature(Joiner.on("\t").join(raw), TrackFormat.GTF)); // Replace last element.
 		
 		} else if(exons.get(0).getStrand() == '-' && cdsStartStat.equals("cmpl")){
 			// same as above. This time apply to first CDS whose start has to be increased by 3
@@ -336,7 +336,7 @@ public class UcscGenePred {
 			// We create an intervalFeature from scratch that will replace the old one.
 			List<String> raw= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().splitToList(stopCds.getRaw()));
 			raw.set(3, Integer.toString(newStop)); // Replace start coord
-			cds.set(0, new IntervalFeature(Joiner.on("\t").join(raw), TrackFormat.GFF)); // Replace last element.
+			cds.set(0, new IntervalFeature(Joiner.on("\t").join(raw), TrackFormat.GTF)); // Replace last element.
 			
 		}
 		return cds;
@@ -369,7 +369,7 @@ public class UcscGenePred {
 			gff[6]= String.valueOf(c.getStrand());
 			gff[7]= ".";
 			gff[8]= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(c.getRaw())).get(8);
-			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 			codons.add(x);
 			return codons;
 		}
@@ -384,7 +384,7 @@ public class UcscGenePred {
 		gff[6]= String.valueOf(c.getStrand());
 		gff[7]= ".";
 		gff[8]= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(c.getRaw())).get(8);
-		IntervalFeature x1 = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+		IntervalFeature x1 = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 		codons.add(x1);
 		
 		c= cds.get(1);
@@ -400,7 +400,7 @@ public class UcscGenePred {
 		gff[6]= String.valueOf(c.getStrand());
 		gff[7]= ".";
 		gff[8]= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(c.getRaw())).get(8);
-		IntervalFeature x2 = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+		IntervalFeature x2 = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 		codons.add(x2);
 		
 		return codons;
@@ -433,7 +433,7 @@ public class UcscGenePred {
 			gff[6]= String.valueOf(c.getStrand());
 			gff[7]= ".";
 			gff[8]= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(c.getRaw())).get(8);
-			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 			codons.add(x);
 			return codons;
 		}
@@ -448,7 +448,7 @@ public class UcscGenePred {
 		gff[6]= String.valueOf(c.getStrand());
 		gff[7]= ".";
 		gff[8]= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(c.getRaw())).get(8);
-		IntervalFeature x1 = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+		IntervalFeature x1 = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 		codons.add(x1);
 		
 		c= cds.get(cds.size() - 2);
@@ -464,7 +464,7 @@ public class UcscGenePred {
 		gff[6]= String.valueOf(c.getStrand());
 		gff[7]= ".";
 		gff[8]= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(c.getRaw())).get(8);
-		IntervalFeature x2 = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+		IntervalFeature x2 = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 		codons.add(x2);
 		
 		return codons;
@@ -506,7 +506,7 @@ public class UcscGenePred {
 			gff[6]= String.valueOf(exons.get(0).getStrand());
 			gff[7]= ".";
 			gff[8]= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(exon.getRaw())).get(8);
-			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 			utr.add(x);
 		}
 		return utr; 		
@@ -545,7 +545,7 @@ public class UcscGenePred {
 			gff[6]= String.valueOf(exons.get(0).getStrand());
 			gff[7]= ".";
 			gff[8]= Lists.newArrayList(Splitter.on("\t").omitEmptyStrings().split(exon.getRaw())).get(8);;
-			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GFF);
+			IntervalFeature x = new IntervalFeature(Joiner.on("\t").join(gff), TrackFormat.GTF);
 			utr.add(x);
 		}
 		return utr; 		

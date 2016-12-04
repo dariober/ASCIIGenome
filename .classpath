@@ -5,7 +5,6 @@
 	<classpathentry excluding="test_data/*" kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry exported="true" kind="lib" path="/Users/berald01/eclipse/libraries/htsjdk/htsjdk-1.141/dist/htsjdk-1.141.jar"/>
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/commons-lang3/commons-lang3-3.4.jar"/>
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/argparse4j/argparse4j-0.6.0.jar"/>
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/igv-2.3.61/igv.jar"/>
@@ -14,5 +13,10 @@
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/biojava/biojava-genome-4.1.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/jline2"/>
 	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/slf4j/slf4j-1.7.13/slf4j-simple-1.7.13.jar"/>
+	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/itext/itext5-5.5.10/itextpdf-5.5.10.jar" sourcepath="/Users/berald01/eclipse/libraries/itext/itext5-5.5.10/itextpdf-5.5.10-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/Users/berald01/eclipse/libraries/itext/itext5-5.5.10/itextpdf-5.5.10-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

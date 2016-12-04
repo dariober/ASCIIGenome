@@ -4,14 +4,7 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-
-//import org.fusesource.jansi.Ansi.Color;
-import java.awt.Color;
 import org.junit.Test;
-
-import com.google.common.base.Splitter;
 
 public class PngTest {
 
@@ -38,7 +31,7 @@ public class PngTest {
 		File tmp= new File("test_data/ansicolor.png");
 		
 		Png png= new Png(new File("test_data/ansicolor.txt"));
-		png.convert(tmp);
+		png.convert(tmp, 32);
 		System.out.println(tmp.getAbsolutePath());
 		assertTrue(tmp.length() > 50000); // Check file size is about right.
 	}

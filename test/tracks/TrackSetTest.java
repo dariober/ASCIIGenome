@@ -1,6 +1,7 @@
 package tracks;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +23,60 @@ import samTextViewer.Utils;
 public class TrackSetTest {
 
 	@Test
+	public void canGetListOfOpenedFiles() throws ClassNotFoundException, IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", null, null);
+		
+		TrackSet trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		trackSet.addTrackFromSource("ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.18.gff3.gz", gc, null);
+
+		assertEquals(3, trackSet.getOpenedFiles().size());
+		assertTrue(trackSet.getOpenedFiles().iterator().next().length() > 30); // Check we are getting full path
+	}
+	
+	@Test 
+	public void canTrimGenomicCoordinatesForTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", null, null);
+		
+		TrackSet trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		
+		GenomicCoords cropped= trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
+		assertEquals(5566778+1, (int)cropped.getFrom());
+		assertEquals(5567378, (int)cropped.getTo());
+		
+		// No feature in #1: What happens if we try to trim
+		gc= new GenomicCoords("chr7:5568506-5575414", null, null);
+		trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+		// No change:
+		cropped= trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
+		assertEquals(5568506, (int)cropped.getFrom());
+		assertEquals(5575414, (int)cropped.getTo());
+		
+		// Trim when feature(s) extend beyond the current window: No cropping
+		gc= new GenomicCoords("chr7:5566843-5567275", null, null);
+		trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+
+		cropped= trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
+		assertEquals(5566843, (int)cropped.getFrom());
+		assertEquals(5567275, (int)cropped.getTo());
+
+		// Trim w/o tracks
+		trackSet= new TrackSet();
+		cropped= trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
+		assertEquals(null, cropped);
+	}
+	
+	@Test
 	public void canPrintFeaturesToFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 		
 		// --------------------------------------------------------------------
@@ -35,13 +90,19 @@ public class TrackSetTest {
 
 		// No redirection file: Nothing done
 		List<String>cmdInput= Utils.tokenize("print #1 >", " ");
-		trackSet.setPrintModeAndPrintFeaturesForRegex(cmdInput);
+		boolean failed= false;
+		try{
+			trackSet.setPrintModeAndPrintFeaturesForRegex(cmdInput);
+		} catch (InvalidCommandLineException e){
+			failed= true;
+		}
+		assertTrue(failed);		
 
 		// Invalid output: Non existent dir:
 		File ff= new File("test_data/foobar/delete.me");
 		ff.deleteOnExit();
 		cmdInput= Utils.tokenize("print #1 > test_data/foobar/delete.me", " ");
-		boolean failed= false;
+		failed= false;
 		try{
 			trackSet.setPrintModeAndPrintFeaturesForRegex(cmdInput);
 		} catch (IOException e){
@@ -140,7 +201,7 @@ public class TrackSetTest {
 		ts.bookmark(gc2, cmdInput);
 		
 		TrackBookmark bm = (TrackBookmark) ts.getTrackList().get(0);
-		assertTrue(bm.getIntervalFeatureList().size() == 2);
+		assertEquals(2, bm.getIntervalFeatureList().size());
 
 		bm.setPrintMode(PrintRawLine.CLIP);
 		System.out.println(bm.printFeaturesToFile()); // NB: it prints twice the same gc becouse the position is nt changed
@@ -240,7 +301,7 @@ public class TrackSetTest {
 		Track t2= new Track(); t2.setFilename("bar.bam"); ts.addTrack(t2, "bar.bam");
 		Track t3= new Track(); t3.setFilename("foo.bam"); ts.addTrack(t3, "foo.bam");
 		
-		String cmdInput= "bsMode foo.*#\\d";
+		String cmdInput= "BSseq foo.*#\\d";
 		ts.setBisulfiteModeForRegex(Utils.tokenize(cmdInput, " "));
 		assertTrue(ts.getTrack(t1).isBisulf());
 		assertTrue(! ts.getTrack(t2).isBisulf());
@@ -258,13 +319,18 @@ public class TrackSetTest {
 		Track t3= new Track(); ts.addTrack(t3, "x");
 
 		
-		String cmdInput= "bsMode #1 #3";
+		String cmdInput= "rpm #1 #3";
 		ts.setRpmForRegex(Utils.tokenize(cmdInput, " "));
 		assertTrue(ts.getTrack(t1).isRpm());
 		assertTrue(! ts.getTrack(t2).isRpm());
 		
 		ts.setRpmForRegex(Utils.tokenize(cmdInput, " ")); // Was set true, now becomes false
 		assertTrue(! ts.getTrack(t1).isRpm());
+		
+		ts.setRpmForRegex(Utils.tokenize("rpm -on", " "));
+		for(Track tr : ts.getTrackList()){
+			assertTrue(tr.isRpm());
+		}
 	}
 
 	@Test
@@ -331,24 +397,21 @@ public class TrackSetTest {
 		Track t2= new Track(); ts.addTrack(t2, "x");
 		Track t3= new Track(); ts.addTrack(t3, "x");
 
-		ts.setFeatureDisplayModeForRegex(Utils.tokenize("squash #1 #3", " "));
-		assertEquals(FeatureDisplayMode.SQUASHED, t1.getFeatureDisplayMode());
-		assertEquals(FeatureDisplayMode.SQUASHED, t3.getFeatureDisplayMode());
-		
-		ts.setFeatureDisplayModeForRegex(Utils.tokenize("squash #1 #3", " "));
+		ts.setFeatureDisplayModeForRegex(Utils.tokenize("featureDisplayMode #1 #3", " "));
+		assertEquals(FeatureDisplayMode.COLLAPSED, t1.getFeatureDisplayMode());
+		assertEquals(FeatureDisplayMode.COLLAPSED, t3.getFeatureDisplayMode());
+
+		// Toggle back to expanded
+		ts.setFeatureDisplayModeForRegex(Utils.tokenize("featureDisplayMode #1 #3", " "));
 		assertEquals(FeatureDisplayMode.EXPANDED, t1.getFeatureDisplayMode());
 		assertEquals(FeatureDisplayMode.EXPANDED, t3.getFeatureDisplayMode());
-
-		ts.setFeatureDisplayModeForRegex(Utils.tokenize("merge #1 #3", " "));
-		assertEquals(FeatureDisplayMode.MERGED, t1.getFeatureDisplayMode());
-		assertEquals(FeatureDisplayMode.MERGED, t3.getFeatureDisplayMode());
-
-		ts.setFeatureDisplayModeForRegex(Utils.tokenize("squash", " "));
-		assertEquals(FeatureDisplayMode.SQUASHED, t1.getFeatureDisplayMode());
-		assertEquals(FeatureDisplayMode.SQUASHED, t3.getFeatureDisplayMode());
 		
+		ts.setFeatureDisplayModeForRegex(Utils.tokenize("featureDisplayMode -collapsed", " "));
+		assertEquals(FeatureDisplayMode.COLLAPSED, t1.getFeatureDisplayMode());
+		assertEquals(FeatureDisplayMode.COLLAPSED, t2.getFeatureDisplayMode());
+		assertEquals(FeatureDisplayMode.COLLAPSED, t3.getFeatureDisplayMode());
+
 	}
-	
 	
 	@Test
 	public void canSetPrintMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
@@ -361,6 +424,15 @@ public class TrackSetTest {
 		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print #1 #3", " "));
 		assertEquals(PrintRawLine.CLIP, t1.getPrintMode());
 		assertEquals(PrintRawLine.CLIP, t3.getPrintMode());
+
+		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print -off #1", " "));
+		assertEquals(PrintRawLine.OFF, t1.getPrintMode());
+		assertEquals(PrintRawLine.CLIP, t3.getPrintMode());
+
+		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print -full", " "));
+		assertEquals(PrintRawLine.FULL, t1.getPrintMode());
+		assertEquals(PrintRawLine.FULL, t2.getPrintMode());
+		assertEquals(PrintRawLine.FULL, t3.getPrintMode());
 		
 		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print #1", " "));
 		assertEquals(PrintRawLine.OFF, t1.getPrintMode());
@@ -371,8 +443,9 @@ public class TrackSetTest {
 		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print -full #1", " "));
 		assertEquals(PrintRawLine.FULL, t1.getPrintMode());
 		
-		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print -full #1", " "));
-		assertEquals(PrintRawLine.OFF, t1.getPrintMode());
+		// Change number of lines but leave printmode as it is
+		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print -n 10 #1", " "));
+		assertEquals(PrintRawLine.FULL, t1.getPrintMode());
 	}
 	
 	

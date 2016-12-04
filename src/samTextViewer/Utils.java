@@ -1,26 +1,6 @@
 package samTextViewer;
 
-import htsjdk.samtools.BAMIndex;
-import htsjdk.samtools.SAMFileReader;
-import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SAMSequenceDictionary;
-import htsjdk.samtools.SAMSequenceRecord;
-import htsjdk.samtools.SamInputResource;
-import htsjdk.samtools.SamReader;
-import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
-import htsjdk.samtools.filter.AggregateFilter;
-import htsjdk.samtools.filter.SamRecordFilter;
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
-import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.readers.TabixReader;
-
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,27 +15,36 @@ import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
-
-import javax.imageio.ImageIO;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
+import org.broad.igv.bbfile.BedFeature;
+import org.broad.igv.bbfile.BigBedIterator;
+import org.broad.igv.bbfile.BigWigIterator;
+import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
 
 import com.google.common.base.Joiner;
@@ -67,6 +56,20 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import filter.FirstOfPairFilter;
+import htsjdk.samtools.BAMIndex;
+import htsjdk.samtools.SAMFileReader;
+import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
+import htsjdk.samtools.SamInputResource;
+import htsjdk.samtools.SamReader;
+import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.filter.AggregateFilter;
+import htsjdk.samtools.filter.SamRecordFilter;
+import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.tribble.index.tabix.TabixFormat;
+import htsjdk.tribble.readers.TabixReader;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
 import ucsc.UcscGenePred;
@@ -126,20 +129,23 @@ public class Utils {
 		return alnCount;
     }
 
-	
-	public static List<IntervalFeature> mergeIntervalFeatures(List<IntervalFeature> intervalList) throws InvalidGenomicCoordsException{
+	/** Merge overlapping features. If screenCoords is true, merge is based on the screen coordinates. Otherwise use
+	 * genomic coordinates.  
+	 * */
+	public static List<IntervalFeature> mergeIntervalFeatures(List<IntervalFeature> intervalList, boolean screenCoords) throws InvalidGenomicCoordsException{
 		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();		 
 		if(intervalList.size() == 0){
 			return mergedList;
 		}
 		
-		String chrom = null;
-		int from= -1;
-		int to= -1;
-		int screenFrom= -1;
-		int screenTo= -1;
+		String mergedChrom = null;
+		int mergedFrom= -1;
+		int mergedTo= -1;
+		int mergedScreenFrom= -1;
+		int mergedScreenTo= -1;
 		int numMrgIntv= 1; // Number of intervals in the merged one. 
-				
+		Set<Character> strand= new HashSet<Character>(); // Put here all the different strands found in the merged features.		
+
 		for(int i= 0; i < (intervalList.size()+1); i++){
 			// We do an additional loop to add to the mergedList the last interval.
 			// The last loop has interval == null so below you need to account for it
@@ -148,29 +154,44 @@ public class Utils {
 				interval= intervalList.get(i); 
 			}
 			
-			if(from < 0){ // Init interval
-				chrom= interval.getChrom(); 
-				from= interval.getFrom();
-				to= interval.getTo();
-				screenFrom= interval.getScreenFrom();
-				screenTo= interval.getScreenTo();
+			if(mergedFrom < 0){ // Init interval
+				mergedChrom= interval.getChrom(); 
+				mergedFrom= interval.getFrom();
+				mergedTo= interval.getTo();
+				mergedScreenFrom= interval.getScreenFrom();
+				mergedScreenTo= interval.getScreenTo();
 				continue;
 			}
 			// Sanity check: The list to be merged is on the same chrom and sorted by start pos.
-			if(i < intervalList.size() && (!chrom.equals(interval.getChrom()) || from > interval.getFrom() || from > to)){
-				System.err.println(chrom + " " + from + " " + to);
+			if(i < intervalList.size() && (!mergedChrom.equals(interval.getChrom()) || mergedFrom > interval.getFrom() || mergedFrom > mergedTo)){
+				System.err.println(mergedChrom + " " + mergedFrom + " " + mergedTo);
 				throw new RuntimeException();
 			} 
-			if(i < intervalList.size() && (from <= interval.getTo() && to >= (interval.getFrom()-1) )){ 
+			
+			boolean overlap= false; 
+			if( screenCoords && i < intervalList.size() && (mergedScreenFrom <= interval.getScreenTo() && mergedScreenTo >= (interval.getScreenFrom()-1)) ){ 
 				// Overlap: Extend <to> coordinate. See also http://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
-				to= interval.getTo();
-				screenTo= interval.getScreenTo();
+				overlap= true;
+			} else if(i < intervalList.size() && (mergedFrom <= interval.getTo() && mergedTo >= (interval.getFrom()-1) )){ 
+				// Overlap on genomic coordinates
+				overlap= true;
+			}
+			if(overlap){ // Overlap found in screen or genomic coords.  
+			    mergedTo= Math.max(interval.getTo(), mergedTo);
+			    mergedScreenTo= Math.max(interval.getScreenTo(), mergedScreenTo);
+				strand.add(interval.getStrand());
 				numMrgIntv++;
-			} else {
+				overlap= false;
+			} 
+			else {
 				// No overlap add merged interval to list and reset new merged interval
-				IntervalFeature x= new IntervalFeature(chrom + "\t" + (from-1) + "\t" + to, TrackFormat.BED);
-				x.setScreenFrom(screenFrom);
-				x.setScreenTo(screenTo);
+				IntervalFeature x= new IntervalFeature(mergedChrom + "\t" + (mergedFrom-1) + "\t" + mergedTo, TrackFormat.BED);
+				x.setScreenFrom(mergedScreenFrom);
+				x.setScreenTo(mergedScreenTo);
+				if(strand.size() == 1){
+					x.setStrand(strand.iterator().next());
+				} 
+				strand.clear();
 
 				if(x.equals(intervalList.get(i-1)) && numMrgIntv == 1){
 					mergedList.add(intervalList.get(i-1));
@@ -178,18 +199,13 @@ public class Utils {
 					mergedList.add(x);
 				}
 				
-				//if(i > 0 && x.equals(intervalList.get(i-1))){
-				//	mergedList.add(intervalList.get(i-1));
-				//} else {
-				//	mergedList.add(x);
-				//}
-				
 				if(i < intervalList.size()){
 					// Do not reset from/to if you are in extra loop.
-					from= interval.getFrom();
-					to= interval.getTo();
-					screenFrom= interval.getScreenFrom();
-					screenTo= interval.getScreenTo();
+					mergedFrom= interval.getFrom();
+					mergedTo= interval.getTo();
+					mergedScreenFrom= interval.getScreenFrom();
+					mergedScreenTo= interval.getScreenTo();
+					strand.add(interval.getStrand());
 					numMrgIntv= 1;
 				}
 			}
@@ -265,6 +281,7 @@ public class Utils {
 		UrlValidator urlValidator = new UrlValidator();
 		String region= "";
 		TrackFormat fmt= Utils.getFileTypeFromName(x); 
+		
 		if(fmt.equals(TrackFormat.BAM)){
 			
 			SamReader samReader;
@@ -278,12 +295,15 @@ public class Utils {
 			region= samReader.getFileHeader().getSequence(0).getSequenceName();
 			samReader.close();
 			return region;
+		
 		} else if(fmt.equals(TrackFormat.BIGWIG) && !urlValidator.isValid(x)){
 			// Loading from URL is painfully slow so do not initialize from URL
-			BBFileReader reader= new BBFileReader(x);
-			region= reader.getChromosomeNames().get(0);
-			reader.close();
-			return region;
+			return initRegionFromBigWig(x);
+			
+		} else if(fmt.equals(TrackFormat.BIGBED) && !urlValidator.isValid(x)){
+			// Loading from URL is painfully slow so do not initialize from URL
+			return initRegionFromBigBed(x);
+			
 		} else if(fmt.equals(TrackFormat.TDF)){
 			Iterator<String> iter = TDFReader.getReader(x).getChromosomeNames().iterator();
 			while(iter.hasNext()){
@@ -294,10 +314,11 @@ public class Utils {
 			} 
 			System.err.println("Cannot initialize from " + x);
 			throw new RuntimeException();
+		
 		} else if(Utils.isUcscGenePredSource(x)){
 			return initRegionFromUcscGenePredSource(x);
 			
-		}else {
+		} else {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
 			BufferedReader br;
 			GZIPInputStream gzipStream;
@@ -333,6 +354,50 @@ public class Utils {
 		} 
 		System.err.println("Cannot initialize from " + x);
 		throw new RuntimeException();
+	}
+	
+	private static String initRegionFromBigBed(String bigBedFile) throws IOException{
+		
+		BBFileReader reader= new BBFileReader(bigBedFile);
+		if(! reader.isBigBedFile()){
+			System.err.println("File " + bigBedFile + " is not bigBed.");
+			throw new RuntimeException();
+		}
+		String region= reader.getChromosomeNames().get(0); // Just get chrom to start with
+		
+		for(String chrom : reader.getChromosomeNames()){
+			BigBedIterator iter = reader.getBigBedIterator(chrom, 0, chrom, Integer.MAX_VALUE, false);
+			if(iter.hasNext()){
+				BedFeature x= (BedFeature) iter.next();
+				region= x.getChromosome() + ":" + (x.getStartBase() + 1);
+				reader.close();
+				return region;
+			}
+		}
+		reader.close();
+		return region;
+	}
+	
+	private static String initRegionFromBigWig(String bigWigFile) throws IOException{
+		
+		BBFileReader reader= new BBFileReader(bigWigFile);
+		if(! reader.isBigWigFile()){
+			System.err.println("File " + bigWigFile + " is not bigWig.");
+			throw new RuntimeException();
+		}
+		String region= reader.getChromosomeNames().get(0); // Just get chrom to start with
+		
+		for(String chrom : reader.getChromosomeNames()){
+			BigWigIterator iter = reader.getBigWigIterator(chrom, 0, chrom, Integer.MAX_VALUE, false);
+			if(iter.hasNext()){
+				WigItem x = iter.next();
+				region= x.getChromosome() + ":" + (x.getStartBase() + 1);
+				reader.close();
+				return region;
+			}
+		}
+		reader.close();
+		return region;
 	}
 	
 	private static String initRegionFromUcscGenePredSource(String x) throws ClassNotFoundException, IOException, InvalidCommandLineException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
@@ -414,20 +479,28 @@ public class Utils {
 		    || fileName.endsWith(".bed.gz") 
 		    || fileName.endsWith(".bed.gz.tbi")){
 			return TrackFormat.BED;
+		
 		} else if( fileName.endsWith(".gtf") 
 				|| fileName.endsWith(".gtf.gz")
-				|| fileName.endsWith(".gtf.gz.tbi")
-				|| fileName.endsWith(".gff") 
+				|| fileName.endsWith(".gtf.gz.tbi")){
+			return TrackFormat.GTF;
+			
+	    } else if(
+				fileName.endsWith(".gff") 
 				|| fileName.endsWith(".gff.gz") 
 				|| fileName.endsWith(".gff.gz.tbi")
 				|| fileName.endsWith(".gff3")
 				|| fileName.endsWith(".gff3.gz") 
 				|| fileName.endsWith(".gff3.gz.tbi")){
 			return TrackFormat.GFF;
+			
 		} else if(fileName.endsWith(".bam") || fileName.endsWith(".cram")){
 			return TrackFormat.BAM;
+			
 		} else if(fileName.endsWith(".bigwig") || fileName.endsWith(".bw")) {
 			return TrackFormat.BIGWIG;
+		} else if(fileName.endsWith(".bigbed") || fileName.endsWith(".bb")) {
+			return TrackFormat.BIGBED;
 		} else if(fileName.endsWith(".tdf")) {
 			return TrackFormat.TDF;
 		} else if(fileName.endsWith(".bedgraph.gz") || fileName.endsWith(".bedgraph")) {
@@ -990,7 +1063,8 @@ public class Utils {
 	public static String printSamSeqDict(SAMSequenceDictionary samSeqDict, int graphSize){
 		
 		if(samSeqDict == null || samSeqDict.isEmpty()){
-			return "Sequence dictionary not available.";
+			System.err.println("Sequence dictionary not available.");
+			return "";
 		}
 		
 		// Prepare a list of strings. Each string is a row tab separated
@@ -1075,7 +1149,7 @@ public class Utils {
 		if(filename == null){
 			return;
 		}
-		if(! filename.toLowerCase().endsWith(".png")){
+		if(! filename.toLowerCase().endsWith(".pdf")){
 			// We write file as plain text so strip ansi codes.
 			xprint= stripAnsiCodes(xprint);
 		}
@@ -1087,7 +1161,7 @@ public class Utils {
 	/** Get a filaname to write to. GenomicCoords obj is used to get current position and 
 	 * create a suitable filename from it, provided a filename is not given.
 	 * The string '%r' in the file name, is replaced with the current position. Useful to construct
-	 * file names like myPeaks.%r.png -> myPeaks.chr1_1234-5000.png.
+	 * file names like myPeaks.%r.pdf -> myPeaks.chr1_1234-5000.pdf.
 	 * */
 	public static String parseCmdinputToGetSnapshotFile(String cmdInput, GenomicCoords gc) throws IOException{
 		
@@ -1099,10 +1173,11 @@ public class Utils {
 		
 		if(snapshotFile.isEmpty()){
 			snapshotFile= REGVAR + ".txt"; 
-		} else if(snapshotFile.equals(".png")){
-			snapshotFile= REGVAR + ".png";
+		} else if(snapshotFile.equals(".pdf")){
+			snapshotFile= REGVAR + ".pdf";
 		} 
 		snapshotFile= snapshotFile.replace(REGVAR, region); // Special string '%r' is replaced with the region 
+		snapshotFile= Utils.tildeToHomeDir(snapshotFile);
 		
 		File file = new File(snapshotFile);
 		if(file.exists() && !file.canWrite()){
@@ -1124,67 +1199,12 @@ public class Utils {
 		return snapshotFile;
 	}
 	
-	public static void convertTextFileToGraphic(File infile, File outfile) throws IOException{
-		String filename= infile.getAbsolutePath(); 
-		// Read back text file and remove ansi escapes
-		List<String> lines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
-		for(int i= 0; i < lines.size(); i++){
-			String x= stripAnsiCodes(lines.get(i));
-			lines.set(i, x);
-		}
-		BufferedImage image = convertTextToGraphic(lines);
-		ImageIO.write(image, "png", outfile);
+	/** Expand ~/ to user's home dir in file path name. See tests for behaviour
+	 * */
+	public static String tildeToHomeDir(String path){
+		return path.replaceAll("^~" + File.separator, System.getProperty("user.home") + File.separator);
 	}
 	
-	/** 
-	 * */
-    private static BufferedImage convertTextToGraphic(List<String> lines) {
-    // See http://stackoverflow.com/questions/23568114/converting-text-to-image-in-java
-        	       	
-    	BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = img.createGraphics();
-
-        Font font= new Font("Courier", Font.PLAIN, 32);
-        
-        g2d.setFont(font);
-        FontMetrics fm = g2d.getFontMetrics();
-    	/* Width of the image and number of lines */
-    	int width= -1;
-    	int height= 0;
-    	for(String text : lines){
-    		if(fm.stringWidth(text) > width){
-    			width= fm.stringWidth(text);
-    		}
-    		height += Math.round(fm.getAscent() * 1.5);
-    	}
-    	height += Math.round(fm.getAscent() * 0.2);
-        g2d.dispose();
-       
-        img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        g2d = img.createGraphics();
-        g2d.setColor(Color.WHITE); // Set background colour by filling a rect
-        g2d.fillRect(0, 0, width, height);
-
-        //g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-        //g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        //g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-        //g2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
-        //g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-        //g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        //g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        //g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g2d.setFont(font);
-        fm = g2d.getFontMetrics();
-        g2d.setColor(Color.BLACK);
-        for(int i= 0; i < lines.size(); i++){
-        	g2d.drawString(lines.get(i), 0, Math.round(fm.getAscent() * (i+1) * 1.5));
-        }
-        g2d.dispose();
-        return img;
-    }
-
-
 	/**
 	 * Count reads in interval using the given filters.
 	 * @param bam
@@ -1265,7 +1285,7 @@ public class Utils {
 			tbx= TabixFormat.SAM; 
 		} else if (fmt.equals(TrackFormat.BED) || fmt.equals(TrackFormat.BEDGRAPH)){
 			tbx= TabixFormat.BED; 
-		} else if (fmt.equals(TrackFormat.GFF)){
+		} else if (fmt.equals(TrackFormat.GFF) || fmt.equals(TrackFormat.GTF)){
 			tbx= TabixFormat.GFF;
 		} else if (fmt.equals(TrackFormat.VCF)){
 			tbx= TabixFormat.VCF;
@@ -1337,5 +1357,72 @@ public class Utils {
 		}
 	}
 
+	/** Return list of files matching the list of glob expressions. This method should behave
+	 * similarly to GNU `ls` command. 
+	 * 
+	 * * Directories are not returned 
+	 * 
+	 * Files are returned as they are matched, 
+	 * so not necessarily in alphabetical order.
+	 *  
+	 * */
+	public static List<String> globFiles(List<String> cmdInput) throws IOException {
+		
+		List<String> globbed= new ArrayList<String>();
+		
+		for(String x : cmdInput){
+			
+			if(Utils.urlFileExists(x)){
+				globbed.add(x);
+				continue;
+			}
+			x= Utils.tildeToHomeDir(x);
+			x= x.replaceAll(File.separator + "+$", ""); // Remove trailing dir sep
+			x= x.replaceAll(File.separator + "+", File.separator); // Remove double dir sep like "/foo//bar" -> /foo/bar 
+
+			String location;
+			if(new File(x).isDirectory()){
+				location= x;
+				x= x + File.separator + "*"; // From "my_dir" to "my_dir/*" 
+			} else {
+				location= new File(x).getParent();
+				if(location == null){
+					location= "";
+				}
+			} 
+			for(Path p : match(x, location)){
+				globbed.add(p.toString());
+			}
+		}		
+		return globbed;
+	}
+
+	/** Search for a glob pattern in a given directory and its sub directories
+	 * See http://javapapers.com/java/glob-with-java-nio/
+	 * */
+	private static List<Path> match(String glob, String location) throws IOException {
+		
+		final List<Path> globbed= new ArrayList<Path>();
+		
+		final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + glob);
+		
+		Files.walkFileTree(Paths.get(location), new SimpleFileVisitor<Path>() {
+			
+			@Override
+			public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+				if (pathMatcher.matches(path)) {
+					globbed.add(path);
+				}
+				return FileVisitResult.CONTINUE;
+			}
+
+			@Override
+			public FileVisitResult visitFileFailed(Path file, IOException exc)
+					throws IOException {
+				return FileVisitResult.CONTINUE;
+			}
+		});
+		return globbed;
+	}
 	
 }
