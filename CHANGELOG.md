@@ -9,6 +9,8 @@ New in 0.6.0
 * Command history is saved to `~/.asciigenome_history` and reloaded on next start,
   so commands are "remembered", similar to shell history.
 
+* Command `recentlyOpened` remembers files from previous sessions.
+
 * Track heights at start are set to fill the height of terminal.
 
 * `showGenome` is a bit more informative: It prints at least the known chromosomes if no 
