@@ -466,9 +466,15 @@ public class TrackSet {
 		for(Track tr : tracksToReset){
 			tr.setPrintRawLineCount(count);
 			if(printMode != null && printMode.equals(PrintRawLine.NO_ACTION)){
+				if(tr.getPrintMode().equals(PrintRawLine.OFF) && cmdInput.contains("-n")){
+					// Make -n switch ON the printing mode
+					// This happens if you exec `print -n INT` with the track set to OFF. 
+					tr.setPrintMode(PrintRawLine.CLIP); 
+				}
 				// 
 			} else if(printMode != null){
 				tr.setPrintMode(printMode);
+				
 			} else if(tr.getPrintMode().equals(PrintRawLine.OFF)) { // Toggle
 				tr.setPrintMode(PrintRawLine.CLIP);
 			} else {

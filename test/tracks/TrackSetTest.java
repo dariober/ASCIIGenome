@@ -446,6 +446,11 @@ public class TrackSetTest {
 		// Change number of lines but leave printmode as it is
 		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print -n 10 #1", " "));
 		assertEquals(PrintRawLine.FULL, t1.getPrintMode());
+		
+		// Set -n with track in mode OFF: -n turns the printing ON 
+		ts.getTrackList().get(0).setPrintMode(PrintRawLine.OFF);
+		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print -n 10", " "));
+		assertTrue( ! t1.getPrintMode().equals(PrintRawLine.OFF));
 	}
 	
 	

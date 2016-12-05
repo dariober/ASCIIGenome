@@ -28,9 +28,25 @@ public class TrackIntervalFeatureTest {
 		tif= new TrackIntervalFeature("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb", gc);
 		assertTrue(tif.getChromosomeNames().size() > 10);
 	}
+
+	@Test
+	public void transcriptGTFToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		// Expect:
+		// ccccccccccc-----cccccae------------------------------------eeeeeeeee
+		
+		String intervalFileName= "test_data/hg19.gencode_genes_v19.gtf.gz";
+		GenomicCoords gc= new GenomicCoords("chr7:5568562-5572120", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		assertTrue(tif.printToScreen().trim().startsWith("ccc"));
+		assertTrue(tif.printToScreen().trim().endsWith("eee"));
+		assertEquals(6, tif.getIntervalFeatureList().size());
+
+	}
 	
 	@Test
-	public void transcriptToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void transcriptGFFToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		String intervalFileName= "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3";
 		GenomicCoords gc= new GenomicCoords("7:5527151-5530709", null, null);

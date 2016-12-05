@@ -748,8 +748,44 @@ public class TrackIntervalFeature extends Track {
 		}
 		// We don't need to return the full Map, only the list of lists (groups) would suffice.
 		// However, we need to separate the group of non-trascripts (_na_ key)
-		return txIds;
+		return txIds;	
+	}
+
+	
+	/** Group the features in this genomic window by GTF attribute (typically a transcripts). 
+	 * */
+	private Map<String, List<IntervalFeature>> groupByGTFAttribute(){
+
+		// * First collect the IDs of the transcripts
 				
+		// Key is transcript ID e.g. ENST00001234. 
+		// Values is all the IntervalFeatures captured by this ID and part of a transcript.
+		// I.e. their are in txFeature set, 
+		Map<String, List<IntervalFeature>> txIds= new LinkedHashMap<String, List<IntervalFeature>>();
+		
+		// This key:value is for records which are not part transcripts. E.g. features like "chromosome" or rRNA.
+		txIds.put("_na_", new ArrayList<IntervalFeature>()); 
+
+		// Now populate the lists of values by assigning to each key the transcript records:
+		for(IntervalFeature x : this.getIntervalFeatureList()){
+			
+			if(FormatGTF.getTxSuperFeatures().contains(x.getFeature().toLowerCase()) || FormatGTF.getTxSubFeatures().contains(x.getFeature().toLowerCase())){
+				// Transcript feature. E.g.
+				// chr7 hg19_wgEncodeGencodeBasicV19 exon       5566782 5567522 0.000000 - . gene_id "ENST00000331789.5"; transcript_id "ENST00000331789.5";
+				String txId= x.getGFFValueFromKey("transcript_id");
+				if( ! txIds.containsKey(txId)){
+					txIds.put(txId, new ArrayList<IntervalFeature>());
+				}
+				txIds.get(txId).add(x);				
+			} else {
+				// Not a transcript or part thereof. E.g.
+				// 7 . biological_region 5529708 5529709 0.999 - . logic_name=eponine
+				txIds.get("_na_").add(x);
+			}
+		}
+		// We don't need to return the full Map, only the list of lists (groups) would suffice.
+		// However, we need to separate the group of non-trascripts (_na_ key)
+		return txIds;	
 	}
 	
 	/** Collapse the list of features in a single IntervalFeature representing the transcript.
@@ -849,9 +885,17 @@ public class TrackIntervalFeature extends Track {
 
 		List<Double> mapToScreen = this.getGc().getMapping(this.getGc().getUserWindowSize());
 		
-		if(this.getTrackFormat().equals(TrackFormat.GFF)){
+		if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)){
 		
-			Map<String, List<IntervalFeature>> tx = this.groupByGFFAttribute();
+			Map<String, List<IntervalFeature>> tx;
+			if(this.getTrackFormat().equals(TrackFormat.GFF)){
+				tx = this.groupByGFFAttribute();
+			} else if (this.getTrackFormat().equals(TrackFormat.GTF)) {
+				tx = this.groupByGTFAttribute();
+			} else {
+				throw new RuntimeException("This is not a GTF or GFF track!");
+			}
+			
 			for(String txId : tx.keySet()){
 				if(txId.equals("_na_")){
 					flatList.addAll(tx.get(txId));

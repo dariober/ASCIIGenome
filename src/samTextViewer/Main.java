@@ -24,13 +24,13 @@ import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import net.sourceforge.argparse4j.inf.Namespace;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
 import jline.console.history.History;
 import jline.console.history.History.Entry;
 import jline.console.history.MemoryHistory;
+import net.sourceforge.argparse4j.inf.Namespace;
 import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackCoverage;
@@ -298,7 +298,6 @@ public class Main {
 			union.add(file);
 		}
 		trackSet.setOpenedFiles(union);
-		System.err.println(union);
 	}
 	
 	/**Read the asciigenome history file to extract the list of opened files 

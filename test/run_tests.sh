@@ -5,7 +5,7 @@
 # Setup: Path to jar and data
 # ===========================
 stvExe=~/Dropbox/Public/ASCIIGenome.jar ## Path to jar 
-cd /Users/berald01/svn_git/ASCIIGenome/branches/color_etc/test_data ## Path to test data
+cd /PATH/TO/test_data ## Path to test data
 
 # Get and prepare chr7.fa file, if not already available
 if [ ! -e chr7.fa ]
