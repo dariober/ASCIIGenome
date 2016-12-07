@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,11 +18,14 @@ import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.PdfCopy;
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.PdfSmartCopy;
 import com.itextpdf.text.pdf.PdfWriter;
 
 public class Pdf {
 
-	File ansiInput;
+	String ansiInput;
 	/** Max height and width of the text to print. I think it's in "point" unit.   
 	 * */
 	int maxWidth= 0;
@@ -29,27 +33,82 @@ public class Pdf {
 	
 	/* C o n s t r u c t o r */
 	
-	public Pdf(File ansiInput) {
+	public Pdf(String ansiInput) {
 		// Possibly some validation about input file?
 		this.ansiInput= ansiInput;
 	}
 
 	/* M e t h o d s */
 
-	public void convert(File pdfOut, float fontSize) throws IOException, DocumentException {
+	public void convert(File pdfOut, float fontSize, boolean append) throws IOException, DocumentException {
+
+		// First we write to tmp file then we copy to given destination, possibly appending
+		File tmpPdf= File.createTempFile(pdfOut.getName(), ".pdf");
+		// tmpPdf.deleteOnExit();
 		
 		List<Paragraph> pdfLines= this.ansiFileToPdfParagraphs(fontSize);
         
 		Document document = new Document(new Rectangle((float) (this.getMaxWidth() * 1.01), (float) (this.getMaxHeight())), 5f, 0f, 0f, 0f);
-        PdfWriter.getInstance(document, new FileOutputStream(pdfOut));
+        PdfWriter.getInstance(document, new FileOutputStream(tmpPdf));
         document.open();
 
 		for(Paragraph line : pdfLines){
 	        document.add(line);
         }
         document.close();
+        
+        if(append){
+        	this.appendPdf(tmpPdf, pdfOut);
+        } else {
+        	Files.move(Paths.get(tmpPdf.getAbsolutePath()), Paths.get(pdfOut.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
+        }
 	}
 
+	private void appendPdf(File inFile, File outputFile) throws DocumentException, IOException {
+
+		if(inFile.equals(outputFile)){
+			// Consistent with Linux `cat test.txt >> test.txt`
+			System.err.println("Cannot append pdf to itself. Input file is output file: " + inFile.getAbsolutePath());
+			throw new RuntimeException(); 
+		}
+		
+		if( ! outputFile.exists()){
+			Files.move(Paths.get(inFile.getAbsolutePath()), Paths.get(outputFile.getAbsolutePath()));	
+			return;
+		}
+		
+		// It's silly to create a list of files first but we have a solution for concatenting lists of files.
+		List<File> listOfPdfFiles= new ArrayList<File>();
+		listOfPdfFiles.add(outputFile);
+		listOfPdfFiles.add(inFile);
+		
+		File tmpPdf= File.createTempFile(outputFile.getName(), ".pdf");
+		// tmpPdf.deleteOnExit();
+		
+		System.err.println(listOfPdfFiles);
+		System.err.println(tmpPdf);
+		
+		// concatenatePdfs(listOfPdfFiles, tmpPdf);
+		// Files.move(Paths.get(tmpPdf.getAbsolutePath()), Paths.get(outputFile.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
+	}
+
+	/* Concatenate pdf files. From 
+	 * http://stackoverflow.com/questions/23062345/function-that-can-use-itext-to-concatenate-merge-pdfs-together-causing-some 
+	 * **/
+	public void concatenatePdfs(List<File> listOfPdfFiles, File outputFile) throws DocumentException, IOException {
+        Document document = new Document();
+        FileOutputStream outputStream = new FileOutputStream(outputFile);
+        PdfCopy copy = new PdfSmartCopy(document, outputStream);
+        document.open();
+
+        for (File inFile : listOfPdfFiles) {
+            PdfReader reader = new PdfReader(inFile.getAbsolutePath());
+            copy.addDocument(reader);
+            reader.close();
+        }
+        document.close();
+	}
+	
 	/** Read ansi formatted file line by lone and convert each line to 
 	 * a iText paragraph. 
 	 * @throws IOException 
@@ -58,7 +117,7 @@ public class Pdf {
 		
 		List<Paragraph> paraList= new ArrayList<Paragraph>();
 
-		byte[] encoded = Files.readAllBytes(Paths.get(this.ansiInput.toURI()));
+		byte[] encoded = this.ansiInput.getBytes(); // Files.readAllBytes(Paths.get(this.ansiInput.toURI()));
 		String str= new String(encoded);
 
 		// Each string in this list is a sequence of a characters sharing the same formatting.
@@ -74,20 +133,11 @@ public class Pdf {
 			BaseColor fgBaseCol= new BaseColor(this.ansiCodesToFgColor(xv).getRGB());
 			BaseColor bgBaseCol= new BaseColor(this.ansiCodesToBgColor(xv).getRGB());
 
-//			Color bgColor= this.ansiCodesToBgColor(xv);
-//			
-//			if(!bgColor.equals(Color.WHITE)){
-//				// This is a hack for now until we figure out how to draw background around a character.
-//				fgBaseCol= new BaseColor(this.ansiCodesToBgColor(xv).getRGB());
-//			}
-			
 			if(this.extractAnsiCodes(xv).size() != 0){
 				// This string begins with ansi sequence and the color has been extracted.
 				// So remove the ansi sequence at the beginnig and the end, we don't need them anymore
 				xv= xv.replaceAll("^.+?m", "");
 			}
-			// Split this string of chars in lines. Each line becomes a paragraph
-			// List<String> lines= Splitter.on("\n").splitToList(xv);
 			
 			for(int i= 0; i < xv.length(); i++){
 				

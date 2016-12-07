@@ -137,10 +137,12 @@ public class TrackSet {
 	 * */
 	public void addTrackFromSource(String sourceName, GenomicCoords gc, String trackTag) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
 
+		
 		if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
 			this.addBamTrackFromSourceName(sourceName, gc, trackTag);
 		
 		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
+				  || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGBED)
 		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
 		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)
 			      || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
@@ -150,6 +152,9 @@ public class TrackSet {
 				|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.TDF) 
 				|| Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)){
 			this.addWiggleTrackFromSourceName(sourceName, gc, trackTag);
+		} else {
+			System.err.println("Unexpected file format: " + Utils.getFileTypeFromName(sourceName) + " for " + sourceName);
+			throw new RuntimeException();
 		}
 		
 		for(Track tr : this.getTrackList()){

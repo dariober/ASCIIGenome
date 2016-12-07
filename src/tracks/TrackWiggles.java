@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BigWigIterator;
@@ -299,7 +300,6 @@ public class TrackWiggles extends Track {
 			ResourceLocator resourceLocator= new ResourceLocator(path);
 			TDFReader reader= new TDFReader(resourceLocator);
 			TDFGroup rootGroup= reader.getGroup("/");
-			System.err.println(rootGroup.getAttributeNames());
 			return rootGroup.getAttribute(attr);
 		} catch(Exception e){
 			return null;

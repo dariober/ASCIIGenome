@@ -7,6 +7,18 @@ Features
 * Allow the user to set the `tmp` directory. By default use a `tmp` other then 
   the system default. On Linux the `tmp` is often pretty small.
 
+* Append pdf as in `save -a images.pdf`. With [itext](http://burnignorance.com/java-web-development-tips/java-merging-multiple-pdfs-into-a-single-pdf-using-itext/). Or see [PDFMergerUtility](http://stackoverflow.com/questions/3585329/how-to-merge-two-pdf-files-into-one-in-java)
+
+* Feature sample: Command to display only a random sample of features in current window. 
+  Useful to see the density of features in large intervals with lots of features. E.g.
+
+```
+sample INT|percent [track_regex = .*] ...
+```
+
+This cmd should operate on the feature set after grep selection. Probably `TrackIntervalFeature.getFeaturesInInterval()` is where
+to work for this.
+
 * `export` command to write to file the data in the current interval? API:
 
 ```

@@ -67,26 +67,25 @@ public class InteractiveInput {
 				
 				// * These commands only print info or do stuff without editing the GenomicCoordinates or the Tracks:
 				if(cmdInput.get(0).equals("h") || cmdInput.get(0).equals("-h")){  
-					Utils.printer(CommandList.briefHelp(), proc.getSnapshotFile());
+					System.err.println(CommandList.briefHelp());
 					this.interactiveInputExitCode= 1;
 					
 				} else if(cmdInput.size() >= 2 && cmdInput.get(1).equals("-h")){ // Help on this command
-					Utils.printer("\n" + CommandList.getHelpForCommand(cmdInput.get(0)) + "\n", proc.getSnapshotFile());
+					System.err.println("\n" + CommandList.getHelpForCommand(cmdInput.get(0)));
 					this.interactiveInputExitCode= 1;
 				
 				} else if(cmdInput.get(0).equals("posHistory")){
 					for(GenomicCoords xgc : proc.getGenomicCoordsHistory().getHistory()){
-						Utils.printer(xgc.toString() + "\n", proc.getSnapshotFile());
+						System.err.println(xgc.toString());
 					}
 					this.interactiveInputExitCode= 1;
 
 				} else if(cmdInput.get(0).equals("history")){
-					Utils.printer(this.cmdHistoryToString() + "\n", proc.getSnapshotFile());
+					System.err.println(this.cmdHistoryToString());
 					this.interactiveInputExitCode= 1;
 					
 				} else if(cmdInput.get(0).equals("showGenome")) {
 					this.showGenome(proc);
-					// System.out.println(Utils.printSamSeqDict(proc.getGenomicCoordsHistory().current().getSamSeqDict(), 30));
 					this.interactiveInputExitCode= 1;
 				
 				} else if(cmdInput.get(0).equals("infoTracks")) {
@@ -98,7 +97,18 @@ public class InteractiveInput {
 					this.interactiveInputExitCode= 1;
 					
 				} else if(cmdInput.get(0).equals("save")) {
-					proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(cmdInput), proc.getGenomicCoordsHistory().current()) );
+					List<String> args= new ArrayList<String>(cmdInput);
+					
+					proc.setAppendToSnapshotFile(false); // Default: do not append
+					
+					if(args.contains(">>")){
+						proc.setAppendToSnapshotFile(true);
+						args.remove(">>");
+					} else if (args.contains(">")){
+						proc.setAppendToSnapshotFile(false);
+						args.remove(">");
+					}  
+					proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(args), proc.getGenomicCoordsHistory().current()) );
 					
 				} else if(cmdInput.get(0).equals("sessionSave")) {
 					if(cmdInput.size() < 2){
@@ -219,7 +229,7 @@ public class InteractiveInput {
 					cmdInput.remove(0);
 					
 					List<String> globbed = Utils.globFiles(cmdInput);
-					
+
 					for(String sourceName : globbed){
 
 						if(proc.getGenomicCoordsHistory().current().getSamSeqDict() == null || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
@@ -327,7 +337,7 @@ public class InteractiveInput {
 					messages += proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdInput);
 					
 				} else {
-					System.err.println("Unrecognized argument: " + cmdInput);
+					System.err.println("Unrecognized command: " + cmdInput);
 					throw new InvalidCommandLineException();
 				}
 			
@@ -342,8 +352,6 @@ public class InteractiveInput {
 					console.clearScreen();
 					console.flush();
 					proc.iterateTracks();
-					Utils.printer("", proc.getSnapshotFile());
-					proc.setSnapshotFile(null); // This is to prevent taking screenshots one after another. It's a hack and should be changed
 
 				} catch (InvalidGenomicCoordsException e){
 					

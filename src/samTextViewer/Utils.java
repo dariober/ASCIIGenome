@@ -2,12 +2,10 @@ package samTextViewer;
 
 import java.awt.Color;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -1135,27 +1133,8 @@ public class Utils {
 	
 	}
 	
-	private static String stripAnsiCodes(String x){
+	public static String stripAnsiCodes(String x){
 		return x.replaceAll("\\033\\[[;\\d]*m", "");
-	}
-	
-	/** Print string to stdout AND to filename. If filename is null, print to stdout only.
-	 * If stripAnsi is true, the ansi escape codes are removed before printing to file, but they stay 
-	 * untouched to print to stdout.
-	 * @throws IOException 
-	 * */
-	public static void printer(String xprint, String filename) throws IOException{
-		System.out.print(xprint);
-		if(filename == null){
-			return;
-		}
-		if(! filename.toLowerCase().endsWith(".pdf")){
-			// We write file as plain text so strip ansi codes.
-			xprint= stripAnsiCodes(xprint);
-		}
-		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename), true));
-		wr.write(xprint);
-		wr.close();
 	}
 	
 	/** Get a filaname to write to. GenomicCoords obj is used to get current position and 
@@ -1188,14 +1167,13 @@ public class Utils {
 		if(!file.exists()){
 			try{
 				file.createNewFile();
+				file.delete();
 			} catch(IOException e) {
 				System.err.println("Cannot create file " + snapshotFile);
 				snapshotFile= null;
 				return snapshotFile;
 			}
 		}
-		(new File(snapshotFile)).delete(); // Otherwise you keep appending.
-		System.err.println("Saving screenshot to " + snapshotFile);
 		return snapshotFile;
 	}
 	

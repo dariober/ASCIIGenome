@@ -36,7 +36,6 @@ import jline.console.ConsoleReader;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
 import tracks.IntervalFeature;
-import tracks.TrackCoverage;
 import tracks.TrackFormat;
 
 public class UtilsTest {
@@ -575,19 +574,7 @@ public class UtilsTest {
 		
 	}
 	
-	@Test
-	public void canPrintToStdoutOrFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
-		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
-		
-		File filename= new File("tmp.txt");
-		filename.deleteOnExit();
-		Utils.printer(tc.getTitle(), filename.getAbsolutePath());
-		Utils.printer(tc.printToScreen(), filename.getAbsolutePath());
-		
-	}
-	
 	@Test
 	public void canGetWritableFileOrNull() throws InvalidGenomicCoordsException, IOException{
 		GenomicCoords gc= new GenomicCoords("chr7:1-200", samSeqDict, fastaFile);
