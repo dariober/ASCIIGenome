@@ -108,8 +108,8 @@ public class TrackProcessor {
 			wr.write(Utils.stripAnsiCodes(outputString));
 			wr.write("\n-------8<-------------[ cut here ]----------------------\n\n");
 			wr.close();
-			this.snapshotFile= null;
 		}
+		this.snapshotFile= null;
 	}
 	
 	private String getFooter(GenomicCoords currentGC) throws InvalidGenomicCoordsException, IOException {

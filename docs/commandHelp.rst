@@ -258,11 +258,17 @@ Similar to grep command, filter for features including or excluding patterns. Op
 
 * :code:`track_regex`: Apply to tracks matched by `track_regex`.
 
+*NOTES*
+
+* For case insensitive matching prepend :code:`(?i)` to regex pattern. E.g. :code:`-i (?i)ACTB` to match also Actb
+
+* Use *single quotes* to delimit patterns containing spaces e.g. :code:`-i 'ACTB gene'`
+
 Regex `-i` and `-e` are applied to the raw lines as read from source file and it is applied only to annotation tracks (GFF, BED, VCF, etc). For example::
 
     grep -i RNA -e mRNA gtf gff
 
-Will show the rows containing 'RNA' but will hide those containing 'mRNA', applies to tracks whose name matches 'gtf' or 'gff'. Use *single quotes* to delimit patterns containing spaces e.g. :code:`-i 'ACTB gene'`.
+Will show the rows containing 'RNA' but will hide those containing 'mRNA', applies to tracks whose name matches 'gtf' or 'gff'.
 With no arguments reset to default: :code:`grep -i .* -e ^$ .*` which means show everything, hide nothing, apply to all tracks.
 
 featureDisplayMode
