@@ -2,9 +2,12 @@ package samTextViewer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidGenomicCoordsException;
+import htsjdk.samtools.SAMSequenceRecord;
 
 public class GenomicCoordsHistory {
 
@@ -74,8 +77,10 @@ public class GenomicCoordsHistory {
 
 	/** Set sequence dictionary and fasta ref, if available for all the genomic coords in this 
 	 * history. 
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public void setGenome(List<String> tokens) throws InvalidCommandLineException, IOException {
+	public void setGenome(List<String> tokens) throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
+		
 		if(tokens.size() == 0){
 			throw new InvalidCommandLineException();
 		}
@@ -85,6 +90,25 @@ public class GenomicCoordsHistory {
 			} catch (Exception e){
 				// e.printStackTrace();
 			}
+		}
+		
+		// We need to check whether the current position exists in the dictionary. If not
+		// move to a volid position.
+		LinkedHashMap<String, Integer> chromLen= new LinkedHashMap<String, Integer>();
+		for(SAMSequenceRecord x : this.current().getSamSeqDict().getSequences()){
+			chromLen.put(x.getSequenceName(), x.getSequenceLength());
+		}
+		boolean isValid= false;
+		if( chromLen.containsKey(this.current().getChrom()) ){
+			int len= chromLen.get(this.current().getChrom());
+			if(this.current().getTo() <= len){
+				isValid= true; 
+			}
+		} 
+		if( ! isValid){
+			String chrom= chromLen.keySet().iterator().next();
+			GenomicCoords newGc= new GenomicCoords(chrom + ":" + 1, this.current().getSamSeqDict(), this.current().getFastaFile());
+			this.add(newGc);
 		}
 	}
 

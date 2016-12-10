@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "0.6.2";
+	public static String VERSION= "0.6.3";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	public static String WEB_RTD= "http://asciigenome.readthedocs.io/";
 	

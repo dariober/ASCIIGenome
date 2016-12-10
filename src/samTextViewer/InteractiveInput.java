@@ -196,7 +196,6 @@ public class InteractiveInput {
 					
 				} else if(cmdInput.get(0).equals("ylim") && cmdInput.size() > 1){
 					proc.getTrackSet().setTrackYlimitsForRegex(cmdInput);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if(cmdInput.get(0).equals("trackHeight") && cmdInput.size() > 1){
 					proc.getTrackSet().setTrackHeightForRegex(cmdInput);
@@ -229,31 +228,39 @@ public class InteractiveInput {
 					cmdInput.remove(0);
 					
 					List<String> globbed = Utils.globFiles(cmdInput);
-
-					for(String sourceName : globbed){
-
-						if(proc.getGenomicCoordsHistory().current().getSamSeqDict() == null || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
-							GenomicCoords gc= proc.getGenomicCoordsHistory().current();
-							gc.setGenome(sourceName);
-						}
-
-						System.err.println("Adding: " + sourceName);
-						try{
-							proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
-						} catch(Exception e){
+					if(globbed.size() == 0){
+					
+						System.err.println(cmdInput + ": No file found.");
+						this.interactiveInputExitCode= 1;
+					
+					} else {
+						
+						for(String sourceName : globbed){
+	
+							System.err.println("Adding: " + sourceName);
 							try{
-								// It may be that you are in position that doesn't exist in the sequence dictionary that
-								// came with this new file. To recover, find an existing position, move there and try to reload the 
-								// file. This fixes issue#23
-								String region= Main.initRegion(null, globbed, null, null);
-								proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
-								proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
-							} catch (Exception x){
-								System.err.println("Failed to add: " + sourceName);
+								proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
+							} catch(Exception e){
+								try{
+									// It may be that you are in position that doesn't exist in the sequence dictionary that
+									// came with this new file. To recover, find an existing position, move there and try to reload the 
+									// file. This fixes issue#23
+									String region= Main.initRegion(null, globbed, null, null);
+									proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
+									proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
+								} catch (Exception x){
+									System.err.println("Failed to add: " + sourceName);
+								}
 							}
+							
+							if(proc.getGenomicCoordsHistory().current().getSamSeqDict() == null || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
+								GenomicCoords gc= proc.getGenomicCoordsHistory().current();
+								gc.setGenome(sourceName);
+							}
+							
 						}
 					}
-				
+					
 				} else if(cmdInput.get(0).equals("dropTracks")){
 					if(cmdInput.size() <= 1){
 						System.err.println("List one or more tracks to drop or `dropTracks -h` for help.");

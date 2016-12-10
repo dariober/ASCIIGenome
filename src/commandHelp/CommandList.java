@@ -733,14 +733,15 @@ public class CommandList {
 		//cmdList.add(cmd);		
 		
 		cmd= new CommandHelp();
-		cmd.setName("save"); cmd.setArgs("[filename = chrom_start_end.txt']"); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("Save current screenshot to file in either text or pdf format.");
-		cmd.setAdditionalDescription("Default filename is generated from the current coordinates and the default format is plain text. "
-				+ "If filename has extension pdf then save as pdf. "
-				+ "The string `%r` in the file name is replaced with the current coordinates. "
+		cmd.setName("save"); cmd.setArgs("[>>] [filename = chrom_start_end.txt']"); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Save screenshot to file as text or pdf format.");
+		cmd.setAdditionalDescription("The default file name is generated from the current coordinates and the default format is plain text. "
+				+ "If the file name has extension '.pdf' then save as pdf. To append to an existing file use :code:`>>`. "
+				+ "The string :code:`%r` in the file name is replaced with the current coordinates. "
 				+ "Examples::\n"
 				+ "\n"
 				+ "    save mygene.txt~~~~-> Save to mygene.txt as text\n"
+				+ "    save >> mygene.txt~-> Append to mygene.txt\n"
 				+ "    save~~~~~~~~~~~~~~~-> Save to chrom_start-end.txt as text\n"
 				+ "    save .pdf~~~~~~~~~~-> Save to chrom_start-end.pdf as pdf\n"
 				+ "    save mygene.%r.pdf~-> Save to mygene.chr1_100-200.pdf as pdf\n"

@@ -58,7 +58,7 @@ java -Xmx500m -jar $stvExe foo.bed -ni
 java -Xmx500m -jar $stvExe invalid-1.bedgraph -ni
 
 echo "BATCH FILE"
-java -Xmx500m -jar $stvExe -b batch_actb.bed -x 'zo 3 && save deleteme.%r.png' -g hg19 ear045.oxBS.actb.tdf hg19.gencode_genes_v19.gtf.gz batch_actb.bed > /dev/null
+java -Xmx500m -jar $stvExe -b batch_actb.bed -x 'zo 3 && save >> deleteme.pdf' -g hg19 ear045.oxBS.actb.tdf hg19.gencode_genes_v19.gtf.gz batch_actb.bed > /dev/null
 rm deleteme*
 
 echo "SAVING AND LOADING SESSION"

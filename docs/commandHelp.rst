@@ -574,11 +574,12 @@ List the executed commands.  Also listed are the commands executed in previous r
 save
 ++++
 
-:code:`save [filename = chrom_start_end.txt']`
+:code:`save [>>] [filename = chrom_start_end.txt']`
 
-Save current screenshot to file in either text or pdf format. Default filename is generated from the current coordinates and the default format is plain text. If filename has extension pdf then save as pdf. The string `%r` in the file name is replaced with the current coordinates. Examples::
+Save screenshot to file as text or pdf format. The default file name is generated from the current coordinates and the default format is plain text. If the file name has extension '.pdf' then save as pdf. To append to an existing file use :code:`>>`. The string :code:`%r` in the file name is replaced with the current coordinates. Examples::
 
     save mygene.txt    -> Save to mygene.txt as text
+    save >> mygene.txt -> Append to mygene.txt
     save               -> Save to chrom_start-end.txt as text
     save .pdf          -> Save to chrom_start-end.pdf as pdf
     save mygene.%r.pdf -> Save to mygene.chr1_100-200.pdf as pdf

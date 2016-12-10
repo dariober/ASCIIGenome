@@ -64,49 +64,37 @@ public class Pdf {
         }
 	}
 
-	private void appendPdf(File inFile, File outputFile) throws DocumentException, IOException {
-
-		if(inFile.equals(outputFile)){
-			// Consistent with Linux `cat test.txt >> test.txt`
-			System.err.println("Cannot append pdf to itself. Input file is output file: " + inFile.getAbsolutePath());
-			throw new RuntimeException(); 
-		}
+	/** Append pdf file `in` to pdf file `dest`
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 * */
+	private void appendPdf(File in, File dest) throws IOException, DocumentException{
 		
-		if( ! outputFile.exists()){
-			Files.move(Paths.get(inFile.getAbsolutePath()), Paths.get(outputFile.getAbsolutePath()));	
+		if( ! dest.exists()){
+			Files.move(Paths.get(in.getAbsolutePath()), Paths.get(dest.getAbsolutePath()));
 			return;
 		}
 		
-		// It's silly to create a list of files first but we have a solution for concatenting lists of files.
-		List<File> listOfPdfFiles= new ArrayList<File>();
-		listOfPdfFiles.add(outputFile);
-		listOfPdfFiles.add(inFile);
-		
-		File tmpPdf= File.createTempFile(outputFile.getName(), ".pdf");
-		// tmpPdf.deleteOnExit();
-		
-		System.err.println(listOfPdfFiles);
-		System.err.println(tmpPdf);
-		
-		// concatenatePdfs(listOfPdfFiles, tmpPdf);
-		// Files.move(Paths.get(tmpPdf.getAbsolutePath()), Paths.get(outputFile.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
-	}
+		File template= File.createTempFile("template.", ".pdf");
+		Files.copy(Paths.get(dest.getAbsolutePath()), Paths.get(template.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
+		template.deleteOnExit();
 
-	/* Concatenate pdf files. From 
-	 * http://stackoverflow.com/questions/23062345/function-that-can-use-itext-to-concatenate-merge-pdfs-together-causing-some 
-	 * **/
-	public void concatenatePdfs(List<File> listOfPdfFiles, File outputFile) throws DocumentException, IOException {
-        Document document = new Document();
-        FileOutputStream outputStream = new FileOutputStream(outputFile);
+		Document document = new Document();
+        FileOutputStream outputStream = new FileOutputStream(template);
         PdfCopy copy = new PdfSmartCopy(document, outputStream);
         document.open();
 
-        for (File inFile : listOfPdfFiles) {
-            PdfReader reader = new PdfReader(inFile.getAbsolutePath());
-            copy.addDocument(reader);
-            reader.close();
-        }
+        PdfReader reader0 = new PdfReader(dest.getAbsolutePath());
+        copy.addDocument(reader0);
+        reader0.close();
+        
+        PdfReader reader = new PdfReader(in.getAbsolutePath());
+        copy.addDocument(reader);
+        reader.close();
+
         document.close();
+        Files.move(Paths.get(template.getAbsolutePath()), Paths.get(dest.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
+		
 	}
 	
 	/** Read ansi formatted file line by lone and convert each line to 
