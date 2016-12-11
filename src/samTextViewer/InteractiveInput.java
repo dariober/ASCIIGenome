@@ -137,7 +137,7 @@ public class InteractiveInput {
 					proc.getGenomicCoordsHistory().add(new GenomicCoords(reg, samSeqDict, fasta));
 					
 				} else if (cmdInput.get(0).equals("p")) {
-					proc.getGenomicCoordsHistory().previous();
+					proc.getGenomicCoordsHistory().previous(); 
 					
 				} else if (cmdInput.get(0).equals("n")) {
 					proc.getGenomicCoordsHistory().next();

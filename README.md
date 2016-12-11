@@ -6,17 +6,17 @@ Text Only Genome Viewer!
 MEMO: Compile, package and upload to github releases
 - Write-out jar from Eclipse
 cd ~/svn_git/ASCIIGenome/trunk
-mkdir ASCIIGenome-0.6.2 # This should match the version in ArgParse
-cp ASCIIGenome ASCIIGenome-0.6.2/
-cp /Users/berald01/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-0.6.2/
-zip -r ASCIIGenome-0.6.2.zip ASCIIGenome-0.6.2
-rm -r ASCIIGenome-0.6.2
+mkdir ASCIIGenome-0.6.4 # This should match the version in ArgParse
+cp ASCIIGenome ASCIIGenome-0.6.4/
+cp /Users/berald01/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-0.6.4/
+zip -r ASCIIGenome-0.6.4.zip ASCIIGenome-0.6.4
+rm -r ASCIIGenome-0.6.4
 
-// Upload ASCIIGenome-0.5.0.zip to github releases and delete
+// Upload ASCIIGenome-x.y.z.zip to github releases and delete
 
 // Update brew formula 
 // Edit install/brew/asciigenome.rb to change release version and sha sum.
-shasum -a 256 ASCIIGenome-0.6.2.zip
+shasum -a 256 ASCIIGenome-0.6.4.zip
 -->
 
 Description

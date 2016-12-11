@@ -1,6 +1,8 @@
 package samTextViewer;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -72,6 +74,23 @@ public class GenomicCoordsHistoryTest {
 	
 	}
 
+	
+	@Test
+	public void canMoveBackAndForthInHistoryWithInvalidPosition() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
+
+		GenomicCoordsHistory gch= new GenomicCoordsHistory();
+		gch.setGenome(Utils.tokenize("test_data/ds051.actb.bam", "\t"));
+		
+		GenomicCoords g1= new GenomicCoords("foo:1-100", null, null);
+		GenomicCoords g2= new GenomicCoords("chr7:1-100", null, null);
+		gch.add(g1);
+		gch.add(g2);
+		
+		gch.previous();
+				
+	}
+
+	
 	@Test
 	public void getAndPutItems() throws InvalidGenomicCoordsException, IOException{
 		
@@ -109,5 +128,22 @@ public class GenomicCoordsHistoryTest {
 		assertTrue(gch.current().getSamSeqDict().toString().length() > 10);
 		assertTrue(gch.getHistory().get(0).getSamSeqDict().toString().length() > 10);
 
+	}
+
+	@Test
+	public void canSetGenomeFromInvalidPosition() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
+		
+		GenomicCoordsHistory gch= new GenomicCoordsHistory();
+		gch.add(new GenomicCoords("nonexisting:1-100", null, null));
+		gch.add(new GenomicCoords("nonexisting:2-100", null, null));
+		gch.add(new GenomicCoords("nonexisting:3-100", null, null));
+		
+		List<String> cmdInput= new ArrayList<String>();
+		cmdInput.add("test_data/chr7.fa");
+		gch.setGenome(cmdInput);
+		
+		assertEquals("chr7", gch.current().getChrom());
+		assertEquals("test_data/chr7.fa", gch.current().getFastaFile());
+		assertEquals(1, gch.getHistory().size()); // Invalid positions have been removed.
 	}
 }
