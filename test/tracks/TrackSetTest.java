@@ -22,6 +22,7 @@ import samTextViewer.Utils;
 
 public class TrackSetTest {
 
+	
 	@Test
 	public void canGetListOfOpenedFiles() throws ClassNotFoundException, IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 

@@ -22,8 +22,7 @@ shasum -a 256 ASCIIGenome-0.6.4.zip
 Description
 -----------
 
-`ASCIIGenome` is a genome browser based on command line interface and designed for
-running from console terminals.
+`ASCIIGenome` is a genome browser based on command line interface and designed for running from console terminals.
 
 Since `ASCIIGenome` does not require a graphical interface it is particularly
 useful for  quickly visualizing genomic data on remote servers while offering flexibility similar to popular GUI viewers like [IGV](https://www.broadinstitute.org/igv/).

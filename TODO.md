@@ -7,9 +7,9 @@ Features
 * Allow the user to set the `tmp` directory. By default use a `tmp` other then 
   the system default. On Linux the `tmp` is often pretty small.
 
-* Append pdf as in `save -a images.pdf`. With [itext](http://burnignorance.com/java-web-development-tips/java-merging-multiple-pdfs-into-a-single-pdf-using-itext/). Or see [PDFMergerUtility](http://stackoverflow.com/questions/3585329/how-to-merge-two-pdf-files-into-one-in-java)
+* Option to log transform quantitative data.
 
-* Feature sample: Command to display only a random sample of features in current window. 
+* Sampling feature: Command to display only a random sample of features in current window. 
   Useful to see the density of features in large intervals with lots of features. E.g.
 
 ```
@@ -36,6 +36,10 @@ with data taken from the raw. Reference sequence if available will be in fasta f
 
 Refactor
 --------
+
+* Test runner `test/run_tests.sh` is effectively not used and clunky. Replace with a *e.g.* snakemake script to run tests properly.
+
+* Populate the enum class `Command` and use `Command.cmdName` in place of the hardcoded command names.
 
 * Each command in CommandHelp should be a class on its own extending CommandHelp. The super class command help
 should implement a `validate()` method which is customized to each sub class. `.validate()` should check e.g.

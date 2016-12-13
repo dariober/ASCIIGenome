@@ -5,9 +5,11 @@ Open and browse
 ---------------
 
 Open some peak and bigWig files from
-`ENCODE <http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/>`_. Note that
-opening remote bigwig files is a little slow (IGV seems equally slow). You might also need to 
-start Java with the option ` -Djava.net.useSystemProxies=true` (see also `issue#6 <https://github.com/dariober/ASCIIGenome/issues/6>`_)::
+`ENCODE <http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/>`_. 
+
+.. note:: Opening remote files is a little slow (IGV seems equally slow). You might also need to  start Java with the option `-Djava.net.useSystemProxies=true` (see also `issue#6 <https://github.com/dariober/ASCIIGenome/issues/6>`_)
+
+::
 
     encode=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs
 
@@ -82,13 +84,7 @@ coordinates as `chrom_start-end`.::
         gencode_genes.gtf \
         peaks.bed > /dev/null
 
-To concatenate several pdf files in a single one you can use ghostscript which should be 
-available on Unix/Linux systems as for example::
-
-    gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=out.pdf in1.pdf in2.pdf
-
-A similar task may be achieved by wrapping ASCIIGenome in a for-loop but it would much slower and complicated since each iteration would
-require restarting the JVM and re-loading the tracks.
+To save all the screenshots in a single pdf use the >> operator in the *save* command, *e.g.* :code:`save >> myScreenshots.pdf`.
 
 Finding sequence motifs
 -----------------------

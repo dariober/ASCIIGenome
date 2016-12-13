@@ -33,6 +33,31 @@ script :code:`ASCIIGenome` and the jar file :code:`ASCIIGenome.jar` in the same 
 
     ASCIIGenome [options]
 
+.. note:: This part below has nothing to do with ASCIIGenome specifically. These are just general instructions to add executable files to your PATH. 
+
+For Unix users: If you have administrator rights and you want to make ASCIIGenome available to all users,
+a popular choice of installation directory is :code:`/usr/local/bin/`, *e.g.*::
+
+    cp ASCIIGenome.jar /usr/local/bin/
+    cp ASCIIGenome /usr/local/bin/
+
+If you don't have administrator rights (*i.e.* you get a :code:`Permission denied` error) you can instead copy to a directory that you have on your 
+PATH and where you have permission to write. A popular user directory for executable files is :code:`$HOME/bin` (*e.g.* :code:`/home/myName/bin` or :code:`/Users/myName/bin` or short :code:`~/bin`). *e.g.*::
+
+    cp ASCIIGenome.jar ~/bin/
+    cp ASCIIGenome ~/bin/
+
+If :code:`~/bin` does not exist or is not on your PATH create it with::
+
+    mkdir ~/bin/
+
+And to add to it to your PATH edit your profile file to add the new 
+directory. *E.g.* edit :code:`~/.bash_profile` to::
+    
+    PATH=/home/myName/bin:$PATH
+
+Then reload the profile file or log off and log back in to make the changes effective.
+
 Note the helper is a bash script. To set the amount of memory available to java use the :code:`-Xmx` option as e.g. :code:`java -Xmx1500m -jar ...`.
 
 If for some reason the text formatting misbehaves, disable it with the :code:`-nf` option.

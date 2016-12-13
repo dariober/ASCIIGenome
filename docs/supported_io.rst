@@ -6,34 +6,38 @@ Input and output
 Input file formats
 ------------------
 
-File name extensions matter as file types are usually recognized by their extension in case
-insensitive mode. Reading remote files might require starting java with the option
-:code:`-Djava.net.useSystemProxies=true`  (see `issue#6 <https://github.com/dariober/ASCIIGenome/issues/6>`_).
-
+File name extensions matter as file types are usually recognized by their extension. Reading remote files might require starting java with the option
+:code:`-Djava.net.useSystemProxies=true`  (see `issue#6 <https://github.com/dariober/ASCIIGenome/issues/6>`_). 
 Unless noted otherwise remote URL links are supported. 
 
-* **bam** files must be sorted and indexed, *e.g.* with :code:`samtools sort` and :code:`samtools index`. Loaded
-  bam files generate two tracks: One for read coverage profile and one for the aligned reads. 
-  Paths to remote URLs are supported but painfully slow (*IGV seems to suffer of the same issue*). 
+.. csv-table::
+   :header: "Format", "Extension", "Notes"
+   :widths: 10, 10, 40
 
-* **bigWig** recognized by extension :code:`.bw` or :code:`.bigWig`.
+   "", "*Annotation*", ""
+   "**gtf**, **gff**", ":code:`.gtf .gff .gff3`", "Can be gzipped (:code:`.gz`)"
+   "**bigBed**", ":code:`.bb .bigBed`", ""
+   "**bed**", "Any", "Can be gzipped (:code:`.gz`)"
+   "", "*Quantitative*", ""
+   "**bigWig**", ":code:`.bigWig .bw`", ""
+   "**bedGraph**", ":code:`.bedGraph`", "Can be gzipped (:code:`.gz`)"
+   "**tdf**", ":code:`.tdf`", "Useful for quantitative data on very large intervals (see `tdf here <https://www.broadinstitute.org/igv/TDF>`_)."
+   "", "*Other*", ""
+   "**vcf**", ":code:`.vcf`", "Can be gzipped (:code:`.gz`)"
+      "**bam**", ":code:`.bam`", "Must be Sorted and indexed. 
 
-* **bedGraph** recognized by extension :code:`.bedGraph` or :code:`.bedgraph`
+   Remote URLs are painfully slow (*same for IGV*)." 
 
-* **bed**, **gtf**, **gff** are recognized by respective extensions.
-
-* **tdf** This is very useful for quickly displaying very large intervals like tens of megabases or entire chromosomes (see `tdf here <https://www.broadinstitute.org/igv/TDF>`_).
-
-* **vcf** Supported but their representation is not too sophisticated. URL should be supported but it appears ftp from 1000genomes doesn't work (same for IGV).
-
-* All other file extensions (e.g. txt, narrowPeak) will be assumed to be bed formatted files.
-
-All plain text formats (bed, bedgraph, etc) can be read as gzipped and there is no need to decompress them.
+Note that the recognition of the extension is *case insensitive*, so *.bigBed* is the 
+same as *.bigbed*.
 
 A notable format currently **not** supported is cram.
 
 .. tip:: For input format specs see also `UCSC format <https://genome.ucsc.edu/FAQ/FAQformat.html>`_ and 
          for guidelines on the choice of format see the `IGV recommendations <https://www.broadinstitute.org/igv/RecommendedFileFormats>`_.
+
+Please see `issue #2 <https://github.com/dariober/ASCIIGenome/issues/2>`_ and `issue #41 <https://github.com/dariober/ASCIIGenome/issues/41>`_
+about reading remote tabix files (*to be resolved*).
 
 .. _handling_large_files:
 
