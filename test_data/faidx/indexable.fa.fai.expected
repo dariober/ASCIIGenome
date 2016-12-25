@@ -1,0 +1,8 @@
+regular;with_comment	122	24	32	33
+sequence_in_one_line	64	172	64	65
+>name_starts_with_>	18	258	18	19
+1_with	122	299	32	33
+2_with	122	447	32	33
+space_after_>	24	592	24	25
+triplets	108	627	30	40
+Trailing_space_in_sequence	76	799	24	28
