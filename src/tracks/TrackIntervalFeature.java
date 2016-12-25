@@ -459,10 +459,6 @@ public class TrackIntervalFeature extends Track {
 
 	protected String getUnformattedTitle(){
 
-		if(this.isHideTitle()){
-			return "";
-		}
-		
 		String sq= "";
 		if (this.getFeatureDisplayMode().equals(FeatureDisplayMode.COLLAPSED)){
 			sq= "; collapsed";
@@ -492,6 +488,11 @@ public class TrackIntervalFeature extends Track {
 	
 	@Override
 	public String getTitle(){
+		
+		if(this.isHideTitle()){
+			return "";
+		}
+		
 		return this.formatTitle(this.getUnformattedTitle()) + "\n";
 	}
 	
@@ -603,19 +604,24 @@ public class TrackIntervalFeature extends Track {
 		List<String> featureList= new ArrayList<String>();
 		
 		int count= this.getPrintRawLineCount();
+		String omitString= "";
 		for(IntervalFeature ift : intervalFeatureList){
 			featureList.add(ift.getRaw());
 			count--;
 			if(count == 0){
 				int omitted= intervalFeatureList.size() - this.getPrintRawLineCount();
 				if(omitted > 0){
-					System.err.println("[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]");
+					omitString= "[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]";
+					// System.err.println("[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]");
 				}
 				break;
 			}
 		}
 		List<String> tabList= Utils.tabulateList(featureList);
 		StringBuilder sb= new StringBuilder();
+		if( ! omitString.isEmpty()){
+			sb.append(omitString + "\n");
+		}
 		for(String x : tabList){
 			if(x.length() > windowSize){
 				x= x.substring(0, windowSize);

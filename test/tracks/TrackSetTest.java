@@ -154,7 +154,6 @@ public class TrackSetTest {
 		assertTrue(msg.length() > 10);
 	}
 	
-	@Test // Disable to save time
 	public void canAddTrackFromSourcename() throws InvalidGenomicCoordsException, IOException, BamIndexNotFoundException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", null, null);

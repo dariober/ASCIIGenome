@@ -46,6 +46,16 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
+	public void canHideTitle() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		// See issue #42
+		String intervalFileName= "test_data/hg19.gencode_genes_v19.gtf.gz";
+		GenomicCoords gc= new GenomicCoords("chr7", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setHideTitle(true);
+		assertEquals("", tif.getTitle());
+	}
+	
+	@Test
 	public void transcriptGFFToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		String intervalFileName= "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3";
@@ -376,7 +386,7 @@ public class TrackIntervalFeatureTest {
 		assertEquals(20, tif.printFeaturesToFile().split("\n").length);
 
 		tif.setPrintRawLineCount(5);
-		assertEquals(5, tif.printFeaturesToFile().split("\n").length);
+		assertEquals(5 + 1, tif.printFeaturesToFile().split("\n").length); // +1 for the string of omitted count.
 		
 	}
 	
