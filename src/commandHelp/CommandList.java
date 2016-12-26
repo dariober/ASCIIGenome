@@ -598,7 +598,7 @@ public class CommandList {
 		cmd.setName("setGenome"); cmd.setArgs("fasta|bam|genome"); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Set genome and reference sequence.");
 		cmd.setAdditionalDescription("The genome, i.e. the list of contig and names and sizes, "
-				+ "can be extracted from the indexed fasta reference, from a bam file or from "
+				+ "can be extracted from the fasta reference, from a bam file or from "
 				+ "a genome identifier (e.g. hg19). If a fasta file is used also the "
 				+ "reference sequence becomes available.");
 		cmdList.add(cmd);

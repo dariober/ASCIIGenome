@@ -24,6 +24,7 @@ import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import faidx.UnindexableFastaFileException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
@@ -43,7 +44,7 @@ import tracks.TrackSet;
  */
 public class Main {
 	
-	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException {
+	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException, UnindexableFastaFileException {
 
 		final String cmdHistoryFile= System.getProperty("user.home") + File.separator + ".asciigenome_history";  
 		final String MARKER_FOR_HISTORY_FILE= "## file ##";
@@ -392,36 +393,6 @@ public class Main {
 			}
 		}
 	}
-
-//	private static void writeFileHistory(final Set<String> fileHistory, final String cmdHistoryFile, final int nmax, final String MARKER_FOR_HISTORY_FILE){
-//		
-//		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-//			public void run() {
-//	            
-//				Iterator<String> iter= fileHistory.iterator();
-//				List<String>lastHist= new ArrayList<String>();
-//				int i= nmax;
-//				while(iter.hasNext()){
-//					if(i == 0){
-//						break;
-//					}
-//					i--;
-//					lastHist.add(MARKER_FOR_HISTORY_FILE + iter.next());
-//				}
-//				
-//				try {
-//					BufferedWriter wr= new BufferedWriter(new FileWriter(new File(cmdHistoryFile)));
-//					for(String cmd : lastHist){
-//						wr.write(cmd + "\n");
-//					}
-//					wr.close();
-//				} catch (IOException e) {
-//					System.err.println("Unable to write history to " + cmdHistoryFile);
-//				}
-//	        }
-//	    }, "Shutdown-thread"));
-//
-//	}
 	
 	/**Write the history of commands to given file.
 	 * */
@@ -462,5 +433,5 @@ public class Main {
 	    }, "Shutdown-thread"));
 
 	}
-
+	
 }

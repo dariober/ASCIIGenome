@@ -486,7 +486,7 @@ setGenome
 
 :code:`setGenome fasta|bam|genome`
 
-Set genome and reference sequence. The genome, i.e. the list of contig and names and sizes, can be extracted from the indexed fasta reference, from a bam file or from a genome identifier (e.g. hg19). If a fasta file is used also the reference sequence becomes available.
+Set genome and reference sequence. The genome, i.e. the list of contig and names and sizes, can be extracted from the fasta reference, from a bam file or from a genome identifier (e.g. hg19). If a fasta file is used also the reference sequence becomes available.
 
 showGenome
 ++++++++++

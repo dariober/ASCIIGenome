@@ -53,6 +53,8 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import faidx.Faidx;
+import faidx.UnindexableFastaFileException;
 import filter.FirstOfPairFilter;
 import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.SAMFileReader;
@@ -79,7 +81,7 @@ import ucsc.UcscGenePred;
 @SuppressWarnings("deprecation")
 public class Utils {
 	
-	public static void checkFasta(String fasta) {
+	public static void checkFasta(String fasta) throws IOException, UnindexableFastaFileException {
 		if(fasta == null){
 			return;
 		}
@@ -96,16 +98,20 @@ public class Utils {
 		IndexedFastaSequenceFile faSeqFile = null;
 		try {
 			faSeqFile= new IndexedFastaSequenceFile(fafile);
-		} catch (FileNotFoundException e) {
-			System.err.println("\nIs fasta file '" + fasta + "' indexed? If not index it with e.g");
-			System.err.println("samtools faidx '" + fasta + "'\n");
-			System.exit(1);
-		}
-		try {
 			faSeqFile.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			System.err.println("\nIndexing '" + fasta + "'.");
+			new Faidx(new File(fasta));
+			(new File(fasta + ".fai")).deleteOnExit();
+			// System.err.println("\nIs fasta file '" + fasta + "' indexed? If not index it with e.g");
+			// System.err.println("samtools faidx '" + fasta + "'\n");
+			// System.exit(1);
 		}
+//		try {
+//			
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 	
     public static long getAlignedReadCount(File bam){

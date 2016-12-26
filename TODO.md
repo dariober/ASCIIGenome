@@ -9,6 +9,8 @@ Features
 
 * Option to log transform quantitative data.
 
+* Implement comments using e.g. // or # 
+
 * Sampling feature: Command to display only a random sample of features in current window. 
   Useful to see the density of features in large intervals with lots of features. E.g.
 

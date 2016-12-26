@@ -23,6 +23,7 @@ import com.google.common.base.Joiner;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import faidx.UnindexableFastaFileException;
 import filter.FirstOfPairFilter;
 import filter.FlagToFilter;
 import filter.ReadNegativeStrandFilter;
@@ -85,7 +86,7 @@ public class UtilsTest {
 		System.out.println(globbed);
 		
 		// With URLs
-		cmdInput = Utils.tokenize("ftp://ftp.ensembl.org/pub/current_gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz", " ");
+		cmdInput = Utils.tokenize("ftp://ftp.ensembl.org/pub/release-84/gtf/homo_sapiens/Homo_sapiens.GRCh38.84.abinitio.gtf.gz", " ");
 		globbed= Utils.globFiles(cmdInput);
 		assertEquals(1, globbed.size());
 	}
@@ -139,9 +140,14 @@ public class UtilsTest {
 	} 
 	
 	@Test
-	public void throwsGentleMessageOnMissingFaIndex(){
+	public void createFastaIndex() throws IOException, UnindexableFastaFileException{
 		String fastaFile= "test_data/noindex.fa";
+		assertTrue( ! (new File("test_data/noindex.fa.fai")).isFile()); // Check index actually does not exist
+		
 		Utils.checkFasta(fastaFile);
+		
+		assertTrue( (new File("test_data/noindex.fa.fai")).isFile() );
+		assertTrue( (new File("test_data/noindex.fa.fai")).length() > 10 );
 	} 
 	
 	@Test

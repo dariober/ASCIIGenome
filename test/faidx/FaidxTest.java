@@ -15,7 +15,6 @@ import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 
 public class FaidxTest {
 
-		
 	@Test
 	public void canIndexValidSeqs() throws IOException, UnindexableFastaFileException {
 		
@@ -112,5 +111,65 @@ public class FaidxTest {
 		new Faidx(fasta);
 		assertTrue( ! new File(fasta.getAbsolutePath() + ".fai").exists());
 	}
+
+//	@Test
+//	public void testFileChannel() throws IOException{
+//		
+//		FileChannel fileChannel = FileChannel.open(Paths.get("chr1.fa"));
+//		long n= 0;
+//		int noOfBytesRead = 0;
+//		
+//		long t0= System.nanoTime();
+//		
+//		while(noOfBytesRead != -1){
+//			ByteBuffer buffer = ByteBuffer.allocate(10000);
+//			noOfBytesRead = fileChannel.read(buffer);
+//			buffer.flip();
+//			while ( buffer.hasRemaining() ) {
+//				char x= (char)buffer.get();
+//				n++;
+//			}
+//		}
+//		long t1= System.nanoTime();
+//		System.err.println((float)(t1-t0) / 1e6);
+//		System.err.println("nchars: " + n);
+//	}
 	
+//	@Test
+//	public void testRead() throws IOException, UnindexableFastaFileException{
+//		
+//		BufferedReader fa= new BufferedReader(new FileReader(new File("chr1.fa")));
+//		long t0= System.nanoTime();
+//		int c;
+//		while( (c = fa.read()) != -1 ){
+//			if(c == '>'){ System.out.println(c); };
+//		}
+//		long t1= System.nanoTime();
+//		System.err.println(t1-t0); // ~ 7000 ms
+//
+//	}
+//	
+//	@Test
+//	public void testReadLine() throws IOException{
+//		
+//		BufferedReader fa= new BufferedReader(new FileReader(new File("chr1.fa")));
+//		
+//		String line;
+//		long t0= System.nanoTime();
+//		while( (line = fa.readLine()) != null ){
+//			if(line.contains(">")){ System.out.println(line); }
+//		}
+//		long t1= System.nanoTime();
+//		System.err.println(t1-t0); // ~ 700 ms
+//	}
+
+//	@Test
+//	public void simpleFasta() throws IOException, UnindexableFastaFileException{
+//		File fasta= new File("/Users/berald01/Desktop/asciigenome_demo/genome.fa");
+//		long t0= System.currentTimeMillis();
+//		new Faidx(fasta);
+//		long t1= System.currentTimeMillis();
+//		System.err.println(t1-t0);
+//	}
+			
 }

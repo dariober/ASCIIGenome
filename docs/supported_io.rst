@@ -81,10 +81,8 @@ There are different ways to set a genome:
 Fasta reference sequence
 ++++++++++++++++++++++++
 
-The reference sequence, optional, should be uncompressed and indexed, with *e.g.* `samtools faidx <http://www.htslib.org/doc/samtools.html>`_::
-
-    samtools faidx genome.fa
-
+The reference sequence, optional, should be uncompressed. A temporary index file is 
+created by *ASCIIGenome* if missing. 
 
 Output
 ------

@@ -1,6 +1,57 @@
 Examples
 ========
 
+Video clips
+-----------
+
+These short clips should give just a feel for how *ASCIIGenome* works in interactive
+mode.
+
+.. raw:: html
+
+    <iframe width="640" height="360" src="https://www.youtube.com/embed/8p753IcdImI" frameborder="0" allowfullscreen></iframe>
+
+This example loads a bam file and shows the read track at the bottom
+and the coverage track on top. After loading the bam file, the follow operations
+are executed at the command prompt:
+ 
+* Go to specified region.
+
+* Zoom in.
+
+* Repeatedly move forward by half a window size.
+
+* Zoom out.
+
+* Filter reads using samtools-like syntax.
+
+----
+
+.. raw:: html
+
+    <iframe width="640" height="360" src="https://www.youtube.com/embed/gaXdrePaB80" frameborder="1" allowfullscreen></iframe>
+
+This are two bigWig files of ChIP-Seq profiles. The corresponding peak regions
+are separately loaded. After loading two bigWig files, the following operations
+are executed at the command prompt:
+
+* Change track height to 12 lines each.
+
+* Add two *narrowPeak* files, captured with the glob :code:`*.narrowPeak.gz`.
+
+* Re-order tracks.
+
+* Zoom out.
+
+* Hide title lines.
+
+* Change limits of the Y-axes to be from 0 to maximum of all tracks.
+
+* Move to the next bed feature.
+
+* Show help for the :code:`ylim` command.
+
+
 Open and browse 
 ---------------
 
@@ -95,8 +146,7 @@ or via `IUPAC notation <https://en.wikipedia.org/wiki/Nucleic_acid_notation#IUPA
 This example is from `Biostars <https://www.biostars.org/p/221325/>`_. We want to find matches of
 the motif TATAWAA near gene ENSG00000168487.
 
-First load the reference sequence and a (remote) annotation file. Note that the fasta file must
-be indexed)::
+First load the reference sequence and a (remote) annotation file::
 
     ASCIIGenome -fa Homo_sapiens.GRCh38.dna.chromosome.8.fa \
         ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.8.gff3.gz
