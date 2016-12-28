@@ -1,3 +1,11 @@
+New in 1.0.0
+============
+
+This is expected to be a stable release. 
+
+* Add utility to index fasta files
+
+
 New in 0.6.0
 ============
 

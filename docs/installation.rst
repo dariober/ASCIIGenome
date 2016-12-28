@@ -6,7 +6,7 @@ Quick start
 
 In the commands below replace version number with the latest from `releases <https://github.com/dariober/ASCIIGenome/releases>`_::
 
-    wget https://github.com/dariober/ASCIIGenome/releases/download/v0.x.0/ASCIIGenome-x.y.z.zip
+    wget https://github.com/dariober/ASCIIGenome/releases/download/vX.Y.Z/ASCIIGenome-x.y.z.zip
     unzip ASCIIGenome-x.y.z.zip
 
     cd ASCIIGenome-x.y.z/
