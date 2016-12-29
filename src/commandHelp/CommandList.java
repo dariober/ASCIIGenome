@@ -721,7 +721,7 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-on | -off` Set mode. Without arguments toggle between on and off.\n"
 				+ "\n"
-				+ "* :code:`track_regex` List of regexes to capture target tracks."
+				+ "* :code:`track_regex` List of regexes to capture target tracks.\n"
 				+ "\n"
 				+ "Ignored without reference fasta sequence.");
 		cmdList.add(cmd);		

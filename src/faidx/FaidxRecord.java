@@ -1,10 +1,13 @@
 package faidx;
 
-/**
- * Example:
+/** This class represents an entry of the fasta index (i.e. a line of the .fai file) 
+ * 
+ * Example of .fai file:
 regular              122  9    32  33
 sequenc_in_one_line  64   156  64  65
 with                 122  241  32  33
+
+Columns are:
 
 1. Sequence name
 2. Sequence length
