@@ -31,9 +31,8 @@ are executed at the command prompt:
 
     <iframe width="640" height="360" src="https://www.youtube.com/embed/gaXdrePaB80" frameborder="1" allowfullscreen></iframe>
 
-This are two bigWig files of ChIP-Seq profiles. The corresponding peak regions
-are separately loaded. After loading two bigWig files, the following operations
-are executed at the command prompt:
+Here there are two bigWig files of ChIP-Seq profiles. The corresponding peak regions
+are separately loaded. The following operations are executed at the command prompt:
 
 * Change track height to 12 lines each.
 
@@ -51,6 +50,75 @@ are executed at the command prompt:
 
 * Show help for the :code:`ylim` command.
 
+Why the command line
+--------------------
+
+At first it may be nonsensical to use a viewer without graphical interface. In
+addition, typed commands involve a steeper learning curve and more frustration.
+However, the command line interface has some great benefits which, at least in
+part, explain why most bioinformaticians prefer R, python and Unix tools over
+Excel and Galaxy (which are great, by the way, just like IGV is great). Some advantages 
+of the command line interface over the GUI:
+
+* Streamline repetitive tasks.
+
+* Finer control of the commands.
+
+* Self-documented and therefore reproducible.
+
+This example should illustrate these points. For a start, most of my data files,
+especially the big ones, live on the institutes's computer cluster or on our
+group server. Almost nothing is stored on my workstation. Consequently pretty
+much all the work I do is via Unix commands, bash and the familiar samtools, bedtools,
+etc.  Popping up a GUI is often a disturbance of the workflow so having a
+visualisation tool with the same interface (*i.e.* command line) as these tools
+is more natural.
+
+Now, say we want to visualise the following files::
+
+    ts058_TS10-PEO1-Pt-A2.tdf 
+    ts059_TS10-PEO1-Pt-A4.tdf 
+    ts060_TS11-PEO1-DMF-A13.tdf 
+    ts061_TS11-PEO1-Pt-A12.tdf 
+    ts062_TS11-PEO1-Pt-A7.tdf 
+    ts063_TS11-PEO4-DMF-A5.tdf 
+    ts064_TS11-PEO4-Pt-A2.tdf 
+    ts065_TS11-PEO4-Pt-A4.tdf 
+    ts069_PEO1-DMF-A5.tdf 
+    ts070_PEO1-Pt-A18.tdf 
+    ts071_PEO1-Pt-A2.tdf
+
+Loading all these files by clinking one by one through a GUI can be annoying
+especially if they  are in different directories, not counting the time spent to
+pop up the GUI and scroll through the relevant menus. With *ASCIIGenome* you can
+probably just do one of the following::
+
+    ASCIIGenome ts0{58..71}*.tdf
+    ASCIIGenome *PEO1*.tdf *PEO4*.tdf
+    ASCIIGenome `find . -name '*PEO*.tdf'` ## If files are in different subdirs
+    ASCIIGenome ts058_TS10-PEO1-Pt-A2.tdf ts059_TS10-PEO1-Pt-A4.tdf <etc>
+
+The command line you have used can be copied in your documentation for reference and it can 
+be used again by copying and pasting it to the terminal. 
+
+Once these files have been loaded you may want to order them to have the PEO1 
+tracks before the PEO4s. This is just::
+    
+    orderTracks PEO1 PEO4
+
+Similarly, settings can be changed without the need of scrolling through
+menu options, for example::
+
+    colorTrack blue PEO1   <- Turn blue the PEO1 tracks
+    trackHeight 10 DMF     <- Make 10 lines high the tracks matching DMF
+
+Furthermore, the commands issued at the prompt can be scrolled with the UP and DOWN arrow
+keys. So if we want to change the colour of the PEO1 tracks again we just need to press UP two times,
+bring back the :code:`colorTrack blue PEO1` command, and edit it as required.
+
+We can put this together in a single command which, again, can go to the documentation::
+
+    ASCIIGenome -x 'orderTracks PEO1 PEO4 && colorTrack blue PEO1 && trackHeight 10 DMF' ts0{58..71}*.tdf
 
 Open and browse 
 ---------------
@@ -85,66 +153,6 @@ Result on terminal screen should look like this:
 
 The file is to *chr1_996137-1003137.pdf*, note that the variable :code:`%r` is expanded to the genomic coordinates.
 
-Why the command line
---------------------
-
-At first it may be nonsensical to use a viewer without graphical interface. In
-addition, typed commands involve a steeper learning curve and more frustration.
-However, the command line interface has some great benefits which, at least in
-part, explain why most bioinformaticians prefer R, python and Unix tools over
-Excel and Galaxy (which are great, by the way, just like IGV is great). This
-example should give a sense of why the command line interface is preferable.
-
-For a start, most of my data files, especially the big ones, live on the institutes's computer 
-cluster or on our group server. Almost nothing is stored on my workstation. Consequently
-pretty much all the work I do is via Unix, bash and the familiar samtools, bedtools, etc. 
-Popping up a GUI is often a disturbance of the workflow. Having a visualisation tool
-with the same interface (*i.e.* command line) as these tools is more natural. 
-
-Now, say we want to visualise the following files::
-
-    ts058_TS10-PEO1-Pt-A2.tdf 
-    ts059_TS10-PEO1-Pt-A4.tdf 
-    ts060_TS11-PEO1-DMF-A13.tdf 
-    ts061_TS11-PEO1-Pt-A12.tdf 
-    ts062_TS11-PEO1-Pt-A7.tdf 
-    ts063_TS11-PEO4-DMF-A5.tdf 
-    ts064_TS11-PEO4-Pt-A2.tdf 
-    ts065_TS11-PEO4-Pt-A4.tdf 
-    ts069_PEO1-DMF-A5.tdf 
-    ts070_PEO1-Pt-A18.tdf 
-    ts071_PEO1-Pt-A2.tdf
-
-Loading all these files by clinking one by one through a GUI can be annoying
-especially if they  are in different directories, not counting the time spent to
-pop up the GUI and scroll through the relevant menus. With *ASCIIGenome* you can
-probably just do one of the following::
-
-    ASCIIGenome ts0{58..71}*.tdf
-    ASCIIGenome *PEO1*.tdf *PEO4*.tdf
-    ASCIIGenome `find . -name '*PEO*.tdf'` ## If files are in different subdirs
-
-The command line you have used can be copied in your documentation for reference and it can 
-be used again by copying and pasting it to the terminal. 
-
-Once these files have been loaded you may want to order them to have the PEO1 
-tracks before the PEO4s. This is just::
-    
-    orderTracks PEO1 PEO4
-
-Similarly, settings can be changed without the need of scrolling through
-menu options, for example::
-
-    colorTrack blue PEO1   <- Turn blue the PEO1 tracks
-    trackHeight 10 DMF     <- Make 10 lines high the tracks matching DMF
-
-Furthermore, the commands issued at the prompt can be scrolled with the UP and DOWN arrow
-keys. So if we want to change the colour of the PEO1 tracks again we just need to press UP two times,
-bring back the :code:`colorTrack blue PEO1` command, and edit it as required.
-
-We can put this together in a single command which, again, you can add to your documentation::
-
-    ASCIIGenome -x 'orderTracks PEO1 PEO4 && colorTrack blue PEO1 && trackHeight 10 DMF' ts0{58..71}*.tdf
 
 Finding & filtering stuff
 -------------------------
@@ -180,9 +188,8 @@ Batch and non-interactive mode
 ------------------------------
 
 *ASCIIGenome* can be integrated in a script to be executed without direct human
-intervention. Started with the :code:`--nonInteractive/-ni` flag, *ASCIIGenome* will
-process the command line input and exit. For example, a simple bash script may contain
-the following commands::
+intervention. For example, a simple bash script may contain the following
+commands::
 
     #!/bin/bash
 
@@ -196,10 +203,10 @@ the following commands::
 
 In this script, a ChIP-Seq sample is first analysed to find peaks against an
 input  control. ChIP, input and output from the peak caller are then loaded in
-*ASCIIGenome*  to visualize a control region. *ASCIIGenome* will save the image in 
-pdf file named after the ChIP sample and exit. An investigator can later inspect 
-the pdf figure to assess the quality of the ChIP and to check where the peak caller 
-has detected a peak.
+*ASCIIGenome*  to visualize a region of interest. *ASCIIGenome* will save the
+image in  pdf file named after the ChIP sample and exit. An investigator can
+later inspect  the pdf figure to assess the quality of the ChIP or to check
+whether a peak has been detected.
 
 The example above can easily be extended to several regions to be visualised in
 batch for one or more tracks. For example, you have a list of ChIP-Seq peaks or
