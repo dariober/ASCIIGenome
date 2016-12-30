@@ -15,26 +15,26 @@ Unless noted otherwise remote URL links are supported.
    :widths: 10, 10, 40
 
    "", "*Annotation*", ""
-   "**gtf**, **gff**", ":code:`.gtf .gff .gff3`", "Can be gzipped (:code:`.gz`)"
-   "**bigBed**", ":code:`.bb .bigBed`", ""
-   "**bed**", "Any", "Can be gzipped (:code:`.gz`)"
+   "`gtf <http://gmod.org/wiki/GFF2>`_, `gff <http://gmod.org/wiki/GFF3>`_", ":code:`.gtf .gff .gff3`", "Can be gzipped (:code:`.gz`)"
+   "`bigBed <http://genome.ucsc.edu/goldenPath/help/bigBed.html>`_", ":code:`.bb .bigBed`", ""
+   "`bed <http://www.ensembl.org/info/website/upload/bed.html>`_", "Any", "Can be gzipped (:code:`.gz`)"
    "", "*Quantitative*", ""
-   "**bigWig**", ":code:`.bigWig .bw`", ""
-   "**bedGraph**", ":code:`.bedGraph`", "Can be gzipped (:code:`.gz`)"
-   "**tdf**", ":code:`.tdf`", "Useful for quantitative data on very large intervals (see `tdf here <https://www.broadinstitute.org/igv/TDF>`_)."
+   "`bigWig <https://genome.ucsc.edu/goldenpath/help/bigWig.html>`_", ":code:`.bigWig .bw`", ""
+   "`bedGraph <https://genome.ucsc.edu/goldenpath/help/bedgraph.html>`_", ":code:`.bedGraph`", "Can be gzipped (:code:`.gz`)"
+   "`tdf <https://www.broadinstitute.org/igv/TDF>`_", ":code:`.tdf`", "Useful for quantitative data on very large intervals."
    "", "*Other*", ""
-   "**vcf**", ":code:`.vcf`", "Can be gzipped (:code:`.gz`)"
-      "**bam**", ":code:`.bam`", "Must be Sorted and indexed. 
+   "`vcf <https://en.wikipedia.org/wiki/Variant_Call_Format>`_", ":code:`.vcf`", "Can be gzipped (:code:`.gz`)"
+   "`bam <https://samtools.github.io/hts-specs/SAMv1.pdf>`_", ":code:`.bam`", "Must be Sorted and indexed. 
 
    Remote URLs are painfully slow (*same for IGV*)." 
 
 Note that the recognition of the extension is *case insensitive*, so *.bigBed* is the 
 same as *.bigbed*.
 
-A notable format currently **not** supported is cram.
+A notable format currently **not** supported is CRAM.
 
-.. tip:: For input format specs see also `UCSC format <https://genome.ucsc.edu/FAQ/FAQformat.html>`_ and 
-         for guidelines on the choice of format see the `IGV recommendations <https://www.broadinstitute.org/igv/RecommendedFileFormats>`_.
+.. tip:: For input format specs see also `UCSC format <https://genome.ucsc.edu/FAQ/FAQformat.html>`_ and `Ensembl <http://www.ensembl.org>`_.  
+         For guidelines on the choice of format see the `IGV recommendations <https://www.broadinstitute.org/igv/RecommendedFileFormats>`_.
 
 Please see `issue #2 <https://github.com/dariober/ASCIIGenome/issues/2>`_ and `issue #41 <https://github.com/dariober/ASCIIGenome/issues/41>`_
 about reading remote tabix files (*to be resolved*).
@@ -78,11 +78,15 @@ There are different ways to set a genome:
 
 .. _Fasta-reference-sequence:
 
-Fasta reference sequence
-++++++++++++++++++++++++
+Reference sequence
+++++++++++++++++++
 
-The reference sequence, optional, should be uncompressed. A temporary index file is 
-created by *ASCIIGenome* if missing. 
+A reference sequence file is optional. If provided, it should be in fasta format,
+and uncompressed. If the fasta file does not have an index, *ASCIIGenome* will 
+create a temporary index file that will be deleted on exit. A permanent index can
+be created with::
+
+    samtools faidx ref.fa 
 
 Output
 ------

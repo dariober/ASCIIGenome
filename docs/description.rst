@@ -3,7 +3,7 @@ Description
 
 .. raw:: html
 
-    <iframe width="600" height="350" src="https://www.youtube.com/embed/LRkhlx3D9Kc" frameborder="0" allowfullscreen></iframe>
+    <iframe width="640" height="360" src="https://www.youtube.com/embed/8p753IcdImI" frameborder="0" allowfullscreen></iframe>
 
 `ASCIIGenome` is a command-line genome browser running from terminal window and solely based on
 ASCII characters. Since `ASCIIGenome` does not require a graphical interface it is particularly

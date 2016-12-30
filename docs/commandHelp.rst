@@ -476,6 +476,7 @@ Set bisulfite mode for read tracks matched by regex. In bisulfite mode, the char
 * :code:`-on | -off` Set mode. Without arguments toggle between on and off.
 
 * :code:`track_regex` List of regexes to capture target tracks.
+
 Ignored without reference fasta sequence.
 
 General
