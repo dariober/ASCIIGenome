@@ -3,9 +3,7 @@ package faidx;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -19,8 +17,6 @@ public class FaidxTest {
 
 	@Test
 	public void canIndexValidSeqs() throws IOException, UnindexableFastaFileException {
-		
-		new Faidx(new File("test_data/faidx/simple.fa"));
 		
 		File fasta= new File("test_data/faidx/indexable.fa");
 		File fai= new File(fasta.getAbsoluteFile() + ".fai");
@@ -146,26 +142,26 @@ public class FaidxTest {
 //		System.err.println("nchars: " + n);
 //	}
 
-	@Test
-	public void readArrayTest() throws IOException, InterruptedException {
-	    
-		final int BUFFER_SIZE = 100;
-		char[] arr = new char[BUFFER_SIZE];
-		
-	    int result = 0;
-	    try (BufferedReader reader = new BufferedReader(new FileReader("chr1.fa"))) {
-	        int charsRead;
-			long t0= System.nanoTime();
-	        while ((charsRead = reader.read(arr)) != -1) {
-	            for (int i = 0; i < charsRead; i++) {
-	            	result += arr[i];
-	            }
-	        }
-			long t1= System.nanoTime();
-			System.err.println((t1-t0) / 1000000.0);
-	    }
-	    System.err.println(result);
-	} 
+//	@Test
+//	public void readArrayTest() throws IOException, InterruptedException {
+//	    
+//		final int BUFFER_SIZE = 100;
+//		char[] arr = new char[BUFFER_SIZE];
+//		
+//	    int result = 0;
+//	    try (BufferedReader reader = new BufferedReader(new FileReader("chr1.fa"))) {
+//	        int charsRead;
+//			long t0= System.nanoTime();
+//	        while ((charsRead = reader.read(arr)) != -1) {
+//	            for (int i = 0; i < charsRead; i++) {
+//	            	result += arr[i];
+//	            }
+//	        }
+//			long t1= System.nanoTime();
+//			System.err.println((t1-t0) / 1000000.0);
+//	    }
+//	    System.err.println(result);
+//	} 
 	
 //	@Test
 //	public void testRead() throws IOException, UnindexableFastaFileException{
