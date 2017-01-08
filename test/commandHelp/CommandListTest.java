@@ -23,7 +23,7 @@ public class CommandListTest {
 	@Test
 	public void canPrintDocstringForCommand() throws InvalidCommandLineException {
 		System.out.println("DOCSTRING");
-		System.out.println(CommandList.getHelpForCommand("BSseq"));
+		System.out.println(CommandList.getHelpForCommand("awk"));
 	}
 
 }

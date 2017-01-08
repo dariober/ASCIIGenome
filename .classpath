@@ -18,5 +18,7 @@
 			<attribute name="javadoc_location" value="jar:file:/Users/berald01/eclipse/libraries/itext/itext5-5.5.10/itextpdf-5.5.10-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/biojava/bytecode-1.9.3-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/jawk_hoijui/Jawk/target/jawk-1.03-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

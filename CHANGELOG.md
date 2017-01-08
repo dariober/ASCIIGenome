@@ -1,3 +1,13 @@
+New in 1.1.0
+============
+
+* `history` and `recentlyOpened` takes optional argument `-grep`
+
+* Introduced `awk` for advanced record filtering 
+
+* Fixed bug where a string starting with '!' caused the JLine2 ConsoleReader to crash. 
+  Fixed by setting `console.setExpandEvents(false)`
+
 New in 1.0.0
 ============
 

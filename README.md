@@ -17,6 +17,12 @@ rm -r ASCIIGenome-1.0.0
 // Update brew formula 
 // Edit install/brew/asciigenome.rb to change release version and sha sum.
 shasum -a 256 ASCIIGenome-1.0.0.zip
+
+// Update bioconda
+cd /Users/berald01/svn_git/bioconda-recipes
+svn checkout https://github.com/bioconda/bioconda-recipes/trunk/recipes/asciigenome
+cd asciigenome
+// Edit meta.yaml to new version
 -->
 
 Description

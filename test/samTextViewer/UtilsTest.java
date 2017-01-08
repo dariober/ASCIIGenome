@@ -7,15 +7,24 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -47,6 +56,46 @@ public class UtilsTest {
 	
 	public static String fastaFile= "test_data/chr7.fa";
 
+	@Test
+	public void testAwk() throws Exception{
+
+		String fin= "/Users/berald01/Downloads/hg19.gencode_genes_v19.gtf"; // "test_data/hg19_genes_head.gtf"
+		InputStream is= new FileInputStream(fin);
+		
+		String[] args= {"-F", "\t", "NR <= 100000"}; 
+		System.err.println(Arrays.toString(args));
+		
+		PrintStream stdout = System.out;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try{
+			PrintStream os= new PrintStream(baos);
+			System.err.println("START");
+			long t0= System.currentTimeMillis();
+			new org.jawk.Main(args, is, os, System.err);
+			long t1= System.currentTimeMillis();
+			System.err.println(t1-t0);
+
+		} finally{
+			System.setOut(stdout);
+			is.close();
+		}
+		System.err.println("DONE");
+		long t0= System.currentTimeMillis();
+		String content = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+		// assertEquals(10, content.split("\n").length);
+		
+		List<String> full= FileUtils.readLines(new File(fin));
+		Set<String> keepme= new HashSet<String>(Arrays.asList(content.split("\n")));
+		for(String line : full){
+			if(keepme.contains(line)){
+				// System.err.println(line);
+			}
+		}
+		long t1= System.currentTimeMillis();
+		System.err.println(t1-t0);
+ 
+	}
+	
 	@Test
 	public void testHistory() throws IOException{
 		ConsoleReader console= new ConsoleReader();
@@ -541,14 +590,32 @@ public class UtilsTest {
 		assertEquals("", Utils.printSamSeqDict(null, 30));
 	}
 	
+//	@Test
+//	public void canSplitCommandLineInTokens(){
+//		
+//		List<String> x= Lists.newArrayList(Splitter.on(Pattern.compile("&&(?=([^']*'[^']*')*[^']*$)"))
+//			.trimResults()
+//			.split("awk '$4 > 910000 && $4 < 1000000' && grep -i foo"));
+//		
+//		System.err.println(x);
+//		
+//		List<String> cmdInput= Utils.tokenize("awk '$4 > 910000 && $4 < 1000000'", "&&");
+//		System.err.println(cmdInput);
+//		assertEquals(1, cmdInput.size());
+//		
+//		// Note single quotes
+//		cmdInput= Utils.tokenize("foo && bar && 'baz && baz'", "&&");
+//		assertEquals(3, cmdInput.size());
+//		assertEquals("baz && baz", cmdInput.get(2));
+//	}
+	
 	@Test
 	public void canSplitStringInTokens(){
-
+		
 		String str= "foo    bar    baz   ";
 		assertTrue(Utils.tokenize(str, " ").contains("bar"));
 		assertTrue(Utils.tokenize(str, " ").contains("baz"));
 		// assertEquals("bar", Utils.tokenize(str, " ").get(1));
-		
 		
 		// Note use of quotes
 		ArrayList<String> xx= Utils.tokenize("'foo && bar' "

@@ -1,21 +1,30 @@
 package tracks;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
 import exceptions.InvalidCommandLineException;
@@ -37,6 +46,8 @@ public class TrackIntervalFeature extends Track {
 	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
 	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
+	private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
+	private Set<String> awkFiltered; // List of features after awk filtering.
 	
 	/* C o n s t r u c t o r */
 
@@ -66,7 +77,6 @@ public class TrackIntervalFeature extends Track {
 			
 			this.setWorkFilename(filename);
 			this.setTrackFormat(TrackFormat.BIGBED);
-			//this.type= TrackFormat.BIGBED;
 			
 		} else if( ! Utils.hasTabixIndex(new File(filename).getAbsolutePath())){
 			// Tabix index not found for this file. Sort and index input to tmp.
@@ -81,7 +91,6 @@ public class TrackIntervalFeature extends Track {
 			this.setWorkFilename(tmpWorkFile);
 
 			this.setTrackFormat(Utils.getFileTypeFromName(new File(filename).getName()));
-			//this.type= Utils.getFileTypeFromName(new File(filename).getName());
 			new MakeTabixIndex(filename, new File( this.getWorkFilename() ), Utils.trackFormatToTabixFormat(this.getTrackFormat()));	
 
 			this.setWorkFilename(tmpWorkFile);
@@ -90,7 +99,6 @@ public class TrackIntervalFeature extends Track {
 		} else { // This means the input is tabix indexed.
 			this.setWorkFilename(filename);
 			this.setTrackFormat(Utils.getFileTypeFromName(new File(filename).getName()));
-			// this.type= Utils.getFileTypeFromName(new File(filename).getName());
 			this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
 		}
 		this.setGc(gc);
@@ -118,6 +126,7 @@ public class TrackIntervalFeature extends Track {
 		for(IntervalFeature ift : intervalFeatureList){
 			ift.mapToScreen(this.getGc().getMapping(windowSize));
 		}
+		
 	}
 	
 	public List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to) throws IOException, InvalidGenomicCoordsException{
@@ -150,6 +159,8 @@ public class TrackIntervalFeature extends Track {
 			xFeatures.add(intervalFeature);
 		} 
 		
+		this.setAwkFiltered(xFeatures);
+		
 		// Remove hidden features
 		List<IntervalFeature> xFeaturesFiltered= new ArrayList<IntervalFeature>();
 		for(IntervalFeature x : xFeatures){
@@ -160,6 +171,41 @@ public class TrackIntervalFeature extends Track {
 		return xFeaturesFiltered;
 	}
 
+	/** Populate field awkFiltered. The features that pass the awk filter go into the string set
+	 * "awkFiltered". Later, we decide whether a feature is visible by testing if the awkFiltered set 
+	 * contains the feature.  
+	 * */
+	private void setAwkFiltered(List<IntervalFeature> features) throws IOException {
+		
+		if(this.getAwk().isEmpty()){
+			this.awkFiltered= new HashSet<String>();
+			return;
+		}
+		
+		String[] strFeatures= new String[features.size()];
+		for(int i= 0; i < features.size(); i++){
+			strFeatures[i]= features.get(i).getRaw();
+		}
+		String str= Joiner.on("\n").join(strFeatures);
+		
+		InputStream is= new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
+		
+		String[] args= Utils.tokenize(this.getAwk(), " ").toArray(new String[0]); 
+		
+		PrintStream stdout = System.out;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try{
+			PrintStream os= new PrintStream(baos);
+			new org.jawk.Main(args, is, os, System.err);
+		} catch(Exception e){
+			throw new IOException();
+		} finally{
+			System.setOut(stdout);
+			is.close();
+		}
+		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);		
+		this.awkFiltered= new HashSet<String>(Arrays.asList(output.split("\n")));
+	}
 
 	/** Return true if string is visible, i.e. it
 	 * passes the regex filters. Note that regex filters are applied to the raw string.
@@ -175,11 +221,22 @@ public class TrackIntervalFeature extends Track {
 		if(!this.hideRegex.isEmpty()){
 			hideIt= Pattern.compile(this.hideRegex).matcher(x).find();	
 		}
+		boolean isVisible= false;
 		if(showIt && !hideIt){
-			return true;
+			isVisible= true;
 		} else {
-			return false;
-		} 
+			return false; // If feature is not visible, no need to go on as there is no way to bring it back.
+		}
+		
+		// Awk
+		if( ! this.getAwk().isEmpty()){
+			if(this.awkFiltered.contains(x)){
+				isVisible= true;
+			} else {
+				isVisible= false;
+			}
+		}
+		return isVisible;
 	}
 
 	/**Return the coordinates of the next feature so that the start coincide with the start of the feature and
@@ -467,6 +524,10 @@ public class TrackIntervalFeature extends Track {
 		if(this.getGap() == 0){
 			gapped= "; ungapped";
 		}
+		String awk= "";
+		if(!this.getAwk().isEmpty()){
+			awk= "; awk:on";
+		}
 		
 		String grep= "";
 		if( ! this.getShowRegex().equals(SHOW_REGEX) ){
@@ -482,7 +543,8 @@ public class TrackIntervalFeature extends Track {
 	                 + " N: " + this.intervalFeatureList.size()
 					 + grep
 	                 + sq
-	                 + gapped;
+	                 + gapped 
+	                 + awk;
 		return title;
 	}
 	
@@ -916,87 +978,7 @@ public class TrackIntervalFeature extends Track {
 		Collections.sort(flatList);
 		return flatList;
 	}
-	
 
-	/** Merge feature using the screen coordinates to establish overlap instead of the genomic coordinates
-	 * */
-//	private List<IntervalFeature> mergeIntervalFeaturesOnScreen(List<IntervalFeature> intervalList) throws InvalidGenomicCoordsException{
-//		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();		 
-//		if(intervalList.size() == 0){
-//			return mergedList;
-//		}
-//		
-//		String chrom = null;
-//		int from= -1;
-//		int to= -1;
-//		int screenFrom= -1;
-//		int screenTo= -1;
-//		int numMrgIntv= 1; // Number of intervals in the merged one. 
-//		Set<Character> strand= new HashSet<Character>(); // Put here all the different strands found in the merged features.		
-//		
-//		for(int i= 0; i < (intervalList.size()+1); i++){
-//			// We do an additional loop to add to the mergedList the last interval.
-//			// The last loop has interval == null so below you need to account for it
-//			IntervalFeature interval= null;
-//			if(i < intervalList.size()){
-//				interval= intervalList.get(i); 
-//			}
-//			
-//			if(from < 0){ // Init interval
-//				chrom= interval.getChrom(); 
-//				from= interval.getFrom();
-//				to= interval.getTo();
-//				screenFrom= interval.getScreenFrom();
-//				screenTo= interval.getScreenTo();
-//				continue;
-//			}
-//			// Sanity check: The list to be merged is on the same chrom and sorted by start pos.
-//			if(i < intervalList.size() && (!chrom.equals(interval.getChrom()) || from > interval.getFrom() || from > to)){
-//				System.err.println(chrom + " " + from + " " + to);
-//				throw new RuntimeException();
-//			} 
-//			if(i < intervalList.size() && (screenFrom <= interval.getScreenTo() && screenTo >= (interval.getScreenFrom()-1) )){ 
-//				// Overlap: Extend <to> coordinate. See also http://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
-//				to= interval.getTo();
-//				screenTo= interval.getScreenTo();
-//				strand.add(interval.getStrand());
-//				numMrgIntv++;
-//			} else {
-//				// No overlap add merged interval to list and reset new merged interval
-//				IntervalFeature x= new IntervalFeature(chrom + "\t" + (from-1) + "\t" + to, TrackFormat.BED);
-//				x.setScreenFrom(screenFrom);
-//				x.setScreenTo(screenTo);
-//				if(strand.size() == 1){
-//					x.setStrand(strand.iterator().next());
-//				} 
-//				strand.clear();
-//				
-//				if(x.equals(intervalList.get(i-1)) && numMrgIntv == 1){
-//					mergedList.add(intervalList.get(i-1));
-//				} else {
-//					mergedList.add(x);
-//				}
-//				
-//				if(i < intervalList.size()){
-//					// Do not reset from/to if you are in extra loop.
-//					from= interval.getFrom();
-//					to= interval.getTo();
-//					screenFrom= interval.getScreenFrom();
-//					screenTo= interval.getScreenTo();
-//					strand.add(interval.getStrand());
-//					numMrgIntv= 1;
-//				}
-//			}
-//		}
-//		return mergedList;
-//	}
-	
-	// SETTERS AND GETTERS
-	// -------------------
-	
-//	private TrackFormat getType() {
-//		return this.type;
-//	}
 
 	protected List<IntervalFeature> getIntervalFeatureList() {
 		return intervalFeatureList;
@@ -1016,6 +998,28 @@ public class TrackIntervalFeature extends Track {
 		return this.hideRegex;
 	}
 
+	@Override
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+
+		if(awk.trim().isEmpty()){
+			this.awk= "";
+			
+		} else {
+			List<String> arglst= Utils.tokenize(awk, " ");
+			
+			// Do we need to set tab as field sep?
+			if(arglst.size() == 1 || ! arglst.contains("-F")){ // It would be more stringent to check for the script.
+				awk= "-F '\\t' " + awk; 
+			}
+			this.awk= awk;
+		}
+		this.update();
+	}
+	@Override
+	public String getAwk(){
+		return this.awk;
+	}
+	
 	@Override
 	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		this.showRegex= showRegex;

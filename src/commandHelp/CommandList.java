@@ -36,6 +36,7 @@ public class CommandList {
 		} catch (InvalidCommandLineException e) {
 			e.printStackTrace();
 		}
+		console.setExpandEvents(false);
 		return console;
 	}
 	
@@ -409,6 +410,88 @@ public class CommandList {
 				);
 		cmdList.add(cmd);		
 
+		cmd= new CommandHelp();
+		cmd.setName("awk"); cmd.setArgs("[-off ...] [-F sep_re] [-v VAR=var] '<script>' [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Advanced feature filtering using awk syntax.");
+		cmd.setAdditionalDescription("awk offers finer control then :code:`grep` to filter records in tabular format.\n"
+				+ "\n"
+				+ "Awk is column oriented. Awk splits each line into a list using a given regular "
+				+ "expression as delimiter (default delimiter is the TAB "
+				+ "character). To access an item, i.e. a column, use "
+				+ "the syntax :code:`$n` where *n* is the position of the item in the list, "
+				+ "e.g. :code:`$3` will access the third field (i.e. 3rd column). "
+				+ "The variable :code:`$0` holds the entire line as single string.\n"
+				+ "\n"
+				+ "Awk understands numbers and mathematical operators. "
+				+ "With awk you can filter records by numeric values in one or more fields since"
+				+ " numbers are handled as such. You can also perform arithmetic operations and filter on the results.\n"
+				+ "\n"
+				+ "*OPTIONS*\n"
+				+ "\n"
+				+ "* :code:`-off track_re ...`:  Turn off awk filtering for tracks captured by the list of regexes.\n"
+				+ "\n"
+				+ "* :code:`-F <sep_re>`: Use regular expression <sep_re> as column separator. Default is '\\t' (tab). "
+				+ "To separate on white space use e.g. '\\b' (backspace) or '\\s' (any white space). Do not use ' '. \n"
+				+ "\n"
+				+ "* :code:`-v VAR=var`: Pass to awk script the variable VAR with value var. Can be repeated.\n"
+				+ "\n"
+				+ "* :code:`script`: The awk script to be executed. Must wrapped in single quotes.\n"
+				+ "\n"
+				+ "*EXAMPLES*\n"
+				+ "\n"
+				+ "Note the use of single quotes to wrap the actual script and the use of "
+				+ "double quotes inside the script.\n"
+				+ "\n"
+				+ "* Filter for lines where the 4th column is between 10 and 100. Apply only to tracks "
+				+ "matching '.gtf' or '.gff'::\n"
+				+ "\n"
+				+ "    awk '$4 > 10 && $4 <= 100' .gtf .gff\n"
+				+ "\n"
+				+ "* Filter for either perfect a match or by matching a regex on 3rd column. "
+				+ "Apply to all tracks. The second example matches regex on the entire line (similar to grep), "
+				+ "The third example also requires features to be on + strand::\n"
+				+ "\n"
+				+ "    awk '$3 == \"exon\" || $3 \\~ \".*_codon\"'\n"
+				+ "    \n"
+				+ "    awk '$0 \\~ \".*_codon\"'\n"
+				+ "    \n"
+				+ "    awk '($3 == \"exon\" || $3 \\~ \".*_codon\") && $7 == \"+\"'\n"
+				+ "\n"
+				+ "* Filter for features size (assuming bed format) and for values after log10 transformation. "
+				+ "For log10 we need to change base using ln(x)/ln(10)::\n"
+				+ "\n"
+				+ "    awk '($3 - $2) > 1000 && (log($4)/log(10)) < 3.5'\n"
+				+ "\n"
+				+ "* Remove awk filter for tracks captured by .gff and .gtf::\n"
+				+ "\n"
+				+ "    awk -off .gtf .gff\n"
+				+ "\n"
+				+ "With no args, turn off awk for all tracks.\n"
+				+ "\n"
+				+ "*NOTES*\n"
+				+ "\n"
+				+ "* This is a java implementation of awk and it is independent on whether awk is "
+				+ "on the local system. It should behave very similar to UNIX awk and therefore it has lots of "
+				+ "functionalities. "
+				+ "In fact, awk is a programming language in itself, search Google for more. "
+				+ "The original code is from https://github.com/hoijui/Jawk\n"
+				+ "\n"
+				+ "* Use awk only to filter features, do not use it to edit them. If features are "
+				+ "changed by the awk script than nothing will be retained. This is because "
+				+ "the awk command first collects the output from awk, then it matches the features in "
+				+ "the current window with those collected from awk. "
+				+ "Hint: The output of awk is temporarily stored in memory.\n"
+				+ "\n"
+				+ "* This awk is slow, about x10 times slower than UNIX awk. For few tens of thousand records "
+				+ "the slowdown should be negligible. "
+				+ "Since only the records in the current window are parsed, "
+				+ "it should be fast enough in most cases.\n"
+				+ "\n"
+				+ "* The default delimiter is TAB not any white space as in UNIX awk.\n"
+				+ "\n"
+				+ "* An invalid script throws an ugly stack trace to stderr. To be fixed.");
+		cmdList.add(cmd);
+		
 //		cmd= new CommandHelp();
 //		cmd.setName("squash"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 //		cmd.setBriefDescription("Toggle the squashing of features with the same coordinates. ");
@@ -628,9 +711,12 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("recentlyOpened"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+		cmd.setName("recentlyOpened"); cmd.setArgs("[-grep = .*]"); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("List recently opened files. ");
-		cmd.setAdditionalDescription("");
+		cmd.setAdditionalDescription("Files are listed with their absolute path.\n"
+				+ "\n"
+				+ ":code:`-grep <pattern>` Filter for files (strings) matching pattern. "
+				+ "Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`.");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
@@ -677,10 +763,12 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("history"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+		cmd.setName("history"); cmd.setArgs("[-grep = .*]"); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("List the executed commands. ");
-		cmd.setAdditionalDescription("Also listed are the commands executed in previous runs of ASCIIGenome. Previous commands "
-				+ "are in \\~/.asciigenome_history");
+		cmd.setAdditionalDescription("Commands executed in previous sessions of ASCIIGenome are in \\~/.asciigenome_history\n"
+				+ "\n"
+				+ ":code:`-grep <pattern>` Filter for commands (strings) matching pattern. "
+				+ "Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
@@ -832,6 +920,7 @@ public class CommandList {
 		paramList.add("seqRegex");
 		paramList.add("bookmark");
 		paramList.add("grep");
+		paramList.add("awk");
 		paramList.add("gffNameAttr");
 		paramList.add(Command.featureDisplayMode.getCmdDescr());
 		paramList.add("gap");

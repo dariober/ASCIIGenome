@@ -1,6 +1,6 @@
 package samTextViewer;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import exceptions.InvalidRecordException;
 import tracks.TrackSet;
 
 public class TrackProcessorTest {
-
+	
 	@Test
 	public void canSaveTrackSettings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException{
 		

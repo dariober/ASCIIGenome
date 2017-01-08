@@ -404,18 +404,19 @@ public class Main {
 				// List of commands
 				ListIterator<Entry> iter = cmdHistory.entries();
 				List<String>lastHist= new ArrayList<String>();
-				int i= 500;
+				int max_cmds= 2000; // Maximum number of commands to write out to asciigenomo_history.
 				while(iter.hasNext()){
-					if(i == 0){
+					if(max_cmds == 0){
 						break;
 					}
-					i--;
+					max_cmds--;
 					lastHist.add(iter.next().value().toString());
 				}
 				
 				// List of files
 				List<String>lastFiles= new ArrayList<String>(fileHistory);
-				lastFiles= lastFiles.subList(Math.max(0, lastFiles.size() - 20), lastFiles.size());
+				int max_files= 200; // Maximum number of files to write out to asciigenomo_history.
+				lastFiles= lastFiles.subList(Math.max(0, lastFiles.size() - max_files), lastFiles.size());
 				
 				try {
 					BufferedWriter wr= new BufferedWriter(new FileWriter(new File(cmdHistoryFile)));

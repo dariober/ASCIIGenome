@@ -825,6 +825,76 @@ public class TrackSet {
 		return Utils.range(yall);
 	}
 	
+	/** Parse awk command and set awk script for the captured tracks. 
+	 * The tokens in cmdInput maybe in the form:
+	 * [awk, $3 > 10]
+	 * [awk, $3 > 10, track1]
+	 * [awk, $3 > 10, track_re1, track_re2]
+	 * [awk, -F, sep, -v, n=10, $3 > n, track1, track2]
+	 * @throws InvalidCommandLineException 
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 * */
+	public void setAwkForTrackIntervalFeature(List<String> cmdInput) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+
+		List<String> args= new ArrayList<String>();
+		for(String x : cmdInput){
+			args.add(x);
+		}
+		
+		args.remove(0); // Remove command name
+		List<String> trackNameRegex= new ArrayList<String>();
+		String awk= "";
+
+		if(args.size() == 0){
+			// This will turn off everything
+			trackNameRegex.add(".*");
+		} else if(args.get(0).equals("-off")){
+			args.remove(0);
+			trackNameRegex.addAll(args); // Everything after -off is track re to turn off. 
+		} else {
+		
+			// We need to find the awk script (i.e. '$3 > 10'), everything after it is track regexes.
+			// * Iterate through the args, if arg starts with - skip this arg and the next one.
+			// * The first arg (string) not starting with - is the script
+			// * Any args after the script are track regex.
+			final List<String> awkOpts= Arrays.asList(new String[] {"-F", "-f", "-v", "-t", "-c", "-o", "-z", "-Z", "-d", "-S", "-s", "-x", "-y", "-r", "-ext", "-ni"});
+			int idxScript= 0; // Index of the script in the command args. 
+			boolean skip= false;
+			for(String x : args){
+				if(awkOpts.contains(x)){
+					idxScript += 2;
+					skip= true;
+				} else if(skip){
+					skip= false;
+					continue;
+				} else {
+					break;
+				}
+			}
+			args.set(idxScript, "'" +  args.get(idxScript) + "'"); // Put back single quotes around the script, exclude cmd line params like -F 
+			awk= Joiner.on(" ").join(args.subList(0, idxScript+1));
+
+			// Everything after the script is track regexes
+			trackNameRegex.addAll(args.subList(idxScript+1, args.size()));
+		}
+
+		if(trackNameRegex.size() == 0){
+			trackNameRegex.add(".*"); // Track regex list not given: Set to capture all of them.
+		}
+		
+		// Set script
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        for(Track tr : tracksToReset){
+			tr.setAwk(awk);;
+        }
+		
+	}
+
+	
 	/** Set filter for IntervalFeature tracks. 
 	 * @throws SQLException 
 	 * @throws InvalidRecordException 
@@ -1656,9 +1726,32 @@ public class TrackSet {
 		this.openedFiles = openedFiles;
 	}
 
-	public String showRecentlyOpened() {
-		return Joiner.on("\n").join(this.getOpenedFiles());
+	public String showRecentlyOpened(List<String> cmdInput) throws InvalidCommandLineException {
+		
+		List<String> args= new ArrayList<String>(cmdInput);
+		args.remove(0);
+		
+		String re= ".*";
+		if(args.size() > 0){
+			if(args.get(0).equals("-grep")){
+				if(args.size() >= 2){
+					re= args.get(1);
+				}
+			} else {
+				System.err.println("Invalid argument: " + args.get(0));
+				throw new InvalidCommandLineException();
+			}
+		}
+		Pattern pattern= Pattern.compile(re); // .matcher(x).find();
+		List<String> opened= new ArrayList<String>();
+		for(String x : this.getOpenedFiles()){
+			if(pattern.matcher(x).find()){
+				opened.add(x);
+			}
+		}
+		return Joiner.on("\n").join(opened);
 	}
+
 
 //	/** Attempt to collect source of sequence dictionary 
 //	 * */

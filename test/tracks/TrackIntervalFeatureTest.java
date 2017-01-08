@@ -224,7 +224,45 @@ public class TrackIntervalFeatureTest {
 
 	}
 
+	@Test
+	public void canApplyAwk_getFeaturesInInterval() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
+		GenomicCoords gc= new GenomicCoords("chr1:10000-100000", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 
+		String awk= "'$3 == \"start_codon\" && $9 !~ \"OR4F\"'";
+		tif.setAwk(awk); // Note use single quotes
+	
+		assertEquals("-F '\\t' " + awk, tif.getAwk()); // Check -F arg has been prepended.
+		
+		List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
+		assertEquals(40, subset.size());
+
+		tif.setAwk("-F \\t '($5 - $4) > 1000'"); // Filter for feature size > x
+		subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
+		assertEquals(23, subset.size());	
+		
+		tif.setAwk("  "); // Remove filter w/o args.
+		subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
+		assertEquals(1000, subset.size());	
+		
+	}
+
+	@Test
+	public void canApplyAwkAndGrep_getFeaturesInInterval() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
+		GenomicCoords gc= new GenomicCoords("chr1:10000-100000", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+
+		tif.setAwk("'$3 == \"start_codon\"");
+		tif.setHideRegex("OR4F");
+		List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
+		assertEquals(40, subset.size());
+
+	}
+	
 	@Test
 	public void canShowAndHide_coordsOfNextFeature() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		

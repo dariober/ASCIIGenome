@@ -7,6 +7,16 @@ Features
 * Allow the user to set the `tmp` directory. By default use a `tmp` other then 
   the system default. On Linux the `tmp` is often pretty small.
 
+* `colorTrack` should allow partial matching of colours with `_` prefix
+  equivalent to `light_`. The matching part should be the start of the colour
+  name. E.g. `colorTrack _y` same as `colorTrack light_yellow`. Throw error if
+  matching is ambiguous.
+
+* Add `-I` flag to `grep` to make it case insensitive.
+
+* Add `-grep` option to `history` and `recentlyOpened` to filter for lines matching regex. E.g.
+  `history -grep trackColor`.
+
 * Option to log transform quantitative data.
 
 * Implement comments using e.g. // or # 

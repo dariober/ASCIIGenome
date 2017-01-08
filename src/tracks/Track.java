@@ -15,7 +15,6 @@ import com.google.common.base.Joiner;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
@@ -210,6 +209,13 @@ public class Track {
 	public boolean isBisulf() { return this.bisulf; }
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+
+	}
+	public String getAwk(){
+		return "";
+	}
+	
 	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { 
 	
 	}

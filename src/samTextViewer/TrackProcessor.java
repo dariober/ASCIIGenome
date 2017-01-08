@@ -54,7 +54,6 @@ public class TrackProcessor {
 		
 		if(currentGC.getChromIdeogram(20, this.noFormat) != null){
 			outputString += currentGC.getChromIdeogram(20, this.noFormat) + "\n";
-			// this.printer(currentGC.getChromIdeogram(20, this.noFormat) + "\n", this.snapshotFile);
 		}			
 
 		// Update tracks to new genomic coords

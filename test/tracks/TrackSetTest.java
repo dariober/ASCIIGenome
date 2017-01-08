@@ -292,7 +292,46 @@ public class TrackSetTest {
 		assertEquals("^$", ts.getTrack(t3).getHideRegex());
 	}
 
+	@Test
+	public void canSetAwkForTrackIntervalFeature() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+				
+		TrackSet ts= new TrackSet();
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", null, null);
+		Track t1= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc); ts.addTrack(t1, "x");
+		Track t2= new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc); ts.addTrack(t2, "x");
+		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.addTrack(t3, "x");
+		
+		// Set for one track
+		String cmdInput= "awk   '$3 == \"exon\"' #1"; 		
+		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		assertEquals("-F '\\t' '$3 == \"exon\"'", ts.getTrack(t1).getAwk());
+		assertEquals("", ts.getTrack(t3).getAwk()); // As default
+		
+		// Use custom delim, some tracks
+		cmdInput= "awk -F _ '$3 == 10' #1 #3"; 	
+		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		assertEquals("-F _ '$3 == 10'", ts.getTrack(t1).getAwk());
+		assertEquals("-F _ '$3 == 10'", ts.getTrack(t3).getAwk());
+			
+		// Use custom delim: All tracks
+		cmdInput= "awk -v FOO=foo -F _ '$3 == 20'"; 	
+		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		assertEquals("-v FOO=foo -F _ '$3 == 20'", ts.getTrack(t1).getAwk());
+		assertEquals("-v FOO=foo -F _ '$3 == 20'", ts.getTrack(t3).getAwk());
+		
+		// Turn off one track
+		cmdInput= "awk -off #2";
+		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		assertEquals("", ts.getTrack(t2).getAwk());
 
+		// Turn off all tracks
+		cmdInput= "awk";
+		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		assertEquals("", ts.getTrack(t1).getAwk());
+		assertEquals("", ts.getTrack(t2).getAwk());
+		assertEquals("", ts.getTrack(t3).getAwk());
+	}
+	
 	@Test
 	public void canSetBSMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 

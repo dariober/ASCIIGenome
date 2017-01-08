@@ -1127,7 +1127,7 @@ public class Utils {
 		
 		// See also http://stackoverflow.com/questions/38161437/inconsistent-behaviour-of-strtokenizer-to-split-string
 		StrTokenizer str= new StrTokenizer(x);
-    	str.setTrimmerMatcher(StrMatcher.spaceMatcher()); 
+    	str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 		str.setDelimiterString(delimiterString);
 		str.setQuoteChar('\'');
 		ArrayList<String> tokens= (ArrayList<String>) str.getTokenList();

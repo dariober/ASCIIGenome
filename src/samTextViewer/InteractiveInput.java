@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -41,8 +42,6 @@ public class InteractiveInput {
 	 * */
 	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
-		// ConsoleReader console = CommandList.initConsole();
-		
 		// cmdInputList: List of individual commands in tokens to be issued. 
 		// E.g.: [ ["zi"], 
 		//         ["-F", "16"], 
@@ -52,7 +51,9 @@ public class InteractiveInput {
 		// rolled back.
 		List<List<String>> cmdInputChainList= new ArrayList<List<String>>();
 		
-		for(String cmd : Splitter.on("&&").trimResults().omitEmptyStrings().split(cmdConcatInput)){
+		// See http://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes
+		// For splitting at delimiter (&&) and ignore delimiters inside single quotes.
+		for(String cmd : Splitter.on(Pattern.compile("&&(?=([^']*'[^']*')*[^']*$)")).trimResults().omitEmptyStrings().split(cmdConcatInput)){
 			cmdInputChainList.add(Utils.tokenize(cmd, " "));
 		}
 
@@ -81,7 +82,7 @@ public class InteractiveInput {
 					this.interactiveInputExitCode= 1;
 
 				} else if(cmdInput.get(0).equals("history")){
-					System.err.println(this.cmdHistoryToString());
+					System.err.println(this.cmdHistoryToString(cmdInput));
 					this.interactiveInputExitCode= 1;
 					
 				} else if(cmdInput.get(0).equals("showGenome")) {
@@ -93,7 +94,7 @@ public class InteractiveInput {
 					this.interactiveInputExitCode= 1;
 				
 				} else if(cmdInput.get(0).equals("recentlyOpened")) {
-					System.out.println(proc.getTrackSet().showRecentlyOpened());
+					System.out.println(proc.getTrackSet().showRecentlyOpened(cmdInput));
 					this.interactiveInputExitCode= 1;
 					
 				} else if(cmdInput.get(0).equals("save")) {
@@ -281,6 +282,9 @@ public class InteractiveInput {
 
 				} else if(cmdInput.get(0).equals("grep")){
 					proc.getTrackSet().setFilterForTrackIntervalFeature(cmdInput);
+				
+				} else if(cmdInput.get(0).equals("awk")){
+					proc.getTrackSet().setAwkForTrackIntervalFeature(cmdInput);
 					
 				} else if(cmdInput.get(0).equals(Command.rpm.getCmdDescr())) {
 					proc.getTrackSet().setRpmForRegex(cmdInput);
@@ -402,11 +406,29 @@ public class InteractiveInput {
 		return;
 	}
 
-	private String cmdHistoryToString() {
+	private String cmdHistoryToString(List<String> cmdInput) throws InvalidCommandLineException {
+		
+		List<String> args= new ArrayList<String>(cmdInput);
+		args.remove(0);
+		
+		String re= ".*";
+		if(args.size() > 0){
+			if(args.get(0).equals("-grep")){
+				if(args.size() >= 2){
+					re= args.get(1);
+				}
+			} else {
+				System.err.println("Invalid argument: " + args.get(0));
+				throw new InvalidCommandLineException();
+			}
+		}
+		Pattern pattern= Pattern.compile(re); // .matcher(x).find();
 		List<String> cmd= new ArrayList<String>();
 		int i = 1;
 		for(Entry x : console.getHistory()){
-			cmd.add(i + ": \t" + x.value().toString());
+			if(pattern.matcher(x.value().toString()).find()){
+				cmd.add(i + ": \t" + x.value().toString());	
+			}
 			i++;
 		}
 		List<String> cmdTab= Utils.tabulateList(cmd);
