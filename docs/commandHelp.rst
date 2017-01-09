@@ -271,6 +271,65 @@ Regex `-i` and `-e` are applied to the raw lines as read from source file and it
 Will show the rows containing 'RNA' but will hide those containing 'mRNA', applies to tracks whose name matches 'gtf' or 'gff'.
 With no arguments reset to default: :code:`grep -i .* -e ^$ .*` which means show everything, hide nothing, apply to all tracks.
 
+awk
++++
+
+:code:`awk [-off ...] [-F sep_re] [-v VAR=var] '<script>' [track_regex = .*]...`
+
+Advanced feature filtering using awk syntax. awk offers finer control then :code:`grep` to filter records in tabular format.
+
+Awk is column oriented. Awk splits each line into a list using a given regular expression as delimiter (default delimiter is the TAB character). To access an item, i.e. a column, use the syntax :code:`$n` where *n* is the position of the item in the list, e.g. :code:`$3` will access the third field (i.e. 3rd column). The variable :code:`$0` holds the entire line as single string.
+
+Awk understands numbers and mathematical operators. With awk you can filter records by numeric values in one or more fields since numbers are handled as such. You can also perform arithmetic operations and filter on the results.
+
+*OPTIONS*
+
+* :code:`-off track_re ...`:  Turn off awk filtering for tracks captured by the list of regexes.
+
+* :code:`-F <sep_re>`: Use regular expression <sep_re> as column separator. Default is '\t' (tab). To separate on white space use e.g. '\b' (backspace) or '\s' (any white space). Do not use ' '. 
+
+* :code:`-v VAR=var`: Pass to awk script the variable VAR with value var. Can be repeated.
+
+* :code:`script`: The awk script to be executed. Must wrapped in single quotes.
+
+*EXAMPLES*
+
+Note the use of single quotes to wrap the actual script and the use of double quotes inside the script.
+
+* Filter for lines where the 4th column is between 10 and 100. Apply only to tracks matching '.gtf' or '.gff'::
+
+    awk '$4 > 10 && $4 <= 100' .gtf .gff
+
+* Filter for either perfect a match or by matching a regex on 3rd column. Apply to all tracks. The second example matches regex on the entire line (similar to grep), The third example also requires features to be on + strand::
+
+    awk '$3 == "exon" || $3 \  ".*_codon"'
+    
+    awk '$0 \  ".*_codon"'
+    
+    awk '($3 == "exon" || $3 \  ".*_codon") && $7 == "+"'
+
+* Filter for features size (assuming bed format) and for values after log10 transformation. For log10 we need to change base using ln(x)/ln(10)::
+
+    awk '($3 - $2) > 1000 && (log($4)/log(10)) < 3.5'
+
+* Remove awk filter for tracks captured by .gff and .gtf::
+
+    awk -off .gtf .gff
+
+With no args, turn off awk for all tracks.
+
+*NOTES*
+
+* This is a java implementation of awk and it is independent on whether awk is on the local system. It should behave very similar to UNIX awk and therefore it has lots of functionalities. In fact, awk is a programming language in itself, search Google for more. The original code is from https://github.com/hoijui/Jawk
+
+* Use awk only to filter features, do not use it to edit them. If features are changed by the awk script than nothing will be retained. This is because the awk command first collects the output from awk, then it matches the features in the current window with those collected from awk. Hint: The output of awk is temporarily stored in memory.
+
+* This awk is slow, about x10 times slower than UNIX awk. For few tens of thousand records the slowdown should be negligible. Since only the records in the current window are parsed, it should be fast enough in most cases.
+
+* The default delimiter is TAB not any white space as in UNIX awk.
+
+* An invalid script throws an ugly stack trace to stderr. To be fixed.
+
 featureDisplayMode
 ++++++++++++++++++
 
@@ -518,9 +577,11 @@ Print the name of the current tracks along with file name and format.  Hidden tr
 recentlyOpened
 ++++++++++++++
 
-:code:`recentlyOpened`
+:code:`recentlyOpened [-grep = .*]`
 
-List recently opened files.  
+List recently opened files.  Files are listed with their absolute path.
+
+:code:`-grep <pattern>` Filter for files (strings) matching pattern. Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`.
 
 addTracks
 +++++++++
@@ -568,9 +629,11 @@ List the visited positions.
 history
 +++++++
 
-:code:`history`
+:code:`history [-grep = .*]`
 
-List the executed commands.  Also listed are the commands executed in previous runs of ASCIIGenome. Previous commands are in \ /.asciigenome_history
+List the executed commands.  Commands executed in previous sessions of ASCIIGenome are in \ /.asciigenome_history
+
+:code:`-grep <pattern>` Filter for commands (strings) matching pattern. Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`
 
 save
 ++++

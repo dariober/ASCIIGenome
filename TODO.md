@@ -14,9 +14,6 @@ Features
 
 * Add `-I` flag to `grep` to make it case insensitive.
 
-* Add `-grep` option to `history` and `recentlyOpened` to filter for lines matching regex. E.g.
-  `history -grep trackColor`.
-
 * Option to log transform quantitative data.
 
 * Implement comments using e.g. // or # 
