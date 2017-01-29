@@ -1,21 +1,22 @@
 package tracks;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 
+import org.junit.Test;
+
+import exceptions.InvalidColourException;
+import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import samTextViewer.GenomicCoords;
-import tracks.TextRead;
-
-import org.junit.Test;
-
-import exceptions.InvalidGenomicCoordsException;
 
 public class TextReadTest {
 
@@ -68,7 +69,7 @@ public class TextReadTest {
 	}
 
 	@Test
-	public void canPrintDNARead() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintDNARead() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		
 		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566798", samSeqDict, fastaFile);
 		SAMRecord rec= new SAMRecord(null);
@@ -99,7 +100,7 @@ public class TextReadTest {
 	}
 
 	@Test
-	public void canPrintSquashedRead() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintSquashedRead() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", samSeqDict, fastaFile);
 		
 		SAMRecord rec= new SAMRecord(null);
@@ -116,7 +117,7 @@ public class TextReadTest {
 	}
 	
 	@Test
-	public void canPrintWithReadName() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintWithReadName() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 
 		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", samSeqDict, fastaFile);
 		

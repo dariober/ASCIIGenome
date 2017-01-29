@@ -1,8 +1,8 @@
 package tracks;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -10,21 +10,13 @@ import java.util.List;
 
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BigWigIterator;
-import org.broad.igv.tdf.TDFGroup;
-import org.broad.igv.tdf.TDFReader;
 import org.broad.igv.tdf.TDFUtils;
-import org.broad.igv.util.ResourceLocator;
 import org.junit.Test;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SAMRecordIterator;
-import htsjdk.samtools.SamReader;
-import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
 import samTextViewer.GenomicCoords;
-import samTextViewer.Utils;
 
 public class TrackWigglesTest {
 
@@ -80,7 +72,7 @@ public class TrackWigglesTest {
 	}
 	
 	@Test
-	public void testYLimits() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException{
+	public void testYLimits() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidRecordException, ClassNotFoundException, SQLException{
 
 		String url= "test_data/test.bedGraph.gz";
 		GenomicCoords gc= new GenomicCoords("chr1:1-30", null, null);
@@ -94,7 +86,7 @@ public class TrackWigglesTest {
 	}
 	
 	@Test
-	public void testCloseToBorder() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException{
+	public void testCloseToBorder() throws InvalidGenomicCoordsException, InvalidColourException, IOException, InvalidRecordException, ClassNotFoundException, SQLException{
 		String url= "test_data/test.bedGraph.gz";
 		int yMaxLines= 10;
 		GenomicCoords gc= new GenomicCoords("chr1:1-800", null, null);
@@ -108,7 +100,7 @@ public class TrackWigglesTest {
 	
 	
 	@Test 
-	public void canPrintBedGraph() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException{
+	public void canPrintBedGraph() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidColourException{
 		
 		String url= "test_data/test.bedGraph.gz";
 		int yMaxLines= 5;
@@ -162,7 +154,7 @@ public class TrackWigglesTest {
 	}
 	
 	// @Test
-	public void canPrintFromTdf() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
+	public void canPrintFromTdf() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidColourException{
 
 		GenomicCoords gc= new GenomicCoords("chr8:1-100", null, null);
 		int userWindowSize= gc.getUserWindowSize();

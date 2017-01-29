@@ -1,6 +1,7 @@
 package samTextViewer;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,19 +9,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Test;
+
+import exceptions.InvalidColourException;
+import exceptions.InvalidCommandLineException;
+import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import tracks.TrackWiggles;
-
-import org.broad.igv.feature.genome.FastaIndexedSequence;
-import org.broad.igv.feature.genome.IGVSequence;
-import org.broad.igv.feature.genome.Sequence;
-import org.junit.Test;
-
-import exceptions.InvalidCommandLineException;
-import exceptions.InvalidGenomicCoordsException;
-import exceptions.InvalidRecordException;
 
 public class GenomicCoordsTest {
 	
@@ -86,9 +84,11 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
-	public void canPrintChromMap() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintChromMap() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 			
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", samSeqDict, null);
+		
+		gc.getChromIdeogram(10, false);		
 		
 		String chromMap= gc.getChromIdeogram(10, true);		
 		assertTrue(chromMap.startsWith("*---------"));
@@ -108,7 +108,7 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
-	public void printRefSeq() throws InvalidGenomicCoordsException, IOException{
+	public void printRefSeq() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		GenomicCoords gc= new GenomicCoords("chr7:5540580-5540590", null, "test_data/chr7.fa");
 		assertEquals("ggccggctggg\n", gc.printableRefSeq(true));
 	}
@@ -177,7 +177,7 @@ public class GenomicCoordsTest {
 //	}
 	
 	@Test
-	public void canPrintRefSeq() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintRefSeq() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566790", samSeqDict, fastaFile);
 		assertEquals("CACTTGGCCTCATTTTTAAGG\n", gc.printableRefSeq(true));
 		// with format
@@ -294,7 +294,7 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
-	public void canPrintRuler() throws InvalidGenomicCoordsException, IOException{
+	public void canPrintRuler() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		
 		GenomicCoords gc= new GenomicCoords("chr1:101-200", samSeqDict, null);
 		assertEquals(79, gc.printableRuler(10, true).length());
@@ -302,7 +302,7 @@ public class GenomicCoordsTest {
 	}
 	
 	// @Test // Do not test until gcProfile is sorted
-	public void canGetGCProfileInRegion() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException{
+	public void canGetGCProfileInRegion() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidColourException{
 				
 		GenomicCoords gc= new GenomicCoords("chr7:1000000-1000500", samSeqDict, null);
 		assertEquals(null, gc.getGCProfile()); // null fasta

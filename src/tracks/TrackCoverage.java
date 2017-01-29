@@ -8,11 +8,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
 
+import coloring.Xterm256;
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SamInputResource;
@@ -152,9 +155,10 @@ public class TrackCoverage extends Track {
 	 * @return HashMapwith with keys/values the printable characteristics of the track. 
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
 	 */
 	@Override
-	public String printToScreen() throws InvalidGenomicCoordsException, IOException{
+	public String printToScreen() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		 //This method should not do any computation like RPM etc. Just print stuff.
 				
 		if(this.getyMaxLines() == 0){
@@ -174,9 +178,10 @@ public class TrackCoverage extends Track {
 		}
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
-			printable= "\033[48;5;231;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[48;5;231m";
+			printable= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256(this.getTitleColour()) + "m" + printable;
 		}
 		return printable;
+		
 	}
 	
     /* S e t t e r s   and   G e t t e r s */
@@ -187,7 +192,7 @@ public class TrackCoverage extends Track {
     }
 
 	@Override
-	public String getTitle(){
+	public String getTitle() throws InvalidColourException{
 		
 		if(this.isHideTitle()){
 			return "";
@@ -260,7 +265,7 @@ public class TrackCoverage extends Track {
 	}
 
 	@Override
-	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException{
+	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 		if(this.getGc().getBpPerScreenColumn() > 1 || this.isBisulf()){
 			return "";
 		}
@@ -275,10 +280,10 @@ public class TrackCoverage extends Track {
 			if(this.isNoFormat()){
 				faSeqStr += base;
 			} 
-			  else if(base == 'A') { faSeqStr += "\033[34m" + base + "\033[0m";} // \033[48;5;231m 
-			  else if(base == 'C') { faSeqStr += "\033[31m" + base + "\033[0m";} 
-			  else if(base == 'G') { faSeqStr += "\033[32m" + base + "\033[0m";} 
-			  else if(base == 'T') { faSeqStr += "\033[33m" + base + "\033[0m";} 
+			  else if(base == 'A') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + base + "\033[0m";} 
+			  else if(base == 'C') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("red") + "m" + base + "\033[0m";} 
+			  else if(base == 'G') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("green") + "m" + base + "\033[0m";} 
+			  else if(base == 'T') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + base + "\033[0m";} 
 			  else { faSeqStr += base + "\033[0m"; } 
 		}
 		if(allEmpty){

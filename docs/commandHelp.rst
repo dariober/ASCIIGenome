@@ -423,9 +423,15 @@ colorTrack
 
 :code:`colorTrack color [track_regex = .*]...`
 
-Set colour for tracks matched by regex.  Available colours: red, green, yellow, blue, magenta, cyan, grey, light_red, light_green, light_yellow, light_blue, light_magenta, light_cyan, light_grey, white, black, default. The 'default' colour reset to the system default colour. Colouring is rendered with ANSI codes 8/16. Example::
+Set colour for tracks matched by regex.  Colors can be specified by name or by a value between 0 and 255. If only the start of a color is given, the first name found starting with the given string is returned, e.g. 'darkv' is interpreted as 'darkviolet'. Names are case insensitive.
 
-    colorTrack light_blue ts.*gtf ts.*bam
+Available colours are from the Xterm256 palette: `colors here <http://jonasjacek.github.io/colors/>`_            
+
+Example::
+
+    colorTrack cyan1 ts.*gtf ts.*bam 
+    colorTrack 40                   <- By INT
+    colorTrack darkv                <- Same as darkviolet
 
 
 
@@ -581,7 +587,9 @@ recentlyOpened
 
 List recently opened files.  Files are listed with their absolute path.
 
-:code:`-grep <pattern>` Filter for files (strings) matching pattern. Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`.
+* :code:`-n INT` Return only the last INT files.
+
+* :code:`-grep <pattern>` Filter for files (strings) matching pattern. Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`.
 
 addTracks
 +++++++++
@@ -629,11 +637,13 @@ List the visited positions.
 history
 +++++++
 
-:code:`history [-grep = .*]`
+:code:`history [-n INT] [-grep = .*]`
 
 List the executed commands.  Commands executed in previous sessions of ASCIIGenome are in \ /.asciigenome_history
 
-:code:`-grep <pattern>` Filter for commands (strings) matching pattern. Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`
+* :code:`-n INT` Return only the last INT commands.
+
+* :code:`-grep <pattern>` Filter for commands (strings) matching pattern. Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`
 
 save
 ++++

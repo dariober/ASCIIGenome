@@ -12,6 +12,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
 
+import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -61,13 +62,15 @@ public class Track {
 	
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
+	 * @throws InvalidColourException 
 	 * */
-	protected String formatTitle(String title){
+	protected String formatTitle(String title) throws InvalidColourException{
+
 		if(this.isNoFormat()){
 			return title;
 		} else {
-			int colourCode= Utils.ansiColorCodes().get(this.titleColour);
-			return "\033[48;5;231;" + colourCode + "m" + title + "\033[48;5;231m";
+			int colourCode= Xterm256.colorNameToXterm256(this.titleColour); // Utils.xterm256ColorCodes().get(this.titleColour);
+			return "\033[48;5;231;38;5;" + colourCode + "m" + title; // + "\033[48;5;231m";
 		}
 	}
 	
@@ -99,7 +102,7 @@ public class Track {
 	}
 	
 	/* Printers */
-	public String printToScreen() throws InvalidGenomicCoordsException, IOException{
+	public String printToScreen() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		return null;
 	}
 
@@ -120,7 +123,7 @@ public class Track {
 	//public void setTitle(String title){
 	//	this.title= title;
 	//}
-	public String getTitle(){
+	public String getTitle() throws InvalidColourException{
 		return this.title;
 	}
 	public int getyMaxLines() {
@@ -237,16 +240,16 @@ public class Track {
 	}
 
 	public void setTitleColour(String colour) {
-		if(!Utils.ansiColorCodes().containsKey(colour)){
-			try {
-				throw new InvalidColourException();
-			} catch (InvalidColourException e) {
-				// e.printStackTrace();
-				System.err.println("\nGot invalid colour: " + colour + ". Resetting to default");
-				System.err.println("Valid colours are: " + Utils.ansiColorCodes().keySet());
-				colour= "blue";
-			} 
-		}
+//		if(!Utils.xterm256ColorCodes().containsKey(colour)){
+//			try {
+//				throw new InvalidColourException();
+//			} catch (InvalidColourException e) {
+//				// e.printStackTrace();
+//				System.err.println("\nGot invalid colour: " + colour + ". Resetting to default");
+//				System.err.println("Valid colours are: " + Utils.xterm256ColorCodes().keySet());
+//				colour= "blue";
+//			} 
+//		}
 		this.titleColour = colour;
 	}
 	
@@ -334,7 +337,7 @@ public class Track {
 		return new ArrayList<String>();
 	}
 	
-	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException{
+	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 		return "";
 	}
 

@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import coloring.Xterm256;
+import exceptions.InvalidColourException;
+
 /** Mapping of GTF/GFF features to text character to use to represent them.
  * */
 public class FormatGTF {
@@ -69,14 +72,17 @@ public class FormatGTF {
 	/* M E T H O D S */
 	
 	/** Return text formatted according to strand. 
+	 * @throws InvalidColourException 
 	 * */
-	public static String format(char text, char strand){
+	public static String format(char text, char strand) throws InvalidColourException{
 		if(strand == '+') {
-			return "\033[30;48;5;147m" + text + "\033[48;5;231m";
+			return "\033[48;5;" + Xterm256.colorNameToXterm256("lightsteelblue") + ";38;5;" + Xterm256.colorNameToXterm256("black") + "m" + text + "\033[48;5;231m";
 		} else if(strand == '-') {
-			return "\033[30;48;5;225m" + text + "\033[48;5;231m";
+			return "\033[48;5;" + Xterm256.colorNameToXterm256("MistyRose1") + ";38;5;" + Xterm256.colorNameToXterm256("black") + "m" + text + "\033[48;5;231m";
+			// return "\033[30;48;5;225m" + text + "\033[48;5;231m";
 		} else {
-			return "\033[30;47m" + text + "\033[48;5;231m";
+			// return "\033[30;47m" + text + "\033[48;5;231m";
+			return "\033[48;5;" + Xterm256.colorNameToXterm256("grey70") + ";38;5;" + Xterm256.colorNameToXterm256("black") + "m" + text + "\033[48;5;231m";
 		}	
 	}
 

@@ -14,8 +14,11 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
 import org.apache.commons.lang3.StringUtils;
 
+import coloring.Xterm256;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -453,8 +456,9 @@ public class GenomicCoords implements Cloneable {
 	 * @param nDist: Distance between labels   
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
 	 * */
-	public String getChromIdeogram(int nDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException {
+	public String getChromIdeogram(int nDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 		if(this.samSeqDict == null || this.samSeqDict.size() == 0){
 			return null;
 		}
@@ -509,7 +513,7 @@ public class GenomicCoords implements Cloneable {
 			ideogram= ideogram.substring(0, this.getUserWindowSize());
 		}
 		if(!noFormat){
-			ideogram= "\033[30m" + ideogram + "\033[48;5;231m";
+			ideogram= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + ideogram;
 		}
 		return ideogram;
 	}
@@ -528,7 +532,7 @@ public class GenomicCoords implements Cloneable {
 		return str;
 	}
 	
-	public String printableRuler(int markDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException{
+	public String printableRuler(int markDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		List<Double> mapping = this.seqFromToLenOut(this.getUserWindowSize());
     	String numberLine= "";
     	int prevLen= 0;
@@ -553,15 +557,16 @@ public class GenomicCoords implements Cloneable {
 		}
 		numberLine= numberLine.substring(0, this.getUserWindowSize());
 		if(!noFormat){
-			numberLine= "\033[30m" + numberLine + "\033[48;5;231m";
+			numberLine= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + numberLine;
 		}
     	return numberLine;
     }
 	
 	/** Ref sequence usable for print on screen. 
 	 * @throws IOException 
-	 * @throws InvalidGenomicCoordsException */
-	public String printableRefSeq(boolean noFormat) throws IOException, InvalidGenomicCoordsException{
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException */
+	public String printableRefSeq(boolean noFormat) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 
 		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
 			return "";
@@ -577,15 +582,15 @@ public class GenomicCoords implements Cloneable {
 				// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
 				char base= (char) c;
 				if(base == 'A' || base == 'a'){
-					faSeqStr += "\033[34m" + base + "\033[48;5;231m";
+					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + base;
 				} else if(base == 'C' || base == 'c') {
-					faSeqStr += "\033[31m" + base + "\033[48;5;231m";
+					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("red") + "m" + base;
 				} else if(base == 'G' || base == 'g') {
-					faSeqStr += "\033[32m" + base + "\033[48;5;231m";
+					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("green") + "m" + base;
 				} else if(base == 'T' || base == 't') {
-					faSeqStr += "\033[33m" + base + "\033[48;5;231m";
+					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + base;
 				} else {
-					faSeqStr += "\033[30m" + base + "\033[48;5;231m";;
+					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + base;
 				} 
 			}
 			return faSeqStr + "\n";

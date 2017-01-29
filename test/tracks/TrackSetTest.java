@@ -14,6 +14,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 import exceptions.BamIndexNotFoundException;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -494,7 +495,7 @@ public class TrackSetTest {
 	
 	
 	@Test
-	public void canSetTrackColour() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+	public void canSetTrackColour() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException{
 				
 		TrackSet ts= new TrackSet();
 		Track t1= new Track(); t1.setFilename("foo.gz");  ts.addTrack(t1, "foo.gz");
@@ -514,7 +515,7 @@ public class TrackSetTest {
 		boolean passed= false;
 		try{
 			ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
-		} catch(InvalidCommandLineException e){
+		} catch(InvalidColourException e){
 			passed= true;
 		}
 		assertTrue(passed);

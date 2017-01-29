@@ -1,6 +1,7 @@
 package tracks;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,6 +9,7 @@ import java.sql.SQLException;
 
 import org.junit.Test;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
@@ -27,18 +29,18 @@ public class TrackReadsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
-	public void canGetTitle() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void canGetTitle() throws InvalidGenomicCoordsException, InvalidColourException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		String bam= "test_data/adjacent.bam";
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", samSeqDict, null);
 		TrackReads tr= new TrackReads(bam, gc);
 		System.out.println("TITLE");
 		tr.setNoFormat(true);
 		tr.setTrackTag("aln.bam#1");
-		assertEquals("aln.bam#1; -F4 -f0 -q0", tr.getTitle().trim());
+		assertEquals("aln.bam#1", tr.getTitle().trim());
 	}
 	
 	@Test
-	public void testOneLineStack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void testOneLineStack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 		String bam= "test_data/adjacent.bam";
 		int yMaxLines= 10;
 		boolean bs= false;
@@ -65,7 +67,7 @@ public class TrackReadsTest {
 	}
 
 	@Test
-	public void test() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
+	public void test() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
 		String bam= "test_data/ds051.actb.bam";
 		int yMaxLines= 50;
 		boolean bs= false;
@@ -80,7 +82,7 @@ public class TrackReadsTest {
 	}
 
 	@Test
-	public void testNoReadsInRegion() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
+	public void testNoReadsInRegion() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
 		String bam= "test_data/ds051.actb.bam";
 		int yMaxLines= 50;
 		boolean bs= false;
@@ -95,7 +97,7 @@ public class TrackReadsTest {
 	}
 	
 	@Test
-	public void canResetToZeroLargeWindow() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException {
+	public void canResetToZeroLargeWindow() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
 		// If the genomic window is too large do not process the bam file and return zero height track.
 		GenomicCoords gc= new GenomicCoords("chr7:1-100000000", samSeqDict, fastaFile);
 		TrackReads tr= new TrackReads("test_data/ds051.actb.bam", gc);

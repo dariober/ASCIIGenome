@@ -13,6 +13,7 @@ import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMRecord;
@@ -107,9 +108,10 @@ public class TrackReads extends Track{
 	
 	/** 
 	 * Printable track on screen. This is what should be called by Main 
-	 * @throws InvalidGenomicCoordsException */
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException */
 	@Override
-	public String printToScreen() throws InvalidGenomicCoordsException{
+	public String printToScreen() throws InvalidGenomicCoordsException, InvalidColourException{
 		
 		int yMaxLines= (this.getyMaxLines() < 0) ? Integer.MAX_VALUE : this.getyMaxLines();;
 		
@@ -192,8 +194,9 @@ public class TrackReads extends Track{
 	 * @return
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
 	 */
-	private String linePrinter(List<TextRead> textReads, boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException{
+	private String linePrinter(List<TextRead> textReads, boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 		StringBuilder sb= new StringBuilder();
 
 		int curPos= 0; // Position on the line, needed to pad with blanks btw reads.
@@ -214,6 +217,7 @@ public class TrackReads extends Track{
 	 * @param gc
 	 * @param filters List of filters to apply
 	 * @return
+	 * @throws InvalidColourException 
 	 * @throws MalformedURLException 
 	 */
 	/*
@@ -255,7 +259,7 @@ public class TrackReads extends Track{
 	}*/
 	
 	@Override
-	public String getTitle(){
+	public String getTitle() throws InvalidColourException{
 		
 		if(this.isHideTitle()){
 			return "";

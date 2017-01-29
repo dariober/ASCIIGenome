@@ -6,6 +6,8 @@ import java.util.List;
 
 import com.google.common.base.Joiner;
 
+import coloring.Xterm256;
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.CigarOperator;
@@ -98,8 +100,9 @@ class TextRead {
 	 * @return
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
 	 */
-	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException{
+	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 		List<Character> unformatted;
 		if(!bs){
 			unformatted= this.getConsRead();
@@ -136,8 +139,9 @@ class TextRead {
 	 * @return
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
 	 */
-	private String readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException{
+	private String readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 
 		if(noFormat){ // Essentially nothing to do in this case
 			return Joiner.on("").join(read);
@@ -149,28 +153,27 @@ class TextRead {
 				fmt += "4;"; // Underline 2nd in pair
 			}					
 			if(this.rec.getMappingQuality() < SHADE_MAPQ){ // Grey out low mapq
-				fmt += "30;47";
+				fmt += "48;5;" + Xterm256.colorNameToXterm256("grey70") + ";38;5;" + Xterm256.colorNameToXterm256("black"); // "30;47";
 			} else if(Character.toUpperCase(c) == charM){
-				fmt += "97;101"; // 97: white fg; 101: Light read bg; 104 Light blue bg
+				fmt += "48;5;" + Xterm256.colorNameToXterm256("grey100") + ";38;5;" + Xterm256.colorNameToXterm256("red");
 			} else if(Character.toUpperCase(c) == charU){
-				fmt += "97;104";
+				fmt += "48;5;" + Xterm256.colorNameToXterm256("grey100") + ";38;5;" + Xterm256.colorNameToXterm256("blue");
 			} else if(Character.toUpperCase(c) == 'A'){
-				fmt += "1;34";  //1: bold; 107: white bg
+				fmt += "1;38;5;" + Xterm256.colorNameToXterm256("blue");
 			} else if(Character.toUpperCase(c) == 'C') {
-				fmt += "1;31";
+				fmt += "1;38;5;" + Xterm256.colorNameToXterm256("red");
 			} else if(Character.toUpperCase(c) == 'G') {
-				fmt += "1;32";
+				fmt += "1;38;5;" + Xterm256.colorNameToXterm256("green");
 			} else if(Character.toUpperCase(c) == 'T') {
-				fmt += "1;33";
-			//} else if(bs){
-			//	fmt += "38;5;0;48;5;231";
+				fmt += "1;38;5;" + Xterm256.colorNameToXterm256("yellow");
 			} else if(!this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
-				fmt += "30;48;5;147"; // 105: light magenta; Test on terminal: echo -e "\033[48;5;225m <<<<<<<<<<<<<<<<<<<<<<<<<<< \033[48;5;231m"
+				fmt += "48;5;" + Xterm256.colorNameToXterm256("lightsteelblue") + ";38;5;" + Xterm256.colorNameToXterm256("black");
 			} else if(this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
-				fmt += "30;48;5;225"; // 48;5;231: light cyan
+				fmt += "48;5;" + Xterm256.colorNameToXterm256("MistyRose1") + ";38;5;" + Xterm256.colorNameToXterm256("black");
+			} else {
+				fmt += "48;5;" + Xterm256.colorNameToXterm256("grey100") + ";38;5;" + Xterm256.colorNameToXterm256("black");
 			}
-			// The formatted string will look like `echo -e "\033[4;1;107;31mACTGnnnnnACTG\033[48;5;231m"`
-			formatted += fmt + "m" + c + "\033[0m"; // Clear all formatting -- \033[0m\033[48;5;231m
+			formatted += fmt + "m" + c + "\033[0m"; // End by clearing all formatting
 		}
 		return formatted;
 	}
@@ -410,6 +413,9 @@ class TextRead {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InvalidGenomicCoordsException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidColourException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

@@ -11,6 +11,8 @@ import org.apache.commons.lang3.StringUtils;
 import com.itextpdf.text.DocumentException;
 
 import coloring.Pdf;
+import coloring.Xterm256;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -46,7 +48,7 @@ public class TrackProcessor {
 	
 	/* M E T H O D S */
 
-	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, DocumentException{
+	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, DocumentException, InvalidColourException{
 		
 		GenomicCoords currentGC= this.genomicCoordsHistory.current();
 		
@@ -89,9 +91,9 @@ public class TrackProcessor {
 		// ---------------------
 		String footer= this.getFooter(currentGC);
 		if(!noFormat){
-			outputString += "\033[48;5;231;34m" + footer + "\033[48;5;231;30m\n";  // this.printer("\033[48;5;231;34m" + footer + "\033[48;5;231;30m\n", this.snapshotFile);
+			outputString += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + footer + "\033[30m\n"; 
 		} else {
-			outputString += footer + "\n"; // this.printer(footer + "\n", this.snapshotFile);
+			outputString += footer + "\n";
 		}
 
 		// Print to screen

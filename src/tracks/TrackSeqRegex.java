@@ -10,8 +10,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.apache.commons.io.FileUtils;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.SequenceUtil;
@@ -238,7 +240,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 	}
 
 	@Override
-	public String getTitle(){
+	public String getTitle() throws InvalidColourException{
 		String title= this.getUnformattedTitle() +  "; re: " + this.getSeqRegex();
 		return this.formatTitle(title) + "\n";
 	}

@@ -371,6 +371,7 @@ public class InteractiveInput {
 					System.err.println("Invalid genomic coordinates found. Resetting to "  + region);
 					
 				} catch (Exception e){
+					// e.printStackTrace();
 					System.err.println("Error processing tracks with input " + cmdInput);
 					this.interactiveInputExitCode= 1;
 				}
@@ -412,16 +413,14 @@ public class InteractiveInput {
 		args.remove(0);
 		
 		String re= ".*";
-		if(args.size() > 0){
-			if(args.get(0).equals("-grep")){
-				if(args.size() >= 2){
-					re= args.get(1);
-				}
-			} else {
-				System.err.println("Invalid argument: " + args.get(0));
-				throw new InvalidCommandLineException();
-			}
+		int nmax= Integer.MAX_VALUE;
+		if(args.contains("-grep")){
+			re= args.get(args.indexOf("-grep") + 1);
 		}
+		if(args.contains("-n")){
+			nmax= Integer.parseInt(args.get(args.indexOf("-n") + 1));
+		}
+
 		Pattern pattern= Pattern.compile(re); // .matcher(x).find();
 		List<String> cmd= new ArrayList<String>();
 		int i = 1;
@@ -431,6 +430,11 @@ public class InteractiveInput {
 			}
 			i++;
 		}
+		
+		if(cmd.size() > nmax){ // Trim list to 
+			cmd= cmd.subList(cmd.size() - nmax, cmd.size());
+		}
+		
 		List<String> cmdTab= Utils.tabulateList(cmd);
 		String tab= "";
 		for(String x : cmdTab){

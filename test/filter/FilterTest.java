@@ -1,16 +1,17 @@
 package filter;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.List;
 
+import org.junit.Test;
+
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.util.Interval;
@@ -18,8 +19,6 @@ import htsjdk.samtools.util.IntervalList;
 import htsjdk.samtools.util.SamLocusIterator;
 import htsjdk.samtools.util.SamLocusIterator.LocusInfo;
 import htsjdk.samtools.util.SamLocusIterator.RecordAndOffset;
-
-import org.junit.Test;
 
 public class FilterTest {
 
@@ -134,7 +133,7 @@ public class FilterTest {
 		assertTrue(new ReadFromTopStrandFilter(true).filterOut(rec));
 	}
 	
-	@Test
+	// @Test
 	public void canFilterFromIntFlag(){
 		
 		int f_incl= 131;
@@ -163,7 +162,7 @@ public class FilterTest {
 		}
 	}
 	
-	@Test
+	//@Test
 	public void STUBcanCallBS(){
 		
 		System.out.println("\u203E");

@@ -17,6 +17,8 @@ import org.broad.igv.util.ResourceLocator;
 
 import com.google.common.base.Joiner;
 
+import coloring.Xterm256;
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.index.IndexFactory;
@@ -143,7 +145,7 @@ public class TrackWiggles extends Track {
 
 	
 	@Override
-	public String printToScreen(){
+	public String printToScreen() throws InvalidColourException{
 	
 		if(this.getyMaxLines() == 0){return "";}
 		TextProfile textProfile= new TextProfile(this.getScreenScores(), this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
@@ -155,13 +157,13 @@ public class TrackWiggles extends Track {
 		}
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
-			printable= "\033[48;5;231;" + Utils.ansiColorCodes().get(this.getTitleColour()) + "m" + printable + "\033[48;5;231m";
+			printable= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256(this.getTitleColour()) + "m" + printable; // + "\033[48;5;231m";
 		}
 		return printable;
 	}
 	
 	@Override
-	public String getTitle(){
+	public String getTitle() throws InvalidColourException{
 
 		if(this.isHideTitle()){
 			return "";

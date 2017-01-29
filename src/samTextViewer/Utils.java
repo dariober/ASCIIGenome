@@ -1,6 +1,5 @@
 package samTextViewer;
 
-import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -49,13 +48,11 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
-import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import faidx.Faidx;
 import faidx.UnindexableFastaFileException;
-import filter.FirstOfPairFilter;
 import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.SAMFileReader;
 import htsjdk.samtools.SAMRecord;
@@ -216,49 +213,49 @@ public class Utils {
 		}
 		return mergedList;
 	}
-
 	
-	public static LinkedHashMap<String, Integer> ansiColorCodes(){
-		// See http://misc.flogisoft.com/bash/tip_colors_and_formatting
-		LinkedHashMap<String, Integer> colourCodes= new LinkedHashMap<String, Integer>();
-		colourCodes.put("default", 39);
-		colourCodes.put("black", 30);
-		colourCodes.put("red", 31);
-		colourCodes.put("green", 32);
-		colourCodes.put("yellow", 33);
-		colourCodes.put("blue", 34);
-		colourCodes.put("magenta", 35);
-		colourCodes.put("cyan", 36);
-		colourCodes.put("light_grey", 37);
-		colourCodes.put("grey", 90);
-		colourCodes.put("light_red", 91);
-		colourCodes.put("light_green", 92);
-		colourCodes.put("light_yellow", 93);
-		colourCodes.put("light_blue", 94);
-		colourCodes.put("light_magenta", 95);
-		colourCodes.put("light_cyan", 96);
-		colourCodes.put("white", 97);
-		// To be continued
-		return colourCodes;
-	}
+//	public static LinkedHashMap<String, Integer> xterm256ColorCodes(){
+//		// See http://misc.flogisoft.com/bash/tip_colors_and_formatting
+//		// From http://jonasjacek.github.io/colors/
+//		LinkedHashMap<String, Integer> colourCodes= new LinkedHashMap<String, Integer>();
+//		colourCodes.put("default", 39);
+//		colourCodes.put("black", 30);
+//		colourCodes.put("red", 31);
+//		colourCodes.put("green", 32);
+//		colourCodes.put("yellow", 33);
+//		colourCodes.put("blue", 34);
+//		colourCodes.put("magenta", 35);
+//		colourCodes.put("cyan", 36);
+//		colourCodes.put("light_grey", 37);
+//		colourCodes.put("grey", 90);
+//		colourCodes.put("light_red", 91);
+//		colourCodes.put("light_green", 92);
+//		colourCodes.put("light_yellow", 93);
+//		colourCodes.put("light_blue", 94);
+//		colourCodes.put("light_magenta", 95);
+//		colourCodes.put("light_cyan", 96);
+//		colourCodes.put("white", 97);
+//		// To be continued
+//		return colourCodes;
+//	}
 	
-	public static Color ansiColourToGraphicsColor(int ansiColor) throws InvalidColourException{
-		
-		if(!ansiColorCodes().entrySet().contains(ansiColor)){
-			throw new InvalidColourException();
-		}
-		if(ansiColor == 30){ return Color.BLACK; }
-		if(ansiColor == 31 || ansiColor == 91){ return Color.RED; }
-		if(ansiColor == 32 || ansiColor == 92){ return Color.GREEN; }
-		if(ansiColor == 33 || ansiColor == 93){ return Color.YELLOW; }
-		if(ansiColor == 34 || ansiColor == 94){ return Color.BLUE; }
-		if(ansiColor == 35 || ansiColor == 95){ return Color.MAGENTA; }
-		if(ansiColor == 36 || ansiColor == 96){ return Color.CYAN; }
-		if(ansiColor == 37){ return Color.LIGHT_GRAY; }
-		if(ansiColor == 90){ return Color.DARK_GRAY; }
-		if(ansiColor == 97){ return Color.WHITE; }
-		return Color.BLACK;
-	}
+//	public static Color ansiColourToGraphicsColor(int ansiColor) throws InvalidColourException{
+//		
+//		if(!xterm256ColorCodes().entrySet().contains(ansiColor)){
+//			throw new InvalidColourException();
+//		}
+//		if(ansiColor == 30){ return Color.BLACK; }
+//		if(ansiColor == 31 || ansiColor == 91){ return Color.RED; }
+//		if(ansiColor == 32 || ansiColor == 92){ return Color.GREEN; }
+//		if(ansiColor == 33 || ansiColor == 93){ return Color.YELLOW; }
+//		if(ansiColor == 34 || ansiColor == 94){ return Color.BLUE; }
+//		if(ansiColor == 35 || ansiColor == 95){ return Color.MAGENTA; }
+//		if(ansiColor == 36 || ansiColor == 96){ return Color.CYAN; }
+//		if(ansiColor == 37){ return Color.LIGHT_GRAY; }
+//		if(ansiColor == 90){ return Color.DARK_GRAY; }
+//		if(ansiColor == 97){ return Color.WHITE; }
+//		return Color.BLACK;
+//	}
 	
 	/** Return true if fileName has a valid tabix index. 
 	 * @throws IOException 
@@ -1249,18 +1246,18 @@ public class Utils {
 	    return result;
 	}
 
-	public static List<SamRecordFilter> cleanInappropriateCallIfNotPairedRead(List<SamRecordFilter> filter){
-		List<SamRecordFilter> cleanfilter= new ArrayList<SamRecordFilter>(); 
-		for(SamRecordFilter x : filter){
-			if(x.equals(new FirstOfPairFilter(true)) ||
-			   x.equals(new FirstOfPairFilter(false))){
-			   //
-			} else {
-				cleanfilter.add(x);
-			}
-		}
-		return cleanfilter;
-	} 
+//	public static List<SamRecordFilter> cleanInappropriateCallIfNotPairedRead(List<SamRecordFilter> filter){
+//		List<SamRecordFilter> cleanfilter= new ArrayList<SamRecordFilter>(); 
+//		for(SamRecordFilter x : filter){
+//			if(x.equals(new FirstOfPairFilter(true)) ||
+//			   x.equals(new FirstOfPairFilter(false))){
+//			   //
+//			} else {
+//				cleanfilter.add(x);
+//			}
+//		}
+//		return cleanfilter;
+//	} 
 	
 	public static TabixFormat trackFormatToTabixFormat(TrackFormat fmt){
 		

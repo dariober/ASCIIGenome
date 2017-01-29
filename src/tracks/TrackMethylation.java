@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.base.Joiner;
 
+import exceptions.InvalidColourException;
 import samTextViewer.Utils;
 
 /**
@@ -179,7 +180,7 @@ public class TrackMethylation extends Track {
     //}
     
     @Override
-    public String getTitle(){
+    public String getTitle() throws InvalidColourException{
     
 		if(this.isHideTitle()){
 			return "";

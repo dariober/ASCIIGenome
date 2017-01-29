@@ -1,12 +1,33 @@
 New in 1.1.0
 ============
 
-* `history` and `recentlyOpened` takes optional argument `-grep`
+* `history` and `recentlyOpened` takes optional argument `-grep` and `-n`
+
+* `colorTrack` supports all the 256 colours from the Xterm256 palette. The Xterm256
+  is now the only palette used throughout ASCIIGenome.
 
 * Introduced `awk` for advanced record filtering 
 
 * Fixed bug where a string starting with '!' caused the JLine2 ConsoleReader to crash. 
   Fixed by setting `console.setExpandEvents(false)`
+
+* Fixed (again!) bug where samtools filters for paired-end reads (*e.g.* -F 64) 
+  applied to non-paired reads threw an `IllegalStateException`. Fixed by editing
+  editing `~/eclipse/libraries/htsjdk/htsjdk-1.141/src/java/htsjdk/samtools/SAMRecord.java`
+  to comment out the method throwing the exception (command line samtools doesn't mind such behaviour).
+  htjdk was then recompiled and the jar file add to build path.
+  This is a hack. If you upgrade htjdk remember to comment out `requireReadPaired`
+  again. Remember also to make the recompiled htjsdk before igv htsjdk.
+  This is the edit:
+
+```
+private void requireReadPaired() {
+    // dariober edit
+    //if (!getReadPairedFlag()) {
+    //    throw new IllegalStateException("Inappropriate call if not paired read");
+    //}
+}
+```
 
 New in 1.0.0
 ============

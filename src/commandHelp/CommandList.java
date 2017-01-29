@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import coloring.Xterm256;
 import exceptions.InvalidCommandLineException;
 import jline.console.ConsoleReader;
 import jline.console.completer.StringsCompleter;
@@ -93,7 +94,13 @@ public class CommandList {
 	public static void updateCommandHelpMdFile(File destFile) throws InvalidCommandLineException, IOException{
 		
 		BufferedWriter wr= new BufferedWriter(new FileWriter(destFile));
-		wr.write(reStructuredTextHelp() + "\n");
+		String doc= reStructuredTextHelp();
+		
+		// Replace ansi escapes
+		doc= doc.replaceAll("\n*0: [\\s|\\S]+0m", "`colors here <http://jonasjacek.github.io/colors/>`_");
+		// doc= doc.replaceAll("\\d+: \\033\\[38;5;\\d+m", ".. raw:: html\n\n    <font color=\"").replaceAll("\\033\\[0m\\s*", "\">FOO</font>\n\n----\n\n");
+		
+		wr.write(doc + "\n");
 		wr.close();
 		System.err.println("Command help file written to " + destFile.getAbsolutePath());
 	}
@@ -600,12 +607,21 @@ public class CommandList {
 		cmd.setName("colorTrack"); cmd.setArgs("color [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set colour for tracks matched by regex. ");
 		cmd.setAdditionalDescription(""
-				+ "Available colours: red, green, yellow, blue, magenta, cyan, grey, "
-				+ "light_red, light_green, light_yellow, light_blue, light_magenta, light_cyan, light_grey, "
-				+ "white, black, default. The 'default' colour reset to the system default colour. "
-				+ "Colouring is rendered with ANSI codes 8/16. Example::\n"
+				+ "Colors can be specified by name or by a value between 0 and 255. "
+				+ "If only the start of a color is given, the first name found starting with "
+				+ "the given string is returned, e.g. 'darkv' is interpreted as 'darkviolet'. "
+				+ "Names are case insensitive.\n"
 				+ "\n"
-				+ "    colorTrack~light_blue~ts.*gtf~ts.*bam\n"
+				+ "Available colours are from the Xterm256 palette: \n"
+				+ "\n"
+				+ Xterm256.colorShowForTerminal().replaceAll(" ", "~") 
+				+ "\n"
+				+ "\n"
+				+ "Example::\n"
+				+ "\n"
+				+ "    colorTrack cyan1 ts.*gtf ts.*bam \n"
+				+ "    colorTrack 40 ~~~~~~~~~~~~~~~~~~<- By INT\n"
+				+ "    colorTrack darkv ~~~~~~~~~~~~~~~<- Same as darkviolet\n"
 				+ "\n");
 		cmdList.add(cmd);
 
@@ -715,7 +731,9 @@ public class CommandList {
 		cmd.setBriefDescription("List recently opened files. ");
 		cmd.setAdditionalDescription("Files are listed with their absolute path.\n"
 				+ "\n"
-				+ ":code:`-grep <pattern>` Filter for files (strings) matching pattern. "
+				+ "* :code:`-n INT` Return only the last INT files.\n"
+				+ "\n"
+				+ "* :code:`-grep <pattern>` Filter for files (strings) matching pattern. "
 				+ "Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`.");
 		cmdList.add(cmd);
 		
@@ -763,11 +781,13 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("history"); cmd.setArgs("[-grep = .*]"); cmd.inSection= Section.GENERAL; 
+		cmd.setName("history"); cmd.setArgs("[-n INT] [-grep = .*]"); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("List the executed commands. ");
 		cmd.setAdditionalDescription("Commands executed in previous sessions of ASCIIGenome are in \\~/.asciigenome_history\n"
 				+ "\n"
-				+ ":code:`-grep <pattern>` Filter for commands (strings) matching pattern. "
+				+ "* :code:`-n INT` Return only the last INT commands.\n"
+				+ "\n"
+				+ "* :code:`-grep <pattern>` Filter for commands (strings) matching pattern. "
 				+ "Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`");
 		cmdList.add(cmd);
 		

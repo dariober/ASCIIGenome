@@ -8,12 +8,12 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.biojava.nbio.genome.parsers.gff.Feature;
 import org.biojava.nbio.genome.parsers.gff.Location;
 
-import samTextViewer.Utils;
-
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
+import samTextViewer.Utils;
 
 /**
  * Class to hold bed or gtf features. Behaviour should be similar to pybedtools Interval.
@@ -351,7 +351,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return ideogramWithName;
 	}
 	
-	protected String[] makeIdeogramFormatted(boolean noFormat){
+	protected String[] makeIdeogramFormatted(boolean noFormat) throws InvalidColourException{
 
 		char[] textArray;
 		if(this.ideogram == null){

@@ -199,6 +199,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 
 		String rawLine;
 		while( (rawLine = br.readLine()) != null) {
+			if(rawLine.contains("\t__ignore_me__\t")){
+				continue;
+			}
 			set.add(this.rawLineToBookmarkCmd(rawLine));
 		}
 		br.close();

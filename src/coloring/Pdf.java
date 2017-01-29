@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import com.google.common.base.Splitter;
@@ -22,6 +24,8 @@ import com.itextpdf.text.pdf.PdfCopy;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfSmartCopy;
 import com.itextpdf.text.pdf.PdfWriter;
+
+import exceptions.InvalidColourException;
 
 public class Pdf {
 
@@ -40,7 +44,7 @@ public class Pdf {
 
 	/* M e t h o d s */
 
-	public void convert(File pdfOut, float fontSize, boolean append) throws IOException, DocumentException {
+	public void convert(File pdfOut, float fontSize, boolean append) throws IOException, DocumentException, InvalidColourException {
 
 		// First we write to tmp file then we copy to given destination, possibly appending
 		File tmpPdf= File.createTempFile(pdfOut.getName(), ".pdf");
@@ -100,8 +104,9 @@ public class Pdf {
 	/** Read ansi formatted file line by lone and convert each line to 
 	 * a iText paragraph. 
 	 * @throws IOException 
+	 * @throws InvalidColourException 
 	 * */
-	private List<Paragraph> ansiFileToPdfParagraphs(float fontSize) throws IOException{
+	private List<Paragraph> ansiFileToPdfParagraphs(float fontSize) throws IOException, InvalidColourException{
 		
 		List<Paragraph> paraList= new ArrayList<Paragraph>();
 
@@ -118,8 +123,8 @@ public class Pdf {
 			if(xv.equals("[48;5;231m")){
 				continue;
 			}
-			BaseColor fgBaseCol= new BaseColor(this.ansiCodesToFgColor(xv).getRGB());
-			BaseColor bgBaseCol= new BaseColor(this.ansiCodesToBgColor(xv).getRGB());
+			BaseColor fgBaseCol= new BaseColor(this.xterm256ToColor(xv, false).getRGB());
+			BaseColor bgBaseCol= new BaseColor(this.xterm256ToColor(xv, true).getRGB());
 
 			if(this.extractAnsiCodes(xv).size() != 0){
 				// This string begins with ansi sequence and the color has been extracted.
@@ -156,38 +161,28 @@ public class Pdf {
 		this.setMaxHeight((int) Math.rint((paraList.size() + 1) * fontSize));
 		return paraList;
 	}
-	
-	/**String x is expected to start with the ansi escape sequence. From the ansi sequence
-	 * extract the (last) color for the foreground color.
-	 * If x doesn't start with the ansi escape return a default color (black?). 
+
+	/** Parse the string x to get the colour for foreground or background.
+	 * This method should be private. It is protected only for unit test.
 	 * */
-	private Color ansiCodesToFgColor(String x){
+	protected Color xterm256ToColor(String x, boolean isBackground) throws InvalidColourException{
 
 		List<Integer> ansiCodes= this.extractAnsiCodes(x);
-
-		Color col= Color.BLACK;
-		for(int n : ansiCodes){
-			if(ColoredChar.ansiForegroundColourToGraphicsColor(n) != null){
-				// Code is a valid foreground color so update the current Color
-				col= ColoredChar.ansiForegroundColourToGraphicsColor(n);
-			}
+		
+		Color col;
+		int xtag= -1;
+		if(isBackground){
+			col= Color.WHITE; // Default background
+			xtag= Collections.indexOfSubList(ansiCodes, Arrays.asList(new Integer[] {48, 5}));
+		} else {
+			col= Color.BLACK; // Default foreground
+			xtag= Collections.indexOfSubList(ansiCodes, Arrays.asList(new Integer[] {38, 5}));
 		}
-		return col;
-	}
-	
-	/**Get the background color from the ansi sequence 
-	 * */
-	private Color ansiCodesToBgColor(String x){
-
-		List<Integer> ansiCodes= this.extractAnsiCodes(x);
-
-		Color col= Color.WHITE;
-		for(int n : ansiCodes){
-			if(ColoredChar.ansiBackgroundColourToGraphicsColor(n) != null){
-				// Code is a valid background color so update the current Color
-				col= ColoredChar.ansiBackgroundColourToGraphicsColor(n);
-			}
+		
+		if(xtag != -1 && ansiCodes.size() > 2){
+			col= Xterm256.xterm256ToColor(ansiCodes.get(xtag + 2));
 		}
+		
 		return col;
 	}
 	
@@ -195,6 +190,7 @@ public class Pdf {
 	 * Not the the escape \033 has been already removed from x. 
 	 *  extractAnsiCodes("[31;32;33mFOOBAR") -> [31, 32, 33]
 	 *  extractAnsiCodes("FOOBAR") -> []
+	 *  engineer 
 	 * */
 	private List<Integer> extractAnsiCodes(String x){
 		List<Integer> ansiCodes= new ArrayList<Integer>();
@@ -222,14 +218,6 @@ public class Pdf {
 		}
 		return ansiCodes;
 	}
-
-//	private File getAnsiInput() {
-//		return ansiInput;
-//	}
-//
-//	private void setAnsiInput(File ansiInput) {
-//		this.ansiInput = ansiInput;
-//	}
 
 	private int getMaxWidth() {
 		return maxWidth;

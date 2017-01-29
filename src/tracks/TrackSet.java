@@ -18,7 +18,9 @@ import java.util.regex.PatternSyntaxException;
 
 import com.google.common.base.Joiner;
 
+import coloring.Xterm256;
 import exceptions.BamIndexNotFoundException;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -657,7 +659,7 @@ public class TrackSet {
         }
 	}
 	
-	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException{
+	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidColourException{
 
 		// MEMO of subcommand syntax:
 		// 0 trackColour
@@ -668,13 +670,10 @@ public class TrackSet {
 		String colour= (new Track()).getTitleColour();
 		if(tokens.size() >= 2){
 			String xcolour= tokens.get(1).toLowerCase();
-			if(!Utils.ansiColorCodes().containsKey(xcolour)){
-				System.err.println("\nInvalid colour: " + xcolour);
-				System.err.println("Valid colours are: " + Utils.ansiColorCodes().keySet());
-				throw new InvalidCommandLineException();
-			} else {
-				colour= xcolour;
-			}
+
+			Xterm256.colorNameToXterm256(xcolour); // This is only to test whether exception is thrown.
+
+			colour= xcolour;
 		}
 		
 		// Regex
@@ -1732,16 +1731,25 @@ public class TrackSet {
 		args.remove(0);
 		
 		String re= ".*";
-		if(args.size() > 0){
-			if(args.get(0).equals("-grep")){
-				if(args.size() >= 2){
-					re= args.get(1);
-				}
-			} else {
-				System.err.println("Invalid argument: " + args.get(0));
-				throw new InvalidCommandLineException();
-			}
+		int nmax= Integer.MAX_VALUE;
+		if(args.contains("-grep")){
+			re= args.get(args.indexOf("-grep") + 1);
 		}
+		if(args.contains("-n")){
+			nmax= Integer.parseInt(args.get(args.indexOf("-n") + 1));
+		}
+		
+//		String re= ".*";
+//		if(args.size() > 0){
+//			if(args.get(0).equals("-grep")){
+//				if(args.size() >= 2){
+//					re= args.get(1);
+//				}
+//			} else {
+//				System.err.println("Invalid argument: " + args.get(0));
+//				throw new InvalidCommandLineException();
+//			}
+//		}
 		Pattern pattern= Pattern.compile(re); // .matcher(x).find();
 		List<String> opened= new ArrayList<String>();
 		for(String x : this.getOpenedFiles()){
@@ -1749,6 +1757,10 @@ public class TrackSet {
 				opened.add(x);
 			}
 		}
+		if(opened.size() > nmax){ // Trim list to 
+			opened= opened.subList(opened.size() - nmax, opened.size());
+		}
+
 		return Joiner.on("\n").join(opened);
 	}
 

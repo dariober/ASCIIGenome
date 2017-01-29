@@ -21,6 +21,7 @@ import com.itextpdf.text.DocumentException;
 
 import commandHelp.CommandList;
 import exceptions.BamIndexNotFoundException;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -44,7 +45,7 @@ import tracks.TrackSet;
  */
 public class Main {
 	
-	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException, UnindexableFastaFileException {
+	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException {
 
 		final String cmdHistoryFile= System.getProperty("user.home") + File.separator + ".asciigenome_history";  
 		final String MARKER_FOR_HISTORY_FILE= "## file ##";

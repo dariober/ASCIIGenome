@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
@@ -46,7 +47,7 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
-	public void canHideTitle() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+	public void canHideTitle() throws ClassNotFoundException, InvalidColourException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		// See issue #42
 		String intervalFileName= "test_data/hg19.gencode_genes_v19.gtf.gz";
 		GenomicCoords gc= new GenomicCoords("chr7", null, null);

@@ -1,11 +1,13 @@
 package tracks;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
 import org.apache.commons.lang3.math.NumberUtils;
 import org.biojava.nbio.genome.parsers.gff.Feature;
 import org.biojava.nbio.genome.parsers.gff.Location;
@@ -13,8 +15,8 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
-import tracks.IntervalFeature;
 
 public class IntervalFeatureTest {
 
@@ -42,7 +44,7 @@ public class IntervalFeatureTest {
 //	}
 	
 	@Test
-	public void canMakeIdeogram() throws InvalidGenomicCoordsException{
+	public void canMakeIdeogram() throws InvalidGenomicCoordsException, InvalidColourException{
 		
 		String line= "chr1 0 10".replaceAll(" ", "\t");
 		IntervalFeature f= new IntervalFeature(line, TrackFormat.BED);
@@ -280,7 +282,7 @@ public class IntervalFeatureTest {
 	}
 	
 	@Test
-	public void canFormatVCFLine() throws InvalidGenomicCoordsException{
+	public void canFormatVCFLine() throws InvalidGenomicCoordsException, InvalidColourException{
 		
 		List<Double> rulerMap= new ArrayList<Double>();
 		for(int i= 113054374; i < 113054580; i++){

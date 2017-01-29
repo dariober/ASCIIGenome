@@ -27,6 +27,7 @@ import org.broad.igv.bbfile.BBFileReader;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -198,6 +199,12 @@ public class TrackIntervalFeature extends Track {
 			PrintStream os= new PrintStream(baos);
 			new org.jawk.Main(args, is, os, System.err);
 		} catch(Exception e){
+			try{
+				this.setAwk(""); // If something goes wrong reset to no awk. Otherwise
+				                 // You looping through a broken awk script.
+			} catch(Exception ex){
+				
+			}
 			throw new IOException();
 		} finally{
 			System.setOut(stdout);
@@ -487,8 +494,9 @@ public class TrackIntervalFeature extends Track {
 	/** Return a string of a single line of (typically de-stacked) reads
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
 	 * */
-	private String printToScreenOneLine(List<IntervalFeature> listToPrint) throws InvalidGenomicCoordsException, IOException {
+	private String printToScreenOneLine(List<IntervalFeature> listToPrint) throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 		
 		int windowSize= this.getGc().getUserWindowSize();
 
@@ -549,7 +557,7 @@ public class TrackIntervalFeature extends Track {
 	}
 	
 	@Override
-	public String getTitle(){
+	public String getTitle() throws InvalidColourException{
 		
 		if(this.isHideTitle()){
 			return "";
