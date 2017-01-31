@@ -10,7 +10,8 @@ cd /path/to/test_data
 
 wget http://hgdownload.cse.ucsc.edu/goldenpath/hg19/chromosomes/chr7.fa.gz 
 gunzip chr7.fa.gz
-md5sum chr7.fa  ## 30c3693ead968844a769a90a801a900f
+## md5sum chr7.fa  ## if linux
+md5 chr7.fa        ## if MacOS ## 30c3693ead968844a769a90a801a900f
 samtools faidx chr7.fa
 
 wget http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
@@ -19,7 +20,7 @@ rm refGene.txt.gz
 
 wget http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/byDataType/openchrom/jan2011/fdrPeaks/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb
 
-wget ftp://ftp.ensembl.org/pub/current_gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz
+wget ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz
 ```
 
 **Memo**:

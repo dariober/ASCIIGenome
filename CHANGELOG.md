@@ -1,3 +1,10 @@
+New in 1.2.0
+============
+
+* Positions visited in previous sessions of ASCIIGenome are now available in later sessions.
+  Visited positions are written to the the history file (`~/.asciigenome_history`) and retrieved
+  at the start of ASCIIGenome.
+
 New in 1.1.0
 ============
 

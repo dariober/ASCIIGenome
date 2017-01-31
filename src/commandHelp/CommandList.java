@@ -777,7 +777,8 @@ public class CommandList {
 		cmd= new CommandHelp();
 		cmd.setName("posHistory"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("List the visited positions.");
-		cmd.setAdditionalDescription("");
+		cmd.setAdditionalDescription("Recorded positions include the current and the previous "
+				+ "sessions of ASCIIGenome.");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();

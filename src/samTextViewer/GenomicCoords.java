@@ -56,7 +56,7 @@ public class GenomicCoords implements Cloneable {
 	private String samSeqDictSource= null; // Source of the sequence dictionary. Can be path to file of fasta, bam, genome. Or genome tag e.g. hg19. 
 	
 	/* Constructors */
-	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
+	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile, boolean verbose) throws InvalidGenomicCoordsException, IOException{
 
 		GenomicCoords xgc= parseStringToGenomicCoords(region);
 
@@ -80,7 +80,9 @@ public class GenomicCoords implements Cloneable {
 		}
 		if(samSeqDict != null && samSeqDict.size() > 0){ // If dict is present, check against it
 			if(samSeqDict.getSequence(chrom) == null){
-				System.err.println("\nCannot find chromosome '" + chrom + "' in sequence dictionary.");
+				if(verbose){
+					System.err.println("\nCannot find chromosome '" + chrom + "' in sequence dictionary.");
+				}
 				InvalidGenomicCoordsException e = new InvalidGenomicCoordsException();
 				throw e;
 			}
@@ -95,7 +97,11 @@ public class GenomicCoords implements Cloneable {
 		}
 		
 	}
-		
+
+	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
+		this(region, samSeqDict, fastaFile, true);
+	}
+	
 	GenomicCoords(){ 
 
 	};

@@ -47,8 +47,9 @@ public class Main {
 	
 	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException {
 
-		final String cmdHistoryFile= System.getProperty("user.home") + File.separator + ".asciigenome_history";  
+		final String CMD_HISTORY_FILE= System.getProperty("user.home") + File.separator + ".asciigenome_history";  
 		final String MARKER_FOR_HISTORY_FILE= "## file ##";
+		final String MARKER_FOR_HISTORY_CMD= "## cmd ##";
 		/* Start parsing arguments * 
 		 * *** If you change something here change also in console input ***/
 		Namespace opts= ArgParse.argParse(args);
@@ -93,10 +94,12 @@ public class Main {
 		// ----------------------------
 		// Genomic positions start here:
 		final GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		gch.add(new GenomicCoords(initGc.toStringRegion(), initGc.getSamSeqDict(), initGc.getFastaFile()));
+		GenomicCoords start= new GenomicCoords(initGc.toStringRegion(), initGc.getSamSeqDict(), initGc.getFastaFile());
+		gch.readHistory(new File(CMD_HISTORY_FILE), start);
+		gch.add(start);
 
 		final TrackSet trackSet= new TrackSet(inputFileList, gch.current());
-		addHistoryFiles(trackSet, cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
+		addHistoryFiles(trackSet, CMD_HISTORY_FILE, MARKER_FOR_HISTORY_FILE);
 		
 		setDefaultTrackHeights(console.getTerminal().getHeight(), trackSet.getTrackList());
 		
@@ -154,9 +157,9 @@ public class Main {
 
 		/* Set up done, start processing */
 		/* ============================= */
-		History cmdHistory= initCmdHistory(cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
+		History cmdHistory= initCmdHistory(CMD_HISTORY_FILE, MARKER_FOR_HISTORY_CMD);
 		console.setHistory(cmdHistory);
-		writeHistory(console.getHistory(), trackSet.getOpenedFiles(), cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
+		writeHistory(console.getHistory(), trackSet.getOpenedFiles(), CMD_HISTORY_FILE, MARKER_FOR_HISTORY_FILE, MARKER_FOR_HISTORY_CMD, gch);
 		
 		while(true){  
 			// keep going until quit or if no interactive input set
@@ -270,16 +273,15 @@ public class Main {
 	/**Read the asciigenome history file and put it a list as current history. Or
 	 * return empty history file does not exist or can't be read. 
 	 * */
-	private static History initCmdHistory(String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE){
+	private static History initCmdHistory(String cmdHistoryFile, String MARKER_FOR_HISTORY_CMD){
 		History cmdHistory= new MemoryHistory();
 		try{
 			BufferedReader br= new BufferedReader(new FileReader(new File(cmdHistoryFile)));
 			String line;
 			while((line = br.readLine()) != null){
-				if(line.startsWith(MARKER_FOR_HISTORY_FILE)){
-					continue;
+				if(line.startsWith(MARKER_FOR_HISTORY_CMD)){
+					cmdHistory.add(line.replaceFirst(MARKER_FOR_HISTORY_CMD, ""));
 				}
-				cmdHistory.add(line);
 			}
 			br.close();
 		} catch(IOException e){
@@ -396,8 +398,10 @@ public class Main {
 	}
 	
 	/**Write the history of commands to given file.
+	 * Note that the existing history file is completely overwritten.
 	 * */
-	private static void writeHistory(final History cmdHistory, final Set<String> fileHistory, final String cmdHistoryFile, final String MARKER_FOR_HISTORY_FILE){
+	private static void writeHistory(final History cmdHistory, final Set<String> fileHistory, final String cmdHistoryFile, final String MARKER_FOR_HISTORY_FILE, 
+				final String MARKER_FOR_HISTORY_CMD, final GenomicCoordsHistory gch){
 		
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			public void run() {
@@ -418,15 +422,23 @@ public class Main {
 				List<String>lastFiles= new ArrayList<String>(fileHistory);
 				int max_files= 200; // Maximum number of files to write out to asciigenomo_history.
 				lastFiles= lastFiles.subList(Math.max(0, lastFiles.size() - max_files), lastFiles.size());
-				
-				try {
-					BufferedWriter wr= new BufferedWriter(new FileWriter(new File(cmdHistoryFile)));
+
+				try{
+					
+					StringBuilder sb= new StringBuilder();
+					
 					for(String cmd : lastHist){
-						wr.write(cmd + "\n");
+						sb.append(MARKER_FOR_HISTORY_CMD + cmd + "\n");
 					}
 					for(String file : lastFiles){
-						wr.write(MARKER_FOR_HISTORY_FILE + file + "\n");
+						sb.append(MARKER_FOR_HISTORY_FILE + file + "\n");
 					}
+					for(String pos : gch.prepareHistoryForHistoryFile(new File(cmdHistoryFile), 100)){
+						sb.append(pos + "\n"); // Positions
+					}
+
+					BufferedWriter wr= new BufferedWriter(new FileWriter(new File(cmdHistoryFile)));
+					wr.write(sb.toString());
 					wr.close();
 				} catch (IOException e) {
 					System.err.println("Unable to write history to " + cmdHistoryFile);
