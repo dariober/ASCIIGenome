@@ -5,6 +5,8 @@ New in 1.2.0
   Visited positions are written to the the history file (`~/.asciigenome_history`) and retrieved
   at the start of ASCIIGenome.
 
+* On exit check if a newer version is available on the GitHub repository.
+
 New in 1.1.0
 ============
 

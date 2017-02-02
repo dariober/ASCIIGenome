@@ -7,15 +7,6 @@ Features
 * Allow the user to set the `tmp` directory. By default use a `tmp` other then 
   the system default. On Linux the `tmp` is often pretty small.
 
-* `colorTrack` should allow partial matching of colours with `_` prefix
-  equivalent to `light_`. The matching part should be the start of the colour
-  name. E.g. `colorTrack _y` same as `colorTrack light_yellow`. Throw error if
-  matching is ambiguous.
-
-* Write history of positions to `.asciigenome_history` together with command and file
-  history. Position history to be reloaded on start of ASCIIGenome. Note however,
-  that positions from previous sessions might be incompatible with the current one.
-
 * `colorTrack`, `trackHeight` and all commands that are applied to a list of tracks
   should accept a `-v` option to invert track selection, *i.e.* apply *command* to 
   all tracks not matched by the list of track regexes. E.g: `trackHeight -v 10 bam`

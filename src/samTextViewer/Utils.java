@@ -47,6 +47,10 @@ import org.broad.igv.tdf.TDFReader;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -1404,6 +1408,73 @@ public class Utils {
 			}
 		});
 		return globbed;
+	}
+
+	/** Query github repo to check if a version newer then this one is available.
+	 * Returns list of length 2: ["this version", "latest version on github"]
+	 * @throws IOException 
+	 * */
+	protected static List<String> checkUpdates() throws IOException {
+		
+		List<String> thisAndGitVersion= new ArrayList<String>();
+		
+		// Get version of this ASCIIGenome
+		thisAndGitVersion.add(ArgParse.VERSION);
+		
+		// Get github versions
+		URL url = new URL("https://api.github.com/repos/dariober/ASCIIGenome/tags");
+        
+		BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
+
+        String line;
+        StringBuilder sb= new StringBuilder();
+        while ((line = br.readLine()) != null) {
+        	sb.append(line + '\n');
+        }
+
+        JsonElement jelement = new JsonParser().parse(sb.toString());
+        JsonArray  jarr = jelement.getAsJsonArray(); //.getAsJsonObject();
+        JsonObject jobj = jarr.get(0).getAsJsonObject();
+        String tag= jobj.get("name").getAsString().replaceFirst("v", "");
+        
+        thisAndGitVersion.add(tag);
+        return thisAndGitVersion;
+	}
+	
+	/**
+	 * Compares two version strings. 
+	 * 
+	 * Use this instead of String.compareTo() for a non-lexicographical 
+	 * comparison that works for version strings. e.g. "1.10".compareTo("1.6").
+	 * 
+	 * From 
+	 * http://stackoverflow.com/questions/6701948/efficient-way-to-compare-version-strings-in-java
+	 * 
+	 * @note It does not work if "1.10" is supposed to be equal to "1.10.0".
+	 * 
+	 * @param str1 a string of ordinal numbers separated by decimal points. 
+	 * @param str2 a string of ordinal numbers separated by decimal points.
+	 * @return The result is a negative integer if str1 is _numerically_ less than str2. 
+	 *         The result is a positive integer if str1 is _numerically_ greater than str2. 
+	 *         The result is zero if the strings are _numerically_ equal.
+	 *        
+	 */
+	public static int versionCompare(String str1, String str2) {
+	    String[] vals1 = str1.split("\\.");
+	    String[] vals2 = str2.split("\\.");
+	    int i = 0;
+	    // set index to first non-equal ordinal or length of shortest version string
+	    while (i < vals1.length && i < vals2.length && vals1[i].equals(vals2[i])) {
+	      i++;
+	    }
+	    // compare first non-equal ordinal number
+	    if (i < vals1.length && i < vals2.length) {
+	        int diff = Integer.valueOf(vals1[i]).compareTo(Integer.valueOf(vals2[i]));
+	        return Integer.signum(diff);
+	    }
+	    // the strings are equal or one string is a substring of the other
+	    // e.g. "1.2.3" = "1.2.3" or "1.2.3" < "1.2.3.4"
+	    return Integer.signum(vals1.length - vals2.length);
 	}
 	
 }

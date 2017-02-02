@@ -19,6 +19,7 @@ import java.util.Set;
 import com.google.common.base.Joiner;
 import com.itextpdf.text.DocumentException;
 
+import coloring.Xterm256;
 import commandHelp.CommandList;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
@@ -63,6 +64,8 @@ public class Main {
 		// Init console right at start so if something goes wrong the user's terminal is reset to 
 		// initial defaults with the shutdown hook. This could be achieved in cleaner way probably.
 		ConsoleReader console = CommandList.initConsole();
+		
+		messageVersion(opts.getBoolean("noFormat"));
 		
 		/* Set up console */
 		
@@ -445,7 +448,30 @@ public class Main {
 				}
 	        }
 	    }, "Shutdown-thread"));
+	}
+		
+	/** On exit print a message informing a new version of ASCIIGenome is available
+	 * */
+	private static void messageVersion(final boolean noFormat) throws IOException, InvalidColourException{
 
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+			public void run() {
+				try{
+					List<String> up = Utils.checkUpdates();
+					int cmp= Utils.versionCompare(up.get(0), up.get(1));
+					String msg= "";
+					if(cmp == -1){
+						msg= "NOTE: Newer version of ASCIIGenome is available: v" + up.get(1);
+					}
+					if( ! noFormat){
+						msg= "\033[38;5;" + Xterm256.colorNameToXterm256("red") + "m" +  msg + "\033[0m";
+					}
+					System.err.println(msg);
+				} catch(Exception e){
+					// e.printStackTrace();
+				}
+	        }
+	    }, "Shutdown-thread"));		
 	}
 	
 }

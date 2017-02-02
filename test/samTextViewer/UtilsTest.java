@@ -57,6 +57,23 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 
 	@Test
+	public void canCheckForUpdates() throws IOException{
+		
+		List<String> up= Utils.checkUpdates();
+			
+		assertEquals(2, up.size());
+		assertTrue(Character.isDigit(up.get(0).charAt(0)));
+		assertTrue(Character.isDigit(up.get(1).charAt(0)));
+		
+		assertEquals(0, Utils.versionCompare("1.0.0", "1.0.0"));
+		assertEquals(1, Utils.versionCompare("1.0.0", "0.0.9")); // Running version ahead of repo
+
+		assertEquals(-1, Utils.versionCompare("1.0.0", "1.0.1")); // Running version out of date
+		assertEquals(-1, Utils.versionCompare("1.0.0", "1.0.0.1"));
+		
+	}
+	
+	@Test
 	public void testAwk() throws Exception{
 
 		String fin= "/Users/berald01/Downloads/hg19.gencode_genes_v19.gtf"; // "test_data/hg19_genes_head.gtf"
