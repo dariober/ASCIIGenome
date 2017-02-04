@@ -335,6 +335,26 @@ public class TrackIntervalFeatureTest {
 	}
 
 	@Test
+	/** This should address issues #50 where a feature starting at the begining
+	 * of the chrom is ignored
+	 * */ 
+	public void nextCanMoveToStartOfChrom() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("chr1:2000-3000", null, null);
+		String intervalFileName= "test_data/refSeqZero.bed";
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		
+		GenomicCoords newGc= tif.coordsOfNextFeature(gc, false);
+		assertEquals(1, (int)newGc.getFrom()); // MEMO: Start of chrom is 0 in bed format but 1 in ASCIIGenome format  
+		
+		// Backwards
+		gc= new GenomicCoords("chr1:500-1000", null, null);
+		tif= new TrackIntervalFeature(intervalFileName, gc);
+		newGc= tif.coordsOfNextFeature(gc, true);
+		assertEquals(1, (int)newGc.getFrom());
+	}
+	
+	@Test
 	public void canGetCoordsOfNextFeature() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		GenomicCoords gc= new GenomicCoords("chr1:8000000-20000000", null, null);

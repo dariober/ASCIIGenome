@@ -327,7 +327,8 @@ public class TrackIntervalFeature extends Track {
 			chroms.add(startChrom);			
 		}
 		for(String chrom : chroms){
-			next = getNextFeatureOnChrom(chrom, 1);
+			next = getNextFeatureOnChrom(chrom, 0); // Use 0 so if the next feature starts at the beginning of the chrom,
+			                                        // i.e. at start=1, it is not missed. See issue #50 
 			if(next != null){
 				return next;
 			}			
@@ -342,7 +343,9 @@ public class TrackIntervalFeature extends Track {
 	 * @throws InvalidGenomicCoordsException */
 	private IntervalFeature getNextFeatureOnChrom(String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
-		TabixBigBedIterator iter= this.getReader().query(chrom, from-1, Integer.MAX_VALUE);
+		int qend= (from - 1) < 0 ? 0 : (from - 1);
+		
+		TabixBigBedIterator iter= this.getReader().query(chrom, qend, Integer.MAX_VALUE);
 		while(true){
 			String line= iter.next();
 			if(line == null){
