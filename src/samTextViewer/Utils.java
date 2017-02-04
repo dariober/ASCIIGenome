@@ -1108,10 +1108,10 @@ public class Utils {
 			try{
 				nz= Integer.parseInt(zz[1]);
 				if(nz < 0){
-					nz= defaultInt; 
+					nz= 0; 
 				}
 			} catch(Exception e){
-				// Leave default
+				nz= 0;
 			}
 		} 
 		return nz;

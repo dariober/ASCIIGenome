@@ -231,7 +231,7 @@ public class TrackIntervalFeatureTest {
 		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
 		GenomicCoords gc= new GenomicCoords("chr1:10000-100000", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-
+		
 		String awk= "'$3 == \"start_codon\" && $9 !~ \"OR4F\"'";
 		tif.setAwk(awk); // Note use single quotes
 	
@@ -247,6 +247,21 @@ public class TrackIntervalFeatureTest {
 		tif.setAwk("  "); // Remove filter w/o args.
 		subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(1000, subset.size());	
+		
+		// Invalid script: Ugly stackTrace printed. All records returned
+		tif.setAwk("$foo");
+		subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
+		assertEquals(1000, subset.size());
+
+		// awk output is neither empty nor equal to input
+		// Exception expected.
+		boolean pass= false;
+		try{
+			tif.setAwk("'{print 999}'");
+		} catch(InvalidGenomicCoordsException e){
+			pass= true;
+		}
+		assertTrue(pass);
 		
 	}
 

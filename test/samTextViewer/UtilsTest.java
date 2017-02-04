@@ -319,8 +319,9 @@ public class UtilsTest {
 		assertEquals(4, Utils.parseZoom("zo   4  ", 1));
 		assertEquals(0, Utils.parseZoom("zo   0", 1));
 		assertEquals(1, Utils.parseZoom("zo", 1));
-		assertEquals(1, Utils.parseZoom("zo -3", 1));
-		assertEquals(1, Utils.parseZoom("zo 3.3", 1));
+		assertEquals(0, Utils.parseZoom("zo -3", 1));   // < 0 reset to 0
+		assertEquals(0, Utils.parseZoom("zo 3.3", 1)); // Invalid INT reset to zero
+		assertEquals(0, Utils.parseZoom("zo foo", 1)); // Invalid INT reset to zero
 	}
 	
 	@Test

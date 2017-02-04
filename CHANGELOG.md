@@ -7,6 +7,8 @@ New in 1.2.0
 
 * On exit check if a newer version is available on the GitHub repository.
 
+* Fixed silly off-by-one error with capturing regexes in `ylim`.
+
 New in 1.1.0
 ============
 

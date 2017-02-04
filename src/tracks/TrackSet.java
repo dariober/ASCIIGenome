@@ -281,6 +281,8 @@ public class TrackSet {
 		// 1 int    mandatory
 		// 2 regex  optional
 		
+        boolean invertSelection= this.argListContainsFlag(tokens, "-v");
+		
 		if(tokens.size() < 2){
 			System.err.println("Error in trackHeight subcommand. Expected 2 args got: " + tokens);
 			throw new InvalidCommandLineException();
@@ -317,7 +319,7 @@ public class TrackSet {
         }
         
         // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
         	tr.setyMaxLines(this.trackHeightForRegex);
         }
@@ -356,6 +358,8 @@ public class TrackSet {
 			mode= FeatureDisplayMode.ONELINE;
 			args.remove("-o");
 		}
+		boolean invertSelection= this.argListContainsFlag(args, "-v");
+		
         // Regex to capture tracks: Everything left after removing command name and args:
         List<String> trackNameRegex= new ArrayList<String>();
         if(args.size() > 0){
@@ -365,7 +369,7 @@ public class TrackSet {
         }
                 
         // And set as required:
-		List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+		List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
         	if(mode == null){ // Toggle between expanded and collapsed
         		if(tr.getFeatureDisplayMode().equals(FeatureDisplayMode.EXPANDED)){
@@ -397,7 +401,9 @@ public class TrackSet {
 		
 		// PARSE ARGS
         // --------------------------------------------------------------------
-		if(args.contains("-clip")){
+		boolean invertSelection= this.argListContainsFlag(args, "-v");
+
+        if(args.contains("-clip")){
 			printMode= PrintRawLine.CLIP;
 			args.remove("-clip");
 		}
@@ -453,7 +459,7 @@ public class TrackSet {
 		// --------------------------------------------------------------------
 		
         // Tracks affected by this command:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
 
         // If we print to file just do that.
 		if(printToFile != null && ! printToFile.isEmpty()){
@@ -495,6 +501,8 @@ public class TrackSet {
 		List<String> args= new ArrayList<String>(tokens);
 		args.remove(0);
 		
+        boolean invertSelection= this.argListContainsFlag(args, "-v");
+		
 		Boolean bisulf= null;
 		if(args.contains("-on")){
 			bisulf= true;
@@ -514,7 +522,7 @@ public class TrackSet {
         }
 
         // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
         	if(bisulf == null){
     			if(tr.isBisulf()){ // Invert setting
@@ -532,6 +540,8 @@ public class TrackSet {
 
 		List<String> args= new ArrayList<String>(tokens);
 		args.remove(0);
+		
+        boolean invertSelection= this.argListContainsFlag(args, "-v");
 		
 		Boolean hide= null;
 		if(args.contains("-on")){
@@ -552,7 +562,7 @@ public class TrackSet {
         }
 
         // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
         	if(hide == null){
     			if(tr.isHideTitle()){ // Invert setting
@@ -626,6 +636,8 @@ public class TrackSet {
 		List<String> args= new ArrayList<String>(tokens);
 		args.remove(0);
 		
+        boolean invertSelection= this.argListContainsFlag(args, "-v");
+		
 		Boolean rpm= null;
 		if(args.contains("-on")){
 			rpm= true;
@@ -645,7 +657,7 @@ public class TrackSet {
         }
 
         // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
         	if(rpm == null){
     			if(tr.isRpm()){ // Invert setting
@@ -658,6 +670,18 @@ public class TrackSet {
         	}
         }
 	}
+
+	/** Returns true of the list of arguments argList contains the given flag
+	 * IMPORTANT SIDE EFFECT: If found, the argument flag is removed from the list. 
+	 * */
+	private boolean argListContainsFlag(List<String> argList, String flag){
+		boolean hasFlag= false;
+		if(argList.contains(flag)){
+			argList.remove(flag);
+			hasFlag= true;
+		}
+		return hasFlag;
+	}
 	
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidColourException{
 
@@ -666,6 +690,8 @@ public class TrackSet {
 		// 1 Colour
 		// 2 Regex
 
+		boolean invertSelection= this.argListContainsFlag(tokens, "-v");
+		
 		// Colour
 		String colour= (new Track()).getTitleColour();
 		if(tokens.size() >= 2){
@@ -684,7 +710,7 @@ public class TrackSet {
 			trackNameRegex.add(".*"); // Default: Capture everything
 		}
 		// And set as required:
-		List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+		List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
 		for(Track tr : tracksToReset){
 			tr.setTitleColour(colour);
 		}
@@ -697,6 +723,8 @@ public class TrackSet {
 		// 1 attrName
 		// 2 Regex
 
+        boolean invertSelection= this.argListContainsFlag(tokens, "-v");
+		
 		String gtfAttributeForName= null; // Null will follow default 
 		if(tokens.size() >= 2){
 			gtfAttributeForName= tokens.get(1);
@@ -704,7 +732,7 @@ public class TrackSet {
 				gtfAttributeForName= null;
 			}
 		}
-
+		
         // Regex
         List<String> trackNameRegex= new ArrayList<String>();
         if(tokens.size() >= 3){
@@ -713,7 +741,7 @@ public class TrackSet {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
         // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
         	tr.setGtfAttributeForName(gtfAttributeForName);
         }		
@@ -725,7 +753,7 @@ public class TrackSet {
 	public void setAutoYLimits() throws InvalidCommandLineException {
 
 		// Tracks to reset
-        List<Track> tracksToReset = this.matchTracks(this.getRegexForYLimits(), true);
+        List<Track> tracksToReset = this.matchTracks(this.getRegexForYLimits(), true, false);
 		
         String yStrMin= this.getYStringLimits()[0];
         String yStrMax= this.getYStringLimits()[1];
@@ -800,7 +828,7 @@ public class TrackSet {
 
         // Set regex attribute catching tracks
         if(tokens.size() >= 4){
-        	this.setRegexForYLimits(tokens.subList(2, tokens.size()));
+        	this.setRegexForYLimits(tokens.subList(3, tokens.size()));
         } else {
         	this.setRegexForYLimits(Arrays.asList(".*"));
         }
@@ -845,6 +873,9 @@ public class TrackSet {
 		}
 		
 		args.remove(0); // Remove command name
+		
+		boolean invertSelection= this.argListContainsFlag(args, "-V");
+		
 		List<String> trackNameRegex= new ArrayList<String>();
 		String awk= "";
 
@@ -886,7 +917,7 @@ public class TrackSet {
 		}
 		
 		// Set script
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
 			tr.setAwk(awk);;
         }
@@ -913,6 +944,8 @@ public class TrackSet {
 		String hideRegex= "^$";  // Hide nothing
 		
 		// Get args:
+		boolean invertSelection= this.argListContainsFlag(args, "-v");
+
 		if(args.contains("-i")){
 			int idx= args.indexOf("-i") + 1; 
 			showRegex= args.get(idx);
@@ -953,7 +986,7 @@ public class TrackSet {
 		// TRACK REGEXES
         // Regex
         // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
 			tr.setShowRegex(showRegex);
 			tr.setHideRegex(hideRegex);
@@ -1013,7 +1046,7 @@ public class TrackSet {
 		} else {
 			List<String> x= new ArrayList<String>();
 			x.add(trackTag);
-			List<Track> matched= matchTracks(x, true);
+			List<Track> matched= matchTracks(x, true, false);
 			if(matched.size() == 0){
 				System.err.println("\nWarning '" + trackTag + "' not found in track set:");
 				System.err.println(ifTracks + "\n");
@@ -1028,7 +1061,7 @@ public class TrackSet {
 		return tr;
 	}
 
-	private List<Track> matchTracks(List<String> patterns, boolean asRegex) throws InvalidCommandLineException{
+	private List<Track> matchTracks(List<String> patterns, boolean asRegex, boolean invertSelection) throws InvalidCommandLineException{
 
 		// Validate regexes
 		if(asRegex){
@@ -1048,6 +1081,9 @@ public class TrackSet {
 			String trackId= track.getTrackTag();
 			for(String pattern : patterns){
 				boolean matched= Pattern.compile(pattern).matcher(trackId).find();
+				if(invertSelection){
+					matched= ! matched;
+				}
 				if(matched && !matchedTracks.contains(trackId)){
 					matchedTracks.add(track);
 				}
@@ -1116,6 +1152,7 @@ public class TrackSet {
 		// 0 gffNameAttr
 		// 1 attrName
 		// 2 Regex
+        boolean invertSelection= this.argListContainsFlag(tokens, "-v");
 
 		int dataCol = 0; // Null will follow default 
 		if(tokens.size() >= 2){
@@ -1136,7 +1173,7 @@ public class TrackSet {
             trackNameRegex.add(".*"); // Default: Capture everything
         }
         // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
         	if(Utils.getFileTypeFromName(tr.getFilename()).equals(TrackFormat.BEDGRAPH)){
 				TrackWiggles bdg= (TrackWiggles) tr;
@@ -1162,7 +1199,7 @@ public class TrackSet {
 		for(String query : newOrder){
 			List<String> x= new ArrayList<String>();
 			x.add(query);
-			List<Track> trList = this.matchTracks(x, true);
+			List<Track> trList = this.matchTracks(x, true, false);
 			for(Track xtrack : trList){
 				if(!newTrackList.contains(xtrack)){ // This will remove dups
 					newTrackList.add(xtrack);
@@ -1357,6 +1394,7 @@ public class TrackSet {
 		int q= 0;
 		
 		// Get args:
+		boolean invertSelection= this.argListContainsFlag(args, "-v");
 		if(args.contains("-f")){
 			int idx= args.indexOf("-f") + 1; 
 			f= Integer.parseInt(args.get(idx));
@@ -1386,7 +1424,7 @@ public class TrackSet {
 		}
 		
         // Get tracks to reset:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         
         if(tracksToReset.size() == 0){
         	System.err.println("No track matching regex " + trackNameRegex);
@@ -1410,7 +1448,9 @@ public class TrackSet {
 		// editNames <patterns> <replacement> [track_re] ...
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove name of command
-		
+
+		boolean invertSelection= this.argListContainsFlag(args, "-v");
+
 		boolean test= false;
 		if(args.contains("-t")){
 			test= true;
@@ -1432,7 +1472,7 @@ public class TrackSet {
 		}
 		
         // Get tracks to reset:
-        List<Track> tracksToReset = this.matchTracks(args, true);
+        List<Track> tracksToReset = this.matchTracks(args, true, invertSelection);
         
         // Dry-run: See if it duplicate or empty names are generated: 
         // These are the track tags that would be generated. Including the edited ones and the untouched ones. 
@@ -1471,7 +1511,9 @@ public class TrackSet {
 
 		List<String> args= new ArrayList<String>(tokens);
 		args.remove(0);
-		
+
+		boolean invertSelection= this.argListContainsFlag(args, "-v");
+
 		Boolean gap= null;
 		if(args.contains("-on")){
 			gap= true;
@@ -1491,7 +1533,7 @@ public class TrackSet {
         }
 
         // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
         	if(gap == null){
     			if(tr.getGap() == 0){ // Invert setting
@@ -1631,6 +1673,8 @@ public class TrackSet {
 
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); //Remove cmd name
+		boolean invertSelection= this.argListContainsFlag(args, "-v");
+
 		boolean test= false;
 		if(args.contains("-t")){
 			test= true;
@@ -1639,7 +1683,7 @@ public class TrackSet {
 		List<String> trackNameRegex= new ArrayList<String>(args);
        
 		String messages= "";
-        List<Track> tracksToDrop= this.matchTracks(trackNameRegex, true);
+        List<Track> tracksToDrop= this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToDrop){
         	messages += "Dropping: " + tr.getTrackTag() + "\n";
         	if( ! test){

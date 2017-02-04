@@ -536,6 +536,14 @@ public class TrackSetTest {
 		assertEquals("red", ts.getTrack(t1).getTitleColour());
 		assertEquals(defaultColour, ts.getTrack(t2).getTitleColour());
 		assertEquals("red", ts.getTrack(t3).getTitleColour());
+		
+		// Invert selection
+		cmdInput= "trackColour -v blue #1";
+		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
+//		 assertTrue( ! ts.getTrack(t1).getTitleColour().equals("blue"));
+//		 assertEquals("blue", ts.getTrack(t2).getTitleColour());
+//		 assertEquals("blue", ts.getTrack(t3).getTitleColour());
+
 	}
 	
 	@Test
@@ -558,6 +566,13 @@ public class TrackSetTest {
 		assertEquals(99, ts.getTrack(t1).getyMaxLines());
 		assertEquals(99, ts.getTrack(t2).getyMaxLines()); 
 		assertEquals(99, ts.getTrack(t3).getyMaxLines());
+	
+		// Invert selection
+		cmdInput= "trackHeight -v 10 #1";  
+		ts.setTrackHeightForRegex(Utils.tokenize(cmdInput, " "));
+		assertEquals(99, ts.getTrack(t1).getyMaxLines());
+		assertEquals(10, ts.getTrack(t2).getyMaxLines());
+		assertEquals(10, ts.getTrack(t3).getyMaxLines());
 		
 	}
 	
@@ -584,6 +599,24 @@ public class TrackSetTest {
 		assertEquals(99, ts.getTrack(t2).getYLimitMax(), 0.001);
 		assertEquals(90, ts.getTrack(t3).getYLimitMin(), 0.001);
 		assertEquals(99, ts.getTrack(t3).getYLimitMax(), 0.001);
+
+		// First reset all
+		cmdInput= "ylim 0 10";
+		ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
+		for(Track tr : ts.getTrackList()){
+			assertEquals(0, tr.getYLimitMin(), 0.001);
+			assertEquals(10, tr.getYLimitMax(), 0.001);
+		}
+		
+		// These limits may be confused for regexes. Make sure the sublisiung is correct:
+		cmdInput= "ylim -1 2 #1";
+		ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
+		assertEquals(-1, ts.getTrack(t1).getYLimitMin(), 0.001);
+		assertEquals(2, ts.getTrack(t1).getYLimitMax(), 0.001);
+		assertEquals(0, ts.getTrack(t2).getYLimitMin(), 0.001);
+		assertEquals(10, ts.getTrack(t2).getYLimitMax(), 0.001);
+		assertEquals(0, ts.getTrack(t3).getYLimitMin(), 0.001);
+		assertEquals(10, ts.getTrack(t3).getYLimitMax(), 0.001);
 
 	}
 	

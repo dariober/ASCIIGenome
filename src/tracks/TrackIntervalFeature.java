@@ -11,20 +11,16 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
 import exceptions.InvalidColourException;
@@ -48,7 +44,7 @@ public class TrackIntervalFeature extends Track {
 	private BBFileReader bigBedReader;
 	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
 	private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
-	private Set<String> awkFiltered; // List of features after awk filtering.
+	// private Set<String> awkFiltered; // List of features after awk filtering.
 	
 	/* C o n s t r u c t o r */
 
@@ -160,7 +156,7 @@ public class TrackIntervalFeature extends Track {
 			xFeatures.add(intervalFeature);
 		} 
 		
-		this.setAwkFiltered(xFeatures);
+		// this.setAwkFiltered(xFeatures);
 		
 		// Remove hidden features
 		List<IntervalFeature> xFeaturesFiltered= new ArrayList<IntervalFeature>();
@@ -176,20 +172,55 @@ public class TrackIntervalFeature extends Track {
 	 * "awkFiltered". Later, we decide whether a feature is visible by testing if the awkFiltered set 
 	 * contains the feature.  
 	 * */
-	private void setAwkFiltered(List<IntervalFeature> features) throws IOException {
-		
+//	private void setAwkFiltered(List<IntervalFeature> features) throws IOException {
+//		
+//		if(this.getAwk().isEmpty()){
+//			this.awkFiltered= new HashSet<String>();
+//			return;
+//		}
+//		
+//		String[] strFeatures= new String[features.size()];
+//		for(int i= 0; i < features.size(); i++){
+//			strFeatures[i]= features.get(i).getRaw();
+//		}
+//		String str= Joiner.on("\n").join(strFeatures);
+//		
+//		InputStream is= new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
+//		
+//		String[] args= Utils.tokenize(this.getAwk(), " ").toArray(new String[0]); 
+//		
+//		PrintStream stdout = System.out;
+//		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//		try{
+//			PrintStream os= new PrintStream(baos);
+//			new org.jawk.Main(args, is, os, System.err);
+//		} catch(Exception e){
+//			try{
+//				this.setAwk(""); // If something goes wrong reset to no awk. Otherwise
+//				                 // You loop through a broken awk script.
+//			} catch(Exception ex){
+//				
+//			}
+//			throw new IOException();
+//		} finally{
+//			System.setOut(stdout);
+//			is.close();
+//		}
+//		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);		
+//		this.awkFiltered= new HashSet<String>(Arrays.asList(output.split("\n")));
+//	}
+
+	/** Return true if the interval feature passes the awk filter.
+	 * rawFeature is a raw line from IntervalFeature file.
+	 * @throws InvalidCommandLineException 
+	 * */
+	private Boolean passAwkFilter(String rawFeature) throws IOException {
+
 		if(this.getAwk().isEmpty()){
-			this.awkFiltered= new HashSet<String>();
-			return;
+			throw new RuntimeException();
 		}
 		
-		String[] strFeatures= new String[features.size()];
-		for(int i= 0; i < features.size(); i++){
-			strFeatures[i]= features.get(i).getRaw();
-		}
-		String str= Joiner.on("\n").join(strFeatures);
-		
-		InputStream is= new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
+		InputStream is= new ByteArrayInputStream(rawFeature.getBytes(StandardCharsets.UTF_8));
 		
 		String[] args= Utils.tokenize(this.getAwk(), " ").toArray(new String[0]); 
 		
@@ -199,25 +230,32 @@ public class TrackIntervalFeature extends Track {
 			PrintStream os= new PrintStream(baos);
 			new org.jawk.Main(args, is, os, System.err);
 		} catch(Exception e){
-			try{
-				this.setAwk(""); // If something goes wrong reset to no awk. Otherwise
-				                 // You looping through a broken awk script.
-			} catch(Exception ex){
-				
-			}
+			this.awk= ""; // If something goes wrong reset to no awk. Otherwise
+						  // You loop through a broken awk script.
 			throw new IOException();
 		} finally{
 			System.setOut(stdout);
 			is.close();
 		}
-		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);		
-		this.awkFiltered= new HashSet<String>(Arrays.asList(output.split("\n")));
+		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+		if(output.trim().isEmpty()){
+			return false;
+		} else if(output.trim().equals(rawFeature.trim())){
+			return true;
+		} else {
+			// Awk output is not empty or equal to inout line. Reset awk script and return null
+			// to signal this condition.
+			this.awk= "";
+			return null;
+		}
 	}
 
+	
 	/** Return true if string is visible, i.e. it
 	 * passes the regex filters. Note that regex filters are applied to the raw string.
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	protected boolean featureIsVisible(String x){
+	protected Boolean featureIsVisible(String x) throws InvalidGenomicCoordsException{
 		
 		if(x.contains("__ignore_me__")){
 			return false;
@@ -228,7 +266,7 @@ public class TrackIntervalFeature extends Track {
 		if(!this.hideRegex.isEmpty()){
 			hideIt= Pattern.compile(this.hideRegex).matcher(x).find();	
 		}
-		boolean isVisible= false;
+		Boolean isVisible= false;
 		if(showIt && !hideIt){
 			isVisible= true;
 		} else {
@@ -237,10 +275,14 @@ public class TrackIntervalFeature extends Track {
 		
 		// Awk
 		if( ! this.getAwk().isEmpty()){
-			if(this.awkFiltered.contains(x)){
-				isVisible= true;
-			} else {
-				isVisible= false;
+			try {
+				isVisible= this.passAwkFilter(x);
+			} catch (Exception e) {
+				// 
+			}
+			if(isVisible == null){
+				System.err.println("Awk output must be either empty or equal to input.");
+				throw new InvalidGenomicCoordsException();
 			}
 		}
 		return isVisible;
