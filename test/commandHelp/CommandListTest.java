@@ -9,6 +9,7 @@ import exceptions.InvalidCommandLineException;
 
 public class CommandListTest {
 
+
 	@Test
 	public void updateReStructuredFile() throws InvalidCommandLineException, IOException{
 		CommandList.updateCommandHelpMdFile(new File("docs/commandHelp.rst"));
@@ -21,7 +22,7 @@ public class CommandListTest {
 	}
 	
 	@Test
-	public void canPrintDocstringForCommand() throws InvalidCommandLineException {
+	public void canPrintDocstringForCommand() throws InvalidCommandLineException, IOException {
 		System.out.println("DOCSTRING");
 		System.out.println(CommandList.getHelpForCommand("history"));
 	}

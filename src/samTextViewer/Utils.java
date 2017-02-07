@@ -57,8 +57,6 @@ import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import faidx.Faidx;
 import faidx.UnindexableFastaFileException;
-import htsjdk.samtools.BAMIndex;
-import htsjdk.samtools.SAMFileReader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
@@ -79,7 +77,6 @@ import ucsc.UcscGenePred;
  * @author berald01
  *
  */
-@SuppressWarnings("deprecation")
 public class Utils {
 	
 	public static void checkFasta(String fasta) throws IOException, UnindexableFastaFileException {
@@ -115,22 +112,29 @@ public class Utils {
 //		}
 	}
 	
-    public static long getAlignedReadCount(File bam){
+    public static long getAlignedReadCount(String bam) throws IOException{
 
-    	SAMFileReader.setDefaultValidationStringency(ValidationStringency.SILENT);
-		@SuppressWarnings("resource")
-		BAMIndex sr= new SAMFileReader(bam).getIndex();
-		long alnCount= 0; 
-		int i= 0;
-		while(true){
-			try{
-				alnCount += sr.getMetaData(i).getAlignedRecordCount();
-			} catch(NullPointerException e){
-				break;
-			}
-			i++;
+		/*  ------------------------------------------------------ */
+		/* This chunk prepares SamReader from local bam or URL bam */
+		UrlValidator urlValidator = new UrlValidator();
+		SamReaderFactory srf=SamReaderFactory.make();
+		srf.validationStringency(ValidationStringency.SILENT);
+		SamReader samReader;
+		if(urlValidator.isValid(bam)){
+			samReader = SamReaderFactory.makeDefault().open(
+					SamInputResource.of(new URL(bam)).index(new URL(bam + ".bai"))
+			);
+		} else {
+			samReader= srf.open(new File(bam));
 		}
-		sr.close();
+		/*  ------------------------------------------------------ */
+
+		List<SAMSequenceRecord> sequences = samReader.getFileHeader().getSequenceDictionary().getSequences();
+		long alnCount= 0;
+		for(SAMSequenceRecord x : sequences){
+			alnCount += samReader.indexing().getIndex().getMetaData(x.getSequenceIndex()).getAlignedRecordCount();
+		}
+		samReader.close();
 		return alnCount;
     }
 
@@ -308,6 +312,10 @@ public class Utils {
 		} else if(fmt.equals(TrackFormat.BIGBED) && !urlValidator.isValid(x)){
 			// Loading from URL is painfully slow so do not initialize from URL
 			return initRegionFromBigBed(x);
+
+		} else if(urlValidator.isValid(x) && (fmt.equals(TrackFormat.BIGWIG) || fmt.equals(TrackFormat.BIGBED))){
+			System.err.println("Refusing to initialize from URL");
+			throw new InvalidGenomicCoordsException();
 			
 		} else if(fmt.equals(TrackFormat.TDF)){
 			Iterator<String> iter = TDFReader.getReader(x).getChromosomeNames().iterator();
@@ -437,7 +445,7 @@ public class Utils {
 			samReader= srf.open(new File(bam));
 		}
 		/*  ------------------------------------------------------ */
-		
+
 		// SamReaderFactory srf=SamReaderFactory.make();
 		// srf.validationStringency(ValidationStringency.SILENT);
 		// SamReader samReader = srf.open(new File(bam));

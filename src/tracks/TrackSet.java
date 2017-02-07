@@ -39,7 +39,8 @@ public class TrackSet {
 	private List<Pattern> regexForTrackHeight= new ArrayList<Pattern>();
 	private int trackHeightForRegex= -1;
 	private String[] yStrLimits= new String[2];
-	private List<String> regexForYLimits= new ArrayList<String>(); 
+	// private List<String> regexForYLimits= new ArrayList<String>(); 
+	private List<Track> tracksForYLimits= new ArrayList<Track>();
 	private LinkedHashSet<String> openedFiles= new LinkedHashSet<String>();
 	
 	/*   C o n s t r u c t o r s   */
@@ -107,7 +108,7 @@ public class TrackSet {
 				}
 			}
 		}	
-		this.regexForYLimits.add(".*");
+		this.tracksForYLimits.addAll(this.getTrackList());
 		this.yStrLimits[0]= "na";
 		this.yStrLimits[1]= "na";
 		// TrackWiggles gcProfile= gc.getGCProfile();
@@ -752,8 +753,9 @@ public class TrackSet {
 	 * */
 	public void setAutoYLimits() throws InvalidCommandLineException {
 
-		// Tracks to reset
-        List<Track> tracksToReset = this.matchTracks(this.getRegexForYLimits(), true, false);
+		// Tracks to reset.
+		// To be depracated. trackToReset should be replaced by the content of field this.tracksForYlimits;
+        List<Track> tracksToReset = this.getTracksForYLimits(); // this.matchTracks(this.getRegexForYLimits(), true, false);
 		
         String yStrMin= this.getYStringLimits()[0];
         String yStrMax= this.getYStringLimits()[1];
@@ -821,20 +823,31 @@ public class TrackSet {
 		// 2 max
 		// 3+ regex (opt)
 
-		if(tokens.size() < 3){
-			System.err.println("Error in ylim subcommand. Expected at least 2 args got: " + tokens);
+		List<String> args= new ArrayList<String>(tokens);
+		
+		boolean invertSelection= this.argListContainsFlag(args, "-v");
+		
+		if(args.size() < 3){
+			System.err.println("Error in ylim subcommand. Expected at least 2 positional arguments args got: " + args);
 			throw new InvalidCommandLineException();
 		}
 
-        // Set regex attribute catching tracks
-        if(tokens.size() >= 4){
-        	this.setRegexForYLimits(tokens.subList(3, tokens.size()));
+		// Set list of tracks to be reset for ylim
+        if(args.size() >= 4){
+        	this.setTracksForYLimits(this.matchTracks(args.subList(3, args.size()), true, invertSelection));
         } else {
-        	this.setRegexForYLimits(Arrays.asList(".*"));
+        	this.setTracksForYLimits(this.matchTracks(Arrays.asList(".*"), true, invertSelection));
         }
-
+		// ----------------------------------
+//        if(args.size() >= 4){
+//        	this.setRegexForYLimits(args.subList(3, tokens.size()));
+//        } else {
+//        	this.setRegexForYLimits(Arrays.asList(".*"));
+//        }
+        // ----------------------------------
+        
         // Set ylimits attribute
-        String[] yStrLimits= {tokens.get(1), tokens.get(2)};
+        String[] yStrLimits= {args.get(1), args.get(2)};
         this.setYStrLimits(yStrLimits);
         
         // Reset ylimits as required
@@ -1075,21 +1088,28 @@ public class TrackSet {
 			}
 		}
 		
-		List<Track> matchedTracks= new ArrayList<Track>();
+		LinkedHashSet<Track> matchedTracks= new LinkedHashSet<Track>(); 
 		
 		for(Track track : this.getTrackList()){
 			String trackId= track.getTrackTag();
 			for(String pattern : patterns){
 				boolean matched= Pattern.compile(pattern).matcher(trackId).find();
-				if(invertSelection){
-					matched= ! matched;
-				}
-				if(matched && !matchedTracks.contains(trackId)){
+				if(matched){
 					matchedTracks.add(track);
 				}
 			}
 		}
-		return matchedTracks;		
+		if(invertSelection){
+			List<Track>inv= new ArrayList<Track>();
+			for(Track x : this.getTrackList()){
+				if( ! matchedTracks.contains(x)){
+					inv.add(x);
+				}
+			}
+			return inv;
+		} else {
+			return new ArrayList<Track>(matchedTracks);
+		}
 	}
 	
 	/** Simple method to get track from track object. See also this.getTrackFromTag. Return null if track not found. 
@@ -1744,14 +1764,23 @@ public class TrackSet {
 		return new GenomicCoords(current.getChrom() + ":" + left + "-" + right, 
 				current.getSamSeqDict(), current.getFastaFile());
 	}
-	
-	public List<String> getRegexForYLimits() {
-		return regexForYLimits;
+
+	public List<Track> getTracksForYLimits() {
+		return tracksForYLimits;
 	}
 
-	public void setRegexForYLimits(List<String> regexForYLimits) {
-		this.regexForYLimits = regexForYLimits;
+	public void setTracksForYLimits(List<Track> tracksForYLimits) {
+		this.tracksForYLimits = tracksForYLimits;
 	}
+
+	
+//	public List<String> getRegexForYLimits() {
+//		return regexForYLimits;
+//	}
+//
+//	public void setRegexForYLimits(List<String> regexForYLimits) {
+//		this.regexForYLimits = regexForYLimits;
+//	}
 
 	public String[] getYStringLimits() {
 		return yStrLimits;

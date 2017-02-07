@@ -5,9 +5,18 @@ New in 1.2.0
   Visited positions are written to the the history file (`~/.asciigenome_history`) and retrieved
   at the start of ASCIIGenome.
 
-* On exit check if a newer version is available on the GitHub repository.
+* On exit check if a newer version is available on GitHub.
 
-* Fixed silly off-by-one error with capturing regexes in `ylim`.
+* Fixed silly off-by-one error with capturing regexes in `ylim`. Fixed issue #49 
+  and #50.
+
+* `posHistory` can limit the number of positions to print with the `-n` option.
+
+* `next` takes optional argument `-zo` to set the zoom level.
+
+* <ENTER> after a command with non-zero exit code returns the previous screenshot rather 
+  than re-issuing a broken command. This is also useful to return to the genome view
+  after executing valid commands with non-zero exit code such as `-h`, `history`, 'showGenome' etc.
 
 New in 1.1.0
 ============

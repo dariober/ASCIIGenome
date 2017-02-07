@@ -75,7 +75,7 @@ public class TrackIntervalFeature extends Track {
 			this.setWorkFilename(filename);
 			this.setTrackFormat(TrackFormat.BIGBED);
 			
-		} else if( ! Utils.hasTabixIndex(new File(filename).getAbsolutePath())){
+		} else if( ! Utils.hasTabixIndex(filename)){
 			// Tabix index not found for this file. Sort and index input to tmp.
 
 			String suffix= new File(filename).getName();
@@ -96,7 +96,7 @@ public class TrackIntervalFeature extends Track {
 		} else { // This means the input is tabix indexed.
 			this.setWorkFilename(filename);
 			this.setTrackFormat(Utils.getFileTypeFromName(new File(filename).getName()));
-			this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
+			this.tabixReader= new TabixReader(this.getWorkFilename());
 		}
 		this.setGc(gc);
 	}

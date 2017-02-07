@@ -821,11 +821,12 @@ public class GenomicCoords implements Cloneable {
 			System.err.println("Invalid feature size. Must be > 0, got " + size);
 			throw new InvalidGenomicCoordsException();
 		}
-				
-		double center= (size/2.0) + gc.getFrom();
-		gc.from= (int)Math.rint(center - (size * slop));
-		gc.to= (int)Math.rint(center + (size * slop));
 		
+		if(slop > 0){
+			double center= (size/2.0) + gc.getFrom();
+			gc.from= (int)Math.rint(center - (size * slop));
+			gc.to= (int)Math.rint(center + (size * slop));
+		}
 		if(((gc.to - gc.from)+1) < gc.getUserWindowSize()){
 			int span= (gc.to - gc.from);
 			int extendBy= (int)Math.rint((gc.getUserWindowSize() / 2.0) - (span / 2.0));

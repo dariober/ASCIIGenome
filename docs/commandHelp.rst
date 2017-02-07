@@ -166,13 +166,15 @@ Go to the next visited position.  Similar to the back and forward arrows of an I
 next
 ++++
 
-:code:`next [-back] [-start] [track]`
+:code:`next [-back] [-start] [-zo INT=5] [track]`
 
 Move to the next feature not overlapping the current coordinates.  By default `next` centers the window on the next feature and zooms out.
 
 * :code:`-back`: Search backwards. I.e. move to next feature on the left of the current position.
 
 * :code:`-start`: Sets the window right at the start of the feature, without centering and zooming out.
+
+* :code:`-zo INT`: Zoom out INT times after having found the next feature.   Ignored if the `-start` flag is set. If <= 0 the window spans exactly the feature coordinates.   Default 5.
 
 * :code:`track`: Track to search for next feature. Default to the first annotation track found.
 
@@ -318,13 +320,15 @@ Note the use of single quotes to wrap the actual script and the use of double qu
 
 With no args, turn off awk for all tracks.
 
-*NOTES*
+*NOTES & LIMITATIONS*
 
 * This is a java implementation of awk and it is independent on whether awk is on the local system. It should behave very similar to UNIX awk and therefore it has lots of functionalities. In fact, awk is a programming language in itself, search Google for more. The original code is from https://github.com/hoijui/Jawk
 
-* Use awk only to filter features, do not use it to edit them. If features are changed by the awk script than nothing will be retained. This is because the awk command first collects the output from awk, then it matches the features in the current window with those collected from awk. Hint: The output of awk is temporarily stored in memory.
+* Use awk only to filter features, do not use it to edit them. If features are changed by the awk script than nothing will be retained. This is because the awk command first collects the output from awk, then it matches the features in the current window with those collected from awk.
 
-* This awk is slow, about x10 times slower than UNIX awk. For few tens of thousand records the slowdown should be negligible. Since only the records in the current window are parsed, it should be fast enough in most cases.
+* Each line is processed independently of the others as a separate awk execution. This means that you cannot filter one line on the bases of previous or following lines.
+
+* This awk is slow, about x10-100 times slower than UNIX awk. For few thousand records the slowdown should be acceptable. Other things being equal, use `grep` instead.
 
 * The default delimiter is TAB not any white space as in UNIX awk.
 
@@ -333,7 +337,7 @@ With no args, turn off awk for all tracks.
 featureDisplayMode
 ++++++++++++++++++
 
-:code:`featureDisplayMode [-expanded | -collapsed | -oneline] [track_regex = .*]...`
+:code:`featureDisplayMode [-expanded | -collapsed | -oneline] [-v] [track_regex = .*]...`
 
 Set how annotation features should be displayed.
  
@@ -342,6 +346,8 @@ Set how annotation features should be displayed.
 * :code:`-collapsed/-c` Merge features with overlapping genomic coordinates.
 
 * :code:`-oneline/-o` Merge features overlapping on screen coordinates. This option makes the track occupy only one line.
+
+* :code:`-v` Invert selection: apply changes to tracks not selected by list of track_regex
 
 * :code:`track_regex` List of regexes to select tracks. Default: .* (all tracks).
 
@@ -389,9 +395,13 @@ Use gene_name as feature name or transcript_id::
 trackHeight
 +++++++++++
 
-:code:`trackHeight INT [track_regex = .*]...`
+:code:`trackHeight [-v] INT [track_regex = .*]...`
 
-Set track height to INT lines of text for all tracks matching regexes.  Setting height to zero hides the track and skips the processing altogether. This is useful to speed up the browsing when large bam files are present. Use infoTrack to see which tracks are hidden. Example::
+Set track height to INT lines of text for all tracks matching regexes.  Setting height to zero hides the track and skips the processing altogether. This is useful to speed up the browsing when large bam files are present. Use infoTrack to see which tracks are hidden.
+
+:code:`-v` Invert selection: apply changes to tracks not selected by list of track_regex
+
+Example::
 
     trackHeight 5 aln.*bam gtf`
 
@@ -630,9 +640,11 @@ For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#
 posHistory
 ++++++++++
 
-:code:`posHistory`
+:code:`posHistory [-n INT=10]`
 
-List the visited positions. 
+List the visited positions. Recorded positions include the current and the previous sessions of ASCIIGenome.
+
+:code:`-n INT`: Show only the last INT positions. Show all if <= 0.
 
 history
 +++++++

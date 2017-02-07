@@ -169,15 +169,21 @@ public class Main {
 			// *** START processing interactive input
 			String cmdConcatInput= ""; // String like "zi && -F 16 && mapq 10"
 			InteractiveInput interactiveInput= new InteractiveInput(console);
-			interactiveInput.setInteractiveInputExitCode(9);
+			int currentExitCode= 9;
+			interactiveInput.setInteractiveInputExitCode(currentExitCode);
 			
 			while(interactiveInput.getInteractiveInputExitCode() != 0){
 				
 				console.setPrompt("[h] for help: ");
 				cmdConcatInput= console.readLine().trim();
-				if (cmdConcatInput.isEmpty()){
-					// Repeat previous command
-					cmdConcatInput= currentCmdConcatInput;
+				if (cmdConcatInput.isEmpty()) {
+					if(interactiveInput.getInteractiveInputExitCode() == 0 || 
+					   interactiveInput.getInteractiveInputExitCode() == currentExitCode){
+						// User only issued <ENTER>: Repeat previous command if the exit code was not an error.
+						cmdConcatInput= currentCmdConcatInput;					
+					} else {
+						cmdConcatInput= "+0";
+					}
 				}
 				interactiveInput.processInput(cmdConcatInput, proc);
 				currentCmdConcatInput= cmdConcatInput;

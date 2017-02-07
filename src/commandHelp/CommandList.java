@@ -304,7 +304,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("next"); cmd.setArgs("[-back] [-start] [track]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("next"); cmd.setArgs("[-back] [-start] [-zo INT=5] [track]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Move to the next feature not overlapping the current coordinates. "); 
 		cmd.setAdditionalDescription(""
 				+ "By default `next` centers the window on the next feature and zooms out.\n"
@@ -312,6 +312,10 @@ public class CommandList {
 				+ "* :code:`-back`: Search backwards. I.e. move to next feature on the left of the current position.\n"
 				+ "\n"
 				+ "* :code:`-start`: Sets the window right at the start of the feature, without centering and zooming out.\n"
+				+ "\n"
+				+ "* :code:`-zo INT`: Zoom out INT times after having found the next feature. "
+				+ "  Ignored if the `-start` flag is set. If <= 0 the window spans exactly the feature coordinates. "
+				+ "  Default 5.\n"
 				+ "\n"
 				+ "* :code:`track`: Track to search for next feature. Default to the first annotation track found.\n"
 				+ "\n"
@@ -499,17 +503,8 @@ public class CommandList {
 				+ "* An invalid script throws an ugly stack trace to stderr. To be fixed.");
 		cmdList.add(cmd);
 		
-//		cmd= new CommandHelp();
-//		cmd.setName("squash"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-//		cmd.setBriefDescription("Toggle the squashing of features with the same coordinates. ");
-//		cmd.setAdditionalDescription("If set, features with the same start, end, and strand are squashed in a single one. "
-//				+ "The displayed feature is the first one found in the group of features with the same coordinates. "
-//				+ "Useful to compact GTF where e.g. CDS and exons have the same coordinates. "
-//				+ "Applies only to annotation tracks captured by track_regex");
-//		cmdList.add(cmd);		
-
 		cmd= new CommandHelp();
-		cmd.setName(Command.featureDisplayMode.toString()); cmd.setArgs("[-expanded | -collapsed | -oneline] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName(Command.featureDisplayMode.toString()); cmd.setArgs("[-expanded | -collapsed | -oneline] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set how annotation features should be displayed.\n");
 		cmd.setAdditionalDescription("\n"
 				+ "* :code:`-expanded/-e` Put overalpping features on different lines (default).\n"
@@ -518,6 +513,8 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-oneline/-o` Merge features overlapping on screen coordinates. This option makes the track "
 				+ "occupy only one line.\n"
+				+ "\n"
+				+ "* :code:`-v` Invert selection: apply changes to tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "* :code:`track_regex` List of regexes to select tracks. Default: .* (all tracks).\n"
 				+ "\n"
@@ -570,11 +567,15 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("trackHeight"); cmd.setArgs("INT [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("trackHeight"); cmd.setArgs("[-v] INT [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set track height to INT lines of text for all tracks matching regexes. ");
 		cmd.setAdditionalDescription("Setting height to zero hides the track and skips the processing altogether. "
 				+ "This is useful to speed up the browsing when large bam files are present. Use infoTrack "
-				+ "to see which tracks are hidden. Example::\n"
+				+ "to see which tracks are hidden.\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to tracks not selected by list of track_regex\n"
+				+ "\n"
+				+ "Example::\n"
 				+ "\n"
 				+ "    trackHeight 5 aln.*bam gtf`"
 				+ "\n");
@@ -775,10 +776,12 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("posHistory"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+		cmd.setName("posHistory"); cmd.setArgs("[-n INT=10]"); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("List the visited positions.");
 		cmd.setAdditionalDescription("Recorded positions include the current and the previous "
-				+ "sessions of ASCIIGenome.");
+				+ "sessions of ASCIIGenome.\n"
+				+ "\n"
+				+ ":code:`-n INT`: Show only the last INT positions. Show all if <= 0.");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();

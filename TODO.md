@@ -4,6 +4,23 @@ TODO
 Features
 --------
 
+* Time out for `updateCheck()`. Something like:
+
+```
+long now= System.currentTimeInMiilis();
+while(System.currentTimeInMiilis() < (now + 10000)){
+  updateCheck();
+} 
+```
+
+* Implement `-v` options for `ylim` command. This is trickier than for the other commands
+  since ylim doesn;t immediately operate on tracks. Instead ylim stores the regexes
+  that will be used later. So: `TrackSet.setRegexForYLimits(List<String>)` should
+  list the tracks to be edited and be renamed `TrackSet.setTracksForYLimits(List<Tracks>)`.
+  Field `List<String> TrackSet.regexForYLimits` should become `List<Track> TrackSet.tracksForYLimits`.
+
+* Check `gffNameAttr` for gtf features
+
 * Allow the user to set the `tmp` directory. By default use a `tmp` other then 
   the system default. On Linux the `tmp` is often pretty small.
 

@@ -107,7 +107,7 @@ public class TrackSeqRegexTest {
 		trackSeqRegex.setSeqRegex("atcKVNMNNNN");
 		
 		assertTrue(trackSeqRegex.getIntervalFeatureList().size() > 5 && trackSeqRegex.getIntervalFeatureList().size() < 100); 
-		System.err.println(trackSeqRegex.printToScreen());
+		
 		assertTrue(trackSeqRegex.printToScreen().contains("ATC"));
 	}
 	

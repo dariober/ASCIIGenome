@@ -110,6 +110,19 @@ public class TrackIntervalFeatureTest {
 		assertEquals(3, xset.size());
 		
 	}
+
+	@Test
+	public void canReadTabixFromHTTP() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		// If this file does not exist, put any valid tabix file and its index on Dropbox/Public and use
+		// the dropbox link here.
+		String bgzFn= "http://genome.ucsc.edu/goldenPath/help/examples/vcfExample.vcf.gz";
+		GenomicCoords gc= new GenomicCoords("chr1:1-100000", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(bgzFn, gc);
+		
+		// We check the working file is on the remote server.
+		assertEquals("http", tif.getWorkFilename().substring(0,  4));
+	}
 	
 	@Test
 	public void canPrintGtfFeatures() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
