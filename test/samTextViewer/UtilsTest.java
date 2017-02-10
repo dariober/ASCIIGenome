@@ -59,7 +59,7 @@ public class UtilsTest {
 	@Test
 	public void canCheckForUpdates() throws IOException{
 		
-		List<String> up= Utils.checkUpdates();
+		List<String> up= Utils.checkUpdates(50000);
 			
 		assertEquals(2, up.size());
 		assertTrue(Character.isDigit(up.get(0).charAt(0)));
@@ -70,6 +70,9 @@ public class UtilsTest {
 
 		assertEquals(-1, Utils.versionCompare("1.0.0", "1.0.1")); // Running version out of date
 		assertEquals(-1, Utils.versionCompare("1.0.0", "1.0.0.1"));
+		
+		// This should timeput and throw a warning
+		up= Utils.checkUpdates(1);
 		
 	}
 	
@@ -410,12 +413,16 @@ public class UtilsTest {
 		assertTrue(Utils.hasTabixIndex("test_data/test.bedGraph.gz"));
 		assertTrue(! Utils.hasTabixIndex("test_data/test.bedGraph"));
 
-		// See https://github.com/samtools/htsjdk/issues/797
-		// assertTrue(Utils.hasTabixIndex("ftp://ftp.ensembl.org/pub/release-87/gff3/homo_sapiens/Homo_sapiens.GRCh38.87.abinitio.gff3.gz"));
+		// This ftp file has index but see https://github.com/samtools/htsjdk/issues/797
+		assertTrue( ! Utils.hasTabixIndex("ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase1/analysis_results/input_call_sets/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf.gz"));
 		
+		// HTTP is ok.
 		// If this file does not exist, put any valid tabix file and its index on Dropbox/Public and use
 		// the dropbox link here.
 		assertTrue(Utils.hasTabixIndex("http://genome.ucsc.edu/goldenPath/help/examples/vcfExample.vcf.gz"));
+
+		// NB: Uncompressed files give a OutOfMemoryError: Java heap space
+		assertTrue(! Utils.hasTabixIndex("ftp://ftp.solgenomics.net/tomato_genome/annotation/ITAG3.0_release/ITAG3.0_RepeatModeler_repeats_light.gff"));
 	}
 		
 	@Test

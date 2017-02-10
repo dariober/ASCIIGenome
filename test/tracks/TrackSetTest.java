@@ -655,5 +655,5 @@ public class TrackSetTest {
 		assertTrue(ts.showTrackInfo().contains("BED"));
 
 	}
-
+	
 }

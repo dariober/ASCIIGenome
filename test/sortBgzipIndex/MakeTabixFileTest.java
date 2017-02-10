@@ -1,6 +1,6 @@
 package sortBgzipIndex;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +19,44 @@ import htsjdk.tribble.util.TabixUtils;
 
 public class MakeTabixFileTest {
 
+	@Test
+	public void testRealFileSizeVCF() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
+		
+		// See test_data/README.md for this file. This is fairly large and we want to check it is processed
+		// in a reasonable amount of time.
+		String infile= "test_data/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf";
+		
+		File outfile= new File("deleteme.gtf.gz");
+		outfile.deleteOnExit();
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
+		expectedTbi.deleteOnExit();
+		
+		long t0= System.currentTimeMillis();
+		new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+		long t1= System.currentTimeMillis();
+		
+		assertTrue(outfile.exists());
+		assertTrue(outfile.length() > 1000);
+		assertTrue((t1 - t0) < 20000); // Should be << than 20 sec, ~2 sec
+	}
+	
+	@Test
+	public void canCompressAndIndexVCF_CEU() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
+
+		String infile= "test_data/CEU.exon.2010_06.genotypes.vcf";
+		
+		File outfile= new File("deleteme.gtf.gz");
+		outfile.deleteOnExit();
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
+		expectedTbi.deleteOnExit();
+		
+		new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+
+		assertTrue(outfile.exists());
+		assertTrue(outfile.length() > 1000);
+
+	}
+	
 	// @Test
 	public void handlingInvalidFile() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
 		
@@ -40,7 +78,10 @@ public class MakeTabixFileTest {
 		expectedTbi.deleteOnExit();
 		
 		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
-		
+	
+		assertTrue(outfile.exists());
+		assertTrue(outfile.length() > 80);
+
 	}
 	
 	@Test

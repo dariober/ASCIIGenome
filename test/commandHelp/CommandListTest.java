@@ -27,4 +27,15 @@ public class CommandListTest {
 		System.out.println(CommandList.getHelpForCommand("history"));
 	}
 
+	@Test
+	public void testTime() throws InterruptedException{
+		
+		long timeout= System.currentTimeMillis() + 5000;
+		while(System.currentTimeMillis() < timeout){
+			while(true){
+				System.err.println("foo");
+			}
+		}
+	}
+	
 }
