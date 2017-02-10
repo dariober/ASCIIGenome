@@ -26,6 +26,9 @@ wget http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRna
 
 wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase1/analysis_results/input_call_sets/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf.gz &&
 gunzip ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf.gz
+
+## This gzip is in repo but unzipped is not:
+gunzip -c CEU.exon.2010_06.genotypes.vcf.gz > CEU.exon.2010_06.genotypes.vcf
 ```
 
 **Memo**:

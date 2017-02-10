@@ -1,5 +1,6 @@
 package sortBgzipIndex;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -80,7 +81,10 @@ public class MakeTabixFileTest {
 		new MakeTabixIndex(infile, outfile, TabixFormat.BED);
 	
 		assertTrue(outfile.exists());
-		assertTrue(outfile.length() > 80);
+		assertTrue(expectedTbi.exists());
+		
+		assertEquals(28, outfile.length()); // Checked with `bgzip empty.bed && ls -l empty.bed.gz`
+		assertTrue(expectedTbi.length() > 0);
 
 	}
 	
