@@ -61,6 +61,8 @@ public class Main {
 		final String fasta= opts.getString("fasta");
 		String exec= opts.getString("exec");
 		exec= parseExec(exec);
+		boolean debug= opts.getBoolean("debug");
+		
 		// Init console right at start so if something goes wrong the user's terminal is reset to 
 		// initial defaults with the shutdown hook. This could be achieved in cleaner way probably.
 		ConsoleReader console = CommandList.initConsole();
@@ -73,17 +75,13 @@ public class Main {
 		
 		/* Test input files exist */
 		List<String> inputFileList= new ArrayList<String>();
-		try{
-			Utils.addSourceName(inputFileList, initFileList);
-		} catch(InvalidCommandLineException e){
-			//
-		}	
-
+		Utils.addSourceName(inputFileList, initFileList);
+		
 		/* Initialize trackSet */
 		/* ------------------- */
 		// This part only prepares a dummy GenomicCoords object to initialize the start position:
 		// ----------------------------
-		region= initRegion(region, inputFileList, fasta, genome);
+		region= initRegion(region, inputFileList, fasta, genome, debug);
 		
 		GenomicCoords initGc= new GenomicCoords(region, null, null);
 		
@@ -102,7 +100,7 @@ public class Main {
 		gch.add(start);
 
 		final TrackSet trackSet= new TrackSet(inputFileList, gch.current());
-		addHistoryFiles(trackSet, CMD_HISTORY_FILE, MARKER_FOR_HISTORY_FILE);
+		addHistoryFiles(trackSet, CMD_HISTORY_FILE, MARKER_FOR_HISTORY_FILE, debug);
 		
 		setDefaultTrackHeights(console.getTerminal().getHeight(), trackSet.getTrackList());
 		
@@ -133,7 +131,7 @@ public class Main {
 				String reg= target.getChrom() + ":" + target.getFrom() + "-" + target.getTo();
 				String gotoAndExec= ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
 				InteractiveInput itr = new InteractiveInput(console);
-				itr.processInput(gotoAndExec, proc);
+				itr.processInput(gotoAndExec, proc, debug);
 				if (itr.getInteractiveInputExitCode() != 0){
 					System.err.println("Error processing '" + gotoAndExec + "' at line '" + line + "'");
 					System.exit(1);
@@ -151,7 +149,7 @@ public class Main {
 		if(!exec.isEmpty() || opts.getBoolean("nonInteractive")){
 
 			InteractiveInput itr = new InteractiveInput(console);
-			itr.processInput(exec, proc);
+			itr.processInput(exec, proc, debug);
 			if(opts.getBoolean("nonInteractive")){
 				System.out.print("\033[0m");
 				System.exit(0);
@@ -160,7 +158,7 @@ public class Main {
 
 		/* Set up done, start processing */
 		/* ============================= */
-		History cmdHistory= initCmdHistory(CMD_HISTORY_FILE, MARKER_FOR_HISTORY_CMD);
+		History cmdHistory= initCmdHistory(CMD_HISTORY_FILE, MARKER_FOR_HISTORY_CMD, debug);
 		console.setHistory(cmdHistory);
 		writeHistory(console.getHistory(), trackSet.getOpenedFiles(), CMD_HISTORY_FILE, MARKER_FOR_HISTORY_FILE, MARKER_FOR_HISTORY_CMD, gch);
 		
@@ -185,7 +183,7 @@ public class Main {
 						cmdConcatInput= "+0";
 					}
 				}
-				interactiveInput.processInput(cmdConcatInput, proc);
+				interactiveInput.processInput(cmdConcatInput, proc, debug);
 				currentCmdConcatInput= cmdConcatInput;
 			}
 			// *** END processing interactive input 
@@ -195,7 +193,7 @@ public class Main {
 	/** Return a suitable region to start. If a region is already given, do nothing.
 	 * This method is a mess and should be cleaned up together with GenomicCoords class.
 	 * */
-	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome) throws IOException{
+	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome, boolean debug) throws IOException{
 
 		if( region != null && ! region.isEmpty() ){
 			return region;
@@ -234,6 +232,9 @@ public class Main {
 					break;
 				} catch(Exception e){
 					System.err.println("\nCould not initilize from file " + x);
+					if(debug){
+						e.printStackTrace();
+					}
 				}
 			}
 		}
@@ -282,7 +283,7 @@ public class Main {
 	/**Read the asciigenome history file and put it a list as current history. Or
 	 * return empty history file does not exist or can't be read. 
 	 * */
-	private static History initCmdHistory(String cmdHistoryFile, String MARKER_FOR_HISTORY_CMD){
+	private static History initCmdHistory(String cmdHistoryFile, String MARKER_FOR_HISTORY_CMD, boolean debug){
 		History cmdHistory= new MemoryHistory();
 		try{
 			BufferedReader br= new BufferedReader(new FileReader(new File(cmdHistoryFile)));
@@ -294,15 +295,17 @@ public class Main {
 			}
 			br.close();
 		} catch(IOException e){
-			//
+			if(debug){
+				e.printStackTrace();
+			}
 		}
 		return cmdHistory;
 	}	
 
 	/** Merge set of opened files in trackSet with the files found in the history file.
 	 * */
-	private static void addHistoryFiles(TrackSet trackSet, String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE){
-		LinkedHashSet<String> union= initRecentlyOpenedFiles(cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
+	private static void addHistoryFiles(TrackSet trackSet, String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE, boolean debug){
+		LinkedHashSet<String> union= initRecentlyOpenedFiles(cmdHistoryFile, MARKER_FOR_HISTORY_FILE, debug);
 		LinkedHashSet<String> now= trackSet.getOpenedFiles();
 		for(String file : now){ // If a file is in the current track set and in the history file, put it last. I.e. last opened. 
 			if(union.contains(file)){
@@ -315,7 +318,8 @@ public class Main {
 	
 	/**Read the asciigenome history file to extract the list of opened files 
 	 * */
-	private static LinkedHashSet<String> initRecentlyOpenedFiles(String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE){
+	private static LinkedHashSet<String> initRecentlyOpenedFiles(String cmdHistoryFile, 
+			String MARKER_FOR_HISTORY_FILE, boolean debug){
 		LinkedHashSet<String> opened= new LinkedHashSet<String>();
 		try{
 			BufferedReader br= new BufferedReader(new FileReader(new File(cmdHistoryFile)));
@@ -328,7 +332,9 @@ public class Main {
 			}
 			br.close();
 		} catch(IOException e){
-			//
+			if(debug){
+				e.printStackTrace();
+			}
 		}
 		return opened;
 	}	
@@ -463,7 +469,7 @@ public class Main {
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			public void run() {
 				try{
-					List<String> up = Utils.checkUpdates();
+					List<String> up = Utils.checkUpdates(5000);
 					int cmp= Utils.versionCompare(up.get(0), up.get(1));
 					String msg= "";
 					if(cmp == -1){

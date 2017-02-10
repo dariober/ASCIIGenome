@@ -40,7 +40,7 @@ public class InteractiveInput {
 	 * @throws InvalidRecordException 
 	 * @throws ClassNotFoundException 
 	 * */
-	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
+	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc, boolean debug) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
 		// cmdInputList: List of individual commands in tokens to be issued. 
 		// E.g.: [ ["zi"], 
@@ -244,7 +244,7 @@ public class InteractiveInput {
 									// It may be that you are in position that doesn't exist in the sequence dictionary that
 									// came with this new file. To recover, find an existing position, move there and try to reload the 
 									// file. This fixes issue#23
-									String region= Main.initRegion(null, globbed, null, null);
+									String region= Main.initRegion(null, globbed, null, null, debug);
 									proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
 									proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
 								} catch (Exception x){
@@ -335,6 +335,9 @@ public class InteractiveInput {
 				System.err.println("\nError processing input: " + cmdInput);
 				System.err.println("For help on command \"cmd\" execute 'cmd -h' or '-h' for list of commands.\n");
 				this.interactiveInputExitCode= 1; 
+				if(debug){
+					e.printStackTrace();
+				}
 			} // END PARSING ONE COMMAND
 
 			if(this.interactiveInputExitCode == 0){
@@ -346,14 +349,19 @@ public class InteractiveInput {
 
 				} catch (InvalidGenomicCoordsException e){
 					
-					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null);
+					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null, debug);
 					proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
 					System.err.println("Invalid genomic coordinates found. Resetting to "  + region);
+					if(debug){
+						e.printStackTrace();
+					}
 					
 				} catch (Exception e){
-					// e.printStackTrace();
 					System.err.println("Error processing tracks with input " + cmdInput);
 					this.interactiveInputExitCode= 1;
+					if(debug){
+						e.printStackTrace();
+					}
 				}
 			}
 			if(this.interactiveInputExitCode != 0) {

@@ -269,6 +269,12 @@ public class Utils {
 	 * @throws IOException 
 	 * */
 	public static boolean hasTabixIndex(String fileName) throws IOException{
+		
+		if((new UrlValidator()).isValid(fileName) && fileName.startsWith("ftp")){
+			// Because of issue #51
+			return false;
+		}
+		
 		try{
 			TabixReader tabixReader= new TabixReader(fileName);
 			tabixReader.readLine();
@@ -1051,7 +1057,7 @@ public class Utils {
 	 * @param newFileNames List of files to append
 	 * @throws InvalidCommandLineException 
 	 */
-	public static void addSourceName(List<String> inputFileList, List<String> newFileNames) throws InvalidCommandLineException {
+	public static void addSourceName(List<String> inputFileList, List<String> newFileNames) {
 
 		List<String> dropMe= new ArrayList<String>();
 		List<String> addMe= new ArrayList<String>();
@@ -1420,19 +1426,25 @@ public class Utils {
 
 	/** Query github repo to check if a version newer then this one is available.
 	 * Returns list of length 2: ["this version", "latest version on github"]
+	 * @param timeout Return if no response is received after so many milliseconds.
 	 * @throws IOException 
 	 * */
-	protected static List<String> checkUpdates() throws IOException {
+	protected static List<String> checkUpdates(long timeout) throws IOException {
 		
 		List<String> thisAndGitVersion= new ArrayList<String>();
 		
 		// Get version of this ASCIIGenome
 		thisAndGitVersion.add(ArgParse.VERSION);
 		
+		BufferedReader br= null;
+		timeout= timeout + System.currentTimeMillis();
 		// Get github versions
 		URL url = new URL("https://api.github.com/repos/dariober/ASCIIGenome/tags");
-        
-		BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
+		br = new BufferedReader(new InputStreamReader(url.openStream()));
+//		if(br == null){
+//			System.err.println("Note: Couldn't check for updates.");
+//			thisAndGitVersion.add(ArgParse.VERSION); // If timed out assume up to date.
+//		}
 
         String line;
         StringBuilder sb= new StringBuilder();

@@ -1206,8 +1206,13 @@ public class TrackSet {
 	 * with order unchanged.
 	 * @throws InvalidCommandLineException 
 	 * */
-	public void orderTracks(List<String> newOrder) throws InvalidCommandLineException {
+	public void orderTracks(List<String> tokens) throws InvalidCommandLineException {
 	
+		// List<String> args= new ArrayList<String>(tokens);
+		// boolean invertSelection= this.argListContainsFlag(args, "-v");
+		
+		List<String> newOrder= new ArrayList<String>(tokens);
+		
 		if(newOrder.size() == 0){
 			this.sortTracksByTagName();
 			return;

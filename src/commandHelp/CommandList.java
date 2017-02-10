@@ -263,7 +263,7 @@ public class CommandList {
 		cmd.setAdditionalDescription("\n"
 				+ "* :code:`window` (default): Extend the current window left and right by `INT` bases\n"
 				+ "\n"
-				+ "* :code:`mid`: The new window is given by the midpoint of the current window "
+				+ "* :code:`mid` The new window is given by the midpoint of the current window "
 				+ "plus and minus `INT` bases left and right.\n"
 				+ "\n"
 				+ "If only one INT is given it is applied to both left and right. Negative INTs will shrink "
@@ -309,15 +309,15 @@ public class CommandList {
 		cmd.setAdditionalDescription(""
 				+ "By default `next` centers the window on the next feature and zooms out.\n"
 				+ "\n"
-				+ "* :code:`-back`: Search backwards. I.e. move to next feature on the left of the current position.\n"
+				+ "* :code:`-back` Search backwards. I.e. move to next feature on the left of the current position.\n"
 				+ "\n"
-				+ "* :code:`-start`: Sets the window right at the start of the feature, without centering and zooming out.\n"
+				+ "* :code:`-start` Sets the window right at the start of the feature, without centering and zooming out.\n"
 				+ "\n"
-				+ "* :code:`-zo INT`: Zoom out INT times after having found the next feature. "
+				+ "* :code:`-zo INT` Zoom out INT times after having found the next feature. "
 				+ "  Ignored if the `-start` flag is set. If <= 0 the window spans exactly the feature coordinates. "
 				+ "  Default 5.\n"
 				+ "\n"
-				+ "* :code:`track`: Track to search for next feature. Default to the first annotation track found.\n"
+				+ "* :code:`track` Track to search for next feature. Default to the first annotation track found.\n"
 				+ "\n"
 				+ "`next` starts searching immediately after the current window and loops thourgh each chromosome until a feature is found.");
  
@@ -347,12 +347,12 @@ public class CommandList {
 		cmd.setBriefDescription("Find regex in reference sequence and show matches as an additional track. ");
 		cmd.setAdditionalDescription("Options:\n"
 				+ "\n"
-				+ "* :code:`regex`: Regex to search. If missing the seq regex track is removed.\n"
+				+ "* :code:`regex` Regex to search. If missing the seq regex track is removed.\n"
 				+ "\n"
-				+ "* :code:`-iupac`: Enable the interpretation of the IUPAC ambiguity code. NB: "
+				+ "* :code:`-iupac` Enable the interpretation of the IUPAC ambiguity code. NB: "
 				+ "This option simply converts IUPAC chracters to the corresponding regex.\n"
 				+ "\n"
-				+ "* :code:`-c`: Enable case-sensitive matching. Default is to ignore case.\n"
+				+ "* :code:`-c` Enable case-sensitive matching. Default is to ignore case.\n"
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
@@ -371,13 +371,13 @@ public class CommandList {
 		cmd.setAdditionalDescription(""
 				+ "Without arguments, add the current position to the bookmark track. Options:\n"
 				+ "\n"
-				+ "* :code:`name`: give this name to the new bookmark.\n"
+				+ "* :code:`name` give this name to the new bookmark.\n"
 				+ "\n"
-				+ "* :code:`-rm`: remove the bookmark matching *exactly* the current position.\n"
+				+ "* :code:`-rm` remove the bookmark matching *exactly* the current position.\n"
 				+ "\n"
-				+ "* :code:`-print`: prints to screen the list of current bookmarks.\n"
+				+ "* :code:`-print` prints to screen the list of current bookmarks.\n"
 				+ "\n"
-				+ "* :code:`>`: saves the bookmark track to file.\n"
+				+ "* :code:`>` saves the bookmark track to file.\n"
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
@@ -392,16 +392,18 @@ public class CommandList {
 
 		
 		cmd= new CommandHelp();
-		cmd.setName("grep"); cmd.setArgs("[-i = .*] [-e = ''] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("grep"); cmd.setArgs("[-i = .*] [-e = ''] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Similar to grep command, filter for features including or excluding patterns.");
 		cmd.setAdditionalDescription(""
 				+ "Options:\n"
 				+ "\n"
-				+ "* :code:`-i regex`:  Show features matching this regex.\n"
+				+ "* :code:`-i regex`  Show features matching this regex.\n"
 				+ "\n"
-				+ "* :code:`-e regex`: Exclude features matching this regex.\n"
+				+ "* :code:`-e regex` Exclude features matching this regex.\n"
 				+ "\n"
-				+ "* :code:`track_regex`: Apply to tracks matched by `track_regex`.\n"
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
+				+ "* :code:`track_regex` Apply to tracks matched by `track_regex`.\n"
 				+ "\n"
 				+ "*NOTES*\n"
 				+ "\n"
@@ -422,7 +424,7 @@ public class CommandList {
 		cmdList.add(cmd);		
 
 		cmd= new CommandHelp();
-		cmd.setName("awk"); cmd.setArgs("[-off ...] [-F sep_re] [-v VAR=var] '<script>' [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("awk"); cmd.setArgs("[-off ...] [-F sep_re] [-v VAR=var] [-V] '<script>' [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Advanced feature filtering using awk syntax.");
 		cmd.setAdditionalDescription("awk offers finer control then :code:`grep` to filter records in tabular format.\n"
 				+ "\n"
@@ -439,14 +441,16 @@ public class CommandList {
 				+ "\n"
 				+ "*OPTIONS*\n"
 				+ "\n"
-				+ "* :code:`-off track_re ...`:  Turn off awk filtering for tracks captured by the list of regexes.\n"
+				+ "* :code:`-off track_re ...`  Turn off awk filtering for tracks captured by the list of regexes.\n"
 				+ "\n"
-				+ "* :code:`-F <sep_re>`: Use regular expression <sep_re> as column separator. Default is '\\t' (tab). "
+				+ "* :code:`-F <sep_re>` Use regular expression <sep_re> as column separator. Default is '\\t' (tab). "
 				+ "To separate on white space use e.g. '\\b' (backspace) or '\\s' (any white space). Do not use ' '. \n"
 				+ "\n"
-				+ "* :code:`-v VAR=var`: Pass to awk script the variable VAR with value var. Can be repeated.\n"
+				+ "* :code:`-v VAR=var` Pass to awk script the variable VAR with value var. Can be repeated.\n"
 				+ "\n"
-				+ "* :code:`script`: The awk script to be executed. Must wrapped in single quotes.\n"
+				+ "* :code:`script` The awk script to be executed. Must wrapped in single quotes.\n"
+				+ "\n"
+				+ "* :code:`-V` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "*EXAMPLES*\n"
 				+ "\n"
@@ -522,12 +526,14 @@ public class CommandList {
 		cmdList.add(cmd);		
 
 		cmd= new CommandHelp();
-		cmd.setName("gap"); cmd.setArgs("[-on | -off] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("gap"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Display features with or without a separating gap. ");
 		cmd.setAdditionalDescription("With :code:`gap -on` (default) features which on screen do not have "
 				+ "at least one space separating them are moved to different lines. In this way it is clear where one "
 				+ "feature starts and ends. "
-				+ "If gap is unset (:code:`gap -off`) features are shown more packed. "
+				+ "If gap is unset (:code:`gap -off`) features are shown more packed.\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "Example with :code:`gap -on`::\n"
 				+ "\n"
@@ -543,11 +549,15 @@ public class CommandList {
 
 		
 		cmd= new CommandHelp();
-		cmd.setName("gffNameAttr"); cmd.setArgs("[attribute_name = NULL | -na] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("gffNameAttr"); cmd.setArgs("[attribute_name = NULL | -na] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("GTF/GFF attribute to set the feature name or `-na` to suppress name. ");
 		cmd.setAdditionalDescription("Use attribute NULL to reset to default choice of attribute. To suppress "
 				+ "printing of the name use `-na`. Bed features get their name from the 4th column. "
-				+ "Applies to annotation tracks captured by the list `track_regex`. Example, given "
+				+ "Applies to annotation tracks captured by the list `track_regex`.\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
+				+ "Example, given "
 				+ "the gtf feature::\n"
 				+ "\n"
 				+ "    chr1 . CDS  10 99 . + 2 gene_id \"PTGFRN\"; transcript_id \"NM_020440\";\n"
@@ -582,17 +592,19 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("ylim"); cmd.setArgs("<NUM|min|na> <NUM|min|na> [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("ylim"); cmd.setArgs("[-v] <NUM|min|na> <NUM|min|na> [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set the y-axis limit for all tracks matched by regexes.");
 		cmd.setAdditionalDescription("The first two arguments set the min and max limits. The 3rd "
 				+ "argument is a list of regexes to capture the tracks to reset. "
 				+ "Argument min and max can be:\n"
 				+ "\n"
-				+ "* :code:`NUM`: Numeric, fix the limits exactly to these values\n"
+				+ "* :code:`NUM` Numeric, fix the limits exactly to these values\n"
 				+ "\n"
-				+ "* :code:`na`: Scale tracks to their individual min and/or max\n"
+				+ "* :code:`na` Scale tracks to their individual min and/or max\n"
 				+ "\n"
-				+ "* :code:`min` and :code:`max`: Set to the min and max of **all** tracks.\n"
+				+ "* :code:`min` and :code:`max` Set to the min and max of **all** tracks.\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "This command applies only to tracks displaying quantitative data on y-axis (e.g. bigwig, tdf), "
 				+ "the other tracks are unaffected. Examples::\n"
@@ -605,13 +617,15 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("colorTrack"); cmd.setArgs("color [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("colorTrack"); cmd.setArgs("[-v] color [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set colour for tracks matched by regex. ");
 		cmd.setAdditionalDescription(""
 				+ "Colors can be specified by name or by a value between 0 and 255. "
 				+ "If only the start of a color is given, the first name found starting with "
 				+ "the given string is returned, e.g. 'darkv' is interpreted as 'darkviolet'. "
 				+ "Names are case insensitive.\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "Available colours are from the Xterm256 palette: \n"
 				+ "\n"
@@ -627,19 +641,26 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("hideTitle"); cmd.setArgs("[-on | -off] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("hideTitle"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set the display of the title line matched by track_regex. ");
 		cmd.setAdditionalDescription(""
-				+ "Without argument -on or -off toggle between the two modes for all tracks matched by the list of regexes."
+				+ "Without argument -on or -off toggle between the two modes for all "
+				+ "tracks matched by the list of regexes.\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "");
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("editNames"); cmd.setArgs("-t <pattern> <replacement> [track_re=.*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("editNames"); cmd.setArgs("[-t] [-v] <pattern> <replacement> [track_re=.*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Edit track names by substituting regex pattern with replacement.");
 		cmd.setAdditionalDescription("Pattern and replacement are required arguments, "
 				+ "the default regex for track is '.*' (i.e. all tracks).\n"
-				+ "The :code:`-t` (test) flag shows what renaming would be done without actually editing the names.\n"
+				+ "\n"
+				+ "* :code:`-t` (test) flag shows what renaming would be done without actually editing the names.\n"
+				+ "\n"
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
 				+ "Use \"\" (empty double quotes) to replace pattern with nothing. "
 				+ "Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::\n"
 				+ "\n"
@@ -654,10 +675,13 @@ public class CommandList {
 		
 		
 		cmd= new CommandHelp();
-		cmd.setName("dataCol"); cmd.setArgs("[index = 4] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("dataCol"); cmd.setArgs("[-v] [index = 4] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Select data column for bedgraph tracks containing regex. ");
 		cmd.setAdditionalDescription("First column has index 1. This command applies only to "
 				+ "tracks of type bedgraph.\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
 				+ "For example, use column 5 on tracks containing #1 and #3::\n "
 				+ "\n"
 				+ "    dataCol 5 #1 #3\n"
@@ -665,22 +689,24 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
+		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-v] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Print lines for the tracks matched by `track_regex`. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
 				+ "Features are filtered in/out according to the :code:`grep` command. Options:\n"
 				+ "\n"
-				+ "* :code:`track_regex`: Apply to tracks matched by one or more of these regexes.\n"
+				+ "* :code:`track_regex` Apply to tracks matched by one or more of these regexes.\n"
 				+ "\n"
-				+ "* :code:`-n INT=10`: Print up to this many lines, default 10. No limit if < 0.\n"
+				+ "* :code:`-n INT=10` Print up to this many lines, default 10. No limit if < 0.\n"
 				+ "\n"
-				+ "* :code:`-clip`: Clip lines longer than the screen width. This is the default.\n"
+				+ "* :code:`-clip` Clip lines longer than the screen width. This is the default.\n"
 				+ "\n"
-				+ "* :code:`-full`: Wrap lines longer than the screen width.\n"
+				+ "* :code:`-full` Wrap lines longer than the screen width.\n"
 				+ "\n"
-				+ "* :code:`-off`: Turn off printing.\n"
+				+ "* :code:`-off` Turn off printing.\n"
 				+ "\n"
-				+ "* :code:`>` and :code:`>>`: Write output to `file`. `>` overwrites and `>>` appends to existing file. "
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
+				+ "* :code:`>` and :code:`>>` Write output to `file`. `>` overwrites and `>>` appends to existing file. "
 				+ "The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides "
 				+ "options -n and -off, lines are written in full without limit.\n"
 				+ "\n"
@@ -751,10 +777,13 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("dropTracks"); cmd.setArgs("[-t] track_regex [track_regex]..."); cmd.inSection= Section.GENERAL; 
+		cmd.setName("dropTracks"); cmd.setArgs("[-t] [-v] track_regex [track_regex]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Drop tracks matching any of the listed regexes.");
-		cmd.setAdditionalDescription("The :code:`-t` (test) flag only shows what tarcks would be removed without "
-				+ "actually removing them.\n"
+		cmd.setAdditionalDescription(""
+				+ "* :code:`-t` (test) flag only shows which tracks would be removed but do not remove them.\n"
+				+ "\n"
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    dropTracks bam\n"
@@ -781,7 +810,7 @@ public class CommandList {
 		cmd.setAdditionalDescription("Recorded positions include the current and the previous "
 				+ "sessions of ASCIIGenome.\n"
 				+ "\n"
-				+ ":code:`-n INT`: Show only the last INT positions. Show all if <= 0.");
+				+ ":code:`-n INT` Show only the last INT positions. Show all if <= 0.");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
@@ -796,25 +825,29 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName(Command.rpm.getCmdDescr()); cmd.setArgs("[-on | -off] [track_regex = .*]"); cmd.inSection= Section.ALIGNMENTS; 
+		cmd.setName(Command.rpm.getCmdDescr()); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]"); cmd.inSection= Section.ALIGNMENTS; 
 		cmd.setBriefDescription("Set display to reads per million for BAM and TDF files.\n");
 		cmd.setAdditionalDescription("\n"
 				+ "* :code:`-on | -off` Set mode on/off. Without arguments toggle between on and off.\n"
+				+ "\n"
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "* :code:`track_regex` List of regexes to capture target tracks.");
 		cmdList.add(cmd);		
 
 		cmd= new CommandHelp();
-		cmd.setName("samtools"); cmd.setArgs("[-f INT=0] [-F INT=4] [-q INT=0] [track_re = .*] ..."); cmd.inSection= Section.ALIGNMENTS; 
+		cmd.setName("samtools"); cmd.setArgs("[-f INT=0] [-F INT=4] [-q INT=0] [-v] [track_re = .*] ..."); cmd.inSection= Section.ALIGNMENTS; 
 		cmd.setBriefDescription("Apply samtools filters to alignment tracks captured by the list of track regexes.");
 		cmd.setAdditionalDescription("As *samtools view*, this command filters alignment records on the basis "
 				+ "of the given flags:\n"
 				+ "\n"
-				+ "* :code:`-F`: Filter out flags with these bits set. NB: 4 is always set.\n"
+				+ "* :code:`-F` Filter out flags with these bits set. NB: 4 is always set.\n"
 				+ "\n"
-				+ "* :code:`-f`: Require alignment to have these bits sets.\n"
+				+ "* :code:`-f` Require alignment to have these bits sets.\n"
 				+ "\n"
-				+ "* :code:`-q`: Require alignments to have MAPQ >= than this.\n"
+				+ "* :code:`-q` Require alignments to have MAPQ >= than this.\n"
+				+ "\n"
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
@@ -825,13 +858,15 @@ public class CommandList {
 		cmdList.add(cmd);		
 
 		cmd= new CommandHelp();
-		cmd.setName(Command.BSseq.getCmdDescr()); cmd.setArgs("[-on | -off] [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
+		cmd.setName(Command.BSseq.getCmdDescr()); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
 		cmd.setBriefDescription("Set bisulfite mode for read tracks matched by regex.");
 		cmd.setAdditionalDescription("In bisulfite mode, the characters M and m mark methylated bases "
 				+ "(i.e. unconverted C to T) and U and u are used for unmethylated bases "
 				+ "(i.e. C converted to T). Upper case is used for reads on  forward strand, small case for reverse.\n"
 				+ "\n"
 				+ "* :code:`-on | -off` Set mode. Without arguments toggle between on and off.\n"
+				+ "\n"
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "* :code:`track_regex` List of regexes to capture target tracks.\n"
 				+ "\n"
