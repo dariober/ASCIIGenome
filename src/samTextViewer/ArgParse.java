@@ -65,6 +65,10 @@ public class ArgParse {
 			.action(Arguments.storeTrue())
 			.help("Non interactive mode: Exit after having processed cmd line args.");
 		
+		parser.addArgument("--debug")
+			.action(Arguments.storeTrue())
+			.help("For debugging only: print error traces when an excpetion is found.");
+		
 		parser.addArgument("--version", "-v").action(Arguments.version());
 		
 		Namespace opts= null;
