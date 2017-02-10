@@ -4,6 +4,12 @@ TODO
 Features
 --------
 
+* Apply `print` to bam files.
+
+* Check implementation of picard/DownsampleSam, it might be much faster than the one you have.
+
+* Deprecate `-fa` option? If the list of files includes a fasta file use that as reference
+
 * Time out for `updateCheck()`. Something like:
 
 ```
@@ -12,12 +18,6 @@ while(System.currentTimeInMiilis() < (now + 10000)){
   updateCheck();
 } 
 ```
-
-* Implement `-v` options for `ylim` command. This is trickier than for the other commands
-  since ylim doesn;t immediately operate on tracks. Instead ylim stores the regexes
-  that will be used later. So: `TrackSet.setRegexForYLimits(List<String>)` should
-  list the tracks to be edited and be renamed `TrackSet.setTracksForYLimits(List<Tracks>)`.
-  Field `List<String> TrackSet.regexForYLimits` should become `List<Track> TrackSet.tracksForYLimits`.
 
 * Check `gffNameAttr` for gtf features
 
