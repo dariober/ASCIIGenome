@@ -8,7 +8,11 @@ Input file formats
 
 File name extensions matter as file types are usually recognized by their extension. Reading remote files might require starting java with the option
 :code:`-Djava.net.useSystemProxies=true`  (see `issue#6 <https://github.com/dariober/ASCIIGenome/issues/6>`_). 
-Unless noted otherwise remote URL links are supported. 
+
+Unless noted otherwise remote URL links are supported. However, there are issues 
+reading tabix files on ftp servers (http are ok), see 
+`htsjdk/issue#797 <https://github.com/samtools/htsjdk/issues/797>`_. Reading such files is
+possible but ASCIIGenome will first download them locally.   
 
 .. csv-table::
    :header: "Format", "Extension", "Notes"

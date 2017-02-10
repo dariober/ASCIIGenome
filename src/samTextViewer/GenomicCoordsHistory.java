@@ -1,10 +1,13 @@
 package samTextViewer;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+
+import org.apache.commons.io.FileUtils;
 
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -13,6 +16,10 @@ import htsjdk.samtools.SAMSequenceRecord;
 
 public class GenomicCoordsHistory {
 
+	private final String MARKER_FOR_POS= "## pos ##";
+	private int countHistoricPositions= 0; // Number of valid positions read from file ~/.asciigenome_history and
+	                                       // put in list of historic positions.
+	
 	/** List of genomic positions in order as they have been visited.*/
 	private List<GenomicCoords> history= new ArrayList<GenomicCoords>();
 	
@@ -147,6 +154,70 @@ public class GenomicCoordsHistory {
 		} 
 		return isValid;
 		
+	}
+
+	/** Add to the GenomicCoordsHistory object the positions read from 
+	 * historyFile.
+	 * @throws IOException 
+	 * */
+	public void readHistory(File historyFile, GenomicCoords checkGc) throws IOException {
+		
+		String[] hist = null;
+		try{
+			hist= FileUtils.readFileToString(historyFile).split("\\n");
+		} catch(Exception e){
+			System.err.println("Cannot read positions from file " + historyFile);
+			return;
+		}
+		for(String line : hist){
+			if(line.startsWith(MARKER_FOR_POS)){
+				// try to create genomicCoords object using checkGc as template
+				// If success, add this position to history list.
+				try {
+					String reg= line.replaceFirst(MARKER_FOR_POS, "");
+					GenomicCoords gc= new GenomicCoords(reg, checkGc.getSamSeqDict(), checkGc.getFastaFile(), false);
+					this.add(gc);
+					this.countHistoricPositions += 1;
+				} catch (Exception e){
+					//
+				}
+			}
+		}
+	}
+
+	/** Prepare a list of strings of positions ready to be written to 
+	 * the ~/.asciigenome_history file.
+	 * @throws IOException 
+	 * */
+	public List<String> prepareHistoryForHistoryFile(File historyFile, int maxPos) throws IOException {
+
+		if(maxPos < 0){
+			maxPos= 0;
+		}
+		
+		List<String> hist= new ArrayList<String>();
+		
+		// First read all the positions from file, valid and non
+		try{
+			String[] histFile= FileUtils.readFileToString(historyFile).split("\\n");
+			for(String line : histFile){
+				if(line.startsWith(MARKER_FOR_POS)){
+					hist.add(line);
+				}
+			}
+		} catch(Exception e){
+			System.err.println("Note: cannot read history file " + historyFile);
+		}
+		// Now add the positions visited in this session
+		for(int i= this.countHistoricPositions; i < this.getHistory().size(); i++){
+			hist.add(MARKER_FOR_POS + this.getHistory().get(i).toStringRegion());
+		}
+
+		// If necessary, trim the full list of positions to the max size
+		if(hist.size() > maxPos){
+			hist= hist.subList(hist.size() - maxPos, hist.size());
+		}
+		return hist;
 	}
 	
 	/** Reset window size according to current terminal screen. 

@@ -60,7 +60,7 @@ public class TrackCoverage extends Track {
 		this.setFilename(bam);
 		this.setWorkFilename(bam);
 		this.setBisulf(bs);
-		this.alnRecCnt= Utils.getAlignedReadCount(new File(bam));
+		this.alnRecCnt= Utils.getAlignedReadCount(bam);
 		/*  ------------------------------------------------------ */
 		/* This chunk prepares SamReader from local bam or URL bam */
 		UrlValidator urlValidator = new UrlValidator();

@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "1.1.0";
+	public static String VERSION= "1.2.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	public static String WEB_RTD= "http://asciigenome.readthedocs.io/";
 	
@@ -64,6 +64,10 @@ public class ArgParse {
 		parser.addArgument("--nonInteractive", "-ni")
 			.action(Arguments.storeTrue())
 			.help("Non interactive mode: Exit after having processed cmd line args.");
+		
+		parser.addArgument("--debug")
+			.action(Arguments.storeTrue())
+			.help("For debugging only: print error traces when an excpetion is found.");
 		
 		parser.addArgument("--version", "-v").action(Arguments.version());
 		

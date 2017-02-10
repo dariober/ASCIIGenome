@@ -1,30 +1,6 @@
 Text Only Genome Viewer!
 ========================
 
-
-<!-- 
-MEMO: Compile, package and upload to github releases
-- Write-out jar from Eclipse
-cd ~/svn_git/ASCIIGenome/trunk
-mkdir ASCIIGenome-1.0.0 # This should match the version in ArgParse
-cp ASCIIGenome ASCIIGenome-1.0.0/
-cp /Users/berald01/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-1.0.0/
-zip -r ASCIIGenome-1.0.0.zip ASCIIGenome-1.0.0
-rm -r ASCIIGenome-1.0.0
-
-// Upload ASCIIGenome-x.y.z.zip to github releases and delete
-
-// Update brew formula 
-// Edit install/brew/asciigenome.rb to change release version and sha sum.
-shasum -a 256 ASCIIGenome-1.0.0.zip
-
-// Update bioconda
-cd /Users/berald01/svn_git/bioconda-recipes
-svn checkout https://github.com/bioconda/bioconda-recipes/trunk/recipes/asciigenome
-cd asciigenome
-// Edit meta.yaml to new version
--->
-
 Description
 -----------
 

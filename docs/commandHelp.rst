@@ -131,7 +131,7 @@ Extend the current window by `INT` bases left and right.
  
 * :code:`window` (default): Extend the current window left and right by `INT` bases
 
-* :code:`mid`: The new window is given by the midpoint of the current window plus and minus `INT` bases left and right.
+* :code:`mid` The new window is given by the midpoint of the current window plus and minus `INT` bases left and right.
 
 If only one INT is given it is applied to both left and right. Negative INTs will shrink instead of extend the window.
 
@@ -166,15 +166,17 @@ Go to the next visited position.  Similar to the back and forward arrows of an I
 next
 ++++
 
-:code:`next [-back] [-start] [track]`
+:code:`next [-back] [-start] [-zo INT=5] [track]`
 
 Move to the next feature not overlapping the current coordinates.  By default `next` centers the window on the next feature and zooms out.
 
-* :code:`-back`: Search backwards. I.e. move to next feature on the left of the current position.
+* :code:`-back` Search backwards. I.e. move to next feature on the left of the current position.
 
-* :code:`-start`: Sets the window right at the start of the feature, without centering and zooming out.
+* :code:`-start` Sets the window right at the start of the feature, without centering and zooming out.
 
-* :code:`track`: Track to search for next feature. Default to the first annotation track found.
+* :code:`-zo INT` Zoom out INT times after having found the next feature.   Ignored if the `-start` flag is set. If <= 0 the window spans exactly the feature coordinates.   Default 5.
+
+* :code:`track` Track to search for next feature. Default to the first annotation track found.
 
 `next` starts searching immediately after the current window and loops thourgh each chromosome until a feature is found.
 
@@ -202,11 +204,11 @@ seqRegex
 
 Find regex in reference sequence and show matches as an additional track.  Options:
 
-* :code:`regex`: Regex to search. If missing the seq regex track is removed.
+* :code:`regex` Regex to search. If missing the seq regex track is removed.
 
-* :code:`-iupac`: Enable the interpretation of the IUPAC ambiguity code. NB: This option simply converts IUPAC chracters to the corresponding regex.
+* :code:`-iupac` Enable the interpretation of the IUPAC ambiguity code. NB: This option simply converts IUPAC chracters to the corresponding regex.
 
-* :code:`-c`: Enable case-sensitive matching. Default is to ignore case.
+* :code:`-c` Enable case-sensitive matching. Default is to ignore case.
 
 Examples::
 
@@ -224,13 +226,13 @@ bookmark
 
 Creates a track to save positions of interest. Without arguments, add the current position to the bookmark track. Options:
 
-* :code:`name`: give this name to the new bookmark.
+* :code:`name` give this name to the new bookmark.
 
-* :code:`-rm`: remove the bookmark matching *exactly* the current position.
+* :code:`-rm` remove the bookmark matching *exactly* the current position.
 
-* :code:`-print`: prints to screen the list of current bookmarks.
+* :code:`-print` prints to screen the list of current bookmarks.
 
-* :code:`>`: saves the bookmark track to file.
+* :code:`>` saves the bookmark track to file.
 
 Examples::
 
@@ -248,15 +250,17 @@ Display
 grep
 ++++
 
-:code:`grep [-i = .*] [-e = ''] [track_regex = .*]...`
+:code:`grep [-i = .*] [-e = ''] [-v] [track_regex = .*]...`
 
 Similar to grep command, filter for features including or excluding patterns. Options:
 
-* :code:`-i regex`:  Show features matching this regex.
+* :code:`-i regex`  Show features matching this regex.
 
-* :code:`-e regex`: Exclude features matching this regex.
+* :code:`-e regex` Exclude features matching this regex.
 
-* :code:`track_regex`: Apply to tracks matched by `track_regex`.
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
+* :code:`track_regex` Apply to tracks matched by `track_regex`.
 
 *NOTES*
 
@@ -274,7 +278,7 @@ With no arguments reset to default: :code:`grep -i .* -e ^$ .*` which means show
 awk
 +++
 
-:code:`awk [-off ...] [-F sep_re] [-v VAR=var] '<script>' [track_regex = .*]...`
+:code:`awk [-off ...] [-F sep_re] [-v VAR=var] [-V] '<script>' [track_regex = .*]...`
 
 Advanced feature filtering using awk syntax. awk offers finer control then :code:`grep` to filter records in tabular format.
 
@@ -284,13 +288,15 @@ Awk understands numbers and mathematical operators. With awk you can filter reco
 
 *OPTIONS*
 
-* :code:`-off track_re ...`:  Turn off awk filtering for tracks captured by the list of regexes.
+* :code:`-off track_re ...`  Turn off awk filtering for tracks captured by the list of regexes.
 
-* :code:`-F <sep_re>`: Use regular expression <sep_re> as column separator. Default is '\t' (tab). To separate on white space use e.g. '\b' (backspace) or '\s' (any white space). Do not use ' '. 
+* :code:`-F <sep_re>` Use regular expression <sep_re> as column separator. Default is '\t' (tab). To separate on white space use e.g. '\b' (backspace) or '\s' (any white space). Do not use ' '. 
 
-* :code:`-v VAR=var`: Pass to awk script the variable VAR with value var. Can be repeated.
+* :code:`-v VAR=var` Pass to awk script the variable VAR with value var. Can be repeated.
 
-* :code:`script`: The awk script to be executed. Must wrapped in single quotes.
+* :code:`script` The awk script to be executed. Must wrapped in single quotes.
+
+* :code:`-V` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 *EXAMPLES*
 
@@ -318,13 +324,15 @@ Note the use of single quotes to wrap the actual script and the use of double qu
 
 With no args, turn off awk for all tracks.
 
-*NOTES*
+*NOTES & LIMITATIONS*
 
 * This is a java implementation of awk and it is independent on whether awk is on the local system. It should behave very similar to UNIX awk and therefore it has lots of functionalities. In fact, awk is a programming language in itself, search Google for more. The original code is from https://github.com/hoijui/Jawk
 
-* Use awk only to filter features, do not use it to edit them. If features are changed by the awk script than nothing will be retained. This is because the awk command first collects the output from awk, then it matches the features in the current window with those collected from awk. Hint: The output of awk is temporarily stored in memory.
+* Use awk only to filter features, do not use it to edit them. If features are changed by the awk script than nothing will be retained. This is because the awk command first collects the output from awk, then it matches the features in the current window with those collected from awk.
 
-* This awk is slow, about x10 times slower than UNIX awk. For few tens of thousand records the slowdown should be negligible. Since only the records in the current window are parsed, it should be fast enough in most cases.
+* Each line is processed independently of the others as a separate awk execution. This means that you cannot filter one line on the bases of previous or following lines.
+
+* This awk is slow, about x10-100 times slower than UNIX awk. For few thousand records the slowdown should be acceptable. Other things being equal, use `grep` instead.
 
 * The default delimiter is TAB not any white space as in UNIX awk.
 
@@ -333,7 +341,7 @@ With no args, turn off awk for all tracks.
 featureDisplayMode
 ++++++++++++++++++
 
-:code:`featureDisplayMode [-expanded | -collapsed | -oneline] [track_regex = .*]...`
+:code:`featureDisplayMode [-expanded | -collapsed | -oneline] [-v] [track_regex = .*]...`
 
 Set how annotation features should be displayed.
  
@@ -343,6 +351,8 @@ Set how annotation features should be displayed.
 
 * :code:`-oneline/-o` Merge features overlapping on screen coordinates. This option makes the track occupy only one line.
 
+* :code:`-v` Invert selection: apply changes to tracks not selected by list of track_regex
+
 * :code:`track_regex` List of regexes to select tracks. Default: .* (all tracks).
 
 Without arguments toggle between expanded and collapsed mode. 
@@ -350,9 +360,12 @@ Without arguments toggle between expanded and collapsed mode.
 gap
 +++
 
-:code:`gap [-on | -off] [track_regex = .*]...`
+:code:`gap [-on | -off] [-v] [track_regex = .*]...`
 
-Display features with or without a separating gap.  With :code:`gap -on` (default) features which on screen do not have at least one space separating them are moved to different lines. In this way it is clear where one feature starts and ends. If gap is unset (:code:`gap -off`) features are shown more packed. 
+Display features with or without a separating gap.  With :code:`gap -on` (default) features which on screen do not have at least one space separating them are moved to different lines. In this way it is clear where one feature starts and ends. If gap is unset (:code:`gap -off`) features are shown more packed.
+
+:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
 Example with :code:`gap -on`::
 
     ||||||
@@ -367,9 +380,13 @@ As elsewhere, this command is applied to all tracks captured by the list of rege
 gffNameAttr
 +++++++++++
 
-:code:`gffNameAttr [attribute_name = NULL | -na] [track_regex = .*]...`
+:code:`gffNameAttr [attribute_name = NULL | -na] [-v] [track_regex = .*]...`
 
-GTF/GFF attribute to set the feature name or `-na` to suppress name.  Use attribute NULL to reset to default choice of attribute. To suppress printing of the name use `-na`. Bed features get their name from the 4th column. Applies to annotation tracks captured by the list `track_regex`. Example, given the gtf feature::
+GTF/GFF attribute to set the feature name or `-na` to suppress name.  Use attribute NULL to reset to default choice of attribute. To suppress printing of the name use `-na`. Bed features get their name from the 4th column. Applies to annotation tracks captured by the list `track_regex`.
+
+:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
+Example, given the gtf feature::
 
     chr1 . CDS  10 99 . + 2 gene_id "PTGFRN"; transcript_id "NM_020440";
 
@@ -389,9 +406,13 @@ Use gene_name as feature name or transcript_id::
 trackHeight
 +++++++++++
 
-:code:`trackHeight INT [track_regex = .*]...`
+:code:`trackHeight [-v] INT [track_regex = .*]...`
 
-Set track height to INT lines of text for all tracks matching regexes.  Setting height to zero hides the track and skips the processing altogether. This is useful to speed up the browsing when large bam files are present. Use infoTrack to see which tracks are hidden. Example::
+Set track height to INT lines of text for all tracks matching regexes.  Setting height to zero hides the track and skips the processing altogether. This is useful to speed up the browsing when large bam files are present. Use infoTrack to see which tracks are hidden.
+
+:code:`-v` Invert selection: apply changes to tracks not selected by list of track_regex
+
+Example::
 
     trackHeight 5 aln.*bam gtf`
 
@@ -399,15 +420,17 @@ Set track height to INT lines of text for all tracks matching regexes.  Setting 
 ylim
 ++++
 
-:code:`ylim <NUM|min|na> <NUM|min|na> [track_regex = .*]...`
+:code:`ylim [-v] <NUM|min|na> <NUM|min|na> [track_regex = .*]...`
 
 Set the y-axis limit for all tracks matched by regexes. The first two arguments set the min and max limits. The 3rd argument is a list of regexes to capture the tracks to reset. Argument min and max can be:
 
-* :code:`NUM`: Numeric, fix the limits exactly to these values
+* :code:`NUM` Numeric, fix the limits exactly to these values
 
-* :code:`na`: Scale tracks to their individual min and/or max
+* :code:`na` Scale tracks to their individual min and/or max
 
-* :code:`min` and :code:`max`: Set to the min and max of **all** tracks.
+* :code:`min` and :code:`max` Set to the min and max of **all** tracks.
+
+:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 This command applies only to tracks displaying quantitative data on y-axis (e.g. bigwig, tdf), the other tracks are unaffected. Examples::
 
@@ -421,9 +444,11 @@ This command applies only to tracks displaying quantitative data on y-axis (e.g.
 colorTrack
 ++++++++++
 
-:code:`colorTrack color [track_regex = .*]...`
+:code:`colorTrack [-v] color [track_regex = .*]...`
 
 Set colour for tracks matched by regex.  Colors can be specified by name or by a value between 0 and 255. If only the start of a color is given, the first name found starting with the given string is returned, e.g. 'darkv' is interpreted as 'darkviolet'. Names are case insensitive.
+
+:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 Available colours are from the Xterm256 palette: `colors here <http://jonasjacek.github.io/colors/>`_            
 
@@ -438,17 +463,24 @@ Example::
 hideTitle
 +++++++++
 
-:code:`hideTitle [-on | -off] [track_regex = .*]...`
+:code:`hideTitle [-on | -off] [-v] [track_regex = .*]...`
 
 Set the display of the title line matched by track_regex.  Without argument -on or -off toggle between the two modes for all tracks matched by the list of regexes.
+
+:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
 
 editNames
 +++++++++
 
-:code:`editNames -t <pattern> <replacement> [track_re=.*]...`
+:code:`editNames [-t] [-v] <pattern> <replacement> [track_re=.*]...`
 
 Edit track names by substituting regex pattern with replacement. Pattern and replacement are required arguments, the default regex for track is '.*' (i.e. all tracks).
-The :code:`-t` (test) flag shows what renaming would be done without actually editing the names.
+
+* :code:`-t` (test) flag shows what renaming would be done without actually editing the names.
+
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
 Use "" (empty double quotes) to replace pattern with nothing. Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::
 
     editNames fk123_ ""       -> hela.bam#1, hela.bed#2
@@ -461,9 +493,12 @@ Use "" (empty double quotes) to replace pattern with nothing. Examples: Given tr
 dataCol
 +++++++
 
-:code:`dataCol [index = 4] [track_regex = .*]...`
+:code:`dataCol [-v] [index = 4] [track_regex = .*]...`
 
 Select data column for bedgraph tracks containing regex.  First column has index 1. This command applies only to tracks of type bedgraph.
+
+:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
 For example, use column 5 on tracks containing #1 and #3::
  
     dataCol 5 #1 #3
@@ -473,21 +508,23 @@ For example, use column 5 on tracks containing #1 and #3::
 print
 +++++
 
-:code:`print [-n INT] [-full] [-off] [track_regex = .*]... [>|>> file]`
+:code:`print [-n INT] [-full] [-off] [-v] [track_regex = .*]... [>|>> file]`
 
 Print lines for the tracks matched by `track_regex`.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the :code:`grep` command. Options:
 
-* :code:`track_regex`: Apply to tracks matched by one or more of these regexes.
+* :code:`track_regex` Apply to tracks matched by one or more of these regexes.
 
-* :code:`-n INT=10`: Print up to this many lines, default 10. No limit if < 0.
+* :code:`-n INT=10` Print up to this many lines, default 10. No limit if < 0.
 
-* :code:`-clip`: Clip lines longer than the screen width. This is the default.
+* :code:`-clip` Clip lines longer than the screen width. This is the default.
 
-* :code:`-full`: Wrap lines longer than the screen width.
+* :code:`-full` Wrap lines longer than the screen width.
 
-* :code:`-off`: Turn off printing.
+* :code:`-off` Turn off printing.
 
-* :code:`>` and :code:`>>`: Write output to `file`. `>` overwrites and `>>` appends to existing file. The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides options -n and -off, lines are written in full without limit.
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
+* :code:`>` and :code:`>>` Write output to `file`. `>` overwrites and `>>` appends to existing file. The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides options -n and -off, lines are written in full without limit.
 
 Examples::
 
@@ -503,26 +540,30 @@ Alignments
 rpm
 +++
 
-:code:`rpm [-on | -off] [track_regex = .*]`
+:code:`rpm [-on | -off] [-v] [track_regex = .*]`
 
 Set display to reads per million for BAM and TDF files.
  
 * :code:`-on | -off` Set mode on/off. Without arguments toggle between on and off.
+
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 * :code:`track_regex` List of regexes to capture target tracks.
 
 samtools
 ++++++++
 
-:code:`samtools [-f INT=0] [-F INT=4] [-q INT=0] [track_re = .*] ...`
+:code:`samtools [-f INT=0] [-F INT=4] [-q INT=0] [-v] [track_re = .*] ...`
 
 Apply samtools filters to alignment tracks captured by the list of track regexes. As *samtools view*, this command filters alignment records on the basis of the given flags:
 
-* :code:`-F`: Filter out flags with these bits set. NB: 4 is always set.
+* :code:`-F` Filter out flags with these bits set. NB: 4 is always set.
 
-* :code:`-f`: Require alignment to have these bits sets.
+* :code:`-f` Require alignment to have these bits sets.
 
-* :code:`-q`: Require alignments to have MAPQ >= than this.
+* :code:`-q` Require alignments to have MAPQ >= than this.
+
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 Examples::
 
@@ -534,11 +575,13 @@ Examples::
 BSseq
 +++++
 
-:code:`BSseq [-on | -off] [track_regex = .*]...`
+:code:`BSseq [-on | -off] [-v] [track_regex = .*]...`
 
 Set bisulfite mode for read tracks matched by regex. In bisulfite mode, the characters M and m mark methylated bases (i.e. unconverted C to T) and U and u are used for unmethylated bases (i.e. C converted to T). Upper case is used for reads on  forward strand, small case for reverse.
 
 * :code:`-on | -off` Set mode. Without arguments toggle between on and off.
+
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 * :code:`track_regex` List of regexes to capture target tracks.
 
@@ -606,9 +649,12 @@ Examples::
 dropTracks
 ++++++++++
 
-:code:`dropTracks [-t] track_regex [track_regex]...`
+:code:`dropTracks [-t] [-v] track_regex [track_regex]...`
 
-Drop tracks matching any of the listed regexes. The :code:`-t` (test) flag only shows what tarcks would be removed without actually removing them.
+Drop tracks matching any of the listed regexes. * :code:`-t` (test) flag only shows which tracks would be removed but do not remove them.
+
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
 Examples::
 
     dropTracks bam
@@ -630,9 +676,11 @@ For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#
 posHistory
 ++++++++++
 
-:code:`posHistory`
+:code:`posHistory [-n INT=10]`
 
-List the visited positions. 
+List the visited positions. Recorded positions include the current and the previous sessions of ASCIIGenome.
+
+:code:`-n INT` Show only the last INT positions. Show all if <= 0.
 
 history
 +++++++

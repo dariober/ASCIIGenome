@@ -344,6 +344,14 @@ public class GenomicCoordsTest {
 		gc.centerAndExtendGenomicCoords(gc, size, 5.0); 
 		assertEquals(1, (int)gc.getFrom());
 		
+		// No extension
+		gc= new GenomicCoords("chr1:1-300", null, null);
+		size= 100;
+		gc.centerAndExtendGenomicCoords(gc, size, 0);
+		System.err.println(gc);
+		assertEquals(1, (int)gc.getFrom());
+		assertEquals(300, (int)gc.getTo());
+		
 	}
 
 }

@@ -19,6 +19,7 @@ import java.util.Set;
 import com.google.common.base.Joiner;
 import com.itextpdf.text.DocumentException;
 
+import coloring.Xterm256;
 import commandHelp.CommandList;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
@@ -47,8 +48,9 @@ public class Main {
 	
 	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException {
 
-		final String cmdHistoryFile= System.getProperty("user.home") + File.separator + ".asciigenome_history";  
+		final String CMD_HISTORY_FILE= System.getProperty("user.home") + File.separator + ".asciigenome_history";  
 		final String MARKER_FOR_HISTORY_FILE= "## file ##";
+		final String MARKER_FOR_HISTORY_CMD= "## cmd ##";
 		/* Start parsing arguments * 
 		 * *** If you change something here change also in console input ***/
 		Namespace opts= ArgParse.argParse(args);
@@ -59,9 +61,13 @@ public class Main {
 		final String fasta= opts.getString("fasta");
 		String exec= opts.getString("exec");
 		exec= parseExec(exec);
+		boolean debug= opts.getBoolean("debug");
+		
 		// Init console right at start so if something goes wrong the user's terminal is reset to 
 		// initial defaults with the shutdown hook. This could be achieved in cleaner way probably.
 		ConsoleReader console = CommandList.initConsole();
+		
+		messageVersion(opts.getBoolean("noFormat"));
 		
 		/* Set up console */
 		
@@ -69,17 +75,13 @@ public class Main {
 		
 		/* Test input files exist */
 		List<String> inputFileList= new ArrayList<String>();
-		try{
-			Utils.addSourceName(inputFileList, initFileList);
-		} catch(InvalidCommandLineException e){
-			//
-		}	
-
+		Utils.addSourceName(inputFileList, initFileList);
+		
 		/* Initialize trackSet */
 		/* ------------------- */
 		// This part only prepares a dummy GenomicCoords object to initialize the start position:
 		// ----------------------------
-		region= initRegion(region, inputFileList, fasta, genome);
+		region= initRegion(region, inputFileList, fasta, genome, debug);
 		
 		GenomicCoords initGc= new GenomicCoords(region, null, null);
 		
@@ -93,10 +95,12 @@ public class Main {
 		// ----------------------------
 		// Genomic positions start here:
 		final GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		gch.add(new GenomicCoords(initGc.toStringRegion(), initGc.getSamSeqDict(), initGc.getFastaFile()));
+		GenomicCoords start= new GenomicCoords(initGc.toStringRegion(), initGc.getSamSeqDict(), initGc.getFastaFile());
+		gch.readHistory(new File(CMD_HISTORY_FILE), start);
+		gch.add(start);
 
 		final TrackSet trackSet= new TrackSet(inputFileList, gch.current());
-		addHistoryFiles(trackSet, cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
+		addHistoryFiles(trackSet, CMD_HISTORY_FILE, MARKER_FOR_HISTORY_FILE, debug);
 		
 		setDefaultTrackHeights(console.getTerminal().getHeight(), trackSet.getTrackList());
 		
@@ -127,7 +131,7 @@ public class Main {
 				String reg= target.getChrom() + ":" + target.getFrom() + "-" + target.getTo();
 				String gotoAndExec= ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
 				InteractiveInput itr = new InteractiveInput(console);
-				itr.processInput(gotoAndExec, proc);
+				itr.processInput(gotoAndExec, proc, debug);
 				if (itr.getInteractiveInputExitCode() != 0){
 					System.err.println("Error processing '" + gotoAndExec + "' at line '" + line + "'");
 					System.exit(1);
@@ -145,7 +149,7 @@ public class Main {
 		if(!exec.isEmpty() || opts.getBoolean("nonInteractive")){
 
 			InteractiveInput itr = new InteractiveInput(console);
-			itr.processInput(exec, proc);
+			itr.processInput(exec, proc, debug);
 			if(opts.getBoolean("nonInteractive")){
 				System.out.print("\033[0m");
 				System.exit(0);
@@ -154,26 +158,32 @@ public class Main {
 
 		/* Set up done, start processing */
 		/* ============================= */
-		History cmdHistory= initCmdHistory(cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
+		History cmdHistory= initCmdHistory(CMD_HISTORY_FILE, MARKER_FOR_HISTORY_CMD, debug);
 		console.setHistory(cmdHistory);
-		writeHistory(console.getHistory(), trackSet.getOpenedFiles(), cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
+		writeHistory(console.getHistory(), trackSet.getOpenedFiles(), CMD_HISTORY_FILE, MARKER_FOR_HISTORY_FILE, MARKER_FOR_HISTORY_CMD, gch);
 		
 		while(true){  
 			// keep going until quit or if no interactive input set
 			// *** START processing interactive input
 			String cmdConcatInput= ""; // String like "zi && -F 16 && mapq 10"
 			InteractiveInput interactiveInput= new InteractiveInput(console);
-			interactiveInput.setInteractiveInputExitCode(9);
+			int currentExitCode= 9;
+			interactiveInput.setInteractiveInputExitCode(currentExitCode);
 			
 			while(interactiveInput.getInteractiveInputExitCode() != 0){
 				
 				console.setPrompt("[h] for help: ");
 				cmdConcatInput= console.readLine().trim();
-				if (cmdConcatInput.isEmpty()){
-					// Repeat previous command
-					cmdConcatInput= currentCmdConcatInput;
+				if (cmdConcatInput.isEmpty()) {
+					if(interactiveInput.getInteractiveInputExitCode() == 0 || 
+					   interactiveInput.getInteractiveInputExitCode() == currentExitCode){
+						// User only issued <ENTER>: Repeat previous command if the exit code was not an error.
+						cmdConcatInput= currentCmdConcatInput;					
+					} else {
+						cmdConcatInput= "+0";
+					}
 				}
-				interactiveInput.processInput(cmdConcatInput, proc);
+				interactiveInput.processInput(cmdConcatInput, proc, debug);
 				currentCmdConcatInput= cmdConcatInput;
 			}
 			// *** END processing interactive input 
@@ -183,7 +193,7 @@ public class Main {
 	/** Return a suitable region to start. If a region is already given, do nothing.
 	 * This method is a mess and should be cleaned up together with GenomicCoords class.
 	 * */
-	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome) throws IOException{
+	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome, boolean debug) throws IOException{
 
 		if( region != null && ! region.isEmpty() ){
 			return region;
@@ -222,6 +232,9 @@ public class Main {
 					break;
 				} catch(Exception e){
 					System.err.println("\nCould not initilize from file " + x);
+					if(debug){
+						e.printStackTrace();
+					}
 				}
 			}
 		}
@@ -270,28 +283,29 @@ public class Main {
 	/**Read the asciigenome history file and put it a list as current history. Or
 	 * return empty history file does not exist or can't be read. 
 	 * */
-	private static History initCmdHistory(String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE){
+	private static History initCmdHistory(String cmdHistoryFile, String MARKER_FOR_HISTORY_CMD, boolean debug){
 		History cmdHistory= new MemoryHistory();
 		try{
 			BufferedReader br= new BufferedReader(new FileReader(new File(cmdHistoryFile)));
 			String line;
 			while((line = br.readLine()) != null){
-				if(line.startsWith(MARKER_FOR_HISTORY_FILE)){
-					continue;
+				if(line.startsWith(MARKER_FOR_HISTORY_CMD)){
+					cmdHistory.add(line.replaceFirst(MARKER_FOR_HISTORY_CMD, ""));
 				}
-				cmdHistory.add(line);
 			}
 			br.close();
 		} catch(IOException e){
-			//
+			if(debug){
+				e.printStackTrace();
+			}
 		}
 		return cmdHistory;
 	}	
 
 	/** Merge set of opened files in trackSet with the files found in the history file.
 	 * */
-	private static void addHistoryFiles(TrackSet trackSet, String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE){
-		LinkedHashSet<String> union= initRecentlyOpenedFiles(cmdHistoryFile, MARKER_FOR_HISTORY_FILE);
+	private static void addHistoryFiles(TrackSet trackSet, String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE, boolean debug){
+		LinkedHashSet<String> union= initRecentlyOpenedFiles(cmdHistoryFile, MARKER_FOR_HISTORY_FILE, debug);
 		LinkedHashSet<String> now= trackSet.getOpenedFiles();
 		for(String file : now){ // If a file is in the current track set and in the history file, put it last. I.e. last opened. 
 			if(union.contains(file)){
@@ -304,7 +318,8 @@ public class Main {
 	
 	/**Read the asciigenome history file to extract the list of opened files 
 	 * */
-	private static LinkedHashSet<String> initRecentlyOpenedFiles(String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE){
+	private static LinkedHashSet<String> initRecentlyOpenedFiles(String cmdHistoryFile, 
+			String MARKER_FOR_HISTORY_FILE, boolean debug){
 		LinkedHashSet<String> opened= new LinkedHashSet<String>();
 		try{
 			BufferedReader br= new BufferedReader(new FileReader(new File(cmdHistoryFile)));
@@ -317,7 +332,9 @@ public class Main {
 			}
 			br.close();
 		} catch(IOException e){
-			//
+			if(debug){
+				e.printStackTrace();
+			}
 		}
 		return opened;
 	}	
@@ -396,8 +413,10 @@ public class Main {
 	}
 	
 	/**Write the history of commands to given file.
+	 * Note that the existing history file is completely overwritten.
 	 * */
-	private static void writeHistory(final History cmdHistory, final Set<String> fileHistory, final String cmdHistoryFile, final String MARKER_FOR_HISTORY_FILE){
+	private static void writeHistory(final History cmdHistory, final Set<String> fileHistory, final String cmdHistoryFile, final String MARKER_FOR_HISTORY_FILE, 
+				final String MARKER_FOR_HISTORY_CMD, final GenomicCoordsHistory gch){
 		
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			public void run() {
@@ -418,22 +437,53 @@ public class Main {
 				List<String>lastFiles= new ArrayList<String>(fileHistory);
 				int max_files= 200; // Maximum number of files to write out to asciigenomo_history.
 				lastFiles= lastFiles.subList(Math.max(0, lastFiles.size() - max_files), lastFiles.size());
-				
-				try {
-					BufferedWriter wr= new BufferedWriter(new FileWriter(new File(cmdHistoryFile)));
+
+				try{
+					
+					StringBuilder sb= new StringBuilder();
+					
 					for(String cmd : lastHist){
-						wr.write(cmd + "\n");
+						sb.append(MARKER_FOR_HISTORY_CMD + cmd + "\n");
 					}
 					for(String file : lastFiles){
-						wr.write(MARKER_FOR_HISTORY_FILE + file + "\n");
+						sb.append(MARKER_FOR_HISTORY_FILE + file + "\n");
 					}
+					for(String pos : gch.prepareHistoryForHistoryFile(new File(cmdHistoryFile), 100)){
+						sb.append(pos + "\n"); // Positions
+					}
+
+					BufferedWriter wr= new BufferedWriter(new FileWriter(new File(cmdHistoryFile)));
+					wr.write(sb.toString());
 					wr.close();
 				} catch (IOException e) {
 					System.err.println("Unable to write history to " + cmdHistoryFile);
 				}
 	        }
 	    }, "Shutdown-thread"));
+	}
+		
+	/** On exit print a message informing a new version of ASCIIGenome is available
+	 * */
+	private static void messageVersion(final boolean noFormat) throws IOException, InvalidColourException{
 
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+			public void run() {
+				try{
+					List<String> up = Utils.checkUpdates(5000);
+					int cmp= Utils.versionCompare(up.get(0), up.get(1));
+					String msg= "";
+					if(cmp == -1){
+						msg= "NOTE: Newer version of ASCIIGenome is available: v" + up.get(1);
+					}
+					if( ! noFormat){
+						msg= "\033[38;5;" + Xterm256.colorNameToXterm256("red") + "m" +  msg + "\033[0m";
+					}
+					System.err.println(msg);
+				} catch(Exception e){
+					// e.printStackTrace();
+				}
+	        }
+	    }, "Shutdown-thread"));		
 	}
 	
 }

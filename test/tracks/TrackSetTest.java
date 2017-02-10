@@ -23,6 +23,18 @@ import samTextViewer.Utils;
 
 public class TrackSetTest {
 
+	@Test
+	public void canConstructTrackSetFromURL() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", null, null);
+		
+		TrackSet trackSet= new TrackSet();
+		trackSet.addTrackFromSource("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig", gc, null);
+		trackSet.addTrackFromSource("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400JunctionsRep2V3.bigBed", gc, null);
+		trackSet.addTrackFromSource("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400GeneGencV3cRep2V3.gtf.gz", gc, null);
+		trackSet.addTrackFromSource("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig", gc, null);
+		
+	}
 	
 	@Test
 	public void canGetListOfOpenedFiles() throws ClassNotFoundException, IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
@@ -536,6 +548,14 @@ public class TrackSetTest {
 		assertEquals("red", ts.getTrack(t1).getTitleColour());
 		assertEquals(defaultColour, ts.getTrack(t2).getTitleColour());
 		assertEquals("red", ts.getTrack(t3).getTitleColour());
+		
+		// Invert selection
+		cmdInput= "trackColour -v blue #1";
+		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
+//		 assertTrue( ! ts.getTrack(t1).getTitleColour().equals("blue"));
+//		 assertEquals("blue", ts.getTrack(t2).getTitleColour());
+//		 assertEquals("blue", ts.getTrack(t3).getTitleColour());
+
 	}
 	
 	@Test
@@ -558,6 +578,13 @@ public class TrackSetTest {
 		assertEquals(99, ts.getTrack(t1).getyMaxLines());
 		assertEquals(99, ts.getTrack(t2).getyMaxLines()); 
 		assertEquals(99, ts.getTrack(t3).getyMaxLines());
+	
+		// Invert selection
+		cmdInput= "trackHeight -v 10 #1";  
+		ts.setTrackHeightForRegex(Utils.tokenize(cmdInput, " "));
+		assertEquals(99, ts.getTrack(t1).getyMaxLines());
+		assertEquals(10, ts.getTrack(t2).getyMaxLines());
+		assertEquals(10, ts.getTrack(t3).getyMaxLines());
 		
 	}
 	
@@ -585,6 +612,32 @@ public class TrackSetTest {
 		assertEquals(90, ts.getTrack(t3).getYLimitMin(), 0.001);
 		assertEquals(99, ts.getTrack(t3).getYLimitMax(), 0.001);
 
+		// First reset all
+		cmdInput= "ylim 0 10";
+		ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
+		for(Track tr : ts.getTrackList()){
+			assertEquals(0, tr.getYLimitMin(), 0.001);
+			assertEquals(10, tr.getYLimitMax(), 0.001);
+		}
+		
+		// These limits may be confused for regexes. Make sure the sublisiung is correct:
+		cmdInput= "ylim -1 2 #1";
+		ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
+		assertEquals(-1, ts.getTrack(t1).getYLimitMin(), 0.001);
+		assertEquals(2, ts.getTrack(t1).getYLimitMax(), 0.001);
+		assertEquals(0, ts.getTrack(t2).getYLimitMin(), 0.001);
+		assertEquals(10, ts.getTrack(t2).getYLimitMax(), 0.001);
+		assertEquals(0, ts.getTrack(t3).getYLimitMin(), 0.001);
+		assertEquals(10, ts.getTrack(t3).getYLimitMax(), 0.001);
+
+		// First reset all
+		cmdInput= "ylim 0 10";
+		ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
+		for(Track tr : ts.getTrackList()){
+			assertEquals(0, tr.getYLimitMin(), 0.001);
+			assertEquals(10, tr.getYLimitMax(), 0.001);
+		}
+		
 	}
 	
 	@Test
@@ -602,5 +655,5 @@ public class TrackSetTest {
 		assertTrue(ts.showTrackInfo().contains("BED"));
 
 	}
-
+	
 }

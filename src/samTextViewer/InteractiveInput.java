@@ -40,7 +40,7 @@ public class InteractiveInput {
 	 * @throws InvalidRecordException 
 	 * @throws ClassNotFoundException 
 	 * */
-	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
+	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc, boolean debug) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
 		// cmdInputList: List of individual commands in tokens to be issued. 
 		// E.g.: [ ["zi"], 
@@ -76,9 +76,7 @@ public class InteractiveInput {
 					this.interactiveInputExitCode= 1;
 				
 				} else if(cmdInput.get(0).equals("posHistory")){
-					for(GenomicCoords xgc : proc.getGenomicCoordsHistory().getHistory()){
-						System.err.println(xgc.toString());
-					}
+					this.posHistory(cmdInput, proc.getGenomicCoordsHistory().getHistory());
 					this.interactiveInputExitCode= 1;
 
 				} else if(cmdInput.get(0).equals("history")){
@@ -195,14 +193,14 @@ public class InteractiveInput {
 						continue;
 					}
 					
-				} else if(cmdInput.get(0).equals("ylim") && cmdInput.size() > 1){
+				} else if(cmdInput.get(0).equals("ylim")){
 					proc.getTrackSet().setTrackYlimitsForRegex(cmdInput);
 					
-				} else if(cmdInput.get(0).equals("trackHeight") && cmdInput.size() > 1){
+				} else if(cmdInput.get(0).equals("trackHeight")){
 					proc.getTrackSet().setTrackHeightForRegex(cmdInput);
 					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
-				} else if((cmdInput.get(0).equals("colorTrack") || cmdInput.get(0).equals("colourTrack")) && cmdInput.size() > 1){
+				} else if((cmdInput.get(0).equals("colorTrack") || cmdInput.get(0).equals("colourTrack"))){
 					proc.getTrackSet().setTrackColourForRegex(cmdInput); 
 
 				} else if(cmdInput.get(0).equals("hideTitle")){
@@ -225,7 +223,7 @@ public class InteractiveInput {
 				} else if(cmdInput.get(0).equals("gffNameAttr")) {
 					proc.getTrackSet().setAttributeForGFFName(cmdInput);
 					
-				} else if(cmdInput.get(0).equals("addTracks") && cmdInput.size() > 1){
+				} else if(cmdInput.get(0).equals("addTracks")){
 					cmdInput.remove(0);
 					
 					List<String> globbed = Utils.globFiles(cmdInput);
@@ -246,7 +244,7 @@ public class InteractiveInput {
 									// It may be that you are in position that doesn't exist in the sequence dictionary that
 									// came with this new file. To recover, find an existing position, move there and try to reload the 
 									// file. This fixes issue#23
-									String region= Main.initRegion(null, globbed, null, null);
+									String region= Main.initRegion(null, globbed, null, null, debug);
 									proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
 									proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
 								} catch (Exception x){
@@ -294,27 +292,9 @@ public class InteractiveInput {
 
 				// * These commands change both the Tracks and the GenomicCoordinates
 				} else if(cmdInput.get(0).equals("next")){
-					GenomicCoords gc= (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
-					String trackId= "";
-					boolean start= false;
-					if(cmdInput.contains("-start")){
-						start= true;
-						cmdInput.remove("-start");
-					}
-					boolean getPrevious= false;
-					if(cmdInput.contains("-back")){
-						getPrevious= true;
-						cmdInput.remove("-back");
-					}
-					if(cmdInput.size() > 1){
-						trackId= cmdInput.get(1);
-					}
-					if(start){
-						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, -1.0, getPrevious));
-					} else {
-						proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, 5.0, getPrevious));
-					}
 					
+					this.next(cmdInput, proc);
+										
 				} else if(cmdInput.get(0).equals("find")) {  
 					// Determine whether we match first or all
 					boolean all= false;
@@ -343,7 +323,6 @@ public class InteractiveInput {
 						continue;						
 					}
 					
-					
 				} else if(cmdInput.get(0).equals("bookmark")){
 					messages += proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdInput);
 					
@@ -353,8 +332,12 @@ public class InteractiveInput {
 				}
 			
 			} catch(Exception e){ // You shouldn't catch anything! Be more specific.
-				System.err.println("\nError processing input: " + cmdInput + "\n");
+				System.err.println("\nError processing input: " + cmdInput);
+				System.err.println("For help on command \"cmd\" execute 'cmd -h' or '-h' for list of commands.\n");
 				this.interactiveInputExitCode= 1; 
+				if(debug){
+					e.printStackTrace();
+				}
 			} // END PARSING ONE COMMAND
 
 			if(this.interactiveInputExitCode == 0){
@@ -366,14 +349,19 @@ public class InteractiveInput {
 
 				} catch (InvalidGenomicCoordsException e){
 					
-					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null);
+					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null, debug);
 					proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
 					System.err.println("Invalid genomic coordinates found. Resetting to "  + region);
+					if(debug){
+						e.printStackTrace();
+					}
 					
 				} catch (Exception e){
-					// e.printStackTrace();
 					System.err.println("Error processing tracks with input " + cmdInput);
 					this.interactiveInputExitCode= 1;
+					if(debug){
+						e.printStackTrace();
+					}
 				}
 			}
 			if(this.interactiveInputExitCode != 0) {
@@ -388,6 +376,81 @@ public class InteractiveInput {
 		System.err.print(messages); 
 		messages= "";
 		return proc;
+	}
+
+	private void posHistory(List<String> cmdInput, List<GenomicCoords> history) throws InvalidCommandLineException {
+		
+		List<String> args= new ArrayList<String>(cmdInput);
+		args.remove(0); // Remove cmd name.
+		
+		int n= 10;
+		if(args.contains("-n")){
+			try{
+				n= Integer.parseInt(args.get(args.indexOf("-n") + 1));
+				args.remove(args.get(args.indexOf("n") + 1));
+				args.remove("-n");
+			} catch (Exception e){
+				System.err.println("Argument to -n parameter must be an integer");
+				throw new InvalidCommandLineException();
+			}
+		}
+
+		int start= 0; // Start listing positions from this index
+		if(history.size() > n && n > 0){
+			start= history.size() - n;
+		}
+		
+		for(int i= start; i < history.size(); i++){
+			GenomicCoords xgc= history.get(i);
+			System.err.println(xgc.toString());
+		}
+	}
+
+	/** Move to next feature using parameters in cmdInput. 
+	 * First arg in cmdInput is command name itself. 
+	 * The side effect is to modify the TrackProcessor obj to update the position.
+	 * */
+	private void next(List<String> cmdInput, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+		
+		List<String> args= new ArrayList<String>(cmdInput); 
+		args.remove(0); // Remove command name
+		
+		int zo= 5;
+		if(args.contains("-zo")){
+			try{
+				zo= Integer.parseInt(args.get(args.indexOf("-zo") + 1));
+				args.remove(args.get(args.indexOf("-zo") + 1));
+				args.remove("-zo");
+				if(zo < 0){
+					zo= 0;
+				}
+			} catch (Exception e){
+				System.err.println("Argument to -zo parameter must be an integer");
+				throw new InvalidCommandLineException();
+			}
+		}
+		
+		GenomicCoords gc= (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+		String trackId= "";
+		boolean start= false;
+		if(args.contains("-start")){
+			start= true;
+			args.remove("-start");
+		}
+		boolean getPrevious= false;
+		if(args.contains("-back")){
+			getPrevious= true;
+			args.remove("-back");
+		}
+		if(args.size() > 0){
+			trackId= args.get(0);
+		}
+		if(start){
+			proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, -1.0, getPrevious));
+		} else {
+			proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, zo, getPrevious));
+		}
+		
 	}
 
 	private void showGenome(TrackProcessor proc) {

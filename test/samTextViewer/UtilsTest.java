@@ -57,6 +57,26 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 
 	@Test
+	public void canCheckForUpdates() throws IOException{
+		
+		List<String> up= Utils.checkUpdates(50000);
+			
+		assertEquals(2, up.size());
+		assertTrue(Character.isDigit(up.get(0).charAt(0)));
+		assertTrue(Character.isDigit(up.get(1).charAt(0)));
+		
+		assertEquals(0, Utils.versionCompare("1.0.0", "1.0.0"));
+		assertEquals(1, Utils.versionCompare("1.0.0", "0.0.9")); // Running version ahead of repo
+
+		assertEquals(-1, Utils.versionCompare("1.0.0", "1.0.1")); // Running version out of date
+		assertEquals(-1, Utils.versionCompare("1.0.0", "1.0.0.1"));
+		
+		// This should timeput and throw a warning
+		up= Utils.checkUpdates(1);
+		
+	}
+	
+	@Test
 	public void testAwk() throws Exception{
 
 		String fin= "/Users/berald01/Downloads/hg19.gencode_genes_v19.gtf"; // "test_data/hg19_genes_head.gtf"
@@ -302,8 +322,9 @@ public class UtilsTest {
 		assertEquals(4, Utils.parseZoom("zo   4  ", 1));
 		assertEquals(0, Utils.parseZoom("zo   0", 1));
 		assertEquals(1, Utils.parseZoom("zo", 1));
-		assertEquals(1, Utils.parseZoom("zo -3", 1));
-		assertEquals(1, Utils.parseZoom("zo 3.3", 1));
+		assertEquals(0, Utils.parseZoom("zo -3", 1));   // < 0 reset to 0
+		assertEquals(0, Utils.parseZoom("zo 3.3", 1)); // Invalid INT reset to zero
+		assertEquals(0, Utils.parseZoom("zo foo", 1)); // Invalid INT reset to zero
 	}
 	
 	@Test
@@ -332,8 +353,10 @@ public class UtilsTest {
 	}
 	
 	@Test
-	public void canGetBamReadCount(){
-		assertEquals(15098, Utils.getAlignedReadCount(new File("test_data/ds051.actb.bam")));
+	public void canGetBamReadCount() throws IOException{
+		assertEquals(15098, Utils.getAlignedReadCount("test_data/ds051.actb.bam"));
+		// Painfully slow!
+		// assertEquals(6337212, Utils.getAlignedReadCount("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SplicesRep2V2.bam"));
 	}
 
 	@Test
@@ -389,13 +412,24 @@ public class UtilsTest {
 	public void canTestForTabixIndex() throws IOException{
 		assertTrue(Utils.hasTabixIndex("test_data/test.bedGraph.gz"));
 		assertTrue(! Utils.hasTabixIndex("test_data/test.bedGraph"));
+
+		// This ftp file has index but see https://github.com/samtools/htsjdk/issues/797
+		assertTrue( ! Utils.hasTabixIndex("ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase1/analysis_results/input_call_sets/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf.gz"));
+		
+		// HTTP is ok.
+		// If this file does not exist, put any valid tabix file and its index on Dropbox/Public and use
+		// the dropbox link here.
+		assertTrue(Utils.hasTabixIndex("http://genome.ucsc.edu/goldenPath/help/examples/vcfExample.vcf.gz"));
+
+		// NB: Uncompressed files give a OutOfMemoryError: Java heap space
+		assertTrue(! Utils.hasTabixIndex("ftp://ftp.solgenomics.net/tomato_genome/annotation/ITAG3.0_release/ITAG3.0_RepeatModeler_repeats_light.gff"));
 	}
 		
 	@Test
 	public void canGetFileTypeFromName(){
 		
 		assertEquals(TrackFormat.BIGWIG,
-		Utils.getFileTypeFromName("/Users/berald01/Downloads/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
+		Utils.getFileTypeFromName("http://foo/bar/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
 	} 
 
 	@Test
@@ -403,11 +437,21 @@ public class UtilsTest {
 		
 		assertEquals("chrM", Utils.initRegionFromFile("test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
-		assertEquals("chr1:10536", Utils.initRegionFromFile("/Users/berald01/Downloads/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
+		assertEquals("chr1:10536", Utils.initRegionFromFile("test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
 		assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
 		assertEquals("chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
 		assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
 		assertEquals("chr1:564666", Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
+		assertEquals("chr1", Utils.initRegionFromFile("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SplicesRep2V2.bam"));
+		
+		boolean pass= false;
+		try{
+			Utils.initRegionFromFile(
+					"http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig");
+		} catch(InvalidGenomicCoordsException e){
+			pass= true;
+		}
+		assertTrue(pass);
 		
 		// assertTrue(Utils.initRegionFromFile("hg19:refGene").startsWith("chr1:"));
 	}

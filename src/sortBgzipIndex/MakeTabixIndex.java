@@ -35,6 +35,7 @@ import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
+import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderVersion;
 import utils.BedLine;
@@ -62,7 +63,7 @@ public class MakeTabixIndex {
 		try{
 			// Try to block compress and create index assuming the file is sorted
 			blockCompressAndIndex(intab, tmp, fmt);
-		} catch(IllegalArgumentException e){
+		} catch(Exception e){
 			// If intab is not sorted, sort it first. 
 			File sorted= File.createTempFile("asciigenome.", ".sorted.tmp");
 			sorted.deleteOnExit();
@@ -94,6 +95,23 @@ public class MakeTabixIndex {
 		TabixIndexCreator indexCreator=new TabixIndexCreator(fmt);
 		
 		boolean first= true;
+		
+		// This is relevant to vcf files only: Prepare header and codec
+		// ------------------------------------------------------------
+		VCFHeader vcfHeader= null;
+		VCFCodec vcfCodec= null;
+		if(fmt.equals(TabixFormat.VCF)){
+			
+			VCFFileReader vcfr= new VCFFileReader(new File(intab), false); 
+		    vcfHeader= vcfr.getFileHeader(); // new VCFHeader();
+		    vcfr.close();
+		    
+			vcfCodec= new VCFCodec();
+		    vcfCodec.setVCFHeader(vcfHeader, VCFHeaderVersion.VCF4_0);
+
+		}
+		// ------------------------------------------------------------
+		
 		while(lin.hasNext()){
 			
 			String line = lin.next().trim();
@@ -107,20 +125,20 @@ public class MakeTabixIndex {
 			
 			if(first && ! fmt.equals(TabixFormat.VCF)){
 				String dummy= this.makeDummyLine(line, fmt);
-				addLineToIndex(dummy, indexCreator, filePosition, fmt);
+				addLineToIndex(dummy, indexCreator, filePosition, fmt, vcfHeader, vcfCodec);
 				
 				writer.write(dummy.getBytes());
 				writer.write('\n');
 				filePosition = writer.getFilePointer();
 				first= false;
 			}
-			
-			addLineToIndex(line, indexCreator, filePosition, fmt);
+			addLineToIndex(line, indexCreator, filePosition, fmt, vcfHeader, vcfCodec);
 			
 			writer.write(line.getBytes());
 			writer.write('\n');
 			filePosition = writer.getFilePointer();
 		}
+
 		writer.flush();
 		
 		Index index = indexCreator.finalizeIndex(writer.getFilePointer());
@@ -129,7 +147,9 @@ public class MakeTabixIndex {
 		CloserUtil.close(lin);
 	}
 
-	private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition, TabixFormat fmt) throws InvalidRecordException {
+	/** Arguments vcfHeader and vcfCodec can be null if format is not VCF otherwise pass suitable objects.
+	 * */
+	private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition, TabixFormat fmt, VCFHeader vcfHeader, VCFCodec vcfCodec) throws InvalidRecordException {
 
 		if(fmt.equals(TabixFormat.BED)){
 			
@@ -143,10 +163,6 @@ public class MakeTabixIndex {
 		
 		} else if(fmt.equals(TabixFormat.VCF)) {
 
-			// NB: bgzf file will be headerless!
-			VCFCodec vcfCodec= new VCFCodec();
-		    VCFHeader header= new VCFHeader();
-		    vcfCodec.setVCFHeader(header, VCFHeaderVersion.VCF4_0);
 			VariantContext vcf = vcfCodec.decode(line);
 			indexCreator.addFeature(vcf, filePosition);
 			
@@ -267,18 +283,6 @@ public class MakeTabixIndex {
 		return Joiner.on("\t").join(dummy);
 	}
 			
-//		int start= Integer.parseInt(dummy[startIdx]);
-//		int end= Integer.parseInt(dummy[endIdx]);
-//		
-//		if(start < 16384 && end > 16384){
-//			dummy[startIdx]= "1";
-//			dummy[endIdx]= "2";
-//			return Joiner.on("\t").join(dummy);
-//		} else {
-//			return "";
-//		}
-//	}
-	
 	/** Create a tmp sqlite db and return the connection to it. 
 	 */
 	private Connection createSQLiteDb(String tablename) throws IOException {
@@ -315,6 +319,5 @@ public class MakeTabixIndex {
 		}
 	    return null;
 	}
-
 	
 }

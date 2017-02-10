@@ -110,6 +110,19 @@ public class TrackIntervalFeatureTest {
 		assertEquals(3, xset.size());
 		
 	}
+
+	@Test
+	public void canReadTabixFromHTTP() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		// If this file does not exist, put any valid tabix file and its index on Dropbox/Public and use
+		// the dropbox link here.
+		String bgzFn= "http://genome.ucsc.edu/goldenPath/help/examples/vcfExample.vcf.gz";
+		GenomicCoords gc= new GenomicCoords("chr1:1-100000", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(bgzFn, gc);
+		
+		// We check the working file is on the remote server.
+		assertEquals("http", tif.getWorkFilename().substring(0,  4));
+	}
 	
 	@Test
 	public void canPrintGtfFeatures() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
@@ -231,7 +244,7 @@ public class TrackIntervalFeatureTest {
 		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
 		GenomicCoords gc= new GenomicCoords("chr1:10000-100000", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-
+		
 		String awk= "'$3 == \"start_codon\" && $9 !~ \"OR4F\"'";
 		tif.setAwk(awk); // Note use single quotes
 	
@@ -247,6 +260,21 @@ public class TrackIntervalFeatureTest {
 		tif.setAwk("  "); // Remove filter w/o args.
 		subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(1000, subset.size());	
+		
+		// Invalid script: Ugly stackTrace printed. All records returned
+		tif.setAwk("$foo");
+		subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
+		assertEquals(1000, subset.size());
+
+		// awk output is neither empty nor equal to input
+		// Exception expected.
+		boolean pass= false;
+		try{
+			tif.setAwk("'{print 999}'");
+		} catch(InvalidGenomicCoordsException e){
+			pass= true;
+		}
+		assertTrue(pass);
 		
 	}
 
@@ -319,6 +347,26 @@ public class TrackIntervalFeatureTest {
 		
 	}
 
+	@Test
+	/** This should address issues #50 where a feature starting at the begining
+	 * of the chrom is ignored
+	 * */ 
+	public void nextCanMoveToStartOfChrom() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("chr1:2000-3000", null, null);
+		String intervalFileName= "test_data/refSeqZero.bed";
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		
+		GenomicCoords newGc= tif.coordsOfNextFeature(gc, false);
+		assertEquals(1, (int)newGc.getFrom()); // MEMO: Start of chrom is 0 in bed format but 1 in ASCIIGenome format  
+		
+		// Backwards
+		gc= new GenomicCoords("chr1:500-1000", null, null);
+		tif= new TrackIntervalFeature(intervalFileName, gc);
+		newGc= tif.coordsOfNextFeature(gc, true);
+		assertEquals(1, (int)newGc.getFrom());
+	}
+	
 	@Test
 	public void canGetCoordsOfNextFeature() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
