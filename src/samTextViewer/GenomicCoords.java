@@ -22,6 +22,7 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import faidx.Faidx;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
@@ -130,12 +131,16 @@ public class GenomicCoords implements Cloneable {
 		for(String x : cleanList){
 			try{
 				IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(x));
-				if(fa.isIndexed()){
-					this.setFastaFile(x);
-				}
+				this.setFastaFile(x);
 				fa.close();
 			} catch(FileNotFoundException e){
-				//
+				try {
+					new Faidx(new File(x));
+					(new File(x + ".fai")).deleteOnExit();
+					this.setFastaFile(x);
+				} catch (Exception e1) {
+					//
+				}
 			}
 		}
 	}
@@ -645,7 +650,20 @@ public class GenomicCoords implements Cloneable {
 
 	private boolean setSamSeqDictFromFasta(String fasta) throws IOException{
 		
-		IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(fasta));
+		IndexedFastaSequenceFile fa= null;
+		
+		try{
+			fa= new IndexedFastaSequenceFile(new File(fasta));
+		} catch(FileNotFoundException e){
+			try {
+				new Faidx(new File(fasta));
+				(new File(fasta + ".fai")).deleteOnExit();
+				fa= new IndexedFastaSequenceFile(new File(fasta));
+			} catch (Exception e1) {
+				//
+			}
+		}		
+		
 		if(fa.isIndexed()){
 			BufferedReader br= new BufferedReader(new FileReader(new File(fasta + ".fai")));
 			SAMSequenceDictionary seqDict= new SAMSequenceDictionary(); // null;

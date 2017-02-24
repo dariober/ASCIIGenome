@@ -181,7 +181,14 @@ public class InteractiveInput {
 					
 				} else if(cmdInput.get(0).equals("setGenome")){
 					cmdInput.remove(0);
-					proc.getGenomicCoordsHistory().setGenome(cmdInput);
+					GenomicCoords testSeqDict= new GenomicCoords("default", null, null); 
+					testSeqDict.setGenome(cmdInput);
+					if(testSeqDict.getSamSeqDict() != null){
+						proc.getGenomicCoordsHistory().setGenome(cmdInput);
+					} else {
+						System.err.println("Cannot set genome from " + cmdInput);
+						this.interactiveInputExitCode= 1;
+					}
 
 				// * These commands change the Tracks but do not touch the GenomicCoordinates.
 				} else if(cmdInput.get(0).equals("dataCol")){

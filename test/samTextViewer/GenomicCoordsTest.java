@@ -160,6 +160,37 @@ public class GenomicCoordsTest {
 		assertEquals(25, gc.getSamSeqDict().size());
 		
 	}
+
+	@Test
+	public void canInitializeSamSeqDictFromFasta() throws InvalidGenomicCoordsException, IOException{
+
+		// From fasta
+		GenomicCoords  gc= new GenomicCoords("chr1", null, null);
+		gc.setGenome("test_data/chr7.fa");
+		assertEquals(1, gc.getSamSeqDict().size());
+		
+		// From fasta without index
+		gc= new GenomicCoords("chr1", null, null);
+		gc.setGenome("test_data/noindex.fa");
+		assertEquals(1, gc.getSamSeqDict().size());
+
+	}
+	
+	@Test
+	public void initializeFromInvalidInput() throws InvalidGenomicCoordsException, IOException{
+		// What if invalid input?
+		GenomicCoords gc= new GenomicCoords("chr1", null, null);
+		assertEquals(null, gc.getSamSeqDict());
+		
+		// Non existent file or genome tag
+		gc.setGenome("test_data/foo.fa");
+		assertEquals(null, gc.getSamSeqDict());
+		
+		// Invalid after having set a valid one: No change:
+		gc.setGenome("hg19");
+		assertTrue(gc.getSamSeqDict() != null);
+		
+	}
 	
 //	@Test
 //	public void canGetSamSeqDict() throws IOException{

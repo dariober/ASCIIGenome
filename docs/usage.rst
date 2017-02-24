@@ -79,3 +79,6 @@ Tips gotchas and miscellanea
 * When opening bam files, the first chromosome is often the mitochondrial chromosome chrM (or chrMT) which
   often has very high read depth (say 10,000x). This can make the opening slow. Consider using the :code:`-r`
   option in these cases. E.g. :code:`ASCIIGenome -r chr1 file1.bam file2.bam ...`
+  
+* If the background colour of your terminal is not white, after exiting ASCIIGenome you will have a rather awkward mix 
+  of white background and user's colours. To get rid of this mix you can issue the Unix command `clear` after exiting ASCIIGenome.
