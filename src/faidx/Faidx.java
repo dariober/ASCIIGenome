@@ -30,7 +30,7 @@ public class Faidx {
 	public Faidx(File fasta) throws IOException, UnindexableFastaFileException {
 
 		if(this.isCompressed(fasta)){
-			System.err.println(fasta.getAbsolutePath() + " is gzip compressed. Indexing of gzip file is not supported.");
+			// System.err.println(fasta.getAbsolutePath() + " is gzip compressed. Indexing of gzip file is not supported.");
 			throw new UnindexableFastaFileException();			
 		}
 		
