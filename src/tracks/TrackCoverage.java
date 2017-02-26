@@ -280,11 +280,12 @@ public class TrackCoverage extends Track {
 			if(this.isNoFormat()){
 				faSeqStr += base;
 			} 
-			  else if(base == 'A') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + base + "\033[0m";} 
-			  else if(base == 'C') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("red") + "m" + base + "\033[0m";} 
-			  else if(base == 'G') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("green") + "m" + base + "\033[0m";} 
-			  else if(base == 'T') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + base + "\033[0m";} 
-			  else { faSeqStr += base + "\033[0m"; } 
+			  // End formatted string by clearing all formatting and resetting to white bg
+			  else if(base == 'A') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + base + "\033[0m\033[48;5;231m";} 
+			  else if(base == 'C') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("red") + "m" + base + "\033[0m\033[48;5;231m";} 
+			  else if(base == 'G') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("green") + "m" + base + "\033[0m\033[48;5;231m";} 
+			  else if(base == 'T') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + base + "\033[0m\033[48;5;231m";} 
+			  else { faSeqStr += base + "\033[0m\033[38;5;0;48;5;231m"; } 
 		}
 		if(allEmpty){
 			return "";

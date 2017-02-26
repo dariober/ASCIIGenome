@@ -29,6 +29,30 @@ public class TrackReadsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void canFilterReadsWithAwk() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", samSeqDict, null);
+		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
+		tr.setNoFormat(true);
+		tr.setyMaxLines(1000);
+
+		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
+		
+		tr.setAwk("'$1 ~ \"NCNNNCCC\"'");
+
+		assertEquals(6, tr.printToScreen().split("\n").length);
+
+		System.err.println(Track.awkFunc);
+		int i= 0;
+		StringBuilder foo= new StringBuilder();
+		
+		while(i < 100000){
+			foo.append("baz");
+			i++;
+		}
+		foo.length();	
+	}
+	
+	@Test
 	public void canGetTitle() throws InvalidGenomicCoordsException, InvalidColourException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		String bam= "test_data/adjacent.bam";
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", samSeqDict, null);

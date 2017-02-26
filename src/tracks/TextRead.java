@@ -173,7 +173,7 @@ class TextRead {
 			} else {
 				fmt += "48;5;" + Xterm256.colorNameToXterm256("grey100") + ";38;5;" + Xterm256.colorNameToXterm256("black");
 			}
-			formatted += fmt + "m" + c + "\033[0m"; // End by clearing all formatting
+			formatted += fmt + "m" + c + "\033[0m\033[48;5;231m"; // End by setting bg to white
 		}
 		return formatted;
 	}

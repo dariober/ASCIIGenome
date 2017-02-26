@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
@@ -19,11 +20,23 @@ import exceptions.InvalidRecordException;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
+import samTextViewer.Main;
 import samTextViewer.Utils;
 
 // TODO: This class should be abstract 
 public class Track {
 
+	public static String awkFunc= "";
+	
+	static {
+		  try {
+		    awkFunc = FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
+		  }
+		  catch (Exception ex) {
+		    /* Handle exception. */
+		  }
+		}
+	
 	private String title= "";
 	protected int yMaxLines= 10;
 	private String filename= "N/A"; // File name as given in input
@@ -54,6 +67,7 @@ public class Track {
 	private boolean hideTrack= false; 
 	private boolean hideTitle= false;
 	private TrackFormat trackFormat;
+	protected String awk= ""; 
 	
 	/** A file to export track data
 	 * */
@@ -424,6 +438,6 @@ public class Track {
 	protected void setPrintRawLineCount(int count) {
 
 	}
-
+	
 }
 

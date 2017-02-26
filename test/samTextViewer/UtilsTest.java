@@ -57,6 +57,61 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 
 	@Test
+	public void canFilterUsingAwk() throws IOException{
+		// Note single quotes around the awk script
+		assertTrue(Utils.passAwkFilter("chr1\t10\t100", "-v VAR=5 '$2 > VAR && $1'"));
+		
+		// Using single quotes inside awk is tricky. 
+		// See https://www.gnu.org/software/gawk/manual/html_node/Quoting.html 
+		// and see http://stackoverflow.com/questions/9899001/how-to-escape-single-quote-in-awk-inside-printf
+		// for using '\'' as a single quote
+		assertTrue(Utils.passAwkFilter("chr'1", "'$1 == \"chr'\''1\"'"));
+		
+		assertTrue( ! Utils.passAwkFilter("'chr1\t10\t100", "-v VAR=50 '$2 > VAR'"));
+		
+		assertTrue( Utils.passAwkFilter("'chr1\t10\t100", "'($3 - $2) > 50'"));
+		assertTrue( ! Utils.passAwkFilter("'chr1\t10\t100", "'($3 - $2) > 500'"));
+		
+		assertTrue(Utils.passAwkFilter("'chr1\t10\t100'", "")); // Empty script equals to no filter.
+		assertTrue(Utils.passAwkFilter("'chr1\t10\t100'", "  "));
+		
+		// Valid awk script but output is not empty and not equal to input. Return NULL
+		assertEquals(null, Utils.passAwkFilter("'chr1\t10\t100'", "'{print $1}'"));
+		
+		// Broken awk script:
+		boolean pass= false;
+		try{
+			assertEquals(null, Utils.passAwkFilter("'chr1\t10\t100'", "'print {'"));
+		} catch(IOException e){
+			pass= true;
+		}
+		assertTrue(pass);
+	}
+	
+	@Test
+	public void canFilterSamTagWithAwk() throws IOException{
+		String rec= "read\t0\tchr7\t5566778\t50\t5M\t*\t0\t0\tCTCAT\tIIIII\tMD:Z:75\tRG:Z:1\tXG:i:0\tNH:i:1\tNM:i:0\tXM:i:0\tXN:i:0\tXO:i:0\tAS:i:0\tYT:Z:UU";
+		
+		//Filter for NH tag value
+		assertTrue(Utils.passAwkFilter(rec, "'getSamTag(\"NH\") > 0'"));
+		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"NH\") > 10'"));
+		
+		// Missing tag
+		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"ZZ\") > 0'"));
+		// MIssing tag searched but not used
+		assertTrue(Utils.passAwkFilter(rec, "'{getSamTag(\"ZZ\"); print $0'}"));
+		
+		long t0= System.currentTimeMillis();
+		int i= 0;
+		while(i < 1000){
+			Utils.passAwkFilter(rec, "'getSamTag(\"NH\") > 0'");
+			i++;
+		}
+		long t1= System.currentTimeMillis();
+		assertTrue((t1-t0) < 3000); // It can filter reasonably fast (?) 
+	}
+	
+	@Test
 	public void canCheckForUpdates() throws IOException{
 		
 		List<String> up= Utils.checkUpdates(50000);
