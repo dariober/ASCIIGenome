@@ -4,7 +4,8 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import coloring.Xterm256;
+import coloring.Config;
+import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 
 /** Mapping of GTF/GFF features to text character to use to represent them.
@@ -75,15 +76,27 @@ public class FormatGTF {
 	 * @throws InvalidColourException 
 	 * */
 	public static String format(char text, char strand) throws InvalidColourException{
+		StringBuilder sb= new StringBuilder();
+		sb.append("\033[48;5;");
 		if(strand == '+') {
-			return "\033[48;5;" + Xterm256.colorNameToXterm256("lightsteelblue") + ";38;5;" + Xterm256.colorNameToXterm256("black") + "m" + text + "\033[48;5;231m";
+			sb.append(Config.getColor(ConfigKey.feature_background_positive_strand));
+			sb.append(";38;5;");
+			sb.append(Config.getColor(ConfigKey.feature_foreground));
 		} else if(strand == '-') {
-			return "\033[48;5;" + Xterm256.colorNameToXterm256("MistyRose1") + ";38;5;" + Xterm256.colorNameToXterm256("black") + "m" + text + "\033[48;5;231m";
-			// return "\033[30;48;5;225m" + text + "\033[48;5;231m";
+			sb.append(Config.getColor(ConfigKey.feature_background_negative_strand));
+			sb.append(";38;5;");
+			sb.append(Config.getColor(ConfigKey.feature_foreground));
 		} else {
-			// return "\033[30;47m" + text + "\033[48;5;231m";
-			return "\033[48;5;" + Xterm256.colorNameToXterm256("grey70") + ";38;5;" + Xterm256.colorNameToXterm256("black") + "m" + text + "\033[48;5;231m";
+			sb.append(Config.getColor(ConfigKey.feature_background_no_strand));
+			sb.append(";38;5;");
+			sb.append(Config.getColor(ConfigKey.feature_foreground));
 		}	
+		sb.append("m");
+		sb.append(text);
+		sb.append("\033[48;5;");
+		sb.append(Config.getColor(ConfigKey.background));
+		sb.append("m");
+		return sb.toString();
 	}
 
 	protected static Set<String> getTxSuperFeatures() {

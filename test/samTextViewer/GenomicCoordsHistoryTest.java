@@ -197,6 +197,19 @@ public class GenomicCoordsHistoryTest {
 	}
 
 	@Test
+	public void canSetGenomeWithInvalidInput() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+		
+		GenomicCoordsHistory gch= new GenomicCoordsHistory();
+		gch.add(new GenomicCoords("chr7:1-100", null, null));
+
+		// Input string is neither not an exiting file or a genome tag:
+		List<String> cmdInput= new ArrayList<String>();
+		cmdInput.add("test_data/foo.fa");
+		gch.setGenome(cmdInput);
+		
+	}
+	
+	@Test
 	public void canSetGenomeFromInvalidPosition() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 		
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();

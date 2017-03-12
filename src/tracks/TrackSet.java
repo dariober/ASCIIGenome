@@ -1522,6 +1522,9 @@ public class TrackSet {
         
         // Now change for real
         String messages= "";
+        if(tracksToReset.size() == 0){
+        	messages += "No track matched";
+        }
         for(Track tr : tracksToReset){
         	String newTag= tr.getTrackTag().replaceAll(pattern, replacement);
         	messages += "Renaming " + tr.getTrackTag() + " to " + newTag + "\n";
@@ -1709,6 +1712,9 @@ public class TrackSet {
        
 		String messages= "";
         List<Track> tracksToDrop= this.matchTracks(trackNameRegex, true, invertSelection);
+        if(tracksToDrop.size() == 0){
+        	messages += "No track matched by regex: " + trackNameRegex;
+        }
         for(Track tr : tracksToDrop){
         	messages += "Dropping: " + tr.getTrackTag() + "\n";
         	if( ! test){

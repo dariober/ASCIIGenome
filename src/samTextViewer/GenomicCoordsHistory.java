@@ -104,6 +104,7 @@ public class GenomicCoordsHistory {
 				toDelete.add(gc);
 			} 
 		}
+
 		for(GenomicCoords gc : toDelete){
 			this.getHistory().remove(gc);
 		}

@@ -240,8 +240,9 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 	}
 
 	@Override
-	public String getTitle() throws InvalidColourException{
+	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 		String title= this.getUnformattedTitle() +  "; re: " + this.getSeqRegex();
+		// title= Utils.padEndMultiLine(title, this.getGc().getUserWindowSize());
 		return this.formatTitle(title) + "\n";
 	}
 	

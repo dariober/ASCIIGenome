@@ -57,10 +57,12 @@ public class TrackReadsTest {
 		String bam= "test_data/adjacent.bam";
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", samSeqDict, null);
 		TrackReads tr= new TrackReads(bam, gc);
-		System.out.println("TITLE");
+		
 		tr.setNoFormat(true);
 		tr.setTrackTag("aln.bam#1");
+		
 		assertEquals("aln.bam#1", tr.getTitle().trim());
+		
 	}
 	
 	@Test
@@ -74,6 +76,8 @@ public class TrackReadsTest {
 		TrackReads tr= new TrackReads(bam, gc);
 		tr.setBisulf(bs);
 		tr.setNoFormat(noFormat);
+
+		// NB: The success of this test depends on the screen width of eclipse
 		String exp= 
 		"AAAAAAAAAA           GGGGGGGGGG TTTTTTTTTT\n"+
 		"          CCCCCCCCCC";
@@ -117,7 +121,7 @@ public class TrackReadsTest {
 		tr.setyMaxLines(yMaxLines);
 		tr.setBisulf(bs);
 		tr.setNoFormat(noFormat);
-		System.out.println(tr.printToScreen());
+		assertEquals("", tr.printToScreen());
 	}
 	
 	@Test

@@ -17,11 +17,14 @@ import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import faidx.Faidx;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
@@ -130,12 +133,16 @@ public class GenomicCoords implements Cloneable {
 		for(String x : cleanList){
 			try{
 				IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(x));
-				if(fa.isIndexed()){
-					this.setFastaFile(x);
-				}
+				this.setFastaFile(x);
 				fa.close();
 			} catch(FileNotFoundException e){
-				//
+				try {
+					new Faidx(new File(x));
+					(new File(x + ".fai")).deleteOnExit();
+					this.setFastaFile(x);
+				} catch (Exception e1) {
+					//
+				}
 			}
 		}
 	}
@@ -519,7 +526,7 @@ public class GenomicCoords implements Cloneable {
 			ideogram= ideogram.substring(0, this.getUserWindowSize());
 		}
 		if(!noFormat){
-			ideogram= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + ideogram;
+			ideogram= "\033[48;5;" + Config.getColor(ConfigKey.background) + ";38;5;" + Config.getColor(ConfigKey.chrom_ideogram) + "m" + ideogram;
 		}
 		return ideogram;
 	}
@@ -563,7 +570,10 @@ public class GenomicCoords implements Cloneable {
 		}
 		numberLine= numberLine.substring(0, this.getUserWindowSize());
 		if(!noFormat){
-			numberLine= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + numberLine;
+			numberLine= "\033[48;5;" + Config.getColor(ConfigKey.background) + 
+					";38;5;" + Config.getColor(ConfigKey.ruler) +
+					"m" + numberLine;
+			// numberLine= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + numberLine;
 		}
     	return numberLine;
     }
@@ -587,16 +597,17 @@ public class GenomicCoords implements Cloneable {
 			for(byte c : refSeq){
 				// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
 				char base= (char) c;
+				String prefix= "\033[48;5;" + Config.getColor(ConfigKey.background) + ";38;5;";
 				if(base == 'A' || base == 'a'){
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_a) + "m" + base;
 				} else if(base == 'C' || base == 'c') {
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("red") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_c) + "m" + base;
 				} else if(base == 'G' || base == 'g') {
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("green") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_g) + "m" + base;
 				} else if(base == 'T' || base == 't') {
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_t) + "m" + base;
 				} else {
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_other) + "m" + base;
 				} 
 			}
 			return faSeqStr + "\n";
@@ -645,7 +656,20 @@ public class GenomicCoords implements Cloneable {
 
 	private boolean setSamSeqDictFromFasta(String fasta) throws IOException{
 		
-		IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(fasta));
+		IndexedFastaSequenceFile fa= null;
+		
+		try{
+			fa= new IndexedFastaSequenceFile(new File(fasta));
+		} catch(FileNotFoundException e){
+			try {
+				new Faidx(new File(fasta));
+				(new File(fasta + ".fai")).deleteOnExit();
+				fa= new IndexedFastaSequenceFile(new File(fasta));
+			} catch (Exception e1) {
+				//
+			}
+		}		
+		
 		if(fa.isIndexed()){
 			BufferedReader br= new BufferedReader(new FileReader(new File(fasta + ".fai")));
 			SAMSequenceDictionary seqDict= new SAMSequenceDictionary(); // null;

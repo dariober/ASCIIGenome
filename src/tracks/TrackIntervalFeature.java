@@ -595,12 +595,11 @@ public class TrackIntervalFeature extends Track {
 	}
 	
 	@Override
-	public String getTitle() throws InvalidColourException{
+	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 		
 		if(this.isHideTitle()){
 			return "";
 		}
-		
 		return this.formatTitle(this.getUnformattedTitle()) + "\n";
 	}
 	
@@ -720,7 +719,6 @@ public class TrackIntervalFeature extends Track {
 				int omitted= intervalFeatureList.size() - this.getPrintRawLineCount();
 				if(omitted > 0){
 					omitString= "[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]";
-					// System.err.println("[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]");
 				}
 				break;
 			}
@@ -736,7 +734,7 @@ public class TrackIntervalFeature extends Track {
 			}			
 			sb.append(x + "\n");
 		}
-		return sb.toString(); // NB: Leave last trailing /n
+		return sb.toString(); // NB: Leave last trailing \n
 	}
 
 	@Override

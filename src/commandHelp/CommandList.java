@@ -16,7 +16,7 @@ import jline.console.completer.StringsCompleter;
 
 public class CommandList {
 	
-	private static String SEE_ALSO= "\nFull documentation at: http://asciigenome.readthedocs.io/\n\n";
+	private static String SEE_ALSO= "\nFull documentation at: http://asciigenome.readthedocs.io/\n";
 	
 	public static ConsoleReader initConsole() throws IOException{
 		
@@ -911,6 +911,21 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
+		cmd.setName("sys"); cmd.setArgs("[-L] command"); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Execute a system command.");
+		cmd.setAdditionalDescription(""
+				+ "By default the given :code:`command` is executed as a string passed to "
+				+ "Bash as :code:`bash -c string`. With the :code:`-L` option the command is "
+				+ "executed literally as it is. Note that with the :code:`-L` option globs "
+				+ "are not expanded by Java. Examples::\n"
+				+ "\n"
+				+ "    sys pwd~~~~~~~~~~~~~~~~~~~~<- Print working directory name\n"
+				+ "    sys ls *.bam ~~~~~~~~~~~~~~<- List files ending in .bam\n"
+				+ "    sys samtools index aln.bam <- Exec samtools"
+				+ "");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
 		cmd.setName("q"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Quit");
 		cmd.setAdditionalDescription("");
@@ -1004,6 +1019,7 @@ public class CommandList {
 		paramList.add(Command.BSseq.getCmdDescr());
 		paramList.add("save");
 		paramList.add("sessionSave");
+		paramList.add("sys");
 	
 		return paramList;
 	}

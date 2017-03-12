@@ -14,6 +14,8 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
@@ -176,9 +178,14 @@ public class TrackCoverage extends Track {
 			List<String> xl= textProfile.getProfile().get(i);
 			lineStrings.add(StringUtils.join(xl, ""));
 		}
-		String printable= Joiner.on("\n").join(lineStrings);
+		String printable= Joiner.on("\n").join(lineStrings); 
 		if(!this.isNoFormat()){
-			printable= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256(this.getTitleColour()) + "m" + printable;
+			printable= "\033[48;5;"
+			+ Config.getColor(ConfigKey.background)
+			+ ";38;5;"
+			+ Xterm256.colorNameToXterm256(this.getTitleColour())
+			+ "m"
+			+ printable;
 		}
 		return printable;
 		
@@ -192,7 +199,7 @@ public class TrackCoverage extends Track {
     }
 
 	@Override
-	public String getTitle() throws InvalidColourException{
+	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 		
 		if(this.isHideTitle()){
 			return "";
@@ -223,9 +230,9 @@ public class TrackCoverage extends Track {
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
 				+ "; Recs here/all: " + this.nRecsInWindow + "/" + this.alnRecCnt
 				+ samtools 
-				+ rpmTag
-				+ "\n";
-		return this.formatTitle(xtitle);
+				+ rpmTag;
+		// xtitle= Utils.padEndMultiLine(xtitle, this.getGc().getUserWindowSize());
+		return this.formatTitle(xtitle) + "\n";
 	}
 
 	
@@ -279,13 +286,14 @@ public class TrackCoverage extends Track {
 			
 			if(this.isNoFormat()){
 				faSeqStr += base;
-			} 
-			  // End formatted string by clearing all formatting and resetting to white bg
-			  else if(base == 'A') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + base + "\033[0m\033[48;5;231m";} 
-			  else if(base == 'C') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("red") + "m" + base + "\033[0m\033[48;5;231m";} 
-			  else if(base == 'G') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("green") + "m" + base + "\033[0m\033[48;5;231m";} 
-			  else if(base == 'T') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + base + "\033[0m\033[48;5;231m";} 
-			  else { faSeqStr += base + "\033[0m\033[38;5;0;48;5;231m"; } 
+			} else { 
+				     if(base == 'A') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + base;} 
+				else if(base == 'C') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("red") + "m" + base;} 
+				else if(base == 'G') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("green") + "m" + base;} 
+				else if(base == 'T') { faSeqStr += "\033[38;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + base;} 
+				else { faSeqStr += base; }
+				faSeqStr += "\033[0m\033[38;5;0;48;5;231m"; // Clear formatting and fg to black and bg to white;
+			}
 		}
 		if(allEmpty){
 			return "";

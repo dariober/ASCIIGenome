@@ -50,6 +50,7 @@ import org.broad.igv.tdf.TDFReader;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -1552,6 +1553,24 @@ public class Utils {
 			return null;
 		}
 		
+	}
+
+	/** Right-pad each line in string x with whitespaces. Each line is 
+	 * defined by the newline. Each line is padded to become at leas of length size.   
+	 * */
+	public static String padEndMultiLine(String x, int size) {
+
+		if(x.isEmpty()){
+			return x;
+		}
+		
+		List<String> split= Splitter.on("\n").splitToList(x);
+		List<String> mline= new ArrayList<String>(split);
+		
+		for(int i= 0; i < mline.size(); i++){
+			mline.set(i, Strings.padEnd(mline.get(i), size, ' '));
+		}
+		return Joiner.on("\n").join(mline);
 	}
 	
 }

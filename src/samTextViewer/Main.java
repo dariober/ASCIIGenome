@@ -16,14 +16,19 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.common.base.Joiner;
 import com.itextpdf.text.DocumentException;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import coloring.Xterm256;
 import commandHelp.CommandList;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import faidx.UnindexableFastaFileException;
@@ -46,7 +51,7 @@ import tracks.TrackSet;
  */
 public class Main {
 	
-	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException {
+	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
 
 		final String CMD_HISTORY_FILE= System.getProperty("user.home") + File.separator + ".asciigenome_history";  
 		final String MARKER_FOR_HISTORY_FILE= "## file ##";
@@ -60,8 +65,11 @@ public class Main {
 		final String genome= opts.getString("genome");
 		final String fasta= opts.getString("fasta");
 		String exec= opts.getString("exec");
+		String configFile= opts.getString("config");
 		exec= parseExec(exec);
 		boolean debug= opts.getBoolean("debug");
+
+		new Config(configFile);
 		
 		// Init console right at start so if something goes wrong the user's terminal is reset to 
 		// initial defaults with the shutdown hook. This could be achieved in cleaner way probably.
@@ -113,7 +121,8 @@ public class Main {
 		String currentCmdConcatInput= ""; 
 
 		if(!proc.isNoFormat()){
-			System.out.print("\033[48;5;231m");
+			String str= String.format("\033[48;5;%sm", Config.getColor(ConfigKey.background));
+			System.out.print(str);
 		}
 
 		// Batch processing file of regions
@@ -172,7 +181,10 @@ public class Main {
 			
 			while(interactiveInput.getInteractiveInputExitCode() != 0){
 				
-				console.setPrompt("[h] for help: ");
+				console.setPrompt(
+						StringUtils.repeat(' ', proc.getWindowSize()) + '\r' + "[h] for help: "
+						);
+
 				cmdConcatInput= console.readLine().trim();
 				if (cmdConcatInput.isEmpty()) {
 					if(interactiveInput.getInteractiveInputExitCode() == 0 || 
@@ -190,6 +202,12 @@ public class Main {
 		}
 	}
 
+	// private static Config config= new Config(null);
+	
+//	public static Config getConfig(){
+//		return new Config(main.);
+//	}
+		
 	/** Return a suitable region to start. If a region is already given, do nothing.
 	 * This method is a mess and should be cleaned up together with GenomicCoords class.
 	 * */
@@ -476,7 +494,7 @@ public class Main {
 						msg= "NOTE: Newer version of ASCIIGenome is available: v" + up.get(1);
 					}
 					if( ! noFormat){
-						msg= "\033[38;5;" + Xterm256.colorNameToXterm256("red") + "m" +  msg + "\033[0m";
+						msg= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("red") + "m" +  msg + "\033[0m";
 					}
 					System.err.println(msg);
 				} catch(Exception e){

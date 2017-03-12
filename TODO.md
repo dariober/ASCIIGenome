@@ -6,6 +6,22 @@ Features
 
 * Apply `print` to bam files.
 
+* Add `-awk '<script>'` to `print` command to parse lines before printing. Useful
+  to get rid of unnecessary stuff and make lines more readable.
+
+* Indel processing. Check variants like `A,CT` processed ok.
+
+* Converter for ensembl to ucsc chromosome names. This functionality could be included
+  in `addTracks` by adding options `-ens2ucsc` and `-ucsc2ens`. E.g. `addTracks -ens2ucsc genes.gtf http://foo/bar/data.bigwig`.
+  The option `-ens2ucsc|-ucsc2ens` should iterate through the target file and make an edited copy 
+  where each line is converted as appropriate. Then load the edited copy by re-sending it to `addTracks`. 
+  For the conversion use the conversion files also used by IGV, put them in resources.
+  There are quite a few limitations: Large files, especially bams, will take ages; TDF and bigwig
+  cannot easily converted, especially TDF.
+  Option 2: Add a field in the `Track` class to indicate that the input file needs to
+  be converted. When you fetch a region send to the track the command with the chromosome
+  name changed. 
+
 * Check implementation of picard/DownsampleSam, it might be much faster than the one you have.
 
 * Deprecate `-fa` option? If the list of files includes a fasta file use that as reference

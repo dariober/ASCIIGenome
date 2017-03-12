@@ -13,6 +13,8 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
@@ -51,7 +53,7 @@ public class Track {
 	/** Max size of genomic region before the track shuts down to prevent excessive slow down */
 	protected final int MAX_REGION_SIZE= 100001;   
 	
-	protected String titleColour= "black";
+	protected String titleColour= null;
 	protected boolean bisulf= false;
 
 	private String gtfAttributeForName= null;
@@ -83,8 +85,11 @@ public class Track {
 		if(this.isNoFormat()){
 			return title;
 		} else {
-			int colourCode= Xterm256.colorNameToXterm256(this.titleColour); // Utils.xterm256ColorCodes().get(this.titleColour);
-			return "\033[48;5;231;38;5;" + colourCode + "m" + title; // + "\033[48;5;231m";
+			int colourCode= Config.getColor(ConfigKey.title_colour);
+			if(this.titleColour != null){
+				colourCode= Xterm256.colorNameToXterm256(this.titleColour);
+			}
+			return "\033[48;5;" + Config.getColor(ConfigKey.background) + ";38;5;" + colourCode + "m" + title;
 		}
 	}
 	
@@ -137,7 +142,7 @@ public class Track {
 	//public void setTitle(String title){
 	//	this.title= title;
 	//}
-	public String getTitle() throws InvalidColourException{
+	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 		return this.title;
 	}
 	public int getyMaxLines() {
@@ -250,6 +255,9 @@ public class Track {
 	}
 	
 	public String getTitleColour() {
+		if(this.titleColour == null){
+			return Config.get(ConfigKey.title_colour);
+		}
 		return this.titleColour;
 	}
 

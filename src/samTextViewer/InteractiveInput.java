@@ -1,6 +1,8 @@
 package samTextViewer;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,54 +51,64 @@ public class InteractiveInput {
 		// Don't check the validity of each cmd now. Execute one by one and if anything goes wrong
 		// reset interactiveInputExitCode = 1 (or else other than 0) so that console input is asked again. Of course, what is executed is not 
 		// rolled back.
-		List<List<String>> cmdInputChainList= new ArrayList<List<String>>();
+		List<String> cmdInputChainList= new ArrayList<String>();
 		
 		// See http://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes
 		// For splitting at delimiter (&&) and ignore delimiters inside single quotes.
 		for(String cmd : Splitter.on(Pattern.compile("&&(?=([^']*'[^']*')*[^']*$)")).trimResults().omitEmptyStrings().split(cmdConcatInput)){
-			cmdInputChainList.add(Utils.tokenize(cmd, " "));
+			cmdInputChainList.add(cmd);
 		}
 
 		String fasta= proc.getGenomicCoordsHistory().current().getFastaFile();
 		SAMSequenceDictionary samSeqDict = proc.getGenomicCoordsHistory().current().getSamSeqDict();
 
 		String messages= ""; // Messages that may be sent from the various methods.
-		for(List<String> cmdInput : cmdInputChainList){
+		for(String cmdString : cmdInputChainList){
+			
+			List<String> cmdTokens= Utils.tokenize(cmdString, " ");
 			
 			this.interactiveInputExitCode= 0; // If something goes wrong this will change to != 0
 			try {
 				
 				// * These commands only print info or do stuff without editing the GenomicCoordinates or the Tracks:
-				if(cmdInput.get(0).equals("h") || cmdInput.get(0).equals("-h")){  
-					System.err.println(CommandList.briefHelp());
+				if(cmdTokens.get(0).equals("h") || cmdTokens.get(0).equals("-h")){  		
+					System.err.println(Utils.padEndMultiLine(CommandList.briefHelp(), proc.getWindowSize()));
 					this.interactiveInputExitCode= 1;
 					
-				} else if(cmdInput.size() >= 2 && cmdInput.get(1).equals("-h")){ // Help on this command
-					System.err.println("\n" + CommandList.getHelpForCommand(cmdInput.get(0)));
+				} else if(cmdTokens.size() >= 2 && cmdTokens.get(1).equals("-h")){ // Help on this command
+					String help= Utils.padEndMultiLine("\n" + CommandList.getHelpForCommand(cmdTokens.get(0)), proc.getWindowSize());
+					System.err.println(help);
 					this.interactiveInputExitCode= 1;
 				
-				} else if(cmdInput.get(0).equals("posHistory")){
-					this.posHistory(cmdInput, proc.getGenomicCoordsHistory().getHistory());
+				} else if(cmdTokens.get(0).equals("posHistory")){
+					this.posHistory(cmdTokens, proc.getGenomicCoordsHistory().getHistory(), proc.getWindowSize());
 					this.interactiveInputExitCode= 1;
 
-				} else if(cmdInput.get(0).equals("history")){
-					System.err.println(this.cmdHistoryToString(cmdInput));
+				} else if(cmdTokens.get(0).equals("history")){
+					String hist= Utils.padEndMultiLine(this.cmdHistoryToString(cmdTokens), proc.getWindowSize());
+					System.err.println(hist);
 					this.interactiveInputExitCode= 1;
 					
-				} else if(cmdInput.get(0).equals("showGenome")) {
+				} else if(cmdTokens.get(0).equals("showGenome")) {
 					this.showGenome(proc);
 					this.interactiveInputExitCode= 1;
 				
-				} else if(cmdInput.get(0).equals("infoTracks")) {
-					System.out.println(proc.getTrackSet().showTrackInfo());
-					this.interactiveInputExitCode= 1;
-				
-				} else if(cmdInput.get(0).equals("recentlyOpened")) {
-					System.out.println(proc.getTrackSet().showRecentlyOpened(cmdInput));
+				} else if(cmdTokens.get(0).equals("sys")) {
+					this.execSysCmd(cmdString, proc.getWindowSize());
 					this.interactiveInputExitCode= 1;
 					
-				} else if(cmdInput.get(0).equals("save")) {
-					List<String> args= new ArrayList<String>(cmdInput);
+				} else if(cmdTokens.get(0).equals("infoTracks")) {
+					String info= Utils.padEndMultiLine(proc.getTrackSet().showTrackInfo(), proc.getWindowSize());
+					System.out.println(info);
+					this.interactiveInputExitCode= 1;
+				
+				} else if(cmdTokens.get(0).equals("recentlyOpened")) {
+					String opened= Utils.padEndMultiLine(proc.getTrackSet().showRecentlyOpened(cmdTokens), proc.getWindowSize());
+					System.out.println(opened);
+					this.interactiveInputExitCode= 1;
+					
+				} else if(cmdTokens.get(0).equals("save")) {
+					List<String> args= new ArrayList<String>(cmdTokens);
 					
 					proc.setAppendToSnapshotFile(false); // Default: do not append
 					
@@ -109,134 +121,135 @@ public class InteractiveInput {
 					}  
 					proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(args), proc.getGenomicCoordsHistory().current()) );
 					
-				} else if(cmdInput.get(0).equals("sessionSave")) {
-					if(cmdInput.size() < 2){
-						System.err.println("Output file name is missing!");
+				} else if(cmdTokens.get(0).equals("sessionSave")) {
+					if(cmdTokens.size() < 2){
+						System.err.println(Utils.padEndMultiLine("Output file name is missing!", proc.getWindowSize()));
 						this.interactiveInputExitCode= 1;
 					} else {
-						proc.exportTrackSetSettings(cmdInput.get(1));
+						proc.exportTrackSetSettings(cmdTokens.get(1));
 					}
 
-				} else if(cmdInput.get(0).equals("q")){
+				} else if(cmdTokens.get(0).equals("q")){
 					System.exit(0);
 				
 				// * These commands change the GenomicCoordinates (navigate) but do not touch the tracks.
-				} else if(cmdInput.get(0).equals("f")
-						|| cmdInput.get(0).equals("b")
-						|| cmdInput.get(0).equals("ff") 
-						|| cmdInput.get(0).equals("bb")
-						|| cmdInput.get(0).matches("^\\d+.*")
-						|| cmdInput.get(0).matches("^\\-\\d+.*") 
-						|| cmdInput.get(0).matches("^\\+\\d+.*")){ // No cmd line args either f/b ops or ints
-						String newRegion= Utils.parseConsoleInput(cmdInput, proc.getGenomicCoordsHistory().current()).trim();
+				} else if(cmdTokens.get(0).equals("f")
+						|| cmdTokens.get(0).equals("b")
+						|| cmdTokens.get(0).equals("ff") 
+						|| cmdTokens.get(0).equals("bb")
+						|| cmdTokens.get(0).matches("^\\d+.*")
+						|| cmdTokens.get(0).matches("^\\-\\d+.*") 
+						|| cmdTokens.get(0).matches("^\\+\\d+.*")){ // No cmd line args either f/b ops or ints
+						String newRegion= Utils.parseConsoleInput(cmdTokens, proc.getGenomicCoordsHistory().current()).trim();
 						proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, samSeqDict, fasta));
 						
-				} else if(cmdInput.get(0).equals("goto") || cmdInput.get(0).startsWith(":")){
-					String reg= Joiner.on(" ").join(cmdInput).replaceFirst("goto|:", "").trim();
+				} else if(cmdTokens.get(0).equals("goto") || cmdTokens.get(0).startsWith(":")){
+					String reg= Joiner.on(" ").join(cmdTokens).replaceFirst("goto|:", "").trim();
 					proc.getGenomicCoordsHistory().add(new GenomicCoords(reg, samSeqDict, fasta));
 					
-				} else if (cmdInput.get(0).equals("p")) {
+				} else if (cmdTokens.get(0).equals("p")) {
 					proc.getGenomicCoordsHistory().previous(); 
 					
-				} else if (cmdInput.get(0).equals("n")) {
+				} else if (cmdTokens.get(0).equals("n")) {
 					proc.getGenomicCoordsHistory().next();
 					
-				} else if(cmdInput.get(0).equals("zo")){
-					int nz= Utils.parseZoom(Joiner.on(" ").join(cmdInput), 1);
+				} else if(cmdTokens.get(0).equals("zo")){
+					int nz= Utils.parseZoom(Joiner.on(" ").join(cmdTokens), 1);
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
 					for(int i= 0; i < nz; i++){
 						gc.zoomOut();
 					}
 					proc.getGenomicCoordsHistory().add(gc);
 					
-				} else if(cmdInput.get(0).equals("zi")){
-					int nz= Utils.parseZoom(Joiner.on(" ").join(cmdInput), 1);
+				} else if(cmdTokens.get(0).equals("zi")){
+					int nz= Utils.parseZoom(Joiner.on(" ").join(cmdTokens), 1);
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
 					for(int i= 0; i < nz; i++){
 						gc.zoomIn();
 					}
 					proc.getGenomicCoordsHistory().add(gc);
 
-				} else if(cmdInput.get(0).equals("extend")) {
-					if(cmdInput.size() == 1){
-						System.err.println("Expected at least one argument.");
+				} else if(cmdTokens.get(0).equals("extend")) {
+					if(cmdTokens.size() == 1){
+						System.err.println(Utils.padEndMultiLine("Expected at least one argument.", proc.getWindowSize()));
 					}
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
-					gc.cmdInputExtend(cmdInput);
+					gc.cmdInputExtend(cmdTokens);
 					proc.getGenomicCoordsHistory().add(gc);
 				
-				} else if(cmdInput.get(0).equals("trim")){
-					GenomicCoords gc = proc.getTrackSet().trimCoordsForTrack(cmdInput);
+				} else if(cmdTokens.get(0).equals("trim")){
+					GenomicCoords gc = proc.getTrackSet().trimCoordsForTrack(cmdTokens);
 					proc.getGenomicCoordsHistory().add(gc);
 					
-				} else if(cmdInput.get(0).equals("l")) {
+				} else if(cmdTokens.get(0).equals("l")) {
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
 					gc.left();
 					proc.getGenomicCoordsHistory().add(gc);
 				
-				} else if(cmdInput.get(0).equals("r")) {
+				} else if(cmdTokens.get(0).equals("r")) {
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
 					gc.right();
 					proc.getGenomicCoordsHistory().add(gc);
 					
-				} else if(cmdInput.get(0).equals("setGenome")){
-					cmdInput.remove(0);
-					proc.getGenomicCoordsHistory().setGenome(cmdInput);
+				} else if(cmdTokens.get(0).equals("setGenome")){
+					this.setGenome(cmdTokens, proc);
 
 				// * These commands change the Tracks but do not touch the GenomicCoordinates.
-				} else if(cmdInput.get(0).equals("dataCol")){
+				} else if(cmdTokens.get(0).equals("dataCol")){
 					try{
-						proc.getTrackSet().setDataColForRegex(cmdInput);
+						proc.getTrackSet().setDataColForRegex(cmdTokens);
 					} catch(Exception e){
-						System.err.println("Error processing " + cmdInput + ". Perhaps a non-numeric column was selected?");
+						String msg= Utils.padEndMultiLine("Error processing " + cmdTokens + ". Perhaps a non-numeric column was selected?", proc.getWindowSize());
+						System.err.println(msg);
 						this.interactiveInputExitCode= 1;
 						continue;
 					}
 					
-				} else if(cmdInput.get(0).equals("ylim")){
-					proc.getTrackSet().setTrackYlimitsForRegex(cmdInput);
+				} else if(cmdTokens.get(0).equals("ylim")){
+					proc.getTrackSet().setTrackYlimitsForRegex(cmdTokens);
 					
-				} else if(cmdInput.get(0).equals("trackHeight")){
-					proc.getTrackSet().setTrackHeightForRegex(cmdInput);
+				} else if(cmdTokens.get(0).equals("trackHeight")){
+					proc.getTrackSet().setTrackHeightForRegex(cmdTokens);
 					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
-				} else if((cmdInput.get(0).equals("colorTrack") || cmdInput.get(0).equals("colourTrack"))){
-					proc.getTrackSet().setTrackColourForRegex(cmdInput); 
+				} else if((cmdTokens.get(0).equals("colorTrack") || cmdTokens.get(0).equals("colourTrack"))){
+					proc.getTrackSet().setTrackColourForRegex(cmdTokens); 
 
-				} else if(cmdInput.get(0).equals("hideTitle")){
-					proc.getTrackSet().setHideTitleForRegex(cmdInput); 
+				} else if(cmdTokens.get(0).equals("hideTitle")){
+					proc.getTrackSet().setHideTitleForRegex(cmdTokens); 
 					
-				} else if(cmdInput.get(0).equals(Command.BSseq.getCmdDescr())) {
+				} else if(cmdTokens.get(0).equals(Command.BSseq.getCmdDescr())) {
 					if( proc.getGenomicCoordsHistory().current().getFastaFile() == null ){
-						System.err.println("Cannot set BSseq mode without reference sequence");
+						String msg= Utils.padEndMultiLine("Cannot set BSseq mode without reference sequence", proc.getWindowSize());
+						System.err.println(msg);
 						this.interactiveInputExitCode= 1;
 						continue;
 					}
-					proc.getTrackSet().setBisulfiteModeForRegex(cmdInput);
+					proc.getTrackSet().setBisulfiteModeForRegex(cmdTokens);
 					
-				} else if (cmdInput.get(0).equals("squash") || cmdInput.get(0).equals(Command.featureDisplayMode.toString())){
-					proc.getTrackSet().setFeatureDisplayModeForRegex(cmdInput);
+				} else if (cmdTokens.get(0).equals("squash") || cmdTokens.get(0).equals(Command.featureDisplayMode.toString())){
+					proc.getTrackSet().setFeatureDisplayModeForRegex(cmdTokens);
 					
-				} else if (cmdInput.get(0).equals("gap")){
-					proc.getTrackSet().setFeatureGapForRegex(cmdInput);
+				} else if (cmdTokens.get(0).equals("gap")){
+					proc.getTrackSet().setFeatureGapForRegex(cmdTokens);
 					
-				} else if(cmdInput.get(0).equals("gffNameAttr")) {
-					proc.getTrackSet().setAttributeForGFFName(cmdInput);
+				} else if(cmdTokens.get(0).equals("gffNameAttr")) {
+					proc.getTrackSet().setAttributeForGFFName(cmdTokens);
 					
-				} else if(cmdInput.get(0).equals("addTracks")){
-					cmdInput.remove(0);
+				} else if(cmdTokens.get(0).equals("addTracks")){
+					cmdTokens.remove(0);
 					
-					List<String> globbed = Utils.globFiles(cmdInput);
+					List<String> globbed = Utils.globFiles(cmdTokens);
 					if(globbed.size() == 0){
-					
-						System.err.println(cmdInput + ": No file found.");
+						String msg= Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
+						System.err.println(msg);
 						this.interactiveInputExitCode= 1;
 					
 					} else {
 						
 						for(String sourceName : globbed){
-	
-							System.err.println("Adding: " + sourceName);
+							String msg= Utils.padEndMultiLine("Adding: " + sourceName, proc.getWindowSize());
+							System.err.println(msg);
 							try{
 								proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
 							} catch(Exception e){
@@ -248,7 +261,8 @@ public class InteractiveInput {
 									proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
 									proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
 								} catch (Exception x){
-									System.err.println("Failed to add: " + sourceName);
+									msg= Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
+									System.err.println(msg);
 								}
 							}
 							
@@ -260,80 +274,80 @@ public class InteractiveInput {
 						}
 					}
 					
-				} else if(cmdInput.get(0).equals("dropTracks")){
-					if(cmdInput.size() <= 1){
-						System.err.println("List one or more tracks to drop or `dropTracks -h` for help.");
+				} else if(cmdTokens.get(0).equals("dropTracks")){
+					if(cmdTokens.size() <= 1){
+						System.err.println(Utils.padEndMultiLine("List one or more tracks to drop or `dropTracks -h` for help.", proc.getWindowSize()));
 						this.interactiveInputExitCode= 1;
 						continue;
 					}
-					messages += proc.getTrackSet().dropTracksWithRegex(cmdInput);
+					messages += proc.getTrackSet().dropTracksWithRegex(cmdTokens);
 					
-				} else if(cmdInput.get(0).equals("orderTracks")){
-					cmdInput.remove(0);
-					proc.getTrackSet().orderTracks(cmdInput);
+				} else if(cmdTokens.get(0).equals("orderTracks")){
+					cmdTokens.remove(0);
+					proc.getTrackSet().orderTracks(cmdTokens);
 				
-				} else if(cmdInput.get(0).equals("editNames")){
-					messages += proc.getTrackSet().editNamesForRegex(cmdInput);
+				} else if(cmdTokens.get(0).equals("editNames")){
+					messages += proc.getTrackSet().editNamesForRegex(cmdTokens);
 					
-				} else if(cmdInput.get(0).equals(Command.print.toString())){
-					proc.getTrackSet().setPrintModeAndPrintFeaturesForRegex(cmdInput);
+				} else if(cmdTokens.get(0).equals(Command.print.toString())){
+					proc.getTrackSet().setPrintModeAndPrintFeaturesForRegex(cmdTokens);
 
-				} else if(cmdInput.get(0).equals("grep")){
-					proc.getTrackSet().setFilterForTrackIntervalFeature(cmdInput);
+				} else if(cmdTokens.get(0).equals("grep")){
+					proc.getTrackSet().setFilterForTrackIntervalFeature(cmdTokens);
 				
-				} else if(cmdInput.get(0).equals("awk")){
-					proc.getTrackSet().setAwkForTrackIntervalFeature(cmdInput);
+				} else if(cmdTokens.get(0).equals("awk")){
+					proc.getTrackSet().setAwkForTrackIntervalFeature(cmdTokens);
 					
-				} else if(cmdInput.get(0).equals(Command.rpm.getCmdDescr())) {
-					proc.getTrackSet().setRpmForRegex(cmdInput);
+				} else if(cmdTokens.get(0).equals(Command.rpm.getCmdDescr())) {
+					proc.getTrackSet().setRpmForRegex(cmdTokens);
 
-				} else if(cmdInput.get(0).equals("samtools")){
-					proc.getTrackSet().setSamFilterForRegex(cmdInput);
+				} else if(cmdTokens.get(0).equals("samtools")){
+					proc.getTrackSet().setSamFilterForRegex(cmdTokens);
 
 				// * These commands change both the Tracks and the GenomicCoordinates
-				} else if(cmdInput.get(0).equals("next")){
+				} else if(cmdTokens.get(0).equals("next")){
 					
-					this.next(cmdInput, proc);
+					this.next(cmdTokens, proc);
 										
-				} else if(cmdInput.get(0).equals("find")) {  
+				} else if(cmdTokens.get(0).equals("find")) {  
 					// Determine whether we match first or all
 					boolean all= false;
-					if(cmdInput.contains("-all")){
+					if(cmdTokens.contains("-all")){
 						all= true;
-						cmdInput.remove("-all");
+						cmdTokens.remove("-all");
 					}
 
-					if(cmdInput.size() < 2){
-						System.err.println("Error in find command. Expected at least 1 argument got: " + cmdInput);
+					if(cmdTokens.size() < 2){
+						System.err.println(Utils.padEndMultiLine("Error in find command. Expected at least 1 argument got: " + cmdTokens, proc.getWindowSize()));
 						this.interactiveInputExitCode= 1;
 						continue;
 					}
-					if(cmdInput.size() == 2){
-						cmdInput.add(""); // If track arg is missing use this placeholder.
+					if(cmdTokens.size() == 2){
+						cmdTokens.add(""); // If track arg is missing use this placeholder.
 					}
 					GenomicCoords gc= (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
-					proc.getGenomicCoordsHistory().add(proc.getTrackSet().findNextMatchOnTrack(cmdInput.get(1), cmdInput.get(2), gc, all));
+					proc.getGenomicCoordsHistory().add(proc.getTrackSet().findNextMatchOnTrack(cmdTokens.get(1), cmdTokens.get(2), gc, all));
 					
-				} else if (cmdInput.get(0).equals("seqRegex")){
+				} else if (cmdTokens.get(0).equals("seqRegex")){
 					try{
-						proc.getTrackSet().setRegexForTrackSeqRegex(cmdInput, proc.getGenomicCoordsHistory().current());
+						proc.getTrackSet().setRegexForTrackSeqRegex(cmdTokens, proc.getGenomicCoordsHistory().current());
 					} catch( InvalidCommandLineException e){
-						System.err.println("Cannot find regex in sequence without fasta reference!");
+						System.err.println(Utils.padEndMultiLine("Cannot find regex in sequence without fasta reference!", proc.getWindowSize()));
 						this.interactiveInputExitCode= 1;
 						continue;						
 					}
 					
-				} else if(cmdInput.get(0).equals("bookmark")){
-					messages += proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdInput);
+				} else if(cmdTokens.get(0).equals("bookmark")){
+					messages += proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdTokens);
 					
 				} else {
-					System.err.println("Unrecognized command: " + cmdInput);
+					System.err.println(Utils.padEndMultiLine("Unrecognized command: " + cmdTokens, proc.getWindowSize()));
 					throw new InvalidCommandLineException();
 				}
 			
 			} catch(Exception e){ // You shouldn't catch anything! Be more specific.
-				System.err.println("\nError processing input: " + cmdInput);
-				System.err.println("For help on command \"cmd\" execute 'cmd -h' or '-h' for list of commands.\n");
+				System.err.println(Utils.padEndMultiLine("\nError processing input: " + cmdTokens, proc.getWindowSize()));
+				System.err.println(Utils.padEndMultiLine("For help on command \"cmd\" execute 'cmd -h' or '-h' for list of commands.\n", proc.getWindowSize()));
 				this.interactiveInputExitCode= 1; 
 				if(debug){
 					e.printStackTrace();
@@ -351,13 +365,13 @@ public class InteractiveInput {
 					
 					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null, debug);
 					proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
-					System.err.println("Invalid genomic coordinates found. Resetting to "  + region);
+					System.err.println(Utils.padEndMultiLine("Invalid genomic coordinates found. Resetting to "  + region, proc.getWindowSize()));
 					if(debug){
 						e.printStackTrace();
 					}
 					
 				} catch (Exception e){
-					System.err.println("Error processing tracks with input " + cmdInput);
+					System.err.println(Utils.padEndMultiLine("Error processing tracks with input " + cmdTokens, proc.getWindowSize()));
 					this.interactiveInputExitCode= 1;
 					if(debug){
 						e.printStackTrace();
@@ -373,12 +387,94 @@ public class InteractiveInput {
 				break;
 			}
 		} // END OF LOOP THROUGH CHAIN OF INPUT COMMANDS
-		System.err.print(messages); 
+		if( ! messages.isEmpty()){
+			System.err.println(Utils.padEndMultiLine(messages.trim(), proc.getWindowSize())); 
+		}
 		messages= "";
 		return proc;
 	}
 
-	private void posHistory(List<String> cmdInput, List<GenomicCoords> history) throws InvalidCommandLineException {
+    
+	private void setGenome(List<String> cmdTokens, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+		
+		List<String> tokens = new ArrayList<String>(cmdTokens); 
+		tokens.remove(0);
+		
+		if(tokens.size() == 0){
+			throw new InvalidCommandLineException();
+		}
+		
+//		if(tokens.get(0).equals("-a")){
+//			System.err.println("HERE");
+//			// Collect genomes in resource
+//			List<String> files = IOUtils.readLines(Main.class.getResource("/genomes/"));		
+//			for(String x : files){
+//				if(x.endsWith(".genome")){
+//					System.err.println(Utils.padEndMultiLine(x.replaceAll(".genome$", ""), proc.getWindowSize()));	
+//				}
+//			}
+//			this.interactiveInputExitCode= 1;
+//			return;
+//		}
+
+		GenomicCoords testSeqDict= new GenomicCoords("default", null, null); 
+		testSeqDict.setGenome(tokens);
+		if(testSeqDict.getSamSeqDict() != null){
+			proc.getGenomicCoordsHistory().setGenome(tokens);
+		} else {
+			System.err.println(Utils.padEndMultiLine("Cannot set genome from " + tokens, proc.getWindowSize()));
+			this.interactiveInputExitCode= 1;
+		}
+		
+	}
+
+	/** Execute arbitrary system command and print its output
+	 *  
+	 * @param cmdInput: String, in contrast to other coomands, process the raw string, not
+	 * the tokenized version so you don't mess up with single quotes inside the 
+	 * system command.
+	 */
+	private void execSysCmd(String cmdInput, int userWindowSize) {
+
+		String rawSysCmd= cmdInput.trim().replaceAll("^sys +", ""); // Remove command name
+		boolean isLiteral= false;
+		if(rawSysCmd.trim().startsWith("-L ")){
+			// Check if -L option is present and remove it if yes.
+			isLiteral= true;
+			rawSysCmd= rawSysCmd.trim().replaceAll("-L +", "");
+		}
+		if(rawSysCmd.isEmpty()){
+			System.err.println(Utils.padEndMultiLine("Please provide a system comand to execute. Use `sys -h` for help.", userWindowSize));
+			return;
+		}
+		
+		List<String> tokens= new ArrayList<String>();
+		
+		if( isLiteral ){
+			tokens.add(rawSysCmd);			
+		} else { // w/o -L option execute command as bash string 
+			tokens.add("bash");
+			tokens.add("-c");
+			tokens.add(rawSysCmd);
+		}
+		
+		try {
+			Process p = new ProcessBuilder().inheritIO().command(tokens).start();
+			p.waitFor();
+			BufferedReader reader= new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            String line = "";
+			while ((line = reader.readLine())!= null) {
+				System.err.println(Utils.padEndMultiLine(line, userWindowSize));
+			}
+
+		} catch (Exception e) {
+			System.err.println(Utils.padEndMultiLine(e.getMessage(), userWindowSize));
+		}
+
+	}
+
+	private void posHistory(List<String> cmdInput, List<GenomicCoords> history, int userWindowSize) throws InvalidCommandLineException {
 		
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove cmd name.
@@ -390,7 +486,7 @@ public class InteractiveInput {
 				args.remove(args.get(args.indexOf("n") + 1));
 				args.remove("-n");
 			} catch (Exception e){
-				System.err.println("Argument to -n parameter must be an integer");
+				System.err.println(Utils.padEndMultiLine("Argument to -n parameter must be an integer", userWindowSize));
 				throw new InvalidCommandLineException();
 			}
 		}
@@ -402,7 +498,7 @@ public class InteractiveInput {
 		
 		for(int i= start; i < history.size(); i++){
 			GenomicCoords xgc= history.get(i);
-			System.err.println(xgc.toString());
+			System.err.println(Utils.padEndMultiLine(xgc.toString(), userWindowSize));
 		}
 	}
 
@@ -425,7 +521,7 @@ public class InteractiveInput {
 					zo= 0;
 				}
 			} catch (Exception e){
-				System.err.println("Argument to -zo parameter must be an integer");
+				System.err.println(Utils.padEndMultiLine("Argument to -zo parameter must be an integer", proc.getWindowSize()));
 				throw new InvalidCommandLineException();
 			}
 		}
@@ -453,19 +549,19 @@ public class InteractiveInput {
 		
 	}
 
-	private void showGenome(TrackProcessor proc) {
+	private void showGenome(TrackProcessor proc) throws InvalidGenomicCoordsException, IOException {
 		String genome= Utils.printSamSeqDict(proc.getGenomicCoordsHistory().current().getSamSeqDict(), 30);
 		if(genome != null && ! genome.isEmpty()){
-			System.err.println(genome);
+			System.err.println(Utils.padEndMultiLine(genome, proc.getWindowSize()));
 			return;
 		}
 		Set<String> chroms= new TreeSet<String>();
 		for(Track tr : proc.getTrackSet().getTrackList()){
 			chroms.addAll(tr.getChromosomeNames());
 		}
-		System.err.println("Known contigs:");
+		System.err.println(Utils.padEndMultiLine("Known contigs:", proc.getWindowSize()));
 		for(String x : chroms){
-			System.err.println(x);	
+			System.err.println(Utils.padEndMultiLine(x, proc.getWindowSize()));
 		}
 		return;
 	}
@@ -514,11 +610,4 @@ public class InteractiveInput {
 		this.interactiveInputExitCode= exitCode;
 	}
 
-//	protected List<String> getCmdHistory() {
-//		return cmdHistory;
-//	}
-//
-//	protected void setCmdHistory(List<String> cmdHistory) {
-//		this.cmdHistory = cmdHistory;
-//	}
 }

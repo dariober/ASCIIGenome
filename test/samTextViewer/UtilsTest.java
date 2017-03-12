@@ -55,7 +55,28 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
-
+	
+	@Test
+	public void canPadMultilineString(){
+		
+		assertEquals("foo  ", Utils.padEndMultiLine("foo", 5));
+		
+		// Empty string is returned as is.
+		assertEquals("", Utils.padEndMultiLine("", 3));
+		
+		// One newline is expanded to TWO strings 
+		assertEquals("   \n   ", Utils.padEndMultiLine("\n", 3));
+		
+		// Note starting with emtpy line, which is going to be padded.
+		String x= "\nfoo\n1234567890";
+		String padded= Utils.padEndMultiLine(x, 5);
+		
+		String[] p = padded.split("\n");
+		assertEquals("     ", p[0]);
+		assertEquals("foo  ", p[1]);
+		assertEquals("1234567890", p[2]);
+	}
+	
 	@Test
 	public void canFilterUsingAwk() throws IOException{
 		// Note single quotes around the awk script

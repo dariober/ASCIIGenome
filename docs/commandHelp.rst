@@ -722,6 +722,17 @@ Quit session and reload with::
     ASCIIGenome -x session.txt
 
 
+sys
++++
+
+:code:`sys [-L] command`
+
+Execute a system command. By default the given :code:`command` is executed as a string passed to Bash as :code:`bash -c string`. With the :code:`-L` option the command is executed literally as it is. Note that with the :code:`-L` option globs are not expanded by Java. Examples::
+
+    sys pwd                    <- Print working directory name
+    sys ls *.bam               <- List files ending in .bam
+    sys samtools index aln.bam <- Exec samtools
+
 q
 +
 

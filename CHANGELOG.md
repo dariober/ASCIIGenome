@@ -1,3 +1,13 @@
+New in 1.3.0
+============
+
+* Add command `sys` to execute system commands
+
+New in 1.2.1
+============
+
+Fixed issue [#55]https://github.com/dariober/ASCIIGenome/issues/55 and [#56](https://github.com/dariober/ASCIIGenome/issues/56)
+
 New in 1.2.0
 ============
 

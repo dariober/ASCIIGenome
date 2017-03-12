@@ -24,7 +24,7 @@ public class CommandListTest {
 	@Test
 	public void canPrintDocstringForCommand() throws InvalidCommandLineException, IOException {
 		System.out.println("DOCSTRING");
-		System.out.println(CommandList.getHelpForCommand("history"));
+		System.out.println(CommandList.getHelpForCommand("sys"));
 	}
 	
 }

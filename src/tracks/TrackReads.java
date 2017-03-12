@@ -129,16 +129,17 @@ public class TrackReads extends Track{
 		} else {
 			keep= Utils.seqFromToLenOut(0, this.readStack.size()-1, this.readStack.size());
 		}
-		String printable= "";
+		StringBuilder printable= new StringBuilder();
 		for(Double idx : keep){
 			List<TextRead> line= this.readStack.get((int)Math.rint(idx));
 			try {
-				printable += linePrinter(line, this.bisulf, this.isNoFormat(), withReadName) + "\n";
+				printable.append(linePrinter(line, this.bisulf, this.isNoFormat(), withReadName));
+				printable.append("\n");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		return printable.replaceAll("\n$", "");
+		return printable.toString().replaceAll("\n$", "");
 	}
 	
 	/**		
@@ -206,7 +207,8 @@ public class TrackReads extends Track{
 
 		int curPos= 0; // Position on the line, needed to pad with blanks btw reads.
 		for(TextRead tr : textReads){
-			sb.append(StringUtils.repeat(" ", (tr.getTextStart()-1) - curPos));
+			String line= StringUtils.repeat(" ", (tr.getTextStart()-1) - curPos);
+			sb.append(line);
 			String printableRead= tr.getPrintableTextRead(bs, noFormat, withReadName);
 			sb.append(printableRead);
 			curPos= tr.getTextEnd();
@@ -216,7 +218,7 @@ public class TrackReads extends Track{
 
 	
 	@Override
-	public String getTitle() throws InvalidColourException{
+	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 		
 		if(this.isHideTitle()){
 			return "";
@@ -236,6 +238,8 @@ public class TrackReads extends Track{
 		}
 		String title= this.getTrackTag()
 				+ samtools;
+		
+		//String xtitle= Utils.padEndMultiLine(title, this.getGc().getUserWindowSize());
 		return this.formatTitle(title) + "\n";
 	}
 	

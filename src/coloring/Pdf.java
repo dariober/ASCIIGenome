@@ -39,6 +39,10 @@ public class Pdf {
 	
 	public Pdf(String ansiInput) {
 		// Possibly some validation about input file?
+		// Input string must end with newline otherwise the last line is not going to be printed to pdf.
+		if( ! ansiInput.endsWith("\n")){
+			ansiInput += '\n';
+		}
 		this.ansiInput= ansiInput;
 	}
 
@@ -131,7 +135,7 @@ public class Pdf {
 				// So remove the ansi sequence at the beginnig and the end, we don't need them anymore
 				xv= xv.replaceAll("^.+?m", "");
 			}
-			
+
 			for(int i= 0; i < xv.length(); i++){
 				
 				char c= xv.charAt(i);
