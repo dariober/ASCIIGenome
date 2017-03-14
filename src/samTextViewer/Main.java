@@ -65,11 +65,12 @@ public class Main {
 		final String genome= opts.getString("genome");
 		final String fasta= opts.getString("fasta");
 		String exec= opts.getString("exec");
-		String configFile= opts.getString("config");
+		String config= opts.getString("config");
 		exec= parseExec(exec);
 		boolean debug= opts.getBoolean("debug");
 
-		new Config(configFile);
+		// Get configuration. Note that we don't need to assign this to a variable. 
+		new Config(config);
 		
 		// Init console right at start so if something goes wrong the user's terminal is reset to 
 		// initial defaults with the shutdown hook. This could be achieved in cleaner way probably.

@@ -347,7 +347,7 @@ public class Utils {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
 			BufferedReader br;
 			GZIPInputStream gzipStream;
-			if(x.toLowerCase().endsWith(".gz")){
+			if(x.toLowerCase().endsWith(".gz") || x.toLowerCase().endsWith(".bgz")){
 				if(urlValidator.isValid(x)) {
 					gzipStream = new GZIPInputStream(new URL(x).openStream());
 				} else {
@@ -502,21 +502,29 @@ public class Utils {
 		
 		if(    fileName.endsWith(".bed") 
 		    || fileName.endsWith(".bed.gz") 
-		    || fileName.endsWith(".bed.gz.tbi")){
+		    || fileName.endsWith(".bed.gz.tbi")
+		    || fileName.endsWith(".bed.bgz")
+		    || fileName.endsWith(".bed.bgz.tbi")){
 			return TrackFormat.BED;
 		
 		} else if( fileName.endsWith(".gtf") 
 				|| fileName.endsWith(".gtf.gz")
-				|| fileName.endsWith(".gtf.gz.tbi")){
+				|| fileName.endsWith(".gtf.gz.tbi")
+				|| fileName.endsWith(".gtf.bgz")
+				|| fileName.endsWith(".gtf.bgz.tbi")){
 			return TrackFormat.GTF;
 			
 	    } else if(
 				fileName.endsWith(".gff") 
 				|| fileName.endsWith(".gff.gz") 
 				|| fileName.endsWith(".gff.gz.tbi")
+				|| fileName.endsWith(".gff.bgz") 
+				|| fileName.endsWith(".gff.bgz.tbi")
 				|| fileName.endsWith(".gff3")
 				|| fileName.endsWith(".gff3.gz") 
-				|| fileName.endsWith(".gff3.gz.tbi")){
+				|| fileName.endsWith(".gff3.gz.tbi")
+				|| fileName.endsWith(".gff3.bgz") 
+				|| fileName.endsWith(".gff3.bgz.tbi")){
 			return TrackFormat.GFF;
 			
 		} else if(fileName.endsWith(".bam") || fileName.endsWith(".cram")){
@@ -530,7 +538,9 @@ public class Utils {
 			return TrackFormat.TDF;
 		} else if(fileName.endsWith(".bedgraph.gz") || fileName.endsWith(".bedgraph")) {
 			return TrackFormat.BEDGRAPH;
-		} else if(fileName.endsWith(".vcf.gz") || fileName.endsWith(".vcf")){
+		} else if(fileName.endsWith(".vcf.gz") 
+				|| fileName.endsWith(".vcf")
+				|| fileName.endsWith(".vcf.bgz")){
 			return TrackFormat.VCF;
 		} else {
 			// System.err.println("Unsopported file: " + fileName);

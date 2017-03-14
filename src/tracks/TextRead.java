@@ -160,12 +160,12 @@ class TextRead {
 				formatted.append(Config.getColor(ConfigKey.foreground));
 			} else if(Character.toUpperCase(c) == charM){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.background)); 
+				formatted.append(Config.getColor(ConfigKey.methylated_background)); 
 				formatted.append(";38;5;");
 				formatted.append(Config.getColor(ConfigKey.methylated_foreground));
 			} else if(Character.toUpperCase(c) == charU){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.background)); 
+				formatted.append(Config.getColor(ConfigKey.unmethylated_background)); 
 				formatted.append(";38;5;");
 				formatted.append(Config.getColor(ConfigKey.unmethylated_foreground));
 			} else if(Character.toUpperCase(c) == 'A'){

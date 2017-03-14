@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 
+import coloring.Config;
 import commandHelp.Command;
 import commandHelp.CommandList;
 import exceptions.InvalidCommandLineException;
@@ -105,6 +106,10 @@ public class InteractiveInput {
 				} else if(cmdTokens.get(0).equals("recentlyOpened")) {
 					String opened= Utils.padEndMultiLine(proc.getTrackSet().showRecentlyOpened(cmdTokens), proc.getWindowSize());
 					System.out.println(opened);
+					this.interactiveInputExitCode= 1;
+				
+				} else if(cmdTokens.get(0).equals("setConfig")) { // Currently undocumented
+					new Config(cmdTokens.get(1));
 					this.interactiveInputExitCode= 1;
 					
 				} else if(cmdTokens.get(0).equals("save")) {

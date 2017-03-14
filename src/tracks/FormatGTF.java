@@ -81,15 +81,15 @@ public class FormatGTF {
 		if(strand == '+') {
 			sb.append(Config.getColor(ConfigKey.feature_background_positive_strand));
 			sb.append(";38;5;");
-			sb.append(Config.getColor(ConfigKey.feature_foreground));
+			sb.append(Config.getColor(ConfigKey.foreground));
 		} else if(strand == '-') {
 			sb.append(Config.getColor(ConfigKey.feature_background_negative_strand));
 			sb.append(";38;5;");
-			sb.append(Config.getColor(ConfigKey.feature_foreground));
+			sb.append(Config.getColor(ConfigKey.foreground));
 		} else {
 			sb.append(Config.getColor(ConfigKey.feature_background_no_strand));
 			sb.append(";38;5;");
-			sb.append(Config.getColor(ConfigKey.feature_foreground));
+			sb.append(Config.getColor(ConfigKey.foreground));
 		}	
 		sb.append("m");
 		sb.append(text);

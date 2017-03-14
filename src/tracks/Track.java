@@ -404,7 +404,7 @@ public class Track {
 		this.workFilename = workFilename;
 	}
 
-	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException {
+	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
 		// TODO Auto-generated method stub
 		return "";
 	}

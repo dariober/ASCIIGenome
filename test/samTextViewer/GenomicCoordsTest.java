@@ -14,6 +14,7 @@ import org.junit.Test;
 import coloring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
@@ -326,7 +327,7 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
-	public void canPrintRuler() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+	public void canPrintRuler() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidConfigException{
 		
 		GenomicCoords gc= new GenomicCoords("chr1:101-200", samSeqDict, null);
 		assertEquals(79, gc.printableRuler(10, true).length());

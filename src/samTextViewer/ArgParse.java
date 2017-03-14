@@ -65,6 +65,15 @@ public class ArgParse {
 			.action(Arguments.storeTrue())
 			.help("Non interactive mode: Exit after having processed cmd line args.");
 		
+		parser.addArgument("--config", "-c")
+			.type(String.class)
+			.required(false)
+			.help("Source of configuration settings. "
+					+ "It can be a local file or a tag matching a built-in configuration setting, e.g. "
+					+ "'black_on_white' or 'white_on_black'. "
+					+ "If null, read configuration from file '~/.asciigenome_config'. If this file is missing "
+					+ "use a built-in setting.");
+		
 		parser.addArgument("--debug")
 			.action(Arguments.storeTrue())
 			.help("For debugging only: print error traces when an excpetion is found.");

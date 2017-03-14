@@ -198,7 +198,7 @@ public class MakeTabixIndex {
 		BufferedReader br= null;
 		InputStream gzipStream= null;
 		UrlValidator urlValidator = new UrlValidator();
-		if(unsorted.endsWith(".gz")){
+		if(unsorted.endsWith(".gz") || unsorted.endsWith(".bgz")){
 			if(urlValidator.isValid(unsorted)) {
 				gzipStream = new GZIPInputStream(new URL(unsorted).openStream());
 			} else {

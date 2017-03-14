@@ -18,6 +18,8 @@ import org.broad.igv.bbfile.BBFileReader;
 
 import com.google.common.collect.Lists;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -743,10 +745,15 @@ public class TrackIntervalFeature extends Track {
 	 * written as string.
 	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
 	 * */
-	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException {
+	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
 		
 		if(this.getExportFile() == null || this.getExportFile().isEmpty()){
-			return this.printFeatures();
+			if(this.isNoFormat()){
+				return this.printFeatures();
+			} else {
+				return "\033[38;5;" + Config.getColor(ConfigKey.foreground) + 
+						";48;5;" + Config.getColor(ConfigKey.background) + "m" + this.printFeatures();				
+			}
 		}
 		
 		BufferedWriter wr= null;

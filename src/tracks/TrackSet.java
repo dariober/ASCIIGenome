@@ -386,7 +386,7 @@ public class TrackSet {
         }
 	}
 	
-	public void setPrintModeAndPrintFeaturesForRegex(List<String> cmdInput) throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
+	public void setPrintModeAndPrintFeaturesForRegex(List<String> cmdInput) throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException {
 
 		// --------------------------------------------------------------------
 		// PARSE ARGUMENTS

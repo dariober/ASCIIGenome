@@ -10,6 +10,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import coloring.Xterm256;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import jline.console.ConsoleReader;
 import jline.console.completer.StringsCompleter;
@@ -18,7 +19,7 @@ public class CommandList {
 	
 	private static String SEE_ALSO= "\nFull documentation at: http://asciigenome.readthedocs.io/\n";
 	
-	public static ConsoleReader initConsole() throws IOException{
+	public static ConsoleReader initConsole() throws IOException, InvalidColourException{
 		
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 		    public void run() {
@@ -41,7 +42,7 @@ public class CommandList {
 		return console;
 	}
 	
-	private static String reStructuredTextHelp() throws InvalidCommandLineException{
+	private static String reStructuredTextHelp() throws InvalidCommandLineException, InvalidColourException{
 
 		String intro = ".. _command_reference:"
 				+ "\n"
@@ -90,8 +91,9 @@ public class CommandList {
 	/** Run this method in Unit test to update the file commandHelp.md  
 	 * @throws InvalidCommandLineException 
 	 * @throws IOException 
+	 * @throws InvalidColourException 
 	 * */
-	public static void updateCommandHelpMdFile(File destFile) throws InvalidCommandLineException, IOException{
+	public static void updateCommandHelpMdFile(File destFile) throws InvalidCommandLineException, IOException, InvalidColourException{
 		
 		BufferedWriter wr= new BufferedWriter(new FileWriter(destFile));
 		String doc= reStructuredTextHelp();
@@ -105,7 +107,7 @@ public class CommandList {
 		System.err.println("Command help file written to " + destFile.getAbsolutePath());
 	}
 	
-	public static String fullHelp() throws InvalidCommandLineException{
+	public static String fullHelp() throws InvalidCommandLineException, InvalidColourException{
 		String help= "\n      N a v i g a t i o n \n\n";
 		for(CommandHelp x : CommandList.getCommandsForSection(Section.NAVIGATION)){
 			help += (x.printCommandHelp() + "\n");
@@ -136,7 +138,7 @@ public class CommandList {
 		return help;
 	}
 	
-	public static String briefHelp() throws InvalidCommandLineException{
+	public static String briefHelp() throws InvalidCommandLineException, InvalidColourException{
 		String help= "\n      N a v i g a t i o n \n\n";
 		for(CommandHelp x : CommandList.getCommandsForSection(Section.NAVIGATION)){
 			help += (x.printBriefHelp());
@@ -163,7 +165,7 @@ public class CommandList {
 	}
 
 	
-	private final static List<CommandHelp> commandHelpList() throws InvalidCommandLineException{
+	private final static List<CommandHelp> commandHelpList() throws InvalidCommandLineException, InvalidColourException{
 		List<CommandHelp> cmdList= new ArrayList<CommandHelp>();
 		CommandHelp cmd= new CommandHelp();		
 
@@ -958,7 +960,7 @@ public class CommandList {
 			
 		}
 
-	protected static List<CommandHelp> getCommandsForSection(Section section) throws InvalidCommandLineException{
+	protected static List<CommandHelp> getCommandsForSection(Section section) throws InvalidCommandLineException, InvalidColourException{
 		List<CommandHelp> cmdList= new ArrayList<CommandHelp>();
 		for(CommandHelp x : commandHelpList()){
 			if(x.inSection.equals(section)){
@@ -1024,7 +1026,7 @@ public class CommandList {
 		return paramList;
 	}
 
-	public static String getHelpForCommand(String commandName) {
+	public static String getHelpForCommand(String commandName) throws InvalidColourException {
 		try {
 			for(CommandHelp x : CommandList.commandHelpList()){
 				if(x.getName().equals(commandName)){

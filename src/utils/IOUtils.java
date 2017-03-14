@@ -53,16 +53,16 @@ import java.util.LinkedHashSet;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import htsjdk.tribble.readers.LineIterator;
-import htsjdk.tribble.readers.LineIteratorImpl;
-import htsjdk.tribble.readers.LineReader;
-import htsjdk.tribble.readers.LineReaderUtil;
 import htsjdk.samtools.Defaults;
 import htsjdk.samtools.util.AbstractIterator;
 import htsjdk.samtools.util.BlockCompressedInputStream;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.samtools.util.CloserUtil;
 import htsjdk.samtools.util.IOUtil;
+import htsjdk.tribble.readers.LineIterator;
+import htsjdk.tribble.readers.LineIteratorImpl;
+import htsjdk.tribble.readers.LineReader;
+import htsjdk.tribble.readers.LineReaderUtil;
 
 public class IOUtils {
 	
@@ -156,7 +156,7 @@ public class IOUtils {
 			//do we have .... azdazpdoazkd.vcf.gz?param=1&param=2
 			int question=uri.indexOf('?');
 			if(question!=-1) uri=uri.substring(0, question);
-			if(uri.endsWith(".gz"))
+			if(uri.endsWith(".gz") || uri.endsWith(".bgz"))
 				{
 				return tryBGZIP(in);
 				}
@@ -181,7 +181,7 @@ public class IOUtils {
 		{
 		IOUtil.assertFileIsReadable(file);
 		InputStream in= new FileInputStream(file);
-		if(file.getName().endsWith(".gz"))
+		if(file.getName().endsWith(".gz") || file.getName().endsWith(".bgz"))
 			{
 			in=tryBGZIP(in);
 			}

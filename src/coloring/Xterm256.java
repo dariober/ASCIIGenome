@@ -316,7 +316,7 @@ public class Xterm256 {
 		}		
 	}
 	
-	public static String colorShowForTerminal(){
+	public static String colorShowForTerminal() throws InvalidColourException{
 		
 		int maxLen= 0;
 		for(String x : mapColorNameToXterm256().keySet()){
@@ -331,7 +331,9 @@ public class Xterm256 {
 			i++;
 			int xterm= mapColorNameToXterm256().get(x);
 			int spacer= maxLen - x.length();
-			sb.append(xterm + ": \033[38;5;" + xterm + "m" + x + "\033[38;5;0;48;5;231m");
+			sb.append(xterm + ": \033[38;5;" + xterm + "m" + x + 
+					"\033[38;5;" + Config.getColor(ConfigKey.foreground) + 
+					";48;5;" + Config.getColor(ConfigKey.background) + "m");
 			
 			if(i == 3){ // Arrange colors in this many columns
 				sb.append("\n");

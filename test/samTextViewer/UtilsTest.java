@@ -504,6 +504,9 @@ public class UtilsTest {
 	@Test
 	public void canGetFileTypeFromName(){
 		
+		assertEquals(TrackFormat.VCF,
+		Utils.getFileTypeFromName("test/gz.vcf.bgz"));
+		
 		assertEquals(TrackFormat.BIGWIG,
 		Utils.getFileTypeFromName("http://foo/bar/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
 	} 
