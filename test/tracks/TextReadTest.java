@@ -9,7 +9,9 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import coloring.Config;
 import exceptions.InvalidColourException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.SAMRecord;
@@ -69,7 +71,9 @@ public class TextReadTest {
 	}
 
 	@Test
-	public void canPrintDNARead() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+	public void canPrintDNARead() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidConfigException{
+		
+		new Config(null);
 		
 		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566798", samSeqDict, fastaFile);
 		SAMRecord rec= new SAMRecord(null);

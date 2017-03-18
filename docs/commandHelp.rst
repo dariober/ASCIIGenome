@@ -450,7 +450,9 @@ Set colour for tracks matched by regex.  Colors can be specified by name or by a
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Available colours are from the Xterm256 palette: `colors here <http://jonasjacek.github.io/colors/>`_            
+Available colours are from the Xterm256 palette: `colors here <http://jonasjacek.github.io/colors/>`_grey74[38;5;0;48;5;231m            251: [38;5;251mgrey78[38;5;0;48;5;231m
+252: [38;5;252mgrey82[38;5;0;48;5;231m            253: [38;5;253mgrey85[38;5;0;48;5;231m            254: [38;5;254mgrey89[38;5;0;48;5;231m
+255: [38;5;255mgrey93[38;5;0;48;5;231m            
 
 Example::
 
@@ -596,6 +598,18 @@ setGenome
 :code:`setGenome fasta|bam|genome`
 
 Set genome and reference sequence. The genome, i.e. the list of contig and names and sizes, can be extracted from the fasta reference, from a bam file or from a genome identifier (e.g. hg19). If a fasta file is used also the reference sequence becomes available.
+
+setConfig
++++++++++
+
+:code:`setConfig tag|file`
+
+Set color configuration. Configuration can be set with one of the built-in themes: 'black_on_white', 'white_on_black', 'metal'. Alternatively, configuration can be read from file. For examples files see 
+https://github.com/dariober/ASCIIGenome/blob/master/resources/config/
+
+Examples:
+setConfig metal
+setConfig /path/to/mytheme.conf
 
 showGenome
 ++++++++++

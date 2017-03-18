@@ -142,7 +142,7 @@ public class Main {
 				String gotoAndExec= ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
 				InteractiveInput itr = new InteractiveInput(console);
 				itr.processInput(gotoAndExec, proc, debug);
-				if (itr.getInteractiveInputExitCode() != 0){
+				if (itr.getInteractiveInputExitCode().equals(ExitCode.ERROR)){
 					System.err.println("Error processing '" + gotoAndExec + "' at line '" + line + "'");
 					System.exit(1);
 				}
@@ -177,10 +177,11 @@ public class Main {
 			// *** START processing interactive input
 			String cmdConcatInput= ""; // String like "zi && -F 16 && mapq 10"
 			InteractiveInput interactiveInput= new InteractiveInput(console);
-			int currentExitCode= 9;
+			ExitCode currentExitCode= ExitCode.NULL;
 			interactiveInput.setInteractiveInputExitCode(currentExitCode);
 			
-			while(interactiveInput.getInteractiveInputExitCode() != 0){
+			while( ! interactiveInput.getInteractiveInputExitCode().equals(ExitCode.ERROR) 
+					||  interactiveInput.getInteractiveInputExitCode().equals(ExitCode.NULL)){
 				
 				console.setPrompt(
 						StringUtils.repeat(' ', proc.getWindowSize()) + '\r' + "[h] for help: "
@@ -188,11 +189,12 @@ public class Main {
 
 				cmdConcatInput= console.readLine().trim();
 				if (cmdConcatInput.isEmpty()) {
-					if(interactiveInput.getInteractiveInputExitCode() == 0 || 
-					   interactiveInput.getInteractiveInputExitCode() == currentExitCode){
+					// Empty inout: User only issued <ENTER> 
+					if( interactiveInput.getInteractiveInputExitCode().equals(ExitCode.CLEAN)){
 						// User only issued <ENTER>: Repeat previous command if the exit code was not an error.
 						cmdConcatInput= currentCmdConcatInput;					
 					} else {
+						// Refresh screen if the exit code was not CLEAN.
 						cmdConcatInput= "+0";
 					}
 				}

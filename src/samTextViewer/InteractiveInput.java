@@ -29,7 +29,7 @@ import tracks.Track;
 public class InteractiveInput {
 
 	private boolean nonInteractive;
-	private int interactiveInputExitCode= 0;
+	private ExitCode interactiveInputExitCode= ExitCode.CLEAN;
 	private ConsoleReader console;
 	public InteractiveInput(ConsoleReader console){
 		this.console= console;
@@ -59,6 +59,9 @@ public class InteractiveInput {
 		for(String cmd : Splitter.on(Pattern.compile("&&(?=([^']*'[^']*')*[^']*$)")).trimResults().omitEmptyStrings().split(cmdConcatInput)){
 			cmdInputChainList.add(cmd);
 		}
+		if(cmdInputChainList.size() >= 2 && cmdInputChainList.get(0).startsWith("setConfig ")){
+			cmdInputChainList.add("+0"); // This is to refresh the screen and actually set the new color
+		}
 
 		String fasta= proc.getGenomicCoordsHistory().current().getFastaFile();
 		SAMSequenceDictionary samSeqDict = proc.getGenomicCoordsHistory().current().getSamSeqDict();
@@ -68,49 +71,57 @@ public class InteractiveInput {
 			
 			List<String> cmdTokens= Utils.tokenize(cmdString, " ");
 			
-			this.interactiveInputExitCode= 0; // If something goes wrong this will change to != 0
+			this.interactiveInputExitCode= ExitCode.CLEAN; // If something goes wrong this will change
 			try {
 				
 				// * These commands only print info or do stuff without editing the GenomicCoordinates or the Tracks:
 				if(cmdTokens.get(0).equals("h") || cmdTokens.get(0).equals("-h")){  		
 					System.err.println(Utils.padEndMultiLine(CommandList.briefHelp(), proc.getWindowSize()));
-					this.interactiveInputExitCode= 1;
+					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 					
 				} else if(cmdTokens.size() >= 2 && cmdTokens.get(1).equals("-h")){ // Help on this command
 					String help= Utils.padEndMultiLine("\n" + CommandList.getHelpForCommand(cmdTokens.get(0)), proc.getWindowSize());
 					System.err.println(help);
-					this.interactiveInputExitCode= 1;
+					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 				
 				} else if(cmdTokens.get(0).equals("posHistory")){
 					this.posHistory(cmdTokens, proc.getGenomicCoordsHistory().getHistory(), proc.getWindowSize());
-					this.interactiveInputExitCode= 1;
+					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 
 				} else if(cmdTokens.get(0).equals("history")){
 					String hist= Utils.padEndMultiLine(this.cmdHistoryToString(cmdTokens), proc.getWindowSize());
 					System.err.println(hist);
-					this.interactiveInputExitCode= 1;
+					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 					
 				} else if(cmdTokens.get(0).equals("showGenome")) {
 					this.showGenome(proc);
-					this.interactiveInputExitCode= 1;
+					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 				
 				} else if(cmdTokens.get(0).equals("sys")) {
 					this.execSysCmd(cmdString, proc.getWindowSize());
-					this.interactiveInputExitCode= 1;
+					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 					
 				} else if(cmdTokens.get(0).equals("infoTracks")) {
 					String info= Utils.padEndMultiLine(proc.getTrackSet().showTrackInfo(), proc.getWindowSize());
 					System.out.println(info);
-					this.interactiveInputExitCode= 1;
+					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 				
 				} else if(cmdTokens.get(0).equals("recentlyOpened")) {
 					String opened= Utils.padEndMultiLine(proc.getTrackSet().showRecentlyOpened(cmdTokens), proc.getWindowSize());
 					System.out.println(opened);
-					this.interactiveInputExitCode= 1;
+					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 				
-				} else if(cmdTokens.get(0).equals("setConfig")) { // Currently undocumented
-					new Config(cmdTokens.get(1));
-					this.interactiveInputExitCode= 1;
+				} else if(cmdTokens.get(0).equals("setConfig")) {
+					try{
+						new Config(cmdTokens.get(1));
+						this.interactiveInputExitCode= ExitCode.CLEAN;
+					} catch(Exception e){
+						System.err.println(Utils.padEndMultiLine("Unable to set configuration", proc.getWindowSize()));
+						this.interactiveInputExitCode= ExitCode.ERROR;
+						if(debug){
+							e.printStackTrace();
+						}
+					}
 					
 				} else if(cmdTokens.get(0).equals("save")) {
 					List<String> args= new ArrayList<String>(cmdTokens);
@@ -129,7 +140,7 @@ public class InteractiveInput {
 				} else if(cmdTokens.get(0).equals("sessionSave")) {
 					if(cmdTokens.size() < 2){
 						System.err.println(Utils.padEndMultiLine("Output file name is missing!", proc.getWindowSize()));
-						this.interactiveInputExitCode= 1;
+						this.interactiveInputExitCode= ExitCode.ERROR;
 					} else {
 						proc.exportTrackSetSettings(cmdTokens.get(1));
 					}
@@ -206,7 +217,7 @@ public class InteractiveInput {
 					} catch(Exception e){
 						String msg= Utils.padEndMultiLine("Error processing " + cmdTokens + ". Perhaps a non-numeric column was selected?", proc.getWindowSize());
 						System.err.println(msg);
-						this.interactiveInputExitCode= 1;
+						this.interactiveInputExitCode= ExitCode.ERROR;
 						continue;
 					}
 					
@@ -227,7 +238,7 @@ public class InteractiveInput {
 					if( proc.getGenomicCoordsHistory().current().getFastaFile() == null ){
 						String msg= Utils.padEndMultiLine("Cannot set BSseq mode without reference sequence", proc.getWindowSize());
 						System.err.println(msg);
-						this.interactiveInputExitCode= 1;
+						this.interactiveInputExitCode= ExitCode.ERROR;
 						continue;
 					}
 					proc.getTrackSet().setBisulfiteModeForRegex(cmdTokens);
@@ -248,7 +259,7 @@ public class InteractiveInput {
 					if(globbed.size() == 0){
 						String msg= Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
 						System.err.println(msg);
-						this.interactiveInputExitCode= 1;
+						this.interactiveInputExitCode= ExitCode.ERROR;
 					
 					} else {
 						
@@ -282,7 +293,7 @@ public class InteractiveInput {
 				} else if(cmdTokens.get(0).equals("dropTracks")){
 					if(cmdTokens.size() <= 1){
 						System.err.println(Utils.padEndMultiLine("List one or more tracks to drop or `dropTracks -h` for help.", proc.getWindowSize()));
-						this.interactiveInputExitCode= 1;
+						this.interactiveInputExitCode= ExitCode.ERROR;
 						continue;
 					}
 					messages += proc.getTrackSet().dropTracksWithRegex(cmdTokens);
@@ -324,7 +335,7 @@ public class InteractiveInput {
 
 					if(cmdTokens.size() < 2){
 						System.err.println(Utils.padEndMultiLine("Error in find command. Expected at least 1 argument got: " + cmdTokens, proc.getWindowSize()));
-						this.interactiveInputExitCode= 1;
+						this.interactiveInputExitCode= ExitCode.ERROR;
 						continue;
 					}
 					if(cmdTokens.size() == 2){
@@ -338,7 +349,7 @@ public class InteractiveInput {
 						proc.getTrackSet().setRegexForTrackSeqRegex(cmdTokens, proc.getGenomicCoordsHistory().current());
 					} catch( InvalidCommandLineException e){
 						System.err.println(Utils.padEndMultiLine("Cannot find regex in sequence without fasta reference!", proc.getWindowSize()));
-						this.interactiveInputExitCode= 1;
+						this.interactiveInputExitCode= ExitCode.ERROR;
 						continue;						
 					}
 					
@@ -347,24 +358,29 @@ public class InteractiveInput {
 					
 				} else {
 					System.err.println(Utils.padEndMultiLine("Unrecognized command: " + cmdTokens, proc.getWindowSize()));
+					this.interactiveInputExitCode= ExitCode.ERROR;
 					throw new InvalidCommandLineException();
 				}
 			
 			} catch(Exception e){ // You shouldn't catch anything! Be more specific.
 				System.err.println(Utils.padEndMultiLine("\nError processing input: " + cmdTokens, proc.getWindowSize()));
 				System.err.println(Utils.padEndMultiLine("For help on command \"cmd\" execute 'cmd -h' or '-h' for list of commands.\n", proc.getWindowSize()));
-				this.interactiveInputExitCode= 1; 
+				this.interactiveInputExitCode= ExitCode.ERROR; 
 				if(debug){
 					e.printStackTrace();
 				}
 			} // END PARSING ONE COMMAND
 
-			if(this.interactiveInputExitCode == 0){
+			if( this.interactiveInputExitCode.equals(ExitCode.CLEAN) || this.interactiveInputExitCode.equals(ExitCode.CLEAN_NO_FLUSH)){
 				// Command has been parsed ok. Let's see if we can execute it without exceptions.
 				try{
-					console.clearScreen();
-					console.flush();
-					proc.iterateTracks();
+					if(this.interactiveInputExitCode.equals(ExitCode.CLEAN)){
+						console.clearScreen();
+						console.flush();
+						proc.iterateTracks();
+					} else {
+						//
+					}
 
 				} catch (InvalidGenomicCoordsException e){
 					
@@ -377,13 +393,13 @@ public class InteractiveInput {
 					
 				} catch (Exception e){
 					System.err.println(Utils.padEndMultiLine("Error processing tracks with input " + cmdTokens, proc.getWindowSize()));
-					this.interactiveInputExitCode= 1;
+					this.interactiveInputExitCode= ExitCode.ERROR;
 					if(debug){
 						e.printStackTrace();
 					}
 				}
 			}
-			if(this.interactiveInputExitCode != 0) {
+			if(this.interactiveInputExitCode.equals(ExitCode.ERROR)) {
 				// If something goes wrong or help is invoked, stop executing commands and restart asking for input
 				// Unless we are in non-interactive mode
 				if(nonInteractive){
@@ -428,7 +444,7 @@ public class InteractiveInput {
 			proc.getGenomicCoordsHistory().setGenome(tokens);
 		} else {
 			System.err.println(Utils.padEndMultiLine("Cannot set genome from " + tokens, proc.getWindowSize()));
-			this.interactiveInputExitCode= 1;
+			this.interactiveInputExitCode= ExitCode.ERROR;
 		}
 		
 	}
@@ -607,11 +623,11 @@ public class InteractiveInput {
 		return tab.trim();
 	}
 
-	public int getInteractiveInputExitCode() {
+	public ExitCode getInteractiveInputExitCode() {
 		return interactiveInputExitCode;
 	}
 
-	public void setInteractiveInputExitCode(int exitCode) {
+	public void setInteractiveInputExitCode(ExitCode exitCode) {
 		this.interactiveInputExitCode= exitCode;
 	}
 

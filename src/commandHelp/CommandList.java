@@ -730,6 +730,21 @@ public class CommandList {
 				+ "a genome identifier (e.g. hg19). If a fasta file is used also the "
 				+ "reference sequence becomes available.");
 		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
+		cmd.setName("setConfig"); cmd.setArgs("tag|file"); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Set color configuration.");
+		cmd.setAdditionalDescription("Configuration can be set with one of the built-in "
+				+ "themes: 'black_on_white', 'white_on_black', 'metal'. "
+				+ "Alternatively, configuration can be read from file. For examples "
+				+ "files see \n"
+				+ "https://github.com/dariober/ASCIIGenome/blob/master/resources/config/\n"
+				+ "\n"
+				+ "Examples:\n"
+				+ "setConfig metal\n"
+				+ "setConfig /path/to/mytheme.conf");
+		cmdList.add(cmd);
+
 		
 		cmd= new CommandHelp();
 		cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
@@ -857,7 +872,7 @@ public class CommandList {
 				+ "    samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar\n"
 				+ "    samtools~~~~~~~~~~~~~~~~~-> Reset all to default.\n"
 				+ "");
-		cmdList.add(cmd);		
+		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
 		cmd.setName(Command.BSseq.getCmdDescr()); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
@@ -1022,6 +1037,7 @@ public class CommandList {
 		paramList.add("save");
 		paramList.add("sessionSave");
 		paramList.add("sys");
+		paramList.add("setConfig");
 	
 		return paramList;
 	}

@@ -16,10 +16,10 @@ public class FormatVCF {
 		if(refAllele.length() == 1 && altAllele.length() == 1){
 			// SNP
 			text= altAllele.charAt(0);
-		} else if(refAllele.length() == 1 && altAllele.length() > 1){
+		} else if(altAllele.length() > refAllele.length()){
 			// Insertion into the reference
 			text= 'I';
-		} else if(refAllele.length() > 1 && altAllele.length() == 1){
+		} else if(refAllele.length() > altAllele.length()){
 			// Deletion into the reference
 			text= 'D';
 		} else {

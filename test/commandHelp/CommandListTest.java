@@ -5,13 +5,14 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import coloring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidConfigException;
 
 public class CommandListTest {
 
-
-	@Test
+		@Test
 	public void updateReStructuredFile() throws InvalidCommandLineException, IOException, InvalidColourException{
 		CommandList.updateCommandHelpMdFile(new File("docs/commandHelp.rst"));
 	}
@@ -23,9 +24,10 @@ public class CommandListTest {
 	}
 	
 	@Test
-	public void canPrintDocstringForCommand() throws InvalidCommandLineException, IOException, InvalidColourException {
+	public void canPrintDocstringForCommand() throws InvalidCommandLineException, IOException, InvalidColourException, InvalidConfigException {
+		new Config(null);
 		System.out.println("DOCSTRING");
-		System.out.println(CommandList.getHelpForCommand("sys"));
+		System.out.println(CommandList.getHelpForCommand("setConfig"));
 	}
 	
 }

@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "1.2.2";
+	public static String VERSION= "1.3.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	public static String WEB_RTD= "http://asciigenome.readthedocs.io/";
 	
@@ -69,10 +69,11 @@ public class ArgParse {
 			.type(String.class)
 			.required(false)
 			.help("Source of configuration settings. "
-					+ "It can be a local file or a tag matching a built-in configuration setting, e.g. "
-					+ "'black_on_white' or 'white_on_black'. "
-					+ "If null, read configuration from file '~/.asciigenome_config'. If this file is missing "
-					+ "use a built-in setting.");
+					+ "It can be a local file or a tag matching a built-in configuration: "
+					+ "'black_on_white', 'white_on_black', 'metal'. "
+					+ "If null, first try to read configuration from file '~/.asciigenome_config'. "
+					+ "If this file is missing use a built-in setting. "
+					+ "For examples of configuration files see https://github.com/dariober/ASCIIGenome/blob/master/resources/config/");
 		
 		parser.addArgument("--debug")
 			.action(Arguments.storeTrue())

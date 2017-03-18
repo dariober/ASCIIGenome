@@ -14,6 +14,7 @@ import com.google.common.base.Splitter;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
+import samTextViewer.Utils;
 
 /** Prepare and handle configuration. 
  * */
@@ -62,7 +63,7 @@ public class Config {
 		// Is source null or empty string?
 		if(source == null || source.isEmpty()){
 			// See if default config file exists
-			File def= new File(System.getProperty("user.home") + ".asciigenome_config");
+			File def= new File(System.getProperty("user.home"), ".asciigenome_config");
 			if(def.isFile()){
 				rawConfigFile= FileUtils.readFileToString(def);
 			} else {
@@ -72,6 +73,8 @@ public class Config {
 			}
 			return rawConfigFile;
 		}
+
+		source= Utils.tildeToHomeDir(source);
 		
 		// Is source a local file? E.g. /path/to/my.conf
 		if((new File(source)).isFile()){
@@ -87,7 +90,6 @@ public class Config {
 		} catch(Exception e){
 			// 
 		}		
-		System.err.println("Cannot read configuration");
 		throw new InvalidConfigException();
 		
 	} 

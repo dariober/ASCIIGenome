@@ -287,7 +287,9 @@ public class UtilsTest {
 	@Test
 	public void createFastaIndex() throws IOException, UnindexableFastaFileException{
 		String fastaFile= "test_data/noindex.fa";
-		assertTrue( ! (new File("test_data/noindex.fa.fai")).isFile()); // Check index actually does not exist
+		if(new File("test_data/noindex.fa.fai").isFile()){
+			new File("test_data/noindex.fa.fai").delete();
+		}
 		
 		Utils.checkFasta(fastaFile);
 		

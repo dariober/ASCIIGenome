@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import coloring.Config;
 import coloring.ConfigKey;
-import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -299,6 +298,18 @@ public class GenomicCoords implements Cloneable {
 	 * @throws IOException 
 	 */
 	public void zoomOut() throws IOException{
+		
+		// If window size is 1 you need to extend it otherwise zoom will have no effect!
+		if((this.to - this.from) == 0){
+			if((this.from - 1) > 0){
+				// Try to extend left by 1 bp:
+				this.from -= 1;
+			} else {
+				// Else extend right
+				this.to += 1; // But what if you have a chrom of 1bp?!
+			}
+		}
+		
 		int zoom= 1;
 		// * Get size of window (to - from + 1)
 		int range= this.to - this.from + 1;
@@ -328,6 +339,7 @@ public class GenomicCoords implements Cloneable {
 		// this.setRefSeq();
 	}
 
+	
 	/**
 	 * Zoom into range. 
 	 * @throws IOException 
