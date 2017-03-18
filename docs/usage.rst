@@ -60,4 +60,3 @@ partial matching is enabled. This is handy since track names have an ID appended
 be used in place of the full name, e.g. `next myLongfileName.bed#1` can be also typed as `next #1`.
 
 These are just some functionalities to give an idea behind *ASCIIGenome*. See :ref:`Supported_input_and_output2` for 
-the individual commands available.

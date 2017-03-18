@@ -207,9 +207,6 @@ public class InteractiveInput {
 					gc.right();
 					proc.getGenomicCoordsHistory().add(gc);
 					
-				} else if(cmdTokens.get(0).equals("setGenome")){
-					this.setGenome(cmdTokens, proc);
-
 				// * These commands change the Tracks but do not touch the GenomicCoordinates.
 				} else if(cmdTokens.get(0).equals("dataCol")){
 					try{
@@ -234,7 +231,7 @@ public class InteractiveInput {
 				} else if(cmdTokens.get(0).equals("hideTitle")){
 					proc.getTrackSet().setHideTitleForRegex(cmdTokens); 
 					
-				} else if(cmdTokens.get(0).equals(Command.BSseq.getCmdDescr())) {
+				} else if(cmdTokens.get(0).equals(Command.BSseq.getCmdDescr())) 
 					if( proc.getGenomicCoordsHistory().current().getFastaFile() == null ){
 						String msg= Utils.padEndMultiLine("Cannot set BSseq mode without reference sequence", proc.getWindowSize());
 						System.err.println(msg);
