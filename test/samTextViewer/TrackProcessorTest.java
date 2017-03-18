@@ -16,7 +16,7 @@ import exceptions.InvalidRecordException;
 import tracks.TrackSet;
 
 public class TrackProcessorTest {
-	
+		
 	@Test
 	public void canSaveTrackSettings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException{
 		

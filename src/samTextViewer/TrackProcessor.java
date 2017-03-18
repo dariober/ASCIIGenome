@@ -5,13 +5,16 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Iterator;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.common.base.Splitter;
 import com.itextpdf.text.DocumentException;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import coloring.Pdf;
-import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -37,13 +40,6 @@ public class TrackProcessor {
 	public TrackProcessor(TrackSet trackSet, GenomicCoordsHistory genomicCoordsHistory) throws IOException, InvalidRecordException {
 		this.trackSet= trackSet;
 		this.genomicCoordsHistory= genomicCoordsHistory;
-		
-		/* Initialize GC profile */
-		//if(genomicCoordsHistory.current().getFastaFile() != null){
-		//	TrackWiggles gcProfile = genomicCoordsHistory.current().getGCProfile();
-		//	this.gcProfileHashCode= gcProfile.hashCode();
-		//	this.getTrackSet().add(gcProfile, "gcProfile");
-		//}		
 	}
 	
 	/* M E T H O D S */
@@ -52,10 +48,10 @@ public class TrackProcessor {
 		
 		GenomicCoords currentGC= this.genomicCoordsHistory.current();
 		
-		String outputString= "";
+		StringBuilder outputString= new StringBuilder();
 		
 		if(currentGC.getChromIdeogram(20, this.noFormat) != null){
-			outputString += currentGC.getChromIdeogram(20, this.noFormat) + "\n";
+			outputString.append(currentGC.getChromIdeogram(20, this.noFormat) + "\n");
 		}			
 
 		// Update tracks to new genomic coords
@@ -73,44 +69,83 @@ public class TrackProcessor {
 			
 			track.setNoFormat(this.noFormat);
 			if(track.getyMaxLines() > 0 && !track.isHideTrack()){
-				outputString += track.getTitle();//				this.printer(track.getTitle(), this.snapshotFile);
-				outputString += track.printToScreen() + "\n"; // this.printer(track.printToScreen() + "\n", this.snapshotFile);
-				outputString += track.getPrintableConsensusSequence(); // this.printer(track.getPrintableConsensusSequence(), this.snapshotFile);
-				outputString += track.printFeaturesToFile(); // this.printer(track.printFeaturesToFile(), this.snapshotFile);
+				outputString.append(track.getTitle());
+				outputString.append(track.printToScreen() + "\n");
+				outputString.append(track.getPrintableConsensusSequence());
+				outputString.append(track.printFeaturesToFile());
 			}
 		}
 
 		// Ruler and sequence
 		// ------------------
-		outputString += currentGC.printableRefSeq(noFormat); // this.printer(currentGC.printableRefSeq(noFormat), snapshotFile);
-		outputString += currentGC.printableRuler(10, noFormat) + "\n"; // this.printer(ruler + "\n", snapshotFile);
+		outputString.append(currentGC.printableRefSeq(noFormat)); // this.printer(currentGC.printableRefSeq(noFormat), snapshotFile);
+		outputString.append(currentGC.printableRuler(10, noFormat) + "\n"); // this.printer(ruler + "\n", snapshotFile);
 
-		// String ruler= currentGC.printableRuler(10, noFormat);
-		
 		// Position, memory, etc
 		// ---------------------
 		String footer= this.getFooter(currentGC);
 		if(!noFormat){
-			outputString += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + footer + "\033[30m\n"; 
+			outputString.append("\033[48;5;");
+			outputString.append(Config.getColor(ConfigKey.background));
+			outputString.append(";38;5;");
+			outputString.append(Config.getColor(ConfigKey.footer));
+			outputString.append("m");
+			outputString.append(footer);
+			outputString.append("\033[38;5;");
+			outputString.append(Config.getColor(ConfigKey.foreground));
+			outputString.append("m");
 		} else {
-			outputString += footer + "\n";
+			outputString.append(footer);
 		}
 
+		String printable= this.fillUpLines(outputString.toString());
+		
 		// Print to screen
-		System.out.print(outputString);
+		System.out.println(printable);
 		
 		// Optionally save to file
 		// -----------------------
 		if(this.snapshotFile != null && this.snapshotFile.endsWith(".pdf")){
-			(new Pdf(outputString)).convert(new File(this.snapshotFile), 10, this.appendToSnapshotFile);
+			(new Pdf(printable)).convert(new File(this.snapshotFile), 10, this.appendToSnapshotFile);
 		
 		} else if(this.snapshotFile != null){
 			BufferedWriter wr= new BufferedWriter(new FileWriter(new File(this.snapshotFile), this.appendToSnapshotFile));
-			wr.write(Utils.stripAnsiCodes(outputString));
+			wr.write(Utils.stripAnsiCodes(printable));
 			wr.write("\n-------8<-------------[ cut here ]----------------------\n\n");
 			wr.close();
 		}
 		this.snapshotFile= null;
+	}
+	
+	/** String screenshot is the string almost ready to be printed to screen or file.
+	 * What is missing is to fill up lines with whitespaces until the end of the screen so
+	 * that terminals like tmux do not show lines of mixed colours. 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * */
+	private String fillUpLines(String screenshot) throws InvalidGenomicCoordsException, IOException{
+		StringBuilder full= new StringBuilder();
+		Iterator<String> iter = Splitter.on("\n").split(screenshot).iterator();
+		int screenSize= this.getWindowSize();
+		while(iter.hasNext()){
+			String line= iter.next();
+			int npad= screenSize - Utils.stripAnsiCodes(line).length();
+// This check throws false positives when `print -full` finds lines longer than screenwidth
+//			if(npad < 0){
+//				throw new RuntimeException("Line width greater then screenwidth! This should not happen!\n"
+//						+ "Please report this as a bug.");
+//			}
+			if(npad < 0){
+				npad= 0; // Nothing to be done.
+			}
+			String filler= StringUtils.repeat(' ', npad);
+			full.append(line);
+			full.append(filler);
+			if(iter.hasNext()){
+				full.append("\n");
+			}
+		}
+		return full.toString();
 	}
 	
 	private String getFooter(GenomicCoords currentGC) throws InvalidGenomicCoordsException, IOException {
@@ -124,7 +159,7 @@ public class TrackProcessor {
             footer += pad;
             footer += "/\\";
         }
-		 return footer;
+		return footer;
 	}
 
 	public void exportTrackSetSettings(String filename) throws IOException{

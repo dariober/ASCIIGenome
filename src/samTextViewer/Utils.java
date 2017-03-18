@@ -1,6 +1,8 @@
 package samTextViewer;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -8,10 +10,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -46,6 +50,7 @@ import org.broad.igv.tdf.TDFReader;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -70,6 +75,7 @@ import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
 import tracks.IntervalFeature;
+import tracks.Track;
 import tracks.TrackFormat;
 import ucsc.UcscGenePred;
 
@@ -341,7 +347,7 @@ public class Utils {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
 			BufferedReader br;
 			GZIPInputStream gzipStream;
-			if(x.toLowerCase().endsWith(".gz")){
+			if(x.toLowerCase().endsWith(".gz") || x.toLowerCase().endsWith(".bgz")){
 				if(urlValidator.isValid(x)) {
 					gzipStream = new GZIPInputStream(new URL(x).openStream());
 				} else {
@@ -496,21 +502,29 @@ public class Utils {
 		
 		if(    fileName.endsWith(".bed") 
 		    || fileName.endsWith(".bed.gz") 
-		    || fileName.endsWith(".bed.gz.tbi")){
+		    || fileName.endsWith(".bed.gz.tbi")
+		    || fileName.endsWith(".bed.bgz")
+		    || fileName.endsWith(".bed.bgz.tbi")){
 			return TrackFormat.BED;
 		
 		} else if( fileName.endsWith(".gtf") 
 				|| fileName.endsWith(".gtf.gz")
-				|| fileName.endsWith(".gtf.gz.tbi")){
+				|| fileName.endsWith(".gtf.gz.tbi")
+				|| fileName.endsWith(".gtf.bgz")
+				|| fileName.endsWith(".gtf.bgz.tbi")){
 			return TrackFormat.GTF;
 			
 	    } else if(
 				fileName.endsWith(".gff") 
 				|| fileName.endsWith(".gff.gz") 
 				|| fileName.endsWith(".gff.gz.tbi")
+				|| fileName.endsWith(".gff.bgz") 
+				|| fileName.endsWith(".gff.bgz.tbi")
 				|| fileName.endsWith(".gff3")
 				|| fileName.endsWith(".gff3.gz") 
-				|| fileName.endsWith(".gff3.gz.tbi")){
+				|| fileName.endsWith(".gff3.gz.tbi")
+				|| fileName.endsWith(".gff3.bgz") 
+				|| fileName.endsWith(".gff3.bgz.tbi")){
 			return TrackFormat.GFF;
 			
 		} else if(fileName.endsWith(".bam") || fileName.endsWith(".cram")){
@@ -524,7 +538,9 @@ public class Utils {
 			return TrackFormat.TDF;
 		} else if(fileName.endsWith(".bedgraph.gz") || fileName.endsWith(".bedgraph")) {
 			return TrackFormat.BEDGRAPH;
-		} else if(fileName.endsWith(".vcf.gz") || fileName.endsWith(".vcf")){
+		} else if(fileName.endsWith(".vcf.gz") 
+				|| fileName.endsWith(".vcf")
+				|| fileName.endsWith(".vcf.bgz")){
 			return TrackFormat.VCF;
 		} else {
 			// System.err.println("Unsopported file: " + fileName);
@@ -1495,6 +1511,76 @@ public class Utils {
 	    // the strings are equal or one string is a substring of the other
 	    // e.g. "1.2.3" = "1.2.3" or "1.2.3" < "1.2.3.4"
 	    return Integer.signum(vals1.length - vals2.length);
+	}
+
+	/** Stream the raw line through awk and return true if the output of awk is the same as the input
+	 * line. If awk returns empty output then the line didn't pass the awk filter.
+	 * If output is not empty and not equal to input, return null.
+	 * See tests for behaviour. 
+	 * */
+	public static Boolean passAwkFilter(String rawLine, String awkScript) throws IOException {
+		
+		awkScript= awkScript.trim();
+
+		if(awkScript.isEmpty()){
+			return true;
+		}
+		
+		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
+		// -v var=foo '$1 == var && $2 == baz'
+		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
+		// the opening of the awk script.
+		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
+		if(scriptStartsAt == awkScript.length() + 1){
+			scriptStartsAt= 1;
+		}
+		// Now add the functions to the script right at the start of the script, after the command args
+		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
+				
+		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.UTF_8));
+		
+		String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]); 
+		
+		PrintStream stdout = System.out;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try{
+			PrintStream os= new PrintStream(baos);
+			new org.jawk.Main(args, is, os, System.err);
+		} catch(Exception e){
+			throw new IOException();
+		} finally{
+			System.setOut(stdout);
+			is.close();
+		}
+		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+		if(output.trim().isEmpty()){
+			return false;
+		} else if(output.trim().equals(rawLine.trim())){
+			return true;
+		} else {
+			// Awk output is not empty or equal to input line. Reset awk script and return null
+			// to signal this condition.
+			return null;
+		}
+		
+	}
+
+	/** Right-pad each line in string x with whitespaces. Each line is 
+	 * defined by the newline. Each line is padded to become at leas of length size.   
+	 * */
+	public static String padEndMultiLine(String x, int size) {
+
+		if(x.isEmpty()){
+			return x;
+		}
+		
+		List<String> split= Splitter.on("\n").splitToList(x);
+		List<String> mline= new ArrayList<String>(split);
+		
+		for(int i= 0; i < mline.size(); i++){
+			mline.set(i, Strings.padEnd(mline.get(i), size, ' '));
+		}
+		return Joiner.on("\n").join(mline);
 	}
 	
 }

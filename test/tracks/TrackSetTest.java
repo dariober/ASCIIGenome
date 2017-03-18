@@ -91,7 +91,7 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canPrintFeaturesToFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
+	public void canPrintFeaturesToFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidColourException{
 		
 		// --------------------------------------------------------------------
 		// Prepare coords and trackSet
@@ -197,7 +197,7 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 
 		List<String>cmdInput= new ArrayList<String>();
 		cmdInput.add("bookmark");
@@ -466,7 +466,7 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canSetPrintMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+	public void canSetPrintMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException{
 				
 		TrackSet ts= new TrackSet();
 		Track t1= new Track(); ts.addTrack(t1, "x");

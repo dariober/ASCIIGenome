@@ -6,7 +6,8 @@ import java.util.List;
 
 import com.google.common.base.Joiner;
 
-import coloring.Xterm256;
+import coloring.Config;
+import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.CigarElement;
@@ -146,36 +147,57 @@ class TextRead {
 		if(noFormat){ // Essentially nothing to do in this case
 			return Joiner.on("").join(read);
 		}
-		String formatted= "";		
+		StringBuilder formatted= new StringBuilder();		
 		for(char c : read){ // Each base is formatted independently from the others
-			String fmt= "\033["; // Start format 
+			formatted.append("\033["); // Start format 
 			if(this.rec.getReadPairedFlag() && this.rec.getSecondOfPairFlag()){
-				fmt += "4;"; // Underline 2nd in pair
+				formatted.append("4;"); // Underline 2nd in pair
 			}					
 			if(this.rec.getMappingQuality() < SHADE_MAPQ){ // Grey out low mapq
-				fmt += "48;5;" + Xterm256.colorNameToXterm256("grey70") + ";38;5;" + Xterm256.colorNameToXterm256("black"); // "30;47";
+				formatted.append("48;5;"); 
+				formatted.append(Config.getColor(ConfigKey.shade_low_mapq)); 
+				formatted.append(";38;5;");
+				formatted.append(Config.getColor(ConfigKey.foreground));
 			} else if(Character.toUpperCase(c) == charM){
-				fmt += "48;5;" + Xterm256.colorNameToXterm256("grey100") + ";38;5;" + Xterm256.colorNameToXterm256("red");
+				formatted.append("48;5;"); 
+				formatted.append(Config.getColor(ConfigKey.methylated_background)); 
+				formatted.append(";38;5;");
+				formatted.append(Config.getColor(ConfigKey.methylated_foreground));
 			} else if(Character.toUpperCase(c) == charU){
-				fmt += "48;5;" + Xterm256.colorNameToXterm256("grey100") + ";38;5;" + Xterm256.colorNameToXterm256("blue");
+				formatted.append("48;5;"); 
+				formatted.append(Config.getColor(ConfigKey.unmethylated_background)); 
+				formatted.append(";38;5;");
+				formatted.append(Config.getColor(ConfigKey.unmethylated_foreground));
 			} else if(Character.toUpperCase(c) == 'A'){
-				fmt += "1;38;5;" + Xterm256.colorNameToXterm256("blue");
+				formatted.append("1;38;5;"); 
+				formatted.append(Config.getColor(ConfigKey.seq_a));
 			} else if(Character.toUpperCase(c) == 'C') {
-				fmt += "1;38;5;" + Xterm256.colorNameToXterm256("red");
+				formatted.append("1;38;5;"); 
+				formatted.append(Config.getColor(ConfigKey.seq_c));
 			} else if(Character.toUpperCase(c) == 'G') {
-				fmt += "1;38;5;" + Xterm256.colorNameToXterm256("green");
+				formatted.append("1;38;5;"); 
+				formatted.append(Config.getColor(ConfigKey.seq_g));
 			} else if(Character.toUpperCase(c) == 'T') {
-				fmt += "1;38;5;" + Xterm256.colorNameToXterm256("yellow");
+				formatted.append("1;38;5;"); 
+				formatted.append(Config.getColor(ConfigKey.seq_t));
 			} else if(!this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
-				fmt += "48;5;" + Xterm256.colorNameToXterm256("lightsteelblue") + ";38;5;" + Xterm256.colorNameToXterm256("black");
+				formatted.append("48;5;"); 
+				formatted.append(Config.getColor(ConfigKey.feature_background_positive_strand)); 
+				formatted.append(";38;5;");
+				formatted.append(Config.getColor(ConfigKey.foreground));
 			} else if(this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
-				fmt += "48;5;" + Xterm256.colorNameToXterm256("MistyRose1") + ";38;5;" + Xterm256.colorNameToXterm256("black");
+				formatted.append("48;5;"); 
+				formatted.append(Config.getColor(ConfigKey.feature_background_negative_strand)); 
+				formatted.append(";38;5;");
+				formatted.append(Config.getColor(ConfigKey.foreground));
 			} else {
-				fmt += "48;5;" + Xterm256.colorNameToXterm256("grey100") + ";38;5;" + Xterm256.colorNameToXterm256("black");
+				formatted.append("48;5;"); 
+				formatted.append(Config.getColor(ConfigKey.background)); 
+				formatted.append(";38;5;");
+				formatted.append(Config.getColor(ConfigKey.foreground));
 			}
-			formatted += fmt + "m" + c + "\033[0m\033[38;5;232;48;5;231m"; // End by setting removing all formatting and fg to black and bg to white
 		}
-		return formatted;
+		return formatted.toString();
 	}
 	
 	/**

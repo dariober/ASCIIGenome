@@ -19,6 +19,7 @@ Contents:
    supported_io
    usage
    examples
+   faq
    commandHelp
    
 Indices and tables

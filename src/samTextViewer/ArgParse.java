@@ -12,7 +12,8 @@ public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
 	public static String VERSION= "1.2.1";
-	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
+
+  public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	public static String WEB_RTD= "http://asciigenome.readthedocs.io/";
 	
 	public static LinkedHashMap<String, String> docstrings= new LinkedHashMap<String, String>(); 
@@ -64,6 +65,16 @@ public class ArgParse {
 		parser.addArgument("--nonInteractive", "-ni")
 			.action(Arguments.storeTrue())
 			.help("Non interactive mode: Exit after having processed cmd line args.");
+		
+		parser.addArgument("--config", "-c")
+			.type(String.class)
+			.required(false)
+			.help("Source of configuration settings. "
+					+ "It can be a local file or a tag matching a built-in configuration: "
+					+ "'black_on_white', 'white_on_black', 'metal'. "
+					+ "If null, first try to read configuration from file '~/.asciigenome_config'. "
+					+ "If this file is missing use a built-in setting. "
+					+ "For examples of configuration files see https://github.com/dariober/ASCIIGenome/blob/master/resources/config/");
 		
 		parser.addArgument("--debug")
 			.action(Arguments.storeTrue())

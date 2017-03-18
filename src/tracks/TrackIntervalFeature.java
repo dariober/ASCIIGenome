@@ -1,14 +1,9 @@
 package tracks;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +18,8 @@ import org.broad.igv.bbfile.BBFileReader;
 
 import com.google.common.collect.Lists;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -43,7 +40,7 @@ public class TrackIntervalFeature extends Track {
 	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
 	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
-	private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
+	// private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
 	// private Set<String> awkFiltered; // List of features after awk filtering.
 	
 	/* C o n s t r u c t o r */
@@ -214,41 +211,41 @@ public class TrackIntervalFeature extends Track {
 	 * rawFeature is a raw line from IntervalFeature file.
 	 * @throws InvalidCommandLineException 
 	 * */
-	private Boolean passAwkFilter(String rawFeature) throws IOException {
-
-		if(this.getAwk().isEmpty()){
-			throw new RuntimeException();
-		}
-		
-		InputStream is= new ByteArrayInputStream(rawFeature.getBytes(StandardCharsets.UTF_8));
-		
-		String[] args= Utils.tokenize(this.getAwk(), " ").toArray(new String[0]); 
-		
-		PrintStream stdout = System.out;
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try{
-			PrintStream os= new PrintStream(baos);
-			new org.jawk.Main(args, is, os, System.err);
-		} catch(Exception e){
-			this.awk= ""; // If something goes wrong reset to no awk. Otherwise
-						  // You loop through a broken awk script.
-			throw new IOException();
-		} finally{
-			System.setOut(stdout);
-			is.close();
-		}
-		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-		if(output.trim().isEmpty()){
-			return false;
-		} else if(output.trim().equals(rawFeature.trim())){
-			return true;
-		} else {
-			// Awk output is not empty or equal to inout line. Reset awk script and return null
-			// to signal this condition.
-			this.awk= "";
-			return null;
-		}
-	}
+//	private Boolean passAwkFilter(String rawFeature) throws IOException {
+//
+//		if(this.getAwk().isEmpty()){
+//			throw new RuntimeException();
+//		}
+//		
+//		InputStream is= new ByteArrayInputStream(rawFeature.getBytes(StandardCharsets.UTF_8));
+//		
+//		String[] args= Utils.tokenize(this.getAwk(), " ").toArray(new String[0]); 
+//		
+//		PrintStream stdout = System.out;
+//		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//		try{
+//			PrintStream os= new PrintStream(baos);
+//			new org.jawk.Main(args, is, os, System.err);
+//		} catch(Exception e){
+//			this.awk= ""; // If something goes wrong reset to no awk. Otherwise
+//						  // You loop through a broken awk script.
+//			throw new IOException();
+//		} finally{
+//			System.setOut(stdout);
+//			is.close();
+//		}
+//		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+//		if(output.trim().isEmpty()){
+//			return false;
+//		} else if(output.trim().equals(rawFeature.trim())){
+//			return true;
+//		} else {
+//			// Awk output is not empty or equal to inout line. Reset awk script and return null
+//			// to signal this condition.
+//			this.awk= "";
+//			return null;
+//		}
+//	}
 
 	
 	/** Return true if string is visible, i.e. it
@@ -274,16 +271,14 @@ public class TrackIntervalFeature extends Track {
 		}
 		
 		// Awk
-		if( ! this.getAwk().isEmpty()){
-			try {
-				isVisible= this.passAwkFilter(x);
-			} catch (Exception e) {
-				// 
-			}
-			if(isVisible == null){
-				System.err.println("Awk output must be either empty or equal to input.");
-				throw new InvalidGenomicCoordsException();
-			}
+		try {
+			isVisible= Utils.passAwkFilter(x, this.getAwk()); // this.passAwkFilter(x);
+		} catch (Exception e) {
+			// 
+		}
+		if(isVisible == null){
+			System.err.println("Awk output must be either empty or equal to input.");
+			throw new InvalidGenomicCoordsException();
 		}
 		return isVisible;
 	}
@@ -602,12 +597,11 @@ public class TrackIntervalFeature extends Track {
 	}
 	
 	@Override
-	public String getTitle() throws InvalidColourException{
+	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 		
 		if(this.isHideTitle()){
 			return "";
 		}
-		
 		return this.formatTitle(this.getUnformattedTitle()) + "\n";
 	}
 	
@@ -727,7 +721,6 @@ public class TrackIntervalFeature extends Track {
 				int omitted= intervalFeatureList.size() - this.getPrintRawLineCount();
 				if(omitted > 0){
 					omitString= "[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]";
-					// System.err.println("[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]");
 				}
 				break;
 			}
@@ -743,7 +736,7 @@ public class TrackIntervalFeature extends Track {
 			}			
 			sb.append(x + "\n");
 		}
-		return sb.toString(); // NB: Leave last trailing /n
+		return sb.toString(); // NB: Leave last trailing \n
 	}
 
 	@Override
@@ -752,10 +745,15 @@ public class TrackIntervalFeature extends Track {
 	 * written as string.
 	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
 	 * */
-	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException {
+	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
 		
 		if(this.getExportFile() == null || this.getExportFile().isEmpty()){
-			return this.printFeatures();
+			if(this.isNoFormat()){
+				return this.printFeatures();
+			} else {
+				return "\033[38;5;" + Config.getColor(ConfigKey.foreground) + 
+						";48;5;" + Config.getColor(ConfigKey.background) + "m" + this.printFeatures();				
+			}
 		}
 		
 		BufferedWriter wr= null;

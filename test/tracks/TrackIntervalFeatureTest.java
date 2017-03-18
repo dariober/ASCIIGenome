@@ -10,12 +10,30 @@ import java.util.List;
 
 import org.junit.Test;
 
+import coloring.Config;
 import exceptions.InvalidColourException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 
 public class TrackIntervalFeatureTest {
+	
+	@Test
+	public void canReadBgzFileExtension() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+
+		// .bgz, without index
+		String intervalFileName= "test_data/bgz_noindex.vcf.bgz";
+		GenomicCoords gc= new GenomicCoords("1:1-200000000", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		assertTrue(tif.getFeaturesInInterval("1", 1, 200000000).size() > 0);
+		
+		// .bgz, with index
+		intervalFileName= "test_data/bgz_index.vcf.bgz";
+		gc= new GenomicCoords("1:1-200000000", null, null);
+		tif= new TrackIntervalFeature(intervalFileName, gc);
+		assertTrue(tif.getFeaturesInInterval("1", 1, 200000000).size() > 0);
+	}
 	
 	@Test
 	public void canPrintChromsomeNames() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
@@ -125,7 +143,7 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
-	public void canPrintGtfFeatures() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void canPrintGtfFeatures() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
 
 		String intervalFileName= "test_data/refSeq.bed";
 		GenomicCoords gc= new GenomicCoords("chr1:1-70", null, null);
@@ -133,8 +151,8 @@ public class TrackIntervalFeatureTest {
 		tif.setNoFormat(true);
 		assertEquals(2, tif.getIntervalFeatureList().size());
 		
+		new Config(null);
 		assertEquals("||||", tif.printToScreen().substring(0,  4));
-
 		tif.setNoFormat(false);
 		assertTrue(tif.printToScreen().trim().startsWith("[")); // trim is necessary to remove escape \033
 		assertTrue(tif.printToScreen().length() > 100);
@@ -464,7 +482,8 @@ public class TrackIntervalFeatureTest {
 
 	
 	@Test
-	public void canPrintRawLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+	public void canPrintRawLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
+		new Config(null);
 		GenomicCoords gc= new GenomicCoords("chr1:1-40000", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		tif.setPrintMode(PrintRawLine.CLIP);

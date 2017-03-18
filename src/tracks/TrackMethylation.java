@@ -1,5 +1,6 @@
 package tracks;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.common.base.Joiner;
 
 import exceptions.InvalidColourException;
+import exceptions.InvalidGenomicCoordsException;
 import samTextViewer.Utils;
 
 /**
@@ -180,7 +182,7 @@ public class TrackMethylation extends Track {
     //}
     
     @Override
-    public String getTitle() throws InvalidColourException{
+    public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
     
 		if(this.isHideTitle()){
 			return "";
@@ -194,8 +196,9 @@ public class TrackMethylation extends Track {
 		
         String xtitle= this.getTrackTag() 
                 + "; ylim[" + ymin + " " + ymax + "]" 
-                + "; range[" + rounded[0] + " " + rounded[1] + "]\n";
-		return this.formatTitle(xtitle);
+                + "; range[" + rounded[0] + " " + rounded[1] + "]";
+        // xtitle= Utils.padEndMultiLine(xtitle, this.getGc().getUserWindowSize());
+		return this.formatTitle(xtitle) + "\n";
     }
     
     public List<ScreenLocusInfo> getScreenLocusInfoList() { return screenLocusInfoList; }

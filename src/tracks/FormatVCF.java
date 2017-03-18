@@ -1,6 +1,7 @@
 package tracks;
 
-import coloring.Xterm256;
+import coloring.Config;
+import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 
 public class FormatVCF {
@@ -15,10 +16,10 @@ public class FormatVCF {
 		if(refAllele.length() == 1 && altAllele.length() == 1){
 			// SNP
 			text= altAllele.charAt(0);
-		} else if(refAllele.length() == 1 && altAllele.length() > 1){
+		} else if(altAllele.length() > refAllele.length()){
 			// Insertion into the reference
 			text= 'I';
-		} else if(refAllele.length() > 1 && altAllele.length() == 1){
+		} else if(refAllele.length() > altAllele.length()){
 			// Deletion into the reference
 			text= 'D';
 		} else {
@@ -33,21 +34,34 @@ public class FormatVCF {
 	public static String format(char textForVariant) throws InvalidColourException{
 
 		// Format
-		String formattedText= "";
-		// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
-		
+		StringBuilder formattedText= new StringBuilder();
+		formattedText.append("\033[7;48;5;"); // 7: Invert colour back/fore-ground
+		formattedText.append(Config.getColor(ConfigKey.background));
+		formattedText.append(";38;5;");
 		if(textForVariant == 'A' || textForVariant == 'a'){
-			formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("blue") + "m" + textForVariant + "\033[0m";
+			formattedText.append(Config.getColor(ConfigKey.seq_a));
+			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("blue") + "m" + textForVariant + "\033[0m";
 		} else if(textForVariant == 'C' || textForVariant == 'c') {
-			formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("red") + "m" + textForVariant + "\033[0m";
+			formattedText.append(Config.getColor(ConfigKey.seq_c));
+			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("red") + "m" + textForVariant + "\033[0m";
 		} else if(textForVariant == 'G' || textForVariant == 'g') {
-			formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("green") + "m" + textForVariant + "\033[0m";
+			formattedText.append(Config.getColor(ConfigKey.seq_g));
+			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("green") + "m" + textForVariant + "\033[0m";
 		} else if(textForVariant == 'T' || textForVariant == 't') {
-			formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + textForVariant + "\033[0m";
+			formattedText.append(Config.getColor(ConfigKey.seq_t));
+			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + textForVariant + "\033[0m";
 		} else {
-			formattedText += textForVariant;
+			formattedText.append(Config.getColor(ConfigKey.seq_other));
+			// formattedText += textForVariant;
 		}
-		return formattedText;
+		formattedText.append("m");
+		formattedText.append(textForVariant);
+		formattedText.append("\033[0m\033[38;5;");
+		formattedText.append(Config.getColor(ConfigKey.foreground));
+		formattedText.append(";48;5;");
+		formattedText.append(Config.getColor(ConfigKey.background));
+		formattedText.append("m");
+		return formattedText.toString();
 	}
 	
 }

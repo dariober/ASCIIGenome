@@ -17,7 +17,8 @@ import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 
-import coloring.Xterm256;
+import coloring.Config;
+import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -297,6 +298,18 @@ public class GenomicCoords implements Cloneable {
 	 * @throws IOException 
 	 */
 	public void zoomOut() throws IOException{
+		
+		// If window size is 1 you need to extend it otherwise zoom will have no effect!
+		if((this.to - this.from) == 0){
+			if((this.from - 1) > 0){
+				// Try to extend left by 1 bp:
+				this.from -= 1;
+			} else {
+				// Else extend right
+				this.to += 1; // But what if you have a chrom of 1bp?!
+			}
+		}
+		
 		int zoom= 1;
 		// * Get size of window (to - from + 1)
 		int range= this.to - this.from + 1;
@@ -326,6 +339,7 @@ public class GenomicCoords implements Cloneable {
 		// this.setRefSeq();
 	}
 
+	
 	/**
 	 * Zoom into range. 
 	 * @throws IOException 
@@ -524,7 +538,7 @@ public class GenomicCoords implements Cloneable {
 			ideogram= ideogram.substring(0, this.getUserWindowSize());
 		}
 		if(!noFormat){
-			ideogram= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + ideogram;
+			ideogram= "\033[48;5;" + Config.getColor(ConfigKey.background) + ";38;5;" + Config.getColor(ConfigKey.chrom_ideogram) + "m" + ideogram;
 		}
 		return ideogram;
 	}
@@ -568,7 +582,10 @@ public class GenomicCoords implements Cloneable {
 		}
 		numberLine= numberLine.substring(0, this.getUserWindowSize());
 		if(!noFormat){
-			numberLine= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + numberLine;
+			numberLine= "\033[48;5;" + Config.getColor(ConfigKey.background) + 
+					";38;5;" + Config.getColor(ConfigKey.ruler) +
+					"m" + numberLine;
+			// numberLine= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + numberLine;
 		}
     	return numberLine;
     }
@@ -592,16 +609,17 @@ public class GenomicCoords implements Cloneable {
 			for(byte c : refSeq){
 				// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
 				char base= (char) c;
+				String prefix= "\033[48;5;" + Config.getColor(ConfigKey.background) + ";38;5;";
 				if(base == 'A' || base == 'a'){
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("blue") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_a) + "m" + base;
 				} else if(base == 'C' || base == 'c') {
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("red") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_c) + "m" + base;
 				} else if(base == 'G' || base == 'g') {
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("green") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_g) + "m" + base;
 				} else if(base == 'T' || base == 't') {
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("yellow") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_t) + "m" + base;
 				} else {
-					faSeqStr += "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + base;
+					faSeqStr += prefix + Config.getColor(ConfigKey.seq_other) + "m" + base;
 				} 
 			}
 			return faSeqStr + "\n";
