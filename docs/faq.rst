@@ -9,7 +9,14 @@ FAQ and miscellanea
   use as template one of the files in the repository directory `config <https://github.com/dariober/ASCIIGenome/blob/master/resources/config/>`_, edit it as desired and save it
   as ``~/.asciigenome_config``.
 
-  For available colours execute see the help in ``trackColor``.
+  Examples:
+  
+      ASCIIGenome -c metal ...    <- Use the "metal" built-in them
+      ASCIIGenome -c mytheme.conf <- Read configuration from this file
+      ASCIIGenome ...             <- No args to -c: Read file ~/.asciigenome_config or use default theme
+      
+  For available colour names see the help in ``trackColor`` or this `cheat sheet 
+<http://jonasjacek.github.io/colors/>`_.
 
 |
 
