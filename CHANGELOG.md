@@ -1,3 +1,10 @@
+New in 1.3.0
+============
+
+* Colour theme can be customized. Add `setConfig` command.
+
+* Add command `sys` to execute system commands.
+
 New in 1.2.1
 ============
 

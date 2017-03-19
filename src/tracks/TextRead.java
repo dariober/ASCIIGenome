@@ -196,6 +196,14 @@ class TextRead {
 				formatted.append(";38;5;");
 				formatted.append(Config.getColor(ConfigKey.foreground));
 			}
+			formatted.append("m");
+			formatted.append(c);
+			// End by setting removing all formatting and reset back/fore-ground
+			formatted.append("\033[0m\033[38;5;");
+			formatted.append(Config.getColor(ConfigKey.foreground));
+			formatted.append(";48;5;");
+			formatted.append(Config.getColor(ConfigKey.background));
+			formatted.append("m");
 		}
 		return formatted.toString();
 	}
