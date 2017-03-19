@@ -61,24 +61,3 @@ be used in place of the full name, e.g. `next myLongfileName.bed#1` can be also 
 
 These are just some functionalities to give an idea behind *ASCIIGenome*. See :ref:`Supported_input_and_output2` for 
 the individual commands available.
-
-Tips gotchas and miscellanea
-----------------------------
-
-* **Regular expression** *ASCIIGenome* makes extensive use of regular expressions. 
-  Most commands use regular expression in *case sensitive* mode. 
-  Use the :code:`(?i)` modifier to match in case insensitve mode, e.g. '(?i)bam' to capture 
-  'foo.bam' and 'foo.BAM'. Note that the command :code:`seqRegex` by default is case insensitive,
-  unless the flag :code:`-c` is set.
-
-* When displaying bam files, *ASCIGenome* is hardcoded to disable the coverage and read tracks if
-  the window size is >100,000 bp. This is to prevent the browsing to become horribly slow. To display
-  such large windows  consider bigWig or tdf file format. Also consider hiding the 
-  read track if not necessary with :code:`trackHeight 0 @*.bam` (or other suitable regex).
-
-* When opening bam files, the first chromosome is often the mitochondrial chromosome chrM (or chrMT) which
-  often has very high read depth (say 10,000x). This can make the opening slow. Consider using the :code:`-r`
-  option in these cases. E.g. :code:`ASCIIGenome -r chr1 file1.bam file2.bam ...`
-  
-* If the background colour of your terminal is not white, after exiting ASCIIGenome you will have a rather awkward mix 
-  of white background and user's colours. To get rid of this mix you can issue the Unix command `clear` after exiting ASCIIGenome.

@@ -11,7 +11,7 @@ import exceptions.InvalidColourException;
 
 public class Xterm256 {
 
-	public static Color xterm256ToColor(int xterm256) throws InvalidColourException{
+	public static final Color xterm256ToColor(int xterm256) throws InvalidColourException{
 		
 		String rgb= xterm256toRGB(xterm256);
 		
@@ -24,9 +24,9 @@ public class Xterm256 {
 		
 	}
 	
-	public static LinkedHashMap<String, Integer> mapColorNameToXterm256(){
+	public static final LinkedHashMap<String, Integer> mapColorNameToXterm256(){
 		
-		LinkedHashMap<String, Integer> map= new LinkedHashMap<String, Integer>();
+		final LinkedHashMap<String, Integer> map= new LinkedHashMap<String, Integer>();
 		
 		// See http://jonasjacek.github.io/colors/
 		map.put("black", 0);
@@ -44,7 +44,7 @@ public class Xterm256 {
 		map.put("blue", 12);
 		map.put("fuchsia", 13);
 		map.put("aqua", 14);
-		map.put("white", 15);
+		map.put("white", 231); // NB: white is "15" but 15 shows up as grey-ish. So use 231 (grey100) instead 
 		map.put("grey0", 16);
 		map.put("navyblue", 17);
 		map.put("darkblue", 18);
@@ -316,7 +316,7 @@ public class Xterm256 {
 		}		
 	}
 	
-	public static String colorShowForTerminal(){
+	public static String colorShowForTerminal() throws InvalidColourException{
 		
 		int maxLen= 0;
 		for(String x : mapColorNameToXterm256().keySet()){
@@ -331,7 +331,9 @@ public class Xterm256 {
 			i++;
 			int xterm= mapColorNameToXterm256().get(x);
 			int spacer= maxLen - x.length();
-			sb.append(xterm + ": \033[38;5;" + xterm + "m" + x + "\033[0m");
+			sb.append(xterm + ": \033[38;5;" + xterm + "m" + x + 
+					"\033[38;5;" + Config.getColor(ConfigKey.foreground) + 
+					";48;5;" + Config.getColor(ConfigKey.background) + "m");
 			
 			if(i == 3){ // Arrange colors in this many columns
 				sb.append("\n");
@@ -343,7 +345,7 @@ public class Xterm256 {
 		return sb.toString();
 	}
 	
-	private static String xterm256toRGB(int xterm256) throws InvalidColourException{
+	private static final String xterm256toRGB(int xterm256) throws InvalidColourException{
 		
 		if(xterm256 < 0 || xterm256 > 255){
 			throw new InvalidColourException();
@@ -621,5 +623,4 @@ public class Xterm256 {
 	
 	Map<Integer, String> xterm256toRGB = new HashMap<Integer, String>();
 
-	
 }

@@ -11,8 +11,10 @@ import java.util.List;
 
 import org.junit.Test;
 
+import coloring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
@@ -284,12 +286,23 @@ public class GenomicCoordsTest {
 		GenomicCoords gc= new GenomicCoords("chr1:101-105", samSeqDict, null); 
 		gc.zoomOut();
 		assertEquals(99, (int)gc.getFrom()); // exp 95,111 if zoom fact is x2
-		assertEquals(107, (int)gc.getTo()); // 
+		assertEquals(107, (int)gc.getTo()); 
 		for(int i= 0; i < 40; i++){
 			gc.zoomOut();
 		}
 		assertEquals(1, (int)gc.getFrom());
 		assertEquals(samSeqDict.getSequence("chr1").getSequenceLength(), (int)gc.getTo()); // Doesn't extend beyond chrom
+
+		// Zoom out from a single base window at start of chrom
+		gc= new GenomicCoords("chrM:1-1", samSeqDict, null);
+		gc.zoomOut();
+		assertEquals(1, (int)gc.getFrom());
+		assertTrue((int)gc.getTo() > 1);
+		// 1 bp at the end of chrom
+		gc= new GenomicCoords("chrM:16571-16571", samSeqDict, null);
+		gc.zoomOut();
+		assertTrue((int)gc.getFrom() < 16571);
+		assertEquals(16571, (int)gc.getTo());
 		
 		gc= new GenomicCoords("chr1:101-1000", samSeqDict, null);
 		gc.zoomIn();
@@ -311,6 +324,7 @@ public class GenomicCoordsTest {
 		gc.zoomIn();
 		assertEquals(16561, (int)gc.getFrom());
 		assertEquals(16571, (int)gc.getTo());
+		
 	}
 	
 	@Test
@@ -325,11 +339,14 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
-	public void canPrintRuler() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+	public void canPrintRuler() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidConfigException{
 		
 		GenomicCoords gc= new GenomicCoords("chr1:101-200", samSeqDict, null);
 		assertEquals(79, gc.printableRuler(10, true).length());
-
+		
+		// With colors: Note that we need to initialize the configuration. 
+		new Config(null);
+		assertTrue((gc.printableRuler(10, false).contains("[")));
 	}
 	
 	// @Test // Do not test until gcProfile is sorted

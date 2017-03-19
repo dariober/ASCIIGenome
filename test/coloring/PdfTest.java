@@ -17,6 +17,20 @@ import exceptions.InvalidColourException;
 public class PdfTest {
 
 	@Test
+	public void canProcessAllLines() throws IOException, InvalidColourException, DocumentException{
+
+		Pdf withoutNewline= new Pdf("foo\nbar\nbaz");
+		Pdf withNewline= new Pdf("foo\nbar\nbaz\n");
+		File tmp1= new File("deleteme1.pdf");
+		File tmp2= new File("deleteme2.pdf");
+		tmp1.deleteOnExit();
+		tmp2.deleteOnExit();
+		withoutNewline.convert(tmp1, 10, false);
+		withNewline.convert(tmp2, 10, false);
+		assertEquals(tmp1.length(), tmp2.length());
+	}
+	
+	@Test
 	public void getColorFromAnsi() throws IOException, InvalidColourException{
 
 		// Dummy pdf object. It doesn't matter how you create it.

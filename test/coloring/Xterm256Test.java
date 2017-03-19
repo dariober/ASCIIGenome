@@ -48,7 +48,7 @@ public class Xterm256Test {
 	}
 	
 	@Test
-	public void canShowColors(){
+	public void canShowColors() throws InvalidColourException{
 		System.out.println(Xterm256.colorShowForTerminal());
 	}
 }

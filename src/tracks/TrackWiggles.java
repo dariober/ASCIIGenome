@@ -17,6 +17,8 @@ import org.broad.igv.util.ResourceLocator;
 
 import com.google.common.base.Joiner;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
@@ -157,13 +159,18 @@ public class TrackWiggles extends Track {
 		}
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
-			printable= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256(this.getTitleColour()) + "m" + printable; // + "\033[48;5;231m";
+			printable= "\033[48;5;"
+			+ Config.getColor(ConfigKey.background)
+			+ ";38;5;"
+			+ Xterm256.colorNameToXterm256(this.getTitleColour())
+			+ "m"
+			+ printable;
 		}
 		return printable;
 	}
 	
 	@Override
-	public String getTitle() throws InvalidColourException{
+	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 
 		if(this.isHideTitle()){
 			return "";
@@ -177,8 +184,10 @@ public class TrackWiggles extends Track {
 		
 		String xtitle= this.getTrackTag() 
 				+ "; ylim[" + ymin + " " + ymax + "]" 
-				+ "; range[" + rounded[0] + " " + rounded[1] + "]\n";
-		return this.formatTitle(xtitle);
+				+ "; range[" + rounded[0] + " " + rounded[1] + "]";
+		
+		// xtitle= Utils.padEndMultiLine(xtitle, this.getGc().getUserWindowSize());
+		return this.formatTitle(xtitle) + "\n";
 	}
 	
 	/** Return true if line looks like a valid bedgraph record  

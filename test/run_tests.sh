@@ -1,13 +1,53 @@
 #!/bin/bash
 
-# These tests are far from comprehensive since they don't check the interactive session
+ASCIIGenome_jar=$1
+test_data=$2
 
-# Setup: Path to jar and data
-# ===========================
-stvExe=~/Dropbox/Public/ASCIIGenome.jar ## Path to jar 
-cd /PATH/TO/test_data ## Path to test data
+function checkZeroExit {
+    if [[ $? == 0 ]]
+        then
+        echo -e "\033[38;5;2m PASSED \033[0m"
+    else
+        echo -e "\033[38;5;9m FAILED \033[0m"
+        exit 1
+    fi
+}
 
-# Get and prepare chr7.fa file, if not already available
+if [[ -z $1 || -z $2 ]]
+    then
+    echo -e "DESCRIPTION
+Test runner for ASCIIGenome. Beware these tests are not comprehensive and they 
+just check that ASCIIGenome exits clean after executing them. 
+Output files are written to current working directory. Make sure this is writable
+and it can be potentially become littered.
+
+USAGE
+run_test.sh /path/to/ASCIIGenome.jar /path/to/test_data/"
+    exit 1
+fi
+
+echo -e "\033[38;5;2m CAN SHOW HELP \033[0m"
+java -Xmx2g -jar $ASCIIGenome_jar -h
+
+echo -e "\033[38;5;2m CAN SHOW VERSION \033[0m"
+java -Xmx2g -jar $ASCIIGenome_jar -v 
+
+clear
+echo -e "\033[38;5;2m CAN EXECUTE sys COMMAND \033[0m"
+java -Xmx2g -jar $ASCIIGenome_jar -ni -x 'sys ls' &&
+checkZeroExit
+
+clear
+echo -e "\033[38;5;2m CAN SET CONFIG \033[0m"
+java -Xmx2g -jar $ASCIIGenome_jar -ni -x 'setConfig metal' &&
+checkZeroExit
+
+
+exit 0
+
+echo "CAN SET CONFIGURATION"
+java -jar 
+
 if [ ! -e chr7.fa ]
     then
     wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/chromosomes/chr7.fa.gz &&

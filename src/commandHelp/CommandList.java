@@ -10,15 +10,16 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import coloring.Xterm256;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import jline.console.ConsoleReader;
 import jline.console.completer.StringsCompleter;
 
 public class CommandList {
 	
-	private static String SEE_ALSO= "\nFull documentation at: http://asciigenome.readthedocs.io/\n\n";
+	private static String SEE_ALSO= "\nFull documentation at: http://asciigenome.readthedocs.io/\n";
 	
-	public static ConsoleReader initConsole() throws IOException{
+	public static ConsoleReader initConsole() throws IOException, InvalidColourException{
 		
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 		    public void run() {
@@ -41,7 +42,7 @@ public class CommandList {
 		return console;
 	}
 	
-	private static String reStructuredTextHelp() throws InvalidCommandLineException{
+	private static String reStructuredTextHelp() throws InvalidCommandLineException, InvalidColourException{
 
 		String intro = ".. _command_reference:"
 				+ "\n"
@@ -90,8 +91,9 @@ public class CommandList {
 	/** Run this method in Unit test to update the file commandHelp.md  
 	 * @throws InvalidCommandLineException 
 	 * @throws IOException 
+	 * @throws InvalidColourException 
 	 * */
-	public static void updateCommandHelpMdFile(File destFile) throws InvalidCommandLineException, IOException{
+	public static void updateCommandHelpMdFile(File destFile) throws InvalidCommandLineException, IOException, InvalidColourException{
 		
 		BufferedWriter wr= new BufferedWriter(new FileWriter(destFile));
 		String doc= reStructuredTextHelp();
@@ -105,7 +107,7 @@ public class CommandList {
 		System.err.println("Command help file written to " + destFile.getAbsolutePath());
 	}
 	
-	public static String fullHelp() throws InvalidCommandLineException{
+	public static String fullHelp() throws InvalidCommandLineException, InvalidColourException{
 		String help= "\n      N a v i g a t i o n \n\n";
 		for(CommandHelp x : CommandList.getCommandsForSection(Section.NAVIGATION)){
 			help += (x.printCommandHelp() + "\n");
@@ -136,7 +138,7 @@ public class CommandList {
 		return help;
 	}
 	
-	public static String briefHelp() throws InvalidCommandLineException{
+	public static String briefHelp() throws InvalidCommandLineException, InvalidColourException{
 		String help= "\n      N a v i g a t i o n \n\n";
 		for(CommandHelp x : CommandList.getCommandsForSection(Section.NAVIGATION)){
 			help += (x.printBriefHelp());
@@ -163,7 +165,7 @@ public class CommandList {
 	}
 
 	
-	private final static List<CommandHelp> commandHelpList() throws InvalidCommandLineException{
+	private final static List<CommandHelp> commandHelpList() throws InvalidCommandLineException, InvalidColourException{
 		List<CommandHelp> cmdList= new ArrayList<CommandHelp>();
 		CommandHelp cmd= new CommandHelp();		
 
@@ -728,6 +730,21 @@ public class CommandList {
 				+ "a genome identifier (e.g. hg19). If a fasta file is used also the "
 				+ "reference sequence becomes available.");
 		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
+		cmd.setName("setConfig"); cmd.setArgs("tag|file"); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Set color configuration.");
+		cmd.setAdditionalDescription("Configuration can be set with one of the built-in "
+				+ "themes: 'black_on_white', 'white_on_black', 'metal'. "
+				+ "Alternatively, configuration can be read from file. For examples "
+				+ "files see \n"
+				+ "https://github.com/dariober/ASCIIGenome/blob/master/resources/config/\n"
+				+ "\n"
+				+ "Examples:\n"
+				+ "setConfig metal\n"
+				+ "setConfig /path/to/mytheme.conf");
+		cmdList.add(cmd);
+
 		
 		cmd= new CommandHelp();
 		cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
@@ -855,7 +872,7 @@ public class CommandList {
 				+ "    samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar\n"
 				+ "    samtools~~~~~~~~~~~~~~~~~-> Reset all to default.\n"
 				+ "");
-		cmdList.add(cmd);		
+		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
 		cmd.setName(Command.BSseq.getCmdDescr()); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
@@ -911,6 +928,21 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
+		cmd.setName("sys"); cmd.setArgs("[-L] command"); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Execute a system command.");
+		cmd.setAdditionalDescription(""
+				+ "By default the given :code:`command` is executed as a string passed to "
+				+ "Bash as :code:`bash -c string`. With the :code:`-L` option the command is "
+				+ "executed literally as it is. Note that with the :code:`-L` option globs "
+				+ "are not expanded by Java. Examples::\n"
+				+ "\n"
+				+ "    sys pwd~~~~~~~~~~~~~~~~~~~~<- Print working directory name\n"
+				+ "    sys ls *.bam ~~~~~~~~~~~~~~<- List files ending in .bam\n"
+				+ "    sys samtools index aln.bam <- Exec samtools"
+				+ "");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
 		cmd.setName("q"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Quit");
 		cmd.setAdditionalDescription("");
@@ -943,7 +975,7 @@ public class CommandList {
 			
 		}
 
-	protected static List<CommandHelp> getCommandsForSection(Section section) throws InvalidCommandLineException{
+	protected static List<CommandHelp> getCommandsForSection(Section section) throws InvalidCommandLineException, InvalidColourException{
 		List<CommandHelp> cmdList= new ArrayList<CommandHelp>();
 		for(CommandHelp x : commandHelpList()){
 			if(x.inSection.equals(section)){
@@ -1004,11 +1036,13 @@ public class CommandList {
 		paramList.add(Command.BSseq.getCmdDescr());
 		paramList.add("save");
 		paramList.add("sessionSave");
+		paramList.add("sys");
+		paramList.add("setConfig");
 	
 		return paramList;
 	}
 
-	public static String getHelpForCommand(String commandName) {
+	public static String getHelpForCommand(String commandName) throws InvalidColourException {
 		try {
 			for(CommandHelp x : CommandList.commandHelpList()){
 				if(x.getName().equals(commandName)){
