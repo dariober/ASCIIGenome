@@ -32,8 +32,9 @@ How to cite
 -----------
 
 If you happen to find `ASCIIGenome` useful and you would like to acknowledge it, please quote the
-GitHub repository (https://github.com/dariober/ASCIIGenome/). A manuscript describing `ASCIIGenome` is
-in preparation.
+GitHub repository (https://github.com/dariober/ASCIIGenome/). 
+
+An article describing `ASCIIGenome` has been published in `Bioinformatics <https://academic.oup.com/bioinformatics/article-abstract/doi/10.1093/bioinformatics/btx007/2949507/ASCIIGenome-A-command-line-genome-browser-for?redirectedFrom=fulltext>`_ .
 
 Credits
 -------
