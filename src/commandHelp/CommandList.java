@@ -99,8 +99,7 @@ public class CommandList {
 		String doc= reStructuredTextHelp();
 		
 		// Replace ansi escapes
-		doc= doc.replaceAll("\n*0: [\\s|\\S]+0m", "`colors here <http://jonasjacek.github.io/colors/>`_");
-		// doc= doc.replaceAll("\\d+: \\033\\[38;5;\\d+m", ".. raw:: html\n\n    <font color=\"").replaceAll("\\033\\[0m\\s*", "\">FOO</font>\n\n----\n\n");
+		doc= doc.replaceAll("\n*0: [\\s|\\S]+grey93\033\\[38;5;0;48;5;231m", "`here <http://jonasjacek.github.io/colors/>`_ ");
 		
 		wr.write(doc + "\n");
 		wr.close();
@@ -740,9 +739,11 @@ public class CommandList {
 				+ "files see \n"
 				+ "https://github.com/dariober/ASCIIGenome/blob/master/resources/config/\n"
 				+ "\n"
-				+ "Examples:\n"
-				+ "setConfig metal\n"
-				+ "setConfig /path/to/mytheme.conf");
+				+ "Examples::\n"
+				+ "\n"
+				+ "    setConfig metal\n"
+				+ "    setConfig /path/to/mytheme.conf\n"
+				+ "");
 		cmdList.add(cmd);
 
 		
@@ -752,14 +753,14 @@ public class CommandList {
 		cmd.setAdditionalDescription("Example output::\n"
 				+ "\n"
 				+ "    showGenome\n"
-				+ "    chrM  16571\n"
-				+ "	   chr1  249250621 ||||||||||||||||||||||||||||||\n"
-				+ "    chr2  243199373 |||||||||||||||||||||||||||||\n"
+				+ "    chrM~~16571\n"
+				+ "	   chr1~~249250621 ||||||||||||||||||||||||||||||\n"
+				+ "    chr2~~243199373 |||||||||||||||||||||||||||||\n"
 				+ "    ...\n"
 				+ "    chr21 48129895~~||||||\n"
 				+ "    chr22 51304566~~||||||\n"
-				+ "    chrX  155270560 |||||||||||||||||||\n"
-				+ "    chrY  59373566~~|||||||\n"
+				+ "    chrX~~155270560 |||||||||||||||||||\n"
+				+ "    chrY~~59373566~~|||||||\n"
 				+ "\n"
 				+ "");
 		cmdList.add(cmd);

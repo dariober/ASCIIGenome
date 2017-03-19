@@ -450,9 +450,7 @@ Set colour for tracks matched by regex.  Colors can be specified by name or by a
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Available colours are from the Xterm256 palette: `colors here <http://jonasjacek.github.io/colors/>`_grey74[38;5;0;48;5;231m            251: [38;5;251mgrey78[38;5;0;48;5;231m
-252: [38;5;252mgrey82[38;5;0;48;5;231m            253: [38;5;253mgrey85[38;5;0;48;5;231m            254: [38;5;254mgrey89[38;5;0;48;5;231m
-255: [38;5;255mgrey93[38;5;0;48;5;231m            
+Available colours are from the Xterm256 palette: `here <http://jonasjacek.github.io/colors/>`_             
 
 Example::
 
@@ -607,9 +605,11 @@ setConfig
 Set color configuration. Configuration can be set with one of the built-in themes: 'black_on_white', 'white_on_black', 'metal'. Alternatively, configuration can be read from file. For examples files see 
 https://github.com/dariober/ASCIIGenome/blob/master/resources/config/
 
-Examples:
-setConfig metal
-setConfig /path/to/mytheme.conf
+Examples::
+
+    setConfig metal
+    setConfig /path/to/mytheme.conf
+
 
 showGenome
 ++++++++++
