@@ -2,7 +2,7 @@ FAQ and miscellanea
 ===================
 
 * **The default colour theme**, *black on white*, **is annoying on my dark background 
-  terminal. How do I changed it?** 
+  terminal. How do I change it?** 
 
   To change colour theme use the ``-c/--config`` command line option or the 
   interactive command ``setConfig``. To make your own theme and set it as default,
@@ -17,7 +17,7 @@ FAQ and miscellanea
 
   For command that do not explicitly enable turning on or off case sensitivity,
   you can prepend ``(?i)`` to your regex to match in case insensitve
-  mode, e.g. '(?i)bam' will capture  'foo.bam' and 'foo.BAM'. This is standard regular expression
+  mode, e.g. ``(?i)bam`` will capture  ``foo.bam`` and ``foo.BAM``. This is standard regular expression
   syntax unrelated to ASCIIGenome.
 
   Note that the command :code:`seqRegex` by default is case insensitive, unless
@@ -27,7 +27,7 @@ FAQ and miscellanea
 
 * **Why read and coverage tracks in bam files sometimes disappear?**
 
-  When displaying bam files, *ASCIGenome* is hardcoded to disable the coverage and read tracks if
+  When displaying bam files, *ASCIIGenome* is hardcoded to disable the coverage and read tracks if
   the window size is >100,000 bp. This is to prevent the browsing to become horribly slow. To display
   such large windows  consider bigWig or tdf file format. Also consider hiding the 
   read track if not necessary with :code:`trackHeight 0 @*.bam` (or other suitable regex).
