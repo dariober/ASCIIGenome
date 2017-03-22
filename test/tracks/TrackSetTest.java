@@ -197,7 +197,7 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
 
 		List<String>cmdInput= new ArrayList<String>();
 		cmdInput.add("bookmark");

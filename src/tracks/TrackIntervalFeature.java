@@ -39,7 +39,6 @@ public class TrackIntervalFeature extends Track {
 	final static private String SHOW_REGEX= ".*"; 	private String showRegex= SHOW_REGEX;
 	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
-	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
 	// private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
 	// private Set<String> awkFiltered; // List of features after awk filtering.
 	
@@ -1103,18 +1102,6 @@ public class TrackIntervalFeature extends Track {
 			System.err.println("Tabix and bigBed reader both null.");
 			throw new RuntimeException();
 		}
-	}
-
-	@Override
-	protected void setPrintRawLineCount(int count) {
-		if(count <= 0){
-			count= Integer.MAX_VALUE;
-		}
-		this.printRawLineCount= count;
-	}
-
-	protected int getPrintRawLineCount() {
-		return this.printRawLineCount;
 	}
 	
 	/** This setter is for TrackBookmark to work.*/

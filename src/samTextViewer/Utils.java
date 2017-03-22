@@ -85,6 +85,43 @@ import ucsc.UcscGenePred;
  */
 public class Utils {
 	
+	/** Returns true of the list of arguments argList contains the given flag
+	 * IMPORTANT SIDE EFFECT: If found, the argument flag is removed from the list. 
+	 * */
+	public static boolean argListContainsFlag(List<String> argList, String flag){
+		boolean hasFlag= false;
+		if(argList.contains(flag)){
+			argList.remove(flag);
+			hasFlag= true;
+		}
+		return hasFlag;
+	}
+
+	/** Check if the list of arguments contains "param" and if so return the argument. 
+	 * Returns null if arglist does not contain the parameter
+	 * IMPORTANT SIDE EFFECT: If found, the parameter and its argument are removed from argList. 
+	 * @throws InvalidCommandLineException 
+	 * */
+	public static String getArgForParam(List<String> argList, String param) throws InvalidCommandLineException{
+		
+		int idx= argList.indexOf(param);
+		if(idx == -1){
+			return null;
+		}
+		if(idx == (argList.size() - 1)){
+			// If param is the last item in the list you cannot get its argument!
+			throw new InvalidCommandLineException();
+		}
+		String arg= argList.get(idx+1);
+		
+		// Remove param and arg
+		argList.remove(idx);
+		argList.remove(idx);
+		
+		return arg;
+
+	}
+
 	public static void checkFasta(String fasta) throws IOException, UnindexableFastaFileException {
 		if(fasta == null){
 			return;
@@ -1581,6 +1618,61 @@ public class Utils {
 			mline.set(i, Strings.padEnd(mline.get(i), size, ' '));
 		}
 		return Joiner.on("\n").join(mline);
+	}
+
+	/**Parse string region in the form <chrom>:[start[-end]] to a list containing the
+	 * the three elements. See tests for behavior.
+	 * <start> and <end> if present are guaranteed to be parsable to positive int.
+	 * @throws InvalidGenomicCoordsException 
+	 * */
+	public static List<String> parseStringCoordsToList(String region) throws InvalidGenomicCoordsException {
+		
+		List<String> coords= new ArrayList<String>(3);
+		coords.add(null);
+		coords.add("1");
+		coords.add("536870912"); // Max size of binning index for tabix is 2^29. See also https://github.com/samtools/htslib/issues/435
+
+		String chrom= StringUtils.substringBeforeLast(region, ":").trim();
+		coords.set(0, chrom);
+		
+		String fromTo= StringUtils.substringAfterLast(region, ":").replaceAll(",", "").replaceAll("\\s", "");
+		if(fromTo.isEmpty()){
+			// Only chrom given
+			return coords;
+		}
+		
+		try{
+			Integer.parseInt(fromTo.replaceFirst("-", ""));
+		} catch(NumberFormatException e){
+			// If the from-to part does not contain only digits with the exception of the - separator,
+			// we assume this is a chrom name containing : and missing the from-to part.
+			coords.set(0, region);
+			return coords;
+		}
+		
+		int nsep= StringUtils.countMatches(fromTo, "-");
+		Integer from= null;
+		Integer to= null;
+		if(nsep == 0){ 
+			// Only start position given
+			from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
+			to= from;
+		} else if(nsep == 1){ // From and To positions given.
+			from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
+			to= Integer.parseInt(StringUtils.substringAfter(fromTo, "-").trim());
+			if(from > to || from <= 0 || to <= 0 || to > 536870912){
+				throw new InvalidGenomicCoordsException();	
+			}
+		} else {
+			throw new InvalidGenomicCoordsException();
+		}
+		coords.set(1, from.toString());
+		coords.set(2, to.toString());
+//		if(to != null){
+//			coords.set(2, to.toString());
+//		}
+		
+		return coords;
 	}
 	
 }

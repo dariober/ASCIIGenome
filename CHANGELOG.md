@@ -1,3 +1,17 @@
+New in 1.4.0
+============
+
+* `print` applies to bam files.
+
+* Insertions in VCF files are represented as string of length equal to the insertion
+  (at single base resolution, at larger zoom they scale accordingly). In previous 
+  versions insertions have always length 1 which is more consistent with the genomic 
+  coordinates but less useful.
+
+* Completely changed the API of `bookmark`. Adding and removing bookmarks is done by explicitly giving 
+  the coordinates of interest. Default is still the current coordinates. bookmark is 
+  more intuitive and useful now.
+
 New in 1.3.0
 ============
 

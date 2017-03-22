@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +16,9 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 
+import coloring.Config;
 import exceptions.InvalidColourException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 
 public class IntervalFeatureTest {
@@ -282,14 +285,16 @@ public class IntervalFeatureTest {
 	}
 	
 	@Test
-	public void canFormatVCFLine() throws InvalidGenomicCoordsException, InvalidColourException{
+	public void canFormatVCFLine() throws InvalidGenomicCoordsException, InvalidColourException, IOException, InvalidConfigException{
+		
+		new Config(null);
 		
 		List<Double> rulerMap= new ArrayList<Double>();
-		for(int i= 113054374; i < 113054580; i++){
+		for(int i= 1; i < 30; i++){
 			rulerMap.add((double)i);
 		}
 		
-		String vcfLine= "1 113054374 . C G 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
+		String vcfLine= "1 10 . C G 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
 		ift.mapToScreen(rulerMap);
 		assertEquals(1, ift.makeIdeogramFormatted(true).length);
@@ -297,13 +302,13 @@ public class IntervalFeatureTest {
 		assertTrue(ift.makeIdeogramFormatted(false)[0].contains("[")); // Just check there is a formatting char
 		
 		// Deletion
-		vcfLine= "1 113054374 . CTTG C 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
+		vcfLine= "1 10 . CTTG C 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
 		ift.mapToScreen(rulerMap);
 		assertEquals("D", ift.makeIdeogramFormatted(true)[0]);
 		
 		// Insertion
-		vcfLine= "1 113054374 . C CTTG 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
+		vcfLine= "1 10 . C CTTG 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
 		ift.mapToScreen(rulerMap);
 		assertEquals("I", ift.makeIdeogramFormatted(true)[0]);

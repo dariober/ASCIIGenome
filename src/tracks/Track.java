@@ -70,6 +70,7 @@ public class Track {
 	private boolean hideTitle= false;
 	private TrackFormat trackFormat;
 	protected String awk= ""; 
+	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
 	
 	/** A file to export track data
 	 * */
@@ -391,9 +392,8 @@ public class Track {
 		this.hideTitle = hideTitle;
 	}
 
-	public void addBookmark(String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException {
-		// TODO Auto-generated method stub
-		
+	public void addBookmark(GenomicCoords gc, String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException {
+		throw new UnsupportedOperationException();		
 	}
 
 	public String getWorkFilename() {
@@ -444,8 +444,20 @@ public class Track {
 	}
 
 	protected void setPrintRawLineCount(int count) {
-
+		if(count <= 0){
+			count= Integer.MAX_VALUE;
+		}
+		this.printRawLineCount= count;
 	}
+
+	protected int getPrintRawLineCount() {
+		return this.printRawLineCount;
+	}
+
+//	
+//	protected void setPrintRawLineCount(int count) {
+//
+//	}
 	
 }
 
