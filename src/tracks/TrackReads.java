@@ -1,8 +1,6 @@
 package tracks;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -16,8 +14,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
-import coloring.Config;
-import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -67,6 +63,8 @@ public class TrackReads extends Track{
 		this.setGc(gc);
 
 	}
+	
+	protected TrackReads(){};
 	
 	/* M e t h o d s */
 	
@@ -171,12 +169,12 @@ public class TrackReads extends Track{
 		line.add(textReads.get(0)); 
 		textReads.remove(0);
 		listOfLines.add(line);
+		int gap= (this.getGc().getBpPerScreenColumn() > 1) ? 0 : 1; // If reads are very compressed, do not add space between adjacent ones.
 		while(true){
 			ArrayList<TextRead> trToRemove= new ArrayList<TextRead>();
 			// Find a read in input whose start is greater then end of current
 			for(int i=0; i < textReads.size(); i++){
 				TextRead tr= textReads.get(i);
-				int gap= (this.getGc().getBpPerScreenColumn() > 1) ? 0 : 1; // If reads are very compressed, do not add space between adjacent ones.
 				if(tr.getTextStart() > line.get(line.size()-1).getTextEnd()+gap){ // +2 because we want some space between adjacent reads
 					listOfLines.get(listOfLines.size()-1).add(tr); // Append to the last line. 
 					trToRemove.add(tr);
@@ -210,10 +208,11 @@ public class TrackReads extends Track{
 		StringBuilder sb= new StringBuilder();
 
 		int curPos= 0; // Position on the line, needed to pad with blanks btw reads.
+		double bpPerScreenColumn= this.getGc().getBpPerScreenColumn();
 		for(TextRead tr : textReads){
 			String line= StringUtils.repeat(" ", (tr.getTextStart()-1) - curPos);
 			sb.append(line);
-			String printableRead= tr.getPrintableTextRead(bs, noFormat, withReadName);
+			String printableRead= tr.getPrintableTextRead(bs, noFormat, withReadName, bpPerScreenColumn);
 			sb.append(printableRead);
 			curPos= tr.getTextEnd();
 		}
@@ -247,87 +246,100 @@ public class TrackReads extends Track{
 		return this.formatTitle(title) + "\n";
 	}
 	
+	@Override
+	protected List<String> getRecordsAsStrings() {
+		List<String> featureList= new ArrayList<String>();
+		
+		for(List<TextRead> x : this.readStack){
+			for(TextRead txr : x ){
+				featureList.add(txr.getSamRecord().getSAMString());
+			}
+		}
+		return featureList;
+	}
+
+	
 	/**Print raw features under track. 
 	 * windowSize size the number of characters before clipping occurs. This is 
 	 * typically the window size for plotting. windowSize is used only by CLIP mode.  
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 * */
-	private String printFeatures() throws InvalidGenomicCoordsException, IOException{
-
-		int windowSize= this.getGc().getUserWindowSize();
-		if(this.getPrintMode().equals(PrintRawLine.FULL)){
-			windowSize= Integer.MAX_VALUE;
-		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
-			// Keep windowSize as it is
-		} else {
-			return "";
-		} 
-		
-		List<String> featureList= new ArrayList<String>();
-		
-		int count= this.getPrintRawLineCount();
-		String omitString= "";
-		outerloop:
-		for(List<TextRead> x : this.readStack){
-			for(TextRead txr : x ){
-				featureList.add(txr.getSamRecord().getSAMString());
-				count--;
-				if(count == 0){
-					int omitted= (int) (this.nRecsInWindow - this.getPrintRawLineCount());
-					if(omitted > 0){
-						omitString= "[" + omitted + "/"  + this.nRecsInWindow + " features omitted]";
-					}
-					break outerloop;
-				}
-			}
-		}
-		List<String> tabList= Utils.tabulateList(featureList);
-		StringBuilder sb= new StringBuilder();
-		if( ! omitString.isEmpty()){
-			sb.append(omitString + "\n");
-		}
-		for(String x : tabList){
-			if(x.length() > windowSize){
-				x= x.substring(0, windowSize);
-			}			
-			sb.append(x + "\n");
-		}
-		return sb.toString(); // NB: Leave last trailing \n
-	}
-	
-	@Override
-	/** Write the features in interval to file by appending to existing file. 
-	 * If the file to write to null or empty, return the data that would be
-	 * written as string.
-	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
-	 * */
-	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
-		
-		if(this.getExportFile() == null || this.getExportFile().isEmpty()){
-			if(this.isNoFormat()){
-				return this.printFeatures();
-			} else {
-				return "\033[38;5;" + Config.getColor(ConfigKey.foreground) + 
-						";48;5;" + Config.getColor(ConfigKey.background) + "m" + this.printFeatures();				
-			}
-		}
-		
-		BufferedWriter wr= null;
-		try{
-			wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
-			for(List<TextRead> x : this.readStack){
-				for(TextRead txr : x){
-					wr.write(txr.getSamRecord().getSAMString() + "\n");
-				}
-			}
-			wr.close();
-		} catch(IOException e){
-			System.err.println("Cannot write to " + this.getExportFile());
-			throw e;
-		}
-		return "";
-	}
+//	private String printFeatures() throws InvalidGenomicCoordsException, IOException{
+//
+//		int windowSize= this.getGc().getUserWindowSize();
+//		if(this.getPrintMode().equals(PrintRawLine.FULL)){
+//			windowSize= Integer.MAX_VALUE;
+//		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
+//			// Keep windowSize as it is
+//		} else {
+//			return "";
+//		} 
+//		
+//		List<String> featureList= new ArrayList<String>();
+//		
+//		int count= this.getPrintRawLineCount();
+//		String omitString= "";
+//		outerloop:
+//		for(List<TextRead> x : this.readStack){
+//			for(TextRead txr : x ){
+//				featureList.add(txr.getSamRecord().getSAMString());
+//				count--;
+//				if(count == 0){
+//					int omitted= (int) (this.nRecsInWindow - this.getPrintRawLineCount());
+//					if(omitted > 0){
+//						omitString= "[" + omitted + "/"  + this.nRecsInWindow + " features omitted]";
+//					}
+//					break outerloop;
+//				}
+//			}
+//		}
+//		List<String> tabList= Utils.tabulateList(featureList);
+//		StringBuilder sb= new StringBuilder();
+//		if( ! omitString.isEmpty()){
+//			sb.append(omitString + "\n");
+//		}
+//		for(String x : tabList){
+//			if(x.length() > windowSize){
+//				x= x.substring(0, windowSize);
+//			}			
+//			sb.append(x + "\n");
+//		}
+//		return sb.toString(); // NB: Leave last trailing \n
+//	}
+//	
+//	@Override
+//	/** Write the features in interval to file by appending to existing file. 
+//	 * If the file to write to null or empty, return the data that would be
+//	 * written as string.
+//	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
+//	 * */
+//	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
+//		
+//		if(this.getExportFile() == null || this.getExportFile().isEmpty()){
+//			if(this.isNoFormat()){
+//				return this.printFeatures();
+//			} else {
+//				return "\033[38;5;" + Config.get256Color(ConfigKey.foreground) + 
+//						";48;5;" + Config.get256Color(ConfigKey.background) + "m" + this.printFeatures();				
+//			}
+//		}
+//		
+//		BufferedWriter wr= null;
+//		try{
+//			wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
+//			for(List<TextRead> x : this.readStack){
+//				for(TextRead txr : x){
+//					wr.write(txr.getSamRecord().getSAMString() + "\n");
+//				}
+//			}
+//			wr.close();
+//		} catch(IOException e){
+//			System.err.println("Cannot write to " + this.getExportFile());
+//			throw e;
+//		}
+//		return "";
+//	}
 
 	
 	/* S e t t e r s   and   G e t t e r s */

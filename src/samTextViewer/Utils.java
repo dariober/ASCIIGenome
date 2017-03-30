@@ -1641,15 +1641,13 @@ public class Utils {
 			return coords;
 		}
 		
-		try{
-			Integer.parseInt(fromTo.replaceFirst("-", ""));
-		} catch(NumberFormatException e){
+		if( ! fromTo.replaceFirst("-", "").matches("[0-9]+")){
 			// If the from-to part does not contain only digits with the exception of the - separator,
 			// we assume this is a chrom name containing : and missing the from-to part.
 			coords.set(0, region);
 			return coords;
 		}
-		
+
 		int nsep= StringUtils.countMatches(fromTo, "-");
 		Integer from= null;
 		Integer to= null;
@@ -1660,7 +1658,7 @@ public class Utils {
 		} else if(nsep == 1){ // From and To positions given.
 			from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
 			to= Integer.parseInt(StringUtils.substringAfter(fromTo, "-").trim());
-			if(from > to || from <= 0 || to <= 0 || to > 536870912){
+			if(from > to || from <= 0 || to <= 0 || (to-from+1) > 536870912){
 				throw new InvalidGenomicCoordsException();	
 			}
 		} else {
@@ -1668,10 +1666,7 @@ public class Utils {
 		}
 		coords.set(1, from.toString());
 		coords.set(2, to.toString());
-//		if(to != null){
-//			coords.set(2, to.toString());
-//		}
-		
+
 		return coords;
 	}
 	

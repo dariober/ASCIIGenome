@@ -28,6 +28,7 @@ import com.google.common.base.Joiner;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.samtools.util.CloserUtil;
+import htsjdk.tribble.TribbleException.MalformedFeatureFile;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndexCreator;
@@ -102,10 +103,13 @@ public class MakeTabixIndex {
 		VCFCodec vcfCodec= null;
 		if(fmt.equals(TabixFormat.VCF)){
 			
-			VCFFileReader vcfr= new VCFFileReader(new File(intab), false); 
-		    vcfHeader= vcfr.getFileHeader(); // new VCFHeader();
-		    vcfr.close();
-		    
+			try{
+				VCFFileReader vcfr= new VCFFileReader(new File(intab), false); 
+			    vcfHeader= vcfr.getFileHeader(); // new VCFHeader();
+			    vcfr.close();
+			} catch(MalformedFeatureFile e){
+				vcfHeader= new VCFHeader();
+			}
 			vcfCodec= new VCFCodec();
 		    vcfCodec.setVCFHeader(vcfHeader, VCFHeaderVersion.VCF4_0);
 

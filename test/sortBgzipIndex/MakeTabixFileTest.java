@@ -21,6 +21,28 @@ import htsjdk.tribble.util.TabixUtils;
 public class MakeTabixFileTest {
 
 	@Test
+	public void canCompressAndIndexHeaderlessVCF() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
+
+		String infile= "test_data/noheader.vcf";
+		File outfile= new File("test_data/noheader.vcf.gz");
+		outfile.deleteOnExit();
+		
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
+		expectedTbi.deleteOnExit();
+
+		new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+		
+		assertTrue(outfile.exists());
+		assertTrue(outfile.length() > 200);
+		assertTrue(expectedTbi.exists());
+		assertTrue(expectedTbi.length() > 100);
+
+		TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
+		Iterator x = tbx.query("1", 1, 10000000);
+		assertTrue(x.next().startsWith("1"));
+
+	}	
+	@Test
 	public void testRealFileSizeVCF() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
 		
 		// See test_data/README.md for this file. This is fairly large and we want to check it is processed

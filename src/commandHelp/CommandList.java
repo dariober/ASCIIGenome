@@ -714,14 +714,14 @@ public class CommandList {
 				+ "The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides "
 				+ "options -n and -off, lines are written in full without limit.\n"
 				+ "\n"
+				+ "Without options toggle tracks between OFF and CLIP mode.\n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    print~~~~~~~~~~~~~~~~~~~~~~~~-> Print all tracks, same as `print .*`\n"
 				+ "    print -off~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
 				+ "    print genes.bed >> genes.txt~-> Append features in track(s) 'genes.bed' to file\n"
-				+ "\n"
-				+ "Currently `print` applies only to annotation tracks, other tracks are unaffected. Without options "
-				+ "toggle tracks between OFF and CLIP mode.");
+				);
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();

@@ -222,19 +222,19 @@ To save matches to file, see the `print` command. This command is ignored if the
 bookmark
 ++++++++
 
-:code:`bookmark [chrom:from-to] [-d chrom:from-to] [-n name] [-print] [> [file]]`
+:code:`bookmark [-d] [-n name] [-print] [> file] [chrom:from-to]`
 
 Creates a track to save positions of interest. Without arguments, add the current position to the bookmark track. Options:
 
 * :code:`chrom:from-to` Bookmark this region. Can be chrom:from-to or chrom:from or chrom only.
 
-* :code:`-d chrom:from-to` Remove the bookmark matching these coordinates.
+* :code:`-d` Remove the bookmark at coordinates [chrom:from-to].
 
 * :code:`-n name` Use name for this new bookmark.
 
 * :code:`-print` prints to screen the list of current bookmarks.
 
-* :code:`>` saves the bookmark track to file.
+* :code:`> file` saves the bookmark track to file.
 
 Examples::
 
@@ -528,13 +528,14 @@ Print lines for the tracks matched by `track_regex`.  Useful to show exactly wha
 
 * :code:`>` and :code:`>>` Write output to `file`. `>` overwrites and `>>` appends to existing file. The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides options -n and -off, lines are written in full without limit.
 
+Without options toggle tracks between OFF and CLIP mode.
+
 Examples::
 
     print                        -> Print all tracks, same as `print .*`
     print -off                   -> Turn off printing for all tracks
     print genes.bed >> genes.txt -> Append features in track(s) 'genes.bed' to file
 
-Currently `print` applies only to annotation tracks, other tracks are unaffected. Without options toggle tracks between OFF and CLIP mode.
 
 Alignments
 ----------

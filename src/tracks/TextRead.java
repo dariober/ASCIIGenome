@@ -103,7 +103,7 @@ class TextRead {
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidColourException 
 	 */
-	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
+	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName, double bpPerScreenColumn) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 		List<Character> unformatted;
 		if(!bs){
 			unformatted= this.getConsRead();
@@ -123,7 +123,7 @@ class TextRead {
 			}
 			return Joiner.on("").join(unformatted);
 		} else {
-			return readFormatter(unformatted, noFormat, bs);
+			return readFormatter(unformatted, noFormat, bs, bpPerScreenColumn);
 		}
 	}
 	
@@ -142,7 +142,7 @@ class TextRead {
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidColourException 
 	 */
-	private String readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+	private String readFormatter(List<Character> read, boolean noFormat, boolean bs, double bpPerScreenColumn) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 
 		if(noFormat){ // Essentially nothing to do in this case
 			return Joiner.on("").join(read);
@@ -155,54 +155,54 @@ class TextRead {
 			}					
 			if(this.samRecord.getMappingQuality() < SHADE_MAPQ){ // Grey out low mapq
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.shade_low_mapq)); 
+				formatted.append(Config.get256Color(ConfigKey.shade_low_mapq)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.foreground));
+				formatted.append(Config.get256Color(ConfigKey.foreground));
 			} else if(Character.toUpperCase(c) == charM){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.methylated_background)); 
+				formatted.append(Config.get256Color(ConfigKey.methylated_background)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.methylated_foreground));
+				formatted.append(Config.get256Color(ConfigKey.methylated_foreground));
 			} else if(Character.toUpperCase(c) == charU){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.unmethylated_background)); 
+				formatted.append(Config.get256Color(ConfigKey.unmethylated_background)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.unmethylated_foreground));
+				formatted.append(Config.get256Color(ConfigKey.unmethylated_foreground));
 			} else if(Character.toUpperCase(c) == 'A'){
 				formatted.append("1;38;5;"); 
-				formatted.append(Config.getColor(ConfigKey.seq_a));
+				formatted.append(Config.get256Color(ConfigKey.seq_a));
 			} else if(Character.toUpperCase(c) == 'C') {
 				formatted.append("1;38;5;"); 
-				formatted.append(Config.getColor(ConfigKey.seq_c));
+				formatted.append(Config.get256Color(ConfigKey.seq_c));
 			} else if(Character.toUpperCase(c) == 'G') {
 				formatted.append("1;38;5;"); 
-				formatted.append(Config.getColor(ConfigKey.seq_g));
+				formatted.append(Config.get256Color(ConfigKey.seq_g));
 			} else if(Character.toUpperCase(c) == 'T') {
 				formatted.append("1;38;5;"); 
-				formatted.append(Config.getColor(ConfigKey.seq_t));
-			} else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
+				formatted.append(Config.get256Color(ConfigKey.seq_t));
+			} else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && !(bpPerScreenColumn > 1))){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.feature_background_positive_strand)); 
+				formatted.append(Config.get256Color(ConfigKey.feature_background_positive_strand)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.foreground));
-			} else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
+				formatted.append(Config.get256Color(ConfigKey.foreground));
+			} else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && !(bpPerScreenColumn > 1))){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.feature_background_negative_strand)); 
+				formatted.append(Config.get256Color(ConfigKey.feature_background_negative_strand)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.foreground));
+				formatted.append(Config.get256Color(ConfigKey.foreground));
 			} else {
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.background)); 
+				formatted.append(Config.get256Color(ConfigKey.background)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.foreground));
+				formatted.append(Config.get256Color(ConfigKey.foreground));
 			}
 			formatted.append("m");
 			formatted.append(c);
 			// End by setting removing all formatting and reset back/fore-ground
 			formatted.append("\033[0m\033[38;5;");
-			formatted.append(Config.getColor(ConfigKey.foreground));
+			formatted.append(Config.get256Color(ConfigKey.foreground));
 			formatted.append(";48;5;");
-			formatted.append(Config.getColor(ConfigKey.background));
+			formatted.append(Config.get256Color(ConfigKey.background));
 			formatted.append("m");
 		}
 		return formatted.toString();
@@ -435,11 +435,11 @@ class TextRead {
 		return textReadBS;
 	}
 	
-	public String toString(){
+	public String toString(double bpPerScreenColumn){
 
 		String txt= "";
 		try {
-			txt = this.getPrintableTextRead(false, true, false);
+			txt = this.getPrintableTextRead(false, true, false, bpPerScreenColumn);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InvalidGenomicCoordsException e) {

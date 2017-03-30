@@ -99,7 +99,7 @@ public class GenomicCoordsHistory {
 		GenomicCoords now= this.current();
 		
 		for(GenomicCoords gc : this.getHistory()){ // Set the genome for each position in history. Invalid positions are removed.
-			gc.setGenome(tokens);
+			gc.setGenome(tokens, true);
 			if( ! this.isValidPosition(gc, gc.getSamSeqDict())){
 				toDelete.add(gc);
 			} 
@@ -119,7 +119,7 @@ public class GenomicCoordsHistory {
 			} else { // There are no valid positions in the history so create a new one and move there
 
 				GenomicCoords defaultPos= new GenomicCoords("default", null, null); 
-				defaultPos.setGenome(tokens);
+				defaultPos.setGenome(tokens, true);
 				
 				LinkedHashMap<String, Integer> chromLen= new LinkedHashMap<String, Integer>();
 				for(SAMSequenceRecord x : defaultPos.getSamSeqDict().getSequences()){

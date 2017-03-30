@@ -204,6 +204,17 @@ public class TrackMethylation extends Track {
     public List<ScreenLocusInfo> getScreenLocusInfoList() { return screenLocusInfoList; }
     public void setScreenLocusInfoList(List<ScreenLocusInfo> screenLocusInfoList) { this.screenLocusInfoList = screenLocusInfoList; }
 
+	@Override
+	protected List<String> getRecordsAsStrings() {
+		// TODO Auto-generated method stub
+		return new ArrayList<String>();
+	}
+
+//	@Override
+//	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
+//		return "";
+//	}
+
 
 }
 

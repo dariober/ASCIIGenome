@@ -13,6 +13,7 @@ import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.pdf.PdfReader;
 
 import exceptions.InvalidColourException;
+import exceptions.InvalidConfigException;
 
 public class PdfTest {
 
@@ -31,8 +32,10 @@ public class PdfTest {
 	}
 	
 	@Test
-	public void getColorFromAnsi() throws IOException, InvalidColourException{
+	public void getColorFromAnsi() throws IOException, InvalidColourException, InvalidConfigException{
 
+		new Config(null);
+		
 		// Dummy pdf object. It doesn't matter how you create it.
 		String ansiInput= FileUtils.readFileToString(new File("test_data/ansicolor.txt"));
 		Pdf pdf= new Pdf(ansiInput);
@@ -45,10 +48,10 @@ public class PdfTest {
 		x= "[48;5;15;38;5;244m FOO";
 		assertEquals("java.awt.Color[r=128,g=128,b=128]", pdf.xterm256ToColor(x, false).toString());
 		
-		// Colour for foreground not given, default to black:
+		// Colour for foreground not given, default to Config:
 		x= "[48;5;15m FOO";
 		assertEquals("java.awt.Color[r=0,g=0,b=0]", pdf.xterm256ToColor(x, false).toString());
-		// Background
+		// Background as in string
 		assertEquals("java.awt.Color[r=255,g=255,b=255]", pdf.xterm256ToColor(x, true).toString());
 	}
 	

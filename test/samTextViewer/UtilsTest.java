@@ -93,6 +93,9 @@ public class UtilsTest {
 		assertEquals(Arrays.asList(new String[] {"foo:bar:1", "10", "10"}), 
 				Utils.parseStringCoordsToList("foo:bar:1:10"));
 		
+		assertEquals(Arrays.asList(new String[] {"chr1", "55681590", "55681890"}), 
+				Utils.parseStringCoordsToList("chr1:55681590-55681890"));
+		
 		// Invalid strings:
 		boolean pass= false;
 		try{
@@ -112,11 +115,14 @@ public class UtilsTest {
 
 		pass= false;
 		try{
-			Utils.parseStringCoordsToList("chr1:1-536870913"); // To large end coords: > 2^29 (536870912)
+			Utils.parseStringCoordsToList("chr1:1-536870913"); // To large span: > 2^29 (536870912)
 		} catch(InvalidGenomicCoordsException e){
 			pass= true;
 		}
 		assertTrue(pass);
+		// Max span:
+		assertEquals(Arrays.asList(new String[] {"chr1", "1", "536870912"}), 
+				Utils.parseStringCoordsToList("chr1:1-536870912"));
 
 	}
 	

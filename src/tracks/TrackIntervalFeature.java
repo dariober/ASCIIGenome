@@ -1,8 +1,6 @@
 package tracks;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -18,8 +16,6 @@ import org.broad.igv.bbfile.BBFileReader;
 
 import com.google.common.collect.Lists;
 
-import coloring.Config;
-import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -698,76 +694,76 @@ public class TrackIntervalFeature extends Track {
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 * */
-	private String printFeatures() throws InvalidGenomicCoordsException, IOException{
-
-		int windowSize= this.getGc().getUserWindowSize();
-		if(this.getPrintMode().equals(PrintRawLine.FULL)){
-			windowSize= Integer.MAX_VALUE;
-		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
-			// Keep windowSize as it is
-		} else {
-			return "";
-		} 
-		
-		List<String> featureList= new ArrayList<String>();
-		
-		int count= this.getPrintRawLineCount();
-		String omitString= "";
-		for(IntervalFeature ift : intervalFeatureList){
-			featureList.add(ift.getRaw());
-			count--;
-			if(count == 0){
-				int omitted= intervalFeatureList.size() - this.getPrintRawLineCount();
-				if(omitted > 0){
-					omitString= "[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]";
-				}
-				break;
-			}
-		}
-		List<String> tabList= Utils.tabulateList(featureList);
-		StringBuilder sb= new StringBuilder();
-		if( ! omitString.isEmpty()){
-			sb.append(omitString + "\n");
-		}
-		for(String x : tabList){
-			if(x.length() > windowSize){
-				x= x.substring(0, windowSize);
-			}			
-			sb.append(x + "\n");
-		}
-		return sb.toString(); // NB: Leave last trailing \n
-	}
-
-	@Override
-	/** Write the features in interval to file by appending to existing file. 
-	 * If the file to write to null or empty, return the data that would be
-	 * written as string.
-	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
-	 * */
-	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
-		
-		if(this.getExportFile() == null || this.getExportFile().isEmpty()){
-			if(this.isNoFormat()){
-				return this.printFeatures();
-			} else {
-				return "\033[38;5;" + Config.getColor(ConfigKey.foreground) + 
-						";48;5;" + Config.getColor(ConfigKey.background) + "m" + this.printFeatures();				
-			}
-		}
-		
-		BufferedWriter wr= null;
-		try{
-			wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
-			for(IntervalFeature ift : intervalFeatureList){
-				wr.write(ift.getRaw() + "\n");
-			}
-			wr.close();
-		} catch(IOException e){
-			System.err.println("Cannot write to " + this.getExportFile());
-			throw e;
-		}
-		return "";
-	}
+//	private String printFeatures() throws InvalidGenomicCoordsException, IOException{
+//
+//		int windowSize= this.getGc().getUserWindowSize();
+//		if(this.getPrintMode().equals(PrintRawLine.FULL)){
+//			windowSize= Integer.MAX_VALUE;
+//		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
+//			// Keep windowSize as it is
+//		} else {
+//			return "";
+//		} 
+//		
+//		List<String> featureList= new ArrayList<String>();
+//		
+//		int count= this.getPrintRawLineCount();
+//		String omitString= "";
+//		for(IntervalFeature ift : intervalFeatureList){
+//			featureList.add(ift.getRaw());
+//			count--;
+//			if(count == 0){
+//				int omitted= intervalFeatureList.size() - this.getPrintRawLineCount();
+//				if(omitted > 0){
+//					omitString= "[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]";
+//				}
+//				break;
+//			}
+//		}
+//		List<String> tabList= Utils.tabulateList(featureList);
+//		StringBuilder sb= new StringBuilder();
+//		if( ! omitString.isEmpty()){
+//			sb.append(omitString + "\n");
+//		}
+//		for(String x : tabList){
+//			if(x.length() > windowSize){
+//				x= x.substring(0, windowSize);
+//			}			
+//			sb.append(x + "\n");
+//		}
+//		return sb.toString(); // NB: Leave last trailing \n
+//	}
+//
+//	@Override
+//	/** Write the features in interval to file by appending to existing file. 
+//	 * If the file to write to null or empty, return the data that would be
+//	 * written as string.
+//	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
+//	 * */
+//	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
+//		
+//		if(this.getExportFile() == null || this.getExportFile().isEmpty()){
+//			if(this.isNoFormat()){
+//				return this.printFeatures();
+//			} else {
+//				return "\033[38;5;" + Config.get256Color(ConfigKey.foreground) + 
+//						";48;5;" + Config.get256Color(ConfigKey.background) + "m" + this.printFeatures();				
+//			}
+//		}
+//		
+//		BufferedWriter wr= null;
+//		try{
+//			wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
+//			for(IntervalFeature ift : intervalFeatureList){
+//				wr.write(ift.getRaw() + "\n");
+//			}
+//			wr.close();
+//		} catch(IOException e){
+//			System.err.println("Cannot write to " + this.getExportFile());
+//			throw e;
+//		}
+//		return "";
+//	}
 	
 	/** Searching the current chrom starting at "from" to find the *next* feature matching the given string. 
 	 * If not found, search the other chroms, if not found restart from the beginning of
@@ -1110,5 +1106,17 @@ public class TrackIntervalFeature extends Track {
 	}
 	protected TabixReader getTabixReader() {
 		return this.tabixReader;
+	}
+
+
+	@Override
+	protected List<String> getRecordsAsStrings() {
+		
+		List<String> featureList= new ArrayList<String>();
+		
+		for(IntervalFeature ift : intervalFeatureList){
+			featureList.add(ift.getRaw());
+		}
+		return featureList;
 	}
 }

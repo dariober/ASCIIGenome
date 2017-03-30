@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
@@ -145,12 +146,12 @@ public class GenomicCoordsTest {
 		
 		// From resource:
 		GenomicCoords gc= new GenomicCoords("chr1", null, null);
-		gc.setGenome(insam);
+		gc.setGenome(insam, true);
 		assertEquals(93, gc.getSamSeqDict().size());
 		
 		// From bam header:
 		insam.set(0, "test_data/ds051.short.bam");
-		gc.setGenome(insam);
+		gc.setGenome(insam, true);
 		assertEquals(25, gc.getSamSeqDict().size());
 		
 		// Check we get the full path to source file.
@@ -158,7 +159,7 @@ public class GenomicCoordsTest {
 	
 		// From single item as string
 		gc= new GenomicCoords("chr1", null, null);
-		gc.setGenome("test_data/ds051.short.bam");
+		gc.setGenome(Arrays.asList(new String[] {"test_data/ds051.short.bam"}), true);
 		assertEquals(25, gc.getSamSeqDict().size());
 		
 	}
@@ -168,12 +169,12 @@ public class GenomicCoordsTest {
 
 		// From fasta
 		GenomicCoords  gc= new GenomicCoords("chr1", null, null);
-		gc.setGenome("test_data/chr7.fa");
+		gc.setGenome(Arrays.asList(new String[] {"test_data/chr7.fa"}), true);
 		assertEquals(1, gc.getSamSeqDict().size());
 		
 		// From fasta without index
 		gc= new GenomicCoords("chr1", null, null);
-		gc.setGenome("test_data/noindex.fa");
+		gc.setGenome(Arrays.asList(new String[] {"test_data/noindex.fa"}), false);
 		assertEquals(1, gc.getSamSeqDict().size());
 
 	}
@@ -185,11 +186,11 @@ public class GenomicCoordsTest {
 		assertEquals(null, gc.getSamSeqDict());
 		
 		// Non existent file or genome tag
-		gc.setGenome("test_data/foo.fa");
+		gc.setGenome(Arrays.asList(new String[] {"test_data/foo.fa"}), true);
 		assertEquals(null, gc.getSamSeqDict());
 		
 		// Invalid after having set a valid one: No change:
-		gc.setGenome("hg19");
+		gc.setGenome(Arrays.asList(new String[] {"hg19"}), true);
 		assertTrue(gc.getSamSeqDict() != null);
 		
 	}

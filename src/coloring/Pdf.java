@@ -56,7 +56,14 @@ public class Pdf {
 		
 		List<Paragraph> pdfLines= this.ansiFileToPdfParagraphs(fontSize);
         
-		Document document = new Document(new Rectangle((float) (this.getMaxWidth() * 1.01), (float) (this.getMaxHeight())), 5f, 0f, 0f, 0f);
+		Rectangle pageSize = new Rectangle((float) (this.getMaxWidth() * 1.01), (float) (this.getMaxHeight()));
+
+		int background256= Config.get256Color(ConfigKey.background);
+		Color pageColor= Xterm256.xterm256ToColor(background256);
+		
+		pageSize.setBackgroundColor(new BaseColor(pageColor.getRed(), pageColor.getGreen(), pageColor.getBlue()));
+		Document document = new Document(pageSize, 5f, 0f, 0f, 0f);
+		//Document document = new Document(new Rectangle((float) (this.getMaxWidth() * 1.01), (float) (this.getMaxHeight())), 5f, 0f, 0f, 0f);
         PdfWriter.getInstance(document, new FileOutputStream(tmpPdf));
         document.open();
 
@@ -124,9 +131,10 @@ public class Pdf {
 		int nChars= 0;
 		int currentMax= 0;
 		for(String xv : ansiList){
-			if(xv.equals("[48;5;231m")){
-				continue;
-			}
+//			if(xv.equals("[48;5;231m")){
+//				continue;
+//			}
+			
 			BaseColor fgBaseCol= new BaseColor(this.xterm256ToColor(xv, false).getRGB());
 			BaseColor bgBaseCol= new BaseColor(this.xterm256ToColor(xv, true).getRGB());
 
@@ -166,20 +174,26 @@ public class Pdf {
 		return paraList;
 	}
 
-	/** Parse the string x to get the colour for foreground or background.
+	/** Parse the string x to get the colour for foreground or background. 
+	 * If the inout string doesn't contain the escape sequence for fore or back ground,
+	 * use the colour from Config. 
 	 * This method should be private. It is protected only for unit test.
 	 * */
 	protected Color xterm256ToColor(String x, boolean isBackground) throws InvalidColourException{
 
 		List<Integer> ansiCodes= this.extractAnsiCodes(x);
 		
-		Color col;
+		Color configBg= Xterm256.xterm256ToColor(Config.get256Color(ConfigKey.background));
+		Color configFg= Xterm256.xterm256ToColor(Config.get256Color(ConfigKey.foreground));
+		// BaseColor bgBaseCol= new BaseColor(configBg.getRed(), configBg.getGreen(), configBg.getBlue());
+		
+		Color col= null;
 		int xtag= -1;
 		if(isBackground){
-			col= Color.WHITE; // Default background
+			col= configBg; // Color.WHITE; // Default background
 			xtag= Collections.indexOfSubList(ansiCodes, Arrays.asList(new Integer[] {48, 5}));
 		} else {
-			col= Color.BLACK; // Default foreground
+			col= configFg; // Color.BLACK; // Default foreground
 			xtag= Collections.indexOfSubList(ansiCodes, Arrays.asList(new Integer[] {38, 5}));
 		}
 		

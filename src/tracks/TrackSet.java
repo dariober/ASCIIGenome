@@ -27,6 +27,7 @@ import exceptions.InvalidRecordException;
 import filter.FlagToFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -386,24 +387,42 @@ public class TrackSet {
         }
 	}
 	
-	public void setPrintModeAndPrintFeaturesForRegex(List<String> cmdInput) throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException {
+	public void setPrintModeAndPrintFeaturesForRegex(List<String> cmdInput) throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException, ArgumentParserException {
 
 		// --------------------------------------------------------------------
 		// PARSE ARGUMENTS
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove cmd name.
-
+		
+// -- 8< -------------------- TO BE COMPLETED ------------ 8< ------
+//		String[] argr = args.toArray(new String[args.size()]);
+//	
+//		ArgumentParser parser= Argparse.parser().get(Command.print);
+//				
+//		Namespace opts=null;
+//		try {
+//            opts = parser.parseArgs(argr);
+//		} catch (ArgumentParserException e) {
+//            parser.handleError(e);
+//            throw new ArgumentParserException(null);
+//        }
+// -- 8< -------------------- TO BE COMPLETED ------------ 8< ------
+		
 		// Defaults if no args given
 		PrintRawLine printMode = null;
-        int count= 10; // Default number of lines to print
-        List<String> trackNameRegex= new ArrayList<String>(); trackNameRegex.add(".*");
-		String printToFile= null;
+        int count= 10; // opts.getInt("nlines"); // Default number of lines to print
+        List<String> trackNameRegex= new ArrayList<String>(); // opts.getList("track_regex");
+        trackNameRegex.add(".*");
+        
+        String printToFile= null;
         boolean append= false;
-		
+        
 		// PARSE ARGS
         // --------------------------------------------------------------------
-		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
+        boolean invertSelection= Utils.argListContainsFlag(args, "-v"); // opts.getBoolean("invert");  
 
+		// String cutScript= Utils.getArgForParam(args, "-cut");
+		
         if(args.contains("-clip")){
 			printMode= PrintRawLine.CLIP;
 			args.remove("-clip");
@@ -451,7 +470,7 @@ public class TrackSet {
 				throw new InvalidCommandLineException();
 			}
 		}
-		
+
         // Everything left in arg list is positional args of regex for tracks
 		if(args.size() >= 1){
             trackNameRegex= args;
@@ -464,18 +483,20 @@ public class TrackSet {
 
         // If we print to file just do that.
 		if(printToFile != null && ! printToFile.isEmpty()){
+
 	        if( ! append){
 	        	new File(printToFile).delete();
 	        }
+
 			for(Track tr : tracksToReset){
 	        	tr.setExportFile(printToFile);
-	        	tr.printFeaturesToFile();
+	        	tr.printLines();
 	        	tr.setPrintMode(PrintRawLine.OFF); // This is not ideal: redirecting to file also set mode to off
 	        	tr.setExportFile(null); // Reset to null so we don't keep writing to this file once we go to another position. 
 	        }
 	        return;
 		}
-        
+
 		// Process as required: Change mode
 		for(Track tr : tracksToReset){
 			tr.setPrintRawLineCount(count);
@@ -494,6 +515,7 @@ public class TrackSet {
 			} else {
 				tr.setPrintMode(PrintRawLine.OFF);
 			}
+			//tr.setCutScriptForPrinting(cutScript);
         }        
 	}
 	
@@ -682,7 +704,7 @@ public class TrackSet {
 		boolean invertSelection= Utils.argListContainsFlag(tokens, "-v");
 		
 		// Colour
-		String colour= (new Track()).getTitleColour();
+		String colour= (new TrackIntervalFeature(null)).getTitleColour();
 		if(tokens.size() >= 2){
 			String xcolour= tokens.get(1).toLowerCase();
 

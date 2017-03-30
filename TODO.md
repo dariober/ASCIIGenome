@@ -1,10 +1,14 @@
 TODO
 ====
 
+FIXME
+-----
+
+* `TrackMethylation`: method `getRecordsAsStrings()` hard-coded returns empty list.
+  Implement it properly or extend `TrackMethylation` to `TrackReads`
+
 Features
 --------
-
-* Apply `print` to bam files.
 
 * Add `-awk '<script>'` to `print` command to parse lines before printing. Useful
   to get rid of unnecessary stuff and make lines more readable.
@@ -22,8 +26,6 @@ Features
   be converted. When you fetch a region send to the track the command with the chromosome
   name changed. 
 
-* Check implementation of picard/DownsampleSam, it might be much faster than the one you have.
-
 * Deprecate `-fa` option? If the list of files includes a fasta file use that as reference
 
 * Time out for `updateCheck()`. Something like:
@@ -40,16 +42,9 @@ while(System.currentTimeInMiilis() < (now + 10000)){
 * Allow the user to set the `tmp` directory. By default use a `tmp` other then 
   the system default. On Linux the `tmp` is often pretty small.
 
-* `colorTrack`, `trackHeight` and all commands that are applied to a list of tracks
-  should accept a `-v` option to invert track selection, *i.e.* apply *command* to 
-  all tracks not matched by the list of track regexes. E.g: `trackHeight -v 10 bam`
-  translates to *set height to 10 for all tracks NOT matching bam*.
-
 * Add `-I` flag to `grep` to make it case insensitive.
 
 * Option to log transform quantitative data.
-
-* Implement comments using e.g. // or # 
 
 * Sampling feature: Command to display only a random sample of features in current window. 
   Useful to see the density of features in large intervals with lots of features. E.g.

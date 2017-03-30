@@ -45,7 +45,7 @@ public class ConfigTest {
 		new Config(null);
 		int i= 0;
 		while(i < 100000){ // This loop should go reasonably fast.
-			assertTrue(Config.getColor(ConfigKey.background) > -1);
+			assertTrue(Config.get256Color(ConfigKey.background) > -1);
 			i++;
 		}
 	}

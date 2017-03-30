@@ -79,22 +79,22 @@ public class FormatGTF {
 		StringBuilder sb= new StringBuilder();
 		sb.append("\033[48;5;");
 		if(strand == '+') {
-			sb.append(Config.getColor(ConfigKey.feature_background_positive_strand));
+			sb.append(Config.get256Color(ConfigKey.feature_background_positive_strand));
 			sb.append(";38;5;");
-			sb.append(Config.getColor(ConfigKey.foreground));
+			sb.append(Config.get256Color(ConfigKey.foreground));
 		} else if(strand == '-') {
-			sb.append(Config.getColor(ConfigKey.feature_background_negative_strand));
+			sb.append(Config.get256Color(ConfigKey.feature_background_negative_strand));
 			sb.append(";38;5;");
-			sb.append(Config.getColor(ConfigKey.foreground));
+			sb.append(Config.get256Color(ConfigKey.foreground));
 		} else {
-			sb.append(Config.getColor(ConfigKey.feature_background_no_strand));
+			sb.append(Config.get256Color(ConfigKey.feature_background_no_strand));
 			sb.append(";38;5;");
-			sb.append(Config.getColor(ConfigKey.foreground));
+			sb.append(Config.get256Color(ConfigKey.foreground));
 		}	
 		sb.append("m");
 		sb.append(text);
 		sb.append("\033[48;5;");
-		sb.append(Config.getColor(ConfigKey.background));
+		sb.append(Config.get256Color(ConfigKey.background));
 		sb.append("m");
 		return sb.toString();
 	}

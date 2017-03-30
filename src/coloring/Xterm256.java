@@ -332,8 +332,8 @@ public class Xterm256 {
 			int xterm= mapColorNameToXterm256().get(x);
 			int spacer= maxLen - x.length();
 			sb.append(xterm + ": \033[38;5;" + xterm + "m" + x + 
-					"\033[38;5;" + Config.getColor(ConfigKey.foreground) + 
-					";48;5;" + Config.getColor(ConfigKey.background) + "m");
+					"\033[38;5;" + Config.get256Color(ConfigKey.foreground) + 
+					";48;5;" + Config.get256Color(ConfigKey.background) + "m");
 			
 			if(i == 3){ // Arrange colors in this many columns
 				sb.append("\n");

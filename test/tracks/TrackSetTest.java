@@ -13,11 +13,14 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
+import coloring.Config;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -91,7 +94,7 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canPrintFeaturesToFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidColourException{
+	public void canPrintFeaturesToFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidColourException, ArgumentParserException{
 		
 		// --------------------------------------------------------------------
 		// Prepare coords and trackSet
@@ -113,8 +116,6 @@ public class TrackSetTest {
 		assertTrue(failed);		
 
 		// Invalid output: Non existent dir:
-		File ff= new File("test_data/foobar/delete.me");
-		ff.deleteOnExit();
 		cmdInput= Utils.tokenize("print #1 > test_data/foobar/delete.me", " ");
 		failed= false;
 		try{
@@ -125,11 +126,12 @@ public class TrackSetTest {
 		assertTrue(failed);		
 		
 		// Now give an output file.
-		ff= new File("deleteme.gtf");
+		File ff= new File("deleteme.gtf");
 		ff.deleteOnExit();
 		cmdInput= Utils.tokenize("print #1 > deleteme.gtf", " ");
-
+		
 		trackSet.setPrintModeAndPrintFeaturesForRegex(cmdInput);
+		
 		assertTrue(ff.exists());
 		assertTrue(ff.length() > 200);
 		assertEquals(13, FileUtils.readLines(ff).size());
@@ -197,8 +199,10 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException, InvalidConfigException{
 
+		new Config(null);
+		
 		List<String>cmdInput= new ArrayList<String>();
 		cmdInput.add("bookmark");
 		cmdInput.add("bookmark_1");
@@ -217,16 +221,17 @@ public class TrackSetTest {
 		assertEquals(2, bm.getIntervalFeatureList().size());
 
 		bm.setPrintMode(PrintRawLine.CLIP);
-		System.out.println(bm.printFeaturesToFile()); // NB: it prints twice the same gc becouse the position is nt changed
+		System.out.println(bm.printLines()); // NB: it prints twice the same gc becouse the position is nt changed
 		
 	}
 	
 	@Test
 	public void canReorderTracks() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.gz");  ts.addTrack(t1, "foo.gz");
-		Track t2= new Track(); t2.setFilename("foo.txt"); ts.addTrack(t2, "foo.txt");
-		Track t3= new Track(); t3.setFilename("bla.gz"); ts.addTrack(t3, "bla.gz");
+		
+		Track t1= new TrackIntervalFeature(null); t1.setFilename("foo.gz");  ts.addTrack(t1, "foo.gz");
+		Track t2= new TrackIntervalFeature(null); t2.setFilename("foo.txt"); ts.addTrack(t2, "foo.txt");
+		Track t3= new TrackIntervalFeature(null); t3.setFilename("bla.gz"); ts.addTrack(t3, "bla.gz");
 
 		List<String> newOrder= new ArrayList<String>();
 		newOrder.add("foo.gz#1");
@@ -349,9 +354,9 @@ public class TrackSetTest {
 	public void canSetBSMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.bam");  ts.addTrack(t1, "foo.bam");
-		Track t2= new Track(); t2.setFilename("bar.bam"); ts.addTrack(t2, "bar.bam");
-		Track t3= new Track(); t3.setFilename("foo.bam"); ts.addTrack(t3, "foo.bam");
+		Track t1= new TrackIntervalFeature(null); t1.setFilename("foo.bam");  ts.addTrack(t1, "foo.bam");
+		Track t2= new TrackIntervalFeature(null); t2.setFilename("bar.bam"); ts.addTrack(t2, "bar.bam");
+		Track t3= new TrackIntervalFeature(null); t3.setFilename("foo.bam"); ts.addTrack(t3, "foo.bam");
 		
 		String cmdInput= "BSseq foo.*#\\d";
 		ts.setBisulfiteModeForRegex(Utils.tokenize(cmdInput, " "));
@@ -366,9 +371,9 @@ public class TrackSetTest {
 	public void canSetRpmForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); ts.addTrack(t1, "x");
-		Track t2= new Track(); ts.addTrack(t2, "x");
-		Track t3= new Track(); ts.addTrack(t3, "x");
+		Track t1= new TrackIntervalFeature(null); ts.addTrack(t1, "x");
+		Track t2= new TrackIntervalFeature(null); ts.addTrack(t2, "x");
+		Track t3= new TrackIntervalFeature(null); ts.addTrack(t3, "x");
 
 		
 		String cmdInput= "rpm #1 #3";
@@ -389,9 +394,9 @@ public class TrackSetTest {
 	public void canEditTrackNamesForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, SQLException, InvalidRecordException, ClassNotFoundException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); ts.addTrack(t1, "foo.gff");
-		Track t2= new Track(); ts.addTrack(t2, "foo.bed");
-		Track t3= new Track(); ts.addTrack(t3, "baz.narrowPeak");
+		Track t1= new TrackIntervalFeature(null); ts.addTrack(t1, "foo.gff");
+		Track t2= new TrackIntervalFeature(null); ts.addTrack(t2, "foo.bed");
+		Track t3= new TrackIntervalFeature(null); ts.addTrack(t3, "baz.narrowPeak");
 		
 		ts.editNamesForRegex(Utils.tokenize("editNames foo FOO", " "));
 		
@@ -406,11 +411,13 @@ public class TrackSetTest {
 	
 	@Test
 	public void canSetFilterFlagForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, SQLException, InvalidRecordException, ClassNotFoundException{
-				
+		
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", null, null);
+		
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); ts.addTrack(t1, "x");
-		Track t2= new Track(); ts.addTrack(t2, "x");
-		Track t3= new Track(); ts.addTrack(t3, "x");
+		Track t1= new TrackReads("test_data/ds051.short.bam", gc); ts.addTrack(t1, "x");
+		Track t2= new TrackReads("test_data/ds051.short.bam", gc); ts.addTrack(t2, "x");
+		Track t3= new TrackReads("test_data/ds051.short.bam", gc); ts.addTrack(t3, "x");
 
 		// String cmdInput= "-F 1024 #1 #3";
 		// Reset all three filters
@@ -445,9 +452,9 @@ public class TrackSetTest {
 	public void canSetFeatureDisplayModeForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); ts.addTrack(t1, "x");
-		Track t2= new Track(); ts.addTrack(t2, "x");
-		Track t3= new Track(); ts.addTrack(t3, "x");
+		Track t1= new TrackIntervalFeature(null); ts.addTrack(t1, "x");
+		Track t2= new TrackIntervalFeature(null); ts.addTrack(t2, "x");
+		Track t3= new TrackIntervalFeature(null); ts.addTrack(t3, "x");
 
 		ts.setFeatureDisplayModeForRegex(Utils.tokenize("featureDisplayMode #1 #3", " "));
 		assertEquals(FeatureDisplayMode.COLLAPSED, t1.getFeatureDisplayMode());
@@ -466,12 +473,12 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canSetPrintMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException{
+	public void canSetPrintMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException, ArgumentParserException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); ts.addTrack(t1, "x");
-		Track t2= new Track(); ts.addTrack(t2, "x");
-		Track t3= new Track(); ts.addTrack(t3, "x");
+		Track t1= new TrackIntervalFeature(null); ts.addTrack(t1, "x");
+		Track t2= new TrackIntervalFeature(null); ts.addTrack(t2, "x");
+		Track t3= new TrackIntervalFeature(null); ts.addTrack(t3, "x");
 
 		ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print #1 #3", " "));
 		assertEquals(PrintRawLine.CLIP, t1.getPrintMode());
@@ -510,11 +517,11 @@ public class TrackSetTest {
 	public void canSetTrackColour() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); t1.setFilename("foo.gz");  ts.addTrack(t1, "foo.gz");
-		Track t2= new Track(); t2.setFilename("foo.txt"); ts.addTrack(t2, "foo.txt");
-		Track t3= new Track(); t3.setFilename("bla.gz"); ts.addTrack(t3, "bla.gz");
+		Track t1= new TrackIntervalFeature(null); t1.setFilename("foo.gz");  ts.addTrack(t1, "foo.gz");
+		Track t2= new TrackIntervalFeature(null); t2.setFilename("foo.txt"); ts.addTrack(t2, "foo.txt");
+		Track t3= new TrackIntervalFeature(null); t3.setFilename("bla.gz"); ts.addTrack(t3, "bla.gz");
 
-		String defaultColour= (new Track()).getTitleColour();
+		String defaultColour= (new TrackIntervalFeature(null)).getTitleColour();
 			
 		String cmdInput= "trackColour RED gz#\\d$";
 		ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
@@ -560,11 +567,14 @@ public class TrackSetTest {
 	
 	@Test
 	public void canSetTrackHeight() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
-				
+
+		String intervalFileName= "test_data/bgz_noindex.vcf.bgz";
+		GenomicCoords gc= new GenomicCoords("1:1-200000000", null, null);
+		
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); ts.addTrack( t1, "x");
-		Track t2= new Track(); ts.addTrack(t2, "x");
-		Track t3= new Track(); ts.addTrack(t3, "x");
+		Track t1= new TrackIntervalFeature(intervalFileName, gc); ts.addTrack( t1, "x");
+		Track t2= new TrackIntervalFeature(intervalFileName, gc); ts.addTrack(t2, "x");
+		Track t3= new TrackIntervalFeature(intervalFileName, gc); ts.addTrack(t3, "x");
 
 		String cmdInput= "trackHeight 2 #1 #3";
 		ts.setTrackHeightForRegex(Utils.tokenize(cmdInput, " "));
@@ -592,9 +602,9 @@ public class TrackSetTest {
 	public void canSetYlimits() throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 				
 		TrackSet ts= new TrackSet();
-		Track t1= new Track(); ts.addTrack(t1, "x");
-		Track t2= new Track(); ts.addTrack(t2, "x");
-		Track t3= new Track(); ts.addTrack(t3, "x");
+		Track t1= new TrackIntervalFeature(null); ts.addTrack(t1, "x");
+		Track t2= new TrackIntervalFeature(null); ts.addTrack(t2, "x");
+		Track t3= new TrackIntervalFeature(null); ts.addTrack(t3, "x");
 		
 		String cmdInput= "ylim 10 20 #1 #2";
 		ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
@@ -646,9 +656,9 @@ public class TrackSetTest {
 		TrackSet ts= new TrackSet();
 		assertEquals("", ts.showTrackInfo());
 
-		Track t1= new Track(); t1.setFilename("/path/to/foo.gz"); ts.addTrack(t1, "foo.gz");
-		Track t2= new Track(); t2.setFilename("/path/to/foo.vcf"); ts.addTrack(t2, "foo.vcf");
-		Track t3= new Track(); t3.setFilename("/path/to/bla.gz"); ts.addTrack(t3, "bla.gz");
+		Track t1= new TrackIntervalFeature(null); t1.setFilename("/path/to/foo.gz"); ts.addTrack(t1, "foo.gz");
+		Track t2= new TrackIntervalFeature(null); t2.setFilename("/path/to/foo.vcf"); ts.addTrack(t2, "foo.vcf");
+		Track t3= new TrackIntervalFeature(null); t3.setFilename("/path/to/bla.gz"); ts.addTrack(t3, "bla.gz");
 
 		assertTrue(ts.showTrackInfo().contains("foo.gz"));
 		assertTrue(ts.showTrackInfo().contains("/path/to/foo.gz"));

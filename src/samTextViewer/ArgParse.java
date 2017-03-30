@@ -44,9 +44,9 @@ public class ArgParse {
 			.required(false)
 			.help("Go to region. Format 1-based as 'chrom:start-end' or 'chrom:start' or 'chrom'. E.g. chr1:1-1000");
 
-		parser.addArgument("--genome", "-g")
-			.type(String.class)
-			.help("A genome file or a tag identifying a genome build (e.g. hg19), or bam file with suitable header");
+//		parser.addArgument("--genome", "-g")
+//			.type(String.class)
+//			.help("A genome file or a tag identifying a genome build (e.g. hg19), or bam file with suitable header");
 		
 		parser.addArgument("--fasta", "-fa")
 			.type(String.class)
@@ -68,6 +68,7 @@ public class ArgParse {
 		parser.addArgument("--config", "-c")
 			.type(String.class)
 			.required(false)
+			.setDefault("metal")
 			.help("Source of configuration settings. "
 					+ "It can be a local file or a tag matching a built-in configuration: "
 					+ "'black_on_white', 'white_on_black', 'metal'. "
