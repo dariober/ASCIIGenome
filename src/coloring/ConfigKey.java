@@ -23,7 +23,8 @@ public enum ConfigKey {
 	feature_background_no_strand,
 	footer,
 	chrom_ideogram,
-	ruler;
+	ruler,
+	max_reads_in_stack;
 	
 	public static Set<String> getValues(){
 		HashSet<String> values = new HashSet<String>();

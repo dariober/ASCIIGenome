@@ -14,6 +14,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -37,7 +39,7 @@ public class TrackReads extends Track{
 	private List<List<TextRead>> readStack;
 	// private boolean bisulf= false;
 	private boolean withReadName= false;
-	private static int MAX_READS_STACK= 2000;
+//	private static int MAX_READS_STACK= 2000;
 	private long nRecsInWindow= -1;
 	/* C o n s t r u c t o r s */
 	/**
@@ -87,13 +89,14 @@ public class TrackReads extends Track{
 			/*  ------------------------------------------------------ */
 			
 			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
-			float probSample= (float) TrackReads.MAX_READS_STACK / this.nRecsInWindow;
+			// float probSample= (float) TrackReads.MAX_READS_STACK / this.nRecsInWindow;
+			float probSample= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack)) / this.nRecsInWindow;
 			
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 			List<TextRead> textReads= new ArrayList<TextRead>();
 			AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
 			
-			while(sam.hasNext() && textReads.size() < TrackReads.MAX_READS_STACK){
+			while(sam.hasNext() && textReads.size() < Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack))){
 	
 				SAMRecord rec= sam.next();
 
