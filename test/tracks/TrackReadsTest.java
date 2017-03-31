@@ -6,12 +6,20 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 
 import org.junit.Test;
 
+import coloring.Config;
 import exceptions.InvalidColourException;
+import exceptions.InvalidCommandLineException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.AlignmentBlock;
+import htsjdk.samtools.Cigar;
+import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -27,8 +35,80 @@ public class TrackReadsTest {
 
 	
 	public static String fastaFile= "test_data/chr7.fa";
+
+	@Test
+	public void testSpeed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr7:5567700-5567872", null, null);
+		SamReader sr= srf.open(new File("test_data/MT.bam"));
+		SAMRecordIterator reads = sr.query("chr7", gc.getFrom(), gc.getTo(), false);
+		int n= 0;
+		long t0= System.currentTimeMillis();
+		while(reads.hasNext()){
+			SAMRecord rec= reads.next();
+			Cigar cigar= rec.getCigar();
+			List<AlignmentBlock> blocks = rec.getAlignmentBlocks();
+			rec.getReferencePositionAtReadPosition(0);
+			n++;
+			TextRead txr= new TextRead(rec, gc);
+			txr.getPrintableTextRead(false, true, false, gc.getBpPerScreenColumn());
+		}
+		long t1= System.currentTimeMillis();
+		System.out.println((t1-t0)/1000.0);
+		System.out.println(n);
+		
+		long t2= System.currentTimeMillis();
+		TrackReads tr= new TrackReads("test_data/MT.bam", gc);
+		long t3= System.currentTimeMillis();
+		System.out.println(tr.getRecordsAsStrings().size());
+		System.out.println((t3-t2)/1000.0);
+		
+	}
 	
 	@Test
+	public void canReturnReadsAsRawStrings() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", null, null);
+		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
+		
+		assertEquals(22, tr.getRecordsAsStrings().size());
+
+		// No read in interval
+		gc= new GenomicCoords("chr1:1-1000", null, null);
+		tr= new TrackReads("test_data/ds051.short.bam", gc);
+		assertEquals(0, tr.getRecordsAsStrings().size());
+		
+//		tr.setPrintRawLineCount(10);
+//		assertEquals(10, tr.getRecordsAsStrings().size());
+//		
+//		tr.setPrintRawLineCount(0);
+//		assertEquals(0, tr.getRecordsAsStrings().size());
+//		
+//		tr.setPrintRawLineCount(-1);
+//		assertEquals(22, tr.getRecordsAsStrings().size());
+
+	}
+	
+	@Test
+	public void canPrintReads() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException, InvalidCommandLineException{
+		
+		new Config(null);
+		
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", null, null);
+		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
+		tr.setNoFormat(true);
+		
+		tr.setPrintMode(PrintRawLine.OFF);
+		String printable = tr.printLines();
+		assertEquals("", printable); // Empty string if printing is off.
+		
+		tr.setPrintMode(PrintRawLine.CLIP);
+		
+		tr.setPrintRawLineCount(5);
+		printable = tr.printLines();
+		assertTrue(printable.length() > 100);
+		assertEquals(5+1, printable.split("\n").length); // Expect 6 lines: 5 for reads and 1 for info header.
+	}
+	
+	// @Test
 	public void canFilterReadsWithAwk() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", samSeqDict, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);

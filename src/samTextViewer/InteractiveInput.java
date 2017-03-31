@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -22,6 +23,7 @@ import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import tracks.Track;
 
 /** Class to process input from console
@@ -125,6 +127,8 @@ public class InteractiveInput {
 					
 				} else if(cmdTokens.get(0).equals("save")) {
 					List<String> args= new ArrayList<String>(cmdTokens);
+					
+					proc.setStripAnsi( ! Utils.argListContainsFlag(args, "-color"));
 					
 					proc.setAppendToSnapshotFile(false); // Default: do not append
 					
@@ -284,7 +288,8 @@ public class InteractiveInput {
 							
 							if(proc.getGenomicCoordsHistory().current().getSamSeqDict() == null || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
 								GenomicCoords gc= proc.getGenomicCoordsHistory().current();
-								gc.setGenome(sourceName);
+								// We are adding tracks. Check if we can set genome but do not treat these files as genome files.
+								gc.setGenome(Arrays.asList(new String[] {sourceName}), false);
 							}
 							
 						}
@@ -361,6 +366,8 @@ public class InteractiveInput {
 					this.interactiveInputExitCode= ExitCode.ERROR;
 					throw new InvalidCommandLineException();
 				}
+			} catch(ArgumentParserException e){
+				this.interactiveInputExitCode= ExitCode.ERROR;
 			
 			} catch(Exception e){ // You shouldn't catch anything! Be more specific.
 				System.err.println(Utils.padEndMultiLine("\nError processing input: " + cmdTokens, proc.getWindowSize()));
@@ -439,7 +446,7 @@ public class InteractiveInput {
 //		}
 
 		GenomicCoords testSeqDict= new GenomicCoords("default", null, null); 
-		testSeqDict.setGenome(tokens);
+		testSeqDict.setGenome(tokens, true);
 		if(testSeqDict.getSamSeqDict() != null){
 			proc.getGenomicCoordsHistory().setGenome(tokens);
 		} else {

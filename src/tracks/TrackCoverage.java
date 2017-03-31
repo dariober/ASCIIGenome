@@ -181,7 +181,7 @@ public class TrackCoverage extends Track {
 		String printable= Joiner.on("\n").join(lineStrings); 
 		if(!this.isNoFormat()){
 			printable= "\033[48;5;"
-			+ Config.getColor(ConfigKey.background)
+			+ Config.get256Color(ConfigKey.background)
 			+ ";38;5;"
 			+ Xterm256.colorNameToXterm256(this.getTitleColour())
 			+ "m"
@@ -287,13 +287,13 @@ public class TrackCoverage extends Track {
 			if(this.isNoFormat()){
 				faSeqStr += base;
 			} else { 
-				faSeqStr += "\033[48;5;" + Config.getColor(ConfigKey.background) + ";38;5;";
-				     if(base == 'A') { faSeqStr += Config.getColor(ConfigKey.seq_a);} 
-				else if(base == 'C') { faSeqStr += Config.getColor(ConfigKey.seq_c);} 
-				else if(base == 'G') { faSeqStr += Config.getColor(ConfigKey.seq_g);} 
-				else if(base == 'T') { faSeqStr += Config.getColor(ConfigKey.seq_t);} 
-				else { faSeqStr += Config.getColor(ConfigKey.seq_other); }
-				faSeqStr += "m" + base + "\033[0m\033[38;5;0;48;5;" + Config.getColor(ConfigKey.background) + "m"; // Clear formatting and fg to black and bg to white;
+				faSeqStr += "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;";
+				     if(base == 'A') { faSeqStr += Config.get256Color(ConfigKey.seq_a);} 
+				else if(base == 'C') { faSeqStr += Config.get256Color(ConfigKey.seq_c);} 
+				else if(base == 'G') { faSeqStr += Config.get256Color(ConfigKey.seq_g);} 
+				else if(base == 'T') { faSeqStr += Config.get256Color(ConfigKey.seq_t);} 
+				else { faSeqStr += Config.get256Color(ConfigKey.seq_other); }
+				faSeqStr += "m" + base + "\033[0m\033[38;5;0;48;5;" + Config.get256Color(ConfigKey.background) + "m"; // Clear formatting and fg to black and bg to white;
 			}
 		}
 		if(allEmpty){
@@ -344,5 +344,18 @@ public class TrackCoverage extends Track {
 			e.printStackTrace();
 		}
 		return plist;
+	}
+
+	@Override
+	public String printLines(){
+		return "";
+	}
+//	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
+//		return "";
+//	}
+
+	@Override
+	protected List<String> getRecordsAsStrings() {
+		return new ArrayList<String>();
 	}
 }

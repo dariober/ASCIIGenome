@@ -23,7 +23,7 @@ public class TrackProcessorTest {
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", null, null);
 		List<String> genome= new ArrayList<String>();
 		genome.add("test_data/ear045.oxBS.actb.bam");
-		gc.setGenome(genome);
+		gc.setGenome(genome, true);
 
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		gch.add(gc);

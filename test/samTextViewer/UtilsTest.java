@@ -3,6 +3,7 @@ package samTextViewer;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +57,113 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void canParseStringToCoords() throws InvalidGenomicCoordsException{
+
+		assertEquals(Arrays.asList(new String[] {"chr1", "1", "10"}), 
+				Utils.parseStringCoordsToList("chr1:1-10"));
+		
+		assertEquals(Arrays.asList(new String[] {"chr1", "1", "536870912"}), 
+				Utils.parseStringCoordsToList("chr1"));
+		
+		assertEquals(Arrays.asList(new String[] {"chr1", "10", "10"}), 
+				Utils.parseStringCoordsToList("chr1:10"));
+		
+		// Can handle : in chrom name
+		assertEquals(Arrays.asList(new String[] {"foo:bar", "10", "100"}), 
+				Utils.parseStringCoordsToList("foo:bar:10-100"));
+		
+		assertEquals(Arrays.asList(new String[] {"foo:bar", "10", "10"}), 
+				Utils.parseStringCoordsToList("foo:bar:10"));
+
+		// Can handle spaces and comma separators
+		assertEquals(Arrays.asList(new String[] {"chr1", "1000", "2000"}), 
+				Utils.parseStringCoordsToList("chr1 : 1,000 - 2,000"));
+
+		// Chrom name with : and without from-to part
+		assertEquals(Arrays.asList(new String[] {"foo:bar", "1", "536870912"}), 
+				Utils.parseStringCoordsToList("foo:bar"));
+		
+		// Chrom name with : and without from-to part
+		assertEquals(Arrays.asList(new String[] {"foo:bar", "1", "1"}), 
+				Utils.parseStringCoordsToList("foo:bar:1"));
+		
+		// Chrom name with ':'
+		assertEquals(Arrays.asList(new String[] {"foo:bar:1", "10", "10"}), 
+				Utils.parseStringCoordsToList("foo:bar:1:10"));
+		
+		assertEquals(Arrays.asList(new String[] {"chr1", "55681590", "55681890"}), 
+				Utils.parseStringCoordsToList("chr1:55681590-55681890"));
+		
+		// Invalid strings:
+		boolean pass= false;
+		try{
+			Utils.parseStringCoordsToList("chr1:0-10");
+		} catch(InvalidGenomicCoordsException e){
+			pass= true;
+		}
+		assertTrue(pass);
+		
+		pass= false;
+		try{
+			Utils.parseStringCoordsToList("chr1:10-5");
+		} catch(InvalidGenomicCoordsException e){
+			pass= true;
+		}
+		assertTrue(pass);
+
+		pass= false;
+		try{
+			Utils.parseStringCoordsToList("chr1:1-536870913"); // To large span: > 2^29 (536870912)
+		} catch(InvalidGenomicCoordsException e){
+			pass= true;
+		}
+		assertTrue(pass);
+		// Max span:
+		assertEquals(Arrays.asList(new String[] {"chr1", "1", "536870912"}), 
+				Utils.parseStringCoordsToList("chr1:1-536870912"));
+
+	}
+	
+	@Test
+	public void canGetCommandFlag(){
+		String[] cmd= {"-r", "foo", "bar"};
+		List<String> argList= new LinkedList<String>(Arrays.asList(cmd));
+		assertTrue(Utils.argListContainsFlag(argList, "foo"));
+		assertTrue( ! argList.contains("foo") ); // Arg has been removed
+		
+		// Flag is not present
+		argList= new LinkedList<String>(Arrays.asList(cmd));
+		assertTrue( ! Utils.argListContainsFlag(argList, "spam"));
+		assertEquals(cmd.length, argList.size() ); // No change
+		
+	}
+	
+	@Test
+	public void canGetCommandArg() throws InvalidCommandLineException{
+		String[] cmd= {"-r", "foo", "-x", "-bar"};
+		List<String> argList= new LinkedList<String>(Arrays.asList(cmd));
+		
+		assertEquals("foo", Utils.getArgForParam(argList, "-r"));
+		assertTrue( ! argList.contains("-r") ); // Arg has been removed
+		assertTrue( ! argList.contains("foo") ); // Arg has been removed
+		
+		// Param is not present
+		argList= new LinkedList<String>(Arrays.asList(cmd));
+		assertNull(Utils.getArgForParam(argList, "-z") );
+		assertEquals(cmd.length, argList.size() ); // No change
+		
+		// Miss-specified arg throws exception:
+		argList= new LinkedList<String>(Arrays.asList(cmd));
+		boolean pass= false;
+		try{
+			Utils.getArgForParam(argList, "-bar");
+		} catch(InvalidCommandLineException e){
+			pass= true;
+		}
+		assertTrue(pass);
+	}
 	
 	@Test
 	public void canPadMultilineString(){

@@ -27,6 +27,7 @@ import exceptions.InvalidRecordException;
 import filter.FlagToFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -282,7 +283,7 @@ public class TrackSet {
 		// 1 int    mandatory
 		// 2 regex  optional
 		
-        boolean invertSelection= this.argListContainsFlag(tokens, "-v");
+        boolean invertSelection= Utils.argListContainsFlag(tokens, "-v");
 		
 		if(tokens.size() < 2){
 			System.err.println("Error in trackHeight subcommand. Expected 2 args got: " + tokens);
@@ -359,7 +360,7 @@ public class TrackSet {
 			mode= FeatureDisplayMode.ONELINE;
 			args.remove("-o");
 		}
-		boolean invertSelection= this.argListContainsFlag(args, "-v");
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 		
         // Regex to capture tracks: Everything left after removing command name and args:
         List<String> trackNameRegex= new ArrayList<String>();
@@ -386,24 +387,42 @@ public class TrackSet {
         }
 	}
 	
-	public void setPrintModeAndPrintFeaturesForRegex(List<String> cmdInput) throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException {
+	public void setPrintModeAndPrintFeaturesForRegex(List<String> cmdInput) throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, InvalidColourException, ArgumentParserException {
 
 		// --------------------------------------------------------------------
 		// PARSE ARGUMENTS
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove cmd name.
-
+		
+// -- 8< -------------------- TO BE COMPLETED ------------ 8< ------
+//		String[] argr = args.toArray(new String[args.size()]);
+//	
+//		ArgumentParser parser= Argparse.parser().get(Command.print);
+//				
+//		Namespace opts=null;
+//		try {
+//            opts = parser.parseArgs(argr);
+//		} catch (ArgumentParserException e) {
+//            parser.handleError(e);
+//            throw new ArgumentParserException(null);
+//        }
+// -- 8< -------------------- TO BE COMPLETED ------------ 8< ------
+		
 		// Defaults if no args given
 		PrintRawLine printMode = null;
-        int count= 10; // Default number of lines to print
-        List<String> trackNameRegex= new ArrayList<String>(); trackNameRegex.add(".*");
-		String printToFile= null;
+        int count= 10; // opts.getInt("nlines"); // Default number of lines to print
+        List<String> trackNameRegex= new ArrayList<String>(); // opts.getList("track_regex");
+        trackNameRegex.add(".*");
+        
+        String printToFile= null;
         boolean append= false;
-		
+        
 		// PARSE ARGS
         // --------------------------------------------------------------------
-		boolean invertSelection= this.argListContainsFlag(args, "-v");
+        boolean invertSelection= Utils.argListContainsFlag(args, "-v"); // opts.getBoolean("invert");  
 
+		// String cutScript= Utils.getArgForParam(args, "-cut");
+		
         if(args.contains("-clip")){
 			printMode= PrintRawLine.CLIP;
 			args.remove("-clip");
@@ -451,7 +470,7 @@ public class TrackSet {
 				throw new InvalidCommandLineException();
 			}
 		}
-		
+
         // Everything left in arg list is positional args of regex for tracks
 		if(args.size() >= 1){
             trackNameRegex= args;
@@ -464,18 +483,20 @@ public class TrackSet {
 
         // If we print to file just do that.
 		if(printToFile != null && ! printToFile.isEmpty()){
+
 	        if( ! append){
 	        	new File(printToFile).delete();
 	        }
+
 			for(Track tr : tracksToReset){
 	        	tr.setExportFile(printToFile);
-	        	tr.printFeaturesToFile();
+	        	tr.printLines();
 	        	tr.setPrintMode(PrintRawLine.OFF); // This is not ideal: redirecting to file also set mode to off
 	        	tr.setExportFile(null); // Reset to null so we don't keep writing to this file once we go to another position. 
 	        }
 	        return;
 		}
-        
+
 		// Process as required: Change mode
 		for(Track tr : tracksToReset){
 			tr.setPrintRawLineCount(count);
@@ -494,6 +515,7 @@ public class TrackSet {
 			} else {
 				tr.setPrintMode(PrintRawLine.OFF);
 			}
+			//tr.setCutScriptForPrinting(cutScript);
         }        
 	}
 	
@@ -502,7 +524,7 @@ public class TrackSet {
 		List<String> args= new ArrayList<String>(tokens);
 		args.remove(0);
 		
-        boolean invertSelection= this.argListContainsFlag(args, "-v");
+        boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 		
 		Boolean bisulf= null;
 		if(args.contains("-on")){
@@ -542,7 +564,7 @@ public class TrackSet {
 		List<String> args= new ArrayList<String>(tokens);
 		args.remove(0);
 		
-        boolean invertSelection= this.argListContainsFlag(args, "-v");
+        boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 		
 		Boolean hide= null;
 		if(args.contains("-on")){
@@ -637,7 +659,7 @@ public class TrackSet {
 		List<String> args= new ArrayList<String>(tokens);
 		args.remove(0);
 		
-        boolean invertSelection= this.argListContainsFlag(args, "-v");
+        boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 		
 		Boolean rpm= null;
 		if(args.contains("-on")){
@@ -672,18 +694,6 @@ public class TrackSet {
         }
 	}
 
-	/** Returns true of the list of arguments argList contains the given flag
-	 * IMPORTANT SIDE EFFECT: If found, the argument flag is removed from the list. 
-	 * */
-	private boolean argListContainsFlag(List<String> argList, String flag){
-		boolean hasFlag= false;
-		if(argList.contains(flag)){
-			argList.remove(flag);
-			hasFlag= true;
-		}
-		return hasFlag;
-	}
-	
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidColourException{
 
 		// MEMO of subcommand syntax:
@@ -691,10 +701,10 @@ public class TrackSet {
 		// 1 Colour
 		// 2 Regex
 
-		boolean invertSelection= this.argListContainsFlag(tokens, "-v");
+		boolean invertSelection= Utils.argListContainsFlag(tokens, "-v");
 		
 		// Colour
-		String colour= (new Track()).getTitleColour();
+		String colour= (new TrackIntervalFeature(null)).getTitleColour();
 		if(tokens.size() >= 2){
 			String xcolour= tokens.get(1).toLowerCase();
 
@@ -724,7 +734,7 @@ public class TrackSet {
 		// 1 attrName
 		// 2 Regex
 
-        boolean invertSelection= this.argListContainsFlag(tokens, "-v");
+        boolean invertSelection= Utils.argListContainsFlag(tokens, "-v");
 		
 		String gtfAttributeForName= null; // Null will follow default 
 		if(tokens.size() >= 2){
@@ -825,7 +835,7 @@ public class TrackSet {
 
 		List<String> args= new ArrayList<String>(tokens);
 		
-		boolean invertSelection= this.argListContainsFlag(args, "-v");
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 		
 		if(args.size() < 3){
 			System.err.println("Error in ylim subcommand. Expected at least 2 positional arguments args got: " + args);
@@ -887,7 +897,7 @@ public class TrackSet {
 		
 		args.remove(0); // Remove command name
 		
-		boolean invertSelection= this.argListContainsFlag(args, "-V");
+		boolean invertSelection= Utils.argListContainsFlag(args, "-V");
 		
 		List<String> trackNameRegex= new ArrayList<String>();
 		String awk= "";
@@ -957,7 +967,7 @@ public class TrackSet {
 		String hideRegex= "^$";  // Hide nothing
 		
 		// Get args:
-		boolean invertSelection= this.argListContainsFlag(args, "-v");
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 
 		if(args.contains("-i")){
 			int idx= args.indexOf("-i") + 1; 
@@ -1172,7 +1182,7 @@ public class TrackSet {
 		// 0 gffNameAttr
 		// 1 attrName
 		// 2 Regex
-        boolean invertSelection= this.argListContainsFlag(tokens, "-v");
+        boolean invertSelection= Utils.argListContainsFlag(tokens, "-v");
 
 		int dataCol = 0; // Null will follow default 
 		if(tokens.size() >= 2){
@@ -1209,7 +1219,7 @@ public class TrackSet {
 	public void orderTracks(List<String> tokens) throws InvalidCommandLineException {
 	
 		// List<String> args= new ArrayList<String>(tokens);
-		// boolean invertSelection= this.argListContainsFlag(args, "-v");
+		// boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 		
 		List<String> newOrder= new ArrayList<String>(tokens);
 		
@@ -1312,25 +1322,37 @@ public class TrackSet {
 	 * @throws InvalidRecordException 
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
+	 * @throws InvalidCommandLineException 
 	 * */
-	public String bookmark(GenomicCoords gc, List<String> cmdInput) throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
+	public String bookmark(GenomicCoords gc, List<String> cmdInput) throws ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidGenomicCoordsException, InvalidCommandLineException{
 		
 		String messages= "";
 		
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove command name
 
-		if(args.size() == 1 && args.get(0).equals("-rm")){
-			for(Track tr : this.getTrackList()){
-				if(tr instanceof TrackBookmark){
-					((TrackBookmark)tr).removeBookmark();
-	 				return messages;
-				}
+		// Get all arguments. What is left is the positional argument 
+		boolean delete= Utils.argListContainsFlag(args, "-d");
+		String name= Utils.getArgForParam(args, "-n");
+		boolean print= Utils.argListContainsFlag(args, "-print");
+		String file= Utils.getArgForParam(args, ">");
+
+		GenomicCoords bookmarkRegion= null;
+		if(args.size() > 0){
+			List<String> strRegion= Utils.parseStringCoordsToList(args.get(0));
+			if(strRegion.get(1) == null){
+				strRegion.set(1, "1");
 			}
-			return messages;
+			if(strRegion.get(2) == null){
+				strRegion.set(2, new Integer(Integer.MAX_VALUE).toString());
+			}
+			bookmarkRegion= new GenomicCoords(strRegion.get(0) + ":" + strRegion.get(1) + "-" + strRegion.get(2), 
+					gc.getSamSeqDict(), gc.getFastaFile());
+		} else {
+			bookmarkRegion= new GenomicCoords(gc.toStringRegion(), gc.getSamSeqDict(), gc.getFastaFile());
 		}
-		
-		if(args.size() == 1 && args.get(0).equals("-print")){
+
+		if(print){
 			for(Track tr : this.getTrackList()){
 				if(tr instanceof TrackBookmark){
 					List<String> marks= Utils.tabulateList(((TrackBookmark)tr).asList());
@@ -1340,26 +1362,31 @@ public class TrackSet {
 			}
 			return messages;
 		}
-		
-		if(args.size() == 2 && (args.get(0).equals(">") || args.get(0).equals(">>"))){
+
+		if(file != null){
 			for(Track tr : this.getTrackList()){
 				if(tr instanceof TrackBookmark){
-					boolean append= false;
-					if(args.get(0).equals(">>")){
-						append= true; // Not sure when you want to append, since you generate duplicate entries. 
-					}
-					((TrackBookmark)tr).save(args.get(1), append);
+					((TrackBookmark)tr).save(file, false);
 	 				return messages;
 				}
 			}
 			return messages;
 		}
 		
-		String nameForBookmark= ".";
-		if(args.size() > 0){
-			nameForBookmark= args.get(0);
+		if(delete){
+			for(Track tr : this.getTrackList()){
+				if(tr instanceof TrackBookmark){
+					((TrackBookmark)tr).removeBookmark(bookmarkRegion);
+	 				return messages;
+				}
+			}
+			return messages;
 		}
-		this.addBookmark(gc, nameForBookmark);
+
+		if(name == null){
+			name= ".";
+		}
+		this.addBookmark(bookmarkRegion, name);
 		return messages;
 	}
 	
@@ -1370,7 +1397,7 @@ public class TrackSet {
 		// Check there isn't a bookmark track already:
 		for(Track tr : this.getTrackList()){
 			if(tr instanceof TrackBookmark){ // A Bookmark track exists, add position to it
-				tr.addBookmark(nameForBookmark);
+				tr.addBookmark(gc, nameForBookmark);
  				tr.setGc(gc);
  				return;
 			}
@@ -1419,7 +1446,7 @@ public class TrackSet {
 		int q= 0;
 		
 		// Get args:
-		boolean invertSelection= this.argListContainsFlag(args, "-v");
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 		if(args.contains("-f")){
 			int idx= args.indexOf("-f") + 1; 
 			f= Integer.parseInt(args.get(idx));
@@ -1474,7 +1501,7 @@ public class TrackSet {
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove name of command
 
-		boolean invertSelection= this.argListContainsFlag(args, "-v");
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 
 		boolean test= false;
 		if(args.contains("-t")){
@@ -1540,7 +1567,7 @@ public class TrackSet {
 		List<String> args= new ArrayList<String>(tokens);
 		args.remove(0);
 
-		boolean invertSelection= this.argListContainsFlag(args, "-v");
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 
 		Boolean gap= null;
 		if(args.contains("-on")){
@@ -1701,7 +1728,7 @@ public class TrackSet {
 
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); //Remove cmd name
-		boolean invertSelection= this.argListContainsFlag(args, "-v");
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 
 		boolean test= false;
 		if(args.contains("-t")){

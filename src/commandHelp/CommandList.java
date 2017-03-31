@@ -367,24 +367,27 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("bookmark"); cmd.setArgs("[name] | [-rm] | [-print] | [> [file]]"); cmd.inSection= Section.FIND; 
+		// cmd.setName("bookmark"); cmd.setArgs("[name] | [-rm] | [-print] | [> [file]]"); cmd.inSection= Section.FIND;
+		cmd.setName("bookmark"); cmd.setArgs("[-d] [-n name] [-print] [> file] [chrom:from-to]"); cmd.inSection= Section.FIND;
 		cmd.setBriefDescription("Creates a track to save positions of interest.");
 		cmd.setAdditionalDescription(""
 				+ "Without arguments, add the current position to the bookmark track. Options:\n"
 				+ "\n"
-				+ "* :code:`name` give this name to the new bookmark.\n"
+				+ "* :code:`chrom:from-to` Bookmark this region. Can be chrom:from-to or chrom:from or chrom only.\n"
 				+ "\n"
-				+ "* :code:`-rm` remove the bookmark matching *exactly* the current position.\n"
+				+ "* :code:`-d` Remove the bookmark at coordinates [chrom:from-to].\n"
+				+ "\n"
+				+ "* :code:`-n name` Use name for this new bookmark.\n"
 				+ "\n"
 				+ "* :code:`-print` prints to screen the list of current bookmarks.\n"
 				+ "\n"
-				+ "* :code:`>` saves the bookmark track to file.\n"
+				+ "* :code:`> file` saves the bookmark track to file.\n"
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    bookmark~~~~~~~~~~~~~~-> Add the current position to bookmarks.\n"
-				+ "    bookmark myGene ~~~~~~-> Add the current position with name myGene\n"
-				+ "    bookmark -rm ~~~~~~~~~-> Remove the bookmark exactly in this position\n"
+				+ "    bookmark chr1:100 ~~~~-> Bookamrk position chr1:100\n"
+				+ "    bookmark -d chr1:100~~-> Delete bookmark at chr1:100\n"
 				+ "    bookmark > books.txt~~-> Save to file books.txt\n"
 				+ "    bookmark -print ~~~~~~-> Show table of bookmarks\n"
 				+ "\n"
@@ -711,14 +714,14 @@ public class CommandList {
 				+ "The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides "
 				+ "options -n and -off, lines are written in full without limit.\n"
 				+ "\n"
+				+ "Without options toggle tracks between OFF and CLIP mode.\n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    print~~~~~~~~~~~~~~~~~~~~~~~~-> Print all tracks, same as `print .*`\n"
 				+ "    print -off~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
 				+ "    print genes.bed >> genes.txt~-> Append features in track(s) 'genes.bed' to file\n"
-				+ "\n"
-				+ "Currently `print` applies only to annotation tracks, other tracks are unaffected. Without options "
-				+ "toggle tracks between OFF and CLIP mode.");
+				);
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();

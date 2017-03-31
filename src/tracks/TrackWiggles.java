@@ -160,7 +160,7 @@ public class TrackWiggles extends Track {
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
 			printable= "\033[48;5;"
-			+ Config.getColor(ConfigKey.background)
+			+ Config.get256Color(ConfigKey.background)
 			+ ";38;5;"
 			+ Xterm256.colorNameToXterm256(this.getTitleColour())
 			+ "m"
@@ -347,6 +347,20 @@ public class TrackWiggles extends Track {
 	protected void setBdgDataColIdx(int bdgDataColIdx) throws ClassNotFoundException, IOException, InvalidRecordException, InvalidGenomicCoordsException, SQLException { 
 		this.bdgDataColIdx = bdgDataColIdx; 
 		this.update();
+	}
+
+	@Override
+	public String printLines(){
+		return "";
+	}
+//	@Override
+//	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
+//		return "";
+//	}
+
+	@Override
+	protected List<String> getRecordsAsStrings() {
+		return new ArrayList<String>();
 	}
 
 

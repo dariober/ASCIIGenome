@@ -112,8 +112,11 @@ public class GenomicCoords implements Cloneable {
 	
 	/** Set genome dictionary and fasta file ref if available. See 
 	 * GenomicCoords.getSamSeqDictFromAnyFile() for available inputs.
+	 * @param includeGenomeFile: Should the input data be treated as a genome file?
+	 * Set to true only if the input can be a genome file. Other files (bed, vcf, gff) 
+	 * look like valid genome file and this can result in wring dictionary.  
 	 * */
-	public void setGenome(List<String> input) throws IOException {
+	public void setGenome(List<String> input, boolean includeGenomeFile) throws IOException {
 		
 		List<String> cleanList= new ArrayList<String>(); 
 		for(String x : input){
@@ -126,8 +129,8 @@ public class GenomicCoords implements Cloneable {
 		}		
 
 		// Set Dictionary
-		this.setSamSeqDictFromAnySource(cleanList);
-		
+		this.setSamSeqDictFromAnySource(cleanList, includeGenomeFile);
+
 		// Try to set fasta sequence
 		for(String x : cleanList){
 			try{
@@ -144,12 +147,6 @@ public class GenomicCoords implements Cloneable {
 				}
 			}
 		}
-	}
-
-	public void setGenome(String input) throws IOException{
-		List<String> x= new ArrayList<String>();
-		x.add(input);
-		setGenome(x);
 	}
 	
 	/** Get sequence from fasta, but only if it can fit the screen. Null otherwise. 
@@ -538,7 +535,7 @@ public class GenomicCoords implements Cloneable {
 			ideogram= ideogram.substring(0, this.getUserWindowSize());
 		}
 		if(!noFormat){
-			ideogram= "\033[48;5;" + Config.getColor(ConfigKey.background) + ";38;5;" + Config.getColor(ConfigKey.chrom_ideogram) + "m" + ideogram;
+			ideogram= "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;" + Config.get256Color(ConfigKey.chrom_ideogram) + "m" + ideogram;
 		}
 		return ideogram;
 	}
@@ -582,8 +579,8 @@ public class GenomicCoords implements Cloneable {
 		}
 		numberLine= numberLine.substring(0, this.getUserWindowSize());
 		if(!noFormat){
-			numberLine= "\033[48;5;" + Config.getColor(ConfigKey.background) + 
-					";38;5;" + Config.getColor(ConfigKey.ruler) +
+			numberLine= "\033[48;5;" + Config.get256Color(ConfigKey.background) + 
+					";38;5;" + Config.get256Color(ConfigKey.ruler) +
 					"m" + numberLine;
 			// numberLine= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + numberLine;
 		}
@@ -609,17 +606,17 @@ public class GenomicCoords implements Cloneable {
 			for(byte c : refSeq){
 				// For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
 				char base= (char) c;
-				String prefix= "\033[48;5;" + Config.getColor(ConfigKey.background) + ";38;5;";
+				String prefix= "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;";
 				if(base == 'A' || base == 'a'){
-					faSeqStr += prefix + Config.getColor(ConfigKey.seq_a) + "m" + base;
+					faSeqStr += prefix + Config.get256Color(ConfigKey.seq_a) + "m" + base;
 				} else if(base == 'C' || base == 'c') {
-					faSeqStr += prefix + Config.getColor(ConfigKey.seq_c) + "m" + base;
+					faSeqStr += prefix + Config.get256Color(ConfigKey.seq_c) + "m" + base;
 				} else if(base == 'G' || base == 'g') {
-					faSeqStr += prefix + Config.getColor(ConfigKey.seq_g) + "m" + base;
+					faSeqStr += prefix + Config.get256Color(ConfigKey.seq_g) + "m" + base;
 				} else if(base == 'T' || base == 't') {
-					faSeqStr += prefix + Config.getColor(ConfigKey.seq_t) + "m" + base;
+					faSeqStr += prefix + Config.get256Color(ConfigKey.seq_t) + "m" + base;
 				} else {
-					faSeqStr += prefix + Config.getColor(ConfigKey.seq_other) + "m" + base;
+					faSeqStr += prefix + Config.get256Color(ConfigKey.seq_other) + "m" + base;
 				} 
 			}
 			return faSeqStr + "\n";
@@ -634,7 +631,7 @@ public class GenomicCoords implements Cloneable {
 	 * @return
 	 * @throws IOException 
 	 */
-	private boolean setSamSeqDictFromAnySource(List<String> testfiles) throws IOException{
+	private boolean setSamSeqDictFromAnySource(List<String> testfiles, boolean includeGenomeFile) throws IOException{
 
 		boolean isSet= false;
 		for(String testfile : testfiles){ // Get sequence dict from bam, if any				
@@ -654,13 +651,15 @@ public class GenomicCoords implements Cloneable {
 			} catch(Exception e){
 				//
 			}
-			try{
-				isSet= this.setSamSeqDictFromGenomeFile(testfile);
-				if(isSet){
-					return isSet;
+			if(includeGenomeFile){
+				try{
+					isSet= this.setSamSeqDictFromGenomeFile(testfile);
+					if(isSet){
+						return isSet;
+					}
+				} catch(Exception e){
+					//
 				}
-			} catch(Exception e){
-				//
 			}
 		}
 		return isSet;

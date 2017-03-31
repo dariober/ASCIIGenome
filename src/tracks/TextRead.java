@@ -57,7 +57,7 @@ class TextRead {
 	 * coords read ends pos 150 and window span is 100:150, then textEnd= 1. */
 	private int textEnd;
 	
-	private SAMRecord rec;
+	private SAMRecord samRecord;
 	private GenomicCoords gc;
 	
 	/*    C o n s t r u c t o r s    */
@@ -85,7 +85,7 @@ class TextRead {
 			throw new RuntimeException();
 		}		
 		this.gc= gc;
-		this.rec= rec;
+		this.samRecord= rec;
 		this.setTextStart();
 		this.setTextEnd();
 	}
@@ -103,7 +103,7 @@ class TextRead {
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidColourException 
 	 */
-	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
+	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName, double bpPerScreenColumn) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 		List<Character> unformatted;
 		if(!bs){
 			unformatted= this.getConsRead();
@@ -111,11 +111,11 @@ class TextRead {
 			unformatted= this.convertDnaReadToTextReadBS();
 		}
 		if(withReadName){ // Replace bases with read name. As long as it fits
-			int upTo= (unformatted.size() < this.rec.getReadName().length()) 
+			int upTo= (unformatted.size() < this.samRecord.getReadName().length()) 
 					? unformatted.size() 
-					: this.rec.getReadName().length();  
+					: this.samRecord.getReadName().length();  
 			for(int i= 0; i< upTo; i++){
-				char nchar= (char) this.rec.getReadName().getBytes()[i];
+				char nchar= (char) this.samRecord.getReadName().getBytes()[i];
 				unformatted.set(i, nchar);
 			}
 			if(unformatted.size() > upTo){ // Add a separator btw read name and sequence
@@ -123,7 +123,7 @@ class TextRead {
 			}
 			return Joiner.on("").join(unformatted);
 		} else {
-			return readFormatter(unformatted, noFormat, bs);
+			return readFormatter(unformatted, noFormat, bs, bpPerScreenColumn);
 		}
 	}
 	
@@ -142,7 +142,7 @@ class TextRead {
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidColourException 
 	 */
-	private String readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+	private String readFormatter(List<Character> read, boolean noFormat, boolean bs, double bpPerScreenColumn) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 
 		if(noFormat){ // Essentially nothing to do in this case
 			return Joiner.on("").join(read);
@@ -150,59 +150,59 @@ class TextRead {
 		StringBuilder formatted= new StringBuilder();		
 		for(char c : read){ // Each base is formatted independently from the others
 			formatted.append("\033["); // Start format 
-			if(this.rec.getReadPairedFlag() && this.rec.getSecondOfPairFlag()){
+			if(this.samRecord.getReadPairedFlag() && this.samRecord.getSecondOfPairFlag()){
 				formatted.append("4;"); // Underline 2nd in pair
 			}					
-			if(this.rec.getMappingQuality() < SHADE_MAPQ){ // Grey out low mapq
+			if(this.samRecord.getMappingQuality() < SHADE_MAPQ){ // Grey out low mapq
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.shade_low_mapq)); 
+				formatted.append(Config.get256Color(ConfigKey.shade_low_mapq)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.foreground));
+				formatted.append(Config.get256Color(ConfigKey.foreground));
 			} else if(Character.toUpperCase(c) == charM){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.methylated_background)); 
+				formatted.append(Config.get256Color(ConfigKey.methylated_background)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.methylated_foreground));
+				formatted.append(Config.get256Color(ConfigKey.methylated_foreground));
 			} else if(Character.toUpperCase(c) == charU){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.unmethylated_background)); 
+				formatted.append(Config.get256Color(ConfigKey.unmethylated_background)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.unmethylated_foreground));
+				formatted.append(Config.get256Color(ConfigKey.unmethylated_foreground));
 			} else if(Character.toUpperCase(c) == 'A'){
 				formatted.append("1;38;5;"); 
-				formatted.append(Config.getColor(ConfigKey.seq_a));
+				formatted.append(Config.get256Color(ConfigKey.seq_a));
 			} else if(Character.toUpperCase(c) == 'C') {
 				formatted.append("1;38;5;"); 
-				formatted.append(Config.getColor(ConfigKey.seq_c));
+				formatted.append(Config.get256Color(ConfigKey.seq_c));
 			} else if(Character.toUpperCase(c) == 'G') {
 				formatted.append("1;38;5;"); 
-				formatted.append(Config.getColor(ConfigKey.seq_g));
+				formatted.append(Config.get256Color(ConfigKey.seq_g));
 			} else if(Character.toUpperCase(c) == 'T') {
 				formatted.append("1;38;5;"); 
-				formatted.append(Config.getColor(ConfigKey.seq_t));
-			} else if(!this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
+				formatted.append(Config.get256Color(ConfigKey.seq_t));
+			} else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && !(bpPerScreenColumn > 1))){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.feature_background_positive_strand)); 
+				formatted.append(Config.get256Color(ConfigKey.feature_background_positive_strand)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.foreground));
-			} else if(this.rec.getReadNegativeStrandFlag() && !(bs && !(gc.getBpPerScreenColumn() > 1))){
+				formatted.append(Config.get256Color(ConfigKey.foreground));
+			} else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && !(bpPerScreenColumn > 1))){
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.feature_background_negative_strand)); 
+				formatted.append(Config.get256Color(ConfigKey.feature_background_negative_strand)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.foreground));
+				formatted.append(Config.get256Color(ConfigKey.foreground));
 			} else {
 				formatted.append("48;5;"); 
-				formatted.append(Config.getColor(ConfigKey.background)); 
+				formatted.append(Config.get256Color(ConfigKey.background)); 
 				formatted.append(";38;5;");
-				formatted.append(Config.getColor(ConfigKey.foreground));
+				formatted.append(Config.get256Color(ConfigKey.foreground));
 			}
 			formatted.append("m");
 			formatted.append(c);
 			// End by setting removing all formatting and reset back/fore-ground
 			formatted.append("\033[0m\033[38;5;");
-			formatted.append(Config.getColor(ConfigKey.foreground));
+			formatted.append(Config.get256Color(ConfigKey.foreground));
 			formatted.append(";48;5;");
-			formatted.append(Config.getColor(ConfigKey.background));
+			formatted.append(Config.get256Color(ConfigKey.background));
 			formatted.append("m");
 		}
 		return formatted.toString();
@@ -215,11 +215,11 @@ class TextRead {
 	 * @throws InvalidGenomicCoordsException 
 	 */
 	private void setTextStart() throws InvalidGenomicCoordsException, IOException{		
-		if(rec.getAlignmentStart() <= gc.getFrom()){ // Read starts right at the window start or even earlier
+		if(samRecord.getAlignmentStart() <= gc.getFrom()){ // Read starts right at the window start or even earlier
 			this.textStart= 1;
 			return;
 		}		
-		this.textStart= Utils.getIndexOfclosestValue(rec.getAlignmentStart(), gc.getMapping(gc.getUserWindowSize())) + 1;
+		this.textStart= Utils.getIndexOfclosestValue(samRecord.getAlignmentStart(), gc.getMapping(gc.getUserWindowSize())) + 1;
 		return;
 	}
 	
@@ -229,7 +229,7 @@ class TextRead {
 		//			gc.getUserWindowSize() : gc.getGenomicWindowSize();
 		//	return;
 		//}
-		this.textEnd= Utils.getIndexOfclosestValue(rec.getAlignmentEnd(), gc.getMapping(gc.getUserWindowSize())) + 1;
+		this.textEnd= Utils.getIndexOfclosestValue(samRecord.getAlignmentEnd(), gc.getMapping(gc.getUserWindowSize())) + 1;
 		return;
 	}
 	
@@ -239,7 +239,7 @@ class TextRead {
 				
 		ArrayList<Character> squashedRead= new ArrayList<Character>();
 		char xc;
-		if(this.rec.getReadNegativeStrandFlag()){
+		if(this.samRecord.getReadNegativeStrandFlag()){
 			xc= charRev;
 		} else {
 			xc= charFwd;
@@ -265,12 +265,12 @@ class TextRead {
 		
 		// Accumulate here the read bases inside the window 
 		ArrayList<Character> dnaRead= new ArrayList<Character>();
-		byte[] readBases= rec.getReadBases();
+		byte[] readBases= samRecord.getReadBases();
 		// Walk along the aligned read and append bases to textRead as long as
 		// the genomic position of the base is inside the genomic coords of the window
-		int curBaseGenomicPos= rec.getAlignmentStart();
+		int curBaseGenomicPos= samRecord.getAlignmentStart();
 		int curBaseReadPos= 0; // Position on read. Start from zero walk along the read
-		List<CigarElement> cigarEls= rec.getCigar().getCigarElements();
+		List<CigarElement> cigarEls= samRecord.getCigar().getCigarElements();
 		for(CigarElement el : cigarEls){
 			if(el.getOperator() == CigarOperator.M || el.getOperator() == CigarOperator.EQ || el.getOperator() == CigarOperator.X){
 				for(int i= 0; i < el.getLength(); i++){
@@ -308,12 +308,12 @@ class TextRead {
 			} else if(el.getOperator() == CigarOperator.P){
 				// Nothing to do: NOT SURE is is correct to just ignore padding!
 			} else {
-				System.err.println("Unexpected operator in cigar string for record\n" + rec.getSAMString()); 
+				System.err.println("Unexpected operator in cigar string for record\n" + samRecord.getSAMString()); 
 				throw new RuntimeException();
 			}
 		}
 		for(int i= 0; i < dnaRead.size(); i++){
-			if(this.rec.getReadNegativeStrandFlag()){
+			if(this.samRecord.getReadNegativeStrandFlag()){
 				dnaRead.set(i, Character.toLowerCase(dnaRead.get(i)));
 			} else {
 				dnaRead.set(i, Character.toUpperCase(dnaRead.get(i)));
@@ -340,13 +340,13 @@ class TextRead {
 			char base= Character.toUpperCase( dnaRead.get(posOnRead) );
 			char ref= (char) Character.toUpperCase(this.gc.getRefSeq()[i]);
 			if( base == ref){
-				if(this.rec.getReadNegativeStrandFlag()){
+				if(this.samRecord.getReadNegativeStrandFlag()){
 					consRead.add(',');
 				} else {
 					consRead.add('.');
 				}
 			} else {
-				if(this.rec.getReadNegativeStrandFlag()){
+				if(this.samRecord.getReadNegativeStrandFlag()){
 					consRead.add(Character.toLowerCase(base));
 				} else {
 					consRead.add(base);
@@ -381,10 +381,10 @@ class TextRead {
 		
 		// For convenience extract flags from sam record
 		boolean isSecondOfPair= false;
-		if(rec.getReadPairedFlag() && rec.getSecondOfPairFlag()){
+		if(samRecord.getReadPairedFlag() && samRecord.getSecondOfPairFlag()){
 			isSecondOfPair= true;
 		}
-		boolean isForwardStrand= !this.rec.getReadNegativeStrandFlag();
+		boolean isForwardStrand= !this.samRecord.getReadNegativeStrandFlag();
 		
 		List<Character> textReadBS= this.getConsRead(); // Iterate through each base to set methyl state
 		for(int i= 0; i < textReadBS.size(); i++){
@@ -435,11 +435,11 @@ class TextRead {
 		return textReadBS;
 	}
 	
-	public String toString(){
+	public String toString(double bpPerScreenColumn){
 
 		String txt= "";
 		try {
-			txt = this.getPrintableTextRead(false, true, false);
+			txt = this.getPrintableTextRead(false, true, false, bpPerScreenColumn);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InvalidGenomicCoordsException e) {
@@ -466,4 +466,8 @@ class TextRead {
 		return textEnd;
 	}
 
+	protected SAMRecord getSamRecord(){
+		return this.samRecord;
+	}
+	
 }

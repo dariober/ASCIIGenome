@@ -222,23 +222,25 @@ To save matches to file, see the `print` command. This command is ignored if the
 bookmark
 ++++++++
 
-:code:`bookmark [name] | [-rm] | [-print] | [> [file]]`
+:code:`bookmark [-d] [-n name] [-print] [> file] [chrom:from-to]`
 
 Creates a track to save positions of interest. Without arguments, add the current position to the bookmark track. Options:
 
-* :code:`name` give this name to the new bookmark.
+* :code:`chrom:from-to` Bookmark this region. Can be chrom:from-to or chrom:from or chrom only.
 
-* :code:`-rm` remove the bookmark matching *exactly* the current position.
+* :code:`-d` Remove the bookmark at coordinates [chrom:from-to].
+
+* :code:`-n name` Use name for this new bookmark.
 
 * :code:`-print` prints to screen the list of current bookmarks.
 
-* :code:`>` saves the bookmark track to file.
+* :code:`> file` saves the bookmark track to file.
 
 Examples::
 
     bookmark              -> Add the current position to bookmarks.
-    bookmark myGene       -> Add the current position with name myGene
-    bookmark -rm          -> Remove the bookmark exactly in this position
+    bookmark chr1:100     -> Bookamrk position chr1:100
+    bookmark -d chr1:100  -> Delete bookmark at chr1:100
     bookmark > books.txt  -> Save to file books.txt
     bookmark -print       -> Show table of bookmarks
 
@@ -526,13 +528,14 @@ Print lines for the tracks matched by `track_regex`.  Useful to show exactly wha
 
 * :code:`>` and :code:`>>` Write output to `file`. `>` overwrites and `>>` appends to existing file. The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides options -n and -off, lines are written in full without limit.
 
+Without options toggle tracks between OFF and CLIP mode.
+
 Examples::
 
     print                        -> Print all tracks, same as `print .*`
     print -off                   -> Turn off printing for all tracks
     print genes.bed >> genes.txt -> Append features in track(s) 'genes.bed' to file
 
-Currently `print` applies only to annotation tracks, other tracks are unaffected. Without options toggle tracks between OFF and CLIP mode.
 
 Alignments
 ----------

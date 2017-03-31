@@ -26,7 +26,7 @@ public class TrackBookmarkTest {
 
 		gc= new GenomicCoords("chr1:200-300", null, null);
 		bm.setGc(gc);
-		bm.addBookmark("book2");
+		bm.addBookmark(gc, "book2");
 		
 		gc= new GenomicCoords("chr1:1-1000", null, null);
 		bm.setGc(gc);
@@ -47,7 +47,7 @@ public class TrackBookmarkTest {
 		
 		gc= new GenomicCoords("chr1:200-300", null, null);
 		bm.setGc(gc);
-		bm.addBookmark("book2");
+		bm.addBookmark(gc, "book2");
 		
 		gc= new GenomicCoords("chr1:1-1000", null, null); // Zoom out to span both bookmarks.  
 		bm.setGc(gc);
@@ -55,19 +55,22 @@ public class TrackBookmarkTest {
 		assertEquals(2, bm.getIntervalFeatureList().size());
 
 		// Partial overlap not touched 
-		bm.setGc(new GenomicCoords("chr1:1-1000", null, null));
-		bm.removeBookmark();
+		gc= new GenomicCoords("chr1:1-1000", null, null);
+		bm.setGc(gc);
+		bm.removeBookmark(gc);
 		assertEquals(2, bm.getIntervalFeatureList().size());
 
 		// Go to first bookmark and remove it:
-		bm.setGc(new GenomicCoords("chr1:1-100", null, null));
-		bm.removeBookmark();
+		gc= new GenomicCoords("chr1:1-100", null, null);
+		bm.setGc(gc);
+		bm.removeBookmark(gc);
 		bm.setGc(new GenomicCoords("chr1:1-1000", null, null));
 		assertEquals(1, bm.getIntervalFeatureList().size());
 
 		// Go to second bookmark and remove it. No bookmarks left:
-		bm.setGc(new GenomicCoords("chr1:200-300", null, null));
-		bm.removeBookmark();
+		gc= new GenomicCoords("chr1:200-300", null, null);
+		bm.setGc(gc);
+		bm.removeBookmark(gc);
 		assertTrue(bm.getIntervalFeatureList().size() == 0);
 	}
 
@@ -80,11 +83,11 @@ public class TrackBookmarkTest {
 		
 		gc= new GenomicCoords("chr1:200-300", null, null);
 		bm.setGc(gc);
-		bm.addBookmark("book2");
+		bm.addBookmark(gc, "book2");
 
 		gc= new GenomicCoords("chr2:2000-3000", null, null);
 		bm.setGc(gc);
-		bm.addBookmark("'foo bar'"); // Note use of single quotes.
+		bm.addBookmark(gc, "'foo bar'"); // Note use of single quotes.
 		
 		assertTrue(bm.settingsToString().contains("goto chr1:1-100"));
 		assertTrue(bm.settingsToString().contains("goto chr2:2000-3000"));
@@ -102,11 +105,11 @@ public class TrackBookmarkTest {
 		
 		gc= new GenomicCoords("chr1:200-300", null, null);
 		bm.setGc(gc);
-		bm.addBookmark("book2");
+		bm.addBookmark(gc, "book2");
 
 		gc= new GenomicCoords("chr2:2000-3000", null, null);
 		bm.setGc(gc);
-		bm.addBookmark("foo bar");
+		bm.addBookmark(gc, "foo bar");
 		
 		assertEquals(3, bm.asList().size());
 		assertTrue(bm.asList().get(1).contains("chr1:200-300"));

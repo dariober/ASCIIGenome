@@ -1,22 +1,27 @@
 package tracks;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 
 import coloring.Config;
 import coloring.ConfigKey;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.filter.AlignedFilter;
@@ -25,8 +30,7 @@ import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
 
-// TODO: This class should be abstract 
-public class Track {
+public abstract class Track {
 
 	public static String awkFunc= "";
 	
@@ -70,10 +74,12 @@ public class Track {
 	private boolean hideTitle= false;
 	private TrackFormat trackFormat;
 	protected String awk= ""; 
+	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
 	
 	/** A file to export track data
 	 * */
 	private String exportFile= null;
+	private String cutScriptForPrinting= "";
 //	private boolean appendToExportFile= false;
 	
 	/** Format the title string to add colour or return title as it is if
@@ -85,11 +91,11 @@ public class Track {
 		if(this.isNoFormat()){
 			return title;
 		} else {
-			int colourCode= Config.getColor(ConfigKey.title_colour);
+			int colourCode= Config.get256Color(ConfigKey.title_colour);
 			if(this.titleColour != null){
 				colourCode= Xterm256.colorNameToXterm256(this.titleColour);
 			}
-			return "\033[48;5;" + Config.getColor(ConfigKey.background) + ";38;5;" + colourCode + "m" + title;
+			return "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;" + colourCode + "m" + title;
 		}
 	}
 	
@@ -125,10 +131,6 @@ public class Track {
 		return null;
 	}
 
-//	public String printFeatures() throws InvalidGenomicCoordsException, IOException{
-//		return "";
-//	};
-	
 	/** Print track info - for debugging and development only.
 	 * */
 	public String toString(){
@@ -391,9 +393,8 @@ public class Track {
 		this.hideTitle = hideTitle;
 	}
 
-	public void addBookmark(String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException {
-		// TODO Auto-generated method stub
-		
+	public void addBookmark(GenomicCoords gc, String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException {
+		throw new UnsupportedOperationException();		
 	}
 
 	public String getWorkFilename() {
@@ -404,11 +405,169 @@ public class Track {
 		this.workFilename = workFilename;
 	}
 
-	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
-		// TODO Auto-generated method stub
-		return "";
+//	public abstract String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException;
+
+	/** Print raw lines after having processed them through `cut`, `clip etc.`.
+	 * This method also add formatting so it returns a single string. 
+	 * It should be used only for printing and not for any computation.
+	 * If an output file has been set via this.setExportFile(exportFile), 
+	 * write to file and return empty string. 
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
+	 * @throws InvalidCommandLineException 
+	 * */
+	public String printLines() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException{
+
+		List<String> rawList= this.getRecordsAsStrings();
+		
+		if(this.getExportFile() != null && ! this.getExportFile().isEmpty()){
+			// If an output file has been set, send output there and return. 
+			BufferedWriter wr= null;
+			try{
+				wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
+				for(String line : rawList){
+					wr.write(line + "\n");
+				}
+				wr.close();
+			} catch(IOException e){
+				System.err.println("Cannot write to " + this.getExportFile());
+				throw e;
+			}
+			return "";
+		}
+		
+		int windowSize= this.getGc().getUserWindowSize();
+		if(this.getPrintMode().equals(PrintRawLine.FULL)){
+			windowSize= Integer.MAX_VALUE;
+		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
+			// Keep windowSize as it is
+		} else {
+			return "";
+		} 
+		
+		int count= this.getPrintRawLineCount();
+		
+		List<String> featureList= new ArrayList<String>();
+		String omitString= "";
+		for(String line : rawList){
+			String parsedLine= this.cutLine(line);
+			featureList.add(parsedLine);
+			count--;
+			if(count == 0){
+				int omitted= rawList.size() - this.getPrintRawLineCount();
+				if(omitted > 0){
+					omitString= "[" + omitted + "/"  + rawList.size() + " features omitted]";
+				}
+				break;
+			}
+		}
+		List<String> tabList= Utils.tabulateList(featureList);
+		StringBuilder sb= new StringBuilder();
+		if( ! omitString.isEmpty()){
+			sb.append(omitString + "\n");
+		}
+		for(String x : tabList){
+			if(x.length() > windowSize){
+				x= x.substring(0, windowSize);
+			}			
+			sb.append(x + "\n");
+		}
+		
+		if(this.isNoFormat()){
+			return sb.toString();
+		}
+
+		String formatted=  "\033[38;5;" + Config.get256Color(ConfigKey.foreground) + 
+		";48;5;" + Config.get256Color(ConfigKey.background) + "m" + sb.toString();
+		
+		return formatted; 
+		
+	}
+	
+	/** Interprets the content of this.cutScriptForPrinting to cut the input line
+	 * in way similar to Unix cut. Args:
+	 * -d <regex> Delimiter to split line, default '\t'
+	 * -f <idx> Indexes to extract columns, no spaces allowed. E.g. 1,3,5-7
+	 * @throws InvalidCommandLineException
+	 * The parsing and interpretation of this.cutScriptForPrinting is done for a single line
+	 * meaning that for many lines in input this is inefficient. However it should be ok for now,
+	 * but consider passing List<String> as input so the interpretation is done once only. 
+	 * */
+	private String cutLine(String line) throws InvalidCommandLineException {
+		if(this.cutScriptForPrinting == null || this.cutScriptForPrinting.isEmpty()){
+			return line;
+		}
+		List<String> args= Utils.tokenize(this.cutScriptForPrinting, " ");
+		String fields= Utils.getArgForParam(args, "-f");
+		if(fields == null){
+			//No fields given: Nothing to cut just return line as it is
+			return line; 
+		}
+		String delim= Utils.getArgForParam(args, "-d");
+		if(delim == null){
+			delim= "\t"; 
+		}
+		// Split the line at delim
+		List<String> lst= Arrays.asList(line.split(delim));
+		List<Integer> idxs = (expandStringOfFieldsToIndexes(fields));
+		List<String> outLst= new ArrayList<String>();
+		for(int i : idxs){
+			i--; // To make it zero-based
+			if(i < 0){
+				throw new InvalidCommandLineException();
+			}
+			if(i >= lst.size()){
+				i= lst.size() - 1;
+			}
+			outLst.add(lst.get(i));
+		}
+		// We always re-join on tab, regardless of delimiter!
+		return Joiner.on("\t").join(outLst);
 	}
 
+	/** Expand the string of fileds to return the individual indexes.
+	 * E.g. "1-3,5-7,10-" -> [1,2,3,5,6,7,10, Integer.MAX_VALUE].
+	 * Integer.MAX_VALUE signals that the fields from the last index to the end should be returned.    
+	 * @throws InvalidCommandLineException 
+	 * */
+	private List<Integer> expandStringOfFieldsToIndexes(String fields) throws InvalidCommandLineException{
+		List<Integer> idxs= new ArrayList<Integer>();
+		
+		// A bunch of checks for the validity of the input
+		String checkOnlyDigits= fields.replaceAll(",", "").replaceAll("-", "");
+		if( ( ! checkOnlyDigits.matches("[0-9]+")) || 
+			  checkOnlyDigits.startsWith("0") ||
+			  fields.contains("--") ||
+			  fields.startsWith("-")){
+			throw new InvalidCommandLineException();
+		}
+		if(fields.endsWith("-")){
+			fields= fields.replaceAll("-$", "");
+		}
+		List<String> lst= Splitter.on(",").omitEmptyStrings().splitToList(fields);
+		for(String x : lst){
+			if(x.contains("-")){
+				// This part expands the string "5-8" to [5,6,7,8]. "8-5" expanded to [8,7,6,5]
+				String[] fromTo = x.split("-");
+				int from= Integer.parseInt(fromTo[0]);
+				int to= Integer.parseInt(fromTo[1]);
+				if(from < to){
+					for(int i= from; i <= to; i++){
+						idxs.add(i);
+					}
+				} else {
+					for(int i= from; i >= to; i--){
+						idxs.add(i);
+					}
+				}
+			} else {
+				idxs.add(Integer.parseInt(x));
+			}
+		}
+		return idxs;
+	}
+	
 	/**Return the export file name. The variable %r is expanded to coordinates. 
 	 * */
 	public String getExportFile() {
@@ -444,7 +603,24 @@ public class Track {
 	}
 
 	protected void setPrintRawLineCount(int count) {
+		if(count < 0){
+			count= Integer.MAX_VALUE;
+		}
+		this.printRawLineCount= count;
+	}
 
+	protected int getPrintRawLineCount() {
+		return this.printRawLineCount;
+	}
+
+	/** Returns the records under the current genomic coordinates. As far as possible, 
+	 * records are returned exactly as they appear in the raw input, e.g. raw vcf lines, raw sam lines 
+	 * etc.
+	 * */
+	protected abstract List<String> getRecordsAsStrings();
+	
+	protected void setCutScriptForPrinting(String cutScriptForPrinting){
+		this.cutScriptForPrinting= cutScriptForPrinting;
 	}
 	
 }

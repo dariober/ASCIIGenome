@@ -109,8 +109,15 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		this.chrom= vcfList.get(0).trim();
 		this.from= Integer.parseInt(vcfList.get(1)); // Make it 1-based
 
-		// Feature coordinates are based on reference only. Insertions to the reference are indistinguishable from SNP (like IGV) 
-		this.to= this.from + (vcfList.get(3).length()-1);
+		// Feature coordinates are based on the longest operation, whether insertion or deletion
+		// or snv (length 1). Note that representing insertions as strings of length > 1 is not
+		// consistent with the genomic coordinates but it gives a better idea of the size of the 
+		// insertion.
+		int offset= vcfList.get(3).length() > vcfList.get(4).length() ? 
+				vcfList.get(3).length() : 
+				vcfList.get(4).length();
+		
+		this.to= this.from + (offset-1);
 		this.name= vcfList.get(2);
 		this.validateIntervalFeature();
 		return this;

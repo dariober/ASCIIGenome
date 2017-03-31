@@ -12,12 +12,37 @@ import org.junit.Test;
 
 import coloring.Config;
 import exceptions.InvalidColourException;
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 
 public class TrackIntervalFeatureTest {
+	
+	@Test
+	public void canReturnFeaturesAsRawStrings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("chr1:1-100000", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		
+		assertEquals(24, tif.getRecordsAsStrings().size());
+
+		// Interval with no features
+		gc= new GenomicCoords("FOO:1-100000", null, null);
+		tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		assertEquals(0, tif.getRecordsAsStrings().size());
+
+//		tif.setPrintRawLineCount(10);
+//		assertEquals(10, tif.getRecordsAsStrings().size());
+//		
+//		tif.setPrintRawLineCount(0);
+//		assertEquals(0, tif.getRecordsAsStrings().size());
+//		
+//		tif.setPrintRawLineCount(-1); // Return all
+//		assertEquals(24, tif.getRecordsAsStrings().size());
+		
+	}
 	
 	@Test
 	public void canReadBgzFileExtension() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
@@ -482,17 +507,17 @@ public class TrackIntervalFeatureTest {
 
 	
 	@Test
-	public void canPrintRawLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
+	public void canPrintRawLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException, InvalidCommandLineException{
 		new Config(null);
 		GenomicCoords gc= new GenomicCoords("chr1:1-40000", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		tif.setPrintMode(PrintRawLine.CLIP);
 
 		tif.setPrintRawLineCount(-1);
-		assertEquals(20, tif.printFeaturesToFile().split("\n").length);
+		assertEquals(20, tif.printLines().split("\n").length);
 
 		tif.setPrintRawLineCount(5);
-		assertEquals(5 + 1, tif.printFeaturesToFile().split("\n").length); // +1 for the string of omitted count.
+		assertEquals(5 + 1, tif.printLines().split("\n").length); // +1 for the string of omitted count.
 		
 	}
 	

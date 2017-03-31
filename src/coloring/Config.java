@@ -96,7 +96,7 @@ public class Config {
 	
 	/** Get xterm256 color corresponding to this configuration key
 	 * */
-	public static int getColor(ConfigKey key) throws InvalidColourException{
+	public static int get256Color(ConfigKey key) throws InvalidColourException{
 		return Xterm256.colorNameToXterm256(config.get(key));
 	}
 

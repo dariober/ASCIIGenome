@@ -62,7 +62,7 @@ public class Main {
 		
 		List<String> initFileList= opts.getList("input");
 		String region= opts.getString("region");
-		final String genome= opts.getString("genome");
+//		final String genome= opts.getString("genome");
 		final String fasta= opts.getString("fasta");
 		String exec= opts.getString("exec");
 		String config= opts.getString("config");
@@ -90,17 +90,15 @@ public class Main {
 		/* ------------------- */
 		// This part only prepares a dummy GenomicCoords object to initialize the start position:
 		// ----------------------------
-		region= initRegion(region, inputFileList, fasta, genome, debug);
+		region= initRegion(region, inputFileList, fasta, null, debug);
 		
 		GenomicCoords initGc= new GenomicCoords(region, null, null);
-		
 		List<String>initGenomeList= new ArrayList<String>();
 		for(String x : inputFileList){
 			initGenomeList.add(x);
 		}
 		initGenomeList.add(fasta);
-		initGenomeList.add(genome);
-		initGc.setGenome(initGenomeList);
+		initGc.setGenome(initGenomeList, false);
 		// ----------------------------
 		// Genomic positions start here:
 		final GenomicCoordsHistory gch= new GenomicCoordsHistory();
@@ -122,7 +120,7 @@ public class Main {
 		String currentCmdConcatInput= ""; 
 
 		if(!proc.isNoFormat()){
-			String str= String.format("\033[48;5;%sm", Config.getColor(ConfigKey.background));
+			String str= String.format("\033[48;5;%sm", Config.get256Color(ConfigKey.background));
 			System.out.print(str);
 		}
 
@@ -237,8 +235,8 @@ public class Main {
 		if(genome != null && ! genome.trim().isEmpty()){
 			initGenomeList.add(genome);
 		}
+		gc.setGenome(initGenomeList, false);
 		
-		gc.setGenome(initGenomeList);
 		SAMSequenceDictionary samSeqDict = gc.getSamSeqDict();
 		
 		System.err.print("Initializing coordinates... ");

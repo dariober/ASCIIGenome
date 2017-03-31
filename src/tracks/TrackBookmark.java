@@ -67,7 +67,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 	 * @throws InvalidGenomicCoordsException 
 	 * */
 	@Override
-	public void addBookmark(String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
+	public void addBookmark(GenomicCoords gc, String nameForBookmark) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException{
 		
 		// Adding a bookmark means re-preparing the bgzip file again. 
 		
@@ -89,7 +89,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 			wr.write(line + "\n");
 		}
 		// Add new bookamrk
-		wr.write(this.positionToGffLine(this.getGc(), nameForBookmark) + "\n");
+		wr.write(this.positionToGffLine(gc, nameForBookmark) + "\n");
 		br.close();
 		wr.close();
 
@@ -116,13 +116,14 @@ public class TrackBookmark extends TrackIntervalFeature {
 	
 	/** Remove the bookmark matching the exact coordinates of the current position. 
 	 * Bookmarks partially overlapping are not removed. 
+	 * @param bookmarkRegion 
 	 * @throws IOException 
 	 * @throws SQLException 
 	 * @throws InvalidRecordException 
 	 * @throws ClassNotFoundException 
 	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public void removeBookmark() throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException {
+	public void removeBookmark(GenomicCoords bookmarkRegion) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidGenomicCoordsException {
 		// To remove a bookmark, iterate through the bgzip file writing records to a tmp file.
 		// The record(s) matching this position is not written. 
 		// 
@@ -140,9 +141,9 @@ public class TrackBookmark extends TrackIntervalFeature {
 			if( ! line.startsWith("#")){ // In case of comment lines
 				List<String>pos= Lists.newArrayList(Splitter.on("\t").split(line));
 				
-				if(this.getGc().getChrom().equals(pos.get(0)) && 
-				   this.getGc().getFrom() == Integer.parseInt(pos.get(3)) && 
-				   this.getGc().getTo() == Integer.parseInt(pos.get(4))){
+				if(bookmarkRegion.getChrom().equals(pos.get(0)) && 
+				   bookmarkRegion.getFrom() == Integer.parseInt(pos.get(3)) && 
+				   bookmarkRegion.getTo() == Integer.parseInt(pos.get(4))){
 					continue;
 				}
 			}

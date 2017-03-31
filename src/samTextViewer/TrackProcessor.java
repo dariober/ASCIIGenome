@@ -33,6 +33,7 @@ public class TrackProcessor {
 	private GenomicCoordsHistory genomicCoordsHistory; 
 	private String snapshotFile= null;
 	private boolean appendToSnapshotFile= false;
+	private boolean stripAnsi= true;
 	// int windowSize= 160;
 	
 	/* C O N S T R U C T O R S */
@@ -72,7 +73,8 @@ public class TrackProcessor {
 				outputString.append(track.getTitle());
 				outputString.append(track.printToScreen() + "\n");
 				outputString.append(track.getPrintableConsensusSequence());
-				outputString.append(track.printFeaturesToFile());
+				outputString.append(track.printLines());
+				// outputString.append(track.printFeaturesToFile());
 			}
 		}
 
@@ -86,13 +88,13 @@ public class TrackProcessor {
 		String footer= this.getFooter(currentGC);
 		if(!noFormat){
 			outputString.append("\033[48;5;");
-			outputString.append(Config.getColor(ConfigKey.background));
+			outputString.append(Config.get256Color(ConfigKey.background));
 			outputString.append(";38;5;");
-			outputString.append(Config.getColor(ConfigKey.footer));
+			outputString.append(Config.get256Color(ConfigKey.footer));
 			outputString.append("m");
 			outputString.append(footer);
 			outputString.append("\033[38;5;");
-			outputString.append(Config.getColor(ConfigKey.foreground));
+			outputString.append(Config.get256Color(ConfigKey.foreground));
 			outputString.append("m");
 		} else {
 			outputString.append(footer);
@@ -110,7 +112,11 @@ public class TrackProcessor {
 		
 		} else if(this.snapshotFile != null){
 			BufferedWriter wr= new BufferedWriter(new FileWriter(new File(this.snapshotFile), this.appendToSnapshotFile));
-			wr.write(Utils.stripAnsiCodes(printable));
+			if(this.getStripAnsi()){
+				wr.write(Utils.stripAnsiCodes(printable));
+			} else {
+				wr.write(printable);
+			}
 			wr.write("\n-------8<-------------[ cut here ]----------------------\n\n");
 			wr.close();
 		}
@@ -202,21 +208,6 @@ public class TrackProcessor {
 		return memStats;
 	}
 
-//	private void printer(String xprint, String filename) throws IOException{
-//		System.out.print(xprint);
-//		if(filename == null){
-//			return;
-//		}
-//		if(! filename.toLowerCase().endsWith(".pdf")){
-//			// We write file as plain text so strip ansi codes.
-//			xprint= Utils.stripAnsiCodes(xprint);
-//		}
-//		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename), true));
-//		wr.write(xprint);
-//		wr.close();
-//	}
-
-	
 	protected TrackSet getTrackSet() {
 		return trackSet;
 	}
@@ -261,4 +252,12 @@ public class TrackProcessor {
 		this.appendToSnapshotFile = appendToSnapshotFile;
 	}
 
+	protected void setStripAnsi(boolean stripAnsi) {
+		this.stripAnsi= stripAnsi;
+	}
+	protected boolean getStripAnsi() {
+		return this.stripAnsi;
+	}
+	
+	
 }

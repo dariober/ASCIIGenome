@@ -1,3 +1,25 @@
+New in 1.4.0
+============
+
+* `print` applies to bam files.
+
+* Insertions in VCF files are represented as string of length equal to the insertion
+  (at single base resolution, at larger zoom they scale accordingly). In previous 
+  versions insertions have always length 1 which is more consistent with the genomic 
+  coordinates but less useful.
+
+* Completely changed the API of `bookmark` to be more useful and intuitive.
+Adding and removing bookmarks can done by explicitly giving the coordinates
+of interest. Default is still the current coordinates.
+
+* Command line option `-g/--genome` has been removed. To set a genome right at the
+  start use `-x setGenome hg19` (replace hg19 with a suitable input of course).
+
+* Default colour theme is "metal".
+
+* Fixed bug in pdf colours. Default back/foreground is taken from configuration 
+  instead of being hard-coded white and black. 
+
 New in 1.3.0
 ============
 
