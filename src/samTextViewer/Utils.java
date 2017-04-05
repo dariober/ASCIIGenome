@@ -1669,5 +1669,19 @@ public class Utils {
 
 		return coords;
 	}
+
+	/** Prepare SamReader from local bam or URL bam */
+	public static SamReader getSamReader(String workFilename) throws MalformedURLException {
+		UrlValidator urlValidator = new UrlValidator();
+		SamReaderFactory srf=SamReaderFactory.make();
+		srf.validationStringency(ValidationStringency.SILENT);
+		SamReader samReader;
+		if(urlValidator.isValid(workFilename)){
+			samReader = srf.open(SamInputResource.of(new URL(workFilename)).index(new URL(workFilename + ".bai")));
+		} else {
+			samReader= srf.open(new File(workFilename));
+		}
+		return samReader;
+	}
 	
 }

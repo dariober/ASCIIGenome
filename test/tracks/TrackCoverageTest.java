@@ -91,7 +91,7 @@ public class TrackCoverageTest {
 
 		GenomicCoords gc= new GenomicCoords("chr7:5566779-5566879", null, "test_data/chr7.fa");
 		TrackCoverage tc= new TrackCoverage("test_data/ds051.short.bam", gc, false);
-		List<PileupLocus> pileup= tc.getPileupList(); 
+		List<PileupLocus_DEPRECATE_ME> pileup= tc.getPileupList(); 
 		assertEquals(101, pileup.size());
 		assertEquals("chr7\t5566779\tT\t0\t0\t0\t4\t0", pileup.get(0).toString());
 		assertEquals("chr7\t5566780\tC\t0\t1\t0\t3\t0", pileup.get(1).toString());

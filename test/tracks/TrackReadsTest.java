@@ -6,8 +6,8 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import coloring.Config;
@@ -16,10 +16,6 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import htsjdk.samtools.AlignmentBlock;
-import htsjdk.samtools.Cigar;
-import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -27,7 +23,10 @@ import samTextViewer.GenomicCoords;
 
 public class TrackReadsTest {
 
-	//public static List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
+    @BeforeClass
+    public static void init() throws IOException, InvalidConfigException {
+        new Config(null);
+    }
 
 	static SamReaderFactory srf=SamReaderFactory.make();
 	static SamReader samReader= srf.open(new File("test_data/ds051.actb.bam"));
@@ -36,25 +35,26 @@ public class TrackReadsTest {
 	
 	public static String fastaFile= "test_data/chr7.fa";
 
-	@Test
-	public void testSpeed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+	
+	@Test 
+	public void testSpeed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
 		GenomicCoords gc= new GenomicCoords("chr7:5567700-5567872", null, null);
 		SamReader sr= srf.open(new File("test_data/MT.bam"));
-		SAMRecordIterator reads = sr.query("chr7", gc.getFrom(), gc.getTo(), false);
-		int n= 0;
-		long t0= System.currentTimeMillis();
-		while(reads.hasNext()){
-			SAMRecord rec= reads.next();
-			Cigar cigar= rec.getCigar();
-			List<AlignmentBlock> blocks = rec.getAlignmentBlocks();
-			rec.getReferencePositionAtReadPosition(0);
-			n++;
-			TextRead txr= new TextRead(rec, gc);
-			txr.getPrintableTextRead(false, true, false, gc.getBpPerScreenColumn());
-		}
-		long t1= System.currentTimeMillis();
-		System.out.println((t1-t0)/1000.0);
-		System.out.println(n);
+//		SAMRecordIterator reads = sr.query("chr7", gc.getFrom(), gc.getTo(), false);
+//		int n= 0;
+//		long t0= System.currentTimeMillis();
+//		while(reads.hasNext()){
+//			SAMRecord rec= reads.next();
+//			Cigar cigar= rec.getCigar();
+//			List<AlignmentBlock> blocks = rec.getAlignmentBlocks();
+//			rec.getReferencePositionAtReadPosition(0);
+//			n++;
+//			TextRead txr= new TextRead(rec, gc);
+//			txr.getPrintableTextRead(false, true, false, gc.getBpPerScreenColumn());
+//		}
+//		long t1= System.currentTimeMillis();
+//		System.out.println((t1-t0)/1000.0);
+//		System.out.println(n);
 		
 		long t2= System.currentTimeMillis();
 		TrackReads tr= new TrackReads("test_data/MT.bam", gc);
@@ -175,7 +175,10 @@ public class TrackReadsTest {
 	}
 
 	@Test
-	public void test() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
+	public void test() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException {
+		
+		new Config(null);
+		
 		String bam= "test_data/ds051.actb.bam";
 		int yMaxLines= 50;
 		boolean bs= false;

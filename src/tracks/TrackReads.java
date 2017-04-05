@@ -3,7 +3,6 @@ package tracks;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -12,7 +11,6 @@ import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 
 import coloring.Config;
 import coloring.ConfigKey;
@@ -20,10 +18,7 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
-import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AggregateFilter;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
@@ -37,10 +32,10 @@ import samTextViewer.Utils;
 public class TrackReads extends Track{
 
 	private List<List<TextRead>> readStack;
-	// private boolean bisulf= false;
 	private boolean withReadName= false;
-//	private static int MAX_READS_STACK= 2000;
 	private long nRecsInWindow= -1;
+//	private Pileup pileup; 
+	
 	/* C o n s t r u c t o r s */
 	/**
 	 * Create read track
@@ -60,10 +55,10 @@ public class TrackReads extends Track{
 			System.err.println("\nAlignment file " + bam + " has no index.\n");
 			throw new RuntimeException();
 		}
+//		this.pileup= new Pileup(gc.getChrom(), gc.getFrom(), gc.getTo());
 		this.setFilename(bam);
 		this.setWorkFilename(bam);
 		this.setGc(gc);
-
 	}
 	
 	protected TrackReads(){};
@@ -75,21 +70,22 @@ public class TrackReads extends Track{
 		this.readStack= new ArrayList<List<TextRead>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
 
-			/*  ------------------------------------------------------ */
-			/* This chunk prepares SamReader from local bam or URL bam */
-			UrlValidator urlValidator = new UrlValidator();
-			SamReaderFactory srf=SamReaderFactory.make();
-			srf.validationStringency(ValidationStringency.SILENT);
-			SamReader samReader;
-			if(urlValidator.isValid(this.getWorkFilename())){
-				samReader = srf.open(SamInputResource.of(new URL(this.getWorkFilename())).index(new URL(this.getWorkFilename() + ".bai")));
-			} else {
-				samReader= srf.open(new File(this.getWorkFilename()));
-			}
-			/*  ------------------------------------------------------ */
+			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
+			
+//			/*  ------------------------------------------------------ */
+//			/* This chunk prepares SamReader from local bam or URL bam */
+//			UrlValidator urlValidator = new UrlValidator();
+//			SamReaderFactory srf=SamReaderFactory.make();
+//			srf.validationStringency(ValidationStringency.SILENT);
+//			SamReader samReader;
+//			if(urlValidator.isValid(this.getWorkFilename())){
+//				samReader = srf.open(SamInputResource.of(new URL(this.getWorkFilename())).index(new URL(this.getWorkFilename() + ".bai")));
+//			} else {
+//				samReader= srf.open(new File(this.getWorkFilename()));
+//			}
+//			/*  ------------------------------------------------------ */
 			
 			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
-			// float probSample= (float) TrackReads.MAX_READS_STACK / this.nRecsInWindow;
 			float probSample= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack)) / this.nRecsInWindow;
 			
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
@@ -108,8 +104,10 @@ public class TrackReads extends Track{
 						TextRead tr= new TextRead(rec, this.getGc());
 						textReads.add(tr);
 					}
+					// this.pileup.add(rec);
 				}
 			}
+			System.err.println(textReads.size());
 			this.readStack= stackReads(textReads);
 		} else {
 			this.nRecsInWindow= -1;
@@ -261,89 +259,9 @@ public class TrackReads extends Track{
 		return featureList;
 	}
 
-	
-	/**Print raw features under track. 
-	 * windowSize size the number of characters before clipping occurs. This is 
-	 * typically the window size for plotting. windowSize is used only by CLIP mode.  
-	 * @throws IOException 
-	 * @throws InvalidGenomicCoordsException 
-	 * */
-//	private String printFeatures() throws InvalidGenomicCoordsException, IOException{
-//
-//		int windowSize= this.getGc().getUserWindowSize();
-//		if(this.getPrintMode().equals(PrintRawLine.FULL)){
-//			windowSize= Integer.MAX_VALUE;
-//		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
-//			// Keep windowSize as it is
-//		} else {
-//			return "";
-//		} 
-//		
-//		List<String> featureList= new ArrayList<String>();
-//		
-//		int count= this.getPrintRawLineCount();
-//		String omitString= "";
-//		outerloop:
-//		for(List<TextRead> x : this.readStack){
-//			for(TextRead txr : x ){
-//				featureList.add(txr.getSamRecord().getSAMString());
-//				count--;
-//				if(count == 0){
-//					int omitted= (int) (this.nRecsInWindow - this.getPrintRawLineCount());
-//					if(omitted > 0){
-//						omitString= "[" + omitted + "/"  + this.nRecsInWindow + " features omitted]";
-//					}
-//					break outerloop;
-//				}
-//			}
-//		}
-//		List<String> tabList= Utils.tabulateList(featureList);
-//		StringBuilder sb= new StringBuilder();
-//		if( ! omitString.isEmpty()){
-//			sb.append(omitString + "\n");
-//		}
-//		for(String x : tabList){
-//			if(x.length() > windowSize){
-//				x= x.substring(0, windowSize);
-//			}			
-//			sb.append(x + "\n");
-//		}
-//		return sb.toString(); // NB: Leave last trailing \n
+//	protected Pileup getPileup(){
+//		return this.pileup;
 //	}
-//	
-//	@Override
-//	/** Write the features in interval to file by appending to existing file. 
-//	 * If the file to write to null or empty, return the data that would be
-//	 * written as string.
-//	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
-//	 * */
-//	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
-//		
-//		if(this.getExportFile() == null || this.getExportFile().isEmpty()){
-//			if(this.isNoFormat()){
-//				return this.printFeatures();
-//			} else {
-//				return "\033[38;5;" + Config.get256Color(ConfigKey.foreground) + 
-//						";48;5;" + Config.get256Color(ConfigKey.background) + "m" + this.printFeatures();				
-//			}
-//		}
-//		
-//		BufferedWriter wr= null;
-//		try{
-//			wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
-//			for(List<TextRead> x : this.readStack){
-//				for(TextRead txr : x){
-//					wr.write(txr.getSamRecord().getSAMString() + "\n");
-//				}
-//			}
-//			wr.close();
-//		} catch(IOException e){
-//			System.err.println("Cannot write to " + this.getExportFile());
-//			throw e;
-//		}
-//		return "";
-//	}
-
 	
 	/* S e t t e r s   and   G e t t e r s */
 

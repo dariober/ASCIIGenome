@@ -97,7 +97,9 @@ public class TrackCoverage extends Track {
 			}
 			
 			List<Double> mapping = this.getGc().getMapping(userWindowSize);
+
 			while(iter.hasNext()){
+
 				samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
 				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), mapping);
 				byte refBase= '\0';
@@ -106,7 +108,8 @@ public class TrackCoverage extends Track {
 				}
 				this.screenLocusInfoList.get(screenPos).increment(locusInfo, refBase);
 			}
-			
+
+
 			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
 			samLocIter.close();
 		}
@@ -261,7 +264,7 @@ public class TrackCoverage extends Track {
 				ref= Character.toUpperCase((char) refSeq[locusInfo.getPosition() - this.getGc().getFrom()]);
 			}
 			if( ! this.isBisulf()){
-				consensusSequence[i]= (new PileupLocus(locusInfo, ref)).getConsensus();
+				consensusSequence[i]= (new PileupLocus_DEPRECATE_ME(locusInfo, ref)).getConsensus();
 			} else {
 				// consensusSequence[i]= (new MethylLocus(locusInfo, ref)).getConsensus();
 			}
@@ -304,7 +307,7 @@ public class TrackCoverage extends Track {
 	
 	/** This method is not really used. For each position print ACGT counts. 
 	 * */
-	protected List<PileupLocus> getPileupList() throws IOException {
+	protected List<PileupLocus_DEPRECATE_ME> getPileupList() throws IOException {
 		
 		IntervalList il= new IntervalList(this.samReader.getFileHeader());
 		il.add(new Interval(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));
@@ -320,14 +323,14 @@ public class TrackCoverage extends Track {
 			faSeqFile.close();
 		}
 		
-		List<PileupLocus> pileup= new ArrayList<PileupLocus>(); 
+		List<PileupLocus_DEPRECATE_ME> pileup= new ArrayList<PileupLocus_DEPRECATE_ME>(); 
 		while(iter.hasNext()){			
 			samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
 			char ref= '.';
 			if(refSeq != null){
 				ref= Character.toUpperCase((char) refSeq[locusInfo.getPosition() - this.getGc().getFrom()]);
 			}
-			pileup.add(new PileupLocus(locusInfo, ref));
+			pileup.add(new PileupLocus_DEPRECATE_ME(locusInfo, ref));
 		}
 		samLocIter.close();
 		return pileup;
@@ -337,7 +340,7 @@ public class TrackCoverage extends Track {
 	public List<String> printPileupList(){
 		List<String> plist= new ArrayList<String>();
 		try {
-			for(PileupLocus x : this.getPileupList()){
+			for(PileupLocus_DEPRECATE_ME x : this.getPileupList()){
 				plist.add(x.toString() + "\n");
 			}
 		} catch (IOException e) {

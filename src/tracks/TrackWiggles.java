@@ -76,6 +76,9 @@ public class TrackWiggles extends Track {
 		
 	};
 	
+	protected TrackWiggles(){
+		
+	}
 
 	/*  M e t h o d s  */
 	@Override
