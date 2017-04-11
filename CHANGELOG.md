@@ -1,3 +1,16 @@
+New in 1.5.0
+============
+
+* Issue #67 is fixed.
+
+* Title can share line with profile if it doesn't get on the way. This gives a more
+  compact visualization with sparse data.
+
+* Centre column is highlighted in read tracks to ease the identification of variant bases
+
+* Base quality below 13 is shaded grey
+
+
 New in 1.4.0
 ============
 

@@ -153,6 +153,7 @@ public class TrackWiggles extends Track {
 	public String printToScreen() throws InvalidColourException{
 	
 		if(this.getyMaxLines() == 0){return "";}
+		
 		TextProfile textProfile= new TextProfile(this.getScreenScores(), this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
 		
 		ArrayList<String> lineStrings= new ArrayList<String>();
@@ -160,6 +161,7 @@ public class TrackWiggles extends Track {
 			List<String> xl= textProfile.getProfile().get(i);
 			lineStrings.add(StringUtils.join(xl, ""));
 		}
+
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
 			printable= "\033[48;5;"

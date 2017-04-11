@@ -1,7 +1,7 @@
 package tracks;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
 
 /** Class to store information about a single position.
  * */
@@ -9,7 +9,8 @@ class Locus {
 
 	String chrom;
 	int pos;
-	Map<String, Integer> counts= new HashMap<String, Integer>();
+	// Map<String, Integer> counts= new HashMap<String, Integer>();
+	Multiset<String> counts = HashMultiset.create();
 
 	/*   C O N S T R U C T O R   */
 	
@@ -18,34 +19,34 @@ class Locus {
 		this.pos= pos;
 		
 //		// Counts for first in pair
-		this.counts.put("A_1F", 0);
-		this.counts.put("C_1F", 0);
-		this.counts.put("G_1F", 0);
-		this.counts.put("T_1F", 0);
-		this.counts.put("N_1F", 0);
-		this.counts.put("D_1F", 0);
-		
-		this.counts.put("A_1R", 0);
-		this.counts.put("C_1R", 0);
-		this.counts.put("G_1R", 0);
-		this.counts.put("T_1R", 0);
-		this.counts.put("N_1R", 0);
-		this.counts.put("D_1R", 0);
+//		this.counts.put("A_1F", 0);
+//		this.counts.put("C_1F", 0);
+//		this.counts.put("G_1F", 0);
+//		this.counts.put("T_1F", 0);
+//		this.counts.put("N_1F", 0);
+//		this.counts.put("D_1F", 0);
+//		
+//		this.counts.put("A_1R", 0);
+//		this.counts.put("C_1R", 0);
+//		this.counts.put("G_1R", 0);
+//		this.counts.put("T_1R", 0);
+//		this.counts.put("N_1R", 0);
+//		this.counts.put("D_1R", 0);
 		
 //		// Counts for second in pair
-		this.counts.put("A_2F", 0);
-		this.counts.put("C_2F", 0);
-		this.counts.put("G_2F", 0);
-		this.counts.put("T_2F", 0);
-		this.counts.put("N_2F", 0);
-		this.counts.put("D_2F", 0);
-		
-		this.counts.put("A_2R", 0);
-		this.counts.put("C_2R", 0);
-		this.counts.put("G_2R", 0);
-		this.counts.put("T_2R", 0);
-		this.counts.put("N_2R", 0);
-		this.counts.put("D_2R", 0);
+//		this.counts.put("A_2F", 0);
+//		this.counts.put("C_2F", 0);
+//		this.counts.put("G_2F", 0);
+//		this.counts.put("T_2F", 0);
+//		this.counts.put("N_2F", 0);
+//		this.counts.put("D_2F", 0);
+//		
+//		this.counts.put("A_2R", 0);
+//		this.counts.put("C_2R", 0);
+//		this.counts.put("G_2R", 0);
+//		this.counts.put("T_2R", 0);
+//		this.counts.put("N_2R", 0);
+//		this.counts.put("D_2R", 0);
 		
 	}
 
@@ -68,7 +69,7 @@ class Locus {
 				}				
 			}
 		}
-		if(base == 'C'){
+		else if(base == 'C'){
 			if(isFirstOFPair){
 				if(isReverse){
 					key= "C_1R";
@@ -83,7 +84,7 @@ class Locus {
 				}				
 			}
 		}
-		if(base == 'G'){
+		else if(base == 'G'){
 			if(isFirstOFPair){
 				if(isReverse){
 					key= "G_1R";
@@ -98,7 +99,7 @@ class Locus {
 				}				
 			}
 		}
-		if(base == 'T'){
+		else if(base == 'T'){
 			if(isFirstOFPair){
 				if(isReverse){
 					key= "T_1R";
@@ -113,7 +114,7 @@ class Locus {
 				}				
 			}
 		}
-		if(base == 'N'){
+		else if(base == 'N'){
 			if(isFirstOFPair){
 				if(isReverse){
 					key= "N_1R";
@@ -128,7 +129,7 @@ class Locus {
 				}				
 			}
 		} 
-		if(base == 'D'){
+		else if(base == 'D'){
 			if(isFirstOFPair){
 				if(isReverse){
 					key= "D_1R";
@@ -142,20 +143,34 @@ class Locus {
 					key= "D_2F";
 				}				
 			}
-		} 
-		int count= this.counts.get(key);
-		this.counts.put(key, count+1);
+		} else {
+			throw new RuntimeException();
+		}
+		// int count= this.counts.get(key);	
+		this.counts.add(key);
 	}
 
 	protected int getDepth(){
 		int depth= 0;
-		for(int x : this.counts.values()){
-			depth += x;
+		for(String key : this.counts.elementSet()){
+			depth += this.counts.count(key);
 		}
-		return depth;
+		return depth; 
 	}
 	
-	protected Map<String, Integer> getCounts(){
-		return this.counts;
-	}
+//	protected LinkedHashMap<Character, Integer> getNCount(){
+//		Map<Character, Integer> counts= new LinkedHashMap<Character, Integer>();
+//		for(char n : new char[]{'A', 'C', 'G', 'T', 'N', 'D'}){
+//			int c= this.counts.get(n + "_1F") + 
+//				   this.counts.get(n + "_1R") + 
+//				   this.counts.get(n + "_2F") +
+//				   this.counts.get(n + "_2R");
+//			counts.put(n, c);
+//		}
+//		return (LinkedHashMap<Character, Integer>) counts;
+//	}
+//	
+//	protected Map<String, Integer> getCounts(){
+//		return this.counts;
+//	}
 }

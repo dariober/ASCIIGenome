@@ -1,7 +1,6 @@
 package tracks;
 
 import filter.ReadFromTopStrandFilter;
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 // import htsjdk.samtools.util.SamLocusIterator.LocusInfo;
 import samTextViewer.SamLocusIterator.LocusInfo;
 // import htsjdk.samtools.util.SamLocusIterator.RecordAndOffset;

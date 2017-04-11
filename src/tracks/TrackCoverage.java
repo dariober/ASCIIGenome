@@ -32,6 +32,7 @@ import samTextViewer.GenomicCoords;
 import samTextViewer.SamLocusIterator;
 import samTextViewer.Utils;
 
+@Deprecated
 public class TrackCoverage extends Track {
 
 	/* A t t r i b u t e s */

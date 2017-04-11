@@ -59,6 +59,42 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void canGetIndexOfCharsOnFormattedLine(){
+		// Unformatted: "  10mFOOBAR[0mfoobar]"
+		// String fline= "  \033[38;5;10m10m\033[0mFOOBAR\033[48;5;10m[0mfoobar]\033[0m";
+		String fline= "foo";
+		
+		// Reconstruct the string without codes
+		String chars= "";
+		for(int idx : Utils.indexOfCharsOnFormattedLine(fline)){
+			chars += fline.charAt(idx);
+		}
+		assertEquals("foo", chars);
+		
+		fline= "\033[0mFOO\033[38;5;10m  BAR";
+				chars= "";
+		for(int idx : Utils.indexOfCharsOnFormattedLine(fline)){
+			chars += fline.charAt(idx);
+		}
+		assertEquals("FOO  BAR", chars);
+
+		// No printable chars:
+		fline= "\033[0m";
+		assertEquals(0, Utils.indexOfCharsOnFormattedLine(fline).size());
+		fline= "";
+		assertEquals(0, Utils.indexOfCharsOnFormattedLine(fline).size());
+	}
+	
+//	@Test
+//	public void canHighlightCenterColumn(){
+//		String profile= "AAANAAA\n"
+//				      + "AAA AAA\n"
+//				      + "TTTTT";
+//		String hProfile= Utils.highlightCenterColumn(profile);
+//		String exp= "AAA\033[27m;7mNAAA\n";
+//	}
+	
+	@Test
 	public void canParseStringToCoords() throws InvalidGenomicCoordsException{
 
 		assertEquals(Arrays.asList(new String[] {"chr1", "1", "10"}), 
@@ -660,11 +696,25 @@ public class UtilsTest {
 	
 	@Test
 	public void canGetClosestIndex(){
+		
+		List<Double> seq = Utils.seqFromToLenOut(10, 50, 5);
+		
+		System.err.println(seq);
+		assertEquals(2, Utils.getIndexOfclosestValue(30, seq));
+		assertEquals(3, Utils.getIndexOfclosestValue(35, seq)); // Value is right in the middle of the interval (but take care you are working with floating points)
+		assertEquals(2, Utils.getIndexOfclosestValue(29, seq));
+		assertEquals(2, Utils.getIndexOfclosestValue(31, seq));
+		assertEquals(4, Utils.getIndexOfclosestValue(50, seq));
+		assertEquals(0, Utils.getIndexOfclosestValue(3, seq)); // Genome pos is to the left of window 
+															   // This should not happen though.
+		
 		int windowSize= 150;
 		List<Double> mapping = Utils.seqFromToLenOut(1, 1000000, windowSize);
 		for(int i=0; i < windowSize; i++){
 			System.out.println("Index: " + i + " position: " + mapping.get(i));
 		}
+		
+		assertEquals(windowSize-1, Arrays.binarySearch(mapping.toArray(new Double[mapping.size()]), 1000000.0));
 		
 		assertEquals(windowSize-1, Utils.getIndexOfclosestValue(1000000, mapping));
 		assertEquals((windowSize/2)-1, Utils.getIndexOfclosestValue(1000000/2, mapping));

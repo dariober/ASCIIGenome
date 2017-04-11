@@ -41,8 +41,8 @@ import jline.console.history.MemoryHistory;
 import net.sourceforge.argparse4j.inf.Namespace;
 import tracks.IntervalFeature;
 import tracks.Track;
-import tracks.TrackCoverage;
 import tracks.TrackFormat;
+import tracks.TrackPileup;
 import tracks.TrackSet;
 
 /**
@@ -387,7 +387,7 @@ public class Main {
 			consensus= 1;
 		}
 		for(Track tr : trackList){
-			if(tr instanceof TrackCoverage){
+			if(tr instanceof TrackPileup){
 				consoleHeight -= consensus;
 			}
 		}

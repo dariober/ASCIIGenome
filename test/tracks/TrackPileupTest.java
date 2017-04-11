@@ -14,12 +14,56 @@ import org.junit.Test;
 
 import com.google.common.base.Splitter;
 
+import coloring.Config;
+import exceptions.InvalidColourException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 
 public class TrackPileupTest {
 
+	@Test
+	public void canProcessReadsWithMissingSequence() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
+	
+		new Config(null);
+
+		GenomicCoords gc= new GenomicCoords("chr7:1-1000", null, null);
+		TrackPileup tr= new TrackPileup("test_data/missingReadSeq.bam", gc);
+		tr.setNoFormat(true);
+		tr.printToScreen();
+		assertTrue(tr.printToScreen().trim().startsWith("_"));
+
+		assertEquals(1, (int)tr.getDepth().entrySet().iterator().next().getValue());
+
+	}
+	
+	@Test
+	public void canPrintProfile() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
+	
+		new Config(null);
+	
+		GenomicCoords gc= new GenomicCoords("chr7:5566776-5566796", null, null);
+		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
+		System.err.println(tr.getScreenScores());
+		tr.setNoFormat(true);
+		System.err.println(tr.printToScreen());
+		assertTrue(tr.getScreenScores().size() > 1); // Here we only test the method doesn't crash
+		
+		gc= new GenomicCoords("chr7:5,554,740-5,554,780", null, null);
+		tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
+		assertTrue(tr.getScreenScores().size() > 1);
+		
+		assertTrue(tr.printToScreen().length() > 50);
+		assertTrue(tr.getTitle().length() > 50);
+		System.err.println(tr.printToScreen());
+		System.err.println(tr.getTitle());
+		
+		tr.setRpm(true);
+		tr.getScreenScores();
+		
+	}
+	
 	@Test
 	public void canCollectCoverage() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566736-5566856", null, null);
@@ -33,12 +77,19 @@ public class TrackPileupTest {
 		gc= new GenomicCoords("chr7:5522059-5612125", null, null);
 		long t0= System.currentTimeMillis();
 		tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-		
 		Map<Integer, Integer> depth = tr.getDepth();
 		long t1= System.currentTimeMillis();
 		assertTrue(t1-t0 < 10000); // Processing time (in ms) is acceptably small
 		assertTrue(t1-t0 > 100); // But not suspiciously small
+		
 		System.err.println("Time to parse " + depth.size() + " positions: " + (t1-t0) + " ms");
+	}
+	
+	public static void sameAsMpileup() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("chr7:5522059-5612125", null, null);
+		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
+		Map<Integer, Integer> depth = tr.getDepth();
 
 		// See test_data/README.md for obtaining this test file (samtools mpileup ...)
 		String expPileup= FileUtils.readFileToString(new File("test_data/ear045.oxBS.actb.pileup"));
@@ -47,6 +98,7 @@ public class TrackPileupTest {
 		// mpileup and TrackPileup hit the same positions
 		assertEquals(expList.size(), depth.size());
 
+		// Same depth at same positions
 		int i= 0;
 		for(int obsPos : depth.keySet()){
 			int obsDepth=depth.get(obsPos);
@@ -54,53 +106,29 @@ public class TrackPileupTest {
 			int expDepth= Integer.parseInt(Splitter.on("\t").splitToList(expList.get(i)).get(3));
 			try{
 				assertEquals(expPos, obsPos);
-				assertTrue(Math.abs((expDepth - obsDepth)) < 10);
+				assertTrue(Math.abs((expDepth - obsDepth)) < 6);
 			} catch(AssertionError e){
-				System.err.println(i);
+				System.err.println("At iteration: " + i);
 				System.err.println(expList.get(i));
-				System.err.println(obsPos);
+				System.err.println("Observed depth: " + obsDepth);
 				throw e; 
 			}
 			i++;
-		}		
-//		
-//		System.err.println(expList.get(0));
-		
+		}				
 	}
 
-//	@Test
-//	public void canAddSAMRecord() {
-//	
-//		// Prepare a sam header
-//		String sqHeader = "@HD\tSO:coordinate\tVN:1.0\n"
-//	                        + "@SQ\tSN:chr1\tAS:HG18\tLN:10000000\n";
-//
-//		// Prepare one read with a 500,000 bases skipped
-//		String cigar= "10S" + "5M" + "5D" + "8M" + "5000N" + "3M";
-//		String s1 = "read1\t0\tchr1\t100\t255\t" + cigar + "\t*\t0\t0\tnnnnnnnnnnACCTACGTTCAATATTACAGG\t*\n";
-//		
-//		
-//		// Prepare sam input and samReader
-//		String exampleSam = sqHeader + s1 + s1;
-//		ByteArrayInputStream inputStream = new ByteArrayInputStream(exampleSam.getBytes());
-//
-//		SamReader samReader= SamReaderFactory.makeDefault().open(SamInputResource.of(inputStream));
-//		SAMRecord rec= samReader.iterator().next();
-//
-//		GenomicCoords gc= new GenomicCoords("chr1:1-10000", null, null);
-//
-//		TrackPileup pileup= new TrackPileup(gc);
-//		pileup.add(rec);
-//		// First position is 100 as per sam record
-//		assertEquals(100, (int)pileup.getDepth().keySet().iterator().next());
-//		
-//		// Number of position covered (sum of M and D ops)
-//		assertEquals(5+5+8+3, pileup.getDepth().keySet().size());
-//		
-//		// All pos depth 1:
-//		for(int x : pileup.getDepth().values() ){
-//			assertEquals(1, x);
-//		}
-//	}
+	@Test
+	public void canCollectCoverageAtOnePos() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr7:5588536-5588536", null, null);
+		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
+		assertEquals(1, tr.getDepth().size());
+	}
+	
+	@Test
+	public void canHandleZeroReads() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr1:1-1000", null, null);
+		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
+		assertEquals(0, tr.getDepth().size());
+	}
 
 }

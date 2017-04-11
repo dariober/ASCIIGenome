@@ -43,6 +43,7 @@ class TextRead {
 	private final static char charFwd= '>';
 	private final static char charRev= '<';
 	private final static int  SHADE_MAPQ= 5;
+	private final static int  SHADE_BASEQ= 13;
 	
 	/** Char to represent deletions from the reference. I.e. gaps in the read */
 	final private char DEL= '-';
@@ -144,16 +145,27 @@ class TextRead {
 	 */
 	private String readFormatter(List<Character> read, boolean noFormat, boolean bs, double bpPerScreenColumn) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 
+		byte[] baseQual= this.samRecord.getBaseQualities();
+		
 		if(noFormat){ // Essentially nothing to do in this case
 			return Joiner.on("").join(read);
 		}
 		StringBuilder formatted= new StringBuilder();		
-		for(char c : read){ // Each base is formatted independently from the others
+		for(int i= 0; i < read.size(); i++){ // Each base is formatted independently from the others
+			char c= read.get(i);
+			boolean shadeBaseQ= false;
+			if(baseQual.length == read.size()){
+				int bq= (int) baseQual[i];
+				if(bq < SHADE_BASEQ){
+					shadeBaseQ= true;
+				}
+			}
 			formatted.append("\033["); // Start format 
 			if(this.samRecord.getReadPairedFlag() && this.samRecord.getSecondOfPairFlag()){
 				formatted.append("4;"); // Underline 2nd in pair
-			}					
-			if(this.samRecord.getMappingQuality() < SHADE_MAPQ){ // Grey out low mapq
+			}
+			
+			if(this.samRecord.getMappingQuality() < SHADE_MAPQ || shadeBaseQ){ // Grey out low mapq/base qual
 				formatted.append("48;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.shade_low_mapq)); 
 				formatted.append(";38;5;");
@@ -169,16 +181,16 @@ class TextRead {
 				formatted.append(";38;5;");
 				formatted.append(Config.get256Color(ConfigKey.unmethylated_foreground));
 			} else if(Character.toUpperCase(c) == 'A'){
-				formatted.append("1;38;5;"); 
+				formatted.append("38;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.seq_a));
 			} else if(Character.toUpperCase(c) == 'C') {
-				formatted.append("1;38;5;"); 
+				formatted.append("38;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.seq_c));
 			} else if(Character.toUpperCase(c) == 'G') {
-				formatted.append("1;38;5;"); 
+				formatted.append("38;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.seq_g));
 			} else if(Character.toUpperCase(c) == 'T') {
-				formatted.append("1;38;5;"); 
+				formatted.append("38;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.seq_t));
 			} else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && !(bpPerScreenColumn > 1))){
 				formatted.append("48;5;"); 

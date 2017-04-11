@@ -1,15 +1,12 @@
 package tracks;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import coloring.Config;
@@ -21,7 +18,6 @@ import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.filter.AggregateFilter;
 import samTextViewer.GenomicCoords;
-import samTextViewer.Main;
 import samTextViewer.Utils;
 
 /**
@@ -34,6 +30,8 @@ public class TrackReads extends Track{
 	private List<List<TextRead>> readStack;
 	private boolean withReadName= false;
 	private long nRecsInWindow= -1;
+	private double bpPerScreenColumn;
+	private int userWindowSize;
 //	private Pileup pileup; 
 	
 	/* C o n s t r u c t o r s */
@@ -66,6 +64,9 @@ public class TrackReads extends Track{
 	/* M e t h o d s */
 	
 	public void update() throws InvalidGenomicCoordsException, IOException{
+		
+		this.bpPerScreenColumn= this.getGc().getBpPerScreenColumn();
+		this.userWindowSize= this.getGc().getUserWindowSize();
 		
 		this.readStack= new ArrayList<List<TextRead>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
@@ -107,7 +108,6 @@ public class TrackReads extends Track{
 					// this.pileup.add(rec);
 				}
 			}
-			System.err.println(textReads.size());
 			this.readStack= stackReads(textReads);
 		} else {
 			this.nRecsInWindow= -1;
@@ -209,17 +209,39 @@ public class TrackReads extends Track{
 		StringBuilder sb= new StringBuilder();
 
 		int curPos= 0; // Position on the line, needed to pad with blanks btw reads.
-		double bpPerScreenColumn= this.getGc().getBpPerScreenColumn();
+		// double bpPerScreenColumn= this.getGc().getBpPerScreenColumn();
 		for(TextRead tr : textReads){
 			String line= StringUtils.repeat(" ", (tr.getTextStart()-1) - curPos);
 			sb.append(line);
-			String printableRead= tr.getPrintableTextRead(bs, noFormat, withReadName, bpPerScreenColumn);
+			String printableRead= tr.getPrintableTextRead(bs, noFormat, withReadName, this.bpPerScreenColumn);
 			sb.append(printableRead);
 			curPos= tr.getTextEnd();
 		}
-		return sb.toString();
+		int nchars= Utils.stripAnsiCodes(sb.toString()).length();
+		if(nchars < this.userWindowSize){
+			sb.append(StringUtils.repeat(' ', this.userWindowSize - nchars));
+		}
+		return this.highlightMidCharacter(sb.toString()); // highlightMidCharacter(fmtLine);
 	}
 
+	/** Find the mid character and add some formatting to highlight it.
+	 * */
+	private String highlightMidCharacter(String fmtLine){
+		if(this.isNoFormat()){
+			return fmtLine;
+		}
+		List<Integer> idx = Utils.indexOfCharsOnFormattedLine(fmtLine);
+		if(idx.size() <= 7){
+			return fmtLine;
+		}
+		int mid= idx.get(this.userWindowSize/2);
+		char midChar= fmtLine.charAt(mid);
+		if(midChar != ' '){
+			String hLine= fmtLine.substring(0, mid) + "\033[1;7m" + midChar + "\033[21;27m" + fmtLine.substring(mid+1);
+			return hLine;
+		}
+		return fmtLine;
+	}
 	
 	@Override
 	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
@@ -259,25 +281,21 @@ public class TrackReads extends Track{
 		return featureList;
 	}
 
-//	protected Pileup getPileup(){
-//		return this.pileup;
-//	}
-	
 	/* S e t t e r s   and   G e t t e r s */
 
-	@Override
-	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		
-		String awkFunc= ""; 
-		try {
-			awkFunc= FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
-		} catch (URISyntaxException e) {
-
-		}
-
-		this.awk= awk;
-		this.update();
-	}
+//	@Override
+//	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+//		
+//		String awkFunc= ""; 
+//		try {
+//			awkFunc= FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
+//		} catch (URISyntaxException e) {
+//
+//		}
+//
+//		this.awk= awk;
+//		this.update();
+//	}
 	
 	@Override
 	public String getAwk(){

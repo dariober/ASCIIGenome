@@ -49,7 +49,7 @@ public abstract class Track {
 	private String workFilename= "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files 
 	private String trackTag= "N/A"; // Tag name for title
 	// private int id= 1;              // A unique identifier for the track. Changed when the track is added to a TrackSet. 
-	private List<Double> screenScores= new ArrayList<Double>();
+	protected List<Double> screenScores= new ArrayList<Double>();
 	private GenomicCoords gc;
 	private boolean noFormat= false; 
 	private double yLimitMin= Double.NaN; // Same as R ylim()
@@ -65,7 +65,7 @@ public abstract class Track {
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
 	private int gap= 1;
-	private boolean rpm= false;
+	protected boolean rpm= false;
 	protected static final int f_FLAG= 0; private int f_flag= f_FLAG;
 	protected static final int F_FLAG= 4; private int F_flag= F_FLAG;
 	protected static final int MAPQ= 0; private int mapq= MAPQ;
@@ -621,6 +621,49 @@ public abstract class Track {
 	
 	protected void setCutScriptForPrinting(String cutScriptForPrinting){
 		this.cutScriptForPrinting= cutScriptForPrinting;
+	}
+	
+	/**Return a single string where title and track have been concatenated.
+	 * Concatenation is done in such way that "title" is not followed by newline if
+	 * the topmost line of "track" has enough white spaces to accommodate the title.
+	 * E.g.
+	 * ```
+	 * data.bed#1     >>>>
+	 *       >>>>        >>>>>
+	 * ```
+	 * instead of
+	 * ```
+	 *  data.bed#1     
+	 *                >>>>
+	 *       >>>>        >>>>>
+	 * ```
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
+	 * */
+	public String concatTitleAndTrack() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
+		// * Strip ascii escapes
+		// * Get length of leading whitespaces on topmost line of tracks
+		// * if len(leadine whitespaces) > len(title):
+		// * Remove the len(title) leading whitespaces from profile
+		// * Return title + profile
+		String track= this.printToScreen();
+		String title= this.getTitle();
+		int titleLen= Utils.stripAnsiCodes(title).trim().length();
+
+		String sProfile= Utils.stripAnsiCodes(track);
+		if(sProfile.trim().isEmpty()){ // No features in this profile
+			return title.replaceAll("\n", "") + track; 	
+		}
+		int leadingSpaces= sProfile.indexOf(sProfile.trim());
+		if(leadingSpaces > titleLen){
+			while(titleLen > 0){
+				track= track.replaceFirst(" ", "");
+				titleLen--;
+			}
+			title= title.replaceAll("\n", "");
+		}
+		return title + track; 
 	}
 	
 }

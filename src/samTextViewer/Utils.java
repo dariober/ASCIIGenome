@@ -26,6 +26,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -35,6 +36,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.lang.StringUtils;
@@ -879,29 +882,53 @@ public class Utils {
 	}
 
 	/**
-	 * Naive search to get the index position of the value in list closest to a given value.
-	 * 
+	 * Binary search to get the index position of the value in list closest to a given value.
+	 * The searched list is expected to be sorted, there is no check whether this is the case.
 	 * @param genomePos
 	 * @param mapping
 	 * @return
 	 */
 	public static int getIndexOfclosestValue(double genomePos, List<Double> mapping){
-		double bestDiff= Integer.MAX_VALUE;
-		int closest= -1;
-		for(int idx= 0; idx < mapping.size(); idx++){ 
-			// Iterate through entire list to find closest position on screen, it's a bit wasteful since
-			// the list is ordered, but it's ok.
-			double candidate= mapping.get(idx);
-			double diff= Math.abs(genomePos - candidate);
-			if(diff < bestDiff){
-				closest= idx;
-				bestDiff= diff;
+
+		// Position is before or after the extremes of the list.
+		if(genomePos <= mapping.get(0)){
+			return 0;
+		}
+		if(genomePos >= mapping.get(mapping.size()-1)){
+			return mapping.size()-1;
+		}
+		
+		int closest= Arrays.binarySearch(mapping.toArray(new Double[mapping.size()]), (double)genomePos);
+		if(closest < 0){
+			// If < 0 the value is not found in the list and binarySearch returns the insertion point.
+			// See binarySearch docs. We need to convert the insertion point to the closest value.
+			int insertionPoint= -(closest + 1);
+			double leftDiff= genomePos - mapping.get(insertionPoint - 1);
+			double rightDiff= mapping.get(insertionPoint) - genomePos;
+			if(leftDiff < rightDiff){
+				return insertionPoint - 1;
+			} else {
+				return insertionPoint;
 			}
 		}
-		if(closest < 0){
-			throw new RuntimeException("Invalid index position: " + closest);
-		}
 		return closest;
+		
+//		double bestDiff= Integer.MAX_VALUE;
+//		int closest= -1;
+//		for(int idx= 0; idx < mapping.size(); idx++){ 
+//			// Iterate through entire list to find closest position on screen, it's a bit wasteful since
+//			// the list is ordered, but it's ok.
+//			double candidate= mapping.get(idx);
+//			double diff= Math.abs(genomePos - candidate);
+//			if(diff < bestDiff){
+//				closest= idx;
+//				bestDiff= diff;
+//			}
+//		}
+//		if(closest < 0){
+//			throw new RuntimeException("Invalid index position: " + closest);
+//		}
+//		return closest;
 	}
 	
 	/** Return true  */
@@ -1682,6 +1709,28 @@ public class Utils {
 			samReader= srf.open(new File(workFilename));
 		}
 		return samReader;
+	}
+
+	/**Rturn the indexes of the prinatble characters interspersed in ansi formatting  
+	 * MEMO: The sequence \033 is NOT four characters. It's just one!
+	 * */
+	public static List<Integer> indexOfCharsOnFormattedLine(String fmtString) {
+
+		List<Integer> idx= new ArrayList<Integer>();
+		// Start assuming that each char in input string is a printable char, not part of ANSI code.
+		for(int i= 0; i < fmtString.length(); i++){
+			idx.add(i);
+		}
+		
+		Matcher m= Pattern.compile("\\033\\[[;\\d]*m").matcher(fmtString);
+		while(m.find()){
+			// Now remove from the index list the characters that are part of the escape
+			for(int i= m.start(); i < m.end(); i++){
+				int del= idx.indexOf(i);
+				idx.remove(del);
+			}
+		}
+		return idx;
 	}
 	
 }
