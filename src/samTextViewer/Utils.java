@@ -1601,7 +1601,7 @@ public class Utils {
 		// Now add the functions to the script right at the start of the script, after the command args
 		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
 				
-		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.UTF_8));
+		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.US_ASCII));
 		
 		String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]); 
 		
@@ -1629,6 +1629,89 @@ public class Utils {
 		
 	}
 
+	/** Stream the raw line through awk and return true if the output of awk is the same as the input
+	 * line. If awk returns empty output then the line didn't pass the awk filter.
+	 * If output is not empty and not equal to input, return null.
+	 * See tests for behaviour. 
+	 * */
+	public static boolean[] passAwkFilter(String[] rawLines, String awkScript) throws IOException {
+		
+		boolean[] results= new boolean[rawLines.length];
+
+		awkScript= awkScript.trim();
+
+		if(awkScript.isEmpty()){
+			for(int i= 0; i < rawLines.length; i++){
+				results[i]= true;
+			}
+			return results;
+		}
+		
+		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
+		// -v var=foo '$1 == var && $2 == baz'
+		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
+		// the opening of the awk script.
+		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
+		if(scriptStartsAt == awkScript.length() + 1){
+			scriptStartsAt= 1;
+		}
+		// Now add the functions to the script right at the start of the script, after the command args
+		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
+		
+		ByteArrayOutputStream baosIn = new ByteArrayOutputStream();
+		for (String line : rawLines) {
+			baosIn.write((line+"\n").getBytes());
+		}
+		InputStream is= new ByteArrayInputStream(baosIn.toByteArray());
+		
+		String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]); 
+		
+		PrintStream stdout = System.out;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try{
+			PrintStream os= new PrintStream(baos);
+			new org.jawk.Main(args, is, os, System.err);
+		} catch(Exception e){
+			throw new IOException();
+		} finally{
+			System.setOut(stdout);
+			is.close();
+		}
+
+		// System.err.println(new String(baos.toByteArray(), StandardCharsets.US_ASCII));
+		
+		String output[] = new String(baos.toByteArray(), StandardCharsets.US_ASCII).split("\n");
+		int j= 0;
+		for(int i=0; i < rawLines.length; i++){
+			String inLine= rawLines[i];
+			if(output.length > j){
+				String outLine= output[j];				
+				if(inLine.equals(outLine)){
+					results[i]= true;
+					j++;
+				} else {
+					results[i]= false;
+				}
+			} else {
+				results[i]= false;
+			}
+		}
+		
+		return results;
+		
+//		if(output.trim().isEmpty()){
+//			return false;
+//		} else if(output.trim().equals(rawLine.trim())){
+//			return true;
+//		} else {
+//			// Awk output is not empty or equal to input line. Reset awk script and return null
+//			// to signal this condition.
+//			return null;
+//		}
+		
+	}
+
+	
 	/** Right-pad each line in string x with whitespaces. Each line is 
 	 * defined by the newline. Each line is padded to become at leas of length size.   
 	 * */

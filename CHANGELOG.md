@@ -3,6 +3,8 @@ New in 1.5.0
 
 * Issue #67 is fixed.
 
+* Awk can be applied to read tracks.
+
 * Title can share line with profile if it doesn't get on the way. This gives a more
   compact visualization with sparse data.
 

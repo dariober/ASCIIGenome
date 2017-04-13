@@ -71,33 +71,30 @@ public class TrackReads extends Track{
 		this.readStack= new ArrayList<List<TextRead>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
 
-			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
-			
-//			/*  ------------------------------------------------------ */
-//			/* This chunk prepares SamReader from local bam or URL bam */
-//			UrlValidator urlValidator = new UrlValidator();
-//			SamReaderFactory srf=SamReaderFactory.make();
-//			srf.validationStringency(ValidationStringency.SILENT);
-//			SamReader samReader;
-//			if(urlValidator.isValid(this.getWorkFilename())){
-//				samReader = srf.open(SamInputResource.of(new URL(this.getWorkFilename())).index(new URL(this.getWorkFilename() + ".bai")));
-//			} else {
-//				samReader= srf.open(new File(this.getWorkFilename()));
-//			}
-//			/*  ------------------------------------------------------ */
-			
 			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
 			float probSample= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack)) / this.nRecsInWindow;
-			
-			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
-			List<TextRead> textReads= new ArrayList<TextRead>();
+
+						List<TextRead> textReads= new ArrayList<TextRead>();
 			AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
 			
-			while(sam.hasNext() && textReads.size() < Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack))){
-	
-				SAMRecord rec= sam.next();
+			// Awk
+			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
+			Iterator<SAMRecord> awksam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
+			boolean[] passAwkArray= this.passAwkFilter(awksam);
 
-				Boolean passAwk= true; // Utils.passAwkFilter(rec.getSAMString(), this.getAwk());
+			samReader= Utils.getSamReader(this.getWorkFilename());
+			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
+
+			int i= 0;
+			while(sam.hasNext() && textReads.size() < Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack))){
+				
+				Boolean passAwk= true;
+				if(passAwkArray != null){
+					passAwk= passAwkArray[i];
+				}
+				i++;
+				
+				SAMRecord rec= sam.next();
 				
 				if( !rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec) && passAwk){
 					Random rand = new Random();
@@ -105,13 +102,31 @@ public class TrackReads extends Track{
 						TextRead tr= new TextRead(rec, this.getGc());
 						textReads.add(tr);
 					}
-					// this.pileup.add(rec);
 				}
 			}
 			this.readStack= stackReads(textReads);
 		} else {
 			this.nRecsInWindow= -1;
 		}
+	}
+	
+	/**Return a boolean array of length equal to the number of reads in the sam
+	 * record iterator. Array entry is true if the awk filter is passed.
+	 * @throws IOException 
+	 * */
+	private boolean[] passAwkFilter(Iterator<SAMRecord> sam) throws IOException{
+		
+		if(this.getAwk() == null || this.getAwk().isEmpty()){
+			return null;
+		}
+		
+		StringBuilder sb= new StringBuilder();
+		while(sam.hasNext()){
+			sb.append(sam.next().getSAMString());
+		}
+		String[] rawLines= sb.toString().split("\n");
+		boolean[] results= Utils.passAwkFilter(rawLines, this.getAwk()); 
+		return results;
 	}
 	
 	/** 
@@ -170,7 +185,7 @@ public class TrackReads extends Track{
 		line.add(textReads.get(0)); 
 		textReads.remove(0);
 		listOfLines.add(line);
-		int gap= (this.getGc().getBpPerScreenColumn() > 1) ? 0 : 1; // If reads are very compressed, do not add space between adjacent ones.
+		int gap= (this.bpPerScreenColumn > 1) ? 0 : 1; // If reads are very compressed, do not add space between adjacent ones.
 		while(true){
 			ArrayList<TextRead> trToRemove= new ArrayList<TextRead>();
 			// Find a read in input whose start is greater then end of current
@@ -249,6 +264,7 @@ public class TrackReads extends Track{
 		if(this.isHideTitle()){
 			return "";
 		}
+		
 		String samtools= "";
 		if( ! (this.get_F_flag() == Track.F_FLAG) ){
 			samtools += " -F " + this.get_F_flag();
@@ -262,12 +278,35 @@ public class TrackReads extends Track{
 		if( ! samtools.isEmpty()){
 			samtools= "; samtools" + samtools;
 		}
-		String title= this.getTrackTag()
-				+ samtools;
-		
-		//String xtitle= Utils.padEndMultiLine(title, this.getGc().getUserWindowSize());
-		return this.formatTitle(title) + "\n";
+		String xtitle= this.getTrackTag() 
+				+ "; Reads: " + this.nRecsInWindow + "/" + Utils.getAlignedReadCount(this.getWorkFilename()) 
+				+ samtools; 
+		return this.formatTitle(xtitle) + "\n";
 	}
+//	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
+//		
+//		if(this.isHideTitle()){
+//			return "";
+//		}
+//		String samtools= "";
+//		if( ! (this.get_F_flag() == Track.F_FLAG) ){
+//			samtools += " -F " + this.get_F_flag();
+//		}
+//		if( ! (this.get_f_flag() == Track.f_FLAG) ){
+//			samtools += " -f " + this.get_f_flag();
+//		}
+//		if( ! (this.getMapq() == Track.MAPQ) ){
+//			samtools += " -q " + this.getMapq();
+//		}
+//		if( ! samtools.isEmpty()){
+//			samtools= "; samtools" + samtools;
+//		}
+//		String title= this.getTrackTag()
+//				+ samtools;
+//		
+//		//String xtitle= Utils.padEndMultiLine(title, this.getGc().getUserWindowSize());
+//		return this.formatTitle(title) + "\n";
+//	}
 	
 	@Override
 	protected List<String> getRecordsAsStrings() {
@@ -283,19 +322,18 @@ public class TrackReads extends Track{
 
 	/* S e t t e r s   and   G e t t e r s */
 
-//	@Override
-//	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-//		
-//		String awkFunc= ""; 
+	@Override
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		
 //		try {
 //			awkFunc= FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
 //		} catch (URISyntaxException e) {
 //
 //		}
-//
-//		this.awk= awk;
-//		this.update();
-//	}
+
+		this.awk= awk;
+		this.update();
+	}
 	
 	@Override
 	public String getAwk(){

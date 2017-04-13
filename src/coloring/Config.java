@@ -55,6 +55,13 @@ public class Config {
 		}
 	}
 
+	private Config(Map<ConfigKey, String> startConfig){
+		for(ConfigKey key : startConfig.keySet()){
+			String value= startConfig.get(key);
+			config.put(key, value);
+		}
+	}
+	
 	// M E T H O D S
 	private static String getConfigFileAsString(String source) throws IOException, InvalidConfigException{
 		
@@ -106,5 +113,13 @@ public class Config {
 		return config.get(key);
 	}		
 
+	public void set(ConfigKey key, String value){
+		config.put(key, value);
+	}
 	
+//	/**Return the key-value map of configuration parameters
+//	 * */
+//	public static Map<ConfigKey, String> getConfigMap(){
+//		return config;
+//	}
 }

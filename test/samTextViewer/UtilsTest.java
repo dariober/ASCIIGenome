@@ -221,9 +221,44 @@ public class UtilsTest {
 		assertEquals("foo  ", p[1]);
 		assertEquals("1234567890", p[2]);
 	}
+
+	@Test
+	public void canFilterArrayUsingAwk() throws IOException{
+
+		String[] in3= {"chr1\t1\t100", "chr1\t10\t100", "chr1\t2\t100"};
+		boolean[] results= Utils.passAwkFilter(in3, "-v VAR=5 '$2 > VAR && $1'");
+		assertTrue(!results[0]);
+		assertTrue(results[1]);
+		assertTrue(!results[2]);
+
+		String[] in= {"chr1\t1\t100", "chr1\t1\t100", "chr1\t2\t100"};
+		results= Utils.passAwkFilter(in, "-v VAR=5 '$2 > VAR && $1'");
+		assertTrue(!results[0]);
+		assertTrue(!results[1]);
+		assertTrue(!results[2]);
+
+		String[] in4= {"chr1\t10\t100", "chr1\t10\t100", "chr1\t2\t100"};
+		results= Utils.passAwkFilter(in4, "-v VAR=5 '$2 > VAR && $1'");
+		assertTrue(results[0]);
+		assertTrue(results[1]);
+		assertTrue(!results[2]);
+		
+		// Zero length
+		String[] in2= {};
+		results= Utils.passAwkFilter(in2, "-v VAR=5 '$2 > VAR && $1'");
+		assertEquals(0, results.length);
+	}
 	
 	@Test
 	public void canFilterUsingAwk() throws IOException{
+		
+		String[] in= {"chr1\t1\t100", "chr1\t1\t100", "chr1\t2\t100"};
+		boolean[] results= Utils.passAwkFilter(in, "-v VAR=5 '$2 > VAR && $1'");
+		System.err.println(results[0]);
+		System.err.println(results[1]);
+		System.err.println(results[2]);
+		
+		
 		// Note single quotes around the awk script
 		assertTrue(Utils.passAwkFilter("chr1\t10\t100", "-v VAR=5 '$2 > VAR && $1'"));
 		

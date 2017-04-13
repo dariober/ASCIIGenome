@@ -11,6 +11,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import coloring.Config;
+import coloring.ConfigKey;
+import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
@@ -35,6 +37,22 @@ public class TrackReadsTest {
 	
 	public static String fastaFile= "test_data/chr7.fa";
 
+	@Test
+	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{
+		
+		String shade = Config.get(ConfigKey.shade_low_mapq);
+		String xshade = Integer.toString(Xterm256.colorNameToXterm256(shade));
+		
+		GenomicCoords gc= new GenomicCoords("chr7:999-1041", null, null);
+		TrackReads tr= new TrackReads("test_data/missingReadSeq.bam", gc);
+		assertTrue(tr.printToScreen().trim().startsWith("[48;5;" + xshade));
+		
+		System.err.println(tr.printToScreen());
+		Config conf = new Config(null);
+		conf.set(ConfigKey.shade_low_mapq, "blue");
+		System.err.println(tr.printToScreen());
+	}
+	
 	@Test
 	public void canReadReadsWithMissingSequence() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException{
 
@@ -119,7 +137,7 @@ public class TrackReadsTest {
 		assertEquals(5+1, printable.split("\n").length); // Expect 6 lines: 5 for reads and 1 for info header.
 	}
 	
-	// @Test
+	@Test
 	public void canFilterReadsWithAwk() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", samSeqDict, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
@@ -129,7 +147,7 @@ public class TrackReadsTest {
 		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
 		
 		tr.setAwk("'$1 ~ \"NCNNNCCC\"'");
-
+		tr.update();
 		assertEquals(6, tr.printToScreen().split("\n").length);
 
 		System.err.println(Track.awkFunc);
@@ -152,7 +170,7 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 		tr.setTrackTag("aln.bam#1");
 		
-		assertEquals("aln.bam#1", tr.getTitle().trim());
+		assertTrue(tr.getTitle().trim().startsWith("aln.bam#1"));
 		
 	}
 	
@@ -188,9 +206,6 @@ public class TrackReadsTest {
 	@Test
 	public void test() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException {
 		
-		byte b= '#';
-		System.err.println((int)b);
-		
 		new Config(null);
 		
 		String bam= "test_data/ds051.actb.bam";
@@ -202,9 +217,7 @@ public class TrackReadsTest {
 		tr.setBisulf(bs);
 		tr.setNoFormat(true);
 		tr.setyMaxLines(yMaxLines);
-		System.out.println("START");
 		System.out.print(tr.printToScreen());
-		System.out.println("DONE");
 	}
 
 	@Test

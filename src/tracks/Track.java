@@ -233,9 +233,8 @@ public abstract class Track {
 	public boolean isBisulf() { return this.bisulf; }
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
-	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-
-	}
+	public abstract void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException;
+	
 	public String getAwk(){
 		return "";
 	}

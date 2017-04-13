@@ -43,7 +43,7 @@ class TextRead {
 	private final static char charFwd= '>';
 	private final static char charRev= '<';
 	private final static int  SHADE_MAPQ= 5;
-	private final static int  SHADE_BASEQ= 13;
+	// private final static int  SHADE_BASEQ= 13;
 	
 	/** Char to represent deletions from the reference. I.e. gaps in the read */
 	final private char DEL= '-';
@@ -146,6 +146,8 @@ class TextRead {
 	private String readFormatter(List<Character> read, boolean noFormat, boolean bs, double bpPerScreenColumn) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 
 		byte[] baseQual= this.samRecord.getBaseQualities();
+		
+		int SHADE_BASEQ= Integer.parseInt(Config.get(ConfigKey.shade_baseq));
 		
 		if(noFormat){ // Essentially nothing to do in this case
 			return Joiner.on("").join(read);

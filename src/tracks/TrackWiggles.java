@@ -368,5 +368,11 @@ public class TrackWiggles extends Track {
 		return new ArrayList<String>();
 	}
 
+	@Override
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException,
+			InvalidRecordException, SQLException {
+		//
+	}
+
 
 }

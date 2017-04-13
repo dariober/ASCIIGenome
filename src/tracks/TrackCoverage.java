@@ -362,4 +362,10 @@ public class TrackCoverage extends Track {
 	protected List<String> getRecordsAsStrings() {
 		return new ArrayList<String>();
 	}
+
+	@Override
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException,
+			InvalidRecordException, SQLException {
+		// 
+	}
 }

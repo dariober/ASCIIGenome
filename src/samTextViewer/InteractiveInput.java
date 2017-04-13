@@ -213,7 +213,7 @@ public class InteractiveInput {
 					
 				} else if(cmdTokens.get(0).equals("setGenome")){
 					this.setGenome(cmdTokens, proc);
-
+					
 				// * These commands change the Tracks but do not touch the GenomicCoordinates.
 				} else if(cmdTokens.get(0).equals("dataCol")){
 					try{

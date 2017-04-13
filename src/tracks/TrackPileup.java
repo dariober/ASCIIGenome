@@ -272,7 +272,7 @@ public class TrackPileup extends TrackWiggles {
 		String xtitle= this.getTrackTag() 
 				+ "; ylim[" + ymin + " " + ymax + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
-				+ "; Recs here/all: " + this.nRecsInWindow + "/" + this.alnRecCnt
+				+ "; Reads: " + this.nRecsInWindow + "/" + this.alnRecCnt
 				+ samtools 
 				+ rpmTag;
 		// xtitle= Utils.padEndMultiLine(xtitle, this.getGc().getUserWindowSize());
