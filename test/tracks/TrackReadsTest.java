@@ -162,6 +162,8 @@ public class TrackReadsTest {
 		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
 		tr.setAwk("'$1 ~ \"NCNNNCCC\"'");
 		assertEquals(6, tr.printToScreen().split("\n").length);
+		assertTrue(tr.getTitle().contains("awk"));
+		System.err.println(tr.getTitle());
 	}
 
 	@Test

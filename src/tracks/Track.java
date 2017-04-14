@@ -149,9 +149,8 @@ public abstract class Track {
 	//public void setTitle(String title){
 	//	this.title= title;
 	//}
-	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
-		return this.title;
-	}
+	public abstract String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException;
+	
 	public int getyMaxLines() {
 		return yMaxLines;
 	}

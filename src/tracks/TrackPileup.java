@@ -265,12 +265,18 @@ public class TrackPileup extends TrackWiggles {
 		if( ! samtools.isEmpty()){
 			samtools= "; samtools" + samtools;
 		}
+		String awk= "";
+		if(!this.getAwk().isEmpty()){
+			awk= "; awk:on";
+		}
+		
 		String xtitle= this.getTrackTag() 
 				+ "; ylim[" + ymin + " " + ymax + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
 				+ "; Reads: " + this.nRecsInWindow + "/" + this.alnRecCnt
 				+ samtools 
-				+ rpmTag;
+				+ rpmTag
+				+ awk;
 		// xtitle= Utils.padEndMultiLine(xtitle, this.getGc().getUserWindowSize());
 		return this.formatTitle(xtitle) + "\n";
 	}

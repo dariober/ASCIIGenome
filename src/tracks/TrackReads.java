@@ -288,9 +288,16 @@ public class TrackReads extends Track{
 		if( ! samtools.isEmpty()){
 			samtools= "; samtools" + samtools;
 		}
+		
+		String awk= "";
+		if(!this.getAwk().isEmpty()){
+			awk= "; awk:on";
+		}
+		
 		String xtitle= this.getTrackTag() 
 				+ "; Reads: " + this.nRecsInWindow + "/" + Utils.getAlignedReadCount(this.getWorkFilename()) 
-				+ samtools; 
+				+ samtools 
+				+ awk; 
 		return this.formatTitle(xtitle) + "\n";
 	}
 //	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
