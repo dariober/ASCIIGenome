@@ -184,6 +184,19 @@ Now showing:
 
 .. _Batch-processing:
 
+Advanced filtering with `awk`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From version 1.5.0, the `awk <https://en.wikipedia.org/wiki/AWK>`_ program is available within ASCIIGenome to filter interval features and SAM records.
+See the command reference for *awk* for more detials. This an example of using awk to filter reads containing deletions, *i.e.* where the cigar string contains
+the character *D*::
+
+    awk '$6 ~ "D"' *.bam
+
+The syntax ``$6`` selects the 6th column, the one containing the cigar string, the operator ``~`` 
+returns true if the cigar string contains the string ``D``. As usual, the last positional argument
+applies the command to the tracks matching the given regex.
+
 Batch and non-interactive mode
 ------------------------------
 
