@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
@@ -16,7 +17,6 @@ import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReader;
-import htsjdk.samtools.filter.AggregateFilter;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -30,9 +30,7 @@ public class TrackReads extends Track{
 	private List<List<TextRead>> readStack;
 	private boolean withReadName= false;
 	private long nRecsInWindow= -1;
-	private double bpPerScreenColumn;
 	private int userWindowSize;
-//	private Pileup pileup; 
 	
 	/* C o n s t r u c t o r s */
 	/**
@@ -53,7 +51,6 @@ public class TrackReads extends Track{
 			System.err.println("\nAlignment file " + bam + " has no index.\n");
 			throw new RuntimeException();
 		}
-//		this.pileup= new Pileup(gc.getChrom(), gc.getFrom(), gc.getTo());
 		this.setFilename(bam);
 		this.setWorkFilename(bam);
 		this.setGc(gc);
@@ -65,38 +62,30 @@ public class TrackReads extends Track{
 	
 	public void update() throws InvalidGenomicCoordsException, IOException{
 		
-		this.bpPerScreenColumn= this.getGc().getBpPerScreenColumn();
 		this.userWindowSize= this.getGc().getUserWindowSize();
 		
 		this.readStack= new ArrayList<List<TextRead>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
 
-			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
-			float probSample= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack)) / this.nRecsInWindow;
-
-						List<TextRead> textReads= new ArrayList<TextRead>();
-			AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
+			List<TextRead> textReads= new ArrayList<TextRead>();
 			
-			// Awk
 			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
-			Iterator<SAMRecord> awksam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
-			boolean[] passAwkArray= this.passAwkFilter(awksam);
-
+			List<Boolean> passFilter= this.filterReads(samReader);
+			this.nRecsInWindow= 0;
+			for(boolean x : passFilter){ // The count of reads in window is the count of reads passing filters
+				if(x){
+					this.nRecsInWindow++;
+				}
+			}
 			samReader= Utils.getSamReader(this.getWorkFilename());
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
-
-			int i= 0;
+			
+			float probSample= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack)) / this.nRecsInWindow;
+			
+			ListIterator<Boolean> pass = passFilter.listIterator();
 			while(sam.hasNext() && textReads.size() < Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack))){
-				
-				Boolean passAwk= true;
-				if(passAwkArray != null){
-					passAwk= passAwkArray[i];
-				}
-				i++;
-				
 				SAMRecord rec= sam.next();
-				
-				if( !rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec) && passAwk){
+				if( pass.next() ){
 					Random rand = new Random();
 					if(rand.nextFloat() < probSample){ // Downsampler
 						TextRead tr= new TextRead(rec, this.getGc());
@@ -114,20 +103,42 @@ public class TrackReads extends Track{
 	 * record iterator. Array entry is true if the awk filter is passed.
 	 * @throws IOException 
 	 * */
-	private boolean[] passAwkFilter(Iterator<SAMRecord> sam) throws IOException{
-		
-		if(this.getAwk() == null || this.getAwk().isEmpty()){
-			return null;
-		}
-		
-		StringBuilder sb= new StringBuilder();
-		while(sam.hasNext()){
-			sb.append(sam.next().getSAMString());
-		}
-		String[] rawLines= sb.toString().split("\n");
-		boolean[] results= Utils.passAwkFilter(rawLines, this.getAwk()); 
-		return results;
-	}
+//	private List<Boolean> passFilters(Iterator<SAMRecord> sam) throws IOException{
+//
+//		AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
+//
+//		// This array will contain true/false to indicate whether a record passes the 
+//		// sam filters AND the awk filter (if given).
+//		// boolean[] results= new boolean[(int) this.nRecsInWindow];
+//		List<Boolean> results= new ArrayList<Boolean>();
+//		
+//		StringBuilder sb= new StringBuilder();
+//		while(sam.hasNext()){ 
+//			// Record whether a read passes the sam filters. If necessary, we also 
+//			// store the raw reads for awk.
+//			SAMRecord rec= sam.next();
+//			if(!rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec)){
+//				results.add(true);
+//			} else {
+//				results.add(false);
+//			}
+//			if(this.getAwk() != null && ! this.getAwk().isEmpty()){
+//				sb.append(rec.getSAMString());	
+//			}
+//		}
+//		// Apply the awk filter, if given
+//		if(this.getAwk() != null && ! this.getAwk().isEmpty()){
+//			String[] rawLines= sb.toString().split("\n");
+//			boolean[] awkResults= Utils.passAwkFilter(rawLines, this.getAwk());
+//			// Compare the results array with awk filtered. Flip as appropriate the results array
+//			for(int j= 0; j < results.size(); j++){
+//				if( ! awkResults[j] ){
+//					results.set(j, false);
+//				} // if results[i]==false there so no need to compare to awk result: Record is out.
+//			}
+//		}
+//		return results;
+//	}
 	
 	/** 
 	 * Printable track on screen. This is what should be called by Main 
@@ -185,7 +196,7 @@ public class TrackReads extends Track{
 		line.add(textReads.get(0)); 
 		textReads.remove(0);
 		listOfLines.add(line);
-		int gap= (this.bpPerScreenColumn > 1) ? 0 : 1; // If reads are very compressed, do not add space between adjacent ones.
+		int gap= (this.getGc().isSingleBaseResolution) ? 1 : 0; // If reads are very compressed, do not add space between adjacent ones.
 		while(true){
 			ArrayList<TextRead> trToRemove= new ArrayList<TextRead>();
 			// Find a read in input whose start is greater then end of current
@@ -224,11 +235,10 @@ public class TrackReads extends Track{
 		StringBuilder sb= new StringBuilder();
 
 		int curPos= 0; // Position on the line, needed to pad with blanks btw reads.
-		// double bpPerScreenColumn= this.getGc().getBpPerScreenColumn();
 		for(TextRead tr : textReads){
 			String line= StringUtils.repeat(" ", (tr.getTextStart()-1) - curPos);
 			sb.append(line);
-			String printableRead= tr.getPrintableTextRead(bs, noFormat, withReadName, this.bpPerScreenColumn);
+			String printableRead= tr.getPrintableTextRead(bs, noFormat, withReadName);
 			sb.append(printableRead);
 			curPos= tr.getTextEnd();
 		}

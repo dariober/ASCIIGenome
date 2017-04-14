@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,11 +16,9 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
-import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import tracks.TrackWiggles;
 
 public class GenomicCoordsTest {
 	
@@ -336,7 +333,7 @@ public class GenomicCoordsTest {
 		assertEquals(10, gc.getMapping(userWindowSize).size());
 		assertEquals(101.0, gc.getMapping(userWindowSize).get(0), 0.01);
 		assertEquals(102.0, gc.getMapping(userWindowSize).get(1), 0.01);
-		assertEquals(1.0, gc.getBpPerScreenColumn(), 0.01);
+		assertTrue(gc.isSingleBaseResolution);
 	}
 	
 	@Test
@@ -350,30 +347,6 @@ public class GenomicCoordsTest {
 		assertTrue((gc.printableRuler(10, false).contains("[")));
 	}
 	
-	// @Test // Do not test until gcProfile is sorted
-	public void canGetGCProfileInRegion() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidColourException{
-				
-		GenomicCoords gc= new GenomicCoords("chr7:1000000-1000500", samSeqDict, null);
-		assertEquals(null, gc.getGCProfile()); // null fasta
-		
-		gc= new GenomicCoords("chr7:1-100", samSeqDict, fastaFile);
-		System.out.println("START");
-		System.out.println(gc.getGCProfile().getTrackTag());
-		System.out.println(gc.getGCProfile().printToScreen());
-		
-		gc= new GenomicCoords("seq:1-120", null, "test_data/seq_cg.fa");
-		TrackWiggles gcCnt= gc.getGCProfile();
-		gcCnt.setyMaxLines(2);
-		String exp= "                                  ::::::::::::::::\n" +
-                    "::::::::::::::::.________________:::::::::::::::::";
-		gcCnt.setNoFormat(true);
-		System.out.println(gcCnt.printToScreen());
-		assertEquals(exp, gcCnt.printToScreen());
-		System.out.println(gcCnt.getTitle());
-		System.out.println(gcCnt.printToScreen());
-		
-	}
-
 	@Test
 	public void canCenterAndExtendGenomicCoords() throws InvalidGenomicCoordsException, IOException{
 		GenomicCoords gc= new GenomicCoords("chr1:10000-20000", null, null);

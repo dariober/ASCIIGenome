@@ -166,7 +166,7 @@ public class TrackCoverage extends Track {
 	@Override
 	public String printToScreen() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		 //This method should not do any computation like RPM etc. Just print stuff.
-				
+		final Xterm256 xterm256= new Xterm256();
 		if(this.getyMaxLines() == 0){
 			return "";
 		} else if(this.screenLocusInfoList.size() == 0){
@@ -187,7 +187,7 @@ public class TrackCoverage extends Track {
 			printable= "\033[48;5;"
 			+ Config.get256Color(ConfigKey.background)
 			+ ";38;5;"
-			+ Xterm256.colorNameToXterm256(this.getTitleColour())
+			+ xterm256.colorNameToXterm256(this.getTitleColour())
 			+ "m"
 			+ printable;
 		}
@@ -277,7 +277,7 @@ public class TrackCoverage extends Track {
 
 	@Override
 	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException, InvalidColourException{
-		if(this.getGc().getBpPerScreenColumn() > 1 || this.isBisulf()){
+		if( ! this.getGc().isSingleBaseResolution || this.isBisulf()){
 			return "";
 		}
 		String faSeqStr= "";
@@ -367,5 +367,11 @@ public class TrackCoverage extends Track {
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException,
 			InvalidRecordException, SQLException {
 		// 
+	}
+
+	@Override
+	public String getAwk() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

@@ -41,16 +41,23 @@ public class TrackReadsTest {
 	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{
 		
 		String shade = Config.get(ConfigKey.shade_low_mapq);
-		String xshade = Integer.toString(Xterm256.colorNameToXterm256(shade));
+		final Xterm256 xterm256= new Xterm256();
+		String xshade = Integer.toString(xterm256.colorNameToXterm256(shade));
 		
 		GenomicCoords gc= new GenomicCoords("chr7:999-1041", null, null);
 		TrackReads tr= new TrackReads("test_data/missingReadSeq.bam", gc);
+		System.err.println(tr.printToScreen());
 		assertTrue(tr.printToScreen().trim().startsWith("[48;5;" + xshade));
-		
-		System.err.println(tr.printToScreen());
-		Config conf = new Config(null);
-		conf.set(ConfigKey.shade_low_mapq, "blue");
-		System.err.println(tr.printToScreen());
+
+		// Read with soft clipped bases
+		gc= new GenomicCoords("chr7:9999-10050", null, null);
+		tr= new TrackReads("test_data/missingReadSeq.bam", gc);
+		assertTrue(tr.printToScreen().contains(xshade));
+
+		// Read with deletions and skipped bases
+		gc= new GenomicCoords("chr7:19999-20050", null, null);
+		tr= new TrackReads("test_data/missingReadSeq.bam", gc);
+		tr.printToScreen();
 	}
 	
 	@Test
@@ -138,27 +145,32 @@ public class TrackReadsTest {
 	}
 	
 	@Test
+	public void canShowReadsInWindow() throws Exception{
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", samSeqDict, null);
+		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
+		tr.setNoFormat(true);
+		tr.setyMaxLines(1000);
+		assertTrue(tr.getTitle().contains("22")); // N. reads stacked in this interval before filtering
+	}
+	
+	@Test
 	public void canFilterReadsWithAwk() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", samSeqDict, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
-
-		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
-		
+		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
 		tr.setAwk("'$1 ~ \"NCNNNCCC\"'");
-		tr.update();
 		assertEquals(6, tr.printToScreen().split("\n").length);
+	}
 
-		System.err.println(Track.awkFunc);
-		int i= 0;
-		StringBuilder foo= new StringBuilder();
+	@Test
+	public void canShowReadCount() throws Exception{
+		GenomicCoords gc= new GenomicCoords("chr7:5565600-5567600", null, null);
+		TrackReads tr= new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
 		
-		while(i < 100000){
-			foo.append("baz");
-			i++;
-		}
-		foo.length();	
+		// Same as: samtools view -F 4 -c ear045.oxBS.actb.bam chr7:5565600-5567600
+		assertTrue(tr.getTitle().contains("2961"));
 	}
 	
 	@Test

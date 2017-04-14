@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -24,6 +25,9 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SamReader;
+import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
@@ -93,7 +97,8 @@ public abstract class Track {
 		} else {
 			int colourCode= Config.get256Color(ConfigKey.title_colour);
 			if(this.titleColour != null){
-				colourCode= Xterm256.colorNameToXterm256(this.titleColour);
+				final Xterm256 xterm256= new Xterm256();
+				colourCode= xterm256.colorNameToXterm256(this.titleColour);
 			}
 			return "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;" + colourCode + "m" + title;
 		}
@@ -235,9 +240,7 @@ public abstract class Track {
 
 	public abstract void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException;
 	
-	public String getAwk(){
-		return "";
-	}
+	public abstract String getAwk();
 	
 	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { 
 	
@@ -663,6 +666,49 @@ public abstract class Track {
 			title= title.replaceAll("\n", "");
 		}
 		return title + track; 
+	}
+	
+	/**Returns a list of boolean indicating whether the reads in samReader pass the 
+	 * sam and awk filters.
+	 * @throws IOException 
+	 * */
+	public List<Boolean> filterReads(SamReader samReader) throws IOException{
+
+		Iterator<SAMRecord> filterSam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
+		
+		AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
+
+		// This array will contain true/false to indicate whether a record passes the 
+		// sam filters AND the awk filter (if given).
+		// boolean[] results= new boolean[(int) this.nRecsInWindow];
+		List<Boolean> results= new ArrayList<Boolean>();
+		
+		StringBuilder sb= new StringBuilder();
+		while(filterSam.hasNext()){ 
+			// Record whether a read passes the sam filters. If necessary, we also 
+			// store the raw reads for awk.
+			SAMRecord rec= filterSam.next();
+			if(!rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec)){
+				results.add(true);
+			} else {
+				results.add(false);
+			}
+			if(this.getAwk() != null && ! this.getAwk().isEmpty()){
+				sb.append(rec.getSAMString());	
+			}
+		}
+		// Apply the awk filter, if given
+		if(this.getAwk() != null && ! this.getAwk().isEmpty()){
+			String[] rawLines= sb.toString().split("\n");
+			boolean[] awkResults= Utils.passAwkFilter(rawLines, this.getAwk());
+			// Compare the results array with awk filtered. Flip as appropriate the results array
+			for(int j= 0; j < results.size(); j++){
+				if( ! awkResults[j] ){
+					results.set(j, false);
+				} // if results[i]==false there so no need to compare to awk result: Record is out.
+			}
+		}
+		return results;
 	}
 	
 }

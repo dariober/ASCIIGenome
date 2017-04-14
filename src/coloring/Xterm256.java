@@ -11,22 +11,9 @@ import exceptions.InvalidColourException;
 
 public class Xterm256 {
 
-	public static final Color xterm256ToColor(int xterm256) throws InvalidColourException{
-		
-		String rgb= xterm256toRGB(xterm256);
-		
-		int r= Integer.parseInt(rgb.substring(0, 2), 16);
-		int g= Integer.parseInt(rgb.substring(2, 4), 16);
-		int b= Integer.parseInt(rgb.substring(4, 6), 16);
-		
-		float[] hsb= Color.RGBtoHSB(r, g, b, null);
-		return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
-		
-	}
+	static final LinkedHashMap<String, Integer> map= new LinkedHashMap<String, Integer>();
 	
-	public static final LinkedHashMap<String, Integer> mapColorNameToXterm256(){
-		
-		final LinkedHashMap<String, Integer> map= new LinkedHashMap<String, Integer>();
+	public Xterm256(){
 		
 		// See http://jonasjacek.github.io/colors/
 		map.put("black", 0);
@@ -286,10 +273,25 @@ public class Xterm256 {
 		map.put("grey89", 254);
 		map.put("grey93", 255); 
 
+	}
+	
+	public static final Color xterm256ToColor(int xterm256) throws InvalidColourException{
+		
+		String rgb= xterm256toRGB(xterm256);
+		int r= Integer.parseInt(rgb.substring(0, 2), 16);
+		int g= Integer.parseInt(rgb.substring(2, 4), 16);
+		int b= Integer.parseInt(rgb.substring(4, 6), 16);
+		
+		float[] hsb= Color.RGBtoHSB(r, g, b, null);
+		return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
+		
+	}
+	
+	public static final LinkedHashMap<String, Integer> mapColorNameToXterm256(){
 		return map;
 	}
 	
-	public static int colorNameToXterm256(String colorName) throws InvalidColourException {
+	public int colorNameToXterm256(String colorName) throws InvalidColourException {
 			
 		try{ // See if colour name is already an int between 0 and 255
 			int xterm= Integer.parseInt(colorName);
@@ -302,13 +304,13 @@ public class Xterm256 {
 		
 		colorName= colorName.toLowerCase();
 		
-        if(mapColorNameToXterm256().containsKey(colorName)) {
-        	return mapColorNameToXterm256().get(colorName);
+        if(map.containsKey(colorName)) {
+        	return map.get(colorName);
         } else {
         	// Try approximate matching
-        	for(String x : mapColorNameToXterm256().keySet()){
+        	for(String x : map.keySet()){
         		if(x.startsWith(colorName)){
-        			return mapColorNameToXterm256().get(x);
+        			return map.get(x);
         		}
         	}
 			System.err.println("Unrecognized color: " + colorName);

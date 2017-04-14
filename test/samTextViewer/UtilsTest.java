@@ -992,13 +992,13 @@ public class UtilsTest {
 		assertEquals("chr1:10", Utils.coordinatesToString("chr1", 10, 9));
 	}
 	
-	@Test
-	public void canTestForUcscSource(){
-		assertTrue(Utils.isUcscGenePredSource("dm6:refGene"));
-		assertTrue(Utils.isUcscGenePredSource("test_data/refGene.hg19.chr7.txt.gz"));
-		assertTrue(Utils.isUcscGenePredSource("http://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/refGene.txt.gz"));
-		assertTrue(!Utils.isUcscGenePredSource("test_data/hg19_genes.gtf.gz"));
-	}
+//	@Test
+//	public void canTestForUcscSource(){
+//		assertTrue(Utils.isUcscGenePredSource("dm6:refGene"));
+//		assertTrue(Utils.isUcscGenePredSource("test_data/refGene.hg19.chr7.txt.gz"));
+//		assertTrue(Utils.isUcscGenePredSource("http://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/refGene.txt.gz"));
+//		assertTrue(!Utils.isUcscGenePredSource("test_data/hg19_genes.gtf.gz"));
+//	}
 	
 	@Test
 	public void canExpandTildeToHomeDir(){

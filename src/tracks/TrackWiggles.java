@@ -164,10 +164,11 @@ public class TrackWiggles extends Track {
 
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
+			final Xterm256 xterm256= new Xterm256();
 			printable= "\033[48;5;"
 			+ Config.get256Color(ConfigKey.background)
 			+ ";38;5;"
-			+ Xterm256.colorNameToXterm256(this.getTitleColour())
+			+ xterm256.colorNameToXterm256(this.getTitleColour())
 			+ "m"
 			+ printable;
 		}
@@ -372,6 +373,11 @@ public class TrackWiggles extends Track {
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException,
 			InvalidRecordException, SQLException {
 		//
+	}
+
+	@Override
+	public String getAwk() {
+		return "";
 	}
 
 

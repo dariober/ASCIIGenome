@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -19,7 +20,6 @@ import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.CigarOperator;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReader;
-import htsjdk.samtools.filter.AggregateFilter;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -68,21 +68,21 @@ public class TrackPileup extends TrackWiggles {
 	public void update() throws InvalidGenomicCoordsException, IOException{
 		
 		SamReader samReader= Utils.getSamReader(this.getWorkFilename());
-		
-		this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
-		
+		List<Boolean> passFilter= this.filterReads(samReader);
+		this.nRecsInWindow= 0;
+		for(boolean x : passFilter){ // The count of reads in window is the count of reads passing filters
+			if(x){
+				this.nRecsInWindow++;
+			}
+		}
+		samReader= Utils.getSamReader(this.getWorkFilename());
 		Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
-		AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
-
+		
 		this.loci= new HashMap<Integer, Locus>();
-		// this.depth= new HashMap<Integer, Integer>();
+		ListIterator<Boolean> pass = passFilter.listIterator();
 		while(sam.hasNext()){
-			
 			SAMRecord rec= sam.next();
-
-			Boolean passAwk= true; // Utils.passAwkFilter(rec.getSAMString(), this.getAwk());
-			
-			if( !rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec) && passAwk){
+			if( pass.next() ){
 				this.add(rec);
 			}
 		}
@@ -238,10 +238,6 @@ public class TrackPileup extends TrackWiggles {
 		return depth;
 	}
 	
-//	protected Map<Integer, Locus> getLoci(){
-//		return this.loci;
-//	}
-	
 	@Override
 	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 		
@@ -279,6 +275,25 @@ public class TrackPileup extends TrackWiggles {
 		return this.formatTitle(xtitle) + "\n";
 	}
  
+	@Override
+	public String getAwk(){
+		return this.awk;
+	}
+	
+	@Override
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		
+//		try {
+//			awkFunc= FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
+//		} catch (URISyntaxException e) {
+//
+//		}
+
+		this.awk= awk;
+		this.update();
+	}
+
+	
 	@Override
 	public void setRpm(boolean rpm){
 		this.rpm= rpm;

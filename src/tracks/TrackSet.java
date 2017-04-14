@@ -641,6 +641,8 @@ public class TrackSet {
 
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidColourException{
 
+		final Xterm256 xterm256= new Xterm256();
+		
 		// MEMO of subcommand syntax:
 		// 0 trackColour
 		// 1 Colour
@@ -653,7 +655,7 @@ public class TrackSet {
 		if(tokens.size() >= 2){
 			String xcolour= tokens.get(1).toLowerCase();
 
-			Xterm256.colorNameToXterm256(xcolour); // This is only to test whether exception is thrown.
+			xterm256.colorNameToXterm256(xcolour); // This is only to test whether exception is thrown.
 
 			colour= xcolour;
 		}

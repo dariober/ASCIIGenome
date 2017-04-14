@@ -1677,8 +1677,6 @@ public class Utils {
 			System.setOut(stdout);
 			is.close();
 		}
-
-		// System.err.println(new String(baos.toByteArray(), StandardCharsets.US_ASCII));
 		
 		String output[] = new String(baos.toByteArray(), StandardCharsets.US_ASCII).split("\n");
 		int j= 0;
@@ -1696,19 +1694,7 @@ public class Utils {
 				results[i]= false;
 			}
 		}
-		
 		return results;
-		
-//		if(output.trim().isEmpty()){
-//			return false;
-//		} else if(output.trim().equals(rawLine.trim())){
-//			return true;
-//		} else {
-//			// Awk output is not empty or equal to input line. Reset awk script and return null
-//			// to signal this condition.
-//			return null;
-//		}
-		
 	}
 
 	
@@ -1794,7 +1780,7 @@ public class Utils {
 		return samReader;
 	}
 
-	/**Rturn the indexes of the prinatble characters interspersed in ansi formatting  
+	/**Return the indexes of the printable characters interspersed in ansi formatting  
 	 * MEMO: The sequence \033 is NOT four characters. It's just one!
 	 * */
 	public static List<Integer> indexOfCharsOnFormattedLine(String fmtString) {
