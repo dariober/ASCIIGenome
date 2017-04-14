@@ -8,7 +8,7 @@ import samTextViewer.SamLocusIterator.LocusInfo;
 import samTextViewer.SamLocusIterator.RecordAndOffset;
 import samTextViewer.Utils;
 
-public class PileupLocus {
+public class PileupLocus_DEPRECATE_ME {
 
 	private static final int MIN_BASE_QUAL= 20; // Min base quality for a read base to be counted
 	private static final int MIN_DEPTH_ALT= 3; // Min read depth for alternative allele to be taken into account
@@ -25,7 +25,7 @@ public class PileupLocus {
 	/** Populate the ACTG counts for the given locus info. ref is the reference base if available.  
 	 * The LocusInfo object is expected to be already filtered for desired flags. Note threshold 
 	 * to mapping quality to count bases. */
-	PileupLocus(LocusInfo locus, char ref){
+	PileupLocus_DEPRECATE_ME(LocusInfo locus, char ref){
 		
 		this.chrom= locus.getSequenceName();
 		this.pos= locus.getPosition();
@@ -40,7 +40,7 @@ public class PileupLocus {
 
 		
 		for(RecordAndOffset recOff : locus.getRecordAndPositions()){
-			if(((int)recOff.getBaseQuality()) > PileupLocus.MIN_BASE_QUAL){
+			if(((int)recOff.getBaseQuality()) > PileupLocus_DEPRECATE_ME.MIN_BASE_QUAL){
 				char base = Character.toUpperCase((char) recOff.getReadBase());
 				int count= this.baseCount.get(base) + 1;
 				this.baseCount.put(base, count);
@@ -65,10 +65,10 @@ public class PileupLocus {
 		if(this.baseCount.get(allele1) == 0){
 			consensus= ' ';
 		}
-		else if((float)(this.baseCount.get(allele1) + this.baseCount.get(allele2))/this.depth() < PileupLocus.MIN_PCT_TOT){
+		else if((float)(this.baseCount.get(allele1) + this.baseCount.get(allele2))/this.depth() < PileupLocus_DEPRECATE_ME.MIN_PCT_TOT){
 			consensus= 'N';
-		} else if(this.baseCount.get(allele2) >= PileupLocus.MIN_DEPTH_ALT 
-				&& (float)this.baseCount.get(allele2)/this.depth() >= PileupLocus.MIN_PCT_ALT ){
+		} else if(this.baseCount.get(allele2) >= PileupLocus_DEPRECATE_ME.MIN_DEPTH_ALT 
+				&& (float)this.baseCount.get(allele2)/this.depth() >= PileupLocus_DEPRECATE_ME.MIN_PCT_ALT ){
 			consensus= this.iupacAmbiguity(allele1, allele2);
 		} else {
 			consensus= allele1;

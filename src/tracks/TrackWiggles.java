@@ -76,6 +76,9 @@ public class TrackWiggles extends Track {
 		
 	};
 	
+	protected TrackWiggles(){
+		
+	}
 
 	/*  M e t h o d s  */
 	@Override
@@ -150,6 +153,7 @@ public class TrackWiggles extends Track {
 	public String printToScreen() throws InvalidColourException{
 	
 		if(this.getyMaxLines() == 0){return "";}
+		
 		TextProfile textProfile= new TextProfile(this.getScreenScores(), this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
 		
 		ArrayList<String> lineStrings= new ArrayList<String>();
@@ -157,12 +161,14 @@ public class TrackWiggles extends Track {
 			List<String> xl= textProfile.getProfile().get(i);
 			lineStrings.add(StringUtils.join(xl, ""));
 		}
+
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
+			final Xterm256 xterm256= new Xterm256();
 			printable= "\033[48;5;"
 			+ Config.get256Color(ConfigKey.background)
 			+ ";38;5;"
-			+ Xterm256.colorNameToXterm256(this.getTitleColour())
+			+ xterm256.colorNameToXterm256(this.getTitleColour())
 			+ "m"
 			+ printable;
 		}
@@ -361,6 +367,17 @@ public class TrackWiggles extends Track {
 	@Override
 	protected List<String> getRecordsAsStrings() {
 		return new ArrayList<String>();
+	}
+
+	@Override
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException,
+			InvalidRecordException, SQLException {
+		//
+	}
+
+	@Override
+	public String getAwk() {
+		return "";
 	}
 
 

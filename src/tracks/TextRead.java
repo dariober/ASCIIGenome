@@ -43,6 +43,7 @@ class TextRead {
 	private final static char charFwd= '>';
 	private final static char charRev= '<';
 	private final static int  SHADE_MAPQ= 5;
+	// private final static int  SHADE_BASEQ= 13;
 	
 	/** Char to represent deletions from the reference. I.e. gaps in the read */
 	final private char DEL= '-';
@@ -103,7 +104,7 @@ class TextRead {
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidColourException 
 	 */
-	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName, double bpPerScreenColumn) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
+	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 		List<Character> unformatted;
 		if(!bs){
 			unformatted= this.getConsRead();
@@ -123,7 +124,7 @@ class TextRead {
 			}
 			return Joiner.on("").join(unformatted);
 		} else {
-			return readFormatter(unformatted, noFormat, bs, bpPerScreenColumn);
+			return readFormatter(unformatted, noFormat, bs);
 		}
 	}
 	
@@ -142,18 +143,34 @@ class TextRead {
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidColourException 
 	 */
-	private String readFormatter(List<Character> read, boolean noFormat, boolean bs, double bpPerScreenColumn) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
-
+	private String readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+		
 		if(noFormat){ // Essentially nothing to do in this case
 			return Joiner.on("").join(read);
 		}
+
+		byte[] baseQual= this.samRecord.getBaseQualities();
+		boolean baseQualIsPresent= baseQual.length > 0 ? true : false;
+		int SHADE_BASEQ= Integer.parseInt(Config.get(ConfigKey.shade_baseq));
+
 		StringBuilder formatted= new StringBuilder();		
-		for(char c : read){ // Each base is formatted independently from the others
+		int qIdx= 0;
+		for(int i= 0; i < read.size(); i++){ // Each base is formatted independently from the others
+			char c= read.get(i);
+			boolean shadeBaseQ= false;
+			if(baseQualIsPresent && this.gc.isSingleBaseResolution && qIdx < baseQual.length){
+				int bq= (int) baseQual[qIdx];
+				qIdx++;
+				if(bq < SHADE_BASEQ){
+					shadeBaseQ= true;
+				}
+			}
 			formatted.append("\033["); // Start format 
 			if(this.samRecord.getReadPairedFlag() && this.samRecord.getSecondOfPairFlag()){
 				formatted.append("4;"); // Underline 2nd in pair
-			}					
-			if(this.samRecord.getMappingQuality() < SHADE_MAPQ){ // Grey out low mapq
+			}
+			
+			if(this.samRecord.getMappingQuality() < SHADE_MAPQ || shadeBaseQ){ // Grey out low mapq/base qual
 				formatted.append("48;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.shade_low_mapq)); 
 				formatted.append(";38;5;");
@@ -169,23 +186,23 @@ class TextRead {
 				formatted.append(";38;5;");
 				formatted.append(Config.get256Color(ConfigKey.unmethylated_foreground));
 			} else if(Character.toUpperCase(c) == 'A'){
-				formatted.append("1;38;5;"); 
+				formatted.append("38;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.seq_a));
 			} else if(Character.toUpperCase(c) == 'C') {
-				formatted.append("1;38;5;"); 
+				formatted.append("38;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.seq_c));
 			} else if(Character.toUpperCase(c) == 'G') {
-				formatted.append("1;38;5;"); 
+				formatted.append("38;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.seq_g));
 			} else if(Character.toUpperCase(c) == 'T') {
-				formatted.append("1;38;5;"); 
+				formatted.append("38;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.seq_t));
-			} else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && !(bpPerScreenColumn > 1))){
+			} else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
 				formatted.append("48;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.feature_background_positive_strand)); 
 				formatted.append(";38;5;");
 				formatted.append(Config.get256Color(ConfigKey.foreground));
-			} else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && !(bpPerScreenColumn > 1))){
+			} else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
 				formatted.append("48;5;"); 
 				formatted.append(Config.get256Color(ConfigKey.feature_background_negative_strand)); 
 				formatted.append(";38;5;");
@@ -259,7 +276,7 @@ class TextRead {
 	 */
 	private List<Character> getDnaRead() throws InvalidGenomicCoordsException, IOException {
 
-		if(this.gc.getBpPerScreenColumn() > 1){
+		if( ! this.gc.isSingleBaseResolution){
 			return this.getSquashedRead();
 		}
 		
@@ -439,7 +456,7 @@ class TextRead {
 
 		String txt= "";
 		try {
-			txt = this.getPrintableTextRead(false, true, false, bpPerScreenColumn);
+			txt = this.getPrintableTextRead(false, true, false);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InvalidGenomicCoordsException e) {

@@ -1,3 +1,21 @@
+New in 1.5.0
+============
+
+This release fixes some important bugs and adds new features.
+
+* Issue #67 is fixed.
+
+* `Awk` has been extended to read tracks so that sam records can be filtered using `awk` syntax.
+
+* The central column is highlighted in read tracks to ease the eye-balling of variant bases.
+
+* Low base qualities in reads are shaded grey.
+
+* The title can be on the same line as the data provided it doesn't get on the way. This gives a more
+  compact visualization especially with sparse data.
+
+* The consensus display of consensus sequence is temporarily disabled (it'll come back).
+
 New in 1.4.0
 ============
 

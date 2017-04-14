@@ -1,5 +1,6 @@
 package tracks;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -17,6 +18,39 @@ import samTextViewer.GenomicCoords;
 
 public class TrackTest {
 
+	@Test
+	public void canConcatTitleAndTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidConfigException, InvalidColourException{
+		new Config(null);
+		GenomicCoords gc= new GenomicCoords("1:735171-2045891", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf", gc);
+		tif.setNoFormat(true);
+		tif.setTrackTag("title.bed");
+		String[] lines= tif.concatTitleAndTrack().split("\n");
+		assertEquals(3, lines.length);
+		assertTrue(lines[0].startsWith("title.bed"));
+		assertTrue(lines[0].trim().endsWith("A"));
+		System.err.println(tif.concatTitleAndTrack());
+		
+		// Do not put on different lines
+		tif.setTrackTag("LoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongTitle.bed");
+		lines= tif.concatTitleAndTrack().split("\n");
+		assertEquals(4, lines.length);
+		System.err.println(tif.concatTitleAndTrack());
+		
+	}
+	
+	@Test
+	public void canConcatTitleAndTrackWithNoFeatures() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidConfigException, InvalidColourException{
+		new Config(null);
+		GenomicCoords gc= new GenomicCoords("1:1-1000", null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf", gc);
+		tif.setNoFormat(true);
+		tif.setTrackTag("title.bed");
+		String[] lines= tif.concatTitleAndTrack().split("\n");
+		assertEquals(1, lines.length);
+		assertTrue( ! tif.concatTitleAndTrack().contains("\n"));
+	}
+	
 	@Test
 	public void canExportSettings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		

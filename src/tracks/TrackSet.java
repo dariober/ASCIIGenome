@@ -63,10 +63,10 @@ public class TrackSet {
 					}
 					
 					/* Coverage track */
-					TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
+					TrackPileup trackPileup= new TrackPileup(sourceName, gc);
 	
-					trackCoverage.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
-					this.trackList.add(trackCoverage);
+					trackPileup.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
+					this.trackList.add(trackPileup);
 					
 					/* Read track */
 					TrackReads trackReads= new TrackReads(sourceName, gc);
@@ -205,9 +205,9 @@ public class TrackSet {
 		int idForTrack= this.getNextTrackId();
 		String coverageTrackId= new File(sourceName).getName() + "#" + idForTrack;
 		
-		TrackCoverage trackCoverage= new TrackCoverage(sourceName, gc, false);
-		trackCoverage.setTrackTag(coverageTrackId);
-		this.trackList.add(trackCoverage);
+		TrackPileup trackPileup= new TrackPileup(sourceName, gc);
+		trackPileup.setTrackTag(coverageTrackId);
+		this.trackList.add(trackPileup);
 		
 		/* Reads */
 		idForTrack= this.getNextTrackId();
@@ -597,63 +597,8 @@ public class TrackSet {
         		tr.setHideTitle(hide);
         	}
         }
-		
-//		if(tokens.size() == 2 && tokens.get(1).equals("/hide_all/")){
-//			for(Track tr : this.getTrackList()){
-//				tr.setHideTitle(true);
-//			}
-//			return;
-//		}
-//		if(tokens.size() == 2 && tokens.get(1).equals("/show_all/")){
-//			for(Track tr : this.getTrackList()){
-//				tr.setHideTitle(false);
-//			}
-//			return;
-//		}		
-//        // Regex
-//        List<String> trackNameRegex= new ArrayList<String>();
-//        if(tokens.size() >= 2){
-//            trackNameRegex= tokens.subList(1, tokens.size());
-//        } else {
-//            trackNameRegex.add(".*"); // Default: Capture everything
-//        }
-//        // And set as required:
-//        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-//        for(Track tr : tracksToReset){
-//			if(tr.isHideTitle()){ // Invert setting
-//				tr.setHideTitle(false);
-//			} else {
-//				tr.setHideTitle(true);
-//			}
-//        }
 	}
-	
-	/*
-	public void setPrintPileupForRegex(List<String> tokens) throws InvalidCommandLineException {
-
-		// MEMO of subcommand syntax:
-		// 0 pileup
-		// 1 Regex
 		
-        // Regex
-        List<String> trackNameRegex= new ArrayList<String>();
-        if(tokens.size() >= 2){
-            trackNameRegex= tokens.subList(1, tokens.size());
-        } else {
-            trackNameRegex.add(".*"); // Default: Capture everything
-        }
-        // And set as required:
-        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-        for(Track tr : tracksToReset){
-			if(tr.isPrintPileup()){ // Invert setting
-				tr.setPrintPileup(false);
-			} else {
-				tr.setPrintPileup(true);
-			}
-        }
-	} */
-	
-	
 	public void setRpmForRegex(List<String> tokens) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 
 		List<String> args= new ArrayList<String>(tokens);
@@ -696,6 +641,8 @@ public class TrackSet {
 
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidColourException{
 
+		final Xterm256 xterm256= new Xterm256();
+		
 		// MEMO of subcommand syntax:
 		// 0 trackColour
 		// 1 Colour
@@ -708,7 +655,7 @@ public class TrackSet {
 		if(tokens.size() >= 2){
 			String xcolour= tokens.get(1).toLowerCase();
 
-			Xterm256.colorNameToXterm256(xcolour); // This is only to test whether exception is thrown.
+			xterm256.colorNameToXterm256(xcolour); // This is only to test whether exception is thrown.
 
 			colour= xcolour;
 		}

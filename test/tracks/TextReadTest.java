@@ -87,20 +87,20 @@ public class TextReadTest {
 		assertEquals(textRead.getTextEnd(), 21);
 		assertEquals("AACCGGTTAACCGGTTAAC".length(), textRead.getTextEnd() - textRead.getTextStart() + 1);
 		
-		System.out.println(textRead.getPrintableTextRead(false, true, false, gc.getBpPerScreenColumn()));
+		System.out.println(textRead.getPrintableTextRead(false, true, false));
 		
-		assertEquals("a,ccgg,t,acc,gtt,ac", textRead.getPrintableTextRead(false, true, false, gc.getBpPerScreenColumn()));
-		assertEquals("a,ccgg,t,uccmgtt,ac", textRead.getPrintableTextRead(true, true, false, gc.getBpPerScreenColumn()));
+		assertEquals("a,ccgg,t,acc,gtt,ac", textRead.getPrintableTextRead(false, true, false));
+		assertEquals("a,ccgg,t,uccmgtt,ac", textRead.getPrintableTextRead(true, true, false));
 
 
 		gc= new GenomicCoords("chr7:5566778-5566798", samSeqDict, null);
 		textRead= new TextRead(rec, gc);
-		assertEquals("aaccggttaaccggttaac", textRead.getPrintableTextRead(false, true, false, gc.getBpPerScreenColumn()));
+		assertEquals("aaccggttaaccggttaac", textRead.getPrintableTextRead(false, true, false));
 
 		gc= new GenomicCoords("chr7:5566780-5566782", samSeqDict, fastaFile);
 		textRead= new TextRead(rec, gc);
-		System.out.println(textRead.getPrintableTextRead(true, true, false, gc.getBpPerScreenColumn()));
-		System.out.println(textRead.getPrintableTextRead(true, false, false, gc.getBpPerScreenColumn()));		
+		System.out.println(textRead.getPrintableTextRead(true, true, false));
+		System.out.println(textRead.getPrintableTextRead(true, false, false));		
 	}
 
 	@Test
@@ -116,7 +116,7 @@ public class TextReadTest {
 		assertEquals(2, textRead.getTextStart());
 		assertEquals(11, textRead.getTextEnd());
 		assertEquals(textRead.getTextEnd() - textRead.getTextStart() + 1, ">>>>>>>>>>".length());
-		assertEquals(textRead.getPrintableTextRead(false, true, false, gc.getBpPerScreenColumn()), ">>>>>>>>>>");
+		assertEquals(textRead.getPrintableTextRead(false, true, false), ">>>>>>>>>>");
 		// System.out.println(textRead);
 	}
 	
@@ -132,14 +132,14 @@ public class TextReadTest {
 		rec.setReadName("Read1");
 		
 		TextRead textRead= new TextRead(rec, gc);
-		assertEquals("Read1/>>>>", textRead.getPrintableTextRead(false, true, true, gc.getBpPerScreenColumn()));
+		assertEquals("Read1/>>>>", textRead.getPrintableTextRead(false, true, true));
 		
 		rec.setReadName("VeryLongReadNameMoreThanReadSequence");
 		textRead= new TextRead(rec, gc);
-		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true, gc.getBpPerScreenColumn()));
+		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
 		
 		rec.setReadName("VeryLongRead");
 		textRead= new TextRead(rec, gc);
-		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true, gc.getBpPerScreenColumn()));
+		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
 	}
 }

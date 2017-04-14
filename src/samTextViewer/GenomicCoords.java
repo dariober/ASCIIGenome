@@ -1,15 +1,12 @@
 package samTextViewer;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +19,6 @@ import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
-import exceptions.InvalidRecordException;
 import faidx.Faidx;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
@@ -30,7 +26,6 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
-import tracks.TrackWiggles;
 
 /**
  * Class to set up the horizontal axis on screen. 
@@ -56,6 +51,8 @@ public class GenomicCoords implements Cloneable {
 	 */
 	private String fastaFile= null;
 	private String samSeqDictSource= null; // Source of the sequence dictionary. Can be path to file of fasta, bam, genome. Or genome tag e.g. hg19. 
+	private byte[] refSeq= null;
+	public boolean isSingleBaseResolution= false;
 	
 	/* Constructors */
 	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile, boolean verbose) throws InvalidGenomicCoordsException, IOException{
@@ -98,6 +95,9 @@ public class GenomicCoords implements Cloneable {
 			this.setFastaFile(fastaFile);
 		}
 		
+		// True if one text character corresponds to 1 bp
+		this.setSingleBaseResolution();
+		this.setRefSeq();
 	}
 
 	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
@@ -150,14 +150,28 @@ public class GenomicCoords implements Cloneable {
 	}
 	
 	/** Get sequence from fasta, but only if it can fit the screen. Null otherwise. 
+	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public byte[] getRefSeq() throws IOException, InvalidGenomicCoordsException {
-		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
-			return null;
+//	public byte[] getRefSeq() throws IOException, InvalidGenomicCoordsException {
+//		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
+//			return null;
+//		}
+//		return this.getSequenceFromFasta(); // this.refSeq;
+//	}
+	
+	private void setRefSeq() throws IOException, InvalidGenomicCoordsException{
+		if(this.fastaFile == null ||  ! this.isSingleBaseResolution){
+			this.refSeq= null;
+			return;
 		}
-		return this.getSequenceFromFasta(); // this.refSeq;
+		this.refSeq= this.getSequenceFromFasta();		
 	}
+	
+	public byte[] getRefSeq() {
+		return this.refSeq;
+	}
+	
 	
 	public byte[] getSequenceFromFasta() throws IOException{
 		IndexedFastaSequenceFile faSeqFile = null;
@@ -293,9 +307,9 @@ public class GenomicCoords implements Cloneable {
 	/**
 	 * Rescale coords to extend them as in zooming-in/-out
 	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
 	 */
-	public void zoomOut() throws IOException{
-		
+	public void zoomOut() throws IOException, InvalidGenomicCoordsException{
 		// If window size is 1 you need to extend it otherwise zoom will have no effect!
 		if((this.to - this.from) == 0){
 			if((this.from - 1) > 0){
@@ -333,7 +347,8 @@ public class GenomicCoords implements Cloneable {
 						this.samSeqDict.getSequence(this.chrom).getSequenceLength() : this.to;
 			}
 		}
-		// this.setRefSeq();
+		this.setSingleBaseResolution();
+		this.setRefSeq();
 	}
 
 	
@@ -372,7 +387,8 @@ public class GenomicCoords implements Cloneable {
 		if(this.from > this.to){ // Not sure this can happen.
 			this.to= this.from;
 		}
-		// this.setRefSeq();
+		this.setSingleBaseResolution();
+		this.setRefSeq();
 	}
 	
 	/** Move coordinates to the left hand side of the current window
@@ -385,6 +401,8 @@ public class GenomicCoords implements Cloneable {
 		if((this.to - this.from) < w){
 			this.to += (w - (this.to - this.from) - 1);  
 		}
+		this.setSingleBaseResolution();
+		this.setRefSeq();		
 	}
 	
 	/** Move coordinates to the right hand side of the current window
@@ -397,7 +415,8 @@ public class GenomicCoords implements Cloneable {
 		if((this.to - this.from) < w){
 			this.from -= (w - (this.to - this.from) - 1);  
 		}
-		
+		this.setSingleBaseResolution();
+		this.setRefSeq();
 	}
 	
 	/**
@@ -467,6 +486,9 @@ public class GenomicCoords implements Cloneable {
 		return mapping;
 	}	
 	
+	/**Take of care you are working with double precision here. Do not use this method to 
+	 * for exact calculations. 
+	 * */
 	public double getBpPerScreenColumn() throws InvalidGenomicCoordsException, IOException{
 		List<Double> mapping = seqFromToLenOut(this.getUserWindowSize());
 		double bpPerScreenColumn= (to - from + 1) / (double)mapping.size();
@@ -593,11 +615,13 @@ public class GenomicCoords implements Cloneable {
 	 * @throws InvalidColourException */
 	public String printableRefSeq(boolean noFormat) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 
-		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
+		byte[] refSeq= this.getRefSeq();
+		if(refSeq == null){
 			return "";
 		}
-		
-		byte[] refSeq= this.getRefSeq();
+//		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
+//			return "";
+//		}
 		
 		if(noFormat){
 			return new String(refSeq) + "\n";
@@ -742,7 +766,6 @@ public class GenomicCoords implements Cloneable {
 				reader= new BufferedReader(new FileReader(new File(genome)));
 			} catch (FileNotFoundException ex){
 				return false; 
-				// System.err.println("\nGenome file not found: " + genome);
 			}
 		}
 		
@@ -782,74 +805,6 @@ public class GenomicCoords implements Cloneable {
 		}
 	}
 
-	/** Return GC profile in region by sliding window of given step size 
-	 * @throws IOException 
-	 * @throws InvalidRecordException 
-	 * @throws InvalidGenomicCoordsException 
-	 * @throws SQLException 
-	 * @throws ClassNotFoundException 
-	 * */
-	public TrackWiggles getGCProfile() throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException {
-		if(this.fastaFile == null){
-			return null; 
-		}
-		
-		// Read fasta sequence in a single string. 
-		// Really there is no need to put the whole thing in memory, but it gives easier implementation.
-		IndexedFastaSequenceFile faSeqFile = null;
-		faSeqFile = new IndexedFastaSequenceFile(new File(this.fastaFile));
-		String fa = new String(faSeqFile.getSubsequenceAt(this.chrom, this.from, this.to).getBases());
-		faSeqFile.close();
-		
-		// Determine step size:
-		int step= (int) (this.getBpPerScreenColumn() < 10 ? 10 : Math.rint(this.getBpPerScreenColumn()));
-		
-		// * Write a temp bedgraph file with coordinates given by step
-		File temp = File.createTempFile("gcProfile.", ".tmp.bedgraph");
-		temp.deleteOnExit();
-		BufferedWriter bw= new BufferedWriter(new FileWriter(temp)); 
-		double ymin= 100;
-		double ymax= 0;
-		for(int xfrom= 0; xfrom < fa.length(); xfrom += step){
-			int xto= xfrom + step;
-			// Look ahead: If the next round is going to be the last one and the step
-			// is not a multiple of the sequence length, merge this round with the next in a 
-			// longer sequence. This is to avoid the last chunk to be too skewed in percentage.
-			if(((xto+step) > fa.length())){
-				xto= fa.length();
-			}
-			String chunk= fa.substring(xfrom, xto).toUpperCase();
-
-			int gcCnt= StringUtils.countMatches(chunk, 'C') + StringUtils.countMatches(chunk, 'G');
-			float pct= (float) ((float)gcCnt / chunk.length() * 100.0);
-			if(pct < ymin){
-				ymin= pct;
-			} 
-			if(pct > ymax){
-				ymax= pct;
-			} 
-			// Shouldn't use + to concatenate...
-			String line= this.chrom + "\t" + (this.from + xfrom - 1) + "\t" + (this.from + xto - 1) + "\t" + pct;
-			bw.write(line + "\n");
-			if(xto >= fa.length()){
-				break;
-			}
-		}
-		bw.close();
-		// * Read this bedGraph via TrackWiggles 
-		TrackWiggles cgWiggle= new TrackWiggles(temp.getAbsolutePath(), this, 4);
-		temp.delete(); // Track has been created - remove al associated tmp files.
-		new File(cgWiggle.getFilename()).delete();
-		new File(cgWiggle.getFilename() + ".tbi").delete();
-
-//		cgWiggle.setTrackTag(GenomicCoords.gcProfileFileTag);
-		cgWiggle.setYLimitMin(0);
-		cgWiggle.setYLimitMax(100);
-		
-		return cgWiggle;
-	}
-
-
 	public void centerAndExtendGenomicCoords(GenomicCoords gc, int size, double slop) throws InvalidGenomicCoordsException, IOException {
 		
 		if(size <= 0){
@@ -869,7 +824,8 @@ public class GenomicCoords implements Cloneable {
 			gc.to += extendBy;
 		}
 		gc.correctCoordsAgainstSeqDict(samSeqDict);
-		
+		this.setSingleBaseResolution();
+		this.setRefSeq();		
 	}
 
 	/** Reset window size according to current terminal screen. 
@@ -981,6 +937,8 @@ public class GenomicCoords implements Cloneable {
 		this.from= newFrom;
 		this.to= newTo;
 		this.correctCoordsAgainstSeqDict(this.getSamSeqDict());
+		this.setSingleBaseResolution();
+		this.setRefSeq();
 	}
 	
 	/** Apply this.extend() after having parsed cmd line args.  
@@ -1009,5 +967,13 @@ public class GenomicCoords implements Cloneable {
 			right= Integer.parseInt(args.get(1));
 		}
 		this.extend(left, right, refpoint);
+	}
+
+	protected void setSingleBaseResolution() throws InvalidGenomicCoordsException, IOException {
+		if(this.getUserWindowSize() == this.getGenomicWindowSize()){
+			this.isSingleBaseResolution= true;
+		} else {
+			this.isSingleBaseResolution= false;
+		}		
 	}
 }

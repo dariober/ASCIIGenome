@@ -32,6 +32,7 @@ import samTextViewer.GenomicCoords;
 import samTextViewer.SamLocusIterator;
 import samTextViewer.Utils;
 
+@Deprecated
 public class TrackCoverage extends Track {
 
 	/* A t t r i b u t e s */
@@ -97,7 +98,9 @@ public class TrackCoverage extends Track {
 			}
 			
 			List<Double> mapping = this.getGc().getMapping(userWindowSize);
+
 			while(iter.hasNext()){
+
 				samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
 				int screenPos= Utils.getIndexOfclosestValue(locusInfo.getPosition(), mapping);
 				byte refBase= '\0';
@@ -106,7 +109,8 @@ public class TrackCoverage extends Track {
 				}
 				this.screenLocusInfoList.get(screenPos).increment(locusInfo, refBase);
 			}
-			
+
+
 			this.nRecsInWindow= Utils.countReadsInWindow(this.getWorkFilename(), this.getGc(), this.getSamRecordFilter());
 			samLocIter.close();
 		}
@@ -162,7 +166,7 @@ public class TrackCoverage extends Track {
 	@Override
 	public String printToScreen() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		 //This method should not do any computation like RPM etc. Just print stuff.
-				
+		final Xterm256 xterm256= new Xterm256();
 		if(this.getyMaxLines() == 0){
 			return "";
 		} else if(this.screenLocusInfoList.size() == 0){
@@ -183,7 +187,7 @@ public class TrackCoverage extends Track {
 			printable= "\033[48;5;"
 			+ Config.get256Color(ConfigKey.background)
 			+ ";38;5;"
-			+ Xterm256.colorNameToXterm256(this.getTitleColour())
+			+ xterm256.colorNameToXterm256(this.getTitleColour())
 			+ "m"
 			+ printable;
 		}
@@ -261,7 +265,7 @@ public class TrackCoverage extends Track {
 				ref= Character.toUpperCase((char) refSeq[locusInfo.getPosition() - this.getGc().getFrom()]);
 			}
 			if( ! this.isBisulf()){
-				consensusSequence[i]= (new PileupLocus(locusInfo, ref)).getConsensus();
+				consensusSequence[i]= (new PileupLocus_DEPRECATE_ME(locusInfo, ref)).getConsensus();
 			} else {
 				// consensusSequence[i]= (new MethylLocus(locusInfo, ref)).getConsensus();
 			}
@@ -273,7 +277,7 @@ public class TrackCoverage extends Track {
 
 	@Override
 	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException, InvalidColourException{
-		if(this.getGc().getBpPerScreenColumn() > 1 || this.isBisulf()){
+		if( ! this.getGc().isSingleBaseResolution || this.isBisulf()){
 			return "";
 		}
 		String faSeqStr= "";
@@ -304,7 +308,7 @@ public class TrackCoverage extends Track {
 	
 	/** This method is not really used. For each position print ACGT counts. 
 	 * */
-	protected List<PileupLocus> getPileupList() throws IOException {
+	protected List<PileupLocus_DEPRECATE_ME> getPileupList() throws IOException {
 		
 		IntervalList il= new IntervalList(this.samReader.getFileHeader());
 		il.add(new Interval(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));
@@ -320,14 +324,14 @@ public class TrackCoverage extends Track {
 			faSeqFile.close();
 		}
 		
-		List<PileupLocus> pileup= new ArrayList<PileupLocus>(); 
+		List<PileupLocus_DEPRECATE_ME> pileup= new ArrayList<PileupLocus_DEPRECATE_ME>(); 
 		while(iter.hasNext()){			
 			samTextViewer.SamLocusIterator.LocusInfo locusInfo= iter.next();
 			char ref= '.';
 			if(refSeq != null){
 				ref= Character.toUpperCase((char) refSeq[locusInfo.getPosition() - this.getGc().getFrom()]);
 			}
-			pileup.add(new PileupLocus(locusInfo, ref));
+			pileup.add(new PileupLocus_DEPRECATE_ME(locusInfo, ref));
 		}
 		samLocIter.close();
 		return pileup;
@@ -337,7 +341,7 @@ public class TrackCoverage extends Track {
 	public List<String> printPileupList(){
 		List<String> plist= new ArrayList<String>();
 		try {
-			for(PileupLocus x : this.getPileupList()){
+			for(PileupLocus_DEPRECATE_ME x : this.getPileupList()){
 				plist.add(x.toString() + "\n");
 			}
 		} catch (IOException e) {
@@ -357,5 +361,17 @@ public class TrackCoverage extends Track {
 	@Override
 	protected List<String> getRecordsAsStrings() {
 		return new ArrayList<String>();
+	}
+
+	@Override
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException,
+			InvalidRecordException, SQLException {
+		// 
+	}
+
+	@Override
+	public String getAwk() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

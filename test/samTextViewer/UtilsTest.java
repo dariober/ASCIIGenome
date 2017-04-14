@@ -59,6 +59,42 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void canGetIndexOfCharsOnFormattedLine(){
+		// Unformatted: "  10mFOOBAR[0mfoobar]"
+		// String fline= "  \033[38;5;10m10m\033[0mFOOBAR\033[48;5;10m[0mfoobar]\033[0m";
+		String fline= "foo";
+		
+		// Reconstruct the string without codes
+		String chars= "";
+		for(int idx : Utils.indexOfCharsOnFormattedLine(fline)){
+			chars += fline.charAt(idx);
+		}
+		assertEquals("foo", chars);
+		
+		fline= "\033[0mFOO\033[38;5;10m  BAR";
+				chars= "";
+		for(int idx : Utils.indexOfCharsOnFormattedLine(fline)){
+			chars += fline.charAt(idx);
+		}
+		assertEquals("FOO  BAR", chars);
+
+		// No printable chars:
+		fline= "\033[0m";
+		assertEquals(0, Utils.indexOfCharsOnFormattedLine(fline).size());
+		fline= "";
+		assertEquals(0, Utils.indexOfCharsOnFormattedLine(fline).size());
+	}
+	
+//	@Test
+//	public void canHighlightCenterColumn(){
+//		String profile= "AAANAAA\n"
+//				      + "AAA AAA\n"
+//				      + "TTTTT";
+//		String hProfile= Utils.highlightCenterColumn(profile);
+//		String exp= "AAA\033[27m;7mNAAA\n";
+//	}
+	
+	@Test
 	public void canParseStringToCoords() throws InvalidGenomicCoordsException{
 
 		assertEquals(Arrays.asList(new String[] {"chr1", "1", "10"}), 
@@ -185,9 +221,44 @@ public class UtilsTest {
 		assertEquals("foo  ", p[1]);
 		assertEquals("1234567890", p[2]);
 	}
+
+	@Test
+	public void canFilterArrayUsingAwk() throws IOException{
+
+		String[] in3= {"chr1\t1\t100", "chr1\t10\t100", "chr1\t2\t100"};
+		boolean[] results= Utils.passAwkFilter(in3, "-v VAR=5 '$2 > VAR && $1'");
+		assertTrue(!results[0]);
+		assertTrue(results[1]);
+		assertTrue(!results[2]);
+
+		String[] in= {"chr1\t1\t100", "chr1\t1\t100", "chr1\t2\t100"};
+		results= Utils.passAwkFilter(in, "-v VAR=5 '$2 > VAR && $1'");
+		assertTrue(!results[0]);
+		assertTrue(!results[1]);
+		assertTrue(!results[2]);
+
+		String[] in4= {"chr1\t10\t100", "chr1\t10\t100", "chr1\t2\t100"};
+		results= Utils.passAwkFilter(in4, "-v VAR=5 '$2 > VAR && $1'");
+		assertTrue(results[0]);
+		assertTrue(results[1]);
+		assertTrue(!results[2]);
+		
+		// Zero length
+		String[] in2= {};
+		results= Utils.passAwkFilter(in2, "-v VAR=5 '$2 > VAR && $1'");
+		assertEquals(0, results.length);
+	}
 	
 	@Test
 	public void canFilterUsingAwk() throws IOException{
+		
+		String[] in= {"chr1\t1\t100", "chr1\t1\t100", "chr1\t2\t100"};
+		boolean[] results= Utils.passAwkFilter(in, "-v VAR=5 '$2 > VAR && $1'");
+		System.err.println(results[0]);
+		System.err.println(results[1]);
+		System.err.println(results[2]);
+		
+		
 		// Note single quotes around the awk script
 		assertTrue(Utils.passAwkFilter("chr1\t10\t100", "-v VAR=5 '$2 > VAR && $1'"));
 		
@@ -660,11 +731,25 @@ public class UtilsTest {
 	
 	@Test
 	public void canGetClosestIndex(){
+		
+		List<Double> seq = Utils.seqFromToLenOut(10, 50, 5);
+		
+		System.err.println(seq);
+		assertEquals(2, Utils.getIndexOfclosestValue(30, seq));
+		assertEquals(3, Utils.getIndexOfclosestValue(35, seq)); // Value is right in the middle of the interval (but take care you are working with floating points)
+		assertEquals(2, Utils.getIndexOfclosestValue(29, seq));
+		assertEquals(2, Utils.getIndexOfclosestValue(31, seq));
+		assertEquals(4, Utils.getIndexOfclosestValue(50, seq));
+		assertEquals(0, Utils.getIndexOfclosestValue(3, seq)); // Genome pos is to the left of window 
+															   // This should not happen though.
+		
 		int windowSize= 150;
 		List<Double> mapping = Utils.seqFromToLenOut(1, 1000000, windowSize);
 		for(int i=0; i < windowSize; i++){
 			System.out.println("Index: " + i + " position: " + mapping.get(i));
 		}
+		
+		assertEquals(windowSize-1, Arrays.binarySearch(mapping.toArray(new Double[mapping.size()]), 1000000.0));
 		
 		assertEquals(windowSize-1, Utils.getIndexOfclosestValue(1000000, mapping));
 		assertEquals((windowSize/2)-1, Utils.getIndexOfclosestValue(1000000/2, mapping));
@@ -907,13 +992,13 @@ public class UtilsTest {
 		assertEquals("chr1:10", Utils.coordinatesToString("chr1", 10, 9));
 	}
 	
-	@Test
-	public void canTestForUcscSource(){
-		assertTrue(Utils.isUcscGenePredSource("dm6:refGene"));
-		assertTrue(Utils.isUcscGenePredSource("test_data/refGene.hg19.chr7.txt.gz"));
-		assertTrue(Utils.isUcscGenePredSource("http://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/refGene.txt.gz"));
-		assertTrue(!Utils.isUcscGenePredSource("test_data/hg19_genes.gtf.gz"));
-	}
+//	@Test
+//	public void canTestForUcscSource(){
+//		assertTrue(Utils.isUcscGenePredSource("dm6:refGene"));
+//		assertTrue(Utils.isUcscGenePredSource("test_data/refGene.hg19.chr7.txt.gz"));
+//		assertTrue(Utils.isUcscGenePredSource("http://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/refGene.txt.gz"));
+//		assertTrue(!Utils.isUcscGenePredSource("test_data/hg19_genes.gtf.gz"));
+//	}
 	
 	@Test
 	public void canExpandTildeToHomeDir(){

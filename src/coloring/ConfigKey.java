@@ -24,7 +24,8 @@ public enum ConfigKey {
 	footer,
 	chrom_ideogram,
 	ruler,
-	max_reads_in_stack;
+	max_reads_in_stack, 
+	shade_baseq;
 	
 	public static Set<String> getValues(){
 		HashSet<String> values = new HashSet<String>();

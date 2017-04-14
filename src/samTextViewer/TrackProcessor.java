@@ -70,11 +70,9 @@ public class TrackProcessor {
 			
 			track.setNoFormat(this.noFormat);
 			if(track.getyMaxLines() > 0 && !track.isHideTrack()){
-				outputString.append(track.getTitle());
-				outputString.append(track.printToScreen() + "\n");
+				outputString.append(track.concatTitleAndTrack() + "\n");
 				outputString.append(track.getPrintableConsensusSequence());
 				outputString.append(track.printLines());
-				// outputString.append(track.printFeaturesToFile());
 			}
 		}
 

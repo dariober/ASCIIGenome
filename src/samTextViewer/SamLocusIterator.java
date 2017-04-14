@@ -1,6 +1,12 @@
 package samTextViewer;
 
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
 import htsjdk.samtools.AlignmentBlock;
 import htsjdk.samtools.SAMException;
 import htsjdk.samtools.SAMRecord;
@@ -22,12 +28,6 @@ import htsjdk.samtools.util.PeekableIterator;
 import htsjdk.samtools.util.ReferenceSequenceMask;
 import htsjdk.samtools.util.SamRecordIntervalIteratorFactory;
 import htsjdk.samtools.util.WholeGenomeReferenceSequenceMask;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Iterator that traverses a SAM File, accumulating information on a per-locus basis.
@@ -223,7 +223,7 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         }
 
         while (complete.isEmpty() && ((!accumulator.isEmpty()) || samHasMore() || hasRemainingMaskBases())) {
-            final LocusInfo locusInfo = next();
+         	final LocusInfo locusInfo = next();
             if (locusInfo != null) {
                 complete.add(0, locusInfo);
             }

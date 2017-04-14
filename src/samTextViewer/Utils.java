@@ -26,6 +26,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -35,6 +36,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.lang.StringUtils;
@@ -879,29 +882,53 @@ public class Utils {
 	}
 
 	/**
-	 * Naive search to get the index position of the value in list closest to a given value.
-	 * 
+	 * Binary search to get the index position of the value in list closest to a given value.
+	 * The searched list is expected to be sorted, there is no check whether this is the case.
 	 * @param genomePos
 	 * @param mapping
 	 * @return
 	 */
 	public static int getIndexOfclosestValue(double genomePos, List<Double> mapping){
-		double bestDiff= Integer.MAX_VALUE;
-		int closest= -1;
-		for(int idx= 0; idx < mapping.size(); idx++){ 
-			// Iterate through entire list to find closest position on screen, it's a bit wasteful since
-			// the list is ordered, but it's ok.
-			double candidate= mapping.get(idx);
-			double diff= Math.abs(genomePos - candidate);
-			if(diff < bestDiff){
-				closest= idx;
-				bestDiff= diff;
+
+		// Position is before or after the extremes of the list.
+		if(genomePos <= mapping.get(0)){
+			return 0;
+		}
+		if(genomePos >= mapping.get(mapping.size()-1)){
+			return mapping.size()-1;
+		}
+		
+		int closest= Arrays.binarySearch(mapping.toArray(new Double[mapping.size()]), (double)genomePos);
+		if(closest < 0){
+			// If < 0 the value is not found in the list and binarySearch returns the insertion point.
+			// See binarySearch docs. We need to convert the insertion point to the closest value.
+			int insertionPoint= -(closest + 1);
+			double leftDiff= genomePos - mapping.get(insertionPoint - 1);
+			double rightDiff= mapping.get(insertionPoint) - genomePos;
+			if(leftDiff < rightDiff){
+				return insertionPoint - 1;
+			} else {
+				return insertionPoint;
 			}
 		}
-		if(closest < 0){
-			throw new RuntimeException("Invalid index position: " + closest);
-		}
 		return closest;
+		
+//		double bestDiff= Integer.MAX_VALUE;
+//		int closest= -1;
+//		for(int idx= 0; idx < mapping.size(); idx++){ 
+//			// Iterate through entire list to find closest position on screen, it's a bit wasteful since
+//			// the list is ordered, but it's ok.
+//			double candidate= mapping.get(idx);
+//			double diff= Math.abs(genomePos - candidate);
+//			if(diff < bestDiff){
+//				closest= idx;
+//				bestDiff= diff;
+//			}
+//		}
+//		if(closest < 0){
+//			throw new RuntimeException("Invalid index position: " + closest);
+//		}
+//		return closest;
 	}
 	
 	/** Return true  */
@@ -1574,7 +1601,7 @@ public class Utils {
 		// Now add the functions to the script right at the start of the script, after the command args
 		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
 				
-		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.UTF_8));
+		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.US_ASCII));
 		
 		String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]); 
 		
@@ -1602,6 +1629,75 @@ public class Utils {
 		
 	}
 
+	/** Stream the raw line through awk and return true if the output of awk is the same as the input
+	 * line. If awk returns empty output then the line didn't pass the awk filter.
+	 * If output is not empty and not equal to input, return null.
+	 * See tests for behaviour. 
+	 * */
+	public static boolean[] passAwkFilter(String[] rawLines, String awkScript) throws IOException {
+		
+		boolean[] results= new boolean[rawLines.length];
+
+		awkScript= awkScript.trim();
+
+		if(awkScript.isEmpty()){
+			for(int i= 0; i < rawLines.length; i++){
+				results[i]= true;
+			}
+			return results;
+		}
+		
+		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
+		// -v var=foo '$1 == var && $2 == baz'
+		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
+		// the opening of the awk script.
+		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
+		if(scriptStartsAt == awkScript.length() + 1){
+			scriptStartsAt= 1;
+		}
+		// Now add the functions to the script right at the start of the script, after the command args
+		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
+		
+		ByteArrayOutputStream baosIn = new ByteArrayOutputStream();
+		for (String line : rawLines) {
+			baosIn.write((line+"\n").getBytes());
+		}
+		InputStream is= new ByteArrayInputStream(baosIn.toByteArray());
+		
+		String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]); 
+		
+		PrintStream stdout = System.out;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try{
+			PrintStream os= new PrintStream(baos);
+			new org.jawk.Main(args, is, os, System.err);
+		} catch(Exception e){
+			throw new IOException();
+		} finally{
+			System.setOut(stdout);
+			is.close();
+		}
+		
+		String output[] = new String(baos.toByteArray(), StandardCharsets.US_ASCII).split("\n");
+		int j= 0;
+		for(int i=0; i < rawLines.length; i++){
+			String inLine= rawLines[i];
+			if(output.length > j){
+				String outLine= output[j];				
+				if(inLine.equals(outLine)){
+					results[i]= true;
+					j++;
+				} else {
+					results[i]= false;
+				}
+			} else {
+				results[i]= false;
+			}
+		}
+		return results;
+	}
+
+	
 	/** Right-pad each line in string x with whitespaces. Each line is 
 	 * defined by the newline. Each line is padded to become at leas of length size.   
 	 * */
@@ -1668,6 +1764,42 @@ public class Utils {
 		coords.set(2, to.toString());
 
 		return coords;
+	}
+
+	/** Prepare SamReader from local bam or URL bam */
+	public static SamReader getSamReader(String workFilename) throws MalformedURLException {
+		UrlValidator urlValidator = new UrlValidator();
+		SamReaderFactory srf=SamReaderFactory.make();
+		srf.validationStringency(ValidationStringency.SILENT);
+		SamReader samReader;
+		if(urlValidator.isValid(workFilename)){
+			samReader = srf.open(SamInputResource.of(new URL(workFilename)).index(new URL(workFilename + ".bai")));
+		} else {
+			samReader= srf.open(new File(workFilename));
+		}
+		return samReader;
+	}
+
+	/**Return the indexes of the printable characters interspersed in ansi formatting  
+	 * MEMO: The sequence \033 is NOT four characters. It's just one!
+	 * */
+	public static List<Integer> indexOfCharsOnFormattedLine(String fmtString) {
+
+		List<Integer> idx= new ArrayList<Integer>();
+		// Start assuming that each char in input string is a printable char, not part of ANSI code.
+		for(int i= 0; i < fmtString.length(); i++){
+			idx.add(i);
+		}
+		
+		Matcher m= Pattern.compile("\\033\\[[;\\d]*m").matcher(fmtString);
+		while(m.find()){
+			// Now remove from the index list the characters that are part of the escape
+			for(int i= m.start(); i < m.end(); i++){
+				int del= idx.indexOf(i);
+				idx.remove(del);
+			}
+		}
+		return idx;
 	}
 	
 }

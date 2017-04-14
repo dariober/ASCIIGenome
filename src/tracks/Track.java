@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -24,6 +25,9 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SamReader;
+import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
@@ -49,7 +53,7 @@ public abstract class Track {
 	private String workFilename= "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files 
 	private String trackTag= "N/A"; // Tag name for title
 	// private int id= 1;              // A unique identifier for the track. Changed when the track is added to a TrackSet. 
-	private List<Double> screenScores= new ArrayList<Double>();
+	protected List<Double> screenScores= new ArrayList<Double>();
 	private GenomicCoords gc;
 	private boolean noFormat= false; 
 	private double yLimitMin= Double.NaN; // Same as R ylim()
@@ -65,7 +69,7 @@ public abstract class Track {
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
 	private int gap= 1;
-	private boolean rpm= false;
+	protected boolean rpm= false;
 	protected static final int f_FLAG= 0; private int f_flag= f_FLAG;
 	protected static final int F_FLAG= 4; private int F_flag= F_FLAG;
 	protected static final int MAPQ= 0; private int mapq= MAPQ;
@@ -93,7 +97,8 @@ public abstract class Track {
 		} else {
 			int colourCode= Config.get256Color(ConfigKey.title_colour);
 			if(this.titleColour != null){
-				colourCode= Xterm256.colorNameToXterm256(this.titleColour);
+				final Xterm256 xterm256= new Xterm256();
+				colourCode= xterm256.colorNameToXterm256(this.titleColour);
 			}
 			return "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;" + colourCode + "m" + title;
 		}
@@ -144,9 +149,8 @@ public abstract class Track {
 	//public void setTitle(String title){
 	//	this.title= title;
 	//}
-	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
-		return this.title;
-	}
+	public abstract String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException;
+	
 	public int getyMaxLines() {
 		return yMaxLines;
 	}
@@ -233,12 +237,9 @@ public abstract class Track {
 	public boolean isBisulf() { return this.bisulf; }
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
-	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-
-	}
-	public String getAwk(){
-		return "";
-	}
+	public abstract void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException;
+	
+	public abstract String getAwk();
 	
 	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { 
 	
@@ -621,6 +622,92 @@ public abstract class Track {
 	
 	protected void setCutScriptForPrinting(String cutScriptForPrinting){
 		this.cutScriptForPrinting= cutScriptForPrinting;
+	}
+	
+	/**Return a single string where title and track have been concatenated.
+	 * Concatenation is done in such way that "title" is not followed by newline if
+	 * the topmost line of "track" has enough white spaces to accommodate the title.
+	 * E.g.
+	 * ```
+	 * data.bed#1     >>>>
+	 *       >>>>        >>>>>
+	 * ```
+	 * instead of
+	 * ```
+	 *  data.bed#1     
+	 *                >>>>
+	 *       >>>>        >>>>>
+	 * ```
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
+	 * */
+	public String concatTitleAndTrack() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
+		// * Strip ascii escapes
+		// * Get length of leading whitespaces on topmost line of tracks
+		// * if len(leadine whitespaces) > len(title):
+		// * Remove the len(title) leading whitespaces from profile
+		// * Return title + profile
+		String track= this.printToScreen();
+		String title= this.getTitle();
+		int titleLen= Utils.stripAnsiCodes(title).trim().length();
+
+		String sProfile= Utils.stripAnsiCodes(track);
+		if(sProfile.trim().isEmpty()){ // No features in this profile
+			return title.replaceAll("\n", "") + track; 	
+		}
+		int leadingSpaces= sProfile.indexOf(sProfile.trim());
+		if(leadingSpaces > titleLen){
+			while(titleLen > 0){
+				track= track.replaceFirst(" ", "");
+				titleLen--;
+			}
+			title= title.replaceAll("\n", "");
+		}
+		return title + track; 
+	}
+	
+	/**Returns a list of boolean indicating whether the reads in samReader pass the 
+	 * sam and awk filters.
+	 * @throws IOException 
+	 * */
+	public List<Boolean> filterReads(SamReader samReader) throws IOException{
+
+		Iterator<SAMRecord> filterSam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
+		
+		AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
+
+		// This array will contain true/false to indicate whether a record passes the 
+		// sam filters AND the awk filter (if given).
+		// boolean[] results= new boolean[(int) this.nRecsInWindow];
+		List<Boolean> results= new ArrayList<Boolean>();
+		
+		StringBuilder sb= new StringBuilder();
+		while(filterSam.hasNext()){ 
+			// Record whether a read passes the sam filters. If necessary, we also 
+			// store the raw reads for awk.
+			SAMRecord rec= filterSam.next();
+			if(!rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec)){
+				results.add(true);
+			} else {
+				results.add(false);
+			}
+			if(this.getAwk() != null && ! this.getAwk().isEmpty()){
+				sb.append(rec.getSAMString());	
+			}
+		}
+		// Apply the awk filter, if given
+		if(this.getAwk() != null && ! this.getAwk().isEmpty()){
+			String[] rawLines= sb.toString().split("\n");
+			boolean[] awkResults= Utils.passAwkFilter(rawLines, this.getAwk());
+			// Compare the results array with awk filtered. Flip as appropriate the results array
+			for(int j= 0; j < results.size(); j++){
+				if( ! awkResults[j] ){
+					results.set(j, false);
+				} // if results[i]==false there so no need to compare to awk result: Record is out.
+			}
+		}
+		return results;
 	}
 	
 }
