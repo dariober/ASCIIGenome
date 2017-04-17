@@ -141,7 +141,6 @@ public class TrackSet {
 	 * */
 	public void addTrackFromSource(String sourceName, GenomicCoords gc, String trackTag) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
 
-		
 		if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
 			this.addBamTrackFromSourceName(sourceName, gc, trackTag);
 		
@@ -451,6 +450,11 @@ public class TrackSet {
 			}
 		}
 		
+		String sys= Utils.getArgForParam(args, "-sys");
+		if(sys != null){
+			printMode= PrintRawLine.NO_ACTION;
+		}
+		
 		// Capture the redirection operator and remove operator and filename.
 		int idx= -1; // Position of the redirection operator, -1 if not present.
 		if(args.contains(">")){
@@ -497,12 +501,13 @@ public class TrackSet {
 	        return;
 		}
 
-		// Process as required: Change mode
+		// Process as required
 		for(Track tr : tracksToReset){
 			tr.setPrintRawLineCount(count);
+			tr.setSystemCommandForPrint(sys);
 			if(printMode != null && printMode.equals(PrintRawLine.NO_ACTION)){
-				if(tr.getPrintMode().equals(PrintRawLine.OFF) && cmdInput.contains("-n")){
-					// Make -n switch ON the printing mode
+				if(tr.getPrintMode().equals(PrintRawLine.OFF) && (cmdInput.contains("-n") || cmdInput.contains("-sys"))){
+					// Make -n or -sys switch ON the printing mode
 					// This happens if you exec `print -n INT` with the track set to OFF. 
 					tr.setPrintMode(PrintRawLine.CLIP); 
 				}
@@ -512,6 +517,7 @@ public class TrackSet {
 				
 			} else if(tr.getPrintMode().equals(PrintRawLine.OFF)) { // Toggle
 				tr.setPrintMode(PrintRawLine.CLIP);
+				
 			} else {
 				tr.setPrintMode(PrintRawLine.OFF);
 			}

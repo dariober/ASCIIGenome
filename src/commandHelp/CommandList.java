@@ -503,7 +503,7 @@ public class CommandList {
 				+ "* Each line is processed independently of the others as a separate awk execution. "
 				+ "This means that you cannot filter one line on the bases of previous or following lines.\n"
 				+ "\n"
-				+ "* This awk is slow, about x10-100 times slower than UNIX awk. For few thousand records "
+				+ "* This awk is slow, about x5-10 times slower than UNIX awk. For few thousand records "
 				+ "the slowdown should be acceptable. Other things being equal, use `grep` instead.\n"
 				+ "\n"
 				+ "* The default delimiter is TAB not any white space as in UNIX awk.\n"
@@ -693,7 +693,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-v] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
+		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Print lines for the tracks matched by `track_regex`. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
 				+ "Features are filtered in/out according to the :code:`grep` command. Options:\n"
@@ -710,6 +710,11 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
+				+ "* :code:`-sys` Parse the raw output with the given system command(s). These commands are executed "
+				+ "by :code:`bash` so bash is expected to be available on the system. The commands should read from stdin and write "
+				+ "to stdout, this is usually the case for Unix commands like :code:`cut`, :code:`sort`, etc. "
+				+ "The command string must be enclosed in single quotes, single quotes inside the string can be escaped as \\' (backslash-quote)\n"
+				+ "\n"
 				+ "* :code:`>` and :code:`>>` Write output to `file`. `>` overwrites and `>>` appends to existing file. "
 				+ "The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides "
 				+ "options -n and -off, lines are written in full without limit.\n"
@@ -721,6 +726,7 @@ public class CommandList {
 				+ "    print~~~~~~~~~~~~~~~~~~~~~~~~-> Print all tracks, same as `print .*`\n"
 				+ "    print -off~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
 				+ "    print genes.bed >> genes.txt~-> Append features in track(s) 'genes.bed' to file\n"
+				+ "    print -sys 'cut 1-5 | sort'~~-> Select columns with `cut` and then sort\n"
 				);
 		cmdList.add(cmd);
 
@@ -916,20 +922,20 @@ public class CommandList {
 				+ "\n");
 		cmdList.add(cmd);
 
-		cmd= new CommandHelp();
-		cmd.setName("sessionSave"); cmd.setArgs("filename"); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("Experimental: Save the current settings to file suitable to be reloaded by ASCIIGenome.");
-		cmd.setAdditionalDescription("`sessionSave` writes to file a set of commands to reproduce the current "
-				+ "settings: tracks, colors, heights etc. It's not meant to be a perfect replica, rather it's a "
-				+ "shortcut to avoid re-typing commands. Example::\n"
-				+ "\n"
-				+ "    sessionSave session.txt\n"
-				+ "\n"
-				+ "Quit session and reload with::\n"
-				+ "\n"
-				+ "    ASCIIGenome -x session.txt\n"
-				+ "");
-		cmdList.add(cmd);
+//		cmd= new CommandHelp();
+//		cmd.setName("sessionSave"); cmd.setArgs("filename"); cmd.inSection= Section.GENERAL; 
+//		cmd.setBriefDescription("Experimental: Save the current settings to file suitable to be reloaded by ASCIIGenome.");
+//		cmd.setAdditionalDescription("`sessionSave` writes to file a set of commands to reproduce the current "
+//				+ "settings: tracks, colors, heights etc. It's not meant to be a perfect replica, rather it's a "
+//				+ "shortcut to avoid re-typing commands. Example::\n"
+//				+ "\n"
+//				+ "    sessionSave session.txt\n"
+//				+ "\n"
+//				+ "Quit session and reload with::\n"
+//				+ "\n"
+//				+ "    ASCIIGenome -x session.txt\n"
+//				+ "");
+//		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
 		cmd.setName("sys"); cmd.setArgs("[-L] command"); cmd.inSection= Section.GENERAL; 
@@ -1039,7 +1045,6 @@ public class CommandList {
 		paramList.add("samtools");
 		paramList.add(Command.BSseq.getCmdDescr());
 		paramList.add("save");
-		paramList.add("sessionSave");
 		paramList.add("sys");
 		paramList.add("setConfig");
 	

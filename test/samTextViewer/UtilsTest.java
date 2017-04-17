@@ -24,6 +24,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
@@ -57,6 +59,52 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void testParallel(){
+		List<List<String>> list= new ArrayList<List<String>>();
+		List<String> inList= new ArrayList<String>();
+		inList.add("foo");
+		inList.add("bar");
+		inList.add("baz");
+		List<String> inList2= new ArrayList<String>();
+		inList2.add("foo2");
+		inList2.add("bar2");
+		inList2.add("baz2");
+		List<String> inList3= new ArrayList<String>();
+		inList3.add("foo3");
+		inList3.add("bar3");
+		inList3.add("baz3");
+
+		list.add(inList);
+		list.add(inList2);
+		list.add(inList3);
+		System.err.println(list);
+		// Collections<T> elems= new ArrayList<T>();
+//		final List<String> outList= new ArrayList<String>();
+//		Parallel.For(list, new Parallel.Operation<String>() {
+//		    public void perform(String parameter) {
+//		        outList.add(parameter + "X");
+//		    };
+//		});
+//		System.err.println(outList);
+		
+		// final List<String> outList= new ArrayList<String>();
+		ExecutorService exec = Executors.newFixedThreadPool(2);
+		try {
+		    for (final List<String> o : list) {
+		        exec.submit(new Runnable() {
+		            @Override
+		            public void run() {
+		            	o.add("X");
+		            }
+		        });
+		    }
+		} finally {
+		    exec.shutdown();
+		}
+		System.err.println(list);
+	}
 	
 	@Test
 	public void canGetIndexOfCharsOnFormattedLine(){

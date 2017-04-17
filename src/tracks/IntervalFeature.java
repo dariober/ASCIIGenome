@@ -611,10 +611,11 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 			this.ideogram = null;
 			return;
 		}
-		
-		if((this.getScreenTo() - this.getScreenFrom() + 1) != ideogram.length){
+		int expFeatureLen= (this.getScreenTo() - this.getScreenFrom() + 1);
+		if(expFeatureLen != ideogram.length){
 			System.err.println("Length of text for screen (" + ideogram.length + ") "
-					+ "does not equal feature length on screen from= " + this.getFrom() + " to= " + this.getScreenTo());
+					+ "does not equal feature length on screen from= " + this.getScreenFrom() + " to= " + this.getScreenTo() 
+					+ " expected: to-from+1");
 			throw new RuntimeException();
 		}
 		this.ideogram = ideogram;

@@ -236,7 +236,7 @@ class TextRead {
 			this.textStart= 1;
 			return;
 		}		
-		this.textStart= Utils.getIndexOfclosestValue(samRecord.getAlignmentStart(), gc.getMapping(gc.getUserWindowSize())) + 1;
+		this.textStart= Utils.getIndexOfclosestValue(samRecord.getAlignmentStart(), gc.getMapping()) + 1;
 		return;
 	}
 	
@@ -246,7 +246,7 @@ class TextRead {
 		//			gc.getUserWindowSize() : gc.getGenomicWindowSize();
 		//	return;
 		//}
-		this.textEnd= Utils.getIndexOfclosestValue(samRecord.getAlignmentEnd(), gc.getMapping(gc.getUserWindowSize())) + 1;
+		this.textEnd= Utils.getIndexOfclosestValue(samRecord.getAlignmentEnd(), gc.getMapping()) + 1;
 		return;
 	}
 	

@@ -8,6 +8,8 @@ import java.sql.SQLException;
 
 import org.junit.Test;
 
+import com.google.common.base.Splitter;
+
 import coloring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -63,25 +65,67 @@ public class TrackTest {
 	}
 	
 	@Test
-	public void canCutLinesWhenPrinting() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException, InvalidCommandLineException{
+	public void canParsePrintableLinesWithSystemCommand() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
 
-		new Config(null);
-		
 		GenomicCoords gc= new GenomicCoords("chr1:1-100000", null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		tif.setNoFormat(true);
 		tif.setPrintMode(PrintRawLine.FULL);
-		tif.setCutScriptForPrinting("-d \\t|; -f 3-5,,11-9"); // Note reversing 11,10,9
-		String printed= tif.printLines();
-		assertTrue(printed.length() > 200);
-		assertTrue(printed.startsWith("exon"));
-		assertTrue(printed.trim().endsWith("\"OR4F5\""));
-		
-		// Columns can be duplicated!
-		tif.setCutScriptForPrinting("-d \\t|; -f 1,1,2,2");
-		printed= tif.printLines();
-		assertTrue(printed.startsWith("chr1 chr1"));
-		System.err.println(tif.printLines());
+		tif.setSystemCommandForPrint("grep WASH7P | sort -k5,5nr");
+		String out= tif.printLines();
+		// Same as `awk '$4 <= 100000' hg19_genes_head.gtf | grep WASH7P | sort -k5,5nr | wc -l`
+		assertEquals(11, Splitter.on("\n").omitEmptyStrings().splitToList(out).size()); // 11 lines grepped.
 	}
 
+	@Test
+	public void canParsePrintableLinesWithInvalidCommand() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+
+		// Invalid command: Empty output. But note that no exception is thrown!
+		GenomicCoords gc = new GenomicCoords("chr1:1-100000", null, null);
+		TrackIntervalFeature tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		tif.setSystemCommandForPrint("foo");
+		assertEquals("", tif.printLines());
+	}
+		
+	@Test
+	public void canParsePrintableLinesWithNoFeatures() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+
+		// Test region with no features
+		GenomicCoords gc = new GenomicCoords("chr10:1-100000", null, null);
+		TrackIntervalFeature tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		tif.setNoFormat(true);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setSystemCommandForPrint("head");
+		assertEquals("", tif.printLines());
+	}
+
+	@Test
+	public void canParsePrintBAM() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
+		new Config(null);
+		// BAM 
+		GenomicCoords gc= new GenomicCoords("chr7:5566733-5566903", null, null);
+		TrackReads tif= new TrackReads("test_data/ds051.short.bam", gc);
+		tif.setNoFormat(true);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setSystemCommandForPrint("grep NCNNTCCC");
+		assertEquals(2, tif.printLines().split("\n").length);
+	}
+
+	@Test
+	public void printIsResetAfterExec() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
+		new Config(null);
+		// BAM 
+		GenomicCoords gc= new GenomicCoords("chr7:5566733-5566903", null, null);
+		TrackReads tif= new TrackReads("test_data/ds051.short.bam", gc);
+		tif.setNoFormat(true);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setSystemCommandForPrint("grep NCNNTCCC");
+		assertEquals(2, tif.printLines().split("\n").length);
+		
+		// Call printLines again: 
+		// The sys command has been reset to null and everything is printed
+		assertEquals(22, tif.printLines().split("\n").length);
+	}
+
+	
 }

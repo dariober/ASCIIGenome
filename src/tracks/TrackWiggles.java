@@ -82,7 +82,7 @@ public class TrackWiggles extends Track {
 
 	/*  M e t h o d s  */
 	@Override
-	protected void update() throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException {
+	public void update() throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException {
 
 		if(this.bdgDataColIdx < 4){
 			System.err.println("Invalid index for bedgraph column of data value. Resetting to 4. Expected >=4. Got " + this.bdgDataColIdx);
@@ -120,10 +120,9 @@ public class TrackWiggles extends Track {
 	
 	private void updateTDF() throws InvalidGenomicCoordsException, IOException{
 		
-		int userWndowSize= this.getGc().getUserWindowSize();
 		this.screenWiggleLocusInfoList= 
 				TDFUtils.tdfRangeToScreen(this.getWorkFilename(), this.getGc().getChrom(), 
-						this.getGc().getFrom(), this.getGc().getTo(), this.getGc().getMapping(userWndowSize));
+						this.getGc().getFrom(), this.getGc().getTo(), this.getGc().getMapping());
 		
 		ArrayList<Double> screenScores= new ArrayList<Double>();
 		for(ScreenWiggleLocusInfo x : screenWiggleLocusInfoList){
@@ -229,12 +228,11 @@ public class TrackWiggles extends Track {
 			screenWigLocInfoList.add(new ScreenWiggleLocusInfo());
 		}
 
-		int userWndowSize= this.getGc().getUserWindowSize();
 		BigWigIterator iter = reader.getBigWigIterator(getGc().getChrom(), getGc().getFrom(), getGc().getChrom(), getGc().getTo(), false);
 		while(iter.hasNext()){
 			WigItem bw = iter.next();
 			for(int i= bw.getStartBase(); i <= bw.getEndBase(); i++){
-				int idx= Utils.getIndexOfclosestValue(i, this.getGc().getMapping(userWndowSize)); // Where should this position be mapped on screen?
+				int idx= Utils.getIndexOfclosestValue(i, this.getGc().getMapping()); // Where should this position be mapped on screen?
 				screenWigLocInfoList.get(idx).increment(bw.getWigValue());
 			} 
 		}
@@ -272,9 +270,8 @@ public class TrackWiggles extends Track {
 					throw new InvalidRecordException();
 				}
 				String[] tokens= q.split("\t");
-				int userWndowSize= this.getGc().getUserWindowSize();
-				int screenFrom= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[1])+1, this.getGc().getMapping(userWndowSize));
-				int screenTo= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[2]), this.getGc().getMapping(userWndowSize));
+				int screenFrom= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[1])+1, this.getGc().getMapping());
+				int screenTo= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[2]), this.getGc().getMapping());
 				float value= Float.valueOf(tokens[this.bdgDataColIdx-1]);
 				for(int i= screenFrom; i <= screenTo; i++){
 					screenWigLocInfoList.get(i).increment(value);

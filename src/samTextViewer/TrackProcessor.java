@@ -47,7 +47,7 @@ public class TrackProcessor {
 
 	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, DocumentException, InvalidColourException{
 		
-		GenomicCoords currentGC= this.genomicCoordsHistory.current();
+		final GenomicCoords currentGC= this.genomicCoordsHistory.current();
 		
 		StringBuilder outputString= new StringBuilder();
 		
@@ -61,6 +61,7 @@ public class TrackProcessor {
 				track.setGc(currentGC);
 			}			
 		}
+
 		// Set new y limits as required. This step has to come after the positioning to new coordinates because
 		// we may need to autoscale to global min or max.
 		this.getTrackSet().setAutoYLimits();
@@ -134,11 +135,6 @@ public class TrackProcessor {
 		while(iter.hasNext()){
 			String line= iter.next();
 			int npad= screenSize - Utils.stripAnsiCodes(line).length();
-// This check throws false positives when `print -full` finds lines longer than screenwidth
-//			if(npad < 0){
-//				throw new RuntimeException("Line width greater then screenwidth! This should not happen!\n"
-//						+ "Please report this as a bug.");
-//			}
 			if(npad < 0){
 				npad= 0; // Nothing to be done.
 			}
@@ -166,6 +162,7 @@ public class TrackProcessor {
 		return footer;
 	}
 
+	@Deprecated
 	public void exportTrackSetSettings(String filename) throws IOException{
 		
 		filename= Utils.tildeToHomeDir(filename);

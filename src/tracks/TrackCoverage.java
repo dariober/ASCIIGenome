@@ -80,7 +80,7 @@ public class TrackCoverage extends Track {
 	
 	/* M e t h o d s */
 	@Override
-	protected void update() throws IOException, InvalidGenomicCoordsException{
+	public void update() throws IOException, InvalidGenomicCoordsException{
 		
 		this.screenLocusInfoList= new ArrayList<ScreenLocusInfo>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE * 5){
@@ -91,13 +91,11 @@ public class TrackCoverage extends Track {
 			samLocIter.setSamFilters(this.getSamRecordFilter());
 			Iterator<samTextViewer.SamLocusIterator.LocusInfo> iter= samLocIter.iterator();
 			
-			int userWindowSize= this.getGc().getUserWindowSize();
-			
-			for(int i= 0; i < this.getGc().getMapping(userWindowSize).size(); i++){
+			for(int i= 0; i < this.getGc().getMapping().size(); i++){
 				this.screenLocusInfoList.add(new ScreenLocusInfo());	
 			}
 			
-			List<Double> mapping = this.getGc().getMapping(userWindowSize);
+			List<Double> mapping = this.getGc().getMapping();
 
 			while(iter.hasNext()){
 

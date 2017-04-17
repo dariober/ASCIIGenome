@@ -62,6 +62,10 @@ public class TrackReads extends Track{
 	
 	public void update() throws InvalidGenomicCoordsException, IOException{
 		
+		if(this.getyMaxLines() == 0){
+			return;
+		}
+		
 		this.userWindowSize= this.getGc().getUserWindowSize();
 		
 		this.readStack= new ArrayList<List<TextRead>>();
@@ -98,47 +102,6 @@ public class TrackReads extends Track{
 			this.nRecsInWindow= -1;
 		}
 	}
-	
-	/**Return a boolean array of length equal to the number of reads in the sam
-	 * record iterator. Array entry is true if the awk filter is passed.
-	 * @throws IOException 
-	 * */
-//	private List<Boolean> passFilters(Iterator<SAMRecord> sam) throws IOException{
-//
-//		AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
-//
-//		// This array will contain true/false to indicate whether a record passes the 
-//		// sam filters AND the awk filter (if given).
-//		// boolean[] results= new boolean[(int) this.nRecsInWindow];
-//		List<Boolean> results= new ArrayList<Boolean>();
-//		
-//		StringBuilder sb= new StringBuilder();
-//		while(sam.hasNext()){ 
-//			// Record whether a read passes the sam filters. If necessary, we also 
-//			// store the raw reads for awk.
-//			SAMRecord rec= sam.next();
-//			if(!rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec)){
-//				results.add(true);
-//			} else {
-//				results.add(false);
-//			}
-//			if(this.getAwk() != null && ! this.getAwk().isEmpty()){
-//				sb.append(rec.getSAMString());	
-//			}
-//		}
-//		// Apply the awk filter, if given
-//		if(this.getAwk() != null && ! this.getAwk().isEmpty()){
-//			String[] rawLines= sb.toString().split("\n");
-//			boolean[] awkResults= Utils.passAwkFilter(rawLines, this.getAwk());
-//			// Compare the results array with awk filtered. Flip as appropriate the results array
-//			for(int j= 0; j < results.size(); j++){
-//				if( ! awkResults[j] ){
-//					results.set(j, false);
-//				} // if results[i]==false there so no need to compare to awk result: Record is out.
-//			}
-//		}
-//		return results;
-//	}
 	
 	/** 
 	 * Printable track on screen. This is what should be called by Main 
@@ -341,13 +304,6 @@ public class TrackReads extends Track{
 
 	@Override
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		
-//		try {
-//			awkFunc= FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
-//		} catch (URISyntaxException e) {
-//
-//		}
-
 		this.awk= awk;
 		this.update();
 	}

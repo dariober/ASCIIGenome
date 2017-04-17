@@ -63,6 +63,22 @@ public class TrackPileupTest {
 		tr.getScreenScores();
 		
 	}
+
+	@Test
+	public void canCorrectRangeByRpm() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
+	
+		new Config(null);
+	
+		GenomicCoords gc= new GenomicCoords("chr7:5566776-5566796", null, null);
+		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
+		System.err.println(tr.getScreenScores());
+		assertTrue(tr.getTitle().contains("range[1.0 22.0]"));
+		tr.setRpm(true);
+		System.err.println(tr.getScreenScores());
+		assertTrue( tr.getTitle().contains("1000000")); // The range should contain 1,000,000 because this is the entire size of the file
+		                                                // rpm= 22/22*1,000,000
+	}
+
 	
 	@Test
 	public void canCollectCoverage() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{

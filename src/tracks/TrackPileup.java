@@ -67,6 +67,10 @@ public class TrackPileup extends TrackWiggles {
 	@Override
 	public void update() throws InvalidGenomicCoordsException, IOException{
 		
+		if(this.getyMaxLines() == 0){
+			return;
+		}
+		
 		SamReader samReader= Utils.getSamReader(this.getWorkFilename());
 		List<Boolean> passFilter= this.filterReads(samReader);
 		this.nRecsInWindow= 0;
@@ -83,7 +87,7 @@ public class TrackPileup extends TrackWiggles {
 		while(sam.hasNext()){
 			SAMRecord rec= sam.next();
 			if( pass.next() ){
-				this.add(rec);
+					this.add(rec);
 			}
 		}
 		List<Double> screenScores= this.prepareScreenScores();
@@ -100,7 +104,7 @@ public class TrackPileup extends TrackWiggles {
 			this.screenWiggleLocusInfoList.add(new ScreenWiggleLocusInfo());
 		}		
 		
-		List<Double> mapping= this.getGc().getMapping(userWindowSize);
+		List<Double> mapping= this.getGc().getMapping();
 		Map<Integer, Integer> depthMap = this.getDepth();
 		for( int refPos : depthMap.keySet()){
 			int screenIdx= Utils.getIndexOfclosestValue(refPos, mapping);
@@ -112,9 +116,6 @@ public class TrackPileup extends TrackWiggles {
 		List<Double> screenScores= new ArrayList<Double>();
 		for(ScreenWiggleLocusInfo screenLocusInfo: this.screenWiggleLocusInfoList){
 			double score= screenLocusInfo.getMeanScore();
-			if(this.isRpm()){
-				score= (score / this.alnRecCnt) * 1000000.0;
-			}
 			screenScores.add(score);
 		}
 		return screenScores;
@@ -188,7 +189,7 @@ public class TrackPileup extends TrackWiggles {
 			}
 		}
 	}
-
+	
 	/**
 	 * MEMO: Deletion does not consume read bases. It consumes reference bases:
 	 * ref  NNNNNNNN
@@ -246,8 +247,15 @@ public class TrackPileup extends TrackWiggles {
 		}
 		
 		Double[] range = Utils.range(this.getScreenScores());
+		
+		String rpmTag= "";
+		if(this.isRpm()){
+			range[0]= (range[0] / this.alnRecCnt) * 1000000.0;
+			range[1]= (range[1] / this.alnRecCnt) * 1000000.0;
+			rpmTag= "; rpm";
+		}
 		Double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
-		String rpmTag= this.isRpm() ? "; rpm" : "";
+		
 
 		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
 		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
@@ -288,13 +296,6 @@ public class TrackPileup extends TrackWiggles {
 	
 	@Override
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		
-//		try {
-//			awkFunc= FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
-//		} catch (URISyntaxException e) {
-//
-//		}
-
 		this.awk= awk;
 		this.update();
 	}
