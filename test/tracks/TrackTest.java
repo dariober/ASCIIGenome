@@ -112,7 +112,7 @@ public class TrackTest {
 	}
 
 	@Test
-	public void printIsResetAfterExec() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
+	public void printIsNotResetAfterExec() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
 		new Config(null);
 		// BAM 
 		GenomicCoords gc= new GenomicCoords("chr7:5566733-5566903", null, null);
@@ -122,8 +122,14 @@ public class TrackTest {
 		tif.setSystemCommandForPrint("grep NCNNTCCC");
 		assertEquals(2, tif.printLines().split("\n").length);
 		
-		// Call printLines again: 
-		// The sys command has been reset to null and everything is printed
+		// Call printLines again on new coordinates: 
+		// The sys command is still on
+		gc= new GenomicCoords("chr7:5566733-5566904", null, null);
+		tif.setGc(gc);
+		assertEquals(2, tif.printLines().split("\n").length);
+		
+		// Now turn it off:
+		tif.setSystemCommandForPrint("");
 		assertEquals(22, tif.printLines().split("\n").length);
 	}
 

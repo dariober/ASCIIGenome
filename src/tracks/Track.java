@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
@@ -43,7 +44,9 @@ public abstract class Track {
 	
 	static {
 		  try {
-		    awkFunc = FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
+			  InputStream in= Main.class.getResourceAsStream("/functions.awk");
+			  awkFunc= IOUtils.toString(in);
+			  in.close();
 		  }
 		  catch (Exception ex) {
 		    /* Handle exception. */
@@ -442,7 +445,6 @@ public abstract class Track {
 		List<String> featureList= new ArrayList<String>();
 		String omitString= "";
 		for(String line : rawList){
-//			String parsedLine= this.cutLine(line);
 			featureList.add(line);
 			count--;
 			if(count == 0){
@@ -499,12 +501,11 @@ public abstract class Track {
         }
 		writer.close();
 		
-		// String[] cmd= new String[] {"bash", "-c", "cat " + tmp.getAbsolutePath() + " | " + sysCmd};
 		ArrayList<String> cmd= new ArrayList<String>();
 		cmd.add("bash");
 		cmd.add("-c");
 		cmd.add("cat " + tmp.getAbsolutePath() + " | " + sysCmd);
-		this.setSystemCommandForPrint(null); // Reset after having consumed sys cmd. 
+		// this.setSystemCommandForPrint(null); // Reset after having consumed sys cmd. 
 
 		ProcessBuilder pb = new ProcessBuilder().command(cmd);
 		pb.redirectErrorStream(true);

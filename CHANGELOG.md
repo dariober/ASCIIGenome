@@ -1,3 +1,11 @@
+New in 1.6.0
+============
+
+* `print` command takes option `-sys` to execute system command to parse the raw lines
+  before printing.
+
+* Fixed bug on rpm conversion in pileup track.
+
 New in 1.5.0
 ============
 

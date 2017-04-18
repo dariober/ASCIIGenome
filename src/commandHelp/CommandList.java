@@ -710,7 +710,8 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
-				+ "* :code:`-sys` Parse the raw output with the given system command(s). These commands are executed "
+				+ "* :code:`-sys` Parse the raw output with the given system command(s). Use :code:`-sys null` to turn off "
+				+ "the system commands. These commands are executed "
 				+ "by :code:`bash` so bash is expected to be available on the system. The commands should read from stdin and write "
 				+ "to stdout, this is usually the case for Unix commands like :code:`cut`, :code:`sort`, etc. "
 				+ "The command string must be enclosed in single quotes, single quotes inside the string can be escaped as \\' (backslash-quote)\n"
@@ -727,6 +728,7 @@ public class CommandList {
 				+ "    print -off~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
 				+ "    print genes.bed >> genes.txt~-> Append features in track(s) 'genes.bed' to file\n"
 				+ "    print -sys 'cut 1-5 | sort'~~-> Select columns with `cut` and then sort\n"
+				+ "    print -sys null~~~~~~~~~~~~~~-> Turn off the execution of sysy commands\n"
 				);
 		cmdList.add(cmd);
 

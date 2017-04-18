@@ -528,7 +528,7 @@ Print lines for the tracks matched by `track_regex`.  Useful to show exactly wha
 
 * :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-* :code:`-sys` Parse the raw output through the given system command(s). These commands are executed by :code:`bash` so bash is expected to be available on the system. The commands should read from stdin and write to stdout, this is usually the case for Unix commands like :code:`cut`, :code:`sort`, etc.
+* :code:`-sys` Parse the raw output with the given system command(s). Use :code:`-sys null` to turn off the system commands. These commands are executed by :code:`bash` so bash is expected to be available on the system. The commands should read from stdin and write to stdout, this is usually the case for Unix commands like :code:`cut`, :code:`sort`, etc. The command string must be enclosed in single quotes, single quotes inside the string can be escaped as \' (backslash-quote)
 
 * :code:`>` and :code:`>>` Write output to `file`. `>` overwrites and `>>` appends to existing file. The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides options -n and -off, lines are written in full without limit.
 
@@ -539,7 +539,8 @@ Examples::
     print                        -> Print all tracks, same as `print .*`
     print -off                   -> Turn off printing for all tracks
     print genes.bed >> genes.txt -> Append features in track(s) 'genes.bed' to file
-    print -sys 'cut 1-5'         -> Parse output with system command sys
+    print -sys 'cut 1-5 | sort'  -> Select columns with `cut` and then sort
+    print -sys null              -> Turn off the execution of sysy commands
 
 
 Alignments

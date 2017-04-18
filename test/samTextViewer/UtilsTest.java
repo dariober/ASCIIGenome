@@ -347,8 +347,14 @@ public class UtilsTest {
 		
 		// Missing tag
 		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"ZZ\") > 0'"));
-		// MIssing tag searched but not used
+		
+		// Missing tag searched but not used
 		assertTrue(Utils.passAwkFilter(rec, "'{getSamTag(\"ZZ\"); print $0'}"));
+		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"NM\") > 0'"));
+		
+		// Tags missing altogether returns empty string
+		rec= "read\t0\tchr7\t5566778\t50\t5M\t*\t0\t0\tCTCAT\tIIIII";
+		assertTrue(Utils.passAwkFilter(rec, "'getSamTag(\"NM\") == \"\"'"));
 		
 		long t0= System.currentTimeMillis();
 		int i= 0;

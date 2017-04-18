@@ -451,6 +451,9 @@ public class TrackSet {
 		}
 		
 		String sys= Utils.getArgForParam(args, "-sys");
+		if(sys.toLowerCase().equals("null")){
+			sys= "";
+		}
 		if(sys != null){
 			printMode= PrintRawLine.NO_ACTION;
 		}
