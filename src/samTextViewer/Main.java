@@ -62,7 +62,6 @@ public class Main {
 		
 		List<String> initFileList= opts.getList("input");
 		String region= opts.getString("region");
-//		final String genome= opts.getString("genome");
 		final String fasta= opts.getString("fasta");
 		String exec= opts.getString("exec");
 		String config= opts.getString("config");

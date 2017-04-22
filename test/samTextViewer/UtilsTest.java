@@ -229,20 +229,25 @@ public class UtilsTest {
 		String[] cmd= {"-r", "foo", "-x", "-bar"};
 		List<String> argList= new LinkedList<String>(Arrays.asList(cmd));
 		
-		assertEquals("foo", Utils.getArgForParam(argList, "-r"));
+		assertEquals("foo", Utils.getArgForParam(argList, "-r", null));
 		assertTrue( ! argList.contains("-r") ); // Arg has been removed
 		assertTrue( ! argList.contains("foo") ); // Arg has been removed
 		
 		// Param is not present
 		argList= new LinkedList<String>(Arrays.asList(cmd));
-		assertNull(Utils.getArgForParam(argList, "-z") );
+		assertNull(Utils.getArgForParam(argList, "-z", null) );
 		assertEquals(cmd.length, argList.size() ); // No change
-		
+
+		// Default arg:
+		argList= new LinkedList<String>(Arrays.asList(cmd));
+		assertEquals("default", Utils.getArgForParam(argList, "-z", "default") );
+		assertEquals(cmd.length, argList.size() ); // No change
+
 		// Miss-specified arg throws exception:
 		argList= new LinkedList<String>(Arrays.asList(cmd));
 		boolean pass= false;
 		try{
-			Utils.getArgForParam(argList, "-bar");
+			Utils.getArgForParam(argList, "-bar", null);
 		} catch(InvalidCommandLineException e){
 			pass= true;
 		}

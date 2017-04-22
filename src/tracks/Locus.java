@@ -1,7 +1,13 @@
 package tracks;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+
+import samTextViewer.Utils;
 
 /** Class to store information about a single position.
  * */
@@ -12,42 +18,16 @@ class Locus {
 	// Map<String, Integer> counts= new HashMap<String, Integer>();
 	Multiset<String> counts = HashMultiset.create();
 
+//	private static final int MIN_BASE_QUAL= 20; // Min base quality for a read base to be counted
+	private static final int MIN_DEPTH_ALT= 3; // Min read depth for alternative allele to be taken into account
+	private static final double MIN_PCT_ALT= 0.01; // Min % of alternative allele to be taken into account  
+	private static final double MIN_PCT_TOT= 0.98; // % (Reference + Alternative) must be above this otherwise set consensus to N.   
+	
 	/*   C O N S T R U C T O R   */
 	
 	protected Locus(String chrom, int pos) {
 		this.chrom= chrom;
 		this.pos= pos;
-		
-//		// Counts for first in pair
-//		this.counts.put("A_1F", 0);
-//		this.counts.put("C_1F", 0);
-//		this.counts.put("G_1F", 0);
-//		this.counts.put("T_1F", 0);
-//		this.counts.put("N_1F", 0);
-//		this.counts.put("D_1F", 0);
-//		
-//		this.counts.put("A_1R", 0);
-//		this.counts.put("C_1R", 0);
-//		this.counts.put("G_1R", 0);
-//		this.counts.put("T_1R", 0);
-//		this.counts.put("N_1R", 0);
-//		this.counts.put("D_1R", 0);
-		
-//		// Counts for second in pair
-//		this.counts.put("A_2F", 0);
-//		this.counts.put("C_2F", 0);
-//		this.counts.put("G_2F", 0);
-//		this.counts.put("T_2F", 0);
-//		this.counts.put("N_2F", 0);
-//		this.counts.put("D_2F", 0);
-//		
-//		this.counts.put("A_2R", 0);
-//		this.counts.put("C_2R", 0);
-//		this.counts.put("G_2R", 0);
-//		this.counts.put("T_2R", 0);
-//		this.counts.put("N_2R", 0);
-//		this.counts.put("D_2R", 0);
-		
 	}
 
 	/*  M E T H O D S  */
@@ -157,20 +137,55 @@ class Locus {
 		}
 		return depth; 
 	}
+
+	private Map<Character, Integer> getGroupedCounts(){
+		Map<Character, Integer> grpCounts= new HashMap<Character, Integer>();
+		grpCounts.put('A', this.counts.count("A_1F") + this.counts.count("A_1R") + this.counts.count("A_2F") + this.counts.count("A_2R"));
+		grpCounts.put('C', this.counts.count("C_1F") + this.counts.count("C_1R") + this.counts.count("C_2F") + this.counts.count("C_2R"));
+		grpCounts.put('G', this.counts.count("G_1F") + this.counts.count("G_1R") + this.counts.count("G_2F") + this.counts.count("G_2R"));
+		grpCounts.put('T', this.counts.count("T_1F") + this.counts.count("T_1R") + this.counts.count("T_2F") + this.counts.count("T_2R"));
+		grpCounts.put('N', this.counts.count("N_1F") + this.counts.count("N_1R") + this.counts.count("N_2F") + this.counts.count("N_2R"));
+		grpCounts.put('D', this.counts.count("D_1F") + this.counts.count("D_1R") + this.counts.count("D_2F") + this.counts.count("D_2R"));
+		return grpCounts;
+	}
 	
-//	protected LinkedHashMap<Character, Integer> getNCount(){
-//		Map<Character, Integer> counts= new LinkedHashMap<Character, Integer>();
-//		for(char n : new char[]{'A', 'C', 'G', 'T', 'N', 'D'}){
-//			int c= this.counts.get(n + "_1F") + 
-//				   this.counts.get(n + "_1R") + 
-//				   this.counts.get(n + "_2F") +
-//				   this.counts.get(n + "_2R");
-//			counts.put(n, c);
-//		}
-//		return (LinkedHashMap<Character, Integer>) counts;
-//	}
-//	
-//	protected Map<String, Integer> getCounts(){
-//		return this.counts;
-//	}
+	/** Call consensus base based on calls
+	 * */
+	protected char getConsensus(){
+		
+		Map<Character, Integer> grpCounts = this.getGroupedCounts();
+		
+		// * Sort by count 
+		Iterator<Character> iter = Utils.sortByValue(grpCounts).keySet().iterator();
+		char allele1= iter.next();
+		char allele2= iter.next();
+
+		// Is allele2 supported by at least n calls? 
+		// Is allele2 making up more than x % of the total?
+		char consensus;
+		if(grpCounts.get(allele1) == 0){
+			consensus= ' ';
+		}
+		else if((float)(grpCounts.get(allele1) + grpCounts.get(allele2))/this.getDepth() < MIN_PCT_TOT){
+			consensus= 'N';
+		} else if(grpCounts.get(allele2) >= MIN_DEPTH_ALT 
+				&& (float)grpCounts.get(allele2)/this.getDepth() >= MIN_PCT_ALT ){
+			consensus= this.iupacAmbiguity(allele1, allele2);
+		} else {
+			consensus= allele1;
+		}
+		return consensus;
+	}
+	
+	private char iupacAmbiguity(char x, char y){
+		
+		if((x == 'A' && y == 'G') || (x == 'G' && y == 'A')){ return 'R'; }
+		if((x == 'C' && y == 'T') || (x == 'T' && y == 'C')){ return 'Y'; }
+		if((x == 'G' && y == 'C') || (x == 'C' && y == 'G')){ return 'S'; }
+		if((x == 'A' && y == 'T') || (x == 'T' && y == 'A')){ return 'W'; }
+		if((x == 'G' && y == 'T') || (x == 'T' && y == 'G')){ return 'K'; }
+		if((x == 'A' && y == 'C') || (x == 'C' && y == 'A')){ return 'M'; }
+		return 'N';
+	}
+
 }

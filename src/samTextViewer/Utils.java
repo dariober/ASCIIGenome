@@ -105,11 +105,11 @@ public class Utils {
 	 * IMPORTANT SIDE EFFECT: If found, the parameter and its argument are removed from argList. 
 	 * @throws InvalidCommandLineException 
 	 * */
-	public static String getArgForParam(List<String> argList, String param) throws InvalidCommandLineException{
+	public static String getArgForParam(List<String> argList, String param, String defArg) throws InvalidCommandLineException{
 		
 		int idx= argList.indexOf(param);
 		if(idx == -1){
-			return null;
+			return defArg;
 		}
 		if(idx == (argList.size() - 1)){
 			// If param is the last item in the list you cannot get its argument!

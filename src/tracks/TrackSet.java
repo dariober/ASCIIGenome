@@ -450,11 +450,11 @@ public class TrackSet {
 			}
 		}
 		
-		String sys= Utils.getArgForParam(args, "-sys");
-		if(sys.toLowerCase().equals("null")){
-			sys= "";
-		}
-		if(sys != null){
+		String sys= Utils.getArgForParam(args, "-sys", "");
+//		if(sys == null || sys.toLowerCase().equals("null")){
+//			sys= "";
+//		}
+		if(sys != ""){
 			printMode= PrintRawLine.NO_ACTION;
 		}
 		
@@ -1289,9 +1289,9 @@ public class TrackSet {
 
 		// Get all arguments. What is left is the positional argument 
 		boolean delete= Utils.argListContainsFlag(args, "-d");
-		String name= Utils.getArgForParam(args, "-n");
+		String name= Utils.getArgForParam(args, "-n", null);
 		boolean print= Utils.argListContainsFlag(args, "-print");
-		String file= Utils.getArgForParam(args, ">");
+		String file= Utils.getArgForParam(args, ">", null);
 
 		GenomicCoords bookmarkRegion= null;
 		if(args.size() > 0){
