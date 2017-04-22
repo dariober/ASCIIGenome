@@ -141,13 +141,13 @@ public class InteractiveInput {
 					}  
 					proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(args), proc.getGenomicCoordsHistory().current()) );
 					
-				} else if(cmdTokens.get(0).equals("sessionSave")) {
-					if(cmdTokens.size() < 2){
-						System.err.println(Utils.padEndMultiLine("Output file name is missing!", proc.getWindowSize()));
-						this.interactiveInputExitCode= ExitCode.ERROR;
-					} else {
-						proc.exportTrackSetSettings(cmdTokens.get(1));
-					}
+//				} else if(cmdTokens.get(0).equals("sessionSave")) {
+//					if(cmdTokens.size() < 2){
+//						System.err.println(Utils.padEndMultiLine("Output file name is missing!", proc.getWindowSize()));
+//						this.interactiveInputExitCode= ExitCode.ERROR;
+//					} else {
+//						proc.exportTrackSetSettings(cmdTokens.get(1));
+//					}
 
 				} else if(cmdTokens.get(0).equals("q")){
 					System.exit(0);
@@ -488,13 +488,13 @@ public class InteractiveInput {
 		
 		try {
 			Process p = new ProcessBuilder().inheritIO().command(tokens).start();
-			p.waitFor();
 			BufferedReader reader= new BufferedReader(new InputStreamReader(p.getInputStream()));
 
             String line = "";
 			while ((line = reader.readLine())!= null) {
 				System.err.println(Utils.padEndMultiLine(line, userWindowSize));
 			}
+			p.waitFor();
 
 		} catch (Exception e) {
 			System.err.println(Utils.padEndMultiLine(e.getMessage(), userWindowSize));

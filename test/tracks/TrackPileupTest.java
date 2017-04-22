@@ -24,6 +24,34 @@ import samTextViewer.GenomicCoords;
 public class TrackPileupTest {
 
 	@Test
+	public void canPrintConsensusSequence() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+
+		GenomicCoords gc= new GenomicCoords("chr7:5566779-5566799", null, "test_data/chr7.fa");
+		TrackPileup tc= new TrackPileup("test_data/ds051.short.bam", gc);
+		tc.setNoFormat(true);
+
+		assertTrue(tc.getPrintableConsensusSequence().startsWith("=TT========="));
+		
+		// Advance coordinates and check consensus is updated:
+		gc= new GenomicCoords("chr7:5566780-5566800", null, "test_data/chr7.fa");
+		tc.setGc(gc);
+		assertTrue(tc.getPrintableConsensusSequence().startsWith("TT========="));
+		
+		// Large window doesn't show consensus 
+		gc= new GenomicCoords("chr7:5566779-5566879", null, "test_data/chr7.fa");
+		tc= new TrackPileup("test_data/ds051.short.bam", gc);
+		tc.setNoFormat(true);
+		assertEquals("", tc.getPrintableConsensusSequence());
+		
+		// Region with no coverage
+		gc= new GenomicCoords("chr7:1-100", null, "test_data/chr7.fa");
+		tc= new TrackPileup("test_data/ds051.short.bam", gc);
+		tc.setNoFormat(true);
+		assertEquals("", tc.getPrintableConsensusSequence());
+
+	}
+	
+	@Test
 	public void canProcessReadsWithMissingSequence() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
 	
 		new Config(null);
@@ -63,6 +91,22 @@ public class TrackPileupTest {
 		tr.getScreenScores();
 		
 	}
+
+	@Test
+	public void canCorrectRangeByRpm() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
+	
+		new Config(null);
+	
+		GenomicCoords gc= new GenomicCoords("chr7:5566776-5566796", null, null);
+		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
+		System.err.println(tr.getScreenScores());
+		assertTrue(tr.getTitle().contains("range[1.0 22.0]"));
+		tr.setRpm(true);
+		System.err.println(tr.getScreenScores());
+		assertTrue( tr.getTitle().contains("1000000")); // The range should contain 1,000,000 because this is the entire size of the file
+		                                                // rpm= 22/22*1,000,000
+	}
+
 	
 	@Test
 	public void canCollectCoverage() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{

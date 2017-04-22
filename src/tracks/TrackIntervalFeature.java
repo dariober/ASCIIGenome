@@ -17,14 +17,12 @@ import org.broad.igv.bbfile.BBFileReader;
 import com.google.common.collect.Lists;
 
 import exceptions.InvalidColourException;
-import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.readers.TabixReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
-import ucsc.UcscGenePred;
 
 public class TrackIntervalFeature extends Track {
  
@@ -44,20 +42,20 @@ public class TrackIntervalFeature extends Track {
 		
 		this.setFilename(filename);
 
-		if(Utils.isUcscGenePredSource(filename)){
-			UcscGenePred ucsc = null;
-			try {
-				ucsc = new UcscGenePred(filename, -1);
-				this.setWorkFilename(ucsc.getTabixFile());
-				this.setTrackFormat(TrackFormat.GTF);
-				//this.type= TrackFormat.GTF;
-				this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
-
-			} catch (InvalidCommandLineException e) {
-				//
-			}
+//		if(Utils.isUcscGenePredSource(filename)){
+//			UcscGenePred ucsc = null;
+//			try {
+//				ucsc = new UcscGenePred(filename, -1);
+//				this.setWorkFilename(ucsc.getTabixFile());
+//				this.setTrackFormat(TrackFormat.GTF);
+//				//this.type= TrackFormat.GTF;
+//				this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
+//
+//			} catch (InvalidCommandLineException e) {
+//				//
+//			}
 		
-		} else if(Utils.getFileTypeFromName(filename).equals(TrackFormat.BIGBED)){
+		if(Utils.getFileTypeFromName(filename).equals(TrackFormat.BIGBED)){
 			
 			this.bigBedReader = new BBFileReader(filename);  // or url for remote access.
 			if(!this.bigBedReader.getBBFileHeader().isBigBed()){
@@ -106,16 +104,14 @@ public class TrackIntervalFeature extends Track {
 	 * E.g. setGc(), which changes the coordinates, or setHideRegex() & setShowRegex() which change the visible 
 	 * features. 
 	 * update() should not change anything other than the list of features and the mapping. 
-	 * */
-	protected void update() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+	 * */ 
+	public void update() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		this.intervalFeatureList = this.getFeaturesInInterval(
 				this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
 		
-		int windowSize= this.getGc().getUserWindowSize();
 		for(IntervalFeature ift : intervalFeatureList){
-			ift.mapToScreen(this.getGc().getMapping(windowSize));
-		}
-		
+			ift.mapToScreen(this.getGc().getMapping());
+		}		
 	}
 	
 	public List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to) throws IOException, InvalidGenomicCoordsException{
@@ -533,11 +529,9 @@ public class TrackIntervalFeature extends Track {
 	 * */
 	private String printToScreenOneLine(List<IntervalFeature> listToPrint) throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 		
-		int windowSize= this.getGc().getUserWindowSize();
-
 		List<String> printable= new ArrayList<String>(); // Each item in this list occupies a character space in the terminal. 
 		                                                 // NB: Each item is String not char because it might contain the ansi formatting.
-		for(int i= 0; i < this.getGc().getMapping(windowSize).size(); i++){ // First create empty line
+		for(int i= 0; i < this.getGc().getMapping().size(); i++){ // First create empty line
 			printable.add(" ");
 		}
 		for(IntervalFeature intervalFeature : listToPrint){
@@ -997,7 +991,7 @@ public class TrackIntervalFeature extends Track {
 		
 		List<IntervalFeature> flatList= new ArrayList<IntervalFeature>(); 
 
-		List<Double> mapToScreen = this.getGc().getMapping(this.getGc().getUserWindowSize());
+		List<Double> mapToScreen = this.getGc().getMapping();
 		
 		if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)){
 		

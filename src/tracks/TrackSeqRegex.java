@@ -45,9 +45,8 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 	public void update() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
 		this.findRegex();
-		int windowSize= this.getGc().getUserWindowSize();
 		for(IntervalFeature ift : this.getIntervalFeatureList()){
-			ift.mapToScreen(this.getGc().getMapping(windowSize));
+			ift.mapToScreen(this.getGc().getMapping());
 		}
 	}
 	

@@ -24,6 +24,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
@@ -57,6 +59,52 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void testParallel(){
+		List<List<String>> list= new ArrayList<List<String>>();
+		List<String> inList= new ArrayList<String>();
+		inList.add("foo");
+		inList.add("bar");
+		inList.add("baz");
+		List<String> inList2= new ArrayList<String>();
+		inList2.add("foo2");
+		inList2.add("bar2");
+		inList2.add("baz2");
+		List<String> inList3= new ArrayList<String>();
+		inList3.add("foo3");
+		inList3.add("bar3");
+		inList3.add("baz3");
+
+		list.add(inList);
+		list.add(inList2);
+		list.add(inList3);
+		System.err.println(list);
+		// Collections<T> elems= new ArrayList<T>();
+//		final List<String> outList= new ArrayList<String>();
+//		Parallel.For(list, new Parallel.Operation<String>() {
+//		    public void perform(String parameter) {
+//		        outList.add(parameter + "X");
+//		    };
+//		});
+//		System.err.println(outList);
+		
+		// final List<String> outList= new ArrayList<String>();
+		ExecutorService exec = Executors.newFixedThreadPool(2);
+		try {
+		    for (final List<String> o : list) {
+		        exec.submit(new Runnable() {
+		            @Override
+		            public void run() {
+		            	o.add("X");
+		            }
+		        });
+		    }
+		} finally {
+		    exec.shutdown();
+		}
+		System.err.println(list);
+	}
 	
 	@Test
 	public void canGetIndexOfCharsOnFormattedLine(){
@@ -181,20 +229,25 @@ public class UtilsTest {
 		String[] cmd= {"-r", "foo", "-x", "-bar"};
 		List<String> argList= new LinkedList<String>(Arrays.asList(cmd));
 		
-		assertEquals("foo", Utils.getArgForParam(argList, "-r"));
+		assertEquals("foo", Utils.getArgForParam(argList, "-r", null));
 		assertTrue( ! argList.contains("-r") ); // Arg has been removed
 		assertTrue( ! argList.contains("foo") ); // Arg has been removed
 		
 		// Param is not present
 		argList= new LinkedList<String>(Arrays.asList(cmd));
-		assertNull(Utils.getArgForParam(argList, "-z") );
+		assertNull(Utils.getArgForParam(argList, "-z", null) );
 		assertEquals(cmd.length, argList.size() ); // No change
-		
+
+		// Default arg:
+		argList= new LinkedList<String>(Arrays.asList(cmd));
+		assertEquals("default", Utils.getArgForParam(argList, "-z", "default") );
+		assertEquals(cmd.length, argList.size() ); // No change
+
 		// Miss-specified arg throws exception:
 		argList= new LinkedList<String>(Arrays.asList(cmd));
 		boolean pass= false;
 		try{
-			Utils.getArgForParam(argList, "-bar");
+			Utils.getArgForParam(argList, "-bar", null);
 		} catch(InvalidCommandLineException e){
 			pass= true;
 		}
@@ -299,8 +352,14 @@ public class UtilsTest {
 		
 		// Missing tag
 		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"ZZ\") > 0'"));
-		// MIssing tag searched but not used
+		
+		// Missing tag searched but not used
 		assertTrue(Utils.passAwkFilter(rec, "'{getSamTag(\"ZZ\"); print $0'}"));
+		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"NM\") > 0'"));
+		
+		// Tags missing altogether returns empty string
+		rec= "read\t0\tchr7\t5566778\t50\t5M\t*\t0\t0\tCTCAT\tIIIII";
+		assertTrue(Utils.passAwkFilter(rec, "'getSamTag(\"NM\") == \"\"'"));
 		
 		long t0= System.currentTimeMillis();
 		int i= 0;

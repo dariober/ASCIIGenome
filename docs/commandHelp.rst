@@ -334,7 +334,7 @@ With no args, turn off awk for all tracks.
 
 * Each line is processed independently of the others as a separate awk execution. This means that you cannot filter one line on the bases of previous or following lines.
 
-* This awk is slow, about x10-100 times slower than UNIX awk. For few thousand records the slowdown should be acceptable. Other things being equal, use `grep` instead.
+* This awk is slow, about x5-10 times slower than UNIX awk. For few thousand records the slowdown should be acceptable. Other things being equal, use `grep` instead.
 
 * The default delimiter is TAB not any white space as in UNIX awk.
 
@@ -452,7 +452,9 @@ Set colour for tracks matched by regex.  Colors can be specified by name or by a
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Available colours are from the Xterm256 palette: `here <http://jonasjacek.github.io/colors/>`_             
+Available colours are from the Xterm256 palette: 
+
+
 
 Example::
 
@@ -510,7 +512,7 @@ For example, use column 5 on tracks containing #1 and #3::
 print
 +++++
 
-:code:`print [-n INT] [-full] [-off] [-v] [track_regex = .*]... [>|>> file]`
+:code:`print [-n INT] [-full] [-off] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]`
 
 Print lines for the tracks matched by `track_regex`.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the :code:`grep` command. Options:
 
@@ -526,6 +528,8 @@ Print lines for the tracks matched by `track_regex`.  Useful to show exactly wha
 
 * :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
+* :code:`-sys` Parse the raw output with the given system command(s). Use :code:`-sys null` to turn off the system commands. These commands are executed by :code:`bash` so bash is expected to be available on the system. The commands should read from stdin and write to stdout, this is usually the case for Unix commands like :code:`cut`, :code:`sort`, etc. The command string must be enclosed in single quotes, single quotes inside the string can be escaped as \' (backslash-quote)
+
 * :code:`>` and :code:`>>` Write output to `file`. `>` overwrites and `>>` appends to existing file. The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides options -n and -off, lines are written in full without limit.
 
 Without options toggle tracks between OFF and CLIP mode.
@@ -535,6 +539,8 @@ Examples::
     print                        -> Print all tracks, same as `print .*`
     print -off                   -> Turn off printing for all tracks
     print genes.bed >> genes.txt -> Append features in track(s) 'genes.bed' to file
+    print -sys 'cut 1-5 | sort'  -> Select columns with `cut` and then sort
+    print -sys null              -> Turn off the execution of sysy commands
 
 
 Alignments
@@ -723,20 +729,6 @@ Save screenshot to file as text or pdf format. The default file name is generate
     save .pdf          -> Save to chrom_start-end.pdf as pdf
     save mygene.%r.pdf -> Save to mygene.chr1_100-200.pdf as pdf
 
-
-
-sessionSave
-+++++++++++
-
-:code:`sessionSave filename`
-
-Experimental: Save the current settings to file suitable to be reloaded by ASCIIGenome. `sessionSave` writes to file a set of commands to reproduce the current settings: tracks, colors, heights etc. It's not meant to be a perfect replica, rather it's a shortcut to avoid re-typing commands. Example::
-
-    sessionSave session.txt
-
-Quit session and reload with::
-
-    ASCIIGenome -x session.txt
 
 
 sys

@@ -62,7 +62,6 @@ public class Main {
 		
 		List<String> initFileList= opts.getList("input");
 		String region= opts.getString("region");
-//		final String genome= opts.getString("genome");
 		final String fasta= opts.getString("fasta");
 		String exec= opts.getString("exec");
 		String config= opts.getString("config");
@@ -211,8 +210,9 @@ public class Main {
 		
 	/** Return a suitable region to start. If a region is already given, do nothing.
 	 * This method is a mess and should be cleaned up together with GenomicCoords class.
+	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome, boolean debug) throws IOException{
+	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome, boolean debug) throws IOException, InvalidGenomicCoordsException{
 
 		if( region != null && ! region.isEmpty() ){
 			return region;
@@ -228,7 +228,7 @@ public class Main {
 		
 		/* Prepare genomic coordinates to fetch. This should probably be a function in itself */
 		// Create a dummy gc object just to get the sequence dict.
-		GenomicCoords gc= new GenomicCoords();
+		GenomicCoords gc= new GenomicCoords(jline.TerminalFactory.get().getWidth() - 1);
 		
 		List<String>initGenomeList= new ArrayList<String>(inputFileList);
 		

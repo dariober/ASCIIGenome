@@ -1,22 +1,26 @@
 package tracks;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 
 import coloring.Config;
 import coloring.ConfigKey;
@@ -40,14 +44,15 @@ public abstract class Track {
 	
 	static {
 		  try {
-		    awkFunc = FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
+			  InputStream in= Main.class.getResourceAsStream("/functions.awk");
+			  awkFunc= IOUtils.toString(in);
+			  in.close();
 		  }
 		  catch (Exception ex) {
 		    /* Handle exception. */
 		  }
 		}
 	
-	private String title= "";
 	protected int yMaxLines= 10;
 	private String filename= "N/A"; // File name as given in input
 	private String workFilename= "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files 
@@ -59,7 +64,7 @@ public abstract class Track {
 	private double yLimitMin= Double.NaN; // Same as R ylim()
 	private double yLimitMax= Double.NaN;
 	/** Max size of genomic region before the track shuts down to prevent excessive slow down */
-	protected final int MAX_REGION_SIZE= 100001;   
+	protected final int MAX_REGION_SIZE= 1000001;   
 	
 	protected String titleColour= null;
 	protected boolean bisulf= false;
@@ -83,8 +88,8 @@ public abstract class Track {
 	/** A file to export track data
 	 * */
 	private String exportFile= null;
-	private String cutScriptForPrinting= "";
-//	private boolean appendToExportFile= false;
+	private String systemCommandForPrint;
+
 	
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
@@ -265,16 +270,6 @@ public abstract class Track {
 	}
 
 	public void setTitleColour(String colour) {
-//		if(!Utils.xterm256ColorCodes().containsKey(colour)){
-//			try {
-//				throw new InvalidColourException();
-//			} catch (InvalidColourException e) {
-//				// e.printStackTrace();
-//				System.err.println("\nGot invalid colour: " + colour + ". Resetting to default");
-//				System.err.println("Valid colours are: " + Utils.xterm256ColorCodes().keySet());
-//				colour= "blue";
-//			} 
-//		}
 		this.titleColour = colour;
 	}
 	
@@ -366,9 +361,7 @@ public abstract class Track {
 		return "";
 	}
 
-	protected void update() throws MalformedURLException, IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException {
-		// TODO Auto-generated method stub
-	}
+	public abstract void update() throws MalformedURLException, IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException;
 
 	public String getSeqRegex() {
 		return null;
@@ -420,7 +413,7 @@ public abstract class Track {
 	 * */
 	public String printLines() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException{
 
-		List<String> rawList= this.getRecordsAsStrings();
+		List<String> rawList= this.execSystemCommand(this.getRecordsAsStrings(), this.getSystemCommandForPrint());
 		
 		if(this.getExportFile() != null && ! this.getExportFile().isEmpty()){
 			// If an output file has been set, send output there and return. 
@@ -452,8 +445,7 @@ public abstract class Track {
 		List<String> featureList= new ArrayList<String>();
 		String omitString= "";
 		for(String line : rawList){
-			String parsedLine= this.cutLine(line);
-			featureList.add(parsedLine);
+			featureList.add(line);
 			count--;
 			if(count == 0){
 				int omitted= rawList.size() - this.getPrintRawLineCount();
@@ -485,6 +477,86 @@ public abstract class Track {
 		return formatted; 
 		
 	}
+
+	public String getSystemCommandForPrint() {
+		return this.systemCommandForPrint;
+	}
+
+	/**Stream the list of string recordsAsStrings through the system command(s) given in 
+	 * sysCmd. The system command(s) must read from stdin and write to stdout.
+	 * @throws IOException 
+	 * @throws InvalidCommandLineException 
+	 * @throws InterruptedException 
+	 * */
+	private List<String> execSystemCommand(List<String> recordsAsStrings, String sysCmd) throws IOException {
+		if(sysCmd == null || sysCmd.isEmpty()){
+			return recordsAsStrings;
+		}
+		File tmp= Files.createTempFile("asciigenome.", ".print.tmp").toFile();
+		tmp.deleteOnExit();
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp.getAbsolutePath())));
+        for(String line : recordsAsStrings){
+        	writer.append(line.replaceAll("\n$", ""));
+        	writer.append("\n");
+        }
+		writer.close();
+		
+		ArrayList<String> cmd= new ArrayList<String>();
+		cmd.add("bash");
+		cmd.add("-c");
+		cmd.add("cat " + tmp.getAbsolutePath() + " | " + sysCmd);
+		// this.setSystemCommandForPrint(null); // Reset after having consumed sys cmd. 
+
+		ProcessBuilder pb = new ProcessBuilder().command(cmd);
+		pb.redirectErrorStream(true);
+		Process p= pb.start();
+		
+		BufferedReader reader= new BufferedReader(new InputStreamReader(p.getInputStream()));
+    
+		List<String> outRecords= new ArrayList<String>();
+		String line = "";
+		while ((line = reader.readLine())!= null) {
+			outRecords.add(line);
+		}
+		reader.close();
+
+		try {
+			p.waitFor();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+//		ProcessBuilder builder = new ProcessBuilder(cmd);
+//		Process process = builder.start();
+//		// OutputStream stdin = process.getOutputStream();
+//		InputStream stdout = process.getInputStream();
+//		InputStream stderr = process.getErrorStream();
+//        // BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
+//        
+//        Scanner err = new Scanner(stderr);
+//        if(err.hasNext()){
+//            while (err.hasNextLine()) {
+//                System.err.println(err.nextLine());
+//            }
+//            err.close();
+//            throw new InvalidCommandLineException();
+//        }
+//        err.close();
+        
+//        Scanner scanner = new Scanner(stdout);
+//        List<String> outRecords= new ArrayList<String>(); 
+//        while (scanner.hasNextLine()) {
+//            outRecords.add(scanner.nextLine());
+//        }
+//        System.err.println(outRecords);
+//        scanner.close();
+        tmp.delete();
+		return outRecords;
+	}
+
+	public void setSystemCommandForPrint(String systemCommandForPrint){
+		this.systemCommandForPrint= systemCommandForPrint; 
+	}
 	
 	/** Interprets the content of this.cutScriptForPrinting to cut the input line
 	 * in way similar to Unix cut. Args:
@@ -495,79 +567,79 @@ public abstract class Track {
 	 * meaning that for many lines in input this is inefficient. However it should be ok for now,
 	 * but consider passing List<String> as input so the interpretation is done once only. 
 	 * */
-	private String cutLine(String line) throws InvalidCommandLineException {
-		if(this.cutScriptForPrinting == null || this.cutScriptForPrinting.isEmpty()){
-			return line;
-		}
-		List<String> args= Utils.tokenize(this.cutScriptForPrinting, " ");
-		String fields= Utils.getArgForParam(args, "-f");
-		if(fields == null){
-			//No fields given: Nothing to cut just return line as it is
-			return line; 
-		}
-		String delim= Utils.getArgForParam(args, "-d");
-		if(delim == null){
-			delim= "\t"; 
-		}
-		// Split the line at delim
-		List<String> lst= Arrays.asList(line.split(delim));
-		List<Integer> idxs = (expandStringOfFieldsToIndexes(fields));
-		List<String> outLst= new ArrayList<String>();
-		for(int i : idxs){
-			i--; // To make it zero-based
-			if(i < 0){
-				throw new InvalidCommandLineException();
-			}
-			if(i >= lst.size()){
-				i= lst.size() - 1;
-			}
-			outLst.add(lst.get(i));
-		}
-		// We always re-join on tab, regardless of delimiter!
-		return Joiner.on("\t").join(outLst);
-	}
+//	private String cutLine(String line) throws InvalidCommandLineException {
+//		if(this.cutScriptForPrinting == null || this.cutScriptForPrinting.isEmpty()){
+//			return line;
+//		}
+//		List<String> args= Utils.tokenize(this.cutScriptForPrinting, " ");
+//		String fields= Utils.getArgForParam(args, "-f");
+//		if(fields == null){
+//			//No fields given: Nothing to cut just return line as it is
+//			return line; 
+//		}
+//		String delim= Utils.getArgForParam(args, "-d");
+//		if(delim == null){
+//			delim= "\t"; 
+//		}
+//		// Split the line at delim
+//		List<String> lst= Arrays.asList(line.split(delim));
+//		List<Integer> idxs = (expandStringOfFieldsToIndexes(fields));
+//		List<String> outLst= new ArrayList<String>();
+//		for(int i : idxs){
+//			i--; // To make it zero-based
+//			if(i < 0){
+//				throw new InvalidCommandLineException();
+//			}
+//			if(i >= lst.size()){
+//				i= lst.size() - 1;
+//			}
+//			outLst.add(lst.get(i));
+//		}
+//		// We always re-join on tab, regardless of delimiter!
+//		return Joiner.on("\t").join(outLst);
+//	}
 
 	/** Expand the string of fileds to return the individual indexes.
 	 * E.g. "1-3,5-7,10-" -> [1,2,3,5,6,7,10, Integer.MAX_VALUE].
 	 * Integer.MAX_VALUE signals that the fields from the last index to the end should be returned.    
 	 * @throws InvalidCommandLineException 
 	 * */
-	private List<Integer> expandStringOfFieldsToIndexes(String fields) throws InvalidCommandLineException{
-		List<Integer> idxs= new ArrayList<Integer>();
-		
-		// A bunch of checks for the validity of the input
-		String checkOnlyDigits= fields.replaceAll(",", "").replaceAll("-", "");
-		if( ( ! checkOnlyDigits.matches("[0-9]+")) || 
-			  checkOnlyDigits.startsWith("0") ||
-			  fields.contains("--") ||
-			  fields.startsWith("-")){
-			throw new InvalidCommandLineException();
-		}
-		if(fields.endsWith("-")){
-			fields= fields.replaceAll("-$", "");
-		}
-		List<String> lst= Splitter.on(",").omitEmptyStrings().splitToList(fields);
-		for(String x : lst){
-			if(x.contains("-")){
-				// This part expands the string "5-8" to [5,6,7,8]. "8-5" expanded to [8,7,6,5]
-				String[] fromTo = x.split("-");
-				int from= Integer.parseInt(fromTo[0]);
-				int to= Integer.parseInt(fromTo[1]);
-				if(from < to){
-					for(int i= from; i <= to; i++){
-						idxs.add(i);
-					}
-				} else {
-					for(int i= from; i >= to; i--){
-						idxs.add(i);
-					}
-				}
-			} else {
-				idxs.add(Integer.parseInt(x));
-			}
-		}
-		return idxs;
-	}
+//	private List<Integer> expandStringOfFieldsToIndexes(String fields) throws InvalidCommandLineException{
+//		List<Integer> idxs= new ArrayList<Integer>();
+//		
+//		// A bunch of checks for the validity of the input
+//		String checkOnlyDigits= fields.replaceAll(",", "").replaceAll("-", "");
+//		if( ( ! checkOnlyDigits.matches("[0-9]+")) || 
+//			  checkOnlyDigits.startsWith("0") ||
+//			  fields.contains("--") ||
+//			  fields.startsWith("-")){
+//			throw new InvalidCommandLineException();
+//		}
+//		if(fields.endsWith("-")){
+//			fields= fields.replaceAll("-$", "");
+//		}
+//		List<String> lst= Splitter.on(",").omitEmptyStrings().splitToList(fields);
+//		for(String x : lst){
+//			if(x.contains("-")){
+//				// This part expands the string "5-8" to [5,6,7,8]. "8-5" expanded to [8,7,6,5]
+//				String[] fromTo = x.split("-");
+//				int from= Integer.parseInt(fromTo[0]);
+//				int to= Integer.parseInt(fromTo[1]);
+//				if(from < to){
+//					for(int i= from; i <= to; i++){
+//						idxs.add(i);
+//					}
+//				} else {
+//					for(int i= from; i >= to; i--){
+//						idxs.add(i);
+//					}
+//				}
+//			} else {
+//				idxs.add(Integer.parseInt(x));
+//			}
+//		}
+//		return idxs;
+//	}
 	
 	/**Return the export file name. The variable %r is expanded to coordinates. 
 	 * */
@@ -620,9 +692,9 @@ public abstract class Track {
 	 * */
 	protected abstract List<String> getRecordsAsStrings();
 	
-	protected void setCutScriptForPrinting(String cutScriptForPrinting){
-		this.cutScriptForPrinting= cutScriptForPrinting;
-	}
+//	protected void setCutScriptForPrinting(String cutScriptForPrinting){
+//		this.cutScriptForPrinting= cutScriptForPrinting;
+//	}
 	
 	/**Return a single string where title and track have been concatenated.
 	 * Concatenation is done in such way that "title" is not followed by newline if

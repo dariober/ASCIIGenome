@@ -1,9 +1,9 @@
 package tracks;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -12,6 +12,8 @@ import java.util.TreeMap;
 
 import org.apache.commons.lang3.StringUtils;
 
+import coloring.Config;
+import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -20,6 +22,7 @@ import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.CigarOperator;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReader;
+import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -67,6 +70,10 @@ public class TrackPileup extends TrackWiggles {
 	@Override
 	public void update() throws InvalidGenomicCoordsException, IOException{
 		
+		if(this.getyMaxLines() == 0){
+			return;
+		}
+		
 		SamReader samReader= Utils.getSamReader(this.getWorkFilename());
 		List<Boolean> passFilter= this.filterReads(samReader);
 		this.nRecsInWindow= 0;
@@ -78,12 +85,12 @@ public class TrackPileup extends TrackWiggles {
 		samReader= Utils.getSamReader(this.getWorkFilename());
 		Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 		
-		this.loci= new HashMap<Integer, Locus>();
+		this.loci= new TreeMap<Integer, Locus>();
 		ListIterator<Boolean> pass = passFilter.listIterator();
 		while(sam.hasNext()){
 			SAMRecord rec= sam.next();
 			if( pass.next() ){
-				this.add(rec);
+					this.add(rec);
 			}
 		}
 		List<Double> screenScores= this.prepareScreenScores();
@@ -100,7 +107,7 @@ public class TrackPileup extends TrackWiggles {
 			this.screenWiggleLocusInfoList.add(new ScreenWiggleLocusInfo());
 		}		
 		
-		List<Double> mapping= this.getGc().getMapping(userWindowSize);
+		List<Double> mapping= this.getGc().getMapping();
 		Map<Integer, Integer> depthMap = this.getDepth();
 		for( int refPos : depthMap.keySet()){
 			int screenIdx= Utils.getIndexOfclosestValue(refPos, mapping);
@@ -112,9 +119,6 @@ public class TrackPileup extends TrackWiggles {
 		List<Double> screenScores= new ArrayList<Double>();
 		for(ScreenWiggleLocusInfo screenLocusInfo: this.screenWiggleLocusInfoList){
 			double score= screenLocusInfo.getMeanScore();
-			if(this.isRpm()){
-				score= (score / this.alnRecCnt) * 1000000.0;
-			}
 			screenScores.add(score);
 		}
 		return screenScores;
@@ -188,7 +192,7 @@ public class TrackPileup extends TrackWiggles {
 			}
 		}
 	}
-
+	
 	/**
 	 * MEMO: Deletion does not consume read bases. It consumes reference bases:
 	 * ref  NNNNNNNN
@@ -238,6 +242,61 @@ public class TrackPileup extends TrackWiggles {
 		return depth;
 	}
 	
+	private char[] getConsensusSequence() throws IOException {
+		
+		// We could get the refseq from genomicCoords but maybe safer to extract it again from scratch.
+		byte[] refSeq= null;
+		if(this.getGc().getFastaFile() != null){
+			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(this.getGc().getFastaFile()));
+			refSeq= faSeqFile.getSubsequenceAt(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()).getBases();
+			faSeqFile.close();
+		}
+		char[] consensusSequence= new char[this.getGc().getTo() - this.getGc().getFrom() + 1];
+		int i= 0;
+		for(int pos= this.getGc().getFrom(); pos <= this.getGc().getTo(); pos++){
+			char consensus= ' '; // Empty char assuming there is no coverage.
+			if(this.loci.containsKey(pos)){ // If containsKey then the position has coverage.
+				Locus loc= this.loci.get(pos);
+				consensus= loc.getConsensus();
+				if(refSeq != null){
+					char ref= Character.toUpperCase((char) refSeq[loc.pos - this.getGc().getFrom()]);
+					if(ref == Character.toUpperCase(consensus)){
+						consensus= '=';
+					}
+				}
+			}
+			consensusSequence[i]= consensus;
+			i++;
+		}
+		return consensusSequence;
+	}
+
+	public String getPrintableConsensusSequence() throws IOException, InvalidGenomicCoordsException, InvalidColourException{
+		if( ! this.getGc().isSingleBaseResolution || this.isBisulf()){
+			return "";
+		}
+		
+		if(new String(this.getConsensusSequence()).trim().isEmpty()){
+			return ""; // If there is no coverage at all
+		}
+		String faSeqStr= "";
+		for(char base : this.getConsensusSequence()){
+			
+			if(this.isNoFormat()){
+				faSeqStr += base;
+			} else { 
+				faSeqStr += "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;";
+				     if(base == 'A') { faSeqStr += Config.get256Color(ConfigKey.seq_a);} 
+				else if(base == 'C') { faSeqStr += Config.get256Color(ConfigKey.seq_c);} 
+				else if(base == 'G') { faSeqStr += Config.get256Color(ConfigKey.seq_g);} 
+				else if(base == 'T') { faSeqStr += Config.get256Color(ConfigKey.seq_t);} 
+				else { faSeqStr += Config.get256Color(ConfigKey.seq_other); }
+				faSeqStr += "m" + base + "\033[0m\033[38;5;0;48;5;" + Config.get256Color(ConfigKey.background) + "m"; // Clear formatting and fg to black and bg to white;
+			}
+		}
+		return faSeqStr + "\n";
+	}
+	
 	@Override
 	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 		
@@ -246,8 +305,15 @@ public class TrackPileup extends TrackWiggles {
 		}
 		
 		Double[] range = Utils.range(this.getScreenScores());
+		
+		String rpmTag= "";
+		if(this.isRpm()){
+			range[0]= (range[0] / this.alnRecCnt) * 1000000.0;
+			range[1]= (range[1] / this.alnRecCnt) * 1000000.0;
+			rpmTag= "; rpm";
+		}
 		Double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
-		String rpmTag= this.isRpm() ? "; rpm" : "";
+		
 
 		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
 		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
@@ -288,18 +354,10 @@ public class TrackPileup extends TrackWiggles {
 	
 	@Override
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		
-//		try {
-//			awkFunc= FileUtils.readFileToString(new File(Main.class.getResource("/functions.awk").toURI()));
-//		} catch (URISyntaxException e) {
-//
-//		}
-
 		this.awk= awk;
 		this.update();
 	}
 
-	
 	@Override
 	public void setRpm(boolean rpm){
 		this.rpm= rpm;
