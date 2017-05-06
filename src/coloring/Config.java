@@ -3,6 +3,7 @@ package coloring;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 
 import exceptions.InvalidColourException;
@@ -49,20 +51,21 @@ public class Config {
 		for(ConfigKey key : ConfigKey.values()){
 			if( ! config.containsKey(key)){
 				System.err.println("Missing configuration key: " + key);
-				// throw new RuntimeException();
 				throw new InvalidConfigException();
 			}
 		}
 	}
 
-	private Config(Map<ConfigKey, String> startConfig){
-		for(ConfigKey key : startConfig.keySet()){
-			String value= startConfig.get(key);
-			config.put(key, value);
+	// M E T H O D S
+	public static String help(){
+		List<String> help= new ArrayList<String>();
+		for(ConfigKey key : ConfigKey.values()){
+			help.add(key + "\t" + Config.get(key) + "\t#\t" + key.getDescription());
 		}
+		List<String> table = Utils.tabulateList(help);
+		return Joiner.on("\n").join(table);
 	}
 	
-	// M E T H O D S
 	private static String getConfigFileAsString(String source) throws IOException, InvalidConfigException{
 		
 		String rawConfigFile= "";
@@ -114,7 +117,7 @@ public class Config {
 		return config.get(key);
 	}		
 
-	public void set(ConfigKey key, String value){
+	public static void set(ConfigKey key, String value){
 		config.put(key, value);
 	}
 	

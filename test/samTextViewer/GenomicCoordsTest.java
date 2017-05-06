@@ -29,6 +29,17 @@ public class GenomicCoordsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void canPrintColumnRuler() throws InvalidGenomicCoordsException, IOException, InvalidConfigException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr1:101-200", samSeqDict, null);
+		assertTrue(gc.printableColumnRuler(10, true).length() > 10);
+		
+		// With colors: Note that we need to initialize the configuration. 
+		new Config(null);
+		assertTrue((gc.printableColumnRuler(10, false).contains("[")));
+
+	}
+	
+	@Test
 	public void canExtendCoordinates() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 		
 		GenomicCoords gc= new GenomicCoords("chr7:1001-1009", null, null);
@@ -339,11 +350,18 @@ public class GenomicCoordsTest {
 	public void canPrintRuler() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidConfigException{
 		
 		GenomicCoords gc= new GenomicCoords("chr1:101-200", samSeqDict, null);
-		assertEquals(79, gc.printableRuler(10, true).length());
+		assertEquals(79, gc.printableGenomicRuler(10, true).length());
+		
+		// Can round labels
+		gc= new GenomicCoords("chr1:2001234-3006789", samSeqDict, null);
+		String[] labels = gc.printableGenomicRuler(13, true).split(" +");
+		for(int i= 0; i < labels.length-1; i++){ // Do not test last label as it might be truncated
+			assertTrue(labels[i].endsWith("000"));
+		}
 		
 		// With colors: Note that we need to initialize the configuration. 
 		new Config(null);
-		assertTrue((gc.printableRuler(10, false).contains("[")));
+		assertTrue((gc.printableGenomicRuler(10, false).contains("[")));
 	}
 	
 	@Test

@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "1.6.0";
+	public static String VERSION= "1.7.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	public static String WEB_RTD= "http://asciigenome.readthedocs.io/";
 	
@@ -77,8 +77,10 @@ public class ArgParse {
 					+ "For examples of configuration files see https://github.com/dariober/ASCIIGenome/blob/master/resources/config/");
 		
 		parser.addArgument("--debug")
-			.action(Arguments.storeTrue())
-			.help("For debugging only: print error traces when an excpetion is found.");
+			.type(Integer.class)
+			.choices(0, 1, 2)
+			.setDefault(0)
+			.help("Set debugging mode. 0: off; 1: print exception stack traces; 2: print stack traces and exit.");
 		
 		parser.addArgument("--version", "-v").action(Arguments.version());
 		

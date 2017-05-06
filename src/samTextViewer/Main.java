@@ -66,7 +66,7 @@ public class Main {
 		String exec= opts.getString("exec");
 		String config= opts.getString("config");
 		exec= parseExec(exec);
-		boolean debug= opts.getBoolean("debug");
+		int debug= opts.getInt("debug");
 
 		// Get configuration. Note that we don't need to assign this to a variable. 
 		new Config(config);
@@ -79,11 +79,11 @@ public class Main {
 		
 		/* Set up console */
 		
-		Utils.checkFasta(fasta);
+		Utils.checkFasta(fasta, debug);
 		
 		/* Test input files exist */
 		List<String> inputFileList= new ArrayList<String>();
-		Utils.addSourceName(inputFileList, initFileList);
+		Utils.addSourceName(inputFileList, initFileList, debug);
 		
 		/* Initialize trackSet */
 		/* ------------------- */
@@ -212,7 +212,7 @@ public class Main {
 	 * This method is a mess and should be cleaned up together with GenomicCoords class.
 	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome, boolean debug) throws IOException, InvalidGenomicCoordsException{
+	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome, int debug ) throws IOException, InvalidGenomicCoordsException{
 
 		if( region != null && ! region.isEmpty() ){
 			return region;
@@ -251,7 +251,7 @@ public class Main {
 					break;
 				} catch(Exception e){
 					System.err.println("\nCould not initilize from file " + x);
-					if(debug){
+					if(debug > 0){
 						e.printStackTrace();
 					}
 				}
@@ -302,7 +302,7 @@ public class Main {
 	/**Read the asciigenome history file and put it a list as current history. Or
 	 * return empty history file does not exist or can't be read. 
 	 * */
-	private static History initCmdHistory(String cmdHistoryFile, String MARKER_FOR_HISTORY_CMD, boolean debug){
+	private static History initCmdHistory(String cmdHistoryFile, String MARKER_FOR_HISTORY_CMD, int debug){
 		History cmdHistory= new MemoryHistory();
 		try{
 			BufferedReader br= new BufferedReader(new FileReader(new File(cmdHistoryFile)));
@@ -314,7 +314,7 @@ public class Main {
 			}
 			br.close();
 		} catch(IOException e){
-			if(debug){
+			if(debug > 0){
 				e.printStackTrace();
 			}
 		}
@@ -323,7 +323,7 @@ public class Main {
 
 	/** Merge set of opened files in trackSet with the files found in the history file.
 	 * */
-	private static void addHistoryFiles(TrackSet trackSet, String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE, boolean debug){
+	private static void addHistoryFiles(TrackSet trackSet, String cmdHistoryFile, String MARKER_FOR_HISTORY_FILE, int debug){
 		LinkedHashSet<String> union= initRecentlyOpenedFiles(cmdHistoryFile, MARKER_FOR_HISTORY_FILE, debug);
 		LinkedHashSet<String> now= trackSet.getOpenedFiles();
 		for(String file : now){ // If a file is in the current track set and in the history file, put it last. I.e. last opened. 
@@ -338,7 +338,7 @@ public class Main {
 	/**Read the asciigenome history file to extract the list of opened files 
 	 * */
 	private static LinkedHashSet<String> initRecentlyOpenedFiles(String cmdHistoryFile, 
-			String MARKER_FOR_HISTORY_FILE, boolean debug){
+			String MARKER_FOR_HISTORY_FILE, int debug){
 		LinkedHashSet<String> opened= new LinkedHashSet<String>();
 		try{
 			BufferedReader br= new BufferedReader(new FileReader(new File(cmdHistoryFile)));
@@ -351,7 +351,7 @@ public class Main {
 			}
 			br.close();
 		} catch(IOException e){
-			if(debug){
+			if(debug > 0){
 				e.printStackTrace();
 			}
 		}

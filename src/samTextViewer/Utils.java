@@ -125,18 +125,26 @@ public class Utils {
 
 	}
 
-	public static void checkFasta(String fasta) throws IOException, UnindexableFastaFileException {
+	public static void checkFasta(String fasta, int debug) throws IOException, UnindexableFastaFileException {
 		if(fasta == null){
 			return;
 		}
 		File fafile= new File(fasta);
 		if(!fafile.isFile()){
 			System.err.println("Fasta file '" + fasta + "' not found.");
-			System.exit(1);
+			if(debug == 0 || debug == 1){
+				System.exit(1);
+			} else if (debug == 2){
+				throw new IOException();
+			}
 		} 
 		if(!fafile.canRead()){
 			System.err.println("Fasta file '" + fasta + "' is not readable.");
-			System.exit(1);			
+			if(debug == 0 || debug == 1){
+				System.exit(1);
+			} else if (debug == 2){
+				throw new IOException();
+			}
 		}
 		
 		IndexedFastaSequenceFile faSeqFile = null;
@@ -147,15 +155,7 @@ public class Utils {
 			System.err.println("\nIndexing '" + fasta + "'.");
 			new Faidx(new File(fasta));
 			(new File(fasta + ".fai")).deleteOnExit();
-			// System.err.println("\nIs fasta file '" + fasta + "' indexed? If not index it with e.g");
-			// System.err.println("samtools faidx '" + fasta + "'\n");
-			// System.exit(1);
 		}
-//		try {
-//			
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
 	}
 	
     public static long getAlignedReadCount(String bam) throws IOException{
@@ -789,8 +789,7 @@ public class Utils {
 				to= from + gc.getUserWindowSize() - 1;
 			}
 			return chrom + ":" + from + "-" + to;
-		} else if(tokens.get(0).matches("\\d+.*")) { // You might want to be more specific
-			return chrom + ":" + parseGoToRegion(Joiner.on(" ").join(tokens)); // You shouldn't return to string!
+		
 		} else if(tokens.get(0).startsWith("+") 
 				|| tokens.get(0).startsWith("-")){
 			int offset= parseStringToIntWithUnits(tokens.get(0));
@@ -1137,7 +1136,7 @@ public class Utils {
 	 * @param newFileNames List of files to append
 	 * @throws InvalidCommandLineException 
 	 */
-	public static void addSourceName(List<String> inputFileList, List<String> newFileNames) {
+	public static void addSourceName(List<String> inputFileList, List<String> newFileNames, int debug) throws InvalidCommandLineException {
 
 		List<String> dropMe= new ArrayList<String>();
 		List<String> addMe= new ArrayList<String>();
@@ -1146,10 +1145,13 @@ public class Utils {
 			if(!new File(x).isFile() && !Utils.urlFileExists(x) && !Utils.isUcscGenePredSource(x)){
 				dropMe.add(x);
 				System.err.println("Unable to add " + x);
+				if(debug == 2){
+					throw new InvalidCommandLineException();
+				}
 			} 
 		}
 		for(String x : dropMe){
-			System.err.println("\nWarning: File " + x + " is not a local file.\n");
+			//System.err.println("\nWarning: File " + x + " is not a local file.\n");
 			newFileNames.remove(x);
 		}
 		for(String x : addMe){
@@ -1194,20 +1196,17 @@ public class Utils {
 	
 	/** Parse cmdInput to extract the integer after the arg. (see tests)
 	 * @param defaultInt Default value if parsing returns nonsense
+	 * @throws InvalidCommandLineException 
 	 * */
-	public static int parseZoom(String cmdInput, int defaultInt) {
+	public static int parseZoom(String cmdInput, int defaultInt) throws InvalidCommandLineException {
 		String[] zz= cmdInput.trim().split(" +");
 		int nz= defaultInt;
 		if(zz.length >= 2){
-			try{
-				nz= Integer.parseInt(zz[1]);
-				if(nz < 0){
-					nz= 0; 
-				}
-			} catch(Exception e){
-				nz= 0;
-			}
+			nz= Integer.parseInt(zz[1]);
 		} 
+		if(nz < 0){
+			throw new InvalidCommandLineException();
+		}
 		return nz;
 	}
 

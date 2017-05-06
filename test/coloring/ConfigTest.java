@@ -17,6 +17,12 @@ import tracks.TrackReads;
 public class ConfigTest {
 
 	@Test
+	public void canPrintHelp() throws IOException, InvalidConfigException{
+		new Config(null);
+		assertTrue(Config.help().length() > 100);
+	}
+	
+	@Test
 	public void canSetConfig() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
 		
 		Config conf= new Config(null);

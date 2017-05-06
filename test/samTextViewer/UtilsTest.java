@@ -530,10 +530,18 @@ public class UtilsTest {
 			new File("test_data/noindex.fa.fai").delete();
 		}
 		
-		Utils.checkFasta(fastaFile);
+		Utils.checkFasta(fastaFile, 0);
 		
 		assertTrue( (new File("test_data/noindex.fa.fai")).isFile() );
 		assertTrue( (new File("test_data/noindex.fa.fai")).length() > 10 );
+		
+		boolean pass= false;
+		try{
+			Utils.checkFasta("foo.bar", 2);
+		} catch(IOException e){
+			pass= true;
+		}
+		assertTrue(pass);
 	} 
 	
 	@Test
@@ -633,15 +641,37 @@ public class UtilsTest {
 	}
 	
 	@Test 
-	public void canParseZoomArg(){
+	public void canParseZoomArg() throws InvalidCommandLineException{
 		assertEquals(2, Utils.parseZoom("zo 2", 1));
 		assertEquals(3, Utils.parseZoom("zo 3 foo", 1));
 		assertEquals(4, Utils.parseZoom("zo   4  ", 1));
 		assertEquals(0, Utils.parseZoom("zo   0", 1));
 		assertEquals(1, Utils.parseZoom("zo", 1));
-		assertEquals(0, Utils.parseZoom("zo -3", 1));   // < 0 reset to 0
-		assertEquals(0, Utils.parseZoom("zo 3.3", 1)); // Invalid INT reset to zero
-		assertEquals(0, Utils.parseZoom("zo foo", 1)); // Invalid INT reset to zero
+		
+		// Invalid input:
+		boolean pass= false;
+		try{
+			Utils.parseZoom("zo -3", 1);
+		} catch(InvalidCommandLineException e){
+			pass= true;
+		}
+		
+		assertTrue(pass);
+		pass= false;
+		try{
+			Utils.parseZoom("zo foo", 1);
+		} catch(NumberFormatException e){
+			pass= true;
+		}
+		
+		assertTrue(pass);
+		pass= false;
+		try{
+			Utils.parseZoom("zo 3.3", 1);
+		} catch(NumberFormatException e){
+			pass= true;
+		}
+		assertTrue(pass);
 	}
 	
 	@Test
@@ -894,6 +924,10 @@ public class UtilsTest {
 	
 	@Test
 	public void canRoundNumbersToSignificantDigits(){
+
+		List<Double> intv = Arrays.asList(Utils.roundToSignificantDigits(85477601.0, 85657825.0, 2));
+		System.err.println(intv);
+		System.err.println((int)Math.rint(intv.get(0)));
 		
 		double x= 1000.123456789;
 		double y= 1001.123456789;
@@ -915,7 +949,7 @@ public class UtilsTest {
 		rounded= Utils.roundToSignificantDigits(x, y, nSignif);
 		assertEquals(1000.000988, rounded[0], 1e-16);
 		assertEquals(1000.009877, rounded[1], 1e-16);		
-
+		
 	}
 	
 	@Test
@@ -953,7 +987,7 @@ public class UtilsTest {
 		List<String> newFileNames= new ArrayList<String>();
 		newFileNames.add("test_data/ds051.actb.bam");
 		newFileNames.add("nonsense");
-		Utils.addSourceName(inputFileList, newFileNames);
+		Utils.addSourceName(inputFileList, newFileNames, 0);
 		assertEquals(3, inputFileList.size());
 	}
 	

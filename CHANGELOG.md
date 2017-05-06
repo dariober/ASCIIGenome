@@ -1,3 +1,12 @@
+New in 1.7.0
+============
+
+* Add `setConfig` command to set individual global parameters. Still rough but usable.
+
+* Change some defaults in `metal.conf` configuration.
+
+* Fixed bug introduced in 1.6.0 with resizing window.
+
 New in 1.6.0
 ============
 

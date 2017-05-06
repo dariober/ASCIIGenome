@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import coloring.Config;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -186,19 +187,23 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("INT"); cmd.setArgs("[INT]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("INT"); cmd.setArgs("[INT] [c]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription(""
 				+ "Go to position `INT` or to region `INT INT` on current chromosome. ");
 		cmd.setAdditionalDescription(""
-				+ "Allowed is the hyphenated format  separating the two positions. "
 				+ "If a list of integers is given, the first and last are taken as *from* and *to*. "
-				+ "This is handy to copy and paste intervals from the ruler above the prompt. "
-				+ "\nExamples::\n"
+				+ "This is handy to copy and paste intervals from the ruler above the prompt.\n"
+				+ "\n"
+				+ "The option :code:`c` (column) interprets INT as positions on the screen column. "
+				+ "This is useful to move within the current genomci window without typing the "
+				+ "(possibly long) string of genomic coordinates."
+				+ "\n"
+				+ "Examples::\n"
 				+ "\n"
 				+ "    10~~~~~~~~~~~~~~~~~~~-> Will jump to position 10 \n"
 				+ "    10 1000~~~~~~~~~~~~~~-> Go to region 10-1000 \n"
-				+ "    10-1000~~~~~~~~~~~~~~-> Same as above\n"
 				+ "    10 250 500 750 1000~~-> Same as above again\n"
+				+ "    10 50c~~~~~~~~~~~~~~~-> Go to region spanned by columns 10 to 50\n"
 				+ "\n");
 		cmdList.add(cmd);
 		
@@ -742,45 +747,71 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("setConfig"); cmd.setArgs("tag|file"); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("Set color configuration.");
-		cmd.setAdditionalDescription("Configuration can be set with one of the built-in "
+		cmd.setName("setConfig"); cmd.setArgs("<file|tag> | <key> <value>"); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Set configuration arguments.");
+		String confHelp= Config.help().replaceAll(" ", "~");
+		cmd.setAdditionalDescription("\n"
+				+ "\n"
+				+ "If only one argument is given then the entire settings are replaced. "
+				+ "Configuration can be set with one of the built-in "
 				+ "themes: 'black_on_white', 'white_on_black', 'metal'. "
 				+ "Alternatively, configuration can be read from file. For examples "
 				+ "files see \n"
 				+ "https://github.com/dariober/ASCIIGenome/blob/master/resources/config/\n"
 				+ "\n"
+				+ "If two arguments are are given, they are taken as a key/value pair to reset.\n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    setConfig metal\n"
 				+ "    setConfig /path/to/mytheme.conf\n"
-				+ "");
-		cmdList.add(cmd);
-
-		
-		cmd= new CommandHelp();
-		cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("Print the genome dictionary with a representation of chromosome sizes. ");
-		cmd.setAdditionalDescription("Example output::\n"
+				+ "	   setConfig max_reads_in_stack 20000 <- Reset this param only\n"
 				+ "\n"
-				+ "    showGenome\n"
-				+ "    chrM~~16571\n"
-				+ "	   chr1~~249250621 ||||||||||||||||||||||||||||||\n"
-				+ "    chr2~~243199373 |||||||||||||||||||||||||||||\n"
-				+ "    ...\n"
-				+ "    chr21 48129895~~||||||\n"
-				+ "    chr22 51304566~~||||||\n"
-				+ "    chrX~~155270560 |||||||||||||||||||\n"
-				+ "    chrY~~59373566~~|||||||\n"
+				+ "Parameters and current settings::\n"
 				+ "\n"
-				+ "");
+				+ confHelp);
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("infoTracks"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("Print the name of the current tracks along with file name and format. ");
-		cmd.setAdditionalDescription("Hidden tracks are marked by an asterisk.");
+		cmd.setName("show"); cmd.setArgs("<arg>"); cmd.inSection= Section.GENERAL;
+		cmd.setBriefDescription("Show or set features to display. ");
+		cmd.setAdditionalDescription("The argument :code:`arg` takes the following choices:\n"
+				+ "\n"
+				+ "* :code:`genome`: Show chromosomes and their sizes as barplot provided a genome file is available.\n"
+				+ "\n"
+				+ "* :code:`trackInfo`: Show information on tracks.\n"
+				+ "\n"
+				+ "* :code:`gruler`: Toggle the display of the genomic coordinates as ruler.\n"
+				+ "\n"
+				+ "* :code:`cruler`: Toggle the display of the column number of the terminal "
+				+ "(useful for navigation within the current genomic window).\n"
+				+ "\n"
+				+ ":code:`arg` can be just a prefix of the argument name, "
+				+ "e.g. :code:`show ge` will be recognized as :code:`show genome`.");
 		cmdList.add(cmd);
+//		cmd= new CommandHelp();
+//		cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+//		cmd.setBriefDescription("Print the genome dictionary with a representation of chromosome sizes. ");
+//		cmd.setAdditionalDescription("Example output::\n"
+//				+ "\n"
+//				+ "    showGenome\n"
+//				+ "    chrM~~16571\n"
+//				+ "	   chr1~~249250621 ||||||||||||||||||||||||||||||\n"
+//				+ "    chr2~~243199373 |||||||||||||||||||||||||||||\n"
+//				+ "    ...\n"
+//				+ "    chr21 48129895~~||||||\n"
+//				+ "    chr22 51304566~~||||||\n"
+//				+ "    chrX~~155270560 |||||||||||||||||||\n"
+//				+ "    chrY~~59373566~~|||||||\n"
+//				+ "\n"
+//				+ "");
+//		cmdList.add(cmd);
+
+//		cmd= new CommandHelp();
+//		cmd.setName("infoTracks"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+//		cmd.setBriefDescription("Print the name of the current tracks along with file name and format. ");
+//		cmd.setAdditionalDescription("Hidden tracks are marked by an asterisk.");
+//		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
 		cmd.setName("recentlyOpened"); cmd.setArgs("[-grep = .*]"); cmd.inSection= Section.GENERAL; 
@@ -1035,8 +1066,7 @@ public class CommandList {
 		paramList.add("dataCol");
 		paramList.add(Command.print.getCmdDescr());
 		paramList.add("setGenome");
-		paramList.add("showGenome");
-		paramList.add("infoTracks");
+		paramList.add("show");
 		paramList.add("addTracks");
 		paramList.add("recentlyOpened");
 		paramList.add("dropTracks");
