@@ -41,15 +41,17 @@ Or the same with::
 INT
 +++
 
-:code:`INT [INT]`
+:code:`INT [INT] [c]`
 
-Go to position `INT` or to region `INT INT` on current chromosome.  Allowed is the hyphenated format  separating the two positions. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt. 
+Go to position `INT` or to region `INT INT` on current chromosome. Use :code:`INT -h` for full help. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt.
+
+The option :code:`c` (column) interprets INT as positions on the screen column. This is useful to move within the current genomci window without typing the (possibly long) string of genomic coordinates.
 Examples::
 
     10                   -> Will jump to position 10 
     10 1000              -> Go to region 10-1000 
-    10-1000              -> Same as above
     10 250 500 750 1000  -> Same as above again
+    10 50c               -> Go to region spanned by columns 10 to 50
 
 
 
@@ -452,9 +454,7 @@ Set colour for tracks matched by regex.  Colors can be specified by name or by a
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Available colours are from the Xterm256 palette: 
-
-
+Available colours are from the Xterm256 palette: `here <http://jonasjacek.github.io/colors/>`_             
 
 Example::
 
@@ -661,7 +661,7 @@ Show or set features to display.  The argument :code:`arg` takes the following c
 
 * :code:`gruler`: Toggle the display of the genomic coordinates as ruler.
 
-* :code:`cruler`: Toggle the display of the column number (useful for navigation within the current genomic window).
+* :code:`cruler`: Toggle the display of the column number of the terminal (useful for navigation within the current genomic window).
 
 :code:`arg` can be just a prefix of the argument name, e.g. :code:`show ge` will be recognized as :code:`show genome`.
 
