@@ -10,9 +10,6 @@ FIXME
 Features
 --------
 
-* Add `-awk '<script>'` to `print` command to parse lines before printing. Useful
-  to get rid of unnecessary stuff and make lines more readable.
-
 * Indel processing. Check variants like `A,CT` processed ok.
 
 * Converter for ensembl to ucsc chromosome names. This functionality could be included

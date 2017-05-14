@@ -119,6 +119,31 @@ public class TextReadTest {
 		assertEquals(textRead.getPrintableTextRead(false, true, false), ">>>>>>>>>>");
 		// System.out.println(textRead);
 	}
+
+	@Test
+	public void canPrintReadWithSkippedBases() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7:1-800", samSeqDict, fastaFile);
+		
+		SAMRecord rec= new SAMRecord(null);
+		rec.setAlignmentStart(1);
+		rec.setCigarString("70M200N50M200N10M");
+		
+		TextRead textRead= new TextRead(rec, gc);
+		System.out.println(textRead.getPrintableTextRead(false, true, false));
+		assertTrue(textRead.getPrintableTextRead(false, true, false).startsWith(">"));
+		assertTrue(textRead.getPrintableTextRead(false, true, false).endsWith(">"));
+		assertTrue(textRead.getPrintableTextRead(false, true, false).contains("_"));
+
+		// Very large skipped region: Only show the skipped part.
+		rec.setCigarString("1M5000N1M");
+		textRead= new TextRead(rec, gc);
+		System.out.println(textRead.getPrintableTextRead(false, true, false));
+		assertTrue("_", textRead.getPrintableTextRead(false, true, false).startsWith("_"));
+		assertTrue("_", textRead.getPrintableTextRead(false, true, false).endsWith("_"));
+		assertEquals("", textRead.getPrintableTextRead(false, true, false).replaceAll("_", ""));
+		
+	}
 	
 	@Test
 	public void canPrintWithReadName() throws InvalidGenomicCoordsException, IOException, InvalidColourException{

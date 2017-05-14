@@ -899,29 +899,7 @@ public class UtilsTest {
 		// assertEquals("chr7:110-210", region);
 		
 	}
-	
-	@Test
-	public void canGetGoToRegionString() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, fastaFile);
-		List<String> tokens= new ArrayList<String>();
-		tokens.add("1000");
-		assertEquals("chr7:1000", Utils.parseConsoleInput(tokens, gc));
 		
-		tokens.set(0, "1000-10000");
-		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(tokens, gc));
-
-		tokens.set(0, "1,000 - 10,000");
-		assertEquals("chr7:1000-10000", Utils.parseConsoleInput(tokens, gc));
-		
-		tokens.set(0, ":foo");
-		try{
-			System.err.println(Utils.parseConsoleInput(tokens, gc));
-			fail();
-		} catch (Exception e) {
-			
-		}
-	}
-	
 	@Test
 	public void canRoundNumbersToSignificantDigits(){
 

@@ -81,7 +81,7 @@ public class TrackReadsTest {
 
 	}
 	
-	@Test 
+//	@Test 
 	public void testSpeed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
 		GenomicCoords gc= new GenomicCoords("chr7:5567700-5567872", null, null);
 		SamReader sr= srf.open(new File("test_data/MT.bam"));

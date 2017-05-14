@@ -48,7 +48,7 @@ class TextRead {
 	/** Char to represent deletions from the reference. I.e. gaps in the read */
 	final private char DEL= '-';
 	/** Char to represent region skip. I.e. gaps in the read */
-	final private char N= '_';
+	final private char SKIP= '_';
 	
 	/** Start position of the read in window coordinates. 1-based. If in genomic
 	 * coords read starts aligning at pos 100 and window span is 100:150, then textStart= 1.*/
@@ -60,6 +60,7 @@ class TextRead {
 	
 	private SAMRecord samRecord;
 	private GenomicCoords gc;
+	private List<int[]> textPositionsOfSkippedBases= new ArrayList<int[]>();
 	
 	/*    C o n s t r u c t o r s    */
 		
@@ -89,6 +90,10 @@ class TextRead {
 		this.samRecord= rec;
 		this.setTextStart();
 		this.setTextEnd();
+		this.setTextPositionsOfSkippedBases();
+//		for(int[] x : this.textPositionsOfSkippedBases){
+//			System.err.println(x[0] + " " + x[1]);
+//		}
 	}
 	
 	/*       M e t h o d s       */
@@ -250,6 +255,27 @@ class TextRead {
 		return;
 	}
 	
+	/**List of positions on screen where the skipped bases (cigar op: N) start
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * */
+	private void setTextPositionsOfSkippedBases() throws InvalidGenomicCoordsException, IOException{
+		int genomicPosition= this.getSamRecord().getAlignmentStart();
+		List<CigarElement> cigar = this.getSamRecord().getCigar().getCigarElements();
+		for(CigarElement el : cigar){
+			if(el.getOperator().equals(CigarOperator.SKIPPED_REGION)){
+				int[] textPositions= new int[2];
+				// +1 because textPosition is 1-based
+				textPositions[0]= Utils.getIndexOfclosestValue(genomicPosition, this.gc.getMapping()) + 1; 
+				textPositions[1]= Utils.getIndexOfclosestValue(genomicPosition + el.getLength(), this.gc.getMapping()) + 1;
+				this.textPositionsOfSkippedBases.add(textPositions);
+			};
+			if(el.getOperator().consumesReferenceBases()){
+				genomicPosition += el.getLength();
+			}
+		}
+	}
+	
 	/** If the windowSize and genomic span are not mapped 1:1, i.e. 1 bp : 1 char, then
 	 * represent reads as simplified bases */
 	private List<Character> getSquashedRead(){
@@ -262,9 +288,22 @@ class TextRead {
 			xc= charFwd;
 		}
 		for(int i= this.textStart; i <= this.textEnd; i++){
-			squashedRead.add(xc);
+			if(this.textPositionIsSkipped(i)){
+				squashedRead.add(this.SKIP);
+			} else {
+				squashedRead.add(xc);
+			}
 		}
 		return squashedRead;
+	}
+	
+	private boolean textPositionIsSkipped(int textPos){
+		for(int[] skippedRegion : this.textPositionsOfSkippedBases){
+			if(textPos >= skippedRegion[0] && textPos <= skippedRegion[1]){
+				return true; 
+			}
+		}
+		return false;
 	}
 	
 	/** Get a representation of the read as it appears aligned to the reference. 
@@ -308,7 +347,7 @@ class TextRead {
 						if(el.getOperator() == CigarOperator.D){
 							dnaRead.add(DEL);
 						} else if(el.getOperator() == CigarOperator.N){ 
-							dnaRead.add(N);
+							dnaRead.add(SKIP);
 						} else {
 							System.err.println("Unexpected operator");
 							throw new RuntimeException();

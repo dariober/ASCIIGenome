@@ -29,6 +29,7 @@ public class CommandList {
 		}));
 		
 		ConsoleReader console= new ConsoleReader(); 
+
 		try {
 			// Autcomplete commands with length > x 
 			for(CommandHelp x : CommandList.commandHelpList()){
@@ -189,7 +190,7 @@ public class CommandList {
 		cmd= new CommandHelp();
 		cmd.setName("INT"); cmd.setArgs("[INT] [c]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription(""
-				+ "Go to position `INT` or to region `INT INT` on current chromosome. ");
+				+ "Go to position `INT` or to region `INT INT` on current chromosome. Use :code:`INT -h` for full help.");
 		cmd.setAdditionalDescription(""
 				+ "If a list of integers is given, the first and last are taken as *from* and *to*. "
 				+ "This is handy to copy and paste intervals from the ruler above the prompt.\n"
