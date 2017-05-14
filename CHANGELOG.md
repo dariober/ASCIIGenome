@@ -1,3 +1,22 @@
+New in 1.7.0
+============
+
+* Add `setConfig` command to set individual global parameters. Still rough but usable.
+
+* Add ruler showing the column number on the terminal. The column numbers are used by the `INT INT` command
+  to zoom in the region spanned by the given column numbers. This is useful to 
+  jump to a specific region within the current genomic window without having to type 
+  the long string of genomic coordinates.
+
+* Genomic ruler shows rounded numbers.
+
+* Reads with skipped regions (cigar operator: N) show the gap also when the resolution
+is greater than single base.
+
+* Change some defaults in `metal.conf` configuration.
+
+* Fixed bug introduced in 1.6.0 with resizing window.
+
 New in 1.6.0
 ============
 

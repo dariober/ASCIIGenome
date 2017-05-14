@@ -9,8 +9,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -53,13 +55,13 @@ public class GenomicCoords implements Cloneable {
 	private String samSeqDictSource= null; // Source of the sequence dictionary. Can be path to file of fasta, bam, genome. Or genome tag e.g. hg19. 
 	private byte[] refSeq= null;
 	public boolean isSingleBaseResolution= false;
-	final private int terminalWindowSize;
+	private int terminalWindowSize;
 	private List<Double> mapping;
 	
 	/* Constructors */
 	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile, boolean verbose) throws InvalidGenomicCoordsException, IOException{
 		
-		this.terminalWindowSize= jline.TerminalFactory.get().getWidth() - 1;
+		this.setTerminalWindowSize();
 		
 		GenomicCoords xgc= parseStringToGenomicCoords(region);
 		
@@ -102,14 +104,6 @@ public class GenomicCoords implements Cloneable {
 		this.update();
 	}
 	
-	/**Update a bunch of fields when coordinates change*/
-	private void update() throws InvalidGenomicCoordsException, IOException {
-		this.setSingleBaseResolution(); // True if one text character corresponds to 1 bp
-		this.setRefSeq();
-		this.mapping= this.seqFromToLenOut(this.terminalWindowSize);
-	}
-
-
 	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
 		this(region, samSeqDict, fastaFile, true);
 	}
@@ -117,6 +111,14 @@ public class GenomicCoords implements Cloneable {
 	GenomicCoords(int terminalWindowSize) throws InvalidGenomicCoordsException, IOException{ 
 		this.terminalWindowSize= terminalWindowSize;
 	};
+
+	/**Update a bunch of fields when coordinates change*/
+	private void update() throws InvalidGenomicCoordsException, IOException {
+		this.setTerminalWindowSize();
+		this.setSingleBaseResolution(); // True if one text character corresponds to 1 bp
+		this.setRefSeq();
+		this.mapping= this.seqFromToLenOut(this.terminalWindowSize);
+	}
 	
 	/* Methods */
 	
@@ -570,38 +572,100 @@ public class GenomicCoords implements Cloneable {
 		return str;
 	}
 	
-	public String printableRuler(int markDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+	public String printableGenomicRuler(int markDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		List<Double> mapping = this.seqFromToLenOut(this.getUserWindowSize());
-    	String numberLine= "";
-    	int prevLen= 0;
-    	int i= 0;
-		while(i < mapping.size()){
-			String posMark= String.valueOf(Math.round(mapping.get(i)));
-			// Increase markDist if the number is bigger than the space itself
-			if(posMark.length() >= markDist){
-				markDist= posMark.length() + 1;
-			}
-			if(i == 0){
-				numberLine= posMark;
-				i += posMark.length();
-			} else if((numberLine.length() - prevLen) >= markDist){
-				prevLen= numberLine.length();
-				numberLine= numberLine + posMark;
-				i += posMark.length();
-			} else {
-				numberLine= numberLine + " ";
-				i++;
-			}
-		}
+		String numberLine= this.printRulerFromList(mapping, markDist);
 		numberLine= numberLine.substring(0, this.getUserWindowSize());
 		if(!noFormat){
 			numberLine= "\033[48;5;" + Config.get256Color(ConfigKey.background) + 
 					";38;5;" + Config.get256Color(ConfigKey.ruler) +
 					"m" + numberLine;
-			// numberLine= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("black") + "m" + numberLine;
 		}
     	return numberLine;
     }
+
+	public String printableColumnRuler(int markDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+		List<Double> mapping =  Utils.seqFromToLenOut(1, this.getUserWindowSize(), this.getUserWindowSize());
+		String numberLine= this.printRulerFromList(mapping, markDist);
+		numberLine= numberLine.substring(0, this.getUserWindowSize());
+		if(!noFormat){
+			numberLine= "\033[48;5;" + Config.get256Color(ConfigKey.background) + 
+					";38;5;" + Config.get256Color(ConfigKey.ruler) +
+					"m" + numberLine;
+		}
+    	return numberLine;
+    }
+
+	
+	private String printRulerFromList(List<Double> marks, int markDist) throws InvalidGenomicCoordsException, IOException {
+		int prevLen= 0;
+    	int i= 0;
+    	// First round numbers and see if we can round digits
+    	List<String>rMarks= new ArrayList<String>();
+    	markLoop:
+    	for(int sfx : new int[]{1000000, 100000, 10000, 1000, 100, 10, 5, 1}){
+        	rMarks.clear();
+	    	for(Double mark : marks){
+	    		rMarks.add( String.valueOf((int)Math.rint(mark/sfx) * sfx) );
+	    	}
+	    	Set<String> uniq= new HashSet<String>(rMarks);
+	    	if(uniq.size() == marks.size()){
+	    		// No duplicates after rounding
+	    		break markLoop;
+	    	}
+    	}
+    	if(rMarks.get(0) == "0"){
+    		rMarks.set(0, "1");
+    	}
+//    	String first= rMarks.get(0);
+//    	rMarks= this.stripCommonPrefix(rMarks);
+//    	rMarks.set(0, first);
+    	StringBuilder numberLine= new StringBuilder();
+		while(i < rMarks.size()){
+			String label= rMarks.get(i); //.replaceAll("000$", "k");
+			
+			//String posMark= String.valueOf(Math.round(rMarks.get(i)));
+			if(label.length() >= markDist){
+				// Increase markDist if the number is bigger than the space itself
+				markDist= label.length() + 1;
+			}
+			if(i == 0){
+				numberLine.append(label);
+				i += label.length();
+			} else if((numberLine.length() - prevLen) >= markDist){
+				prevLen= numberLine.length();
+				numberLine.append(label);
+				i += label.length();
+			} else {
+				numberLine.append(" ");
+				i++;
+			}
+		}
+		return numberLine.toString();
+	}
+
+//	private List<String> stripCommonPrefix(List<String> list){
+//		int idx= 0;
+//		String prefix= "";
+//		for(int i= 0; i < list.get(0).length(); i++){
+//			List<Character> curChar= new ArrayList<Character>();
+//			for(String x : list){
+//				curChar.add(x.charAt(i));
+//			}
+//			Set<Character> pfx= new HashSet<Character>(curChar);
+//			if(pfx.size() == 1){
+//				idx= i;
+//				prefix= prefix + "_";
+//			} else {
+//				break;
+//			}
+//		}
+//		List<String> sList= new ArrayList<String>();
+//		for(String x : list){
+//			sList.add(prefix + x.substring(idx));
+//		}
+//		return sList;
+//	}
 	
 	/** Ref sequence usable for print on screen. 
 	 * @throws IOException 
@@ -613,9 +677,6 @@ public class GenomicCoords implements Cloneable {
 		if(refSeq == null){
 			return "";
 		}
-//		if(this.fastaFile == null || this.getBpPerScreenColumn() > 1){
-//			return "";
-//		}
 		
 		if(noFormat){
 			return new String(refSeq) + "\n";
@@ -960,6 +1021,10 @@ public class GenomicCoords implements Cloneable {
 		this.extend(left, right, refpoint);
 	}
 
+	private void setTerminalWindowSize() {
+		this.terminalWindowSize= jline.TerminalFactory.get().getWidth() - 1;
+	}
+
 	protected void setSingleBaseResolution() throws InvalidGenomicCoordsException, IOException {
 		if(this.getUserWindowSize() == this.getGenomicWindowSize()){
 			this.isSingleBaseResolution= true;
@@ -967,4 +1032,5 @@ public class GenomicCoords implements Cloneable {
 			this.isSingleBaseResolution= false;
 		}		
 	}
+
 }

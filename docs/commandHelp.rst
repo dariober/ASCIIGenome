@@ -41,15 +41,17 @@ Or the same with::
 INT
 +++
 
-:code:`INT [INT]`
+:code:`INT [INT] [c]`
 
-Go to position `INT` or to region `INT INT` on current chromosome.  Allowed is the hyphenated format  separating the two positions. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt. 
+Go to position `INT` or to region `INT INT` on current chromosome. Use :code:`INT -h` for full help. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt.
+
+The option :code:`c` (column) interprets INT as positions on the screen column. This is useful to move within the current genomci window without typing the (possibly long) string of genomic coordinates.
 Examples::
 
     10                   -> Will jump to position 10 
     10 1000              -> Go to region 10-1000 
-    10-1000              -> Same as above
     10 250 500 750 1000  -> Same as above again
+    10 50c               -> Go to region spanned by columns 10 to 50
 
 
 
@@ -452,9 +454,7 @@ Set colour for tracks matched by regex.  Colors can be specified by name or by a
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Available colours are from the Xterm256 palette: 
-
-
+Available colours are from the Xterm256 palette: `here <http://jonasjacek.github.io/colors/>`_             
 
 Example::
 
@@ -609,42 +609,61 @@ Set genome and reference sequence. The genome, i.e. the list of contig and names
 setConfig
 +++++++++
 
-:code:`setConfig tag|file`
+:code:`setConfig <file|tag> | <key> <value>`
 
-Set color configuration. Configuration can be set with one of the built-in themes: 'black_on_white', 'white_on_black', 'metal'. Alternatively, configuration can be read from file. For examples files see 
+Set configuration arguments. 
+
+If only one argument is given then the entire settings are replaced. Configuration can be set with one of the built-in themes: 'black_on_white', 'white_on_black', 'metal'. Alternatively, configuration can be read from file. For examples files see 
 https://github.com/dariober/ASCIIGenome/blob/master/resources/config/
+
+If two arguments are are given, they are taken as a key/value pair to reset.
 
 Examples::
 
     setConfig metal
     setConfig /path/to/mytheme.conf
+	   setConfig max_reads_in_stack 20000 <- Reset this param only
 
+Parameters and current settings::
 
-showGenome
-++++++++++
+background                         white          # Background colour
+foreground                         black          # Foreground colour
+seq_a                              blue           # Colour for nucleotide A
+seq_c                              red            # Colour for nucleotide C
+seq_g                              green          # Colour for nucleotide G
+seq_t                              yellow         # Colour for nucleotide T
+seq_other                          black          # Colour for any other nucleotide
+shade_low_mapq                     grey70         # Colour for shading reads wit low MAPQ
+methylated_foreground              grey100        # Foreground colour for methylated C
+unmethylated_foreground            grey100        # Foreground colour for unmethylated C
+methylated_background              red            # Background colour for methylated C
+unmethylated_background            blue           # Background colour for unmethylated C
+title_colour                       black          # Default Colour for titles
+feature_background_positive_strand lightsteelblue # Colour for features on forward strand
+feature_background_negative_strand mistyrose1     # Colour for features on reverse strand
+feature_background_no_strand       grey70         # Colour for features without strand information
+footer                             blue           # Colour for footer line
+chrom_ideogram                     black          # Colour for chromosome ideogram
+ruler                              black          # Colour for ruler
+max_reads_in_stack                 2000           # Max number of reads to accumulate when showing read tracks
+shade_baseq                        13             # Shade read base when quality is below this threshold
 
-:code:`showGenome`
+show
+++++
 
-Print the genome dictionary with a representation of chromosome sizes.  Example output::
+:code:`show <arg>`
 
-    showGenome
-    chrM  16571
-	   chr1  249250621 ||||||||||||||||||||||||||||||
-    chr2  243199373 |||||||||||||||||||||||||||||
-    ...
-    chr21 48129895  ||||||
-    chr22 51304566  ||||||
-    chrX  155270560 |||||||||||||||||||
-    chrY  59373566  |||||||
+Show or set features to display.  The argument :code:`arg` takes the following choices:
 
+* :code:`genome`: Show chromosomes and their sizes as barplot provided a genome file is available.
 
+* :code:`trackInfo`: Show information on tracks.
 
-infoTracks
-++++++++++
+* :code:`gruler`: Toggle the display of the genomic coordinates as ruler.
 
-:code:`infoTracks`
+* :code:`cruler`: Toggle the display of the column number of the terminal (useful for navigation within the current genomic window).
 
-Print the name of the current tracks along with file name and format.  Hidden tracks are marked by an asterisk.
+:code:`arg` can be just a prefix of the argument name, e.g. :code:`show ge` will be recognized as :code:`show genome`.
 
 recentlyOpened
 ++++++++++++++

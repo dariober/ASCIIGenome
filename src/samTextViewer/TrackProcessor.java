@@ -35,6 +35,8 @@ public class TrackProcessor {
 	private boolean appendToSnapshotFile= false;
 	private boolean stripAnsi= true;
 	// int windowSize= 160;
+	private boolean showGruler= true;
+	private boolean showCruler= true;
 	
 	/* C O N S T R U C T O R S */
 	
@@ -79,9 +81,14 @@ public class TrackProcessor {
 
 		// Ruler and sequence
 		// ------------------
-		outputString.append(currentGC.printableRefSeq(noFormat)); // this.printer(currentGC.printableRefSeq(noFormat), snapshotFile);
-		outputString.append(currentGC.printableRuler(10, noFormat) + "\n"); // this.printer(ruler + "\n", snapshotFile);
-
+		outputString.append(currentGC.printableRefSeq(noFormat));
+		if(this.isShowGruler()){
+			outputString.append(currentGC.printableGenomicRuler(10, noFormat) + "\n");
+		}
+		if(this.isShowCruler()){
+			outputString.append(currentGC.printableColumnRuler(10, noFormat) + "\n");
+		}
+		
 		// Position, memory, etc
 		// ---------------------
 		String footer= this.getFooter(currentGC);
@@ -252,6 +259,22 @@ public class TrackProcessor {
 	}
 	protected boolean getStripAnsi() {
 		return this.stripAnsi;
+	}
+
+	protected boolean isShowGruler() {
+		return showGruler;
+	}
+
+	protected void setShowGruler(boolean showGruler) {
+		this.showGruler = showGruler;
+	}
+
+	protected boolean isShowCruler() {
+		return showCruler;
+	}
+
+	protected void setShowCruler(boolean showCruler) {
+		this.showCruler = showCruler;
 	}
 	
 	
