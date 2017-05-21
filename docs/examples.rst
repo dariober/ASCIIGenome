@@ -197,6 +197,11 @@ The syntax ``$6`` selects the 6th column, the one containing the cigar string, t
 returns true if the cigar string contains the string ``D``. As usual, the last positional argument
 applies the command to the tracks matching the given regex.
 
+The internal function ``getSamTag()`` extracts the value of a given SAM tag and this value can be used to as filter. For example,
+to select only reads containing mismatches, *i.e.* where the NM tag is greater than zero, use::
+
+    awk 'getSamTag("NM") > 0'
+
 Batch and non-interactive mode
 ------------------------------
 
