@@ -101,6 +101,7 @@ public class TrackSet {
 					System.err.println("Unable to classify " + sourceName + "; skipping"); 								
 				}
 			} catch(Exception e){
+				System.err.println(e.getMessage());
 				System.err.println("Cannot add " + sourceName + "; skipping");
 				try {
 					TimeUnit.SECONDS.sleep(3);

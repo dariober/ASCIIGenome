@@ -24,6 +24,9 @@ ASCIIGenome="$1 --debug 2 -ni"
 
 set -x
 
+## Test awk with getSamTag()
+$ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && awk 'getSamTag(\"NM\") > 0'" > /dev/null
+
 ## Can show/hide track settings
 $ASCIIGenome ../test_data/ds051.actb.bam -x 'goto chr7:5568803-5568975 && show genome && show genome' > /dev/null
 
@@ -39,6 +42,8 @@ $ASCIIGenome ../test_data/ds051.actb.bam -fa ../test_data/chr7.fa -x 'goto chr7:
 
 ## Use of from-to with screen coords
 $ASCIIGenome ../test_data/ds051.actb.bam  -x 'goto chrM:1 && 1 20c && 16555 && 5c' > /dev/null
+
+
 
 set +x
 echo -e "\033[32mDONE\033[0m"

@@ -302,6 +302,10 @@ Awk understands numbers and mathematical operators. With awk you can filter reco
 
 * :code:`-V` Invert selection: apply changes to the tracks not selected by list of track_regex
 
+*ADDITIONAL FUNCTION(s)*
+
+* :code:`getSamTag(<tag>)` Return the value of the given sam tag. A record is filtered out if the the tag is not found. This function is usually meaningless on non-sam records where sam tags are not present.
+
 *EXAMPLES*
 
 Note the use of single quotes to wrap the actual script and the use of double quotes inside the script.
@@ -325,6 +329,10 @@ Note the use of single quotes to wrap the actual script and the use of double qu
 * Remove awk filter for tracks captured by .gff and .gtf::
 
     awk -off .gtf .gff
+
+* Return bam records where NM tag (edit distance) is > 0::
+
+    awk 'getSamTag("NM") > 0'
 
 With no args, turn off awk for all tracks.
 
@@ -454,7 +462,9 @@ Set colour for tracks matched by regex.  Colors can be specified by name or by a
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Available colours are from the Xterm256 palette: `here <http://jonasjacek.github.io/colors/>`_             
+Available colours are from the Xterm256 palette: 
+
+
 
 Example::
 
