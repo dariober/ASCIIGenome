@@ -465,7 +465,7 @@ public class CommandList {
 				+ "*ADDITIONAL FUNCTION(s)*\n"
 				+ "\n"
 				+ "* :code:`getSamTag(<tag>)` Return the value of the given sam tag. "
-				+ "A record is filtered out if the the tag is not found. "
+				+ "A record is filtered out if the tag is not found. "
 				+ "This function is usually meaningless on non-sam records where sam tags are not present.\n"
 				+ "\n"
 				+ "*EXAMPLES*\n"
