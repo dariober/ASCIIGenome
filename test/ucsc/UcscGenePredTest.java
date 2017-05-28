@@ -80,7 +80,7 @@ public class UcscGenePredTest {
 	public void canCreateTrackFromLocalFile() throws IOException, InvalidCommandLineException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException {
 
 		 UcscGenePred ucsc= new UcscGenePred("test_data/refGene.hg19.chr7.txt.gz", -1); 
-		 TrackIntervalFeature gtfTrack= new TrackIntervalFeature(ucsc.getTabixFile(), new GenomicCoords("chr7", null, null)); 
+		 TrackIntervalFeature gtfTrack= new TrackIntervalFeature(ucsc.getTabixFile(), new GenomicCoords("chr7", 80, null, null)); 
 				 
 		 List<IntervalFeature> genes = gtfTrack.getFeaturesInInterval("chr7", 5000000, 6000000);
 		 assertTrue(genes.size() > 50);
@@ -96,7 +96,7 @@ public class UcscGenePredTest {
 	public void canCreateTrackFromUrl() throws IOException, InvalidCommandLineException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException {
 
 		UcscGenePred ucsc= new UcscGenePred("dm6:refGene", -1); 
-		TrackIntervalFeature gtfTrack= new TrackIntervalFeature(ucsc.getTabixFile(), new GenomicCoords("chr3R", null, null)); 
+		TrackIntervalFeature gtfTrack= new TrackIntervalFeature(ucsc.getTabixFile(), new GenomicCoords("chr3R", 80, null, null)); 
 				 
 		List<IntervalFeature> genes = gtfTrack.getFeaturesInInterval("chr3R", 1, 6000000);
 		assertTrue(genes.size() > 1000);
@@ -128,7 +128,7 @@ public class UcscGenePredTest {
 		//
 		// Prepare observed data
 		UcscGenePred ucsc= new UcscGenePred("test_data/refGene.hg19.chr7.txt.gz", -1); 
-		TrackIntervalFeature gtfTrack= new TrackIntervalFeature(ucsc.getTabixFile(), new GenomicCoords("chr7", null, null)); 
+		TrackIntervalFeature gtfTrack= new TrackIntervalFeature(ucsc.getTabixFile(), new GenomicCoords("chr7", 80, null, null)); 
 		List<IntervalFeature> obs = gtfTrack.getFeaturesInInterval("chr7", 1, Integer.MAX_VALUE);
 
 		List<Integer> obsStarts= new ArrayList<Integer>();

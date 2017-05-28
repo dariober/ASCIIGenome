@@ -23,7 +23,7 @@ public class TrackTest {
 	@Test
 	public void canConcatTitleAndTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidConfigException, InvalidColourException{
 		new Config(null);
-		GenomicCoords gc= new GenomicCoords("1:735171-2045891", null, null);
+		GenomicCoords gc= new GenomicCoords("1:735171-2045891", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf", gc);
 		tif.setNoFormat(true);
 		tif.setTrackTag("title.bed");
@@ -44,7 +44,7 @@ public class TrackTest {
 	@Test
 	public void canConcatTitleAndTrackWithNoFeatures() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidConfigException, InvalidColourException{
 		new Config(null);
-		GenomicCoords gc= new GenomicCoords("1:1-1000", null, null);
+		GenomicCoords gc= new GenomicCoords("1:1-1000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf", gc);
 		tif.setNoFormat(true);
 		tif.setTrackTag("title.bed");
@@ -57,7 +57,7 @@ public class TrackTest {
 	public void canExportSettings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		
 		String bgzFn= "test_data/refSeq.hg19.short.sort.bed.gz"; // "test_data/refSeq.hg19.short.sort.bed.gz";
-		GenomicCoords gc= new GenomicCoords("chr1:16000000-20000000", null, null);
+		GenomicCoords gc= new GenomicCoords("chr1:16000000-20000000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(bgzFn, gc);
 		tif.setTrackTag("name.bed#12");
 		System.out.println(tif.settingsToString());
@@ -67,7 +67,7 @@ public class TrackTest {
 	@Test
 	public void canParsePrintableLinesWithSystemCommand() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
 
-		GenomicCoords gc= new GenomicCoords("chr1:1-100000", null, null);
+		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		tif.setNoFormat(true);
 		tif.setPrintMode(PrintRawLine.FULL);
@@ -81,7 +81,7 @@ public class TrackTest {
 	public void canParsePrintableLinesWithInvalidCommand() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
 
 		// Invalid command: Empty output. But note that no exception is thrown!
-		GenomicCoords gc = new GenomicCoords("chr1:1-100000", null, null);
+		GenomicCoords gc = new GenomicCoords("chr1:1-100000", 80, null, null);
 		TrackIntervalFeature tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		tif.setSystemCommandForPrint("foo");
 		assertEquals("", tif.printLines());
@@ -91,7 +91,7 @@ public class TrackTest {
 	public void canParsePrintableLinesWithNoFeatures() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
 
 		// Test region with no features
-		GenomicCoords gc = new GenomicCoords("chr10:1-100000", null, null);
+		GenomicCoords gc = new GenomicCoords("chr10:1-100000", 80, null, null);
 		TrackIntervalFeature tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		tif.setNoFormat(true);
 		tif.setPrintMode(PrintRawLine.FULL);
@@ -103,7 +103,7 @@ public class TrackTest {
 	public void canParsePrintBAM() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
 		new Config(null);
 		// BAM 
-		GenomicCoords gc= new GenomicCoords("chr7:5566733-5566903", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566733-5566903", 80, null, null);
 		TrackReads tif= new TrackReads("test_data/ds051.short.bam", gc);
 		tif.setNoFormat(true);
 		tif.setPrintMode(PrintRawLine.FULL);
@@ -115,7 +115,7 @@ public class TrackTest {
 	public void printIsNotResetAfterExec() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
 		new Config(null);
 		// BAM 
-		GenomicCoords gc= new GenomicCoords("chr7:5566733-5566903", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566733-5566903", 80, null, null);
 		TrackReads tif= new TrackReads("test_data/ds051.short.bam", gc);
 		tif.setNoFormat(true);
 		tif.setPrintMode(PrintRawLine.FULL);
@@ -124,7 +124,7 @@ public class TrackTest {
 		
 		// Call printLines again on new coordinates: 
 		// The sys command is still on
-		gc= new GenomicCoords("chr7:5566733-5566904", null, null);
+		gc= new GenomicCoords("chr7:5566733-5566904", 80, null, null);
 		tif.setGc(gc);
 		assertEquals(2, tif.printLines().split("\n").length);
 		

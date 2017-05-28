@@ -75,7 +75,7 @@ public class TextReadTest {
 		
 		new Config(null);
 		
-		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566798", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566798", 80, samSeqDict, fastaFile);
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(5566780);
 		rec.setCigarString("24M");
@@ -93,11 +93,11 @@ public class TextReadTest {
 		assertEquals("a,ccgg,t,uccmgtt,ac", textRead.getPrintableTextRead(true, true, false));
 
 
-		gc= new GenomicCoords("chr7:5566778-5566798", samSeqDict, null);
+		gc= new GenomicCoords("chr7:5566778-5566798", 80, samSeqDict, null);
 		textRead= new TextRead(rec, gc);
 		assertEquals("aaccggttaaccggttaac", textRead.getPrintableTextRead(false, true, false));
 
-		gc= new GenomicCoords("chr7:5566780-5566782", samSeqDict, fastaFile);
+		gc= new GenomicCoords("chr7:5566780-5566782", 80, samSeqDict, fastaFile);
 		textRead= new TextRead(rec, gc);
 		System.out.println(textRead.getPrintableTextRead(true, true, false));
 		System.out.println(textRead.getPrintableTextRead(true, false, false));		
@@ -105,7 +105,7 @@ public class TextReadTest {
 
 	@Test
 	public void canPrintSquashedRead() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
-		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", 80, samSeqDict, fastaFile);
 		
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(5566780);
@@ -123,7 +123,7 @@ public class TextReadTest {
 	@Test
 	public void canPrintReadWithSkippedBases() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		
-		GenomicCoords gc= new GenomicCoords("chr7:1-800", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:1-800", 80, samSeqDict, fastaFile);
 		
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(1);
@@ -148,7 +148,7 @@ public class TextReadTest {
 	@Test
 	public void canPrintWithReadName() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 
-		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", 80, samSeqDict, fastaFile);
 		
 		SAMRecord rec= new SAMRecord(null);
 		rec.setAlignmentStart(5566780);

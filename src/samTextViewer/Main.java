@@ -24,6 +24,7 @@ import com.itextpdf.text.DocumentException;
 import coloring.Config;
 import coloring.ConfigKey;
 import coloring.Xterm256;
+import commandHelp.CommandHelp;
 import commandHelp.CommandList;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
@@ -35,6 +36,7 @@ import faidx.UnindexableFastaFileException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
+import jline.console.completer.StringsCompleter;
 import jline.console.history.History;
 import jline.console.history.History.Entry;
 import jline.console.history.MemoryHistory;
@@ -73,7 +75,7 @@ public class Main {
 		
 		// Init console right at start so if something goes wrong the user's terminal is reset to 
 		// initial defaults with the shutdown hook. This could be achieved in cleaner way probably.
-		ConsoleReader console = CommandList.initConsole();
+		ConsoleReader console = initConsole();
 		
 		messageVersion(opts.getBoolean("noFormat"));
 		
@@ -89,9 +91,12 @@ public class Main {
 		/* ------------------- */
 		// This part only prepares a dummy GenomicCoords object to initialize the start position:
 		// ----------------------------
+		
 		region= initRegion(region, inputFileList, fasta, null, debug);
 		
-		GenomicCoords initGc= new GenomicCoords(region, null, null);
+		int terminalWidth= Utils.getTerminalWidth();
+		GenomicCoords initGc= new GenomicCoords(region, terminalWidth, null, null);
+		
 		List<String>initGenomeList= new ArrayList<String>();
 		for(String x : inputFileList){
 			initGenomeList.add(x);
@@ -101,7 +106,7 @@ public class Main {
 		// ----------------------------
 		// Genomic positions start here:
 		final GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		GenomicCoords start= new GenomicCoords(initGc.toStringRegion(), initGc.getSamSeqDict(), initGc.getFastaFile());
+		GenomicCoords start= new GenomicCoords(initGc.toStringRegion(), terminalWidth, initGc.getSamSeqDict(), initGc.getFastaFile());
 		gch.readHistory(new File(CMD_HISTORY_FILE), start);
 		gch.add(start);
 
@@ -228,7 +233,7 @@ public class Main {
 		
 		/* Prepare genomic coordinates to fetch. This should probably be a function in itself */
 		// Create a dummy gc object just to get the sequence dict.
-		GenomicCoords gc= new GenomicCoords(jline.TerminalFactory.get().getWidth() - 1);
+		GenomicCoords gc= new GenomicCoords(Utils.getTerminalWidth());
 		
 		List<String>initGenomeList= new ArrayList<String>(inputFileList);
 		
@@ -503,6 +508,30 @@ public class Main {
 				}
 	        }
 	    }, "Shutdown-thread"));		
+	}
+
+	public static ConsoleReader initConsole() throws IOException, InvalidColourException{
+		
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+		    public void run() {
+		    	System.out.print("\033[0m"); // On exit turn off all formatting
+		    }
+		}));
+		
+		ConsoleReader console= new ConsoleReader(); 
+
+		try {
+			// Autcomplete commands with length > x 
+			for(CommandHelp x : CommandList.commandHelpList()){
+				if(x.getName().length() > 2){
+					console.addCompleter(new StringsCompleter(x.getName()));
+				}
+			}
+		} catch (InvalidCommandLineException e) {
+			e.printStackTrace();
+		}
+		console.setExpandEvents(false);
+		return console;
 	}
 	
 }

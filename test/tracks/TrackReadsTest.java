@@ -44,18 +44,18 @@ public class TrackReadsTest {
 		final Xterm256 xterm256= new Xterm256();
 		String xshade = Integer.toString(xterm256.colorNameToXterm256(shade));
 		
-		GenomicCoords gc= new GenomicCoords("chr7:999-1041", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:999-1041", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/missingReadSeq.bam", gc);
 		System.err.println(tr.printToScreen());
 		assertTrue(tr.printToScreen().trim().startsWith("[48;5;" + xshade));
 
 		// Read with soft clipped bases
-		gc= new GenomicCoords("chr7:9999-10050", null, null);
+		gc= new GenomicCoords("chr7:9999-10050", 80, null, null);
 		tr= new TrackReads("test_data/missingReadSeq.bam", gc);
 		assertTrue(tr.printToScreen().contains(xshade));
 
 		// Read with deletions and skipped bases
-		gc= new GenomicCoords("chr7:19999-20050", null, null);
+		gc= new GenomicCoords("chr7:19999-20050", 80, null, null);
 		tr= new TrackReads("test_data/missingReadSeq.bam", gc);
 		tr.printToScreen();
 	}
@@ -64,7 +64,7 @@ public class TrackReadsTest {
 	public void canReadReadsWithMissingSequence() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException{
 
 		// Window size larger then 1 bp per column
-		GenomicCoords gc= new GenomicCoords("chr7:1-1000", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1-1000", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/missingReadSeq.bam", gc);
 		tr.setNoFormat(true);
 		assertTrue(tr.printToScreen().trim().startsWith(">"));
@@ -72,7 +72,7 @@ public class TrackReadsTest {
 		assertTrue(tr.printToScreen().trim().length() > 1);
 		
 		// Window size < 1 bp per column
-		gc= new GenomicCoords("chr7:100-120", null, null);
+		gc= new GenomicCoords("chr7:100-120", 80, null, null);
 		tr= new TrackReads("test_data/missingReadSeq.bam", gc);
 		tr.setNoFormat(true);
 		assertTrue(tr.printToScreen().trim().startsWith("N"));
@@ -83,7 +83,7 @@ public class TrackReadsTest {
 	
 //	@Test 
 	public void testSpeed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
-		GenomicCoords gc= new GenomicCoords("chr7:5567700-5567872", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5567700-5567872", 80, null, null);
 		SamReader sr= srf.open(new File("test_data/MT.bam"));
 //		SAMRecordIterator reads = sr.query("chr7", gc.getFrom(), gc.getTo(), false);
 //		int n= 0;
@@ -111,13 +111,13 @@ public class TrackReadsTest {
 	
 	@Test
 	public void canReturnReadsAsRawStrings() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
 		
 		assertEquals(22, tr.getRecordsAsStrings().size());
 
 		// No read in interval
-		gc= new GenomicCoords("chr1:1-1000", null, null);
+		gc= new GenomicCoords("chr1:1-1000", 80, null, null);
 		tr= new TrackReads("test_data/ds051.short.bam", gc);
 		assertEquals(0, tr.getRecordsAsStrings().size());
 		
@@ -128,7 +128,7 @@ public class TrackReadsTest {
 		
 		new Config(null);
 		
-		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
 		tr.setNoFormat(true);
 		
@@ -146,7 +146,7 @@ public class TrackReadsTest {
 	
 	@Test
 	public void canShowReadsInWindow() throws Exception{
-		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", samSeqDict, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000",80, samSeqDict, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
@@ -155,7 +155,7 @@ public class TrackReadsTest {
 	
 	@Test
 	public void canFilterReadsWithAwk() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
-		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", samSeqDict, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000",80, samSeqDict, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
@@ -168,7 +168,7 @@ public class TrackReadsTest {
 
 	@Test
 	public void canShowReadCount() throws Exception{
-		GenomicCoords gc= new GenomicCoords("chr7:5565600-5567600", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5565600-5567600", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
 		
 		// Same as: samtools view -F 4 -c ear045.oxBS.actb.bam chr7:5565600-5567600
@@ -178,7 +178,7 @@ public class TrackReadsTest {
 	@Test
 	public void canGetTitle() throws InvalidGenomicCoordsException, InvalidColourException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		String bam= "test_data/adjacent.bam";
-		GenomicCoords gc= new GenomicCoords("chr7:1-100", samSeqDict, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1-100",80, samSeqDict, null);
 		TrackReads tr= new TrackReads(bam, gc);
 		
 		tr.setNoFormat(true);
@@ -194,7 +194,7 @@ public class TrackReadsTest {
 		int yMaxLines= 10;
 		boolean bs= false;
 		boolean noFormat= true;
-		GenomicCoords gc= new GenomicCoords("chr7:1-50", samSeqDict, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1-50",80, samSeqDict, null);
 			
 		TrackReads tr= new TrackReads(bam, gc);
 		tr.setBisulf(bs);
@@ -209,7 +209,7 @@ public class TrackReadsTest {
 		
 		System.out.println(tr.printToScreen());
 		
-		gc= new GenomicCoords("chr7:1-100", samSeqDict, null);
+		gc= new GenomicCoords("chr7:1-100",80, samSeqDict, null);
 		tr= new TrackReads(bam, gc);
 		tr.setBisulf(bs);
 		tr.setNoFormat(noFormat);
@@ -225,7 +225,7 @@ public class TrackReadsTest {
 		String bam= "test_data/ds051.actb.bam";
 		int yMaxLines= 50;
 		boolean bs= false;
-		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870",80, samSeqDict, fastaFile);
 			
 		TrackReads tr= new TrackReads(bam, gc);
 		tr.setBisulf(bs);
@@ -240,7 +240,7 @@ public class TrackReadsTest {
 		int yMaxLines= 50;
 		boolean bs= false;
 		boolean noFormat= true;
-		GenomicCoords gc= new GenomicCoords("chr7:1-101", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:1-101",80, samSeqDict, fastaFile);
 			
 		TrackReads tr= new TrackReads(bam, gc);
 		tr.setyMaxLines(yMaxLines);
@@ -252,7 +252,7 @@ public class TrackReadsTest {
 	@Test
 	public void canResetToZeroLargeWindow() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
 		// If the genomic window is too large do not process the bam file and return zero height track.
-		GenomicCoords gc= new GenomicCoords("chr7:1-100000000", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:1-100000000",80, samSeqDict, fastaFile);
 		TrackReads tr= new TrackReads("test_data/ds051.actb.bam", gc);
 		assertEquals("", tr.printToScreen());
 	}

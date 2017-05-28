@@ -13,37 +13,11 @@ import coloring.Config;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
-import jline.console.ConsoleReader;
-import jline.console.completer.StringsCompleter;
 
 public class CommandList {
 	
 	private static String SEE_ALSO= "\nFull documentation at: http://asciigenome.readthedocs.io/\n";
-	
-	public static ConsoleReader initConsole() throws IOException, InvalidColourException{
 		
-		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-		    public void run() {
-		    	System.out.print("\033[0m"); // On exit turn off all formatting
-		    }
-		}));
-		
-		ConsoleReader console= new ConsoleReader(); 
-
-		try {
-			// Autcomplete commands with length > x 
-			for(CommandHelp x : CommandList.commandHelpList()){
-				if(x.getName().length() > 2){
-					console.addCompleter(new StringsCompleter(x.getName()));
-				}
-			}
-		} catch (InvalidCommandLineException e) {
-			e.printStackTrace();
-		}
-		console.setExpandEvents(false);
-		return console;
-	}
-	
 	private static String reStructuredTextHelp() throws InvalidCommandLineException, InvalidColourException{
 
 		String intro = ".. _command_reference:"
@@ -166,7 +140,7 @@ public class CommandList {
 	}
 
 	
-	private final static List<CommandHelp> commandHelpList() throws InvalidCommandLineException, InvalidColourException{
+	public final static List<CommandHelp> commandHelpList() throws InvalidCommandLineException, InvalidColourException{
 		List<CommandHelp> cmdList= new ArrayList<CommandHelp>();
 		CommandHelp cmd= new CommandHelp();		
 

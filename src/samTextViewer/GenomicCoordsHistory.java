@@ -118,7 +118,8 @@ public class GenomicCoordsHistory {
 			
 			} else { // There are no valid positions in the history so create a new one and move there
 
-				GenomicCoords defaultPos= new GenomicCoords("default", null, null); 
+				int terminalWindowSize= Utils.getTerminalWidth();
+				GenomicCoords defaultPos= new GenomicCoords("default", terminalWindowSize, null, null); 
 				defaultPos.setGenome(tokens, true);
 				
 				LinkedHashMap<String, Integer> chromLen= new LinkedHashMap<String, Integer>();
@@ -126,7 +127,7 @@ public class GenomicCoordsHistory {
 					chromLen.put(x.getSequenceName(), x.getSequenceLength());
 				}
 				String chrom= chromLen.keySet().iterator().next();
-				GenomicCoords newGc= new GenomicCoords(chrom + ":" + 1, defaultPos.getSamSeqDict(), defaultPos.getFastaFile());
+				GenomicCoords newGc= new GenomicCoords(chrom + ":" + 1, terminalWindowSize, defaultPos.getSamSeqDict(), defaultPos.getFastaFile());
 				this.add(newGc);
 				
 			}
@@ -170,13 +171,14 @@ public class GenomicCoordsHistory {
 			System.err.println("Cannot read positions from file " + historyFile);
 			return;
 		}
+		int terminalWindowSize= Utils.getTerminalWidth();
 		for(String line : hist){
 			if(line.startsWith(MARKER_FOR_POS)){
 				// try to create genomicCoords object using checkGc as template
 				// If success, add this position to history list.
 				try {
 					String reg= line.replaceFirst(MARKER_FOR_POS, "");
-					GenomicCoords gc= new GenomicCoords(reg, checkGc.getSamSeqDict(), checkGc.getFastaFile(), false);
+					GenomicCoords gc= new GenomicCoords(reg, terminalWindowSize, checkGc.getSamSeqDict(), checkGc.getFastaFile(), false);
 					this.add(gc);
 					this.countHistoricPositions += 1;
 				} catch (Exception e){
@@ -221,24 +223,4 @@ public class GenomicCoordsHistory {
 		return hist;
 	}
 	
-	/** Reset window size according to current terminal screen. 
-	 * If the user reshapes the terminal window size or the font size, 
-	 * detect the new size and add it to the history. 
-	 * */
-//	public void resetWindowSize() throws InvalidGenomicCoordsException, IOException{
-//
-//		int currentWindowSize= this.current().getUserWindowSize(); 
-//		
-//		int newSize= jline.TerminalFactory.get().getWidth() - 1;
-//		if(newSize != this.current().getUserWindowSize()){
-//			// Replace the current genomicCoords obj with a new one having the same coordinates but different windowSize.
-//			// NB: The current genomic obj might not be the last one in the history list.
-//			currentWindowSize= newSize;
-//			String newRegion= this.current().getChrom() + ":" + this.current().getFrom() + "-" + this.current().getTo(); 
-//			this.getHistory().add(
-//					this.getHistory().indexOf(this.current()), 
-//					new GenomicCoords(newRegion, this.current().getSamSeqDict(), currentWindowSize, this.current().getFastaFile())
-//			);
-//		}
-//	}	
 }

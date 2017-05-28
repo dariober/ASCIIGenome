@@ -26,25 +26,25 @@ public class TrackPileupTest {
 	@Test
 	public void canPrintConsensusSequence() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 
-		GenomicCoords gc= new GenomicCoords("chr7:5566779-5566799", null, "test_data/chr7.fa");
+		GenomicCoords gc= new GenomicCoords("chr7:5566779-5566799", 80, null, "test_data/chr7.fa");
 		TrackPileup tc= new TrackPileup("test_data/ds051.short.bam", gc);
 		tc.setNoFormat(true);
 
 		assertTrue(tc.getPrintableConsensusSequence().startsWith("=TT========="));
 		
 		// Advance coordinates and check consensus is updated:
-		gc= new GenomicCoords("chr7:5566780-5566800", null, "test_data/chr7.fa");
+		gc= new GenomicCoords("chr7:5566780-5566800", 80, null, "test_data/chr7.fa");
 		tc.setGc(gc);
 		assertTrue(tc.getPrintableConsensusSequence().startsWith("TT========="));
 		
 		// Large window doesn't show consensus 
-		gc= new GenomicCoords("chr7:5566779-5566879", null, "test_data/chr7.fa");
+		gc= new GenomicCoords("chr7:5566779-5566879", 80, null, "test_data/chr7.fa");
 		tc= new TrackPileup("test_data/ds051.short.bam", gc);
 		tc.setNoFormat(true);
 		assertEquals("", tc.getPrintableConsensusSequence());
 		
 		// Region with no coverage
-		gc= new GenomicCoords("chr7:1-100", null, "test_data/chr7.fa");
+		gc= new GenomicCoords("chr7:1-100", 80, null, "test_data/chr7.fa");
 		tc= new TrackPileup("test_data/ds051.short.bam", gc);
 		tc.setNoFormat(true);
 		assertEquals("", tc.getPrintableConsensusSequence());
@@ -56,7 +56,7 @@ public class TrackPileupTest {
 	
 		new Config(null);
 
-		GenomicCoords gc= new GenomicCoords("chr7:1-1000", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1-1000", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/missingReadSeq.bam", gc);
 		tr.setNoFormat(true);
 		tr.printToScreen();
@@ -71,14 +71,14 @@ public class TrackPileupTest {
 	
 		new Config(null);
 	
-		GenomicCoords gc= new GenomicCoords("chr7:5566776-5566796", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566776-5566796", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
 		System.err.println(tr.getScreenScores());
 		tr.setNoFormat(true);
 		System.err.println(tr.printToScreen());
 		assertTrue(tr.getScreenScores().size() > 1); // Here we only test the method doesn't crash
 		
-		gc= new GenomicCoords("chr7:5,554,740-5,554,780", null, null);
+		gc= new GenomicCoords("chr7:5,554,740-5,554,780", 80, null, null);
 		tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
 		assertTrue(tr.getScreenScores().size() > 1);
 		
@@ -97,7 +97,7 @@ public class TrackPileupTest {
 	
 		new Config(null);
 	
-		GenomicCoords gc= new GenomicCoords("chr7:5566776-5566796", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566776-5566796", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
 		System.err.println(tr.getScreenScores());
 		assertTrue(tr.getTitle().contains("range[1.0 22.0]"));
@@ -110,7 +110,7 @@ public class TrackPileupTest {
 	
 	@Test
 	public void canCollectCoverage() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-		GenomicCoords gc= new GenomicCoords("chr7:5566736-5566856", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566736-5566856", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
 		
 		assertEquals(79, tr.getDepth().size());
@@ -118,7 +118,7 @@ public class TrackPileupTest {
 		assertEquals(5, (int)tr.getDepth().get(5566782));
 		assertEquals(18, (int)tr.getDepth().get(5566856));
 		
-		gc= new GenomicCoords("chr7:5522059-5612125", null, null);
+		gc= new GenomicCoords("chr7:5522059-5612125", 80, null, null);
 		long t0= System.currentTimeMillis();
 		tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
 		Map<Integer, Integer> depth = tr.getDepth();
@@ -131,7 +131,7 @@ public class TrackPileupTest {
 	
 	public static void sameAsMpileup() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
-		GenomicCoords gc= new GenomicCoords("chr7:5522059-5612125", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5522059-5612125", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
 		Map<Integer, Integer> depth = tr.getDepth();
 
@@ -163,14 +163,14 @@ public class TrackPileupTest {
 
 	@Test
 	public void canCollectCoverageAtOnePos() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-		GenomicCoords gc= new GenomicCoords("chr7:5588536-5588536", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:5588536-5588536", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
 		assertEquals(1, tr.getDepth().size());
 	}
 	
 	@Test
 	public void canHandleZeroReads() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-		GenomicCoords gc= new GenomicCoords("chr1:1-1000", null, null);
+		GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
 		assertEquals(0, tr.getDepth().size());
 	}

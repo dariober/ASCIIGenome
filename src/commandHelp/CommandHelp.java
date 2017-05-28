@@ -94,7 +94,7 @@ public class CommandHelp {
 		}
 		this.name = name;
 	}
-	protected String getName(){
+	public String getName(){
 		return this.name;
 	}
 	

@@ -55,13 +55,13 @@ public class GenomicCoords implements Cloneable {
 	private String samSeqDictSource= null; // Source of the sequence dictionary. Can be path to file of fasta, bam, genome. Or genome tag e.g. hg19. 
 	private byte[] refSeq= null;
 	public boolean isSingleBaseResolution= false;
-	private int terminalWindowSize;
+	private int terminalWidth;
 	private List<Double> mapping;
 	
 	/* Constructors */
-	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile, boolean verbose) throws InvalidGenomicCoordsException, IOException{
+	public GenomicCoords(String region, int terminalWidth, SAMSequenceDictionary samSeqDict, String fastaFile, boolean verbose) throws InvalidGenomicCoordsException, IOException{
 		
-		this.setTerminalWindowSize();
+		this.setTerminalWidth(terminalWidth);
 		
 		GenomicCoords xgc= parseStringToGenomicCoords(region);
 		
@@ -74,7 +74,7 @@ public class GenomicCoords implements Cloneable {
 		}
 		
 		if(to == null){ 
-			to= from + this.getTerminalWindowSize() - 1;
+			to= from + this.getTerminalWidth() - 1;
 		}
 		
 		// Check valid input
@@ -104,20 +104,20 @@ public class GenomicCoords implements Cloneable {
 		this.update();
 	}
 	
-	public GenomicCoords(String region, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
-		this(region, samSeqDict, fastaFile, true);
+	public GenomicCoords(String region, int terminalWidth, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
+		this(region, terminalWidth, samSeqDict, fastaFile, true);
 	}
 	
-	GenomicCoords(int terminalWindowSize) throws InvalidGenomicCoordsException, IOException{ 
-		this.terminalWindowSize= terminalWindowSize;
+	GenomicCoords(int terminalWidth) throws InvalidGenomicCoordsException, IOException{ 
+		this.terminalWidth= terminalWidth;
 	};
 
 	/**Update a bunch of fields when coordinates change*/
 	private void update() throws InvalidGenomicCoordsException, IOException {
-		this.setTerminalWindowSize();
+		// this.setTerminalWindowSize();
 		this.setSingleBaseResolution(); // True if one text character corresponds to 1 bp
 		this.setRefSeq();
-		this.mapping= this.seqFromToLenOut(this.terminalWindowSize);
+		this.mapping= this.seqFromToLenOut(this.getTerminalWidth());
 	}
 	
 	/* Methods */
@@ -205,9 +205,9 @@ public class GenomicCoords implements Cloneable {
 	private GenomicCoords parseStringToGenomicCoords(String x) throws InvalidGenomicCoordsException, IOException{
 
 		Integer from= 1; // Default start/end coords.
-		Integer to= this.getTerminalWindowSize();
+		Integer to= this.getTerminalWidth();
 		
-		GenomicCoords xgc= new GenomicCoords(this.getTerminalWindowSize());
+		GenomicCoords xgc= new GenomicCoords(this.getTerminalWidth());
 		
 		if(x == null || x.isEmpty()){
 			x= "Undefined_contig";
@@ -231,7 +231,7 @@ public class GenomicCoords implements Cloneable {
 			nsep= StringUtils.countMatches(fromTo, "-");
 			if(nsep == 0){ // Only start position given
 				xgc.from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
-				xgc.to= xgc.from + this.getTerminalWindowSize() - 1;
+				xgc.to= xgc.from + this.getTerminalWidth() - 1;
 			} else if(nsep == 1){ // From and To positions given.
 				xgc.from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
 				xgc.to= Integer.parseInt(StringUtils.substringAfter(fromTo, "-").trim());
@@ -432,6 +432,10 @@ public class GenomicCoords implements Cloneable {
 	 * @throws InvalidGenomicCoordsException 
 	 */
 	private List<Double> seqFromToLenOut(int size) throws InvalidGenomicCoordsException, IOException {
+		
+		if(this.getFrom() == null || this.getTo() == null){
+			return null;
+		}
 		
 		List<Double> mapping= new ArrayList<Double>();
 		
@@ -886,13 +890,13 @@ public class GenomicCoords implements Cloneable {
 	 * If the user reshapes the terminal window size or the font size, 
 	 * detect the new size and add it to the history. 
 	 * */
-	private int getTerminalWindowSize() throws InvalidGenomicCoordsException, IOException{
-		return this.terminalWindowSize;
+	private int getTerminalWidth() {
+		return this.terminalWidth;
 	}	
 	
 	/* Getters and setters */
 
-	public List<Double> getMapping() throws InvalidGenomicCoordsException, IOException {
+	public List<Double> getMapping() {
 		return this.mapping;
 	}
 	
@@ -920,7 +924,7 @@ public class GenomicCoords implements Cloneable {
 	 * @throws InvalidGenomicCoordsException */
 	public int getUserWindowSize() throws InvalidGenomicCoordsException, IOException{
 
-		int userWindowSize= this.getTerminalWindowSize();
+		int userWindowSize= this.getTerminalWidth();
 		if(userWindowSize > this.getGenomicWindowSize()){
 			return this.getGenomicWindowSize();
 		} else {
@@ -932,7 +936,10 @@ public class GenomicCoords implements Cloneable {
 	 * Not to be confused with userWindowSize. 
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException */
-	public int getGenomicWindowSize() throws InvalidGenomicCoordsException, IOException{
+	public Integer getGenomicWindowSize() throws InvalidGenomicCoordsException {
+		if(this.getTo() == null || this.getFrom() == null){
+			return null;
+		}
 		return this.to - this.from + 1;
 	}
 
@@ -1021,11 +1028,16 @@ public class GenomicCoords implements Cloneable {
 		this.extend(left, right, refpoint);
 	}
 
-	private void setTerminalWindowSize() {
-		this.terminalWindowSize= jline.TerminalFactory.get().getWidth() - 1;
+	public void setTerminalWidth(int terminalWidth) throws InvalidGenomicCoordsException, IOException {
+		this.terminalWidth= terminalWidth;
+		this.update();
 	}
 
 	protected void setSingleBaseResolution() throws InvalidGenomicCoordsException, IOException {
+		if(this.getGenomicWindowSize() == null){
+			this.isSingleBaseResolution= false;
+			return;
+		}
 		if(this.getUserWindowSize() == this.getGenomicWindowSize()){
 			this.isSingleBaseResolution= true;
 		} else {

@@ -21,7 +21,7 @@ public class GenomicCoordsHistoryTest {
 
 		// This is the initial coordinates. Set by the user or reading the input files.
 		// The historic positions will be checked against this coordinates.
-		GenomicCoords checkGc= new GenomicCoords("chr1:1-10000", null, "test_data/chr7.fa");
+		GenomicCoords checkGc= new GenomicCoords("chr1:1-10000", 80, null, "test_data/chr7.fa");
 
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		gch.readHistory(new File("test_data/asciigenome_history"), checkGc);
@@ -30,7 +30,7 @@ public class GenomicCoordsHistoryTest {
 		
 		// Initial genomic coords has no sequence dict, so everything in the history
 		// file is loaded:
-		checkGc= new GenomicCoords("chr1:1-10000", null, null);
+		checkGc= new GenomicCoords("chr1:1-10000", 80, null, null);
 
 		gch= new GenomicCoordsHistory();
 		gch.readHistory(new File("test_data/asciigenome_history"), checkGc);
@@ -48,12 +48,12 @@ public class GenomicCoordsHistoryTest {
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		// History is mixture of positions read from file, some of which invalid, and
 		// positions visited in this session.
-		gch.readHistory(new File("test_data/asciigenome_history"), new GenomicCoords("chr7:1-100", null, "test_data/chr7.fa"));
-		GenomicCoords g1= new GenomicCoords("chr7:1-100", null, "test_data/chr7.fa");
-		GenomicCoords g2= new GenomicCoords("chr7:2-100", null, "test_data/chr7.fa");
-		GenomicCoords g3= new GenomicCoords("chr7:3-100", null, "test_data/chr7.fa");
-		GenomicCoords g4= new GenomicCoords("chr7:4-100", null, "test_data/chr7.fa");
-		GenomicCoords g5= new GenomicCoords("chr7:5-100", null, "test_data/chr7.fa");
+		gch.readHistory(new File("test_data/asciigenome_history"), new GenomicCoords("chr7:1-100", 80, null, "test_data/chr7.fa"));
+		GenomicCoords g1= new GenomicCoords("chr7:1-100", 80, null, "test_data/chr7.fa");
+		GenomicCoords g2= new GenomicCoords("chr7:2-100", 80, null, "test_data/chr7.fa");
+		GenomicCoords g3= new GenomicCoords("chr7:3-100", 80, null, "test_data/chr7.fa");
+		GenomicCoords g4= new GenomicCoords("chr7:4-100", 80, null, "test_data/chr7.fa");
+		GenomicCoords g5= new GenomicCoords("chr7:5-100", 80, null, "test_data/chr7.fa");
 		gch.add(g1);
 		gch.add(g2);
 		gch.add(g3);
@@ -85,11 +85,11 @@ public class GenomicCoordsHistoryTest {
 	public void canMoveBackAndForthInHistory() throws InvalidGenomicCoordsException, IOException{
 
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		GenomicCoords g1= new GenomicCoords("chr7:1-100", null, null);
-		GenomicCoords g2= new GenomicCoords("chr7:2-100", null, null);
-		GenomicCoords g3= new GenomicCoords("chr7:3-100", null, null);
-		GenomicCoords g4= new GenomicCoords("chr7:4-100", null, null);
-		GenomicCoords g5= new GenomicCoords("chr7:5-100", null, null);
+		GenomicCoords g1= new GenomicCoords("chr7:1-100", 80, null, null);
+		GenomicCoords g2= new GenomicCoords("chr7:2-100", 80, null, null);
+		GenomicCoords g3= new GenomicCoords("chr7:3-100", 80, null, null);
+		GenomicCoords g4= new GenomicCoords("chr7:4-100", 80, null, null);
+		GenomicCoords g5= new GenomicCoords("chr7:5-100", 80, null, null);
 		gch.add(g1);
 		gch.add(g2);
 		gch.add(g3);
@@ -122,14 +122,14 @@ public class GenomicCoordsHistoryTest {
 		gch.previous();
 		gch.previous();
 		gch.previous();
-		GenomicCoords g6= new GenomicCoords("chr7:6-100", null, null);
+		GenomicCoords g6= new GenomicCoords("chr7:6-100", 80, null, null);
 		gch.add(g6);
 		assertTrue(g6.equalCoords(gch.current()));
 		
 		// Adding same pos more than once has no effect:
-		GenomicCoords g7= new GenomicCoords("chr7:6-100", null, null);
+		GenomicCoords g7= new GenomicCoords("chr7:6-100", 80, null, null);
 		gch.add(g7);
-		GenomicCoords g8= new GenomicCoords("chr7:6-100", null, null);
+		GenomicCoords g8= new GenomicCoords("chr7:6-100", 80, null, null);
 		gch.add(g8);
 		// System.out.println(gch.getHistory());
 		
@@ -147,8 +147,8 @@ public class GenomicCoordsHistoryTest {
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		gch.setGenome(Utils.tokenize("test_data/ds051.actb.bam", "\t"));
 		
-		GenomicCoords g1= new GenomicCoords("foo:1-100", null, null);
-		GenomicCoords g2= new GenomicCoords("chr7:1-100", null, null);
+		GenomicCoords g1= new GenomicCoords("foo:1-100", 80, null, null);
+		GenomicCoords g2= new GenomicCoords("chr7:1-100", 80, null, null);
 		gch.add(g1);
 		gch.add(g2);
 		
@@ -160,7 +160,7 @@ public class GenomicCoordsHistoryTest {
 	@Test
 	public void getAndPutItems() throws InvalidGenomicCoordsException, IOException{
 		
-		GenomicCoords g1= new GenomicCoords("chr7:1-100", null, null);
+		GenomicCoords g1= new GenomicCoords("chr7:1-100", 80, null, null);
 		
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		gch.add(g1);
@@ -177,7 +177,7 @@ public class GenomicCoordsHistoryTest {
 	public void canSetGenome() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 		
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		gch.add(new GenomicCoords("chr7:1-100", null, null));
+		gch.add(new GenomicCoords("chr7:1-100", 80, null, null));
 		List<String> cmdInput= new ArrayList<String>();
 		cmdInput.add("test_data/chr7.fa");
 		gch.setGenome(cmdInput);
@@ -185,9 +185,9 @@ public class GenomicCoordsHistoryTest {
 		assertTrue(gch.current().getSamSeqDict().toString().length() > 10);
 		
 		gch= new GenomicCoordsHistory();
-		gch.add(new GenomicCoords("chr7:1-100", null, null));
-		gch.add(new GenomicCoords("chr7:1-1000", null, null));
-		gch.add(new GenomicCoords("chr7:1-10000", null, null));
+		gch.add(new GenomicCoords("chr7:1-100", 80, null, null));
+		gch.add(new GenomicCoords("chr7:1-1000", 80, null, null));
+		gch.add(new GenomicCoords("chr7:1-10000", 80, null, null));
 		cmdInput= new ArrayList<String>();
 		cmdInput.add("hg19");
 		gch.setGenome(cmdInput);
@@ -200,7 +200,7 @@ public class GenomicCoordsHistoryTest {
 	public void canSetGenomeWithInvalidInput() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 		
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		gch.add(new GenomicCoords("chr7:1-100", null, null));
+		gch.add(new GenomicCoords("chr7:1-100", 80, null, null));
 
 		// Input string is neither not an exiting file or a genome tag:
 		List<String> cmdInput= new ArrayList<String>();
@@ -213,9 +213,9 @@ public class GenomicCoordsHistoryTest {
 	public void canSetGenomeFromInvalidPosition() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 		
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		gch.add(new GenomicCoords("nonexisting:1-100", null, null));
-		gch.add(new GenomicCoords("nonexisting:2-100", null, null));
-		gch.add(new GenomicCoords("nonexisting:3-100", null, null));
+		gch.add(new GenomicCoords("nonexisting:1-100", 80, null, null));
+		gch.add(new GenomicCoords("nonexisting:2-100", 80, null, null));
+		gch.add(new GenomicCoords("nonexisting:3-100", 80, null, null));
 		
 		List<String> cmdInput= new ArrayList<String>();
 		cmdInput.add("test_data/chr7.fa");

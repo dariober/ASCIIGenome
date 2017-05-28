@@ -6,7 +6,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -708,7 +707,7 @@ public class UtilsTest {
 
 	@Test
 	public void canCountReadsInWindow2() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5524838-5611878", 80, samSeqDict, fastaFile);
 		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 		
 		assertEquals(100377, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
@@ -738,7 +737,7 @@ public class UtilsTest {
 	
 	@Test
 	public void canCountReadsInWindow() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:5522436-5613572", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:5522436-5613572", 80, samSeqDict, fastaFile);
 		List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
 		
 		filters.add(new MappingQualityFilter(30)); // Same as   
@@ -751,7 +750,7 @@ public class UtilsTest {
 		long t1= System.currentTimeMillis();
 		System.out.println("TIME TO FILTER: " + (t1-t0));
 		
-		gc= new GenomicCoords("chr7:5524838-5611878", samSeqDict, fastaFile);
+		gc= new GenomicCoords("chr7:5524838-5611878", 80, samSeqDict, fastaFile);
 		
 	}
 	
@@ -879,7 +878,7 @@ public class UtilsTest {
 	
 	@Test
 	public void canParseInputAndUpdateGenomicCoords() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:100-200", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:100-200", 80, samSeqDict, fastaFile);
 
 		//String region= Utils.parseConsoleInput("-r chr8:1-1000", gc);
 		//assertEquals("chr8:1-1000", region);
@@ -1040,7 +1039,7 @@ public class UtilsTest {
 
 	@Test
 	public void canGetWritableFileOrNull() throws InvalidGenomicCoordsException, IOException{
-		GenomicCoords gc= new GenomicCoords("chr7:1-200", samSeqDict, fastaFile);
+		GenomicCoords gc= new GenomicCoords("chr7:1-200", 80, samSeqDict, fastaFile);
 		String x= Utils.parseCmdinputToGetSnapshotFile("save", gc);
 		assertEquals("chr7_1-200.txt", x);
 		x= Utils.parseCmdinputToGetSnapshotFile("save /tmp/foo.txt", gc);

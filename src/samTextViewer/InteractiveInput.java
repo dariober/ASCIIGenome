@@ -49,6 +49,8 @@ public class InteractiveInput {
 	 * */
 	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc, int debug) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
+		int terminalWidth= Utils.getTerminalWidth();
+		
 		// cmdInputList: List of individual commands in tokens to be issued. 
 		// E.g.: [ ["zi"], 
 		//         ["-F", "16"], 
@@ -100,20 +102,11 @@ public class InteractiveInput {
 				} else if(cmdTokens.get(0).equals("show")){
 					this.interactiveInputExitCode= this.show(cmdTokens, proc);
 //					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
-					
-//				} else if(cmdTokens.get(0).equals("showGenome")) {
-//					this.showGenome(proc);
-//					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
-				
+									
 				} else if(cmdTokens.get(0).equals("sys")) {
 					this.execSysCmd(cmdString, proc.getWindowSize());
 					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 					
-//				} else if(cmdTokens.get(0).equals("infoTracks")) {
-//					String info= Utils.padEndMultiLine(proc.getTrackSet().showTrackInfo(), proc.getWindowSize());
-//					System.out.println(info);
-//					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
-				
 				} else if(cmdTokens.get(0).equals("recentlyOpened")) {
 					String opened= Utils.padEndMultiLine(proc.getTrackSet().showRecentlyOpened(cmdTokens), proc.getWindowSize());
 					System.out.println(opened);
@@ -147,14 +140,6 @@ public class InteractiveInput {
 					}  
 					proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(args), proc.getGenomicCoordsHistory().current()) );
 					
-//				} else if(cmdTokens.get(0).equals("sessionSave")) {
-//					if(cmdTokens.size() < 2){
-//						System.err.println(Utils.padEndMultiLine("Output file name is missing!", proc.getWindowSize()));
-//						this.interactiveInputExitCode= ExitCode.ERROR;
-//					} else {
-//						proc.exportTrackSetSettings(cmdTokens.get(1));
-//					}
-
 				} else if(cmdTokens.get(0).equals("q")){
 					System.exit(0);
 				
@@ -166,7 +151,7 @@ public class InteractiveInput {
 						|| cmdTokens.get(0).matches("^\\-\\d+.*") 
 						|| cmdTokens.get(0).matches("^\\+\\d+.*")){ // No cmd line args either f/b ops or ints
 						String newRegion= Utils.parseConsoleInput(cmdTokens, proc.getGenomicCoordsHistory().current()).trim();
-						proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, samSeqDict, fasta));
+						proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
 				
 				} else if(cmdTokens.get(0).matches("^\\d+.*")){
 					String newRegion;
@@ -176,11 +161,11 @@ public class InteractiveInput {
 						System.err.append("Column coordinates must be >= 1 and <= the screen width");
 						throw new InvalidCommandLineException();
 					}
-					proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, samSeqDict, fasta));
+					proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
 					
 				} else if(cmdTokens.get(0).equals("goto") || cmdTokens.get(0).startsWith(":")){
 					String reg= Joiner.on(" ").join(cmdTokens).replaceFirst("goto|:", "").trim();
-					proc.getGenomicCoordsHistory().add(new GenomicCoords(reg, samSeqDict, fasta));
+					proc.getGenomicCoordsHistory().add(new GenomicCoords(reg, terminalWidth, samSeqDict, fasta));
 					
 				} else if (cmdTokens.get(0).equals("p")) {
 					proc.getGenomicCoordsHistory().previous(); 
@@ -191,6 +176,7 @@ public class InteractiveInput {
 				} else if(cmdTokens.get(0).equals("zo")){
 					int nz= Utils.parseZoom(Joiner.on(" ").join(cmdTokens), 1);
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+					gc.setTerminalWidth(terminalWidth);
 					for(int i= 0; i < nz; i++){
 						gc.zoomOut();
 					}
@@ -199,6 +185,7 @@ public class InteractiveInput {
 				} else if(cmdTokens.get(0).equals("zi")){
 					int nz= Utils.parseZoom(Joiner.on(" ").join(cmdTokens), 1);
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+					gc.setTerminalWidth(terminalWidth);
 					for(int i= 0; i < nz; i++){
 						gc.zoomIn();
 					}
@@ -209,6 +196,7 @@ public class InteractiveInput {
 						System.err.println(Utils.padEndMultiLine("Expected at least one argument.", proc.getWindowSize()));
 					}
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+					gc.setTerminalWidth(terminalWidth);
 					gc.cmdInputExtend(cmdTokens);
 					proc.getGenomicCoordsHistory().add(gc);
 				
@@ -218,11 +206,13 @@ public class InteractiveInput {
 					
 				} else if(cmdTokens.get(0).equals("l")) {
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+					gc.setTerminalWidth(terminalWidth);
 					gc.left();
 					proc.getGenomicCoordsHistory().add(gc);
 				
 				} else if(cmdTokens.get(0).equals("r")) {
 					GenomicCoords gc = (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+					gc.setTerminalWidth(terminalWidth);
 					gc.right();
 					proc.getGenomicCoordsHistory().add(gc);
 					
@@ -293,7 +283,7 @@ public class InteractiveInput {
 									// came with this new file. To recover, find an existing position, move there and try to reload the 
 									// file. This fixes issue#23
 									String region= Main.initRegion(null, globbed, null, null, debug);
-									proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
+									proc.getGenomicCoordsHistory().add(new GenomicCoords(region, terminalWidth, samSeqDict, fasta));
 									proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
 								} catch (Exception x){
 									msg= Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
@@ -362,6 +352,7 @@ public class InteractiveInput {
 						cmdTokens.add(""); // If track arg is missing use this placeholder.
 					}
 					GenomicCoords gc= (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+					gc.setTerminalWidth(terminalWidth);
 					proc.getGenomicCoordsHistory().add(proc.getTrackSet().findNextMatchOnTrack(cmdTokens.get(1), cmdTokens.get(2), gc, all));
 					
 				} else if (cmdTokens.get(0).equals("seqRegex")){
@@ -410,7 +401,7 @@ public class InteractiveInput {
 				} catch (InvalidGenomicCoordsException e){
 					
 					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null, debug);
-					proc.getGenomicCoordsHistory().add(new GenomicCoords(region, samSeqDict, fasta));
+					proc.getGenomicCoordsHistory().add(new GenomicCoords(region, terminalWidth, samSeqDict, fasta));
 					System.err.println(Utils.padEndMultiLine("Invalid genomic coordinates found. Resetting to "  + region, proc.getWindowSize()));
 					if(debug > 0){
 						e.printStackTrace();
@@ -485,7 +476,7 @@ public class InteractiveInput {
 			throw new InvalidCommandLineException();
 		}
 		
-		GenomicCoords testSeqDict= new GenomicCoords("default", null, null); 
+		GenomicCoords testSeqDict= new GenomicCoords("default", Utils.getTerminalWidth(), null, null); 
 		testSeqDict.setGenome(tokens, true);
 		if(testSeqDict.getSamSeqDict() != null){
 			proc.getGenomicCoordsHistory().setGenome(tokens);

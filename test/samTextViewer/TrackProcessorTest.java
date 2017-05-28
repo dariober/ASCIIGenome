@@ -25,7 +25,7 @@ public class TrackProcessorTest {
 
 		new Config(null);
 		
-		GenomicCoords gc= new GenomicCoords("chr7:1-100", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1-100", 80, null, null);
 		List<String> genome= new ArrayList<String>();
 		genome.add("test_data/ear045.oxBS.actb.bam");
 		gc.setGenome(genome, true);

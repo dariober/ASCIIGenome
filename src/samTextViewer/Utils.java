@@ -1800,5 +1800,10 @@ public class Utils {
 		}
 		return idx;
 	}
+
+	public static int getTerminalWidth() {
+		int terminalWidth= jline.TerminalFactory.get().getWidth(); 
+		return terminalWidth;
+	}
 	
 }

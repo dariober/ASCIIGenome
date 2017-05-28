@@ -28,7 +28,7 @@ public class ConfigTest {
 		Config conf= new Config(null);
 		conf.set(ConfigKey.seq_a, "grey");
 		String bam= "test_data/adjacent.bam";
-		GenomicCoords gc= new GenomicCoords("chr7:1-50", null, null);
+		GenomicCoords gc= new GenomicCoords("chr7:1-50", 80, null, null);
 		TrackReads tr= new TrackReads(bam, gc);
 		assertTrue(tr.printToScreen().contains("8m"));
 		conf= new Config(null);
