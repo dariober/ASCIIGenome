@@ -1,3 +1,11 @@
+New in 1.8.0
+============
+
+* Transcript names (or in general feature names) for GTF files ca be set via `gffNameAttr` (Fix issue 74).
+
+* There should be a mild improve in speed, especially at start up, due to building the
+  jar with libraries *extracted* instead of *packaged*.   
+
 New in 1.7.0
 ============
 

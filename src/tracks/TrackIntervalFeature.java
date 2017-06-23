@@ -109,7 +109,7 @@ public class TrackIntervalFeature extends Track {
 		this.intervalFeatureList = this.getFeaturesInInterval(
 				this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
 		
-		for(IntervalFeature ift : intervalFeatureList){
+		for(IntervalFeature ift : this.intervalFeatureList){
 			ift.mapToScreen(this.getGc().getMapping());
 		}		
 	}
@@ -137,7 +137,6 @@ public class TrackIntervalFeature extends Track {
 				break;
 			}
 			IntervalFeature intervalFeature= new IntervalFeature(q, this.getTrackFormat());
-
 			if(intervalFeature.getRaw().contains("\t__ignore_me__")){ // Hack to circumvent issue #38
 				continue;
 			}
@@ -156,89 +155,6 @@ public class TrackIntervalFeature extends Track {
 		return xFeaturesFiltered;
 	}
 
-	/** Populate field awkFiltered. The features that pass the awk filter go into the string set
-	 * "awkFiltered". Later, we decide whether a feature is visible by testing if the awkFiltered set 
-	 * contains the feature.  
-	 * */
-//	private void setAwkFiltered(List<IntervalFeature> features) throws IOException {
-//		
-//		if(this.getAwk().isEmpty()){
-//			this.awkFiltered= new HashSet<String>();
-//			return;
-//		}
-//		
-//		String[] strFeatures= new String[features.size()];
-//		for(int i= 0; i < features.size(); i++){
-//			strFeatures[i]= features.get(i).getRaw();
-//		}
-//		String str= Joiner.on("\n").join(strFeatures);
-//		
-//		InputStream is= new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
-//		
-//		String[] args= Utils.tokenize(this.getAwk(), " ").toArray(new String[0]); 
-//		
-//		PrintStream stdout = System.out;
-//		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//		try{
-//			PrintStream os= new PrintStream(baos);
-//			new org.jawk.Main(args, is, os, System.err);
-//		} catch(Exception e){
-//			try{
-//				this.setAwk(""); // If something goes wrong reset to no awk. Otherwise
-//				                 // You loop through a broken awk script.
-//			} catch(Exception ex){
-//				
-//			}
-//			throw new IOException();
-//		} finally{
-//			System.setOut(stdout);
-//			is.close();
-//		}
-//		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);		
-//		this.awkFiltered= new HashSet<String>(Arrays.asList(output.split("\n")));
-//	}
-
-	/** Return true if the interval feature passes the awk filter.
-	 * rawFeature is a raw line from IntervalFeature file.
-	 * @throws InvalidCommandLineException 
-	 * */
-//	private Boolean passAwkFilter(String rawFeature) throws IOException {
-//
-//		if(this.getAwk().isEmpty()){
-//			throw new RuntimeException();
-//		}
-//		
-//		InputStream is= new ByteArrayInputStream(rawFeature.getBytes(StandardCharsets.UTF_8));
-//		
-//		String[] args= Utils.tokenize(this.getAwk(), " ").toArray(new String[0]); 
-//		
-//		PrintStream stdout = System.out;
-//		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//		try{
-//			PrintStream os= new PrintStream(baos);
-//			new org.jawk.Main(args, is, os, System.err);
-//		} catch(Exception e){
-//			this.awk= ""; // If something goes wrong reset to no awk. Otherwise
-//						  // You loop through a broken awk script.
-//			throw new IOException();
-//		} finally{
-//			System.setOut(stdout);
-//			is.close();
-//		}
-//		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-//		if(output.trim().isEmpty()){
-//			return false;
-//		} else if(output.trim().equals(rawFeature.trim())){
-//			return true;
-//		} else {
-//			// Awk output is not empty or equal to inout line. Reset awk script and return null
-//			// to signal this condition.
-//			this.awk= "";
-//			return null;
-//		}
-//	}
-
-	
 	/** Return true if string is visible, i.e. it
 	 * passes the regex filters. Note that regex filters are applied to the raw string.
 	 * @throws InvalidGenomicCoordsException 
@@ -512,7 +428,6 @@ public class TrackIntervalFeature extends Track {
 		int nLines= 0;
 		try {
 			for(List<IntervalFeature> listToPrint : this.stackFeatures()){
-				
 				nLines++;
 				if(nLines > this.yMaxLines){
 					// Limit the number of lines in output
@@ -544,6 +459,7 @@ public class TrackIntervalFeature extends Track {
 				throw new RuntimeException(); // Feature doesn't map to screen, this shouldn't happen
 			}
 			intervalFeature.setGtfAttributeForName( this.getGtfAttributeForName() );
+			
 			String[] text = intervalFeature.makeIdeogramFormatted(this.isNoFormat());
 			
 			int i= 0;
@@ -686,83 +602,6 @@ public class TrackIntervalFeature extends Track {
 		}
 		return listOfLines;
 	}
-
-	/**Print raw features under track. 
-	 * windowSize size the number of characters before clipping occurs. This is 
-	 * typically the window size for plotting. windowSize is used only by CLIP mode.  
-	 * @throws IOException 
-	 * @throws InvalidGenomicCoordsException 
-	 * */
-//	private String printFeatures() throws InvalidGenomicCoordsException, IOException{
-//
-//		int windowSize= this.getGc().getUserWindowSize();
-//		if(this.getPrintMode().equals(PrintRawLine.FULL)){
-//			windowSize= Integer.MAX_VALUE;
-//		} else if(this.getPrintMode().equals(PrintRawLine.CLIP)){
-//			// Keep windowSize as it is
-//		} else {
-//			return "";
-//		} 
-//		
-//		List<String> featureList= new ArrayList<String>();
-//		
-//		int count= this.getPrintRawLineCount();
-//		String omitString= "";
-//		for(IntervalFeature ift : intervalFeatureList){
-//			featureList.add(ift.getRaw());
-//			count--;
-//			if(count == 0){
-//				int omitted= intervalFeatureList.size() - this.getPrintRawLineCount();
-//				if(omitted > 0){
-//					omitString= "[" + omitted + "/"  + intervalFeatureList.size() + " features omitted]";
-//				}
-//				break;
-//			}
-//		}
-//		List<String> tabList= Utils.tabulateList(featureList);
-//		StringBuilder sb= new StringBuilder();
-//		if( ! omitString.isEmpty()){
-//			sb.append(omitString + "\n");
-//		}
-//		for(String x : tabList){
-//			if(x.length() > windowSize){
-//				x= x.substring(0, windowSize);
-//			}			
-//			sb.append(x + "\n");
-//		}
-//		return sb.toString(); // NB: Leave last trailing \n
-//	}
-//
-//	@Override
-//	/** Write the features in interval to file by appending to existing file. 
-//	 * If the file to write to null or empty, return the data that would be
-//	 * written as string.
-//	 * printFeaturesToFile aims at reproducing the behavior of Linux cat: print to file, possibly appending or to stdout. 
-//	 * */
-//	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
-//		
-//		if(this.getExportFile() == null || this.getExportFile().isEmpty()){
-//			if(this.isNoFormat()){
-//				return this.printFeatures();
-//			} else {
-//				return "\033[38;5;" + Config.get256Color(ConfigKey.foreground) + 
-//						";48;5;" + Config.get256Color(ConfigKey.background) + "m" + this.printFeatures();				
-//			}
-//		}
-//		
-//		BufferedWriter wr= null;
-//		try{
-//			wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
-//			for(IntervalFeature ift : intervalFeatureList){
-//				wr.write(ift.getRaw() + "\n");
-//			}
-//			wr.close();
-//		} catch(IOException e){
-//			System.err.println("Cannot write to " + this.getExportFile());
-//			throw e;
-//		}
-//		return "";
-//	}
 	
 	/** Searching the current chrom starting at "from" to find the *next* feature matching the given string. 
 	 * If not found, search the other chroms, if not found restart from the beginning of
@@ -974,14 +813,31 @@ public class TrackIntervalFeature extends Track {
 		
 		//Now we get the name for this transcript
 		String txName= "."; // Default: No name
+		outerloop:
 		for(String txSuperType : FormatGTF.getTxSuperFeatures()){
 			for(IntervalFeature x : txFeatures){
 				if(x.getFeature().toLowerCase().equals(txSuperType)){
 					txName= x.getName();
 				}
-				if( txName != null  && ! txName.isEmpty() && ! txName.equals(".")){ break; } // A name found, break
+				if(txName != null && ! txName.isEmpty() && ! txName.equals(".")){ 
+					break outerloop; // A name found, break 
+				} 
 			}
-			if( txName != null  && ! txName.isEmpty() && ! txName.equals(".")){ break; }
+		}
+		if(txName == null || txName.isEmpty() || txName.equals(".")){
+			// If a name has not been found among the superfeatures, look at the
+			// individual components (exons, CDS, etc)
+			outerloop:
+			for(String txSuperType : FormatGTF.getTxSubFeatures()){
+				for(IntervalFeature x : txFeatures){
+					if(x.getFeature().toLowerCase().equals(txSuperType)){
+						txName= x.getName();
+					}
+					if(txName != null && ! txName.isEmpty() && ! txName.equals(".")){ 
+						break outerloop; // A name found, break 
+					} 
+				}
+			}	
 		}
 		transcript.setName(txName);
 		
@@ -1003,7 +859,7 @@ public class TrackIntervalFeature extends Track {
 		List<Double> mapToScreen = this.getGc().getMapping();
 		
 		if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)){
-		
+
 			Map<String, List<IntervalFeature>> tx;
 			if(this.getTrackFormat().equals(TrackFormat.GFF)){
 				tx = this.groupByGFFAttribute();
