@@ -836,8 +836,9 @@ public class TrackIntervalFeature extends Track {
 
 		// Now populate the lists of values by assigning to each key the transcript records:
 		for(IntervalFeature x : this.getIntervalFeatureList()){
-			
+
 			if(FormatGTF.getTxSuperFeatures().contains(x.getFeature().toLowerCase())){
+
 				// Transcript feature. E.g.
 				// 7 ensembl_havana mRNA 5527151 5530709 . - . ID=transcript:ENST00000331789;Parent=gene:ENSG00000075624;Name=ACTB-...
 				String txId= x.getGFFValueFromKey("ID");
@@ -849,6 +850,9 @@ public class TrackIntervalFeature extends Track {
 				// Part of transcript, e.g:
 				// 7 ensembl_havana exon 5527151 5527891 . - . Parent=transcript:ENST00000331789;Name=ENSE00001902654;constitutive=0;ensembl_end_pha
 				String txId= x.getGFFValueFromKey("Parent");
+				if(txId == null){
+					txId= "_na_";
+				}
 				if( ! txIds.containsKey(txId)){
 					txIds.put(txId, new ArrayList<IntervalFeature>());
 				}

@@ -44,6 +44,17 @@ public class TrackIntervalFeatureTest {
 		
 	}
 	
+	@Test 
+	public void canHandleGFFWithoutSupeFeatures() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
+		// We have a GFF with only exons. Since there are no "transcripts", there is nothing to group by. 
+		// See also issue #74. 
+		new Config(null);
+		GenomicCoords gc= new GenomicCoords("chr1:11800-20000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/issue74.gff3.gz", gc);
+		tif.setNoFormat(true);
+		assertEquals(10, tif.intervalFeatureList.size());
+	}
+	
 	@Test
 	public void canReadBgzFileExtension() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
@@ -115,7 +126,10 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
-	public void canAddNameToGFFTranscript() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void canAddNameToGFFTranscript() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
+		
+		new Config(null);
+		
 		String intervalFileName= "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3";
 
 		GenomicCoords gc= new GenomicCoords("7:5527151-5530709", 80, null, null);
@@ -125,9 +139,22 @@ public class TrackIntervalFeatureTest {
 		assertTrue(tif.printToScreen().contains("ACTB-001"));
 		
 		tif.setNoFormat(false);
-		assertTrue(tif.printToScreen().trim().startsWith("["));
-
+		assertTrue(tif.printToScreen().trim().startsWith("["));		
+	}
+	
+	@Test
+	public void canAddNameToGTFTranscript() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
 		
+		new Config(null);
+		
+		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
+
+		GenomicCoords gc= new GenomicCoords("7:11874", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		
+		assertTrue(tif.printToScreen().contains("NR_046018_1"));
+				
 	}
 	
 	@Test
