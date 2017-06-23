@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.jline.terminal.TerminalBuilder;
 
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -118,7 +119,7 @@ public class GenomicCoordsHistory {
 			
 			} else { // There are no valid positions in the history so create a new one and move there
 
-				int terminalWindowSize= Utils.getTerminalWidth();
+				int terminalWindowSize= TerminalBuilder.terminal().getWidth();
 				GenomicCoords defaultPos= new GenomicCoords("default", terminalWindowSize, null, null); 
 				defaultPos.setGenome(tokens, true);
 				
@@ -171,14 +172,13 @@ public class GenomicCoordsHistory {
 			System.err.println("Cannot read positions from file " + historyFile);
 			return;
 		}
-		int terminalWindowSize= Utils.getTerminalWidth();
 		for(String line : hist){
 			if(line.startsWith(MARKER_FOR_POS)){
 				// try to create genomicCoords object using checkGc as template
 				// If success, add this position to history list.
 				try {
 					String reg= line.replaceFirst(MARKER_FOR_POS, "");
-					GenomicCoords gc= new GenomicCoords(reg, terminalWindowSize, checkGc.getSamSeqDict(), checkGc.getFastaFile(), false);
+					GenomicCoords gc= new GenomicCoords(reg, checkGc.getUserWindowSize(), checkGc.getSamSeqDict(), checkGc.getFastaFile(), false);
 					this.add(gc);
 					this.countHistoricPositions += 1;
 				} catch (Exception e){
