@@ -396,7 +396,7 @@ public class UtilsTest {
 	@Test
 	public void testAwk() throws Exception{
 
-		String fin= "/Users/berald01/Downloads/hg19.gencode_genes_v19.gtf"; // "test_data/hg19_genes_head.gtf"
+		String fin= "test_data/hg19.gencode_genes_v19.gtf.gz";
 		InputStream is= new FileInputStream(fin);
 		
 		String[] args= {"-F", "\t", "NR <= 100000"}; 

@@ -89,7 +89,7 @@ public class IntervalFeatureTest {
 		
 	}
 	
-	// @Test
+	//@Test
 	public void canAssignNameToFeature() throws InvalidGenomicCoordsException{
 		
 		Location location= new Location(10, 100);

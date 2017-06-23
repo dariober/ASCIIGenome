@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
@@ -19,6 +20,11 @@ import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 
 public class TrackIntervalFeatureTest {
+	
+	@Before
+	public void prepareConfig() throws IOException, InvalidConfigException{
+		new Config(null);
+	}
 	
 	@Test
 	public void canReturnFeaturesAsRawStrings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
@@ -42,6 +48,17 @@ public class TrackIntervalFeatureTest {
 //		tif.setPrintRawLineCount(-1); // Return all
 //		assertEquals(24, tif.getRecordsAsStrings().size());
 		
+	}
+	
+	@Test 
+	public void canHandleGFFWithoutSupeFeatures() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
+		// We have a GFF with only exons. Since there are no "transcripts", there is nothing to group by. 
+		// See also issue #74. 
+		
+		GenomicCoords gc= new GenomicCoords("chr1:11800-20000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/issue74.gff3.gz", gc);
+		tif.setNoFormat(true);
+		assertEquals(10, tif.intervalFeatureList.size());
 	}
 	
 	@Test
@@ -115,7 +132,8 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
-	public void canAddNameToGFFTranscript() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void canAddNameToGFFTranscript() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
+		
 		String intervalFileName= "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3";
 
 		GenomicCoords gc= new GenomicCoords("7:5527151-5530709", 80, null, null);
@@ -125,9 +143,22 @@ public class TrackIntervalFeatureTest {
 		assertTrue(tif.printToScreen().contains("ACTB-001"));
 		
 		tif.setNoFormat(false);
-		assertTrue(tif.printToScreen().trim().startsWith("["));
-
+		assertTrue(tif.printToScreen().trim().startsWith("["));		
+	}
+	
+	@Test
+	public void canAddNameToGTFTranscript() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
 		
+		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
+
+		GenomicCoords gc= new GenomicCoords("chr1:11874-20000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		
+		System.err.println(tif.printToScreen());
+		
+		// assertTrue(tif.printToScreen().contains("NR_046018_1"));
+				
 	}
 	
 	@Test
@@ -176,7 +207,6 @@ public class TrackIntervalFeatureTest {
 		tif.setNoFormat(true);
 		assertEquals(2, tif.getIntervalFeatureList().size());
 		
-		new Config(null);
 		assertEquals("||||", tif.printToScreen().substring(0,  4));
 		tif.setNoFormat(false);
 		assertTrue(tif.printToScreen().trim().startsWith("[")); // trim is necessary to remove escape \033
@@ -508,7 +538,7 @@ public class TrackIntervalFeatureTest {
 	
 	@Test
 	public void canPrintRawLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException, InvalidCommandLineException{
-		new Config(null);
+		
 		GenomicCoords gc= new GenomicCoords("chr1:1-40000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		tif.setPrintMode(PrintRawLine.CLIP);

@@ -34,8 +34,6 @@ while(System.currentTimeInMiilis() < (now + 10000)){
 } 
 ```
 
-* Check `gffNameAttr` for gtf features
-
 * Allow the user to set the `tmp` directory. By default use a `tmp` other then 
   the system default. On Linux the `tmp` is often pretty small.
 

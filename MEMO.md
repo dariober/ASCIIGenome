@@ -1,19 +1,3 @@
-<!-- MarkdownTOC -->
-
-- [Notes on maintenance and development](#notes-on-maintenance-and-development)
-    - [Release new version](#release-new-version)
-        - [Upload to github](#upload-to-github)
-        - [Upload ASCIIGenome-1.6.0.zip to github](#upload-asciigenome-xyzzip-to-github)
-        - [Update brew formula](#update-brew-formula)
-        - [Update bioconda](#update-bioconda)
-        - [Merge branch to master](#merge-branch-to-master)
-    - [Start new development branch](#start-new-development-branch)
-        - [Create a new branch:](#create-a-new-branch)
-        - [Set up Eclipse project](#set-up-eclipse-project)
-
-<!-- /MarkdownTOC -->
-
-
 Notes on maintenance and development
 ====================================
 
@@ -45,20 +29,21 @@ is what users will download and use.
 * Prepare zip
 
 ```
-cd ~/svn_git/ASCIIGenome/trunk ## Or wherever the latest local dir is
+cd ~/git_repos/ASCIIGenome ## Or wherever the latest local dir is
 
-mkdir ASCIIGenome-1.6.0        ## The 1.6.0 tag should match the version in ArgParse.VERSION
+mkdir ASCIIGenome-1.8.0        ## The 1.8.0 tag should match the version in ArgParse.VERSION
 
 ## Copy helper script and jar file to future zip dir
-cp ASCIIGenome ASCIIGenome-1.6.0/
-cp /Users/berald01/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-1.6.0/
+cp ASCIIGenome ASCIIGenome-1.8.0/
+cp ~/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-1.8.0/
+cp INSTALL.md ASCIIGenome-1.8.0/
 
 ## Zip up
-zip -r ASCIIGenome-1.6.0.zip ASCIIGenome-1.6.0
-rm -r ASCIIGenome-1.6.0
+zip -r ASCIIGenome-1.8.0.zip ASCIIGenome-1.8.0
+rm -r ASCIIGenome-1.8.0
 ```
 
-### Upload ASCIIGenome-1.6.0.zip to github 
+### Upload ASCIIGenome-1.8.0.zip to github 
 
 * Create a new release (*Draft new release*). Format of the name must be v*X.Y.Z*
   e.g. *v1.2.3*. As always, X.Y.Z must match throughout.
@@ -74,7 +59,7 @@ Edit `install/brew/asciigenome.rb` to change **release version** and **sha sum**
 Get sha256 sum with:
 
 ```
-shasum -a 256 ASCIIGenome-1.6.0.zip
+shasum -a 256 ASCIIGenome-1.8.0.zip
 vi install/brew/asciigenome.rb ## Edit version and sha
 ```
 
@@ -112,12 +97,12 @@ the new branch.
 * Check out the new branch:
 
 ```
-cd /Users/berald01/svn_git/
+cd /Users/berald01/git_repos/
 svn co https://github.com/dariober/ASCIIGenome
 ```
 
 This command effectively checks out the entire repository. If
-`/Users/berald01/svn_git/` already contains dir `ASCIIGenome` with the trunk and
+`/Users/berald01/git_repos/` already contains dir `ASCIIGenome` with the trunk and
 old branches, svn will not download them again. That's good because downloading
 the entire repository takes a while.
 
@@ -131,7 +116,7 @@ to download and prepare them or just copy it from one of the old branches.
 * *Project name*: something meaningful, it doesn't really matter. Use the branch name maybe.
 
 * Uncheck *Use default location* and browse instead to the new branch directory, for 
-example it may be `/Users/berald01/svn_git/ASCIIGenome/branches/argparse`.
+example it may be `/Users/berald01/git_repos/ASCIIGenome/branches/argparse`.
 
 * If not selected, choose execution environment Java 1.7. Other options should be fine as default.
 

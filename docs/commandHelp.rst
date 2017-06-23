@@ -462,9 +462,7 @@ Set colour for tracks matched by regex.  Colors can be specified by name or by a
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Available colours are from the Xterm256 palette: 
-
-
+Available colours are from the Xterm256 palette: `here <http://jonasjacek.github.io/colors/>`_             
 
 Example::
 
