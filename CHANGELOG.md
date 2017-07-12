@@ -1,7 +1,18 @@
+New in 1.9.0
+============
+
+* New command `featureColorForRegex` allows feature colours to be customised (see also issue #75)
+
+* Add command `PERCENT [PERCENT]` to zoom into a region on the current 
+window. E.g. `.25 .5` moves to the second quarter of the current 
+window. This command deprecates the use of suffix `c` in command command `INT [INT]`. 
+
+* Fixed some minor bugs.
+
 New in 1.8.0
 ============
 
-* Transcript names (or in general feature names) for GTF files ca be set via `gffNameAttr` (Fix issue 74).
+* Transcript names (or in general feature names) for GTF files can be set via `gffNameAttr` (Fix issue 74).
 
 * There should be a mild improve in speed, especially at start up, due to building the
   jar with libraries *extracted* instead of *packaged*.   

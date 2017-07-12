@@ -153,7 +153,7 @@ public class InteractiveInput {
 						String newRegion= Utils.parseConsoleInput(cmdTokens, proc.getGenomicCoordsHistory().current()).trim();
 						proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
 				
-				} else if(cmdTokens.get(0).matches("^\\d+.*")){
+				} else if(cmdTokens.get(0).matches("^\\d+.*") || cmdTokens.get(0).matches("^\\.\\d+.*")){
 					String newRegion;
 					try{
 						newRegion= this.gotoOnCurrentChrom(cmdTokens, proc.getGenomicCoordsHistory().current());
@@ -240,6 +240,9 @@ public class InteractiveInput {
 				} else if((cmdTokens.get(0).equals("colorTrack") || cmdTokens.get(0).equals("colourTrack"))){
 					proc.getTrackSet().setTrackColourForRegex(cmdTokens); 
 
+				} else if((cmdTokens.get(0).equals("featureColorForRegex"))){
+					proc.getTrackSet().setFeatureColorForRegex(cmdTokens); 
+					
 				} else if(cmdTokens.get(0).equals("hideTitle")){
 					proc.getTrackSet().setHideTitleForRegex(cmdTokens); 
 					
@@ -433,19 +436,33 @@ public class InteractiveInput {
 
 	private String gotoOnCurrentChrom(List<String> cmdTokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException {
 		List<String> args= new ArrayList<String>(cmdTokens);
-		if(args.get(args.size()-1).endsWith("c")){
-			// Switch to screen coordinates
-			// Join, remove trailing "c" and split again 
-			args= Splitter.on(" ").omitEmptyStrings().splitToList(Joiner.on(" ").join(args).trim().replaceAll("c$", ""));
-			int screenFrom= Integer.parseInt(args.get(0));
-			int regFrom= (int) Math.rint(gc.getMapping().get(screenFrom - 1));
-			
+		if(Float.valueOf(args.get(0)) < 1){
+			// Switch to screen percent coordinates
+			float pctFrom= Float.parseFloat(args.get(0));
+			// Which is the screen column matching this percent?
+			int screenIdx= (int) Math.rint(pctFrom * gc.getUserWindowSize());
+			// Which is the genomic coordinate corresponding to this screen index?
+			int regFrom= (int) Math.rint(gc.getMapping().get(screenIdx));
+
+			// Same for end position. Accounting for possibility that only one pct value is given
 			int regTo;
 			if(args.size() > 1){
-				int screenTo= Integer.parseInt(args.get(args.size()-1));
-				regTo= (int) Math.rint(gc.getMapping().get(screenTo - 1));
+				float pctTo= Float.parseFloat(args.get(1));
+				if(pctTo > 1){
+					System.err.println("Coordinate interval given as percent of screen width must be between 0 and 1. Got " + args);
+					throw new InvalidGenomicCoordsException();
+				}
+				screenIdx= (int) Math.rint(pctTo * gc.getUserWindowSize());
+				if(screenIdx >= gc.getMapping().size()){
+					screenIdx= gc.getMapping().size() - 1;
+				}
+				regTo= (int) Math.rint(gc.getMapping().get(screenIdx));
 			} else {
 				regTo= regFrom + gc.getGenomicWindowSize();
+			}
+			if(regTo < regFrom){
+				System.err.println("Invalid coordinates: end < start for argument(s): " + args);
+				throw new InvalidGenomicCoordsException();				
 			}
 			return gc.getChrom() + ":" + regFrom + "-" + regTo; 
 		}
@@ -636,7 +653,7 @@ public class InteractiveInput {
 			proc.setShowGruler(! proc.isShowGruler());
 			return ExitCode.CLEAN;
 
-		} else if("cruler".startsWith(args.get(0))){
+		} else if("pctRuler".startsWith(args.get(0))){
 			proc.setShowCruler(! proc.isShowCruler());
 			return ExitCode.CLEAN;
 			

@@ -291,6 +291,12 @@ public class Xterm256 {
 		return map;
 	}
 	
+	/**Return the color integer for the given input string.
+	 * colorName can be: 1) The name itself like "red" 
+	 * 2) An integer string in the range 0-255, e.g. "230"
+	 * 3) Prefix of a name, e.g. "lightsal".
+	 * Color names are case insensitive. 
+	 * */
 	public int colorNameToXterm256(String colorName) throws InvalidColourException {
 			
 		try{ // See if colour name is already an int between 0 and 255

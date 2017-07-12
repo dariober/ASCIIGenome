@@ -9,8 +9,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -649,6 +651,51 @@ public class TrackSet {
         }
 	}
 
+	public void setFeatureColorForRegex(List<String> cmdTokens) throws InvalidCommandLineException, InvalidColourException {
+
+		List<String> argList= new ArrayList<String>(cmdTokens);
+		argList.remove(0); // Remove cmd name
+		
+		// Collect all regex/color pairs from input
+		Map<String, String> colorForRegex= new LinkedHashMap<String, String>();
+		final Xterm256 xterm256= new Xterm256();
+		while(true){
+			List<String> pair = Utils.getNArgsForParam(argList, "-r", 2);
+			if(pair == null){
+				break;
+			}
+			String pattern= pair.get(0);
+			try{ // Check valid regex
+				Pattern.compile(pattern); 
+			} catch(PatternSyntaxException e){
+		    	System.err.println("Invalid regex: " + pattern);
+		    	throw new InvalidCommandLineException();
+			}	
+			String xcolor= pair.get(1);
+			xterm256.colorNameToXterm256(xcolor); // Check this is a valid colour 
+			colorForRegex.put(pattern, xcolor);
+		}
+		if(colorForRegex.size() == 0){
+			colorForRegex= null;
+		}
+		
+		boolean invertSelection= Utils.argListContainsFlag(argList, "-v");
+		
+		// Regex to capture tracks: All positional args left
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(argList.size() > 0){
+            trackNameRegex= argList;
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        
+        // Set as appropriate
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+        for(Track tr : tracksToReset){
+        	tr.setColorForRegex(colorForRegex);
+        }
+	}
+	
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidColourException{
 
 		final Xterm256 xterm256= new Xterm256();
@@ -1830,26 +1877,5 @@ public class TrackSet {
 		}
 
 		return Joiner.on("\n").join(opened);
-	}
-
-
-//	/** Attempt to collect source of sequence dictionary 
-//	 * */
-//	private String getSamSeqDictSource(){
-//		String samSeqDictSource= null;
-//		// First try to find fasta
-//		for(Track tr : this.getTrackList()){
-//			if(tr.getGc().getFastaFile() != null){
-//				return tr.getGc().getFastaFile();
-//			}
-//		}
-//		// Try directly the get method:
-//		for(Track tr : this.getTrackList()){
-//			if(tr.getGc().getSamSeqDictSource() != null){
-//				return tr.getGc().getSamSeqDictSource();
-//			}
-//		}
-//		return samSeqDictSource;
-//	}
-	
+	}	
 }

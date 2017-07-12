@@ -4,10 +4,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import exceptions.InvalidColourException;
-
 /** Mapping of GTF/GFF features to text character to use to represent them.
  * */
 public class FormatGTF {
@@ -72,32 +68,47 @@ public class FormatGTF {
 	
 	/* M E T H O D S */
 	
+//	protected FeatureChar formatChar(char text, char strand) {
+//		FeatureChar fchar= new FeatureChar();
+//		fchar.setText(text);
+//		fchar.setFgColor(Config.get(ConfigKey.foreground));
+//		if(strand == '+') {
+//			fchar.setBgColor(Config.get(ConfigKey.feature_background_positive_strand));
+//		} else if(strand == '-') {
+//			fchar.setBgColor(Config.get(ConfigKey.feature_background_negative_strand));
+//		} else {
+//			fchar.setBgColor(Config.get(ConfigKey.feature_background_no_strand));
+//		}
+//		return fchar;	
+//	}
+	
 	/** Return text formatted according to strand. 
 	 * @throws InvalidColourException 
 	 * */
-	public static String format(char text, char strand) throws InvalidColourException{
-		StringBuilder sb= new StringBuilder();
-		sb.append("\033[48;5;");
-		if(strand == '+') {
-			sb.append(Config.get256Color(ConfigKey.feature_background_positive_strand));
-			sb.append(";38;5;");
-			sb.append(Config.get256Color(ConfigKey.foreground));
-		} else if(strand == '-') {
-			sb.append(Config.get256Color(ConfigKey.feature_background_negative_strand));
-			sb.append(";38;5;");
-			sb.append(Config.get256Color(ConfigKey.foreground));
-		} else {
-			sb.append(Config.get256Color(ConfigKey.feature_background_no_strand));
-			sb.append(";38;5;");
-			sb.append(Config.get256Color(ConfigKey.foreground));
-		}	
-		sb.append("m");
-		sb.append(text);
-		sb.append("\033[48;5;");
-		sb.append(Config.get256Color(ConfigKey.background));
-		sb.append("m");
-		return sb.toString();
-	}
+//	@Deprecated
+//	public static String format(char text, char strand) throws InvalidColourException{
+//		StringBuilder sb= new StringBuilder();
+//		sb.append("\033[48;5;");
+//		if(strand == '+') {
+//			sb.append(Config.get256Color(ConfigKey.feature_background_positive_strand));
+//			sb.append(";38;5;");
+//			sb.append(Config.get256Color(ConfigKey.foreground));
+//		} else if(strand == '-') {
+//			sb.append(Config.get256Color(ConfigKey.feature_background_negative_strand));
+//			sb.append(";38;5;");
+//			sb.append(Config.get256Color(ConfigKey.foreground));
+//		} else {
+//			sb.append(Config.get256Color(ConfigKey.feature_background_no_strand));
+//			sb.append(";38;5;");
+//			sb.append(Config.get256Color(ConfigKey.foreground));
+//		}	
+//		sb.append("m");
+//		sb.append(text);
+//		sb.append("\033[48;5;");
+//		sb.append(Config.get256Color(ConfigKey.background));
+//		sb.append("m");
+//		return sb.toString();
+//	}
 
 	protected static Set<String> getTxSuperFeatures() {
 

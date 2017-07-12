@@ -24,6 +24,9 @@ ASCIIGenome="$1 --debug 2 -ni"
 
 set -x
 
+## Set color for features
+$ASCIIGenome ../test_data/hg19_genes_head.gtf -x "goto chr1:6267-17659 && featureColorForRegex -r DDX11L1 red -r WASH7P blue" > /dev/null
+
 ## Test awk with getSamTag()
 $ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && awk 'getSamTag(\"NM\") > 0'" > /dev/null
 

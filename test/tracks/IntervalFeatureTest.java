@@ -10,11 +10,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.biojava.nbio.genome.parsers.gff.Feature;
-import org.biojava.nbio.genome.parsers.gff.Location;
+import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.base.Joiner;
 
 import coloring.Config;
 import exceptions.InvalidColourException;
@@ -23,6 +20,19 @@ import exceptions.InvalidGenomicCoordsException;
 
 public class IntervalFeatureTest {
 
+	private String ideogramToString(List<FeatureChar> fchars, boolean noFormat) throws InvalidColourException{
+		StringBuilder sb= new StringBuilder();
+		for(FeatureChar x : fchars){
+			sb.append(x.format(noFormat));
+		}
+		return sb.toString();
+	}
+	
+	@Before
+	public void setConfig() throws IOException, InvalidConfigException{
+		new Config(null);
+	}
+	
 	@Test
 	public void beahviourOfIsNumber() {
 
@@ -54,22 +64,18 @@ public class IntervalFeatureTest {
 		f.setScreenFrom(0);
 		f.setScreenTo(9);
 
-		assertEquals("||||||||||", Joiner.on("").join(f.makeIdeogramFormatted(true)));
+		String ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertEquals("||||||||||", ideogram);
 
 		f.setStrand('+');
-		assertEquals(">>>>>>>>>>", Joiner.on("").join(f.makeIdeogramFormatted(true)));
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertEquals(">>>>>>>>>>", ideogram);
 		
 		// Can add name
 		f.setName("foo");
-		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains("foo"));
-		assertTrue(f.makeIdeogramFormatted(false).length > 4);
-
-		// Set ideogram from outside and put name on it
-		f.setIdeogram("xxxxxxxxxx".toCharArray());
-		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains("x_foo_x"));
-		
-		f.setIdeogram(null);
-		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains(">_foo_>"));
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.contains("foo"));
+		assertTrue(f.getIdeogram(true, true).size() > 4);
 
 		// With GTF feature
 		line= "chr1 na exon 1 100 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
@@ -77,24 +83,50 @@ public class IntervalFeatureTest {
 		f.setScreenFrom(0);
 		f.setScreenTo(9);
 		f.setGtfAttributeForName("foo");
-		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains("E_myname_E"));
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.contains("E_myname_E"));
 
 		// No key value found
 		f.setGtfAttributeForName("NOT");
-		assertEquals("EEEEEEEEEE", Joiner.on("").join(f.makeIdeogramFormatted(true)));
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertEquals("EEEEEEEEEE", ideogram);
 
 		// Use default
 		f.setGtfAttributeForName(null);
-		assertTrue(Joiner.on("").join(f.makeIdeogramFormatted(true)).contains("mrna"));
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.contains("mrna"));
 		
 	}
-	
-	//@Test
-	public void canAssignNameToFeature() throws InvalidGenomicCoordsException{
+
+	@Test
+	public void canSetIdeogram() throws InvalidGenomicCoordsException, InvalidColourException{
+
+		String line= "chr1 0 10".replaceAll(" ", "\t");
+		IntervalFeature f= new IntervalFeature(line, TrackFormat.BED);
+		f.setScreenFrom(0);
+		f.setScreenTo(9);
+
+		// Use an ideogram created from outside
+		List<FeatureChar> xIdeogram= new ArrayList<FeatureChar>(); 
+		for(int i= 0; i< "xxxxxxxxxx".length(); i++){
+			FeatureChar x= new FeatureChar();
+			x.setText('x');
+			xIdeogram.add(x);
+		}
+		f.setName("foo");
+		f.setIdeogram(xIdeogram, true);
+
+		String ideogram = this.ideogramToString(f.getIdeogram(false, true), true);
+		assertTrue(ideogram.contains("x_foo_x"));
 		
-		Location location= new Location(10, 100);
-		Feature gff= new Feature("chr1", "foo", "bar", location, (double) 0, 0, "ID=mirna");
-		System.out.println(gff.getAttribute(null));		
+		// Use default, internal ideogram
+		f.setIdeogram(null, false);
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.contains("|_foo_|"));
+	}
+	
+	@Test
+	public void canAssignNameToFeature() throws InvalidGenomicCoordsException{
 		
 		String line; 
 		IntervalFeature f;
@@ -280,14 +312,10 @@ public class IntervalFeatureTest {
 		f.mapToScreen(rulerMap);
 		assertEquals(4, f.getScreenFrom());
 		assertEquals(4, f.getScreenTo());
-		//System.out.println(f);
-		//System.out.println(rulerMap);
 	}
 	
 	@Test
 	public void canFormatVCFLine() throws InvalidGenomicCoordsException, InvalidColourException, IOException, InvalidConfigException{
-		
-		new Config(null);
 		
 		List<Double> rulerMap= new ArrayList<Double>();
 		for(int i= 1; i < 30; i++){
@@ -297,21 +325,22 @@ public class IntervalFeatureTest {
 		String vcfLine= "1 10 . C G 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
 		ift.mapToScreen(rulerMap);
-		assertEquals(1, ift.makeIdeogramFormatted(true).length);
-		assertEquals("G", ift.makeIdeogramFormatted(true)[0]);
-		assertTrue(ift.makeIdeogramFormatted(false)[0].contains("[")); // Just check there is a formatting char
+		
+		assertEquals(1, ift.getIdeogram(true, true).size());
+		assertEquals('G', ift.getIdeogram(true, true).get(0).getText());
+		assertTrue(ift.getIdeogram(true, true).get(0).format(false).contains("[")); // Just check there is a formatting char
 		
 		// Deletion
 		vcfLine= "1 10 . CTTG C 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
 		ift.mapToScreen(rulerMap);
-		assertEquals("D", ift.makeIdeogramFormatted(true)[0]);
+		assertEquals("D", ift.getIdeogram(true, true).get(0).format(true));
 		
 		// Insertion
 		vcfLine= "1 10 . C CTTG 23 PASS AC=2;AN=4;DP=4718;NS=65 GT:VR:DP:FT".replaceAll(" ", "\t");
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF);
 		ift.mapToScreen(rulerMap);
-		assertEquals("I", ift.makeIdeogramFormatted(true)[0]);
+		assertEquals("I", ift.getIdeogram(true, true).get(0).format(true));
 	}
 	
 //	@Test

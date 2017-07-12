@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -58,6 +59,14 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void roundNumber(){
+		assertEquals(10.12, Utils.round(10.123, 2), 0.000001);
+		assertEquals(10.13, Utils.round(10.129, 2), 0.000001);
+		assertEquals(10.50, Utils.round(10.505, 2), 0.000001);
+		assertEquals(10.52, Utils.round(10.515, 2), 0.000001);
+	}
 	
 	@Test
 	public void testParallel(){
@@ -224,6 +233,35 @@ public class UtilsTest {
 	}
 	
 	@Test
+	public void canGetCommandWithMultipleArgs() throws InvalidCommandLineException{
+		String[] cmd= {"-baz", "-r", "foo", "bar"};
+		List<String> argList= new LinkedList<String>(Arrays.asList(cmd));
+		
+		List<String> args= new ArrayList<String>();
+		args.add("foo");
+		args.add("bar");
+		
+		assertEquals(args, Utils.getNArgsForParam(argList, "-r", 2));
+		assertEquals(1, argList.size()); // Item left in original list
+
+		// Missing arg
+		argList= new LinkedList<String>(Arrays.asList(cmd));
+		assertEquals(null, Utils.getNArgsForParam(argList, "-z", 2));
+		assertEquals(cmd.length, argList.size());
+		
+		// Asked for too many args
+		argList= new LinkedList<String>(Arrays.asList(cmd));
+		boolean passed= false;
+		try{
+			Utils.getNArgsForParam(argList, "-r", 3);
+		} catch(InvalidCommandLineException e){
+			passed= true;
+		}
+		assertTrue(passed);
+		assertEquals(cmd.length, argList.size()); // Input list left unchanged
+	}
+	
+	@Test
 	public void canGetCommandArg() throws InvalidCommandLineException{
 		String[] cmd= {"-r", "foo", "-x", "-bar"};
 		List<String> argList= new LinkedList<String>(Arrays.asList(cmd));
@@ -251,6 +289,13 @@ public class UtilsTest {
 			pass= true;
 		}
 		assertTrue(pass);
+		
+		// Param given more than once: Return first found:
+		String[] cmd2= {"-r", "first", "-X", "-r", "second"};
+		argList= new LinkedList<String>(Arrays.asList(cmd2));
+		assertEquals("first", Utils.getArgForParam(argList, "-r", null));
+		assertEquals("second", Utils.getArgForParam(argList, "-r", null));
+		assertEquals("-X", argList.get(0));
 	}
 	
 	@Test
@@ -544,7 +589,7 @@ public class UtilsTest {
 	} 
 	
 	@Test
-	public void canMergeIntervals() throws InvalidGenomicCoordsException{
+	public void canMergeIntervals() throws InvalidGenomicCoordsException, InvalidColourException{
 		
 		// Zero len list
 		List<IntervalFeature> intv= new ArrayList<IntervalFeature>();

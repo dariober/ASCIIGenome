@@ -36,7 +36,7 @@ public class TrackReadsTest {
 
 	
 	public static String fastaFile= "test_data/chr7.fa";
-
+	
 	@Test
 	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{
 		

@@ -5,15 +5,38 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.junit.Before;
 import org.junit.Test;
 
+import coloring.Config;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 
 public class TrackBookmarkTest {
 
+	@Before
+	public void prepareConfig() throws IOException, InvalidConfigException{
+		new Config(null);
+	}
+	
+	@Test
+	public void canColorByRegex() throws Exception{
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", 80, null, null);
+		TrackBookmark bm= new TrackBookmark(gc, "book1");
+		bm.printToScreen(); // This is to populate the ideograms.
+		
+		Map<String, String> colorForRegex= new HashMap<String, String>();
+		colorForRegex.put(".*", "216");
+		bm.setColorForRegex(colorForRegex);
+		assertTrue(bm.printToScreen().contains("216"));
+
+	}
+	
 	@Test
 	public void canAddIntervalsToTrackBookmark() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		

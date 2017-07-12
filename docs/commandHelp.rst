@@ -41,17 +41,31 @@ Or the same with::
 INT
 +++
 
-:code:`INT [INT] [c]`
+:code:`INT [INT]`
 
-Go to position `INT` or to region `INT INT` on current chromosome. Use :code:`INT -h` for full help. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt.
+Go to position `INT` or to region `INT INT` on current chromosome. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt.
 
-The option :code:`c` (column) interprets INT as positions on the screen column. This is useful to move within the current genomci window without typing the (possibly long) string of genomic coordinates.
 Examples::
 
     10                   -> Will jump to position 10 
     10 1000              -> Go to region 10-1000 
     10 250 500 750 1000  -> Same as above again
-    10 50c               -> Go to region spanned by columns 10 to 50
+
+
+
+PERCENT
++++++++
+
+:code:`PERCENT [PERCENT]`
+
+Zoom into the current window delimited by given PERCENT of screen. PERCENT is a number in the range 0-1 mapping to the given percent of the current genomic window. Similar to the `:code:INT` command, one number moves the genomic window to the position located at PERCENT and two numbers will zoom into the region PERCENT-PERCENT.
+This command is useful to quickly focus an a feature of interest, such as a ChIP-Seq peak or a variant.
+
+Examples::
+
+    0.25      -> Jump to position at 25% of current screen.
+    .25       -> Same as above.
+    .25 .75   -> Zoom into the interval between 25-75% of current screen.
 
 
 
@@ -350,6 +364,28 @@ With no args, turn off awk for all tracks.
 
 * An invalid script throws an ugly stack trace to stderr. To be fixed.
 
+featureColorForRegex
+++++++++++++++++++++
+
+:code:`featureColorForRegex [-r regex color] [-v] [track_regex = .*]...`
+
+Set colour for features captured by regex.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by a regex. It is useful for example to highlight features of interest such as CDS. Currently the color is assigned to the text background.
+For available colors see :code:`colorTrack -h`. As :code:`colorTrack` colors can be specified by name, name prefix, or integer in range 0-255.
+
+Options::
+
+:code:`-r <regex> <color>` Features matching :code:`regex` will have color :code:`color`. The regex is applied to the raw lines as read from file. This option takes exactly two arguments and can be given zero or more times. If this option is not present colors are reset to default.
+
+:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
+:code:`[track_regex]` Apply to tracks captured by this list of regexes.
+
+Example::
+
+    featureColorForRegex -r CDS plum2 -r exon grey
+    featureColorForRegex bed -> Reset to default track names matching 'bed'
+
+
 featureDisplayMode
 ++++++++++++++++++
 
@@ -458,7 +494,7 @@ colorTrack
 
 :code:`colorTrack [-v] color [track_regex = .*]...`
 
-Set colour for tracks matched by regex.  Colors can be specified by name or by a value between 0 and 255. If only the start of a color is given, the first name found starting with the given string is returned, e.g. 'darkv' is interpreted as 'darkviolet'. Names are case insensitive.
+Set colour for tracks matched by regex.  Colors can be specified by name or by a value between 0 and 255. If only the prefix of a color name is given, the first name found starting with the prefix is returned, e.g. 'darkv' is interpreted as 'darkviolet'. Names are case insensitive.
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
@@ -669,7 +705,7 @@ Show or set features to display.  The argument :code:`arg` takes the following c
 
 * :code:`gruler`: Toggle the display of the genomic coordinates as ruler.
 
-* :code:`cruler`: Toggle the display of the column number of the terminal (useful for navigation within the current genomic window).
+* :code:`pctRuler`: Toggle the display of the column number of the terminal (useful for navigation within the current genomic window).
 
 :code:`arg` can be just a prefix of the argument name, e.g. :code:`show ge` will be recognized as :code:`show genome`.
 

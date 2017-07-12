@@ -1,6 +1,6 @@
 package tracks;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	
 	// The feature as it would be represented on screen. Each String of the array
 	// is a character to be printed on screen (e.g. "E") possibly formatted (e.g. "\033[m5;45E\033")
-	private char[] ideogram;
+	private List<FeatureChar> ideogram;
 	
 	/* C o n s t r u c t o r s */
 		
@@ -287,9 +287,52 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return (this.chrom.equals(x.chrom) && this.from == x.from && this.to == x.to && this.strand == x.strand);
 	}
 	
-	/** Returns array of characters to be used for this feature type and strand.
+
+	/** Edit the ideogram list with chars from feature name replaced */
+	private void addNameToIdeogram(){
+		
+		if(this.getName() == null || this.getName().trim().isEmpty() || this.getName().trim().equals(".")){
+			return;
+		}
+		char[] ideogramWithName= new char[this.ideogram.size()];
+		for(int i= 0; i < ideogramWithName.length; i++){
+			ideogramWithName[i]= this.ideogram.get(i).getText();
+		}
+				
+		// Find longest run of the same char to make space for the name
+		int[] run= this.maxRun(ideogramWithName);
+		
+		// This is the amount of space (# chars) available to the name. Minus n because we leave some
+		// space left and right.
+		int space= run[1] - 1;
+		if(space < 4){ // If the name has left less than this many chars do not return it at all. 
+			return;
+		}
+						
+		// Name to print, maybe shorter than the full name:
+		String nameOnFeature= "_" + this.getName().trim() + "_";
+		nameOnFeature= nameOnFeature.substring(0, Math.min(nameOnFeature.length(), space - 1));
+		
+		// This is where the name will start and end.
+		int offset= (space - nameOnFeature.length())/2;
+		int start= run[0] + offset + 1;
+		int end= start + nameOnFeature.length();
+		
+		int j= 0;
+		for(int i= (start); i < (end); i++){
+			ideogramWithName[i]= nameOnFeature.charAt(j);
+			j++;
+		}
+		ideogramWithName[end-1]= '_'; // Always terminate name with underscore 
+		
+		for(int i= 0; i < ideogramWithName.length; i++){
+			this.ideogram.get(i).setText(ideogramWithName[i]);
+		}
+	}
+	
+	/** Return the character to be used for this feature type and strand.
 	 * */
-	private char[] makeIdeogram() {
+	private char getCharForIdeogram() {
 		
 		char text;
 		if(this.trackFormat.equals(TrackFormat.VCF)){
@@ -314,83 +357,71 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 			// Now you have the right char to be used for this feature type and strand.
 			text= featureToTextCharDict.get(strand).get(feature);
 		}
-		char[] textArrayForScreen= new char[this.getScreenTo() - this.getScreenFrom() + 1];
-		for(int i= 0; i < textArrayForScreen.length; i++){
-			textArrayForScreen[i]= text;
-		}
-		return textArrayForScreen;
+		return text;
 	}
 
-	/** Returns a copy of input array with chars from feature name replaced */
-	private char[] addNameToIdeogram(char[] xIdeoagram){
-		
-		if(this.getName() == null || this.getName().trim().isEmpty() || this.getName().trim().equals(".")){
-			return xIdeoagram;
-		}
-		
-		char[] ideogramWithName= Arrays.copyOf(xIdeoagram, xIdeoagram.length);
-				
-		// Find longest run of the same char to make space for the name
-		int[] run= this.maxRun(ideogramWithName);
-		
-		// This is the amount of space (# chars) available to the name. Minus n because we leave some
-		// space left and right.
-		int space= run[1] - 1;
-		if(space < 4){ // If the name has left than this many chars do not return it at all. 
-			return ideogramWithName;
-		}
-						
-		// Name to print, maybe shorter than the full name:
-		String nameOnFeature= "_" + this.getName().trim() + "_";
-		nameOnFeature= nameOnFeature.substring(0, Math.min(nameOnFeature.length(), space - 1));
-		
-		// This is where the name will start and end.
-		int offset= (space - nameOnFeature.length())/2;
-		int start= run[0] + offset + 1;
-		int end= start + nameOnFeature.length();
-		
-		int j= 0;
-		for(int i= (start); i < (end); i++){
-			ideogramWithName[i]= nameOnFeature.charAt(j);
-			j++;
-		}
-		ideogramWithName[end-1]= '_'; // Always terminate name with underscore 
-		return ideogramWithName;
-	}
 	
-	protected String[] makeIdeogramFormatted(boolean noFormat) throws InvalidColourException{
+	private void makeIdeogram(boolean addName) throws InvalidColourException{
 
-		char[] textArray;
-		if(this.ideogram == null){
-			// The array of chars has not been set from outside so create it:
-			textArray= this.makeIdeogram();
-		} else {
-			textArray= this.ideogram;
-		}
+		char ideogramChar= this.getCharForIdeogram();
+		int ideogramLength= this.getScreenTo() - this.getScreenFrom() + 1;
 		
-		textArray= this.addNameToIdeogram(textArray);
-		
-		String[] formattedTextForScreen= new String[textArray.length];
-		for(int i=0 ; i < textArray.length; i++){
-			char c= textArray[i];
-			if(noFormat){
-				formattedTextForScreen[i]= String.valueOf(c);
-				
-			} else if(this.trackFormat.equals(TrackFormat.GTF) 
+		this.ideogram= new ArrayList<FeatureChar>(ideogramLength);
+		for(int i=0 ; i < ideogramLength; i++){
+			FeatureChar c= new FeatureChar();
+			c.setText(ideogramChar);
+			
+			if(this.trackFormat.equals(TrackFormat.GTF) 
 					  || this.trackFormat.equals(TrackFormat.GFF)
 					  || this.trackFormat.equals(TrackFormat.BED)){
 				// You may want to set up formatting for each of these TrackFormats
-				formattedTextForScreen[i]= FormatGTF.format(c, this.getStrand());
-			
+				c.addFormatGFF(ideogramChar, this.getStrand());
+				
 			} else if(this.trackFormat.equals(TrackFormat.VCF)){
-				formattedTextForScreen[i]= FormatVCF.format(c);
+				c.addFormatVCF(ideogramChar);
 			
 			} else {
 				System.out.println("I don't kknow how to format TrackFormat: " + this.trackFormat);
 				throw new RuntimeException();
 			}
+			this.ideogram.add(c);
 		}
-		return formattedTextForScreen;
+		if(addName){
+			this.addNameToIdeogram();
+		}
+	}
+
+	protected void setIdeogram(List<FeatureChar> ideogram, boolean addName) {
+		
+		if(ideogram == null){
+			this.ideogram = null;
+			return;
+		}
+		
+		int expFeatureLen= (this.getScreenTo() - this.getScreenFrom() + 1);
+		if(expFeatureLen != ideogram.size()){
+			System.err.println("Length of text for screen (" + ideogram.size() + ") "
+					+ "does not equal feature length on screen from= " + this.getScreenFrom() + " to= " + this.getScreenTo() 
+					+ " expected: to-from+1");
+			throw new RuntimeException();
+		}
+		this.ideogram = ideogram;
+		if(addName){
+			this.addNameToIdeogram();
+		}
+	}
+
+	/**Return the ideogram, optionally create it and add a title. 
+	 * If makeIt and withName are false simply return whatever is in the ideogram field.
+	 * */
+	public List<FeatureChar> getIdeogram(boolean makeIt, boolean withName) throws InvalidColourException{
+		if(makeIt){
+			this.makeIdeogram(false);
+		}
+		if(withName){
+			this.addNameToIdeogram();
+		}
+		return this.ideogram;
 	}
 	
 	/** Get attribute value given key, e.g. transcript_id */
@@ -452,10 +483,6 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 			}
 			return xname;
 		}
-		
-		if(attributeKey.equals(this.NAME_NA)){
-			return ".";
-		} 
 		else if(! (this.trackFormat.equals(TrackFormat.GFF) || this.trackFormat.equals(TrackFormat.GTF))){
 			// This is not a GFF/GTF file return default name without parsing attributes
 			return xname;
@@ -519,9 +546,12 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 
 	/** Name be shown to the user */
 	public String getName() {
+		if(this.gtfAttributeForName != null && this.gtfAttributeForName.equals(this.NAME_NA)){
+			return ".";
+		}
 		if(this.name != null &&  ! this.name.equals(".") && ! this.name.isEmpty() || this.raw == null){
 			return this.name;
-		}		
+		}
 		return this.getNameForIdeogram(this.gtfAttributeForName);
 	}
 
@@ -605,20 +635,4 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return i;
 	}
 
-	protected void setIdeogram(char[] ideogram) {
-
-		if(ideogram == null){
-			this.ideogram = null;
-			return;
-		}
-		int expFeatureLen= (this.getScreenTo() - this.getScreenFrom() + 1);
-		if(expFeatureLen != ideogram.length){
-			System.err.println("Length of text for screen (" + ideogram.length + ") "
-					+ "does not equal feature length on screen from= " + this.getScreenFrom() + " to= " + this.getScreenTo() 
-					+ " expected: to-from+1");
-			throw new RuntimeException();
-		}
-		this.ideogram = ideogram;
-	}
-	
 }

@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -780,6 +781,11 @@ public abstract class Track {
 			}
 		}
 		return results;
+	}
+
+	protected void setColorForRegex(Map<String, String> xcolorForRegex) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }
