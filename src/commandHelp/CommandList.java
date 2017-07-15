@@ -266,15 +266,6 @@ public class CommandList {
 				+ "instead of extend the window.");
 		cmdList.add(cmd);
 		
-//		cmd= new CommandHelp();
-//		cmd.setName("trim"); cmd.setArgs("track_name"); cmd.inSection= Section.NAVIGATION; 
-//		cmd.setBriefDescription("Trim current coordinates to remove empty regions around `track_name`. ");
-//		cmd.setAdditionalDescription("With `track_name` missing, trim on the first annotation track found. "
-//				+ "`track_name` can partially match the actual, full track name if multiple "
-//				+ "matches occur the first track matched is trimmed.\n"
-//				+ "Note that the window is not trimmed if the trimmed window is smaller than the user window size (e.g. trimmed 20bp with window 100bp).");
-//		cmdList.add(cmd);
-		
 		cmd= new CommandHelp();
 		cmd.setName("l"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; cmd.setPrintName("l - left");
 		cmd.setBriefDescription("Go to the Left half of the current window. ");
@@ -528,7 +519,7 @@ public class CommandList {
 				+ "For available colors see :code:`colorTrack -h`. As for :code:`colorTrack` "
 				+ "colors can be specified by name, name prefix, or integer in range 0-255.\n"
 				+ "\n"
-				+ "Options::\n"
+				+ "Options:\n"
 				+ "\n"
 				+ ":code:`-r <regex> <color>` Features matching :code:`regex` will have color :code:`color`. "
 				+ "The regex is applied to the raw lines as read from file. "
@@ -542,7 +533,7 @@ public class CommandList {
 				+ "Example::\n"
 				+ "\n"
 				+ "    featureColorForRegex -r CDS plum2 -r exon grey\n"
-				+ "    featureColorForRegex bed -> Reset to default track names matching 'bed'"
+				+ "    featureColorForRegex bed -> Reset to default the track matching 'bed'"
 				+ "\n");
 		cmdList.add(cmd);
 		
