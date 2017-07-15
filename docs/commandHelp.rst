@@ -373,7 +373,7 @@ Set colour for features captured by regex.  This command affects interval featur
 
 For available colors see :code:`colorTrack -h`. As for :code:`colorTrack` colors can be specified by name, name prefix, or integer in range 0-255.
 
-Options::
+Options:
 
 :code:`-r <regex> <color>` Features matching :code:`regex` will have color :code:`color`. The regex is applied to the raw lines as read from file. This option takes exactly two arguments and can be given zero or more times. If this option is not present colors are reset to default.
 
