@@ -11,6 +11,12 @@ import exceptions.InvalidColourException;
 public class Xterm256Test {
 
 	@Test
+	public void canGetContrastColor() throws InvalidColourException{
+		new Xterm256();
+		assertEquals("grey85", Xterm256.getContrastColor("black").toLowerCase());
+	}
+	
+	@Test
 	public void testXterm256() throws InvalidColourException{
 		Color c= Xterm256.xterm256ToColor(30);
 		System.err.println(c.getRGB()); // Not sure how to interpret this number.
@@ -18,14 +24,14 @@ public class Xterm256Test {
 	
 	@Test
 	public void testColorByInteger() throws InvalidColourException{
-		Xterm256 x= new Xterm256();
-		assertEquals(231, x.colorNameToXterm256("grey100"));
-		assertEquals(231, x.colorNameToXterm256("231"));
+		new Xterm256();
+		assertEquals(231, Xterm256.colorNameToXterm256("grey100"));
+		assertEquals(231, Xterm256.colorNameToXterm256("231"));
 		
 		// Invalid colour
 		boolean pass= false;
 		try{
-			x.colorNameToXterm256("foo");
+			Xterm256.colorNameToXterm256("foo");
 		} catch(InvalidColourException e){
 			pass= true;
 		}
@@ -34,7 +40,7 @@ public class Xterm256Test {
 		// Invalid colour as int
 		pass= false;
 		try{
-			x.colorNameToXterm256("256");
+			Xterm256.colorNameToXterm256("256");
 		} catch(InvalidColourException e){
 			pass= true;
 		}
@@ -43,8 +49,8 @@ public class Xterm256Test {
 
 	@Test
 	public void canGetColorByApproxMatching() throws InvalidColourException{
-		Xterm256 x= new Xterm256();
-		assertEquals(26, x.colorNameToXterm256("DodgerBl"));
+		new Xterm256();
+		assertEquals(26, Xterm256.colorNameToXterm256("DodgerBl"));
 	}
 	
 	@Test

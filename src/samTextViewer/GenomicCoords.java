@@ -593,6 +593,7 @@ public class GenomicCoords implements Cloneable {
 		// List<Double> mapping =  Utils.seqFromToLenOut(1, this.getUserWindowSize(), this.getUserWindowSize());
 		List<Double> mapping =  Utils.seqFromToLenOut(0, 1, this.getUserWindowSize());
 		String numberLine= this.printRulerFromList(mapping, markDist, 2);
+		numberLine= numberLine.substring(0, this.getUserWindowSize());
 		if(!noFormat){
 			numberLine= "\033[48;5;" + Config.get256Color(ConfigKey.background) + 
 					";38;5;" + Config.get256Color(ConfigKey.ruler) +
@@ -612,8 +613,9 @@ public class GenomicCoords implements Cloneable {
 	    	for(Double mark : marks){
 	    		double n = Utils.round(mark/sfx, digits) * sfx;
 	    		String str= String.format("%." + digits + "f", n);
-	    		str= str.replaceAll("^0\\.00", "0"); // Format and strip leading zero if any.
-	    		str= str.replaceAll("^0\\.", "."); // Format and strip leading zero if any.
+	    		str= str.replaceAll("^0\\.00", "0"); // Strip leading zero if any.
+	    		str= str.replaceAll("^0\\.", "."); 
+	    		str= str.replaceAll("\\.00$", ""); // Change x.00 to x. E.g. 1.00 -> 1
 	    		rMarks.add(str);
 	    	}
 	    	Set<String> uniq= new HashSet<String>(rMarks);

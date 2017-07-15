@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -15,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
+import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
@@ -42,10 +44,11 @@ public class TrackIntervalFeatureTest {
 		assertTrue(tif.printToScreen().contains("216"));
 
 		colorForRegex.clear();
-		colorForRegex.put("WASH7P", "177");
+		colorForRegex.put("WASH7P", "233"); // 233:grey7 (almost black)
 		tif.setColorForRegex(colorForRegex);
-		assertTrue(tif.printToScreen().contains("177"));
+		assertTrue(tif.printToScreen().contains("233"));
 		assertTrue(tif.printToScreen().contains("216"));
+		assertTrue(tif.printToScreen().contains("253")); // Foreground color
 		
 		// Reset default
 		tif.setColorForRegex(null);

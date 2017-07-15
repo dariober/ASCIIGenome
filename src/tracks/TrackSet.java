@@ -658,7 +658,7 @@ public class TrackSet {
 		
 		// Collect all regex/color pairs from input
 		Map<String, String> colorForRegex= new LinkedHashMap<String, String>();
-		final Xterm256 xterm256= new Xterm256();
+		new Xterm256();
 		while(true){
 			List<String> pair = Utils.getNArgsForParam(argList, "-r", 2);
 			if(pair == null){
@@ -672,7 +672,12 @@ public class TrackSet {
 		    	throw new InvalidCommandLineException();
 			}	
 			String xcolor= pair.get(1);
-			xterm256.colorNameToXterm256(xcolor); // Check this is a valid colour 
+			Xterm256.colorNameToXterm256(xcolor); // Check this is a valid colour 
+			if(colorForRegex.containsKey(pattern)){
+				// We remove an exiting key and add it new instead of updating its value. 
+				// In this way the new pattern is last in the linked list and has priority over the preceding ones. 
+				colorForRegex.remove(pattern);
+			}
 			colorForRegex.put(pattern, xcolor);
 		}
 		if(colorForRegex.size() == 0){
@@ -698,7 +703,7 @@ public class TrackSet {
 	
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidColourException{
 
-		final Xterm256 xterm256= new Xterm256();
+		new Xterm256();
 		
 		// MEMO of subcommand syntax:
 		// 0 trackColour
@@ -712,7 +717,7 @@ public class TrackSet {
 		if(tokens.size() >= 2){
 			String xcolour= tokens.get(1).toLowerCase();
 
-			xterm256.colorNameToXterm256(xcolour); // This is only to test whether exception is thrown.
+			Xterm256.colorNameToXterm256(xcolour); // This is only to test whether exception is thrown.
 
 			colour= xcolour;
 		}

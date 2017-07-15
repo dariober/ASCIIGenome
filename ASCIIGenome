@@ -10,7 +10,7 @@
 
 prefix=`dirname $(readlink $0 || echo $0)`
 java -Djava.net.useSystemProxies=true -Xmx2500m -jar "$prefix"/ASCIIGenome.jar "$@"
-if [ "$?" == 0  ]
-then
-    clear
-fi
+#if [ "$?" == 0  ]
+#then
+#    clear
+#fi

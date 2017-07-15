@@ -163,11 +163,11 @@ public class TrackWiggles extends Track {
 
 		String printable= Joiner.on("\n").join(lineStrings);
 		if(!this.isNoFormat()){
-			final Xterm256 xterm256= new Xterm256();
+			new Xterm256();
 			printable= "\033[48;5;"
 			+ Config.get256Color(ConfigKey.background)
 			+ ";38;5;"
-			+ xterm256.colorNameToXterm256(this.getTitleColour())
+			+ Xterm256.colorNameToXterm256(this.getTitleColour())
 			+ "m"
 			+ printable;
 		}

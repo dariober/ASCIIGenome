@@ -369,8 +369,9 @@ featureColorForRegex
 
 :code:`featureColorForRegex [-r regex color] [-v] [track_regex = .*]...`
 
-Set colour for features captured by regex.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by a regex. It is useful for example to highlight features of interest such as CDS. Currently the color is assigned to the text background.
-For available colors see :code:`colorTrack -h`. As :code:`colorTrack` colors can be specified by name, name prefix, or integer in range 0-255.
+Set colour for features captured by regex.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by a regex. It is useful to highlight features containg a string of interset, such as 'CDS' in gff files.
+
+For available colors see :code:`colorTrack -h`. As for :code:`colorTrack` colors can be specified by name, name prefix, or integer in range 0-255.
 
 Options::
 
@@ -498,7 +499,9 @@ Set colour for tracks matched by regex.  Colors can be specified by name or by a
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Available colours are from the Xterm256 palette: `here <http://jonasjacek.github.io/colors/>`_             
+Available colours are from the Xterm256 palette: 
+
+
 
 Example::
 

@@ -1,11 +1,13 @@
 New in 1.9.0
 ============
 
-* New command `featureColorForRegex` allows feature colours to be customised (see also issue #75)
+* New command `featureColorForRegex` sets custom colour of individual features.
 
 * Add command `PERCENT [PERCENT]` to zoom into a region on the current 
 window. E.g. `.25 .5` moves to the second quarter of the current 
 window. This command deprecates the use of suffix `c` in command command `INT [INT]`. 
+
+* On exit via `q` command the screen is cleared. This avoids leaving the the screen in mixed colours. 
 
 * Fixed some minor bugs.
 

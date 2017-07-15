@@ -141,6 +141,9 @@ public class InteractiveInput {
 					proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(args), proc.getGenomicCoordsHistory().current()) );
 					
 				} else if(cmdTokens.get(0).equals("q")){
+					System.out.print("\033[0m");
+					console.clearScreen();
+					console.flush();
 					System.exit(0);
 				
 				// * These commands change the GenomicCoordinates (navigate) but do not touch the tracks.

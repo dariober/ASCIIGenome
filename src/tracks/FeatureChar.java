@@ -31,20 +31,20 @@ class FeatureChar {
 		if(noFormat){
 			return sb.append(this.getText()).toString();
 		}
-		final Xterm256 xterm256= new Xterm256();
+		new Xterm256();
 		sb.append("\033[");
 		if(this.invertFgBgColor){
 			sb.append("7;");
 		}
 		sb.append("48;5;");
-		sb.append(xterm256.colorNameToXterm256(this.getBgColor()));
+		sb.append(Xterm256.colorNameToXterm256(this.getBgColor()));
 		sb.append(";38;5;");
-		sb.append(xterm256.colorNameToXterm256(this.getFgColor()));
+		sb.append(Xterm256.colorNameToXterm256(this.getFgColor()));
 		sb.append("m");
 		sb.append(text);
 		// Reset formatting
 		sb.append("\033[0;48;5;");
-		sb.append(xterm256.colorNameToXterm256(Config.get(ConfigKey.background)));
+		sb.append(Xterm256.colorNameToXterm256(Config.get(ConfigKey.background)));
 		sb.append("m");
 		return sb.toString();
 	}

@@ -103,8 +103,8 @@ public abstract class Track {
 		} else {
 			int colourCode= Config.get256Color(ConfigKey.title_colour);
 			if(this.titleColour != null){
-				final Xterm256 xterm256= new Xterm256();
-				colourCode= xterm256.colorNameToXterm256(this.titleColour);
+				new Xterm256();
+				colourCode= Xterm256.colorNameToXterm256(this.titleColour);
 			}
 			return "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;" + colourCode + "m" + title;
 		}

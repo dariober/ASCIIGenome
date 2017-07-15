@@ -15,6 +15,7 @@ import org.broad.igv.bbfile.BBFileReader;
 
 import com.google.common.collect.Lists;
 
+import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -990,12 +991,14 @@ public class TrackIntervalFeature extends Track {
 		if(colorForRegex == null){
 			return;
 		}
+	
 		for(String regex : colorForRegex.keySet()){
 			String color= colorForRegex.get(regex);
 			for(IntervalFeature x : this.getIntervalFeatureList()){
 				if(Pattern.compile(regex).matcher(x.getRaw()).find()){
 					for(FeatureChar f : x.getIdeogram(false, false)){
 						f.setBgColor(color);
+						f.setFgColor(Xterm256.getContrastColor(color));
 					}
 				}
 			}
