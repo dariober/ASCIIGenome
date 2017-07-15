@@ -28,12 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
-import org.jline.reader.History;
-import org.jline.reader.LineReader;
-import org.jline.reader.LineReaderBuilder;
-import org.jline.reader.impl.history.DefaultHistory;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -52,6 +46,9 @@ import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import jline.console.ConsoleReader;
+import jline.console.history.History;
+import jline.console.history.MemoryHistory;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
 
@@ -481,23 +478,12 @@ public class UtilsTest {
 	@Test
 	public void testHistory() throws IOException{
 		
-		Terminal terminal = TerminalBuilder.builder()
-			      .nativeSignals(true)
-			      .signalHandler(Terminal.SignalHandler.SIG_IGN)
-			      .build();
-		 LineReader console= LineReaderBuilder.builder()
-			      .terminal(terminal)
-			      .build();
-		
-		//LineReader console= new ConsoleReader();
+		ConsoleReader console= new ConsoleReader();
 		//History history= new History(new File(System.getProperty("user.home") + File.separator + ".asciigenome_history"));
-		
-		History history= new DefaultHistory();
-		
+		History history= new MemoryHistory();
 		history.add("foobar");
 		history.add("baz");
-		history.attach(console);
-		//console.setHistory(history);
+		console.setHistory(history);
 		System.out.println(console.getHistory());
 	}
 	

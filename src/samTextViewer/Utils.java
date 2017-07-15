@@ -52,7 +52,6 @@ import org.broad.igv.bbfile.BigBedIterator;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
-import org.jline.terminal.Terminal;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -1857,9 +1856,9 @@ public class Utils {
 
 	/**Get terminal width. 
 	 * */
-	public static int getTerminalWidth(Terminal terminal) throws IOException {
+	public static int getTerminalWidth() throws IOException {
 		// The argument terminal could be initialized inside this method but it takes ~3 sec to do that.
-		int terminalWidth= terminal.getWidth(); // jline.TerminalFactory.get().getWidth(); 
+		int terminalWidth= jline.TerminalFactory.get().getWidth(); 
 		if(terminalWidth <= 0){
 			terminalWidth= 80;
 		}

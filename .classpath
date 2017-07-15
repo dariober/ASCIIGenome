@@ -29,11 +29,5 @@
 			<attribute name="javadoc_location" value="jar:file:/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/jline3/jline3-jline-parent-3.3.0/jline/target/jline-3.3.0.jar" sourcepath="/Users/berald01/eclipse/libraries/jline3/jline3-jline-parent-3.3.0/jline/target/jline-3.3.0-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:file:/Users/berald01/eclipse/libraries/jline3/jline3-jline-parent-3.3.0/jline/target/jline-3.3.0-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/Users/berald01/eclipse/libraries/htsjdk/htsjdk-2.9.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
