@@ -11,6 +11,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import org.jline.reader.History.Entry;
+import org.jline.reader.LineReader;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 
@@ -23,9 +26,6 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
-import jline.console.ConsoleReader;
-import jline.console.history.History.Entry;
-import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import tracks.Track;
 
 /** Class to process input from console
@@ -34,8 +34,8 @@ public class InteractiveInput {
 
 	private boolean nonInteractive;
 	private ExitCode interactiveInputExitCode= ExitCode.CLEAN;
-	private ConsoleReader console;
-	public InteractiveInput(ConsoleReader console){
+	private LineReader console;
+	public InteractiveInput(LineReader console){
 		this.console= console;
 	}
 	
@@ -47,10 +47,8 @@ public class InteractiveInput {
 	 * @throws InvalidRecordException 
 	 * @throws ClassNotFoundException 
 	 * */
-	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc, int debug) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
+	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc, int terminalWidth, int debug) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
-		int terminalWidth= Utils.getTerminalWidth();
-		
 		// cmdInputList: List of individual commands in tokens to be issued. 
 		// E.g.: [ ["zi"], 
 		//         ["-F", "16"], 
@@ -288,7 +286,7 @@ public class InteractiveInput {
 									// It may be that you are in position that doesn't exist in the sequence dictionary that
 									// came with this new file. To recover, find an existing position, move there and try to reload the 
 									// file. This fixes issue#23
-									String region= Main.initRegion(null, globbed, null, null, debug);
+									String region= Main.initRegion(null, globbed, null, null, console.getTerminal(), debug);
 									proc.getGenomicCoordsHistory().add(new GenomicCoords(region, terminalWidth, samSeqDict, fasta));
 									proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
 								} catch (Exception x){
@@ -378,8 +376,8 @@ public class InteractiveInput {
 					this.interactiveInputExitCode= ExitCode.ERROR;
 					throw new InvalidCommandLineException();
 				}
-			} catch(ArgumentParserException e){
-				this.interactiveInputExitCode= ExitCode.ERROR;
+//			} catch(ArgumentParserException e){
+//				this.interactiveInputExitCode= ExitCode.ERROR;
 			
 			} catch(Exception e){ // You shouldn't catch anything! Be more specific.
 				System.err.println(Utils.padEndMultiLine("\nError processing input: " + cmdTokens, proc.getWindowSize()));
@@ -397,8 +395,10 @@ public class InteractiveInput {
 				// Command has been parsed ok. Let's see if we can execute it without exceptions.
 				try{
 					if(this.interactiveInputExitCode.equals(ExitCode.CLEAN)){
-						console.clearScreen();
-						console.flush();
+				        System.out.print("\033[H\033[2J");  
+				        System.out.flush();  
+//						console.clearScreen();
+//						console.flush();
 						proc.iterateTracks();
 					} else {
 						//
@@ -406,7 +406,7 @@ public class InteractiveInput {
 
 				} catch (InvalidGenomicCoordsException e){
 					
-					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null, debug);
+					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null, console.getTerminal(), debug);
 					proc.getGenomicCoordsHistory().add(new GenomicCoords(region, terminalWidth, samSeqDict, fasta));
 					System.err.println(Utils.padEndMultiLine("Invalid genomic coordinates found. Resetting to "  + region, proc.getWindowSize()));
 					if(debug > 0){
@@ -496,7 +496,7 @@ public class InteractiveInput {
 			throw new InvalidCommandLineException();
 		}
 		
-		GenomicCoords testSeqDict= new GenomicCoords("default", Utils.getTerminalWidth(), null, null); 
+		GenomicCoords testSeqDict= new GenomicCoords("default", Utils.getTerminalWidth(this.console.getTerminal()), null, null); 
 		testSeqDict.setGenome(tokens, true);
 		if(testSeqDict.getSamSeqDict() != null){
 			proc.getGenomicCoordsHistory().setGenome(tokens);
@@ -702,8 +702,8 @@ public class InteractiveInput {
 		List<String> cmd= new ArrayList<String>();
 		int i = 1;
 		for(Entry x : console.getHistory()){
-			if(pattern.matcher(x.value().toString()).find()){
-				cmd.add(i + ": \t" + x.value().toString());	
+			if(pattern.matcher(x.line()).find()){
+				cmd.add(i + ": \t" + x.line());	
 			}
 			i++;
 		}

@@ -1356,9 +1356,9 @@ public class TrackSet {
 				strRegion.set(2, new Integer(Integer.MAX_VALUE).toString());
 			}
 			bookmarkRegion= new GenomicCoords(strRegion.get(0) + ":" + strRegion.get(1) + "-" + strRegion.get(2), 
-					Utils.getTerminalWidth(), gc.getSamSeqDict(), gc.getFastaFile());
+					gc.getUserWindowSize(), gc.getSamSeqDict(), gc.getFastaFile());
 		} else {
-			bookmarkRegion= new GenomicCoords(gc.toStringRegion(), Utils.getTerminalWidth(), gc.getSamSeqDict(), gc.getFastaFile());
+			bookmarkRegion= new GenomicCoords(gc.toStringRegion(), gc.getUserWindowSize(), gc.getSamSeqDict(), gc.getFastaFile());
 		}
 
 		if(print){
@@ -1809,7 +1809,7 @@ public class TrackSet {
 			right= current.getTo();
 		}
 		return new GenomicCoords(current.getChrom() + ":" + left + "-" + right, 
-				Utils.getTerminalWidth(), current.getSamSeqDict(), current.getFastaFile());
+				current.getUserWindowSize(), current.getSamSeqDict(), current.getFastaFile());
 	}
 
 	public List<Track> getTracksForYLimits() {
