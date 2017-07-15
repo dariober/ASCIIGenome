@@ -86,7 +86,7 @@ public class TrackProcessor {
 			outputString.append(currentGC.printableGenomicRuler(10, noFormat) + "\n");
 		}
 		if(this.isShowCruler()){
-			outputString.append(currentGC.printableColumnRuler(10, noFormat) + "\n");
+			outputString.append(currentGC.printablePercentRuler(10, noFormat) + "\n");
 		}
 		
 		// Position, memory, etc

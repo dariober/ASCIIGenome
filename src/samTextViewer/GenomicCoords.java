@@ -439,8 +439,8 @@ public class GenomicCoords implements Cloneable {
 		
 		List<Double> mapping= new ArrayList<Double>();
 		
-		if(from < 1 || from > to){
-			System.err.println("Invalid genome coordinates: from " + from + " to " + to);
+		if(this.from < 1 || this.from > this.to){
+			System.err.println("Invalid genome coordinates: from " + this.from + " to " + this.to);
 			try {
 				throw new InvalidGenomicCoordsException();
 			} catch (InvalidGenomicCoordsException e) {
@@ -448,35 +448,35 @@ public class GenomicCoords implements Cloneable {
 				System.exit(1);
 			}
 		}
-		int span= to - from + 1;
+		int span= this.to - this.from + 1;
 		// If the genomic span is less then screen size, reduce screen size to.
 		// If genomic span == screenSize then you have a mapping one to one.
 		if(span <= size){ 
-			for(int i= from; i <= to; i++){
+			for(int i= this.from; i <= this.to; i++){
 				mapping.add((double)i);
 			}
 			return mapping;
 		}
 		
 		double step= ((double)span - 1)/(size - 1);
-		mapping.add((double)from);
+		mapping.add((double)this.from);
 		for(int i= 1; i < size; i++){
 			mapping.add((double)mapping.get(i-1)+step);
 		}
 		
 		// First check last point is close enough to expectation. If so, replace last point with
 		// exact desired.
-		double diffTo= Math.abs(mapping.get(mapping.size() - 1) - to);
-		if(diffTo > ((float)to * 0.001)){
+		double diffTo= Math.abs(mapping.get(mapping.size() - 1) - this.to);
+		if(diffTo > ((float)this.to * 0.001)){
 			System.err.println("Error generating sequence:");
 			System.err.println("Last point: " + mapping.get(mapping.size() - 1));
 			System.err.println("To diff: " + diffTo);
 			System.err.println("Step: " + step);
 		} else {
-			mapping.set(mapping.size()-1, (double)to);
+			mapping.set(mapping.size()-1, (double)this.to);
 		}
 		
-		double diffFrom= Math.abs(mapping.get(0) - from);		
+		double diffFrom= Math.abs(mapping.get(0) - this.from);		
 		if(diffFrom > 0.01 || mapping.size() != size){
 			System.err.println("Error generating sequence:");
 			System.err.println("Expected size: " + size + "; Effective: " + mapping.size());
@@ -578,7 +578,8 @@ public class GenomicCoords implements Cloneable {
 	
 	public String printableGenomicRuler(int markDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		List<Double> mapping = this.seqFromToLenOut(this.getUserWindowSize());
-		String numberLine= this.printRulerFromList(mapping, markDist);
+		String numberLine= this.printRulerFromList(mapping, markDist, 0);
+		numberLine= numberLine.replaceFirst("^0 ", "1 "); // Force to start from 1
 		numberLine= numberLine.substring(0, this.getUserWindowSize());
 		if(!noFormat){
 			numberLine= "\033[48;5;" + Config.get256Color(ConfigKey.background) + 
@@ -588,9 +589,10 @@ public class GenomicCoords implements Cloneable {
     	return numberLine;
     }
 
-	public String printableColumnRuler(int markDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
-		List<Double> mapping =  Utils.seqFromToLenOut(1, this.getUserWindowSize(), this.getUserWindowSize());
-		String numberLine= this.printRulerFromList(mapping, markDist);
+	public String printablePercentRuler(int markDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+		// List<Double> mapping =  Utils.seqFromToLenOut(1, this.getUserWindowSize(), this.getUserWindowSize());
+		List<Double> mapping =  Utils.seqFromToLenOut(0, 1, this.getUserWindowSize());
+		String numberLine= this.printRulerFromList(mapping, markDist, 2);
 		numberLine= numberLine.substring(0, this.getUserWindowSize());
 		if(!noFormat){
 			numberLine= "\033[48;5;" + Config.get256Color(ConfigKey.background) + 
@@ -599,18 +601,22 @@ public class GenomicCoords implements Cloneable {
 		}
     	return numberLine;
     }
-
-	
-	private String printRulerFromList(List<Double> marks, int markDist) throws InvalidGenomicCoordsException, IOException {
+		
+	private String printRulerFromList(List<Double> marks, int markDist, int digits) throws InvalidGenomicCoordsException, IOException {
 		int prevLen= 0;
     	int i= 0;
     	// First round numbers and see if we can round digits
     	List<String>rMarks= new ArrayList<String>();
     	markLoop:
     	for(int sfx : new int[]{1000000, 100000, 10000, 1000, 100, 10, 5, 1}){
-        	rMarks.clear();
+    		rMarks.clear();
 	    	for(Double mark : marks){
-	    		rMarks.add( String.valueOf((int)Math.rint(mark/sfx) * sfx) );
+	    		double n = Utils.round(mark/sfx, digits) * sfx;
+	    		String str= String.format("%." + digits + "f", n);
+	    		str= str.replaceAll("^0\\.00", "0"); // Strip leading zero if any.
+	    		str= str.replaceAll("^0\\.", "."); 
+	    		str= str.replaceAll("\\.00$", ""); // Change x.00 to x. E.g. 1.00 -> 1
+	    		rMarks.add(str);
 	    	}
 	    	Set<String> uniq= new HashSet<String>(rMarks);
 	    	if(uniq.size() == marks.size()){
@@ -618,17 +624,11 @@ public class GenomicCoords implements Cloneable {
 	    		break markLoop;
 	    	}
     	}
-    	if(rMarks.get(0) == "0"){
-    		rMarks.set(0, "1");
-    	}
-//    	String first= rMarks.get(0);
-//    	rMarks= this.stripCommonPrefix(rMarks);
-//    	rMarks.set(0, first);
+
     	StringBuilder numberLine= new StringBuilder();
 		while(i < rMarks.size()){
-			String label= rMarks.get(i); //.replaceAll("000$", "k");
+			String label= rMarks.get(i);
 			
-			//String posMark= String.valueOf(Math.round(rMarks.get(i)));
 			if(label.length() >= markDist){
 				// Increase markDist if the number is bigger than the space itself
 				markDist= label.length() + 1;
@@ -647,29 +647,6 @@ public class GenomicCoords implements Cloneable {
 		}
 		return numberLine.toString();
 	}
-
-//	private List<String> stripCommonPrefix(List<String> list){
-//		int idx= 0;
-//		String prefix= "";
-//		for(int i= 0; i < list.get(0).length(); i++){
-//			List<Character> curChar= new ArrayList<Character>();
-//			for(String x : list){
-//				curChar.add(x.charAt(i));
-//			}
-//			Set<Character> pfx= new HashSet<Character>(curChar);
-//			if(pfx.size() == 1){
-//				idx= i;
-//				prefix= prefix + "_";
-//			} else {
-//				break;
-//			}
-//		}
-//		List<String> sList= new ArrayList<String>();
-//		for(String x : list){
-//			sList.add(prefix + x.substring(idx));
-//		}
-//		return sList;
-//	}
 	
 	/** Ref sequence usable for print on screen. 
 	 * @throws IOException 

@@ -12,6 +12,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -61,6 +63,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -89,6 +92,14 @@ import ucsc.UcscGenePred;
  */
 public class Utils {
 	
+	public static double round(double value, int places) {
+	    if (places < 0) throw new IllegalArgumentException();
+	 
+	    BigDecimal bd = new BigDecimal(Double.toString(value));
+	    bd = bd.setScale(places, RoundingMode.HALF_EVEN);
+	    return bd.doubleValue();
+	}
+	
 	/** Returns true of the list of arguments argList contains the given flag
 	 * IMPORTANT SIDE EFFECT: If found, the argument flag is removed from the list. 
 	 * */
@@ -101,6 +112,46 @@ public class Utils {
 		return hasFlag;
 	}
 
+	/** Check if the list of arguments contains "param" and if so return nargs argument after it. 
+	 * Returns null if arglist does not contain the parameter.
+	 * IMPORTANT SIDE EFFECT: If found, the parameter and its arguments are removed from input list. 
+	 * @throws InvalidCommandLineException 
+	 * */
+	public static List<String> getNArgsForParam(List<String> argList, String param, int nargs) throws InvalidCommandLineException {
+		if(nargs < 1){
+			System.err.println("narg must be >= 1. Got " + nargs);
+			throw new InvalidCommandLineException(); 
+		}
+//		List<String> args= new ArrayList<String>();
+		
+		int idx= argList.indexOf(param);
+		if(idx == -1){
+			return null;
+		}
+		if(idx == (argList.size() - 1)){
+			// If param is the last item in the list you cannot get its argument!
+			throw new InvalidCommandLineException();
+		}
+		if(idx+1+nargs > argList.size()){
+			System.err.println("Not enough arguments passed to parameter " + param);
+			throw new InvalidCommandLineException();
+		}
+		
+		List<String> args= new ArrayList<String>();
+		for(int i= idx+1; i < idx+1+nargs; i++){
+			// Do not use List.subList() because you get a view of the input, not a copy.
+			args.add(argList.get(i));
+		}
+		// Remove param and args from list
+		argList.remove(idx);
+		while(nargs > 0){
+			argList.remove(idx);
+			nargs--;
+		}
+		return args;
+	}
+
+	
 	/** Check if the list of arguments contains "param" and if so return the argument. 
 	 * Returns null if arglist does not contain the parameter
 	 * IMPORTANT SIDE EFFECT: If found, the parameter and its argument are removed from argList. 
@@ -187,8 +238,9 @@ public class Utils {
 
 	/** Merge overlapping features. If screenCoords is true, merge is based on the screen coordinates. Otherwise use
 	 * genomic coordinates.  
+	 * @throws InvalidColourException 
 	 * */
-	public static List<IntervalFeature> mergeIntervalFeatures(List<IntervalFeature> intervalList, boolean screenCoords) throws InvalidGenomicCoordsException{
+	public static List<IntervalFeature> mergeIntervalFeatures(List<IntervalFeature> intervalList, boolean screenCoords) throws InvalidGenomicCoordsException, InvalidColourException{
 		List<IntervalFeature> mergedList= new ArrayList<IntervalFeature>();		 
 		if(intervalList.size() == 0){
 			return mergedList;
@@ -266,6 +318,7 @@ public class Utils {
 				}
 			}
 		}
+		mergedList.get(0).getIdeogram(true, true);
 		return mergedList;
 	}
 	

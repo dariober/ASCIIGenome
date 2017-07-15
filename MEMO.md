@@ -17,6 +17,8 @@ you want to release it as a new version.
 
 * Make sure the version set in `ArgParse.VERSION` is correct.
 
+* Commit changes to repository.
+
 * Merge branch to master: 
 
 ### Upload to github

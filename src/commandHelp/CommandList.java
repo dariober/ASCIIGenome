@@ -162,23 +162,38 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("INT"); cmd.setArgs("[INT] [c]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("INT"); cmd.setArgs("[INT]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription(""
-				+ "Go to position `INT` or to region `INT INT` on current chromosome. Use :code:`INT -h` for full help.");
+				+ "Go to position `INT` or to region `INT INT` on current chromosome.");
 		cmd.setAdditionalDescription(""
 				+ "If a list of integers is given, the first and last are taken as *from* and *to*. "
 				+ "This is handy to copy and paste intervals from the ruler above the prompt.\n"
-				+ "\n"
-				+ "The option :code:`c` (column) interprets INT as positions on the screen column. "
-				+ "This is useful to move within the current genomci window without typing the "
-				+ "(possibly long) string of genomic coordinates."
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    10~~~~~~~~~~~~~~~~~~~-> Will jump to position 10 \n"
 				+ "    10 1000~~~~~~~~~~~~~~-> Go to region 10-1000 \n"
 				+ "    10 250 500 750 1000~~-> Same as above again\n"
-				+ "    10 50c~~~~~~~~~~~~~~~-> Go to region spanned by columns 10 to 50\n"
+				+ "\n");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
+		cmd.setName("PERCENT"); cmd.setArgs("[PERCENT]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription(""
+				+ "Zoom into the current window delimited by given PERCENT of screen.");
+		cmd.setAdditionalDescription(""
+				+ "PERCENT is a number in the range 0-1 mapping to the given "
+				+ "percent of the current genomic window. Similar to the `:code:INT` "
+				+ "command, one number moves the genomic window to the position located at PERCENT and two numbers "
+				+ "will zoom into the region PERCENT-PERCENT.\n"
+				+ "This command is useful to quickly focus an a feature of interest, such as "
+				+ "a ChIP-Seq peak or a variant.\n"
+				+ "\n"
+				+ "Examples::\n"
+				+ "\n"
+				+ "    0.25~~~~~~-> Jump to position at 25% of current screen.\n"
+				+ "    .25~~~~~~~-> Same as above.\n"
+				+ "    .25 .75~~~-> Zoom into the interval between 25-75% of current screen.\n"
 				+ "\n");
 		cmdList.add(cmd);
 		
@@ -502,6 +517,36 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
+		cmd.setName("featureColorForRegex"); cmd.setArgs("[-r regex color] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Set colour for features captured by regex. ");
+		cmd.setAdditionalDescription(""
+				+ "This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color "
+				+ "for the lines captured by "
+				+ "a regex. It is useful to highlight features containg a string of interset, "
+				+ "such as 'CDS' in gff files.\n"
+				+ "\n"
+				+ "For available colors see :code:`colorTrack -h`. As for :code:`colorTrack` "
+				+ "colors can be specified by name, name prefix, or integer in range 0-255.\n"
+				+ "\n"
+				+ "Options::\n"
+				+ "\n"
+				+ ":code:`-r <regex> <color>` Features matching :code:`regex` will have color :code:`color`. "
+				+ "The regex is applied to the raw lines as read from file. "
+				+ "This option takes exactly two arguments and can be given zero or more times. "
+				+ "If this option is not present colors are reset to default.\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
+				+ ":code:`[track_regex]` Apply to tracks captured by this list of regexes.\n"
+				+ "\n"
+				+ "Example::\n"
+				+ "\n"
+				+ "    featureColorForRegex -r CDS plum2 -r exon grey\n"
+				+ "    featureColorForRegex bed -> Reset to default track names matching 'bed'"
+				+ "\n");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
 		cmd.setName(Command.featureDisplayMode.toString()); cmd.setArgs("[-expanded | -collapsed | -oneline] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set how annotation features should be displayed.\n");
 		cmd.setAdditionalDescription("\n"
@@ -615,8 +660,8 @@ public class CommandList {
 		cmd.setBriefDescription("Set colour for tracks matched by regex. ");
 		cmd.setAdditionalDescription(""
 				+ "Colors can be specified by name or by a value between 0 and 255. "
-				+ "If only the start of a color is given, the first name found starting with "
-				+ "the given string is returned, e.g. 'darkv' is interpreted as 'darkviolet'. "
+				+ "If only the prefix of a color name is given, the first name found starting with "
+				+ "the prefix is returned, e.g. 'darkv' is interpreted as 'darkviolet'. "
 				+ "Names are case insensitive.\n"
 				+ "\n"
 				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
@@ -633,7 +678,7 @@ public class CommandList {
 				+ "    colorTrack darkv ~~~~~~~~~~~~~~~<- Same as darkviolet\n"
 				+ "\n");
 		cmdList.add(cmd);
-
+		
 		cmd= new CommandHelp();
 		cmd.setName("hideTitle"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set the display of the title line matched by track_regex. ");
@@ -768,7 +813,7 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`gruler`: Toggle the display of the genomic coordinates as ruler.\n"
 				+ "\n"
-				+ "* :code:`cruler`: Toggle the display of the column number of the terminal "
+				+ "* :code:`pctRuler`: Toggle the display of the column number of the terminal "
 				+ "(useful for navigation within the current genomic window).\n"
 				+ "\n"
 				+ ":code:`arg` can be just a prefix of the argument name, "
@@ -1030,6 +1075,7 @@ public class CommandList {
 		paramList.add("r");
 		paramList.add("goto");
 		paramList.add("INT");
+		paramList.add("PERCENT");
 		paramList.add("+");
 		paramList.add("-");
 		paramList.add("p");
@@ -1041,10 +1087,11 @@ public class CommandList {
 		paramList.add("grep");
 		paramList.add("awk");
 		paramList.add("gffNameAttr");
-		paramList.add(Command.featureDisplayMode.getCmdDescr());
 		paramList.add("gap");
 		paramList.add("trackHeight");
 		paramList.add("colorTrack");
+		paramList.add("featureColorForRegex");
+		paramList.add(Command.featureDisplayMode.getCmdDescr());
 		paramList.add("hideTitle");
 		paramList.add("editNames");
 		paramList.add("ylim");

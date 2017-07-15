@@ -6,12 +6,17 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
+import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
@@ -26,6 +31,31 @@ public class TrackIntervalFeatureTest {
 		new Config(null);
 	}
 	
+	@Test
+	public void canColorGTFFeaturesByRegex()  throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+
+		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		tif.printToScreen(); // This is to populate the ideograms.
+		
+		Map<String, String> colorForRegex= new HashMap<String, String>();
+		colorForRegex.put("DDX11L1", "216");
+		tif.setColorForRegex(colorForRegex);
+		assertTrue(tif.printToScreen().contains("216"));
+
+		colorForRegex.clear();
+		colorForRegex.put("WASH7P", "233"); // 233:grey7 (almost black)
+		tif.setColorForRegex(colorForRegex);
+		assertTrue(tif.printToScreen().contains("233"));
+		assertTrue(tif.printToScreen().contains("216"));
+		assertTrue(tif.printToScreen().contains("253")); // Foreground color
+		
+		// Reset default
+		tif.setColorForRegex(null);
+		assertTrue( ! tif.printToScreen().contains("216"));
+		
+	}
+		
 	@Test
 	public void canReturnFeaturesAsRawStrings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
@@ -100,6 +130,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr7:5568562-5572120", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
+		System.err.println(tif.printToScreen());
 		assertTrue(tif.printToScreen().trim().startsWith("ccc"));
 		assertTrue(tif.printToScreen().trim().endsWith("eee"));
 		assertEquals(6, tif.getIntervalFeatureList().size());
@@ -117,15 +148,28 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
+	public void canPrintGFFRegionWithAndWithoutTranscripts() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		String intervalFileName= "test_data/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz";
+		GenomicCoords gc= new GenomicCoords("7:1-100000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		System.err.println(tif.printToScreen());
+		assertTrue(tif.printToScreen().contains("||||||"));
+		assertTrue(tif.printToScreen().contains("eee"));
+	}
+	
+	@Test
 	public void transcriptGFFToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		String intervalFileName= "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3";
 		GenomicCoords gc= new GenomicCoords("7:5527151-5530709", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
+		System.out.println("PRINTING:" + tif.printToScreen());
 		assertTrue(tif.printToScreen().startsWith("uuuuu"));
 		assertTrue(tif.printToScreen().endsWith("www"));
-		System.out.println("PRINTING:" + tif.printToScreen());
+		
 		
 		tif.setNoFormat(false);
 		assertTrue(tif.printToScreen().trim().startsWith("["));
@@ -143,7 +187,39 @@ public class TrackIntervalFeatureTest {
 		assertTrue(tif.printToScreen().contains("ACTB-001"));
 		
 		tif.setNoFormat(false);
-		assertTrue(tif.printToScreen().trim().startsWith("["));		
+		assertTrue(tif.printToScreen().trim().startsWith("["));
+	}
+	
+	@Test
+	public void canChangeFeatureName() throws Exception{
+		
+		// Complete GFF transscript
+		String intervalFileName= "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3";
+
+		GenomicCoords gc= new GenomicCoords("7:5527151-5530709", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		
+		tif.setNoFormat(true);
+		tif.setGtfAttributeForName("ID");
+		assertTrue(tif.printToScreen().contains("transcript:ENS"));
+		
+		tif.setGtfAttributeForName("Name");
+		assertTrue(tif.printToScreen().contains("ACTB-001"));
+
+	}
+	
+	@Test
+	public void canChangeFeatureName2() throws Exception{
+		// GFF with features that are not transcript (e.g. "chromosome")
+		String intervalFileName = "test_data/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz";
+		GenomicCoords gc = new GenomicCoords("7:1-1000", 80, null, null);
+		TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		assertTrue(tif.printToScreen().contains("chromosome:7"));
+		
+		tif.setGtfAttributeForName("Alias");
+		System.err.println(tif.printToScreen());
+		assertTrue(tif.printToScreen().contains("CM000669"));
 	}
 	
 	@Test
@@ -154,10 +230,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:11874-20000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
-		
-		System.err.println(tif.printToScreen());
-		
-		// assertTrue(tif.printToScreen().contains("NR_046018_1"));
+		assertTrue(tif.printToScreen().contains("NR_046018"));
 				
 	}
 	
@@ -182,7 +255,6 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(bgzFn, gc);
 		List<IntervalFeature> xset = tif.getFeaturesInInterval(gc.getChrom(), gc.getFrom(), gc.getTo());
 		assertEquals(3, xset.size());
-		
 	}
 
 	@Test

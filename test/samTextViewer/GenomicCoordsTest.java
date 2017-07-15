@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
@@ -27,16 +28,23 @@ public class GenomicCoordsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
-	
-	@Test
-	public void canPrintColumnRuler() throws InvalidGenomicCoordsException, IOException, InvalidConfigException, InvalidColourException{
-		GenomicCoords gc= new GenomicCoords("chr1:101-200", 80, samSeqDict, null);
-		assertTrue(gc.printableColumnRuler(10, true).length() > 10);
-		
-		// With colors: Note that we need to initialize the configuration. 
-		new Config(null);
-		assertTrue((gc.printableColumnRuler(10, false).contains("[")));
 
+	@Before
+	public void initConfig() throws IOException, InvalidConfigException{
+		new Config(null);
+	}
+
+	@Test
+	public void canPrintPerecentRuler() throws InvalidGenomicCoordsException, IOException, InvalidConfigException, InvalidColourException{
+		
+		GenomicCoords gc= new GenomicCoords("chr1:101-2000", 80, samSeqDict, null);
+		assertTrue(gc.printablePercentRuler(10, true).length() > 10);
+		assertTrue((gc.printablePercentRuler(10, false).contains("[")));
+		
+		// Single digit % is handled correctly. I.e. 6 -> .06
+		gc= new GenomicCoords("chr1:101-2000", 180, samSeqDict, null);
+		assertTrue(gc.printablePercentRuler(10, true).startsWith("0         .06       .11"));
+															
 	}
 	
 	@Test
@@ -96,8 +104,6 @@ public class GenomicCoordsTest {
 	
 	@Test
 	public void canPrintChromMap() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidConfigException{
-		
-		new Config(null);
 		
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", 80, samSeqDict, null);
 		
@@ -326,8 +332,9 @@ public class GenomicCoordsTest {
 	@Test
 	public void canPrintRuler() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidConfigException{
 
-		GenomicCoords gc= new GenomicCoords("chr1:101-200", 80, samSeqDict, null);
+		GenomicCoords gc= new GenomicCoords("chr1:1-81", 80, samSeqDict, null);
 		assertEquals(80, gc.printableGenomicRuler(10, true).length());
+		assertTrue(gc.printableGenomicRuler(10, true).startsWith("1 "));
 		
 		// Can round labels
 		gc= new GenomicCoords("chr1:2001234-3006789", 80, samSeqDict, null);
@@ -335,10 +342,12 @@ public class GenomicCoordsTest {
 		for(int i= 0; i < labels.length-1; i++){ // Do not test last label as it might be truncated
 			assertTrue(labels[i].endsWith("000"));
 		}
-		
-		// With colors: Note that we need to initialize the configuration. 
-		new Config(null);
+
 		assertTrue((gc.printableGenomicRuler(10, false).contains("[")));
+		
+		// Starts with 1 with large span
+		gc= new GenomicCoords("chr1:1-10000", 80, null, null);
+		assertTrue(gc.printableGenomicRuler(10, true).startsWith("1 "));
 	}
 	
 	@Test

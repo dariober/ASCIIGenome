@@ -27,7 +27,7 @@ public class CommandListTest {
 	public void canPrintDocstringForCommand() throws InvalidCommandLineException, IOException, InvalidColourException, InvalidConfigException {
 		new Config(null);
 		System.out.println("DOCSTRING");
-		System.out.println(CommandList.getHelpForCommand("awk"));
+		System.out.println(CommandList.getHelpForCommand("colorTrack"));
 	}
 	
 }

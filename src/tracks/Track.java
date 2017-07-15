@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -102,8 +103,8 @@ public abstract class Track {
 		} else {
 			int colourCode= Config.get256Color(ConfigKey.title_colour);
 			if(this.titleColour != null){
-				final Xterm256 xterm256= new Xterm256();
-				colourCode= xterm256.colorNameToXterm256(this.titleColour);
+				new Xterm256();
+				colourCode= Xterm256.colorNameToXterm256(this.titleColour);
 			}
 			return "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;" + colourCode + "m" + title;
 		}
@@ -780,6 +781,11 @@ public abstract class Track {
 			}
 		}
 		return results;
+	}
+
+	protected void setColorForRegex(Map<String, String> xcolorForRegex) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

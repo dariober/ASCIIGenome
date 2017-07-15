@@ -529,7 +529,7 @@ public class Main {
 	/** On exit print a message informing a new version of ASCIIGenome is available
 	 * */
 	private static void messageVersion(final boolean noFormat) throws IOException, InvalidColourException{
-		final Xterm256 xterm256= new Xterm256();
+		new Xterm256();
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			public void run() {
 				try{
@@ -540,7 +540,7 @@ public class Main {
 						msg= "NOTE: Newer version of ASCIIGenome is available: v" + up.get(1);
 					}
 					if( ! noFormat){
-						msg= "\033[48;5;231;38;5;" + xterm256.colorNameToXterm256("red") + "m" +  msg + "\033[0m";
+						msg= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("red") + "m" +  msg + "\033[0m";
 					}
 					System.err.println(msg);
 				} catch(Exception e){

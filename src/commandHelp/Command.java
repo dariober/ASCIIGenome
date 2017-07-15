@@ -2,6 +2,7 @@ package commandHelp;
 
 // With some patience you should replace the hardcoded command names with these. 
 public enum Command {
+	featureColorForRegex("featureColorForRegex"), 
 	featureDisplayMode("featureDisplayMode"), 
 	print("print"),
 	q("q"),

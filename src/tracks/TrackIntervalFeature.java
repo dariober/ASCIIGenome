@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +15,9 @@ import org.broad.igv.bbfile.BBFileReader;
 
 import com.google.common.collect.Lists;
 
+import coloring.Xterm256;
 import exceptions.InvalidColourException;
+import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.readers.TabixReader;
@@ -33,6 +34,7 @@ public class TrackIntervalFeature extends Track {
 	final static private String SHOW_REGEX= ".*"; 	private String showRegex= SHOW_REGEX;
 	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
+	private Map<String, String> colorForRegex= null;
 	// private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
 	// private Set<String> awkFiltered; // List of features after awk filtering.
 	
@@ -42,19 +44,6 @@ public class TrackIntervalFeature extends Track {
 		
 		this.setFilename(filename);
 
-//		if(Utils.isUcscGenePredSource(filename)){
-//			UcscGenePred ucsc = null;
-//			try {
-//				ucsc = new UcscGenePred(filename, -1);
-//				this.setWorkFilename(ucsc.getTabixFile());
-//				this.setTrackFormat(TrackFormat.GTF);
-//				//this.type= TrackFormat.GTF;
-//				this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
-//
-//			} catch (InvalidCommandLineException e) {
-//				//
-//			}
-		
 		if(Utils.getFileTypeFromName(filename).equals(TrackFormat.BIGBED)){
 			
 			this.bigBedReader = new BBFileReader(filename);  // or url for remote access.
@@ -424,6 +413,10 @@ public class TrackIntervalFeature extends Track {
 	@Override
 	public String printToScreen() throws InvalidGenomicCoordsException {
 	
+		for(IntervalFeature x : this.getIntervalFeatureList()){
+			x.setGtfAttributeForName( this.getGtfAttributeForName() );
+		}
+		
 		List<String> printable= new ArrayList<String>();		
 		int nLines= 0;
 		try {
@@ -438,105 +431,8 @@ public class TrackIntervalFeature extends Track {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 		return StringUtils.join(printable, "\n");
 	}
-	
-	/** Return a string of a single line of (typically de-stacked) reads
-	 * @throws IOException 
-	 * @throws InvalidGenomicCoordsException 
-	 * @throws InvalidColourException 
-	 * */
-	private String printToScreenOneLine(List<IntervalFeature> listToPrint) throws InvalidGenomicCoordsException, IOException, InvalidColourException {
-		
-		List<String> printable= new ArrayList<String>(); // Each item in this list occupies a character space in the terminal. 
-		                                                 // NB: Each item is String not char because it might contain the ansi formatting.
-		for(int i= 0; i < this.getGc().getMapping().size(); i++){ // First create empty line
-			printable.add(" ");
-		}
-		for(IntervalFeature intervalFeature : listToPrint){
-			if(intervalFeature.getScreenFrom() == -1){
-				throw new RuntimeException(); // Feature doesn't map to screen, this shouldn't happen
-			}
-			intervalFeature.setGtfAttributeForName( this.getGtfAttributeForName() );
-			
-			String[] text = intervalFeature.makeIdeogramFormatted(this.isNoFormat());
-			
-			int i= 0;
-			for(int j= intervalFeature.getScreenFrom(); j <= intervalFeature.getScreenTo(); j++){
-				printable.set(j, text[i]);
-				i++;
-			}
-			
-		}
-		return StringUtils.join(printable, "");
-	}
-
-	protected String getUnformattedTitle(){
-
-		String sq= "";
-		if (this.getFeatureDisplayMode().equals(FeatureDisplayMode.COLLAPSED)){
-			sq= "; collapsed";
-		}
-		String gapped= "";
-		if(this.getGap() == 0){
-			gapped= "; ungapped";
-		}
-		String awk= "";
-		if(!this.getAwk().isEmpty()){
-			awk= "; awk:on";
-		}
-		
-		String grep= "";
-		if( ! this.getShowRegex().equals(SHOW_REGEX) ){
-			grep += " -i " + this.getShowRegex(); 
-		}
-		if( ! this.getHideRegex().equals(HIDE_REGEX) ){
-			grep += " -e " + this.getHideRegex(); 
-		}
-		if( ! grep.isEmpty()){
-			grep= "; grep" + grep; 
-		}
-		String title=  this.getTrackTag() + ";" 
-	                 + " N: " + this.intervalFeatureList.size()
-					 + grep
-	                 + sq
-	                 + gapped 
-	                 + awk;
-		return title;
-	}
-	
-	@Override
-	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
-		
-		if(this.isHideTitle()){
-			return "";
-		}
-		return this.formatTitle(this.getUnformattedTitle()) + "\n";
-	}
-	
-	
-//	/** Remove positional duplicates from list of interval features for more compact visualization. 
-//	 * Squashing is done according to feature field which should be applicable to GTF/GFF only.*/
-//	private List<IntervalFeature> squashFeatures(List<IntervalFeature> intervalList){
-//
-//		List<IntervalFeature> stack= new ArrayList<IntervalFeature>();
-//		List<IntervalFeature> squashed= new ArrayList<IntervalFeature>();
-//		for(IntervalFeature interval : intervalList){
-//			if(stack.size() == 0 || stack.get(0).equalStranded(interval)){
-//				// Accumulate features with same coords.
-//				stack.add(interval);
-//			} else {
-//				squashed.add(stack.get(0));
-//				stack.clear();
-//				stack.add(interval);
-//			}
-//		}
-//		if(stack.size() > 0){
-//			squashed.add(stack.get(0));
-//		}
-//		return squashed;
-//	}
 	
 	/**		
 	 * Put in the same list reads that will go in the same line of text. 
@@ -548,8 +444,9 @@ public class TrackIntervalFeature extends Track {
 	 * See also TrackReads.stackReads();
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws IOException 
+	 * @throws InvalidColourException 
 	 */
-	private List<List<IntervalFeature>> stackFeatures() throws InvalidGenomicCoordsException, IOException{
+	private List<List<IntervalFeature>> stackFeatures() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		
 		List<IntervalFeature> intervals; 
 		List<IntervalFeature> flatListOfTx = this.flatListOfPrintableFeatures();
@@ -602,6 +499,132 @@ public class TrackIntervalFeature extends Track {
 		}
 		return listOfLines;
 	}
+	
+	/** Return a string of a single line of (typically de-stacked) reads
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
+	 * */
+	private String printToScreenOneLine(List<IntervalFeature> listToPrint) throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+		
+		List<String> printable= new ArrayList<String>(); // Each item in this list occupies a character space in the terminal. 
+		                                                 // NB: Each item is String not char because it might contain the ansi formatting.
+		for(int i= 0; i < this.getGc().getMapping().size(); i++){ // First create empty line
+			printable.add(" ");
+		}
+		for(IntervalFeature intervalFeature : listToPrint){
+			if(intervalFeature.getScreenFrom() == -1){
+				throw new RuntimeException(); // Feature doesn't map to screen, this shouldn't happen
+			}
+			List<FeatureChar> text = intervalFeature.getIdeogram(false, false);
+			int i= 0;
+			for(int j= intervalFeature.getScreenFrom(); j <= intervalFeature.getScreenTo(); j++){
+				printable.set(j, text.get(i).format(this.isNoFormat()));
+				i++;
+			}			
+		}
+		return StringUtils.join(printable, "");
+	}
+
+	/** List where the original records have been grouped into transcripts. If there are 
+	 * no transcripts, just return the input feature(s) as it is. 
+	 * TODO: Process here also squash, merge and gap?
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
+	 * @throws InvalidCommandLineException 
+	 * */
+	private List<IntervalFeature> flatListOfPrintableFeatures() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+		
+		for(IntervalFeature x : this.getIntervalFeatureList()){
+			x.getIdeogram(true, false);
+		}
+		this.changeFeatureColor(this.getColorForRegex());
+		
+		List<IntervalFeature> flatList= new ArrayList<IntervalFeature>(); 
+
+		List<Double> mapToScreen = this.getGc().getMapping();
+		
+		if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)){
+
+			Map<String, List<IntervalFeature>> tx;
+			if(this.getTrackFormat().equals(TrackFormat.GFF)){
+				tx = this.groupByGFFAttribute();
+			} else if (this.getTrackFormat().equals(TrackFormat.GTF)) {
+				tx = this.groupByGTFAttribute();
+			} else {
+				throw new RuntimeException("This is not a GTF or GFF track!");
+			}
+			for(String txId : tx.keySet()){
+				if(txId.equals("_na_")){
+					// Features that are not part of transcript
+					for(IntervalFeature x : tx.get(txId)){
+						x.getIdeogram(false, false);
+						flatList.add(x);
+					}
+				} else {
+					flatList.add(this.collapseGFFTranscript(tx.get(txId), mapToScreen));
+				}
+			}
+			
+		} else {
+			for(IntervalFeature x : this.getIntervalFeatureList()){
+				flatList.add(x);
+			}
+		}
+		
+		Collections.sort(flatList);
+		for(IntervalFeature x : flatList){
+			// Add name to the ideogram of each feature.
+			x.getIdeogram(false, true);
+		}
+		return flatList;
+	}
+
+	protected String getUnformattedTitle(){
+
+		String sq= "";
+		if (this.getFeatureDisplayMode().equals(FeatureDisplayMode.COLLAPSED)){
+			sq= "; collapsed";
+		}
+		String gapped= "";
+		if(this.getGap() == 0){
+			gapped= "; ungapped";
+		}
+		String awk= "";
+		if(!this.getAwk().isEmpty()){
+			awk= "; awk:on";
+		}
+		
+		String grep= "";
+		if( ! this.getShowRegex().equals(SHOW_REGEX) ){
+			grep += " -i " + this.getShowRegex(); 
+		}
+		if( ! this.getHideRegex().equals(HIDE_REGEX) ){
+			grep += " -e " + this.getHideRegex(); 
+		}
+		if( ! grep.isEmpty()){
+			grep= "; grep" + grep; 
+		}
+		String title=  this.getTrackTag() + ";" 
+	                 + " N: " + this.intervalFeatureList.size()
+					 + grep
+	                 + sq
+	                 + gapped 
+	                 + awk;
+		return title;
+	}
+	
+	@Override
+	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
+		
+		if(this.isHideTitle()){
+			return "";
+		}
+		return this.formatTitle(this.getUnformattedTitle()) + "\n";
+	}
+	
+	
 	
 	/** Searching the current chrom starting at "from" to find the *next* feature matching the given string. 
 	 * If not found, search the other chroms, if not found restart from the beginning of
@@ -753,8 +776,9 @@ public class TrackIntervalFeature extends Track {
 	 * method but better to pass it from outside as it can take time to get the terminal window size several times.  
 	 * 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidColourException 
 	 * */
-	private IntervalFeature collapseGFFTranscript(List<IntervalFeature> txFeatures, List<Double> mapToScreen) throws InvalidGenomicCoordsException{
+	private IntervalFeature collapseGFFTranscript(List<IntervalFeature> txFeatures, List<Double> mapToScreen) throws InvalidGenomicCoordsException, InvalidColourException{
 		
 		if(txFeatures.size() == 0){
 			System.err.println("Unexpected transcript: Length zero!");
@@ -767,7 +791,7 @@ public class TrackIntervalFeature extends Track {
 		int screenFrom= Integer.MAX_VALUE;
 		int screenTo= 0;
 		for(IntervalFeature x : txFeatures){
-
+			
 			if(x.getFrom() < gFrom){
 				gFrom= x.getFrom(); 
 			}
@@ -780,7 +804,6 @@ public class TrackIntervalFeature extends Track {
 			if(x.getScreenTo() > screenTo){
 				screenTo= x.getScreenTo();
 			}
-			x.setGtfAttributeForName( this.getGtfAttributeForName() );
 		}
 				
 		IntervalFeature transcript= new IntervalFeature(txFeatures.get(0).getChrom(), gFrom, gTo, TrackFormat.GFF); 
@@ -788,29 +811,32 @@ public class TrackIntervalFeature extends Track {
 		transcript.mapToScreen(mapToScreen);
 		
 		// Now we need to prepare the ideogram
-		char[] ideogram= new char[screenTo - screenFrom + 1];
-		for(int i= 0; i < ideogram.length; i++){
-			ideogram[i]= '-'; // Deafult characater to print. Typically this should apply to introns only.
+		int txIdeogramSize= screenTo - screenFrom + 1;
+		List<FeatureChar> ideogram= new ArrayList<FeatureChar>(txIdeogramSize);
+		for(int i= 0; i < txIdeogramSize; i++){
+			FeatureChar c= new FeatureChar();
+			c.setText('-');
+			ideogram.add(c); // Default character to print. Typically this should apply to introns only.
 		}
-		HashMap<String, Character> charDict = FormatGTF.getFeatureToTextCharDict().get(transcript.getStrand());
 
 		for(String txSubType : FormatGTF.getTxSubFeatures()){
 
 			for(IntervalFeature subFeature : txFeatures){
 				
 				if(subFeature.getFeature().toLowerCase().equals(txSubType)){
-
-					char c= charDict.get(subFeature.getFeature().toLowerCase());
-					
-					// Fill up text with this character
-					for(int i= subFeature.getScreenFrom(); i <= subFeature.getScreenTo(); i++){
-						ideogram[i - screenFrom]= c;
+					// Replace the featureChars in the novel transcript with the those from the individual features  
+					// cccccccc				  <- subfeature#1
+					//               eeee     <- subfeature#2
+					// ---------------------- <- novel ideogram to be replaced
+					List<FeatureChar> subFeatureIdeogram= subFeature.getIdeogram(false, false);
+					int offset= subFeature.getScreenFrom() - screenFrom;
+					for(FeatureChar x : subFeatureIdeogram){
+						ideogram.set(offset, x);
+						offset++;
 					}
 				}
 			}			
 		}
-		transcript.setIdeogram(ideogram);
-		
 		//Now we get the name for this transcript
 		String txName= "."; // Default: No name
 		outerloop:
@@ -840,50 +866,9 @@ public class TrackIntervalFeature extends Track {
 			}	
 		}
 		transcript.setName(txName);
-		
-		// ideogram= transcript.addNameToIdeogram(ideogram);
-		// transcript.setIdeogram(ideogram);
+		transcript.setIdeogram(ideogram, false);
 		return transcript;
 	}
-	
-	/** List where the original records have been grouped into transcripts, if there are 
-	 * transcripts. 
-	 * TODO: Process here also squash, merge and gap?
-	 * @throws IOException 
-	 * @throws InvalidGenomicCoordsException 
-	 * */
-	private List<IntervalFeature> flatListOfPrintableFeatures() throws InvalidGenomicCoordsException, IOException{
-		
-		List<IntervalFeature> flatList= new ArrayList<IntervalFeature>(); 
-
-		List<Double> mapToScreen = this.getGc().getMapping();
-		
-		if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)){
-
-			Map<String, List<IntervalFeature>> tx;
-			if(this.getTrackFormat().equals(TrackFormat.GFF)){
-				tx = this.groupByGFFAttribute();
-			} else if (this.getTrackFormat().equals(TrackFormat.GTF)) {
-				tx = this.groupByGTFAttribute();
-			} else {
-				throw new RuntimeException("This is not a GTF or GFF track!");
-			}
-			
-			for(String txId : tx.keySet()){
-				if(txId.equals("_na_")){
-					flatList.addAll(tx.get(txId));
-				} else {
-					flatList.add(this.collapseGFFTranscript(tx.get(txId), mapToScreen));
-				}
-			}
-			
-		} else {
-			flatList.addAll(this.getIntervalFeatureList());
-		}
-		Collections.sort(flatList);
-		return flatList;
-	}
-
 
 	protected List<IntervalFeature> getIntervalFeatureList() {
 		return intervalFeatureList;
@@ -977,5 +962,46 @@ public class TrackIntervalFeature extends Track {
 			featureList.add(ift.getRaw());
 		}
 		return featureList;
+	}
+
+	@Override
+	protected void setColorForRegex(Map<String, String> xcolorForRegex) {
+		if(xcolorForRegex == null){
+			this.colorForRegex= null;
+			return;
+		} else {
+			if(this.colorForRegex == null){
+				this.colorForRegex= new LinkedHashMap<String, String>();
+			}
+			for(String p : xcolorForRegex.keySet()){
+				this.colorForRegex.put(p, xcolorForRegex.get(p));
+			}
+		}
+	}
+
+	private Map<String, String> getColorForRegex() {
+		return this.colorForRegex;
+	}
+
+	/** Iterate through the features in this track and set background colour.
+	 * colorForRegex: Key= Regex to capture features; Value= Colour to use for the captures features.
+	 * @throws InvalidColourException 
+	 * */
+	private void changeFeatureColor(Map<String, String> colorForRegex) throws InvalidColourException {
+		if(colorForRegex == null){
+			return;
+		}
+	
+		for(String regex : colorForRegex.keySet()){
+			String color= colorForRegex.get(regex);
+			for(IntervalFeature x : this.getIntervalFeatureList()){
+				if(Pattern.compile(regex).matcher(x.getRaw()).find()){
+					for(FeatureChar f : x.getIdeogram(false, false)){
+						f.setBgColor(color);
+						f.setFgColor(Xterm256.getContrastColor(color));
+					}
+				}
+			}
+		}
 	}
 }

@@ -9,10 +9,7 @@ import exceptions.InvalidCommandLineException;
 
 public class MakeFastaIndex {
 
-	final private String fastaFile;
-			
 	public MakeFastaIndex(String fastaFile) {
-		this.fastaFile= fastaFile;
 	}
     
 	public List<fastaIndexRecord> makeIndex() throws InvalidCommandLineException, FileNotFoundException {
@@ -23,10 +20,6 @@ public class MakeFastaIndex {
 	}
 
 	private class fastaIndexRecord {
-		String seqname;
-		int seqLen= 0;
-		int byteOffset= 0;
-		int lineLen= 0;
 	}
 	
 }
