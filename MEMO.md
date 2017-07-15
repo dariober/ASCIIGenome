@@ -33,19 +33,19 @@ is what users will download and use.
 ```
 cd ~/git_repos/ASCIIGenome ## Or wherever the latest local dir is
 
-mkdir ASCIIGenome-1.8.0        ## The 1.8.0 tag should match the version in ArgParse.VERSION
+mkdir ASCIIGenome-1.9.0        ## The 1.9.0 tag should match the version in ArgParse.VERSION
 
 ## Copy helper script and jar file to future zip dir
-cp ASCIIGenome ASCIIGenome-1.8.0/
-cp ~/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-1.8.0/
-cp INSTALL.md ASCIIGenome-1.8.0/
+cp ASCIIGenome ASCIIGenome-1.9.0/
+cp ~/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-1.9.0/
+cp INSTALL.md ASCIIGenome-1.9.0/
 
 ## Zip up
-zip -r ASCIIGenome-1.8.0.zip ASCIIGenome-1.8.0
-rm -r ASCIIGenome-1.8.0
+zip -r ASCIIGenome-1.9.0.zip ASCIIGenome-1.9.0
+rm -r ASCIIGenome-1.9.0
 ```
 
-### Upload ASCIIGenome-1.8.0.zip to github 
+### Upload ASCIIGenome-1.9.0.zip to github 
 
 * Create a new release (*Draft new release*). Format of the name must be v*X.Y.Z*
   e.g. *v1.2.3*. As always, X.Y.Z must match throughout.
@@ -61,7 +61,7 @@ Edit `install/brew/asciigenome.rb` to change **release version** and **sha sum**
 Get sha256 sum with:
 
 ```
-shasum -a 256 ASCIIGenome-1.8.0.zip
+shasum -a 256 ASCIIGenome-1.9.0.zip
 vi install/brew/asciigenome.rb ## Edit version and sha
 ```
 
