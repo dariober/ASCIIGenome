@@ -513,7 +513,7 @@ public class CommandList {
 		cmd.setAdditionalDescription(""
 				+ "This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color "
 				+ "for the lines captured by "
-				+ "a regex. It is useful to highlight features containg a string of interset, "
+				+ "a regex. It is useful to highlight features containg a string of interest, "
 				+ "such as 'CDS' in gff files.\n"
 				+ "\n"
 				+ "For available colors see :code:`colorTrack -h`. As for :code:`colorTrack` "
