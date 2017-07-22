@@ -292,7 +292,7 @@ public class Utils {
 			} 
 			else {
 				// No overlap add merged interval to list and reset new merged interval
-				IntervalFeature x= new IntervalFeature(mergedChrom + "\t" + (mergedFrom-1) + "\t" + mergedTo, TrackFormat.BED);
+				IntervalFeature x= new IntervalFeature(mergedChrom + "\t" + (mergedFrom-1) + "\t" + mergedTo, TrackFormat.BED, null);
 				x.setScreenFrom(mergedScreenFrom);
 				x.setScreenTo(mergedScreenTo);
 				if(strand.size() == 1){
@@ -464,8 +464,12 @@ public class Utils {
 				if(line.startsWith("#") || line.isEmpty() || line.startsWith("track ")){
 					continue;
 				}
-				IntervalFeature feature= new IntervalFeature(line, fmt);
-				region= feature.getChrom() + ":" + feature.getFrom(); 
+				if(fmt.equals(TrackFormat.VCF)){
+					region= line.split("\t")[0] + ":" + line.split("\t")[1]; 
+				} else {
+					IntervalFeature feature= new IntervalFeature(line, fmt, null);
+					region= feature.getChrom() + ":" + feature.getFrom();
+				}
 				br.close();
 				return region;
 			}

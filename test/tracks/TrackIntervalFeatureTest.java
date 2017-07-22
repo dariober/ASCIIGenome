@@ -4,24 +4,28 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
-import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.tribble.AbstractFeatureReader;
+import htsjdk.tribble.readers.LineIterator;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFCodec;
+import htsjdk.variant.vcf.VCFHeader;
 import samTextViewer.GenomicCoords;
 
 public class TrackIntervalFeatureTest {
@@ -257,17 +261,52 @@ public class TrackIntervalFeatureTest {
 		assertEquals(3, xset.size());
 	}
 
+	
 	@Test
-	public void canReadTabixFromHTTP() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
-		
+	public void canReadFromHTTP() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/refSeq.bed", gc);
+		assertEquals("http", tif.getFilename().substring(0,  4));
+		assertEquals(2, tif.getIntervalFeatureList().size());
+	}
+	
+	@Test
+	public void canReadTabixGTFFromHTTP() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		// If this file does not exist, put any valid tabix file and its index on Dropbox/Public and use
 		// the dropbox link here.
-		String bgzFn= "http://genome.ucsc.edu/goldenPath/help/examples/vcfExample.vcf.gz";
-		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);
-		TrackIntervalFeature tif= new TrackIntervalFeature(bgzFn, gc);
+		GenomicCoords gc= new GenomicCoords("chr1:64000-74000", 80, null, null);
 		
+		TrackIntervalFeature tif= new TrackIntervalFeature("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/hg19_genes_head.gtf.gz", gc);
+
 		// We check the working file is on the remote server.
+		assertEquals("http", tif.getFilename().substring(0,  4)); 
+		assertEquals("http", tif.getWorkFilename().substring(0,  4)); // Check we are using the remote file as working file. I.e. no need to download and index.
+		assertEquals(4, tif.getIntervalFeatureList().size());
+	}	
+	
+	@Test
+	public void canReadTabixVCFFromHTTP() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+		String bgzFn= "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/CHD.exon.2010_03.sites.vcf.gz";
+		GenomicCoords gc= new GenomicCoords("1:1-2000000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(bgzFn, gc);
+		assertEquals(3, tif.getIntervalFeatureList().size());
 		assertEquals("http", tif.getWorkFilename().substring(0,  4));
+	}
+
+	@Test
+	public void canReadUnsortedVCFFromHTTP() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("1:1-1142000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/CHD.exon.2010_03.sites.unsorted.vcf", gc);
+		assertEquals("http", tif.getFilename().substring(0,  4));
+		assertEquals(3, tif.getIntervalFeatureList().size());
+	}
+	
+	@Test
+	public void canReadTabixVCFFromLocal() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+		String bgzFn= "test_data/CHD.exon.2010_03.sites.vcf.gz";
+		GenomicCoords gc= new GenomicCoords("1:1-2000000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(bgzFn, gc);
+		assertEquals(3, tif.getIntervalFeatureList().size());
 	}
 	
 	@Test

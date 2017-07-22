@@ -14,6 +14,7 @@ class FeatureChar {
 	private String bgColor; 	/** The background colour to use */
 	private String fgColor;
 	private boolean invertFgBgColor= false;
+	private boolean underline= false;
 	
 	/*  C O N S T R U C T O R  */
 	
@@ -35,6 +36,9 @@ class FeatureChar {
 		sb.append("\033[");
 		if(this.invertFgBgColor){
 			sb.append("7;");
+		}
+		if(this.isUnderline()){
+			sb.append("4;");
 		}
 		sb.append("48;5;");
 		sb.append(Xterm256.colorNameToXterm256(this.getBgColor()));
@@ -122,5 +126,13 @@ class FeatureChar {
 	
 	protected void setFgColor(String fgColor) {
 		this.fgColor = fgColor;
+	}
+
+	public boolean isUnderline() {
+		return underline;
+	}
+
+	public void setUnderline(boolean underline) {
+		this.underline = underline;
 	}
 }

@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
@@ -38,6 +39,7 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderVersion;
 import utils.BedLine;
 import utils.BedLineCodec;
@@ -104,23 +106,29 @@ public class MakeTabixIndex {
 		if(fmt.equals(TabixFormat.VCF)){
 			
 			try{
-				VCFFileReader vcfr= new VCFFileReader(new File(intab), false); 
+				VCFFileReader vcfr= new VCFFileReader(new File(intab), false);
 			    vcfHeader= vcfr.getFileHeader(); // new VCFHeader();
 			    vcfr.close();
 			} catch(MalformedFeatureFile e){
 				vcfHeader= new VCFHeader();
 			}
 			vcfCodec= new VCFCodec();
-		    vcfCodec.setVCFHeader(vcfHeader, VCFHeaderVersion.VCF4_0);
-
+		    vcfCodec.setVCFHeader(vcfHeader, this.getVCFHeaderVersion(vcfHeader));
+//		    writeVCFHeader(vcfHeader, writer);
+//		    filePosition= writer.getFilePointer();
 		}
 		// ------------------------------------------------------------
-		
+
 		while(lin.hasNext()){
 			
 			String line = lin.next().trim();
 			
-			if(line.isEmpty() || line.startsWith("#") || line.startsWith("track ")){
+			if(line.isEmpty() || line.startsWith("track ")){
+				continue;
+			}
+			if(line.startsWith("#")){
+				writer.write((line + "\n").getBytes());
+				filePosition = writer.getFilePointer();
 				continue;
 			}
 			if(line.startsWith("##FASTA")){
@@ -129,7 +137,7 @@ public class MakeTabixIndex {
 			
 			if(first && ! fmt.equals(TabixFormat.VCF)){
 				String dummy= this.makeDummyLine(line, fmt);
-				addLineToIndex(dummy, indexCreator, filePosition, fmt, vcfHeader, vcfCodec);
+				addLineToIndex(dummy, indexCreator, filePosition, fmt, null, null);
 				
 				writer.write(dummy.getBytes());
 				writer.write('\n');
@@ -151,7 +159,7 @@ public class MakeTabixIndex {
 		CloserUtil.close(lin);
 	}
 
-	/** Arguments vcfHeader and vcfCodec can be null if format is not VCF otherwise pass suitable objects.
+	/** Set vcfHeader and vcfCodec to null if reading non-vcf line.
 	 * */
 	private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition, TabixFormat fmt, VCFHeader vcfHeader, VCFCodec vcfCodec) throws InvalidRecordException {
 
@@ -173,10 +181,20 @@ public class MakeTabixIndex {
 		} else {
 			System.err.println("Unexpected TabixFormat: " + fmt.sequenceColumn + " " + fmt.startPositionColumn);
 			throw new InvalidRecordException();
-		}
-		
+		}	
 	}
-
+	
+	private VCFHeaderVersion getVCFHeaderVersion(VCFHeader vcfHeader){
+		Iterator<VCFHeaderLine> iter = vcfHeader.getMetaDataInInputOrder().iterator();
+		while(iter.hasNext()){
+			VCFHeaderLine hl = iter.next();
+			if(hl.getKey().equals("fileformat")){
+				return VCFHeaderVersion.toHeaderVersion(hl.getValue());
+			}
+		}
+		return null;
+	}
+	
 	/** Sort file by columns chrom (text) and pos (int). chromIdx and posIdx are 1-based  
 	 * indexes for the chrom and pos column. For bed use 1 and 2 respectively. For use GTF/GFF  1 and 4.
 	 * Comment lines, starting with #, are returned as they are. Reading stops if the line ##FASTA is found.

@@ -2,6 +2,7 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,7 +21,13 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.tribble.AbstractFeatureReader;
+import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.readers.TabixReader;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFCodec;
+import htsjdk.variant.vcf.VCFFileReader;
+import htsjdk.variant.vcf.VCFHeader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -35,6 +42,7 @@ public class TrackIntervalFeature extends Track {
 	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
 	private Map<String, String> colorForRegex= null;
+	private VCFHeader vcfHeader= null;
 	// private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
 	// private Set<String> awkFiltered; // List of features after awk filtering.
 	
@@ -117,21 +125,26 @@ public class TrackIntervalFeature extends Track {
 			to= Integer.MAX_VALUE;
 			throw new InvalidGenomicCoordsException();
 		}		
-		List<IntervalFeature> xFeatures= new ArrayList<IntervalFeature>();
-
-		TabixBigBedIterator qry= this.getReader().query(chrom, from-1, to);
-		while(true){
-			String q = qry.next();
-			if(q == null){
-				break;
-			}
-			IntervalFeature intervalFeature= new IntervalFeature(q, this.getTrackFormat());
-			if(intervalFeature.getRaw().contains("\t__ignore_me__")){ // Hack to circumvent issue #38
-				continue;
-			}
-			xFeatures.add(intervalFeature);
-		} 
 		
+		List<IntervalFeature> xFeatures= new ArrayList<IntervalFeature>();
+		
+		if(this.getTrackFormat().equals(TrackFormat.VCF)){
+			xFeatures= getFeaturesInVCFInterval(chrom, from, to);
+		} 
+		else { 
+			TabixBigBedIterator qry= this.getReader().query(chrom, from-1, to);
+			while(true){
+				String q = qry.next();
+				if(q == null){
+					break;
+				}
+				IntervalFeature intervalFeature= new IntervalFeature(q, this.getTrackFormat(), null);
+				if(intervalFeature.getRaw().contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+					continue;
+				}
+				xFeatures.add(intervalFeature);
+			} 
+		}
 		// this.setAwkFiltered(xFeatures);
 		
 		// Remove hidden features
@@ -144,6 +157,38 @@ public class TrackIntervalFeature extends Track {
 		return xFeaturesFiltered;
 	}
 
+	private List<IntervalFeature> getFeaturesInVCFInterval(String chrom, int from, int to) throws IOException, InvalidGenomicCoordsException{
+
+		// Get header if not set yet
+		if(this.vcfHeader == null){
+			if( Utils.urlFileExists(this.getFilename()) ){
+				URL url= new URL(this.getFilename());
+				AbstractFeatureReader<VariantContext, LineIterator> reader = AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
+				vcfHeader = (VCFHeader) reader.getHeader();
+			} else {
+				VCFFileReader reader = new VCFFileReader(new File(this.getWorkFilename()));
+				vcfHeader= reader.getFileHeader();
+				reader.close();
+			}
+		}
+
+		// Collect feature
+		List<IntervalFeature> xFeatures= new ArrayList<IntervalFeature>();
+		TabixBigBedIterator qry= this.getReader().query(chrom, from-1, to);
+		while(true){
+			String q = qry.next();
+			if(q == null){
+				break;
+			}
+			IntervalFeature intervalFeature= new IntervalFeature(q, TrackFormat.VCF, this.vcfHeader);
+			if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+				continue;
+			}
+			xFeatures.add(intervalFeature);
+		} 
+		return xFeatures;
+	}
+	
 	/** Return true if string is visible, i.e. it
 	 * passes the regex filters. Note that regex filters are applied to the raw string.
 	 * @throws InvalidGenomicCoordsException 
@@ -219,7 +264,7 @@ public class TrackIntervalFeature extends Track {
 			chroms.add(startChrom);			
 		}
 		for(String chrom : chroms){
-			next = getNextFeatureOnChrom(chrom, 0); // Use 0 so if the next feature starts at the beginning of the chrom,
+			next = this.getNextFeatureOnChrom(chrom, 0); // Use 0 so if the next feature starts at the beginning of the chrom,
 			                                        // i.e. at start=1, it is not missed. See issue #50 
 			if(next != null){
 				return next;
@@ -243,7 +288,7 @@ public class TrackIntervalFeature extends Track {
 			if(line == null){
 				return null;
 			} 
-			IntervalFeature x= new IntervalFeature(line, this.getTrackFormat());
+			IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
 			if(x.getFrom() > from && this.featureIsVisible(x.getRaw())){
 				return x;
 			}
@@ -289,10 +334,10 @@ public class TrackIntervalFeature extends Track {
 					break;
 				} 
 				line= line.trim();
-				IntervalFeature candidate= new IntervalFeature(line, this.getTrackFormat());
+				IntervalFeature candidate= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
 				if(candidate.getTo() < pos && this.featureIsVisible(line)){ 
 					// This is a candidate feature but we don't know yet of it's the last one
-					last= new IntervalFeature(line, this.getTrackFormat());
+					last= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
 				}
 			}
 			if(last != null){
@@ -388,7 +433,7 @@ public class TrackIntervalFeature extends Track {
 				if(line == null) break;
 				boolean matched= Pattern.compile(query).matcher(line).find();
 				if(matched){
-					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat());
+					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
 					if(this.featureIsVisible(x.getRaw())){
 						matchedFeatures.add(x);
 					}
@@ -644,7 +689,7 @@ public class TrackIntervalFeature extends Track {
 				if(line == null) break;
 				boolean matched= Pattern.compile(query).matcher(line).find();
 				if(matched){
-					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat());
+					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
 					if(x.getFrom() > startingPoint && this.featureIsVisible(x.getRaw())){
 						return x;
 					}

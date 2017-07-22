@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.biojava.nbio.genome.parsers.gff.Feature;
 import org.biojava.nbio.genome.parsers.gff.Location;
@@ -13,6 +14,10 @@ import com.google.common.collect.Lists;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
+import htsjdk.variant.variantcontext.Allele;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFCodec;
+import htsjdk.variant.vcf.VCFHeader;
 import samTextViewer.Utils;
 
 /**
@@ -49,33 +54,73 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	// The feature as it would be represented on screen. Each String of the array
 	// is a character to be printed on screen (e.g. "E") possibly formatted (e.g. "\033[m5;45E\033")
 	private List<FeatureChar> ideogram;
-	
+	private VariantContext variantContext;
 	/* C o n s t r u c t o r s */
 		
 	/**
-	 * Create an IntervalFeature from a String. Typically this string is a bed or gtf line read from file.
-	 * @param line
-	 * @param type Format of this line
-	 * @throws InvalidGenomicCoordsException 
+	 * Create an IntervalFeature from a String. Typically this is a line read from file.
+	 * vcfHeader can be null if trackformat is not VCF.
 	 */
-	public IntervalFeature(String line, TrackFormat type) throws InvalidGenomicCoordsException{
-		if(type.equals(TrackFormat.BED) || type.equals(TrackFormat.BEDGRAPH) || type.equals(TrackFormat.BIGBED)){
+	public IntervalFeature(String line, TrackFormat format, VCFHeader vcfHeader) throws InvalidGenomicCoordsException{
+		if(format.equals(TrackFormat.BED) || format.equals(TrackFormat.BEDGRAPH) || format.equals(TrackFormat.BIGBED)){
 			this.intervalFeatureFromBedLine(line);
 			this.trackFormat= TrackFormat.BED;
 		
-		} else if(type.equals(TrackFormat.GFF) || type.equals(TrackFormat.GTF)){
+		} else if(format.equals(TrackFormat.GFF) || format.equals(TrackFormat.GTF)){
 			this.intervalFeatureFromGtfLine(line);
 			this.trackFormat= TrackFormat.GFF;
 					
-		} else if(type.equals(TrackFormat.VCF)) {
-			this.intervalFeatureFromVcfLine(line);
+		} else if(format.equals(TrackFormat.VCF)) {
+			if(vcfHeader == null){
+				System.err.println("IntervalFeature of type VCF cannot be constructed without a VCFHeader object.");
+				throw new RuntimeException();
+			}
+			VCFCodec vcfCodec= new VCFCodec();
+			vcfCodec.setVCFHeader(vcfHeader, null); // null causes problems, see MakeTabixIndex.getVCFHeaderVersion() to get header version.
+			this.variantContext= vcfCodec.decode(line);
+			this.setRaw(line);
 			this.trackFormat= TrackFormat.VCF;
+			this.chrom= this.variantContext.getContig();
+			this.from= this.variantContext.getStart();
+			this.to= this.setToForVCF();
+			this.name= this.variantContext.getID();
+
 		} else {
-			System.err.println("Format " + type + " not supported");
+			System.err.println("Format " + format + " not supported");
 			throw new RuntimeException();
 		}
 	}
-	
+
+	private int setToForVCF() {
+		if(this.variantContext.getAlleles().size() > 2){ // Multiallelic
+			return this.variantContext.getEnd();
+		}
+		else if(this.variantContext.isSNP()){
+			return this.variantContext.getStart();
+		}
+		else if(this.variantContext.isSimpleInsertion()){
+			int alt_len= this.variantContext.getAlleles().get(1).length();
+			return this.variantContext.getStart() + alt_len - 1;
+		}
+		else if(this.variantContext.isSimpleDeletion() || this.variantContext.isMNP()){
+			int ref_len= this.variantContext.getAlleles().get(0).length();
+			return this.variantContext.getStart() + ref_len - 1;
+		} 
+		else if(this.variantContext.isComplexIndel()){
+			int ref_len= this.variantContext.getAlleles().get(0).length();
+			int alt_len= this.variantContext.getAlleles().get(1).length();
+			if(ref_len > alt_len){ // Similar to a deletion
+				return this.variantContext.getStart() + ref_len - 1;	
+			} else {
+				// Similar to an insertion
+				return this.variantContext.getStart() + alt_len - 1;	
+			}
+		}
+		else {
+			return this.variantContext.getEnd();
+		}
+	}
+
 	public IntervalFeature(String chrom, int from, int to, TrackFormat format) throws InvalidGenomicCoordsException{
 
 		if(chrom == null || chrom.isEmpty()){
@@ -95,41 +140,36 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	}
 	
 	/* M e t h o d s */
-	
-	private IntervalFeature intervalFeatureFromVcfLine(String vcfLine) throws InvalidGenomicCoordsException{
-		vcfLine= vcfLine.replace("\n", "");
-		vcfLine= vcfLine.replace("\r", "");
-		this.raw= vcfLine;
-		
-		List<String> vcfList = Lists.newArrayList(Splitter.on("\t").split(vcfLine));
-		if(vcfList.size() < 8){
-			throw new RuntimeException("intervalFeatureFromVcfLine: Invalid vcf line:\n" + vcfList);
-		}
-				
-		this.chrom= vcfList.get(0).trim();
-		this.from= Integer.parseInt(vcfList.get(1)); // Make it 1-based
 
-		// Feature coordinates are based on the longest operation, whether insertion or deletion
-		// or snv (length 1). Note that representing insertions as strings of length > 1 is not
-		// consistent with the genomic coordinates but it gives a better idea of the size of the 
-		// insertion.
-		int offset= vcfList.get(3).length() > vcfList.get(4).length() ? 
-				vcfList.get(3).length() : 
-				vcfList.get(4).length();
-		
-		this.to= this.from + (offset-1);
-		this.name= vcfList.get(2);
-		this.validateIntervalFeature();
-		return this;
-		
-	}
+//	private IntervalFeature intervalFeatureFromVcfLine(String vcfLine) throws InvalidGenomicCoordsException{
+//		this.setRaw(vcfLine);
+//		
+//		List<String> vcfList = Lists.newArrayList(Splitter.on("\t").split(vcfLine));
+//		if(vcfList.size() < 8){
+//			throw new RuntimeException("intervalFeatureFromVcfLine: Invalid vcf line:\n" + vcfList);
+//		}
+//				
+//		this.chrom= vcfList.get(0).trim();
+//		this.from= Integer.parseInt(vcfList.get(1)); // Make it 1-based
+//
+//		// Feature coordinates are based on the longest operation, whether insertion or deletion
+//		// or snv (length 1). Note that representing insertions as strings of length > 1 is not
+//		// consistent with the genomic coordinates but it gives a better idea of the size of the 
+//		// insertion.
+//		int offset= vcfList.get(3).length() > vcfList.get(4).length() ? 
+//				vcfList.get(3).length() : 
+//				vcfList.get(4).length();
+//		
+//		this.to= this.from + (offset-1);
+//		this.name= vcfList.get(2);
+//		this.validateIntervalFeature();
+//		return this;
+//		
+//	}
 	
 	private IntervalFeature intervalFeatureFromBedLine (String bedLine) throws InvalidGenomicCoordsException{
-		
-		bedLine= bedLine.replace("\n", "");
-		bedLine= bedLine.replace("\r", "");
-		this.raw= bedLine;
-		
+		this.setRaw(bedLine);
+
 		List<String> bedList = Lists.newArrayList(Splitter.on("\t").split(bedLine));
 		if(bedList.size() < 3){
 			throw new RuntimeException("intervalFeatureFromBedLine: Invalid bed line:\n" + bedList);
@@ -162,10 +202,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	
 	private IntervalFeature intervalFeatureFromGtfLine (String gtfLine) throws InvalidGenomicCoordsException{
 		//chr1    unknown exon    11874   12227   .       +       .       gene_id "DDX11L1"; transcript_id "NR_046018_1"; gene_name "DDX11L1"; tss_id "TSS14523";
-		gtfLine= gtfLine.replace("\n", "");
-		gtfLine= gtfLine.replace("\r", "");
-		this.raw= gtfLine;
-
+		this.setRaw(gtfLine);
 		List<String> gtfList = Lists.newArrayList(Splitter.on("\t").split(gtfLine));
 		this.chrom= gtfList.get(0).trim();
 		this.source= gtfList.get(1).trim();
@@ -335,57 +372,70 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	private char getCharForIdeogram() {
 		
 		char text;
-		if(this.trackFormat.equals(TrackFormat.VCF)){
-			List<String> vcfList = Lists.newArrayList(Splitter.on("\t").split(this.raw));
-			text= FormatVCF.textForVariant(vcfList.get(3), vcfList.get(4));
-
-		} else {
-			// Get feature strand
-			char strand= '.'; // Default for NA
-			if(this.strand == '+'){
-				strand= '+';
-			} else if(this.strand == '-'){
-				strand= '-';
-			}
-			// Get feature type
-			String feature= this.getFeature().toLowerCase();
-			HashMap<Character, HashMap<String, Character>> featureToTextCharDict = FormatGTF.getFeatureToTextCharDict();
-			if(!featureToTextCharDict.get('.').containsKey(feature)){
-				feature= "other"; // Feature type NA or not found in dict
-			}
-			
-			// Now you have the right char to be used for this feature type and strand.
-			text= featureToTextCharDict.get(strand).get(feature);
+		// Get feature strand
+		char strand= '.'; // Default for NA
+		if(this.strand == '+'){
+			strand= '+';
+		} else if(this.strand == '-'){
+			strand= '-';
 		}
+		// Get feature type
+		String feature= this.getFeature().toLowerCase();
+		HashMap<Character, HashMap<String, Character>> featureToTextCharDict = FormatGTF.getFeatureToTextCharDict();
+		if(!featureToTextCharDict.get('.').containsKey(feature)){
+			feature= "other"; // Feature type NA or not found in dict
+		}
+		
+		// Now you have the right char to be used for this feature type and strand.
+		text= featureToTextCharDict.get(strand).get(feature);
 		return text;
 	}
 
+	private char getCharForVCFIdeogram(){
+
+		if(this.variantContext.getAlleles().size() > 2){ // Multiallelic
+			return '|';
+		}
+		else if(this.variantContext.isSNP()){
+			Allele alt = this.variantContext.getAlleles().get(1);
+			return alt.getBaseString().charAt(0);
+		}
+		else if(this.variantContext.isSimpleInsertion()){
+			return 'I';
+		}
+		else if(this.variantContext.isSimpleDeletion()){
+			return 'D';
+		}
+		else if(this.variantContext.isMNP()){
+			return 'M';
+		}
+		else if(this.variantContext.isComplexIndel()){
+			return 'X';
+		}
+		else {
+			return '|';
+		}
+	}
 	
 	private void makeIdeogram(boolean addName) throws InvalidColourException{
 
-		char ideogramChar= this.getCharForIdeogram();
 		int ideogramLength= this.getScreenTo() - this.getScreenFrom() + 1;
-		
 		this.ideogram= new ArrayList<FeatureChar>(ideogramLength);
+
 		for(int i=0 ; i < ideogramLength; i++){
 			FeatureChar c= new FeatureChar();
-			c.setText(ideogramChar);
-			
-			if(this.trackFormat.equals(TrackFormat.GTF) 
-					  || this.trackFormat.equals(TrackFormat.GFF)
-					  || this.trackFormat.equals(TrackFormat.BED)){
-				// You may want to set up formatting for each of these TrackFormats
-				c.addFormatGFF(ideogramChar, this.getStrand());
-				
-			} else if(this.trackFormat.equals(TrackFormat.VCF)){
+			char ideogramChar;
+			if(this.trackFormat.equals(TrackFormat.VCF)){
+				ideogramChar= this.getCharForVCFIdeogram();
 				c.addFormatVCF(ideogramChar);
-			
 			} else {
-				System.out.println("I don't kknow how to format TrackFormat: " + this.trackFormat);
-				throw new RuntimeException();
+				ideogramChar= this.getCharForIdeogram();
+				c.addFormatGFF(ideogramChar, this.getStrand());
 			}
+			c.setText(ideogramChar);
 			this.ideogram.add(c);
 		}
+
 		if(addName){
 			this.addNameToIdeogram();
 		}
@@ -633,6 +683,12 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		    if (i != 0) return i;
 		    
 		return i;
+	}
+
+	private void setRaw(String line) {
+		line= line.replace("\n", "");
+		line= line.replace("\r", "");
+		this.raw= line;
 	}
 
 }

@@ -139,7 +139,7 @@ public class Main {
 			String line = null;  
 			while ((line = br.readLine()) != null){
 				// Start processing intervals one by one
-				IntervalFeature target= new IntervalFeature(line, TrackFormat.BED);
+				IntervalFeature target= new IntervalFeature(line, TrackFormat.BED, null);
 				String reg= target.getChrom() + ":" + target.getFrom() + "-" + target.getTo();
 				String gotoAndExec= ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
 				InteractiveInput itr = new InteractiveInput(console);
@@ -495,14 +495,15 @@ public class Main {
 				try{
 					List<String> up = Utils.checkUpdates(5000);
 					int cmp= Utils.versionCompare(up.get(0), up.get(1));
+					// cmp= -1; // For testing
 					String msg= "";
 					if(cmp == -1){
-						msg= "NOTE: Newer version of ASCIIGenome is available: v" + up.get(1);
+						msg= "NEW: ASCIIGenome version v" + up.get(1) + " is available at " + ArgParse.WEB_ADDRESS + "/releases\n";
 					}
 					if( ! noFormat){
-						msg= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("red") + "m" +  msg + "\033[0m";
+						msg= "\033[48;5;231;38;5;" + Xterm256.colorNameToXterm256("red") + "m" +  msg + "\033[0m\n";
 					}
-					System.err.println(msg);
+					System.err.print(msg);
 				} catch(Exception e){
 					// e.printStackTrace();
 				}

@@ -13,13 +13,27 @@ import com.google.common.io.Files;
 
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
 import htsjdk.tribble.util.TabixUtils;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFFileReader;
 
 public class MakeTabixFileTest {
 
+	public void vcfTester(String inVcf){
+		// Credit: https://www.biostars.org/p/262943/
+		VCFFileReader r=new VCFFileReader(new File(inVcf));
+		CloseableIterator<VariantContext> t=r.iterator();
+		while(t.hasNext()){
+		    t.next();
+		}
+		t.close();
+		r.close();
+	} 
+	
 	@Test
 	public void canCompressAndIndexHeaderlessVCF() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
 
@@ -42,6 +56,7 @@ public class MakeTabixFileTest {
 		assertTrue(x.next().startsWith("1"));
 
 	}	
+	
 	@Test
 	public void testRealFileSizeVCF() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
 		
@@ -49,7 +64,7 @@ public class MakeTabixFileTest {
 		// in a reasonable amount of time.
 		String infile= "test_data/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf";
 		
-		File outfile= new File("deleteme.gtf.gz");
+		File outfile= new File("deleteme.vcf.gz");
 		outfile.deleteOnExit();
 		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
@@ -61,6 +76,9 @@ public class MakeTabixFileTest {
 		assertTrue(outfile.exists());
 		assertTrue(outfile.length() > 1000);
 		assertTrue((t1 - t0) < 20000); // Should be << than 20 sec, ~2 sec
+
+		// Check you can read ok
+		this.vcfTester(outfile.getAbsolutePath());
 	}
 	
 	@Test
@@ -68,7 +86,7 @@ public class MakeTabixFileTest {
 
 		String infile= "test_data/CEU.exon.2010_06.genotypes.vcf";
 		
-		File outfile= new File("deleteme.gtf.gz");
+		File outfile= new File("deleteme.vcf.gz");
 		outfile.deleteOnExit();
 		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
 		expectedTbi.deleteOnExit();
@@ -77,7 +95,9 @@ public class MakeTabixFileTest {
 
 		assertTrue(outfile.exists());
 		assertTrue(outfile.length() > 1000);
-
+		
+		// Check you can read ok
+		this.vcfTester(outfile.getAbsolutePath());
 	}
 	
 	// @Test
@@ -235,6 +255,8 @@ public class MakeTabixFileTest {
 		Iterator x = tbx.query("1", 20000000, 30000000);
 		assertTrue(x.next().startsWith("1"));
 
+		// Check you can read ok
+		this.vcfTester(outfile.getAbsolutePath());
 	}
 	
 	@Test

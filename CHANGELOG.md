@@ -1,3 +1,10 @@
+New in 1.10.0
+============
+
+* VCF: better representation of structural variants. Previous versions had very limited support for SV. 
+
+
+
 New in 1.9.0
 ============
 

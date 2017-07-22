@@ -64,7 +64,7 @@ class TextRead {
 	
 	/*    C o n s t r u c t o r s    */
 		
-	public TextRead(SAMRecord rec, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
+	protected TextRead(SAMRecord rec, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
 		// At least part of the read must be in the window
 		//            |  window  |
 		//                         |------| read
@@ -161,7 +161,9 @@ class TextRead {
 		StringBuilder formatted= new StringBuilder();		
 		int qIdx= 0;
 		for(int i= 0; i < read.size(); i++){ // Each base is formatted independently from the others
-			char c= read.get(i);
+			FeatureChar c= new FeatureChar(); 
+			c.setText(read.get(i));
+			
 			boolean shadeBaseQ= false;
 			if(baseQualIsPresent && this.gc.isSingleBaseResolution && qIdx < baseQual.length){
 				int bq= (int) baseQual[qIdx];
@@ -170,62 +172,47 @@ class TextRead {
 					shadeBaseQ= true;
 				}
 			}
-			formatted.append("\033["); // Start format 
 			if(this.samRecord.getReadPairedFlag() && this.samRecord.getSecondOfPairFlag()){
-				formatted.append("4;"); // Underline 2nd in pair
+				c.setUnderline(true);
 			}
 			
 			if(this.samRecord.getMappingQuality() < SHADE_MAPQ || shadeBaseQ){ // Grey out low mapq/base qual
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.shade_low_mapq)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.foreground));
-			} else if(Character.toUpperCase(c) == charM){
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.methylated_background)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.methylated_foreground));
-			} else if(Character.toUpperCase(c) == charU){
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.unmethylated_background)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.unmethylated_foreground));
-			} else if(Character.toUpperCase(c) == 'A'){
-				formatted.append("38;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.seq_a));
-			} else if(Character.toUpperCase(c) == 'C') {
-				formatted.append("38;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.seq_c));
-			} else if(Character.toUpperCase(c) == 'G') {
-				formatted.append("38;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.seq_g));
-			} else if(Character.toUpperCase(c) == 'T') {
-				formatted.append("38;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.seq_t));
-			} else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.feature_background_positive_strand)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.foreground));
-			} else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.feature_background_negative_strand)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.foreground));
-			} else {
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.background)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.foreground));
+				c.setBgColor(Config.get(ConfigKey.shade_low_mapq));
+				c.setFgColor(Config.get(ConfigKey.foreground));
+			} 
+			else if(Character.toUpperCase(c.getText()) == charM){
+				c.setBgColor(Config.get(ConfigKey.methylated_background));
+				c.setFgColor(Config.get(ConfigKey.methylated_foreground));
+			} 
+			else if(Character.toUpperCase(c.getText()) == charU){
+				c.setBgColor(Config.get(ConfigKey.unmethylated_background));
+				c.setFgColor(Config.get(ConfigKey.unmethylated_foreground));
+			} 
+			else if(Character.toUpperCase(c.getText()) == 'A'){
+				c.setFgColor(Config.get(ConfigKey.seq_a));
+			} 
+			else if(Character.toUpperCase(c.getText()) == 'C') {
+				c.setFgColor(Config.get(ConfigKey.seq_c));
+			} 
+			else if(Character.toUpperCase(c.getText()) == 'G') {
+				c.setFgColor(Config.get(ConfigKey.seq_g));
+			} 
+			else if(Character.toUpperCase(c.getText()) == 'T') {
+				c.setFgColor(Config.get(ConfigKey.seq_t));
+			} 
+			else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
+				c.setBgColor(Config.get(ConfigKey.feature_background_positive_strand));
+				c.setFgColor(Config.get(ConfigKey.foreground));
+			} 
+			else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
+				c.setBgColor(Config.get(ConfigKey.feature_background_negative_strand));
+				c.setFgColor(Config.get(ConfigKey.foreground));
+			} 
+			else {
+				c.setBgColor(Config.get(ConfigKey.background));
+				c.setFgColor(Config.get(ConfigKey.foreground));
 			}
-			formatted.append("m");
-			formatted.append(c);
-			// End by setting removing all formatting and reset back/fore-ground
-			formatted.append("\033[0m\033[38;5;");
-			formatted.append(Config.get256Color(ConfigKey.foreground));
-			formatted.append(";48;5;");
-			formatted.append(Config.get256Color(ConfigKey.background));
-			formatted.append("m");
+			formatted.append(c.format(noFormat));
 		}
 		return formatted.toString();
 	}
