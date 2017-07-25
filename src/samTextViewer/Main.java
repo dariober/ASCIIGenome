@@ -72,6 +72,7 @@ public class Main {
 
 		// Get configuration. Note that we don't need to assign this to a variable. 
 		new Config(config);
+		new Xterm256();
 		
 		// Init console right at start so if something goes wrong the user's terminal is reset to 
 		// initial defaults with the shutdown hook. This could be achieved in cleaner way probably.

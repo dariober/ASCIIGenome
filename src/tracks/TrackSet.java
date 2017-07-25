@@ -651,6 +651,43 @@ public class TrackSet {
         }
 	}
 
+	public void setGenotypeMatrix(List<String> cmdTokens) throws InvalidCommandLineException {
+		List<String> argList= new ArrayList<String>(cmdTokens);
+		argList.remove(0);
+
+		// Collect arguments
+		String nRows= Utils.getArgForParam(argList, "-n", null);
+		String selectSampleRegex= Utils.getArgForParam(argList, "-s", null);
+		List<String> subSampleRegex= Utils.getNArgsForParam(argList, "-r", 2);
+		boolean invertSelection= Utils.argListContainsFlag(argList, "-v");
+		
+		// Regex to capture tracks: All positional args left
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(argList.size() > 0){
+            trackNameRegex= argList;
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        
+        // Set as appropriate
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+        for(Track tr : tracksToReset){
+        	if(nRows != null){
+        		int n= Integer.valueOf(nRows) >= 0 ? Integer.valueOf(nRows) : Integer.MAX_VALUE;
+        		tr.getGenotypeMatrix().setnMaxSamples(n);
+        	}
+        	if(selectSampleRegex != null){
+            	tr.getGenotypeMatrix().setSelectSampleRegex(selectSampleRegex);
+        	}
+        	if(subSampleRegex != null){
+        		String rplc= subSampleRegex.get(1);
+        		rplc= ! rplc.equals("\"\"") ? rplc : ""; 
+            	tr.getGenotypeMatrix().setSubSampleRegex(subSampleRegex.get(0), rplc);
+        	}
+        }
+
+	}	
+	
 	public void setFeatureColorForRegex(List<String> cmdTokens) throws InvalidCommandLineException, InvalidColourException {
 
 		List<String> argList= new ArrayList<String>(cmdTokens);
@@ -703,8 +740,6 @@ public class TrackSet {
 	
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidColourException{
 
-		new Xterm256();
-		
 		// MEMO of subcommand syntax:
 		// 0 trackColour
 		// 1 Colour
@@ -1882,5 +1917,5 @@ public class TrackSet {
 		}
 
 		return Joiner.on("\n").join(opened);
-	}	
+	}
 }

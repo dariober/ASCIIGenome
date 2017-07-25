@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,16 +14,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
+import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import htsjdk.tribble.AbstractFeatureReader;
-import htsjdk.tribble.readers.LineIterator;
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFCodec;
-import htsjdk.variant.vcf.VCFHeader;
 import samTextViewer.GenomicCoords;
 
 public class TrackIntervalFeatureTest {
@@ -33,6 +27,7 @@ public class TrackIntervalFeatureTest {
 	@Before
 	public void prepareConfig() throws IOException, InvalidConfigException{
 		new Config(null);
+		new Xterm256();
 	}
 	
 	@Test
@@ -93,22 +88,6 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/issue74.gff3.gz", gc);
 		tif.setNoFormat(true);
 		assertEquals(10, tif.intervalFeatureList.size());
-	}
-	
-	@Test
-	public void canReadBgzFileExtension() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-
-		// .bgz, without index
-		String intervalFileName= "test_data/bgz_noindex.vcf.bgz";
-		GenomicCoords gc= new GenomicCoords("1:1-200000000", 80, null, null);
-		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-		assertTrue(tif.getFeaturesInInterval("1", 1, 200000000).size() > 0);
-		
-		// .bgz, with index
-		intervalFileName= "test_data/bgz_index.vcf.bgz";
-		gc= new GenomicCoords("1:1-200000000", 80, null, null);
-		tif= new TrackIntervalFeature(intervalFileName, gc);
-		assertTrue(tif.getFeaturesInInterval("1", 1, 200000000).size() > 0);
 	}
 	
 	@Test
@@ -173,7 +152,6 @@ public class TrackIntervalFeatureTest {
 		System.out.println("PRINTING:" + tif.printToScreen());
 		assertTrue(tif.printToScreen().startsWith("uuuuu"));
 		assertTrue(tif.printToScreen().endsWith("www"));
-		
 		
 		tif.setNoFormat(false);
 		assertTrue(tif.printToScreen().trim().startsWith("["));
@@ -307,6 +285,32 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("1:1-2000000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(bgzFn, gc);
 		assertEquals(3, tif.getIntervalFeatureList().size());
+	}
+	
+	@Test
+	public void canReadBgzFileExtension() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("1:1-200000000", 80, null, null);
+		
+		// .bgz, without index
+		String intervalFileName= "test_data/bgz_noindex.vcf.bgz";
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		assertTrue(tif.getIntervalFeatureList().size() > 0);
+		
+		// .bgz, with index
+		intervalFileName= "test_data/bgz_index.vcf.bgz";
+		tif= new TrackIntervalFeature(intervalFileName, gc);
+		assertTrue(tif.getFeaturesInInterval("1", 1, 200000000).size() > 0);
+	}
+
+	@Test
+	public void canPrintGenotypeMatrix() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		
+		GenomicCoords gc= new GenomicCoords("1:577583-759855", 80, null, null);
+		String intervalFileName= "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		assertTrue(tif.printToScreen().contains("HG00096"));
 	}
 	
 	@Test

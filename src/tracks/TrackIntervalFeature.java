@@ -43,6 +43,7 @@ public class TrackIntervalFeature extends Track {
 	private BBFileReader bigBedReader;
 	private Map<String, String> colorForRegex= null;
 	private VCFHeader vcfHeader= null;
+	
 	// private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
 	// private Set<String> awkFiltered; // List of features after awk filtering.
 	
@@ -87,13 +88,13 @@ public class TrackIntervalFeature extends Track {
 		}
 		this.setGc(gc);
 	}
-	
 
 	protected TrackIntervalFeature(GenomicCoords gc){
 		
 	}
 	
 	/* M e t h o d s */
+	
 	@Override
 	/** Collect features mapping to the current genomic coordinates and update the list of interval features
 	 * for the track. Also update the mapping of features to the terminal screen.
@@ -103,15 +104,16 @@ public class TrackIntervalFeature extends Track {
 	 * update() should not change anything other than the list of features and the mapping. 
 	 * */ 
 	public void update() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+
 		this.intervalFeatureList = this.getFeaturesInInterval(
 				this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
-		
+
 		for(IntervalFeature ift : this.intervalFeatureList){
 			ift.mapToScreen(this.getGc().getMapping());
-		}		
+		}	
 	}
 	
-	public List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to) throws IOException, InvalidGenomicCoordsException{
+	protected List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to) throws IOException, InvalidGenomicCoordsException{
 
 		if(from < 1){
 			System.err.println("from < 1: " + from + "; resetting to 1."); 
@@ -145,8 +147,6 @@ public class TrackIntervalFeature extends Track {
 				xFeatures.add(intervalFeature);
 			} 
 		}
-		// this.setAwkFiltered(xFeatures);
-		
 		// Remove hidden features
 		List<IntervalFeature> xFeaturesFiltered= new ArrayList<IntervalFeature>();
 		for(IntervalFeature x : xFeatures){
@@ -476,7 +476,19 @@ public class TrackIntervalFeature extends Track {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return StringUtils.join(printable, "\n");
+
+		// Genotype matrix
+		if(this.getTrackFormat().equals(TrackFormat.VCF)){
+			try {
+				this.getGenotypeMatrix().makeMatrix(this.intervalFeatureList, this.getGc().getUserWindowSize());
+				String gtm= this.getGenotypeMatrix().printToScreen(this.isNoFormat());
+				printable.add(gtm);
+			} catch (InvalidColourException | IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return StringUtils.join(printable, "\n").replaceAll("\n$", "");
 	}
 	
 	/**		

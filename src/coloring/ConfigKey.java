@@ -34,6 +34,18 @@ public enum ConfigKey {
 	ConfigKey(String value) {
         this.value = value;
     }
+
+	/** 			U P D A T E   M E 
+	 * Configuration parameters that are NOT COLOURS
+	 * */
+	public static Set<ConfigKey> nonColorKeys(){
+		Set<ConfigKey> nonColorKeys= new HashSet<ConfigKey>(); 
+
+		nonColorKeys.add(ConfigKey.max_reads_in_stack);
+		nonColorKeys.add(ConfigKey.shade_baseq);
+		
+		return nonColorKeys;
+	}
 	
     public static ConfigKey getEnum(String value) {
         if(value == null)

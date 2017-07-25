@@ -369,11 +369,11 @@ featureColorForRegex
 
 :code:`featureColorForRegex [-r regex color] [-v] [track_regex = .*]...`
 
-Set colour for features captured by regex.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by a regex. It is useful to highlight features containg a string of interset, such as 'CDS' in gff files.
+Set colour for features captured by regex.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by a regex. It is useful to highlight features containg a string of interest, such as 'CDS' in gff files.
 
 For available colors see :code:`colorTrack -h`. As for :code:`colorTrack` colors can be specified by name, name prefix, or integer in range 0-255.
 
-Options::
+Options:
 
 :code:`-r <regex> <color>` Features matching :code:`regex` will have color :code:`color`. The regex is applied to the raw lines as read from file. This option takes exactly two arguments and can be given zero or more times. If this option is not present colors are reset to default.
 
@@ -384,7 +384,7 @@ Options::
 Example::
 
     featureColorForRegex -r CDS plum2 -r exon grey
-    featureColorForRegex bed -> Reset to default track names matching 'bed'
+    featureColorForRegex bed -> Reset to default the track matching 'bed'
 
 
 featureDisplayMode
@@ -499,9 +499,7 @@ Set colour for tracks matched by regex.  Colors can be specified by name or by a
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Available colours are from the Xterm256 palette: 
-
-
+Available colours are from the Xterm256 palette: `here <http://jonasjacek.github.io/colors/>`_             
 
 Example::
 
@@ -517,6 +515,18 @@ hideTitle
 :code:`hideTitle [-on | -off] [-v] [track_regex = .*]...`
 
 Set the display of the title line matched by track_regex.  Without argument -on or -off toggle between the two modes for all tracks matched by the list of regexes.
+
+:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
+
+genotype
+++++++++
+
+:code:`genotype [-n 10] [-v] [track_regex = .*]...`
+
+Options to customise the genotype rows.  Each sample in a vcf track has a row of genotypes printed below the feature track. These option edit the display of the genotype rows.
+
+:code:`-n` Display up to this many samples (rows).
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
@@ -673,27 +683,27 @@ Examples::
 
 Parameters and current settings::
 
-background                         white          # Background colour
-foreground                         black          # Foreground colour
-seq_a                              blue           # Colour for nucleotide A
-seq_c                              red            # Colour for nucleotide C
-seq_g                              green          # Colour for nucleotide G
-seq_t                              yellow         # Colour for nucleotide T
-seq_other                          black          # Colour for any other nucleotide
-shade_low_mapq                     grey70         # Colour for shading reads wit low MAPQ
-methylated_foreground              grey100        # Foreground colour for methylated C
-unmethylated_foreground            grey100        # Foreground colour for unmethylated C
-methylated_background              red            # Background colour for methylated C
-unmethylated_background            blue           # Background colour for unmethylated C
-title_colour                       black          # Default Colour for titles
-feature_background_positive_strand lightsteelblue # Colour for features on forward strand
-feature_background_negative_strand mistyrose1     # Colour for features on reverse strand
-feature_background_no_strand       grey70         # Colour for features without strand information
-footer                             blue           # Colour for footer line
-chrom_ideogram                     black          # Colour for chromosome ideogram
-ruler                              black          # Colour for ruler
-max_reads_in_stack                 2000           # Max number of reads to accumulate when showing read tracks
-shade_baseq                        13             # Shade read base when quality is below this threshold
+background                         231  # Background colour
+foreground                         0    # Foreground colour
+seq_a                              12   # Colour for nucleotide A
+seq_c                              9    # Colour for nucleotide C
+seq_g                              2    # Colour for nucleotide G
+seq_t                              11   # Colour for nucleotide T
+seq_other                          0    # Colour for any other nucleotide
+shade_low_mapq                     249  # Colour for shading reads wit low MAPQ
+methylated_foreground              231  # Foreground colour for methylated C
+unmethylated_foreground            231  # Foreground colour for unmethylated C
+methylated_background              9    # Background colour for methylated C
+unmethylated_background            12   # Background colour for unmethylated C
+title_colour                       0    # Default Colour for titles
+feature_background_positive_strand 147  # Colour for features on forward strand
+feature_background_negative_strand 224  # Colour for features on reverse strand
+feature_background_no_strand       249  # Colour for features without strand information
+footer                             12   # Colour for footer line
+chrom_ideogram                     0    # Colour for chromosome ideogram
+ruler                              0    # Colour for ruler
+max_reads_in_stack                 2000 # Max number of reads to accumulate when showing read tracks
+shade_baseq                        13   # Shade read base when quality is below this threshold
 
 show
 ++++

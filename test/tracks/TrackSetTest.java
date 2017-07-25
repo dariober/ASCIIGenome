@@ -2,6 +2,7 @@ package tracks;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,9 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
+import coloring.Xterm256;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -26,6 +29,12 @@ import samTextViewer.Utils;
 
 public class TrackSetTest {
 
+	@Before
+	public void config() throws IOException, InvalidConfigException{
+		new Config(null);
+		new Xterm256();
+	}
+	
 	@Test
 	public void canConstructTrackSetFromURL() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException{
 
@@ -596,6 +605,30 @@ public class TrackSetTest {
 		assertEquals(10, ts.getTrack(t2).getyMaxLines());
 		assertEquals(10, ts.getTrack(t3).getyMaxLines());
 		
+	}
+
+	@Test
+	public void canHandleGenotypeMatrix() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+		TrackSet ts= new TrackSet();
+		GenomicCoords gc= new GenomicCoords("1:577583-759855", 80, null, null);
+		String vcf= "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
+		Track t1= new TrackIntervalFeature(vcf, gc); ts.addTrack(t1, "x"); t1.setNoFormat(true);
+		Track t2= new TrackIntervalFeature(vcf, gc); ts.addTrack(t2, "x");
+		Track t3= new TrackIntervalFeature(vcf, gc); ts.addTrack(t3, "x");
+		
+		// Number of samples
+		ts.setGenotypeMatrix(Utils.tokenize("genotype -n 1", " "));
+		assertTrue(ts.getTrack(t1).printToScreen().contains("HG00096"));
+		assertTrue( ! ts.getTrack(t1).printToScreen().contains("HG00097"));
+		
+		// Sample regex
+		ts.setGenotypeMatrix(Utils.tokenize("genotype -n -1 -s 96|97", " "));
+		assertTrue(ts.getTrack(t1).printToScreen().contains("HG00096"));
+		assertTrue( ! ts.getTrack(t1).printToScreen().contains("HG00099"));
+
+		// Edit name by regex
+		ts.setGenotypeMatrix(Utils.tokenize("genotype -n -1 -s .* -r HG __", " "));
+		assertTrue(ts.getTrack(t1).printToScreen().contains("__00096"));
 	}
 	
 	@Test

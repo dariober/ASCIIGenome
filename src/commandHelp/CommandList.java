@@ -682,6 +682,23 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
+		cmd.setName("genotype"); cmd.setArgs("[-n 10] [-s .*] [-r pattern rplc] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Customise the genotype rows printed under VCF tracks. ");
+		cmd.setAdditionalDescription(""
+				+ "\n"
+				+ ":code:`-n` Display up to this many samples (rows). -1 for no limit.\n"
+				+ "\n"
+				+ ":code:`-s` Select samples matching this regex.\n"
+				+ "\n"
+				+ ":code:`-r` Edit sample names to replace <pattern> with <replacement>. Names are edited only for "
+				+     "display. To completely hide names use :code:`-r .* \"\"`. "
+				+     "To restore original names use a regex matching nothing e.g. '^$'\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
 		cmd.setName("editNames"); cmd.setArgs("[-t] [-v] <pattern> <replacement> [track_re=.*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Edit track names by substituting regex pattern with replacement.");
 		cmd.setAdditionalDescription("Pattern and replacement are required arguments, "
@@ -1084,6 +1101,7 @@ public class CommandList {
 		paramList.add("featureColorForRegex");
 		paramList.add(Command.featureDisplayMode.getCmdDescr());
 		paramList.add("hideTitle");
+		paramList.add("genotype");
 		paramList.add("editNames");
 		paramList.add("ylim");
 		paramList.add("dataCol");

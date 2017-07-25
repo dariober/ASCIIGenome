@@ -4,6 +4,7 @@ import coloring.Config;
 import coloring.ConfigKey;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
+import htsjdk.variant.variantcontext.Genotype;
 
 /**Class to model a *single* character printed on terminal representing 
  * an interval feature. 
@@ -19,7 +20,8 @@ class FeatureChar {
 	/*  C O N S T R U C T O R  */
 	
 	protected FeatureChar(){
-
+		this.fgColor= Config.get(ConfigKey.foreground);
+		this.bgColor= Config.get(ConfigKey.background);
 	}
 	
 	/*  M E T H O D S  */
@@ -32,7 +34,6 @@ class FeatureChar {
 		if(noFormat){
 			return sb.append(this.getText()).toString();
 		}
-		new Xterm256();
 		sb.append("\033[");
 		if(this.invertFgBgColor){
 			sb.append("7;");
@@ -84,6 +85,25 @@ class FeatureChar {
 		this.invertFgBgColor= true;
 	}
 	
+	public void addFormatGenotype(Genotype gt) {
+		if(gt == null){
+			this.setText(' ');
+		}
+		else if(gt.isHomRef()){
+			this.setText('.');
+		}
+		else if(gt.isHomVar()){
+			this.setText('O');
+		}
+		else if(gt.isHet()){
+			this.setText('E');
+		} 
+		else {
+			this.setText('?');
+		}
+	}
+
+	
 	@Override
 	public String toString(){
 		try {
@@ -105,11 +125,7 @@ class FeatureChar {
 	}
 	
 	protected String getBgColor() {
-		String color = this.bgColor;
-		if(color == null){
-			color= Config.get(ConfigKey.background);
-		}
-		return color;
+		return this.bgColor;
 	}
 	
 	protected void setBgColor(String bgColor) {
@@ -117,11 +133,7 @@ class FeatureChar {
 	}
 	
 	protected String getFgColor() {
-		String color = this.fgColor;
-		if(color == null){
-			color= Config.get(ConfigKey.foreground);
-		}
-		return color;
+		return this.fgColor;
 	}
 	
 	protected void setFgColor(String fgColor) {
@@ -135,4 +147,5 @@ class FeatureChar {
 	public void setUnderline(boolean underline) {
 		this.underline = underline;
 	}
+
 }

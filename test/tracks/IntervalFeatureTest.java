@@ -49,6 +49,36 @@ public class IntervalFeatureTest {
 		assertFalse(NumberUtils.isNumber(""));
 		assertFalse(NumberUtils.isNumber("001.1"));
 	}
+
+	@Test 
+	public void canGetMidPointOfFeature() throws InvalidGenomicCoordsException{
+
+		String line= "chr1 0 100".replaceAll(" ", "\t"); // Genomic coords are irrelavant to this test
+		IntervalFeature f= new IntervalFeature(line, TrackFormat.BED, null);
+		f.setScreenFrom(0);
+		f.setScreenTo(0);
+		assertEquals(0, f.getScreenMid());
+		
+		f.setScreenFrom(10);
+		f.setScreenTo(10);
+		assertEquals(10, f.getScreenMid());
+		
+		f.setScreenFrom(10); // Even
+		f.setScreenTo(13);
+		assertEquals(11, f.getScreenMid());
+		
+		f.setScreenFrom(0); // Even
+		f.setScreenTo(3);
+		assertEquals(1, f.getScreenMid());
+		
+		f.setScreenFrom(0); // Odd
+		f.setScreenTo(4);
+		assertEquals(2, f.getScreenMid());
+		
+		f.setScreenFrom(10); // Odd
+		f.setScreenTo(14);
+		assertEquals(12, f.getScreenMid());
+	}
 	
 //	@Test
 //	public void longestRun() throws InvalidGenomicCoordsException{
@@ -329,10 +359,10 @@ public class IntervalFeatureTest {
 		VCFFileReader reader = new VCFFileReader(new File("test_data/CHD.exon.2010_03.sites.vcf.gz"));
 		VCFHeader vcfHeader= reader.getFileHeader();
 		reader.close();
+
 		String vcfLine= "1 10 . C G 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
 		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfHeader);
 		ift.mapToScreen(rulerMap);
-
 		assertEquals(1, ift.getIdeogram(true, true).size());
 		assertEquals('G', ift.getIdeogram(true, true).get(0).getText());
 		assertTrue(ift.getIdeogram(true, true).get(0).format(false).contains("[")); // Just check there is a formatting char
@@ -355,7 +385,6 @@ public class IntervalFeatureTest {
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfHeader);
 		ift.mapToScreen(rulerMap);
 		assertEquals("|", ift.getIdeogram(true, true).get(0).format(true));
-		
 	}
 	
 	@Test

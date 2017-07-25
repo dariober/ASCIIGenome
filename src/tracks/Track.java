@@ -85,7 +85,7 @@ public abstract class Track {
 	private TrackFormat trackFormat;
 	protected String awk= ""; 
 	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
-	
+	private GenotypeMatrix genotypeMatrix= new GenotypeMatrix();
 	/** A file to export track data
 	 * */
 	private String exportFile= null;
@@ -787,6 +787,14 @@ public abstract class Track {
 		// TODO Auto-generated method stub
 		
 	}
+
+	public GenotypeMatrix getGenotypeMatrix() {
+		return genotypeMatrix;
+	}
+
+//	public void setGenotypeMatrix(GenotypeMatrix genotypeMatrix) {
+//		this.genotypeMatrix = genotypeMatrix;
+//	}
 	
 }
 

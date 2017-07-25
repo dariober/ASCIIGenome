@@ -18,6 +18,7 @@ import coloring.Config;
 import coloring.ConfigKey;
 import commandHelp.Command;
 import commandHelp.CommandList;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
@@ -335,7 +336,10 @@ public class InteractiveInput {
 
 				} else if(cmdTokens.get(0).equals("samtools")){
 					proc.getTrackSet().setSamFilterForRegex(cmdTokens);
-
+					
+				} else if(cmdTokens.get(0).equals("genotype")){
+					proc.getTrackSet().setGenotypeMatrix(cmdTokens);
+			
 				// * These commands change both the Tracks and the GenomicCoordinates
 				} else if(cmdTokens.get(0).equals("next")){
 					
@@ -473,7 +477,7 @@ public class InteractiveInput {
 		return newRegion;
 	}
 
-	private void setConfigOpt(List<String> cmdTokens) throws IOException, InvalidConfigException, InvalidCommandLineException {
+	private void setConfigOpt(List<String> cmdTokens) throws IOException, InvalidConfigException, InvalidCommandLineException, InvalidColourException {
 		List<String> args=  new ArrayList<String>(cmdTokens);
 		args.remove(0);
 		if(args.size() == 0){

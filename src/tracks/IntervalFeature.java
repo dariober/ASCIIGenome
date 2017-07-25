@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.biojava.nbio.genome.parsers.gff.Feature;
 import org.biojava.nbio.genome.parsers.gff.Location;
@@ -18,6 +17,7 @@ import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFHeaderVersion;
 import samTextViewer.Utils;
 
 /**
@@ -45,8 +45,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	/** Use this attribute to as key to assign the name field */
 	private String gtfAttributeForName= null;
 	
-	/** Start position of feature in screen coordinates. 
-	 * -1 if the feature is not part of the screenshot. */
+	/** Start position of feature in screen coordinates. -1 if the feature is not part of the screenshot. 
+	 * screenFrom/To are both 0-based. So a feature that occupies one character only (e.g. a SNP) 
+	 * at the first screen column as screenFrom= 0 and screenTo= 0. 
+	 * See test canMapIntervalToRuler()*/
 	private int screenFrom= -1;
 	private int screenTo= -1;
 	final private String NAME_NA= "-na"; // String to use to set the name field to missing when retrieving feature name.
@@ -55,6 +57,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	// is a character to be printed on screen (e.g. "E") possibly formatted (e.g. "\033[m5;45E\033")
 	private List<FeatureChar> ideogram;
 	private VariantContext variantContext;
+	
 	/* C o n s t r u c t o r s */
 		
 	/**
@@ -76,7 +79,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 				throw new RuntimeException();
 			}
 			VCFCodec vcfCodec= new VCFCodec();
-			vcfCodec.setVCFHeader(vcfHeader, null); // null causes problems, see MakeTabixIndex.getVCFHeaderVersion() to get header version.
+			vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
 			this.variantContext= vcfCodec.decode(line);
 			this.setRaw(line);
 			this.trackFormat= TrackFormat.VCF;
@@ -254,7 +257,8 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 
 	/** 
 	 * Map interval to screen coordinates using the provided ruler.
-	 * @param rulerMap List typically obtained from Ruler_TO_BE_DEPRECTED.mapping of length equal to the screen 
+	 * @param rulerMap List typically obtained from Ruler_TO_BE_DEPRECTED.mapping of 
+	 * length equal to the screen. 
 	 * width mapping genome coords to screen coords.
 	 * */
 	public void mapToScreen(List<Double> rulerMap) {
@@ -656,6 +660,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		return raw;
 	}
 
+	protected VariantContext getVariantContext(){
+		return this.variantContext;
+	}
+	
 	public String getGtfAttributeForName() {
 		return this.gtfAttributeForName;
 	}
@@ -689,6 +697,28 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		line= line.replace("\n", "");
 		line= line.replace("\r", "");
 		this.raw= line;
+	}
+
+	/** Returns the mid point of the feature on screen. 
+	 * Consistent with screenFrom/To, we make screenMid 0-based.
+	 * E.g.
+	 * ------------------ <- Screen
+	 * ==*==              <- getScreenMid() => 2
+	 * =*==               <- getScreenMid() => 1 (round leftmost)
+	 * =                  <- getScreenMid() = screenFrom = screenTo = 0
+	 *                  = <- getScreenMid()  same as above
+	 * Consistent with screenFrom/to we make screen mid
+	 * */
+	protected int getScreenMid() {
+		int width= this.getScreenTo() - this.getScreenFrom() + 1;
+		if(width == 1){
+			return this.getScreenFrom();
+		}
+		if((width % 2) == 0){
+			return this.getScreenFrom() + (width/2) - 1;
+		} else {
+			return this.getScreenFrom() + (width/2);
+		}
 	}
 
 }

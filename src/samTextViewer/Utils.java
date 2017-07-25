@@ -80,6 +80,9 @@ import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.TabixReader;
+import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFHeaderLine;
+import htsjdk.variant.vcf.VCFHeaderVersion;
 import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
@@ -1867,6 +1870,17 @@ public class Utils {
 			terminalWidth= 80;
 		}
 		return terminalWidth;
+	}
+
+	public static VCFHeaderVersion getVCFHeaderVersion(VCFHeader vcfHeader){
+		Iterator<VCFHeaderLine> iter = vcfHeader.getMetaDataInInputOrder().iterator();
+		while(iter.hasNext()){
+			VCFHeaderLine hl = iter.next();
+			if(hl.getKey().equals("fileformat")){
+				return VCFHeaderVersion.toHeaderVersion(hl.getValue());
+			}
+		}
+		return null;
 	}
 	
 }

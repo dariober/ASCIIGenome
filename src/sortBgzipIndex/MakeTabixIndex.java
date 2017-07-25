@@ -18,7 +18,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
@@ -39,8 +38,7 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
-import htsjdk.variant.vcf.VCFHeaderLine;
-import htsjdk.variant.vcf.VCFHeaderVersion;
+import samTextViewer.Utils;
 import utils.BedLine;
 import utils.BedLineCodec;
 import utils.GtfLine;
@@ -113,7 +111,7 @@ public class MakeTabixIndex {
 				vcfHeader= new VCFHeader();
 			}
 			vcfCodec= new VCFCodec();
-		    vcfCodec.setVCFHeader(vcfHeader, this.getVCFHeaderVersion(vcfHeader));
+			vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
 //		    writeVCFHeader(vcfHeader, writer);
 //		    filePosition= writer.getFilePointer();
 		}
@@ -182,17 +180,6 @@ public class MakeTabixIndex {
 			System.err.println("Unexpected TabixFormat: " + fmt.sequenceColumn + " " + fmt.startPositionColumn);
 			throw new InvalidRecordException();
 		}	
-	}
-	
-	private VCFHeaderVersion getVCFHeaderVersion(VCFHeader vcfHeader){
-		Iterator<VCFHeaderLine> iter = vcfHeader.getMetaDataInInputOrder().iterator();
-		while(iter.hasNext()){
-			VCFHeaderLine hl = iter.next();
-			if(hl.getKey().equals("fileformat")){
-				return VCFHeaderVersion.toHeaderVersion(hl.getValue());
-			}
-		}
-		return null;
 	}
 	
 	/** Sort file by columns chrom (text) and pos (int). chromIdx and posIdx are 1-based  
