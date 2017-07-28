@@ -783,8 +783,7 @@ public abstract class Track {
 		return results;
 	}
 
-	protected void setColorForRegex(Map<String, String> xcolorForRegex) {
-		// TODO Auto-generated method stub
+	protected void setColorForRegex(Map<String, Argument> xcolorForRegex) {
 		
 	}
 

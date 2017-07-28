@@ -3,6 +3,8 @@ New in 1.10.0
 
 * VCF: better representation of structural variants. Previous versions had very limited support for SV. 
 
+* `featureColorForRegex` can set colour for features NOT matching a regex. Useful to dim features without 
+completely hiding them.
 
 
 New in 1.9.0

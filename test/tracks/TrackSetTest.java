@@ -613,9 +613,7 @@ public class TrackSetTest {
 		GenomicCoords gc= new GenomicCoords("1:577583-759855", 80, null, null);
 		String vcf= "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
 		Track t1= new TrackIntervalFeature(vcf, gc); ts.addTrack(t1, "x"); t1.setNoFormat(true);
-		Track t2= new TrackIntervalFeature(vcf, gc); ts.addTrack(t2, "x");
-		Track t3= new TrackIntervalFeature(vcf, gc); ts.addTrack(t3, "x");
-		
+
 		// Number of samples
 		ts.setGenotypeMatrix(Utils.tokenize("genotype -n 1", " "));
 		assertTrue(ts.getTrack(t1).printToScreen().contains("HG00096"));
@@ -629,6 +627,18 @@ public class TrackSetTest {
 		// Edit name by regex
 		ts.setGenotypeMatrix(Utils.tokenize("genotype -n -1 -s .* -r HG __", " "));
 		assertTrue(ts.getTrack(t1).printToScreen().contains("__00096"));
+	}
+
+	@Test
+	public void canFilterGenotypeMatrix() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+		TrackSet ts= new TrackSet();
+		GenomicCoords gc= new GenomicCoords("1:113054356-113054534", 80, null, null);
+		String vcf= "test_data/CEU.exon.2010_06.genotypes.vcf";
+		Track t1= new TrackIntervalFeature(vcf, gc); ts.addTrack(t1, "x"); t1.setNoFormat(true);
+		
+		// Number of samples
+		ts.setGenotypeMatrix(Utils.tokenize("genotype -n -1 -f 'DP > 100'", " "));
+		System.err.println(ts.getTrack(t1).printToScreen());
 	}
 	
 	@Test

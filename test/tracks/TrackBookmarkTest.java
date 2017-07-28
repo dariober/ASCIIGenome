@@ -30,8 +30,8 @@ public class TrackBookmarkTest {
 		TrackBookmark bm= new TrackBookmark(gc, "book1");
 		bm.printToScreen(); // This is to populate the ideograms.
 		
-		Map<String, String> colorForRegex= new HashMap<String, String>();
-		colorForRegex.put(".*", "216");
+		Map<String, Argument> colorForRegex= new HashMap<String, Argument>();
+		colorForRegex.put(".*", new Argument("216", false));
 		bm.setColorForRegex(colorForRegex);
 		assertTrue(bm.printToScreen().contains("216"));
 

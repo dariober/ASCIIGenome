@@ -41,9 +41,11 @@ public class TrackIntervalFeature extends Track {
 	final static private String SHOW_REGEX= ".*"; 	private String showRegex= SHOW_REGEX;
 	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
-	private Map<String, String> colorForRegex= null;
 	private VCFHeader vcfHeader= null;
 	
+	/** The outer key is the regex matching feature. */ 
+	private Map<String, Argument> colorForRegex= null;
+		
 	// private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
 	// private Set<String> awkFiltered; // List of features after awk filtering.
 	
@@ -480,8 +482,8 @@ public class TrackIntervalFeature extends Track {
 		// Genotype matrix
 		if(this.getTrackFormat().equals(TrackFormat.VCF)){
 			try {
-				this.getGenotypeMatrix().makeMatrix(this.intervalFeatureList, this.getGc().getUserWindowSize());
-				String gtm= this.getGenotypeMatrix().printToScreen(this.isNoFormat());
+				// this.getGenotypeMatrix().makeMatrix(this.intervalFeatureList, this.getGc().getUserWindowSize(), this.vcfHeader);
+				String gtm= this.getGenotypeMatrix().printToScreen(this.isNoFormat(), this.intervalFeatureList, this.getGc().getUserWindowSize(), this.vcfHeader);
 				printable.add(gtm);
 			} catch (InvalidColourException | IOException e) {
 				e.printStackTrace();
@@ -1022,13 +1024,13 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
-	protected void setColorForRegex(Map<String, String> xcolorForRegex) {
+	protected void setColorForRegex(Map<String, Argument> xcolorForRegex) {
 		if(xcolorForRegex == null){
 			this.colorForRegex= null;
 			return;
 		} else {
 			if(this.colorForRegex == null){
-				this.colorForRegex= new LinkedHashMap<String, String>();
+				this.colorForRegex= new LinkedHashMap<String, Argument>();
 			}
 			for(String p : xcolorForRegex.keySet()){
 				this.colorForRegex.put(p, xcolorForRegex.get(p));
@@ -1036,7 +1038,7 @@ public class TrackIntervalFeature extends Track {
 		}
 	}
 
-	private Map<String, String> getColorForRegex() {
+	private Map<String, Argument> getColorForRegex() {
 		return this.colorForRegex;
 	}
 
@@ -1044,15 +1046,19 @@ public class TrackIntervalFeature extends Track {
 	 * colorForRegex: Key= Regex to capture features; Value= Colour to use for the captures features.
 	 * @throws InvalidColourException 
 	 * */
-	private void changeFeatureColor(Map<String, String> colorForRegex) throws InvalidColourException {
+	private void changeFeatureColor(Map<String, Argument> colorForRegex) throws InvalidColourException {
 		if(colorForRegex == null){
 			return;
 		}
 	
 		for(String regex : colorForRegex.keySet()){
-			String color= colorForRegex.get(regex);
+			String color= colorForRegex.get(regex).getArg();
 			for(IntervalFeature x : this.getIntervalFeatureList()){
-				if(Pattern.compile(regex).matcher(x.getRaw()).find()){
+				boolean matched= Pattern.compile(regex).matcher(x.getRaw()).find();
+				if(colorForRegex.get(regex).isInvert()){
+					matched= ! matched;
+				}
+				if(matched){
 					for(FeatureChar f : x.getIdeogram(false, false)){
 						f.setBgColor(color);
 						f.setFgColor(Xterm256.getContrastColor(color));

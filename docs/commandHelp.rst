@@ -367,7 +367,7 @@ With no args, turn off awk for all tracks.
 featureColorForRegex
 ++++++++++++++++++++
 
-:code:`featureColorForRegex [-r regex color] [-v] [track_regex = .*]...`
+:code:`featureColorForRegex [-r/-R regex color] [-v] [track_regex = .*]...`
 
 Set colour for features captured by regex.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by a regex. It is useful to highlight features containg a string of interest, such as 'CDS' in gff files.
 
@@ -377,6 +377,8 @@ Options:
 
 :code:`-r <regex> <color>` Features matching :code:`regex` will have color :code:`color`. The regex is applied to the raw lines as read from file. This option takes exactly two arguments and can be given zero or more times. If this option is not present colors are reset to default.
 
+:code:`-R <regex> <color>` Same as :code:`-r` but sets color for features NOT matched by regex.
+
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 :code:`[track_regex]` Apply to tracks captured by this list of regexes.
@@ -384,7 +386,9 @@ Options:
 Example::
 
     featureColorForRegex -r CDS plum2 -r exon grey
-    featureColorForRegex bed -> Reset to default the track matching 'bed'
+    featureColorForRegex bed         -> Reset to default the track matching 'bed'
+	   featureColorForRegex -R CDS grey  > Grey all features except those matching CDS
+
 
 
 featureDisplayMode
@@ -522,11 +526,14 @@ Set the display of the title line matched by track_regex.  Without argument -on 
 genotype
 ++++++++
 
-:code:`genotype [-n 10] [-v] [track_regex = .*]...`
+:code:`genotype [-n 10] [-s .*] [-r pattern rplc] [-v] [track_regex = .*]...`
 
-Options to customise the genotype rows.  Each sample in a vcf track has a row of genotypes printed below the feature track. These option edit the display of the genotype rows.
+Customise the genotype rows printed under VCF tracks.  
+:code:`-n` Display up to this many samples (rows). -1 for no limit.
 
-:code:`-n` Display up to this many samples (rows).
+:code:`-s` Select samples matching this regex.
+
+:code:`-r` Edit sample names to replace <pattern> with <replacement>. Names are edited only for display. To completely hide names use :code:`-r .* ""`. To restore original names use a regex matching nothing e.g. '^$'
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 

@@ -508,7 +508,7 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("featureColorForRegex"); cmd.setArgs("[-r regex color] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("featureColorForRegex"); cmd.setArgs("[-r/-R regex color] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set colour for features captured by regex. ");
 		cmd.setAdditionalDescription(""
 				+ "This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color "
@@ -526,6 +526,9 @@ public class CommandList {
 				+ "This option takes exactly two arguments and can be given zero or more times. "
 				+ "If this option is not present colors are reset to default.\n"
 				+ "\n"
+				+ ":code:`-R <regex> <color>` Same as :code:`-r` but sets color for features NOT "
+				+ "matched by regex.\n"
+				+ "\n"
 				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ ":code:`[track_regex]` Apply to tracks captured by this list of regexes.\n"
@@ -533,7 +536,8 @@ public class CommandList {
 				+ "Example::\n"
 				+ "\n"
 				+ "    featureColorForRegex -r CDS plum2 -r exon grey\n"
-				+ "    featureColorForRegex bed -> Reset to default the track matching 'bed'"
+				+ "    featureColorForRegex bed~~~~~~~~~-> Reset to default the track matching 'bed'\n"
+				+ "	   featureColorForRegex -R CDS grey ~> Grey all features except those matching CDS\n"
 				+ "\n");
 		cmdList.add(cmd);
 		

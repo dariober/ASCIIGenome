@@ -659,6 +659,7 @@ public class TrackSet {
 		String nRows= Utils.getArgForParam(argList, "-n", null);
 		String selectSampleRegex= Utils.getArgForParam(argList, "-s", null);
 		List<String> subSampleRegex= Utils.getNArgsForParam(argList, "-r", 2);
+		String jsScriptFilter= Utils.getArgForParam(argList, "-f", null);
 		boolean invertSelection= Utils.argListContainsFlag(argList, "-v");
 		
 		// Regex to capture tracks: All positional args left
@@ -684,6 +685,9 @@ public class TrackSet {
         		rplc= ! rplc.equals("\"\"") ? rplc : ""; 
             	tr.getGenotypeMatrix().setSubSampleRegex(subSampleRegex.get(0), rplc);
         	}
+        	if(jsScriptFilter != null){
+            	tr.getGenotypeMatrix().setJsScriptFilter(jsScriptFilter);
+        	}
         }
 
 	}	
@@ -693,13 +697,20 @@ public class TrackSet {
 		List<String> argList= new ArrayList<String>(cmdTokens);
 		argList.remove(0); // Remove cmd name
 		
-		// Collect all regex/color pairs from input
-		Map<String, String> colorForRegex= new LinkedHashMap<String, String>();
+		// Collect all regex/color pairs from input. We move left to right along the command 
+		// arguments and collect -r/-R and set the regex inversion accordingly.
+		Map<String, Argument> colorForRegex= new LinkedHashMap<String, Argument>();
 		new Xterm256();
-		while(true){
-			List<String> pair = Utils.getNArgsForParam(argList, "-r", 2);
-			if(pair == null){
-				break;
+		while(argList.contains("-r") || argList.contains("-R")){
+			int r= argList.indexOf("-r") >= 0 ? argList.indexOf("-r") : Integer.MAX_VALUE;
+			int R= argList.indexOf("-R") >= 0 ? argList.indexOf("-R") : Integer.MAX_VALUE;
+			List<String> pair;
+			boolean invert= false;
+			if(r < R){
+				pair = Utils.getNArgsForParam(argList, "-r", 2);
+			} else {
+				pair = Utils.getNArgsForParam(argList, "-R", 2);
+				invert= true;
 			}
 			String pattern= pair.get(0);
 			try{ // Check valid regex
@@ -707,9 +718,9 @@ public class TrackSet {
 			} catch(PatternSyntaxException e){
 		    	System.err.println("Invalid regex: " + pattern);
 		    	throw new InvalidCommandLineException();
-			}	
-			String xcolor= pair.get(1);
-			Xterm256.colorNameToXterm256(xcolor); // Check this is a valid colour 
+			}
+			Argument xcolor= new Argument(pair.get(1), invert);
+			Xterm256.colorNameToXterm256(xcolor.getArg()); // Check this is a valid colour 
 			if(colorForRegex.containsKey(pattern)){
 				// We remove an exiting key and add it new instead of updating its value. 
 				// In this way the new pattern is last in the linked list and has priority over the preceding ones. 
