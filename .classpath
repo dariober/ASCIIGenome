@@ -6,8 +6,12 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/commons-lang3/commons-lang3-3.4.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/igv-2.3.61/igv.jar"/>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/slf4j/slf4j-1.7.13/slf4j-api-1.7.13.jar"/>
+	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT.jar" sourcepath="/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/commons-validator/commons-validator-1.5.1/commons-validator-1.5.1.jar"/>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/biojava/biojava-genome-4.1.0.jar"/>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/slf4j/slf4j-1.7.13/slf4j-simple-1.7.13.jar"/>
@@ -23,11 +27,7 @@
 			<attribute name="javadoc_location" value="jar:file:/Users/db291g/eclipse/libraries/argparse4j/argparse4j-0.7.0/target/argparse4j-0.7.0-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT.jar" sourcepath="/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:file:/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/igv-2.3.61/igv.jar"/>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/htsjdk/htsjdk-1.141/dist/htsjdk-1.141.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -91,12 +91,15 @@ class FeatureChar {
 		}
 		else if(gt.isHomRef()){
 			this.setText('.');
+			this.setBgColor(Config.get(ConfigKey.feature_background_no_strand));
 		}
 		else if(gt.isHomVar()){
 			this.setText('O');
+			this.setBgColor(Config.get(ConfigKey.feature_background_negative_strand));
 		}
 		else if(gt.isHet()){
 			this.setText('E');
+			this.setBgColor(Config.get(ConfigKey.feature_background_positive_strand));
 		} 
 		else {
 			this.setText('?');

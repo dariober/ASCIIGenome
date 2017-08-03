@@ -33,7 +33,7 @@ AACCTTGGCC---------------------------------------
 -------------AACCTTGGCC--------------------------
 --------------AA----CCTT-------------------------
  */
-class TextRead {
+class TextRead extends IntervalFeature{
 	
 	// Characters for methylation coding. NB: M and U are valid DNA chars in IUPAC!
 	private final static char charM= 'M';

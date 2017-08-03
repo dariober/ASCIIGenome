@@ -1284,11 +1284,16 @@ public class Utils {
 			return null;
 		}
 		
+		// This is a hack to allow empty tokens to be passed at the command line. 
+		// An empty 
+		x= x.replace("''", "' '");
+		
 		// See also http://stackoverflow.com/questions/38161437/inconsistent-behaviour-of-strtokenizer-to-split-string
 		StrTokenizer str= new StrTokenizer(x);
     	str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 		str.setDelimiterString(delimiterString);
 		str.setQuoteChar('\'');
+		// str.setIgnoreEmptyTokens(false);
 		ArrayList<String> tokens= (ArrayList<String>) str.getTokenList();
 		for(int i= 0; i < tokens.size(); i++){
 			String tok= tokens.get(i).trim();

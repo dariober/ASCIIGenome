@@ -6,6 +6,8 @@ New in 1.10.0
 * `featureColorForRegex` can set colour for features NOT matching a regex. Useful to dim features without 
 completely hiding them.
 
+* A pair of single quotes (`''`) at the command prompt is understood as an empty argument. 
+
 
 New in 1.9.0
 ============

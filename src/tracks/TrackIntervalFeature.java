@@ -44,11 +44,9 @@ public class TrackIntervalFeature extends Track {
 	private VCFHeader vcfHeader= null;
 	
 	/** The outer key is the regex matching feature. */ 
-	private Map<String, Argument> colorForRegex= null;
+	private List<Argument> colorForRegex= null;
+	private VCFCodec vcfCodec;
 		
-	// private String awk= ""; // Awk script to filter features. See TrackIntervalFeatureTest for examples
-	// private Set<String> awkFiltered; // List of features after awk filtering.
-	
 	/* C o n s t r u c t o r */
 
 	public TrackIntervalFeature(final String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
@@ -166,10 +164,10 @@ public class TrackIntervalFeature extends Track {
 			if( Utils.urlFileExists(this.getFilename()) ){
 				URL url= new URL(this.getFilename());
 				AbstractFeatureReader<VariantContext, LineIterator> reader = AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
-				vcfHeader = (VCFHeader) reader.getHeader();
+				this.vcfHeader = (VCFHeader) reader.getHeader();
 			} else {
 				VCFFileReader reader = new VCFFileReader(new File(this.getWorkFilename()));
-				vcfHeader= reader.getFileHeader();
+				this.vcfHeader= reader.getFileHeader();
 				reader.close();
 			}
 		}
@@ -182,7 +180,7 @@ public class TrackIntervalFeature extends Track {
 			if(q == null){
 				break;
 			}
-			IntervalFeature intervalFeature= new IntervalFeature(q, TrackFormat.VCF, this.vcfHeader);
+			IntervalFeature intervalFeature= new IntervalFeature(q, TrackFormat.VCF, this.getVCFCodec());
 			if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
 				continue;
 			}
@@ -201,7 +199,11 @@ public class TrackIntervalFeature extends Track {
 			return false;
 		}
 		
-		boolean showIt= Pattern.compile(this.showRegex).matcher(x).find();
+		boolean showIt= true;
+		if(this.showRegex != null && ! this.showRegex.equals(".*")){
+			showIt= Pattern.compile(this.showRegex).matcher(x).find();
+		}
+
 		boolean hideIt= false;
 		if(!this.hideRegex.isEmpty()){
 			hideIt= Pattern.compile(this.hideRegex).matcher(x).find();	
@@ -215,12 +217,17 @@ public class TrackIntervalFeature extends Track {
 		
 		// Awk
 		try {
-			isVisible= Utils.passAwkFilter(x, this.getAwk()); // this.passAwkFilter(x);
+			isVisible= Utils.passAwkFilter(x, this.getAwk());
 		} catch (Exception e) {
 			// 
 		}
 		if(isVisible == null){
 			System.err.println("Awk output must be either empty or equal to input.");
+			try {
+				this.setAwk(""); // Remove the faulty awk script.
+			} catch (ClassNotFoundException | IOException | InvalidRecordException | SQLException e) {
+				//
+			}
 			throw new InvalidGenomicCoordsException();
 		}
 		return isVisible;
@@ -290,7 +297,7 @@ public class TrackIntervalFeature extends Track {
 			if(line == null){
 				return null;
 			} 
-			IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
+			IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.getVCFCodec());
 			if(x.getFrom() > from && this.featureIsVisible(x.getRaw())){
 				return x;
 			}
@@ -336,10 +343,10 @@ public class TrackIntervalFeature extends Track {
 					break;
 				} 
 				line= line.trim();
-				IntervalFeature candidate= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
+				IntervalFeature candidate= new IntervalFeature(line, this.getTrackFormat(), this.getVCFCodec());
 				if(candidate.getTo() < pos && this.featureIsVisible(line)){ 
 					// This is a candidate feature but we don't know yet of it's the last one
-					last= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
+					last= new IntervalFeature(line, this.getTrackFormat(), this.getVCFCodec());
 				}
 			}
 			if(last != null){
@@ -435,7 +442,7 @@ public class TrackIntervalFeature extends Track {
 				if(line == null) break;
 				boolean matched= Pattern.compile(query).matcher(line).find();
 				if(matched){
-					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
+					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.getVCFCodec());
 					if(this.featureIsVisible(x.getRaw())){
 						matchedFeatures.add(x);
 					}
@@ -482,7 +489,6 @@ public class TrackIntervalFeature extends Track {
 		// Genotype matrix
 		if(this.getTrackFormat().equals(TrackFormat.VCF)){
 			try {
-				// this.getGenotypeMatrix().makeMatrix(this.intervalFeatureList, this.getGc().getUserWindowSize(), this.vcfHeader);
 				String gtm= this.getGenotypeMatrix().printToScreen(this.isNoFormat(), this.intervalFeatureList, this.getGc().getUserWindowSize(), this.vcfHeader);
 				printable.add(gtm);
 			} catch (InvalidColourException | IOException e) {
@@ -697,13 +703,12 @@ public class TrackIntervalFeature extends Track {
 		for(String curChrom : chromSearchOrder){
 			
 			TabixBigBedIterator iter= this.getReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
-			// Iterator iter = this.iteratorFromQuery(curChrom , startingPoint, Integer.MAX_VALUE); // this.getTabixReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
 			while(true){
 				String line= iter.next();
 				if(line == null) break;
 				boolean matched= Pattern.compile(query).matcher(line).find();
 				if(matched){
-					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.vcfHeader);
+					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.getVCFCodec());
 					if(x.getFrom() > startingPoint && this.featureIsVisible(x.getRaw())){
 						return x;
 					}
@@ -711,6 +716,18 @@ public class TrackIntervalFeature extends Track {
 			}
 			startingPoint= 0;
 		} return null; // Not found anywhere
+	}
+
+	private VCFCodec getVCFCodec() {
+		if(this.vcfHeader == null){
+			return null;
+		}
+		if(this.vcfCodec == null){
+			VCFCodec vcfCodec= new VCFCodec();
+			vcfCodec.setVCFHeader(this.vcfHeader, Utils.getVCFHeaderVersion(this.vcfHeader));
+			this.vcfCodec= vcfCodec; 
+		}
+		return this.vcfCodec;
 	}
 
 	/** Return the set chroms sorted but with and first chrom set to startChrom.
@@ -1024,38 +1041,36 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
-	protected void setColorForRegex(Map<String, Argument> xcolorForRegex) {
+	protected void setColorForRegex(List<Argument> xcolorForRegex) {
 		if(xcolorForRegex == null){
 			this.colorForRegex= null;
 			return;
 		} else {
 			if(this.colorForRegex == null){
-				this.colorForRegex= new LinkedHashMap<String, Argument>();
+				this.colorForRegex= new ArrayList<Argument>();
 			}
-			for(String p : xcolorForRegex.keySet()){
-				this.colorForRegex.put(p, xcolorForRegex.get(p));
+			for(Argument p : xcolorForRegex){
+				this.colorForRegex.add(p);
 			}
 		}
 	}
 
-	private Map<String, Argument> getColorForRegex() {
+	private List<Argument> getColorForRegex() {
 		return this.colorForRegex;
 	}
 
-	/** Iterate through the features in this track and set background colour.
-	 * colorForRegex: Key= Regex to capture features; Value= Colour to use for the captures features.
-	 * @throws InvalidColourException 
-	 * */
-	private void changeFeatureColor(Map<String, Argument> colorForRegex) throws InvalidColourException {
-		if(colorForRegex == null){
+	@Override
+	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException {
+		if(list == null){
 			return;
 		}
 	
-		for(String regex : colorForRegex.keySet()){
-			String color= colorForRegex.get(regex).getArg();
+		for(Argument arg : list){
+			String regex= arg.getKey();
+			String color= arg.getArg();
 			for(IntervalFeature x : this.getIntervalFeatureList()){
 				boolean matched= Pattern.compile(regex).matcher(x.getRaw()).find();
-				if(colorForRegex.get(regex).isInvert()){
+				if(arg.isInvert()){
 					matched= ! matched;
 				}
 				if(matched){

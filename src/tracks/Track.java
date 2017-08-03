@@ -16,7 +16,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -760,7 +759,9 @@ public abstract class Track {
 			// Record whether a read passes the sam filters. If necessary, we also 
 			// store the raw reads for awk.
 			SAMRecord rec= filterSam.next();
-			if(!rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec)){
+			if(!rec.getReadUnmappedFlag() && 
+			        !aggregateFilter.filterOut(rec) &&
+			        rec.getAlignmentEnd() >= rec.getAlignmentStart()){
 				results.add(true);
 			} else {
 				results.add(false);
@@ -783,12 +784,20 @@ public abstract class Track {
 		return results;
 	}
 
-	protected void setColorForRegex(Map<String, Argument> xcolorForRegex) {
+	protected void setColorForRegex(List<Argument> xcolorForRegex) {
 		
 	}
 
 	public GenotypeMatrix getGenotypeMatrix() {
 		return genotypeMatrix;
+	}
+
+	/** Iterate through the features in this track and set background colour.
+	 * colorForRegex: Key= Regex to capture features; Value= Colour to use for the captures features.
+	 * @throws InvalidColourException 
+	 * */
+	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException {
+		
 	}
 
 //	public void setGenotypeMatrix(GenotypeMatrix genotypeMatrix) {

@@ -18,9 +18,12 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.ValidationStringency;
 import samTextViewer.GenomicCoords;
 
 public class TrackReadsTest {
@@ -33,9 +36,22 @@ public class TrackReadsTest {
 	static SamReaderFactory srf=SamReaderFactory.make();
 	static SamReader samReader= srf.open(new File("test_data/ds051.actb.bam"));
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
-
-	
 	public static String fastaFile= "test_data/chr7.fa";
+
+	@Test
+	public void softClip(){
+		
+		SamReaderFactory srf=SamReaderFactory.make();
+		srf.validationStringency(ValidationStringency.SILENT);
+		samReader= srf.open(new File("/Users/db291g/Tritume/soft_clip.bam"));
+		SAMRecordIterator iter = samReader.iterator();
+		while(iter.hasNext()){
+			SAMRecord rec = iter.next();
+			System.err.println(rec.getSAMString());
+			System.err.println(rec.getAlignmentStart() + " " +  rec.getAlignmentEnd());
+			
+		}
+	}
 	
 	@Test
 	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{
@@ -172,7 +188,8 @@ public class TrackReadsTest {
 		TrackReads tr= new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
 		
 		// Same as: samtools view -F 4 -c ear045.oxBS.actb.bam chr7:5565600-5567600
-		assertTrue(tr.getTitle().contains("2961"));
+		// AND excluding also reads fully soft-clipped
+		assertTrue(tr.getTitle().contains("2436"));
 	}
 	
 	@Test

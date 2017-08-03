@@ -10,6 +10,8 @@ import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.common.hash.Hashing;
+
 import coloring.Config;
 import coloring.ConfigKey;
 import exceptions.InvalidColourException;
@@ -86,11 +88,18 @@ public class TrackReads extends Track{
 			
 			float probSample= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack)) / this.nRecsInWindow;
 			
+			// Add this random String to the read name so different screenshot will generate 
+			// different samples. 
+			String rndOffset= Integer.toString(new Random().nextInt());
+			                                                            
 			ListIterator<Boolean> pass = passFilter.listIterator();
 			while(sam.hasNext() && textReads.size() < Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack))){
 				SAMRecord rec= sam.next();
 				if( pass.next() ){
-					Random rand = new Random();
+					// Get read name (template name in fact), w/o the suffixes and what comes after the first blank.
+					String templ_name= rec.getReadName().replaceAll(" .*", "").replaceAll("/1$|/2$", "");
+					long v= Hashing.md5().hashBytes((templ_name + rndOffset).getBytes()).asLong();
+					Random rand = new Random(v);
 					if(rand.nextFloat() < probSample){ // Downsampler
 						TextRead tr= new TextRead(rec, this.getGc());
 						textReads.add(tr);
@@ -124,6 +133,10 @@ public class TrackReads extends Track{
 		StringBuilder printable= new StringBuilder();
 		for(Double idx : keep){
 			List<TextRead> line= this.readStack.get((int)Math.rint(idx));
+//			for(TextRead tr : line){
+//				tr.setIdeogram(tr.getIdeogram(true, false), false);
+//				this.changeFeatureColor(this.getColorForRegex()); // For each TextRead in this interval set colour according to regex in List<Argument>
+//			}
 			try {
 				printable.append(linePrinter(line, this.bisulf, this.isNoFormat(), withReadName));
 				printable.append("\n");

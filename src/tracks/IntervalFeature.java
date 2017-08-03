@@ -16,8 +16,6 @@ import exceptions.InvalidGenomicCoordsException;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
-import htsjdk.variant.vcf.VCFHeader;
-import htsjdk.variant.vcf.VCFHeaderVersion;
 import samTextViewer.Utils;
 
 /**
@@ -64,7 +62,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * Create an IntervalFeature from a String. Typically this is a line read from file.
 	 * vcfHeader can be null if trackformat is not VCF.
 	 */
-	public IntervalFeature(String line, TrackFormat format, VCFHeader vcfHeader) throws InvalidGenomicCoordsException{
+	public IntervalFeature(String line, TrackFormat format, VCFCodec vcfCodec) throws InvalidGenomicCoordsException{
 		if(format.equals(TrackFormat.BED) || format.equals(TrackFormat.BEDGRAPH) || format.equals(TrackFormat.BIGBED)){
 			this.intervalFeatureFromBedLine(line);
 			this.trackFormat= TrackFormat.BED;
@@ -74,12 +72,6 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 			this.trackFormat= TrackFormat.GFF;
 					
 		} else if(format.equals(TrackFormat.VCF)) {
-			if(vcfHeader == null){
-				System.err.println("IntervalFeature of type VCF cannot be constructed without a VCFHeader object.");
-				throw new RuntimeException();
-			}
-			VCFCodec vcfCodec= new VCFCodec();
-			vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
 			this.variantContext= vcfCodec.decode(line);
 			this.setRaw(line);
 			this.trackFormat= TrackFormat.VCF;
@@ -140,6 +132,11 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		this.from= from;
 		this.to= to;
 		this.trackFormat= format;
+	}
+	
+	/**Only used to make TextRead(...) work*/
+	protected IntervalFeature() {
+		
 	}
 	
 	/* M e t h o d s */
@@ -694,9 +691,8 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	}
 
 	private void setRaw(String line) {
-		line= line.replace("\n", "");
-		line= line.replace("\r", "");
-		this.raw= line;
+		// line= line.replaceAll("\n$|\r$", "");
+		this.raw= line.trim();
 	}
 
 	/** Returns the mid point of the feature on screen. 

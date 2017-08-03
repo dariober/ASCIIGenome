@@ -4,14 +4,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Random;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.base.Stopwatch;
+import com.google.common.hash.Hashing;
 
 import coloring.Config;
 import coloring.Xterm256;
@@ -29,7 +32,7 @@ public class TrackIntervalFeatureTest {
 		new Config(null);
 		new Xterm256();
 	}
-	
+		
 	@Test
 	public void canColorGTFFeaturesByRegex()  throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 
@@ -37,13 +40,13 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		tif.printToScreen(); // This is to populate the ideograms.
 		
-		Map<String, Argument> colorForRegex= new HashMap<String, Argument>();
-		colorForRegex.put("DDX11L1", new Argument("216", false));
+		List<Argument> colorForRegex= new ArrayList<Argument>();
+		colorForRegex.add(new Argument("DDX11L1", "216", false));
 		tif.setColorForRegex(colorForRegex);
 		assertTrue(tif.printToScreen().contains("216"));
 
 		colorForRegex.clear();
-		colorForRegex.put("WASH7P", new Argument("233", false)); // 233:grey7 (almost black)
+		colorForRegex.add(new Argument("WASH7P", "233", false)); // 233:grey7 (almost black)
 		tif.setColorForRegex(colorForRegex);
 		assertTrue(tif.printToScreen().contains("233"));
 		assertTrue(tif.printToScreen().contains("216"));

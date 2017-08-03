@@ -371,8 +371,6 @@ featureColorForRegex
 
 Set colour for features captured by regex.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by a regex. It is useful to highlight features containg a string of interest, such as 'CDS' in gff files.
 
-For available colors see :code:`colorTrack -h`. As for :code:`colorTrack` colors can be specified by name, name prefix, or integer in range 0-255.
-
 Options:
 
 :code:`-r <regex> <color>` Features matching :code:`regex` will have color :code:`color`. The regex is applied to the raw lines as read from file. This option takes exactly two arguments and can be given zero or more times. If this option is not present colors are reset to default.
@@ -387,123 +385,9 @@ Example::
 
     featureColorForRegex -r CDS plum2 -r exon grey
     featureColorForRegex bed         -> Reset to default the track matching 'bed'
-	   featureColorForRegex -R CDS grey  > Grey all features except those matching CDS
+	   featureColorForRegex -R CDS grey -> Grey all features except those matching CDS
 
-
-
-featureDisplayMode
-++++++++++++++++++
-
-:code:`featureDisplayMode [-expanded | -collapsed | -oneline] [-v] [track_regex = .*]...`
-
-Set how annotation features should be displayed.
- 
-* :code:`-expanded/-e` Put overalpping features on different lines (default).
-
-* :code:`-collapsed/-c` Merge features with overlapping genomic coordinates.
-
-* :code:`-oneline/-o` Merge features overlapping on screen coordinates. This option makes the track occupy only one line.
-
-* :code:`-v` Invert selection: apply changes to tracks not selected by list of track_regex
-
-* :code:`track_regex` List of regexes to select tracks. Default: .* (all tracks).
-
-Without arguments toggle between expanded and collapsed mode. 
-
-gap
-+++
-
-:code:`gap [-on | -off] [-v] [track_regex = .*]...`
-
-Display features with or without a separating gap.  With :code:`gap -on` (default) features which on screen do not have at least one space separating them are moved to different lines. In this way it is clear where one feature starts and ends. If gap is unset (:code:`gap -off`) features are shown more packed.
-
-:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-Example with :code:`gap -on`::
-
-    ||||||
-          ||||||
-
-With :code:`gap -off` these two features look like::
-
-    ||||||||||||
-
-As elsewhere, this command is applied to all tracks captured by the list of regexes.
-
-gffNameAttr
-+++++++++++
-
-:code:`gffNameAttr [attribute_name = NULL | -na] [-v] [track_regex = .*]...`
-
-GTF/GFF attribute to set the feature name or `-na` to suppress name.  Use attribute NULL to reset to default choice of attribute. To suppress printing of the name use `-na`. Bed features get their name from the 4th column. Applies to annotation tracks captured by the list `track_regex`.
-
-:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-Example, given the gtf feature::
-
-    chr1 . CDS  10 99 . + 2 gene_id "PTGFRN"; transcript_id "NM_020440";
-
-Use gene_name as feature name or transcript_id::
-
-    gffNameAttr gene_name genes.gtf .*gff
-    PTGFRN_CCCCCCCCC
-    
-    gffNameAttr transcript_id genes.gtf .*gff
-    NM_020440_CCCCCC
-    
-    gffNameAttr -na
-    CCCCCCCCCCCCCCCC <- Do not show name    
-
-
-
-trackHeight
-+++++++++++
-
-:code:`trackHeight [-v] INT [track_regex = .*]...`
-
-Set track height to INT lines of text for all tracks matching regexes.  Setting height to zero hides the track and skips the processing altogether. This is useful to speed up the browsing when large bam files are present. Use infoTrack to see which tracks are hidden.
-
-:code:`-v` Invert selection: apply changes to tracks not selected by list of track_regex
-
-Example::
-
-    trackHeight 5 aln.*bam gtf`
-
-
-ylim
-++++
-
-:code:`ylim [-v] <NUM|min|na> <NUM|min|na> [track_regex = .*]...`
-
-Set the y-axis limit for all tracks matched by regexes. The first two arguments set the min and max limits. The 3rd argument is a list of regexes to capture the tracks to reset. Argument min and max can be:
-
-* :code:`NUM` Numeric, fix the limits exactly to these values
-
-* :code:`na` Scale tracks to their individual min and/or max
-
-* :code:`min` and :code:`max` Set to the min and max of **all** tracks.
-
-:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-This command applies only to tracks displaying quantitative data on y-axis (e.g. bigwig, tdf), the other tracks are unaffected. Examples::
-
-    ylim 0 50      -> Set min= 0 and max= 50 in all tracks.
-    ylim 0 na      -> Set min to 0 and autoscale the max. Apply to all tracks
-    ylim na na tdf -> Autoscale min and max. Apply to all tracks matching 'tdf'
-    ylim min max   -> Set to the min and max of all tracks
-
-
-
-colorTrack
-++++++++++
-
-:code:`colorTrack [-v] color [track_regex = .*]...`
-
-Set colour for tracks matched by regex.  Colors can be specified by name or by a value between 0 and 255. If only the prefix of a color name is given, the first name found starting with the prefix is returned, e.g. 'darkv' is interpreted as 'darkviolet'. Names are case insensitive.
-
-:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-Available colours are from the Xterm256 palette: `here <http://jonasjacek.github.io/colors/>`_             
+Colors can be specified by name, name prefix, or integer in range 0-255. Available colours:`here <http://jonasjacek.github.io/colors/>`_             
 
 Example::
 
@@ -526,16 +410,64 @@ Set the display of the title line matched by track_regex.  Without argument -on 
 genotype
 ++++++++
 
-:code:`genotype [-n 10] [-s .*] [-r pattern rplc] [-v] [track_regex = .*]...`
+:code:`genotype [-n 10] [-s .*] [-r pattern rplc] [-f expr] [-v] [track_regex = .*]...`
 
-Customise the genotype rows printed under VCF tracks.  
+Customise the genotype rows printed under the VCF tracks.  
+
 :code:`-n` Display up to this many samples (rows). -1 for no limit.
 
 :code:`-s` Select samples matching this regex.
 
 :code:`-r` Edit sample names to replace <pattern> with <replacement>. Names are edited only for display. To completely hide names use :code:`-r .* ""`. To restore original names use a regex matching nothing e.g. '^$'
 
+:code:`-f` Filter samples using an expression in javascript syntax. See below for details.
+
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
+FILTER EXPRESSION
+
+Samples can be filtered by applying arbitrary expressions to the VCF records. The VCF fields of a sample are accessed using the syntax :code:`{TAG}`.
+
+TAG is one of the fixed fields: CHROM, POS, ID, REF, ALT, QUAL, FILTER, or one of the INFO or FORMAT tags. In case of ambiguity, the prefix 'INFO/' or 'FMT/' should be used to identify the target tag (e.g. :code:`{FMT/ID}` will access the ID field in FORMAT rather than the ID in the header).
+
+The value(s) in a TAG are converted to the appropriate data type (Integer, String, etc). Tags holding more than one value are returned as arrays whose individual values should be accessed using the syntax :code:`[index]`. E.g. :code:`{ALT}[0]` will access the first alternate allele.
+
+Note that the ALT and FILTER fields are always arrays, even if only one allele is present.
+
+After substitution of the :code:`{TAG}` placeholders with the actual values, the expression string is evaluated as a javascript script so any valid JS code is allowed including the common operators: :code:`> < == != && ||`.
+
+Importantly, the result of the expression must be a boolean, i.e. it must evaluate to true or false.
+
+For each sample, the expression is evaluated for each VCF record in the current window and if ANY record returns *true*, the sample is filtered-in. To apply the filter to specific records either include only those records using e.g. commands :code:`grep` or :code:`awk` or make the expression more selective, e.g. by including the POS field.
+
+As elsewhere in ASCIIGenome, if the argument (expression) contains spaces it must be enclosed in single quotes and single quotes inside the expression must be escaped. To remove the expression filter pass a blank string as argument :code:`-f ' '` (note the white space between single quotes).
+
+The following tags can be used to filter on the genotype. When substituted, they evaluate to true according to the sample genotype. Testing the :code:`{GT}` tag, e.g. :code:`{GT} == "0/1"`, achieves a similar result and gives more control but using these tags is less error prone:
+
+* :code:`{HOM}` genotype is homozygote.
+
+* :code:`{HET}` genotype is heterozygote.
+
+* :code:`{HOM_REF}` genotype is homozygote reference.
+
+* :code:`{HOM_VAR}` homozygote for an ALT allele.
+
+* :code:`{HET_NON_REF}` heterozygote and all alleles are non-reference.
+
+* :code:`{CALLED}` at least one allele is not a missing value ('.' in vcf).
+
+* :code:`{NO_CALL}` No allele is called (e.g. it appears as ./. in vcf).
+
+* :code:`{MIXED}` genotype is comprised of both calls and no-calls.
+
+Examples of filters::
+
+    genotype -f '{DP} > 30' -> Display samples having DP > 30
+    genotype -f '{DP} > 30 && {ID} == "rs99"' -> Select also for ID
+    genotype -f '{FMT/XA} > 30 && {INFO/XA} == "foo"' -> Disambiguate tags
+    genotype -f '{ALT}[0] == "C"'  -> Access the first ALT allele
+    genotype -f '{HOM_REF} == false' -> Discard if homozygote ref.
+
 
 
 editNames

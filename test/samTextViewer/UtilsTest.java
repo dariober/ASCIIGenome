@@ -1073,7 +1073,10 @@ public class UtilsTest {
 		// Unusual input:
 		assertEquals(null, Utils.tokenize(null, " "));
 		assertTrue(Utils.tokenize("", " ").size() == 0);
-		assertTrue(Utils.tokenize("   ", " ").size() == 0);
+//		assertTrue(Utils.tokenize("   ", " ").size() == 0);
+		
+		// Empty token:
+		assertTrue(Utils.tokenize("foo -f '' -bar", " ").get(2).isEmpty());
 		
 		// Reverse token
 		String cmdInput= "goto chr1 0 100";

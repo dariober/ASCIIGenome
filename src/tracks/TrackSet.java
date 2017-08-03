@@ -9,10 +9,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -660,6 +658,7 @@ public class TrackSet {
 		String selectSampleRegex= Utils.getArgForParam(argList, "-s", null);
 		List<String> subSampleRegex= Utils.getNArgsForParam(argList, "-r", 2);
 		String jsScriptFilter= Utils.getArgForParam(argList, "-f", null);
+		
 		boolean invertSelection= Utils.argListContainsFlag(argList, "-v");
 		
 		// Regex to capture tracks: All positional args left
@@ -699,7 +698,7 @@ public class TrackSet {
 		
 		// Collect all regex/color pairs from input. We move left to right along the command 
 		// arguments and collect -r/-R and set the regex inversion accordingly.
-		Map<String, Argument> colorForRegex= new LinkedHashMap<String, Argument>();
+		List<Argument> colorForRegex= new ArrayList<Argument>();
 		new Xterm256();
 		while(argList.contains("-r") || argList.contains("-R")){
 			int r= argList.indexOf("-r") >= 0 ? argList.indexOf("-r") : Integer.MAX_VALUE;
@@ -719,14 +718,9 @@ public class TrackSet {
 		    	System.err.println("Invalid regex: " + pattern);
 		    	throw new InvalidCommandLineException();
 			}
-			Argument xcolor= new Argument(pair.get(1), invert);
+			Argument xcolor= new Argument(pair.get(0), pair.get(1), invert);
 			Xterm256.colorNameToXterm256(xcolor.getArg()); // Check this is a valid colour 
-			if(colorForRegex.containsKey(pattern)){
-				// We remove an exiting key and add it new instead of updating its value. 
-				// In this way the new pattern is last in the linked list and has priority over the preceding ones. 
-				colorForRegex.remove(pattern);
-			}
-			colorForRegex.put(pattern, xcolor);
+			colorForRegex.add(xcolor);
 		}
 		if(colorForRegex.size() == 0){
 			colorForRegex= null;

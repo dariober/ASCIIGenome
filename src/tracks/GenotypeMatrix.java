@@ -2,17 +2,21 @@ package tracks;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.io.IOException;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
@@ -22,6 +26,7 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFormatHeaderLine;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLineType;
+import htsjdk.variant.vcf.VCFInfoHeaderLine;
 
 class GenotypeMatrix {
 
@@ -29,11 +34,10 @@ class GenotypeMatrix {
 	private Map<String, List<FeatureChar>> matrix= new LinkedHashMap<String, List<FeatureChar>>(); 
     
 	/**List of regexes to select samples to be displayed */
-	private String selectSampleRegex= ".*"; 
+	private String selectSampleRegex; 
 	
 	/** Maximum number of samples (rows) to print */
-	private int nMaxSamples= 10;
-
+	private Integer nMaxSamples;
 	
 	private Map<String, String> subSampleRegex= new HashMap<String, String>();
 
@@ -41,18 +45,29 @@ class GenotypeMatrix {
 
 	private ScriptEngine engine; // Leave this null. Only if required use the getter to create it.
 	                             // The engine maybe called 1000s of times. So if created only once.
+	private final Set<String> genotypes= new HashSet<String>();
+	
 	
     protected GenotypeMatrix() {
     	this.subSampleRegex.put("pattern", "$^"); // Default pattern-replacement to match nothing
     	this.subSampleRegex.put("replacement", "");
+    	this.genotypes.add("{HOM}");
+    	this.genotypes.add("{HET}");
+    	this.genotypes.add("{HOM_REF}");
+    	this.genotypes.add("{HOM_VAR}");
+    	this.genotypes.add("{HET_NON_REF}");
+    	this.genotypes.add("{CALLED}");
+    	this.genotypes.add("{NO_CALL}");
+    	this.genotypes.add("{MIXED}");
     }
     
     // -------------------------------------------------------------------------
 
     /** Replace or create the current matrix using the provided input.
      * @throws InvalidGenomicCoordsException 
+     * @throws IOException 
      * */
-    private void makeMatrix(List<IntervalFeature> variantList, int terminalWidth, VCFHeader vcfHeader) throws InvalidGenomicCoordsException{
+    private void makeMatrix(List<IntervalFeature> variantList, int terminalWidth, VCFHeader vcfHeader) throws InvalidGenomicCoordsException, IOException{
 
     	this.matrix= new LinkedHashMap<String, List<FeatureChar>>();
     	
@@ -60,6 +75,17 @@ class GenotypeMatrix {
     		return;
     	}
 
+    	Map<VariantContext, String> vcfRecordWithScript= new HashMap<VariantContext, String>();
+		if(vcfHeader != null && this.getJsScriptFilter() != null &&  ! this.getJsScriptFilter().trim().isEmpty()){
+	    	// We assign to each VCF record the JS script formatted with the fields that
+			// do not change across samples, so we do the formatting only once.
+	    	for(IntervalFeature ctx : variantList){
+	    		String js= this.formatJsScriptWithFixedFields(this.getJsScriptFilter(), ctx.getVariantContext());
+	    		js= this.formatJsScriptWithInfo(js, ctx.getVariantContext(), vcfHeader);
+	    		vcfRecordWithScript.put(ctx.getVariantContext(), js);
+	    	}
+		}
+    	
     	int n= 0;
         for(String sampleName : variantList.get(0).getVariantContext().getSampleNamesOrderedByName()){
 
@@ -73,9 +99,9 @@ class GenotypeMatrix {
 			}
     		
     		boolean keep= true;
-    		if(vcfHeader != null && this.getJsScriptFilter() != null){
-    			keep= this.isPassedFilter(variantList, sampleName, vcfHeader);
-        		if( ! keep){
+    		if(vcfHeader != null && this.getJsScriptFilter() != null &&  ! this.getJsScriptFilter().trim().isEmpty()){
+    			keep= this.isPassedFilter(vcfRecordWithScript, sampleName, vcfHeader);
+        		if( ! keep ){
         			continue;
         		}
     		}
@@ -100,42 +126,89 @@ class GenotypeMatrix {
     }
     
     /**Return true if ANY of the variants in the given sample pass the filters in javascript.
-     * @throws InvalidGenomicCoordsException */
-    private boolean isPassedFilter(List<IntervalFeature> variantList, String sampleName, VCFHeader vcfHeader) throws InvalidGenomicCoordsException {
+     * @throws InvalidGenomicCoordsException 
+     * @throws IOException */
+    private boolean isPassedFilter(Map<VariantContext, String> vcfRecordWithScript, String sampleName, VCFHeader vcfHeader) {
 
-		StringBuilder concatJS= new StringBuilder(); 
-    	for(IntervalFeature vcf : variantList){
-    		String js= this.getJsScriptFilter();
-    		VariantContext ctx= vcf.getVariantContext();
-    		
-    		js= this.formatJsScriptWithFixedFields(js, ctx);
-    		js= this.formatJsScriptWithFormat(js, sampleName, ctx, vcfHeader);
-    		js= this.formatJsScriptWithInfo(js, ctx, vcfHeader);
-    		concatJS.append(js);
-    		concatJS.append(" || ");
+//    	Stopwatch sw= Stopwatch.createUnstarted();
+    	boolean subGenotype= false;
+    	for(String g : this.genotypes){
+    		if(this.getJsScriptFilter().contains(g)){
+    			subGenotype= true;
+    			break;
+    		}
     	}
-
-    	String script= concatJS.toString().replaceAll(" \\|\\| $", ""); 
-		
+    	
+    	// We concatenate all the scripts for each record in a single string that we execute all in one shot.
+    	// In this way we avoid calling the JS engine many times. We accumulate the individual scripts in
+    	//  a set where duplicates are excluded so we make the final script simpler and faster to execute.
+    	// This is important especially for GT where we have few combinations of genotype appearing many times
+    	// across markers.
+    	Set<String> concatJS= new HashSet<String>();
+    	
+    	for(VariantContext ctx : vcfRecordWithScript.keySet()){
+    		// We format the JS script and apply it to this sample for each record in the 
+    		// window. As soon as a record passes the filter, we pass the sample.
+    		String js= vcfRecordWithScript.get(ctx);
+    		
+    		js= this.formatJsScriptWithFormat(js, sampleName, ctx, vcfHeader);
+    		if(subGenotype){
+    			js= this.formatJsScriptWithGenotype(js, ctx.getGenotype(sampleName));
+    		}
+    		concatJS.add("(" + js + ")");  		
+    	}
+    	String concat= Joiner.on(" || ").join(concatJS);
 		Object b = null;
-		try {
-			b = this.getEngine().eval(script);
-		} catch (ScriptException e) {
-			e.printStackTrace();
-		}
+//		sw.start();
 		try{
+			b = this.getEngine().eval(concat);
     		if((boolean)b){
 				return true;
 			}
-		} catch(ClassCastException e){
-			throw new InvalidGenomicCoordsException();
+		} catch(ClassCastException | ScriptException e){
+			String x= concatJS.size() > 0 ? concatJS.iterator().next() : concat; 
+			System.err.println(
+					  "ERROR in expression. It may be that the expression is not valid Javascript syntax\n"
+					+ "or its result is not a boolean (true or false). First evaluated expression was:\n"
+					+  x + ". Final result= " + b + "\n");
+			this.setJsScriptFilter(null);
 		}
+		return false;
+	}
 
-    	return false;
+	private String formatJsScriptWithGenotype(String js, Genotype gt) {
+		
+		// Comments are copied from htsjdk 
+		if(js.contains("{HOM}")){
+			js= js.replace("{HOM}", Boolean.toString(gt.isHom()));
+		}
+		if(js.contains("{HET}")){
+			js= js.replace("{HET}", Boolean.toString(gt.isHet()));
+		}
+		if(js.contains("{HOM_REF}")){
+			js= js.replace("{HOM_REF}", Boolean.toString(gt.isHomRef()));
+		}
+		if(js.contains("{HOM_VAR}")){
+			js= js.replace("{HOM_VAR}", Boolean.toString(gt.isHomVar())); // true if all observed alleles are alt; if any alleles are no-calls, return false.
+		}
+		if(js.contains("{HET_NON_REF}")){
+			js= js.replace("{HET_NON_REF}", Boolean.toString(gt.isHetNonRef())); // true if we're het (observed alleles differ) and neither allele is reference; if the ploidy is less than 2 or if any alleles are no-calls, this method will return false.
+		}
+		if(js.contains("{CALLED}")){
+			js= js.replace("{CALLED}", Boolean.toString(gt.isCalled())); // true if this genotype is comprised of any alleles that are not no-calls (even if some are).
+		}
+		if(js.contains("{NO_CALL}")){
+			js= js.replace("{NO_CALL}", Boolean.toString(gt.isNoCall())); // true if this genotype is not actually a genotype but a "no call" (e.g. './.' in VCF); if any alleles are not no-calls (even if some are), this method will return false.
+		}
+		if(js.contains("{MIXED}")){
+			js= js.replace("{MIXED}", Boolean.toString(gt.isMixed())); // true if this genotype is comprised of both calls and no-calls.
+		}
+		return js;
 	}
 
 	/**Replace the JS script string with the actual values in the fixed VCF fields. */
     private String formatJsScriptWithFixedFields(String js, VariantContext ctx) {
+		
     	if(js.contains("{CHROM}")){
     		js= js.replace("{CHROM}", '"' + ctx.getContig() + '"');
     	}
@@ -181,12 +254,16 @@ class GenotypeMatrix {
      * */
     @SuppressWarnings("unchecked")
 	private String formatJsScriptWithInfo(String jsScript, VariantContext ctx, VCFHeader vcfHeader){
-    	for(String key : ctx.getAttributes().keySet()){
+    	Iterator<VCFInfoHeaderLine> iter = vcfHeader.getInfoHeaderLines().iterator();
+    	while(iter.hasNext()){ 
+    		//We iterate through each key in the header and see if there is a match in JS script. 
+    		VCFInfoHeaderLine headerLine = iter.next();
+    		String key= headerLine.getID();
     		if(jsScript.contains('{' + key + '}') || jsScript.contains("{INFO/" + key + '}')){
-	    		Object unknValue= ctx.getAttributes().get(key);
+	    		Object unkValue= ctx.getAttributes().get(key);
 	    		String fmtValue;
 	    		try{
-	    			List<Object> unknList= (List<Object>) unknValue;
+	    			List<Object> unknList= (List<Object>) unkValue;
 	    			StringBuilder listParam= new StringBuilder();
 	    			listParam.append("[");
 	    			for(Object unk : unknList){
@@ -194,7 +271,14 @@ class GenotypeMatrix {
 	    			}
 	    			fmtValue= listParam.append("]").toString();
 	    		} catch(ClassCastException e){ 
-	    			fmtValue= this.formatObjectForJS(key, unknValue, vcfHeader.getInfoHeaderLine(key).getType());
+	    			fmtValue= this.formatObjectForJS(key, unkValue, vcfHeader.getInfoHeaderLine(key).getType());
+	    		} catch(NullPointerException e){
+	    			if(headerLine.getType().equals(VCFHeaderLineType.Flag)){ 
+	    				// A flag type returns null if the flag is missing, which is odd. Shouldn't it return false?
+	    				fmtValue= "false";  
+	    			} else {
+	    				fmtValue= "null";
+	    			}
 	    		}
 	    		jsScript= jsScript.replace("{INFO/" + key + '}', fmtValue);
 	    		jsScript= jsScript.replace('{' + key + '}', fmtValue);
@@ -204,26 +288,40 @@ class GenotypeMatrix {
     } 
 
     /**Similar to formatJsScriptWithInfo but applied to FORMAT.*/
-    @SuppressWarnings("unchecked")
-	private String formatJsScriptWithFormat(String jsScript, String sampleName, VariantContext ctx, VCFHeader vcfHeader){
+    private String formatJsScriptWithFormat(String jsScript, String sampleName, VariantContext ctx, VCFHeader vcfHeader){
+    	
     	Iterator<VCFFormatHeaderLine> iter = vcfHeader.getFormatHeaderLines().iterator();
     	while(iter.hasNext()){ 
     		//We iterate through each key in the header and see if there is a match in JS script. 
     		VCFFormatHeaderLine headerLine = iter.next();
     		String key= headerLine.getID();
     		if(jsScript.contains('{' + key + '}') || jsScript.contains("{FMT/" + key + '}')){
+    			
+    			if(key.equals("GT")){ // We put GT as string rather than list.
+    				String gt= this.genotypeAsAlleleIndexes(ctx, sampleName); 
+    				jsScript= jsScript.replace("{FMT/" + key + '}', gt);
+    				jsScript= jsScript.replace('{' + key + '}', gt);
+    				continue;
+    			} 
+    			
 	    		Object unkValue= ctx.getGenotype(sampleName).getAnyAttribute(key);
 	    		String fmtValue;
-	    		try{
-	    			List<Object> unknList= (List<Object>) unkValue;
+	    		if(headerLine.getCount(ctx) == 1){
+	    			fmtValue= this.formatObjectForJS(key, unkValue, headerLine.getType()); 
+	    		}
+	    		else {
+	    			List<String> strList= Splitter.on(",").splitToList(unkValue.toString());
 	    			StringBuilder listParam= new StringBuilder();
 	    			listParam.append("[");
-	    			for(Object unk : unknList){
-	    				listParam.append(this.formatObjectForJS(key, unk, headerLine.getType()) + ", ");
+	    			for(String unk : strList){
+	    				if(headerLine.getType().equals(VCFHeaderLineType.String) || 
+	    				   headerLine.getType().equals(VCFHeaderLineType.Character)){
+	    					listParam.append('"' + unk + '"' + ", ");
+	    				} else {
+	    					listParam.append(unk + ", "); // Float or Int append as it is w/o quoting
+	    				}
 	    			}
 	    			fmtValue= listParam.append("]").toString();
-	    		} catch(ClassCastException e){ 
-	    			fmtValue= this.formatObjectForJS(key, unkValue, headerLine.getType());
 	    		}
 	    		jsScript= jsScript.replace("{FMT/" + key + '}', fmtValue);
 	    		jsScript= jsScript.replace('{' + key + '}', fmtValue);
@@ -232,7 +330,26 @@ class GenotypeMatrix {
 		return jsScript;
     } 
     
-    /**Return Object unk as a string quoted or not quoted depending on its type 
+    /** Get the sample genotype in the same format as it appears on the VCF file.
+     * I.e. allele indexes separated by '/' or '|' (if phased). E.g. 0/0, 0/1 etc 
+     */
+	private String genotypeAsAlleleIndexes(VariantContext ctx, String sample) {
+		Genotype gt = ctx.getGenotype(sample);
+		char sep= gt.isPhased() ? '|' : '/';
+		List<String> all= new ArrayList<String>();
+		for(Allele a : gt.getAlleles()){
+			if(a.isNoCall()){
+				all.add(".");
+			}
+			else {
+				int i= ctx.getAlleleIndex(a);
+				all.add(Integer.toString(i));
+			}
+		}
+		return '"' + Joiner.on(sep).join(all) + '"';
+	}
+
+	/**Return Object unk as a string quoted or not quoted depending on its type 
      * and suitable for a javascript script.
      * */
 	private String formatObjectForJS(String key, Object unk, VCFHeaderLineType type) {
@@ -249,7 +366,7 @@ class GenotypeMatrix {
 		}	
 	}
 
-	protected String printToScreen(boolean noFormat, List<IntervalFeature> linf, int terminalWidth, VCFHeader vcfHeader) throws InvalidColourException, InvalidGenomicCoordsException {
+	protected String printToScreen(boolean noFormat, List<IntervalFeature> linf, int terminalWidth, VCFHeader vcfHeader) throws InvalidColourException, InvalidGenomicCoordsException, IOException {
     	
 		this.makeMatrix(linf, terminalWidth, vcfHeader);
 		
@@ -284,6 +401,9 @@ class GenotypeMatrix {
     }
     
 	private String getSelectSampleRegex() {
+		if(this.selectSampleRegex == null){
+			return ".*";
+		}
 		return selectSampleRegex;
 	}
 
@@ -299,6 +419,9 @@ class GenotypeMatrix {
 	}
 
 	private int getnMaxSamples() {
+		if(this.nMaxSamples == null){
+			return 10;
+		}
 		return nMaxSamples;
 	}
 
@@ -315,7 +438,7 @@ class GenotypeMatrix {
 		this.jsScriptFilter= jsScriptFilter;
 	}
 	
-	private String getJsScriptFilter() {
+	protected String getJsScriptFilter() {
 		return this.jsScriptFilter;
 	}
 	

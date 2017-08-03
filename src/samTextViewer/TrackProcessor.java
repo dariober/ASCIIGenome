@@ -34,7 +34,6 @@ public class TrackProcessor {
 	private String snapshotFile= null;
 	private boolean appendToSnapshotFile= false;
 	private boolean stripAnsi= true;
-	// int windowSize= 160;
 	private boolean showGruler= true;
 	private boolean showCruler= true;
 	

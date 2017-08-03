@@ -18,8 +18,10 @@ import coloring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
+import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
+import samTextViewer.Utils;
 
 public class IntervalFeatureTest {
 
@@ -359,9 +361,11 @@ public class IntervalFeatureTest {
 		VCFFileReader reader = new VCFFileReader(new File("test_data/CHD.exon.2010_03.sites.vcf.gz"));
 		VCFHeader vcfHeader= reader.getFileHeader();
 		reader.close();
-
+		VCFCodec vcfCodec= new VCFCodec();
+		vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
+		
 		String vcfLine= "1 10 . C G 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
-		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfHeader);
+		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfCodec);
 		ift.mapToScreen(rulerMap);
 		assertEquals(1, ift.getIdeogram(true, true).size());
 		assertEquals('G', ift.getIdeogram(true, true).get(0).getText());
@@ -369,20 +373,20 @@ public class IntervalFeatureTest {
 		
 		// Deletion
 		vcfLine= "1 10 . CTTG C 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
-		ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfHeader);
+		ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfCodec);
 		ift.mapToScreen(rulerMap);
 		assertEquals('D', ift.getIdeogram(true, true).get(0).getText());
 		assertEquals(4, ift.getIdeogram(true, true).size());
 		
 		// Insertion
 		vcfLine= "1 10 . C CTTG 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
-		ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfHeader);
+		ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfCodec);
 		ift.mapToScreen(rulerMap);
 		assertEquals("I", ift.getIdeogram(true, true).get(0).format(true));
 		
 		// Multiple alleles
 		vcfLine= "1 10 . C CTTG,A 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
-		ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfHeader);
+		ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfCodec);
 		ift.mapToScreen(rulerMap);
 		assertEquals("|", ift.getIdeogram(true, true).get(0).format(true));
 	}
@@ -399,9 +403,11 @@ public class IntervalFeatureTest {
 		VCFFileReader reader = new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
 		VCFHeader vcfHeader= reader.getFileHeader();
 		reader.close();
-		
+		VCFCodec vcfCodec= new VCFCodec();
+		vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
+
 		String vcfLine= "1 668630 DUP_delly_DUP20532 G <CN2> . PASS AC=64;AF=0.0127795;AFR_AF=0.0015;AMR_AF=0;AN=5008;CIEND=-150,150;CIPOS=-150,150;CS=DUP_delly;EAS_AF=0.0595;END=850204;EUR_AF=0.001;IMPRECISE;NS=2504;SAS_AF=0.001;SITEPOST=1;SVTYPE=DUP GT 0|0 0|0 0|0".replaceAll(" ", "\t");
-		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfHeader);
+		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfCodec);
 		ift.mapToScreen(rulerMap);
 		assertEquals(850204, ift.getTo());
 		assertEquals("|", ift.getIdeogram(true, true).get(0).format(true));
