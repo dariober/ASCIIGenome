@@ -39,19 +39,30 @@ public class TrackReadsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 
 	@Test
-	public void softClip(){
-		
+	public void nano(){
 		SamReaderFactory srf=SamReaderFactory.make();
-		srf.validationStringency(ValidationStringency.SILENT);
-		samReader= srf.open(new File("/Users/db291g/Tritume/soft_clip.bam"));
+		srf.validationStringency(ValidationStringency.STRICT);
+		samReader= srf.open(new File("/Users/db291g/Downloads/chrY.sorted.bam"));
 		SAMRecordIterator iter = samReader.iterator();
 		while(iter.hasNext()){
 			SAMRecord rec = iter.next();
-			System.err.println(rec.getSAMString());
-			System.err.println(rec.getAlignmentStart() + " " +  rec.getAlignmentEnd());
-			
-		}
+//			System.err.println(rec.getSAMString());
+			System.err.println(rec.getAlignmentStart() + " " +  rec.getAlignmentEnd());	
+		}		
 	}
+	
+//	@Test
+//	public void softClip(){
+//		SamReaderFactory srf=SamReaderFactory.make();
+//		srf.validationStringency(ValidationStringency.SILENT);
+//		samReader= srf.open(new File("/Users/db291g/Tritume/soft_clip.bam"));
+//		SAMRecordIterator iter = samReader.iterator();
+//		while(iter.hasNext()){
+//			SAMRecord rec = iter.next();
+//			System.err.println(rec.getSAMString());
+//			System.err.println(rec.getAlignmentStart() + " " +  rec.getAlignmentEnd());	
+//		}
+//	}
 	
 	@Test
 	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{

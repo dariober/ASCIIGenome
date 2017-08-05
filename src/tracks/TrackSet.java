@@ -991,12 +991,60 @@ public class TrackSet {
 		// Set script
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
-			tr.setAwk(awk);;
+        	if(tr instanceof TrackPileup || tr instanceof TrackReads){
+        		// Replace special variables
+        		awk= awk.replace("$QNAME", "$1")
+        				.replace("$FLAG", "$2")
+        				.replace("$RNAME", "$3")
+        				.replace("$POS", "$4")
+        				.replace("$MAPQ", "$5")
+        				.replace("$CIGAR", "$6")
+        				.replace("$RNEXT", "$7")
+        				.replace("$PNEXT", "$8")
+        				.replace("$TLEN", "$9")
+        				.replace("$SEQ", "$10")
+        				.replace("$QUAL", "$11");
+        	}
+        	else if(tr.getTrackFormat().equals(TrackFormat.VCF)){
+        		awk= awk.replace("$CHROM", "$1")
+        				.replace("$POS", "$2")
+        				.replace("$ID", "$3")
+        				.replace("$REF", "$4")
+        				.replace("$ALT", "$5")
+        				.replace("$QUAL", "$6")
+        				.replace("$FILTER", "$7")
+        				.replace("$INFO", "$8")
+        				.replace("$FORMAT", "$9");
+        	}
+        	else if(tr.getTrackFormat().equals(TrackFormat.GFF) || tr.getTrackFormat().equals(TrackFormat.GTF)){
+        		awk= awk.replace("$SEQNAME", "$1")
+        				.replace("$SOURCE", "$2")
+        				.replace("$FEATURE", "$3")
+        				.replace("$START", "$4")
+        				.replace("$END", "$5")
+        				.replace("$SCORE", "$6")
+        				.replace("$STRAND", "$7")
+        				.replace("$FRAME", "$8")
+        				.replace("$ATTRIBUTE", "$9");
+        	}
+        	else if(tr.getTrackFormat().equals(TrackFormat.BED)){
+        		awk= awk.replace("$CHROM", "$1")
+        				.replace("$START", "$2")
+        				.replace("$END", "$3")
+        				.replace("$NAME", "$4")
+        				.replace("$SCORE", "$5")
+        				.replace("$STRAND", "$6")
+        				.replace("$THICKSTART", "$7")
+        				.replace("$THICKEND", "$8")
+        				.replace("$RGB", "$9")
+        				.replace("$BLOCKCOUNT", "$10")
+        				.replace("$BLOCKSIZES", "$11")
+        				.replace("$BLOCKSTARTS", "$12");
+        	}
+        	tr.setAwk(awk);
         }
-		
 	}
 
-	
 	/** Set filter for IntervalFeature tracks. 
 	 * @throws SQLException 
 	 * @throws InvalidRecordException 

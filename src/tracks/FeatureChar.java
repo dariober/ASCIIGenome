@@ -132,6 +132,9 @@ class FeatureChar {
 	}
 	
 	protected void setBgColor(String bgColor) {
+		if(bgColor == null){
+			bgColor= Config.get(ConfigKey.background);
+		}
 		this.bgColor = bgColor;
 	}
 	
@@ -140,6 +143,9 @@ class FeatureChar {
 	}
 	
 	protected void setFgColor(String fgColor) {
+		if(fgColor == null){
+			fgColor= Config.get(ConfigKey.foreground);
+		}
 		this.fgColor = fgColor;
 	}
 

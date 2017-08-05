@@ -7,6 +7,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,6 +30,12 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.tribble.AbstractFeatureReader;
+import htsjdk.tribble.readers.LineIterator;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFCodec;
+import htsjdk.variant.vcf.VCFFileReader;
+import htsjdk.variant.vcf.VCFHeader;
 
 /**
  * Class to set up the horizontal axis on screen. 
@@ -722,9 +730,42 @@ public class GenomicCoords implements Cloneable {
 				}
 			}
 		}
+		// If we still haven't found a sequence dict, try looking for a VCF file.
+		for(String testfile : testfiles){ 
+			try{
+				isSet= this.setSamSeqDictFromVCF(testfile);
+				if(isSet){
+					return isSet;
+				}
+			} catch(Exception e){
+				//
+			}
+		}
 		return isSet;
 	}
 
+	private boolean setSamSeqDictFromVCF(String vcf) throws MalformedURLException {
+
+		VCFHeader vcfHeader;
+		if( Utils.urlFileExists(vcf) ){
+			URL url= new URL(vcf);
+			AbstractFeatureReader<VariantContext, LineIterator> reader = AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
+			vcfHeader = (VCFHeader) reader.getHeader();
+		} else {
+			VCFFileReader reader = new VCFFileReader(new File(vcf));
+			vcfHeader= reader.getFileHeader();
+			reader.close();
+		}
+		if(vcfHeader.getSequenceDictionary() != null){
+			this.setSamSeqDictSource(new File(vcf).getAbsolutePath());
+			this.setSamSeqDict(vcfHeader.getSequenceDictionary());
+			return true;
+		}
+		return false;
+
+	}
+
+	
 	private boolean setSamSeqDictFromFasta(String fasta) throws IOException{
 		
 		IndexedFastaSequenceFile fa= null;

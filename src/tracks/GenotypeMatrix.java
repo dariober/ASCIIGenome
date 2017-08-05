@@ -118,6 +118,16 @@ class GenotypeMatrix {
                 Genotype gt= variant.getVariantContext().getGenotype(sampleName);
                 FeatureChar fmtGt= new FeatureChar();
                 fmtGt.addFormatGenotype(gt);
+                if(genotypeRow.get(col).getText() == '*'){
+                	// This cell has mixed genotype
+                	continue;
+                }
+                if( ! (genotypeRow.get(col).getText() == ' ') && ! (genotypeRow.get(col).getText() == fmtGt.getText())){
+                	// If the cell is not empty or the genotype is not the same as this one:
+                	fmtGt.setText('*');
+                	fmtGt.setBgColor(null);
+                	fmtGt.setFgColor(null);
+                }
                 genotypeRow.set(col, fmtGt);
             }
         	this.matrix.put(sampleName, genotypeRow);

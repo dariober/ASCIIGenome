@@ -316,9 +316,27 @@ Awk understands numbers and mathematical operators. With awk you can filter reco
 
 * :code:`-V` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-*ADDITIONAL FUNCTION(s)*
+*ADDITIONAL FEATURES*
 
 * :code:`getSamTag(<tag>)` Return the value of the given sam tag. A record is filtered out if the tag is not found. This function is usually meaningless on non-sam records where sam tags are not present.
+
+* Column headers. The following variables are replaced by the appropriate column indexes, so they can be used to easily select columns. Make sure the track types are selected to be compatible with the headers (see examples).
+
+- bam tracks::
+
+    $QNAME, $FLAG, $RNAME, $POS, $MAPQ, $CIGAR, $RNEXT, $PNEXT, $TLEN, $SEQ, $QUAL
+
+- vcf tracks::
+
+    $CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT
+
+- gtf and gff tracks::
+
+    $SEQNAME, $SOURCE, $FEATURE, $START, $END, $SCORE, $STRAND, $FRAME, $ATTRIBUTE
+
+- bed tracks::
+
+    $CHROM, $START, $END, $NAME, $SCORE, $STRAND, $THICKSTART, $THICKEND, $RGB, $BLOCKCOUNT, $BLOCKSIZES, $BLOCKSTARTS
 
 *EXAMPLES*
 
@@ -347,6 +365,14 @@ Note the use of single quotes to wrap the actual script and the use of double qu
 * Return bam records where NM tag (edit distance) is > 0::
 
     awk 'getSamTag("NM") > 0'
+
+* Using header variables::
+
+    awk '$FEATURE \  "CDS" && $START > 1234' .gff
+
+Applying bam headers to gff will throw an error, probably an ugly one::
+
+    awk '$MAPQ > 10' .gff  -> ERROR
 
 With no args, turn off awk for all tracks.
 
@@ -418,7 +444,7 @@ Customise the genotype rows printed under the VCF tracks.
 
 :code:`-s` Select samples matching this regex.
 
-:code:`-r` Edit sample names to replace <pattern> with <replacement>. Names are edited only for display. To completely hide names use :code:`-r .* ""`. To restore original names use a regex matching nothing e.g. '^$'
+:code:`-r` Edit sample names to replace <pattern> with <replacement>. Names are edited only for display. To completely hide names replace with empty string :code:`-r .* ''`. To restore original names use a regex matching nothing e.g. '^$'
 
 :code:`-f` Filter samples using an expression in javascript syntax. See below for details.
 
@@ -481,10 +507,10 @@ Edit track names by substituting regex pattern with replacement. Pattern and rep
 
 * :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-Use "" (empty double quotes) to replace pattern with nothing. Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::
+Use '' (empty string in single quotes) to replace pattern with nothing. Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::
 
-    editNames fk123_ ""       -> hela.bam#1, hela.bed#2
-    editNames fk123_ "" bam   -> hela.bam#1, fk123_hela.bed#2
+    editNames fk123_ ''       -> hela.bam#1, hela.bed#2
+    editNames fk123_ '' bam   -> hela.bam#1, fk123_hela.bed#2
     editNames _ ' '           -> fk123 hela.bam#1,  fk123 hela.bed#2
     editNames ^.*# cells      -> cells#1, cells#2
     editNames ^ xx_           -> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)

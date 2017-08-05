@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/htsjdk/htsjdk-1.141/dist/htsjdk-1.141.jar"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="resources"/>
 	<classpathentry excluding="test_data/*" kind="src" path="test"/>
@@ -28,6 +29,5 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/igv-2.3.61/igv.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/htsjdk/htsjdk-1.141/dist/htsjdk-1.141.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

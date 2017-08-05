@@ -36,27 +36,6 @@ public class GenotypeMatrixTest {
 	}
 
 	@Test
-	public void testEval() throws ScriptException, InvalidColourException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
-		String f= "/Users/db291g/Downloads/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
-
-		VCFFileReader reader = new VCFFileReader(new File(f));
-		VCFHeader vcfHeader = reader.getFileHeader();
-		reader.close();
-		GenomicCoords gc= new GenomicCoords("1:5-35444567", 80, null, null);
-		TrackIntervalFeature vcf= new TrackIntervalFeature(f, gc);
-
-		List<IntervalFeature> linf = vcf.getIntervalFeatureList();
-
-		GenotypeMatrix gm= new GenotypeMatrix();
-		gm.setJsScriptFilter("{AC} < 0");
-		long t0= System.currentTimeMillis();
-		gm.printToScreen(true, linf, 80, vcfHeader);
-		long t1= System.currentTimeMillis();
-		System.err.println(t1-t0);
-		
-	}
-	
-	@Test
 	public void bigData()throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
 
 		VCFFileReader reader = new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
@@ -247,21 +226,6 @@ public class GenotypeMatrixTest {
 
 		GenotypeMatrix gm= new GenotypeMatrix();
 		
-//		// NB: The JS must have the allele bases REF and ALT, not the encoding 
-//		// 0/1, 1/1 etc. that you see in the VCF
-//		
-//		// Note '/' separator (same as in VCF)
-//		gm.setJsScriptFilter("{GT} == 'G/T'");
-//		String x= gm.printToScreen(true, linf, 80, vcfHeader);
-//		assertTrue(x.contains("sample2"));
-//		assertTrue( ! x.contains("sample1"));
-//		
-//		// Here '|' separator (same as in VCF)
-//		gm.setJsScriptFilter("{GT} == 'T|A'");
-//		x= gm.printToScreen(true, linf, 80, vcfHeader);
-//		assertTrue(x.contains("sample2"));
-//		assertTrue( ! x.contains("sample1"));
-
 		// Missing alleles
 		gm.setJsScriptFilter("{GT} == './.'");
 		String x= gm.printToScreen(true, linf, 80, vcfHeader);
@@ -286,7 +250,6 @@ public class GenotypeMatrixTest {
 		// No feature at all
 		assertTrue(gm.printToScreen(true, new ArrayList<IntervalFeature>(), 80, vcfHeader).isEmpty());
 		
-		// gm.makeMatrix(linf, 80, null);
 		String x= gm.printToScreen(true, linf, 80, vcfHeader);
 		
 		// Check sample name
@@ -303,6 +266,24 @@ public class GenotypeMatrixTest {
 		assertTrue(rows[2].contains("0")); // HOM alt
 	}
 
+	@Test
+	public void overalappingSymbols() throws IOException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
+		
+		VCFFileReader reader = new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
+		VCFHeader vcfHeader = reader.getFileHeader();
+		reader.close();
+		
+		// Same genotype: no ambiguity.
+		GenomicCoords gc= new GenomicCoords("1:199882-200100", 80, null, null);
+		TrackIntervalFeature vcf= new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+		List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+		
+		GenotypeMatrix gm= new GenotypeMatrix();
+		String x= gm.printToScreen(false, linf, 80, vcfHeader);
+		assertTrue(x.contains("O")); // Two genotype at the same position: Both the same
+		assertTrue(x.contains("*")); // Different
+	}
+	
 	@Test
 	public void canSelectSamplesByRegex() throws Exception{
 
