@@ -13,6 +13,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import htsjdk.variant.vcf.VCFFileReader;
 import jline.console.ConsoleReader;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
@@ -359,11 +361,11 @@ public class UtilsTest {
 		// Note single quotes around the awk script
 		assertTrue(Utils.passAwkFilter("chr1\t10\t100", "-v VAR=5 '$2 > VAR && $1'"));
 		
-		// Using single quotes inside awk is tricky. 
+		// Using single quotes inside awk is tricky. Use the code \x027 to represent it.
 		// See https://www.gnu.org/software/gawk/manual/html_node/Quoting.html 
 		// and see http://stackoverflow.com/questions/9899001/how-to-escape-single-quote-in-awk-inside-printf
 		// for using '\'' as a single quote
-		assertTrue(Utils.passAwkFilter("chr'1", "'$1 == \"chr'\''1\"'"));
+		assertTrue(Utils.passAwkFilter("chr'1", "'$1 ~ \"chr\"\\x027\"1\"'"));
 		
 		assertTrue( ! Utils.passAwkFilter("'chr1\t10\t100", "-v VAR=50 '$2 > VAR'"));
 		
@@ -727,8 +729,7 @@ public class UtilsTest {
 		rawList.add("1\tfoo\tna\t2"); // Missing last field
 		rawList.add("1\tfoo\tna\t2\t10");
 		rawList.add("1\tfoo\t\t2\t10"); // Empty cell
-		
-
+	
 		List<String> expList= new ArrayList<String>();
 		expList.add("1    genedb      gene 2964 45090");
 		expList.add("chr1 genedb_long gene 2964 45090");
@@ -736,9 +737,18 @@ public class UtilsTest {
 		expList.add("1    foo         na   2    10");
 		expList.add("1    foo              2    10");
 
+		List<String> obsList= Utils.tabulateList(rawList, -1);
+		assertThat(obsList, is(obsList));
+		
+		// Flush left "foo" rows as it has too much white space
+		obsList= Utils.tabulateList(rawList, 5*4); // *4 has to be adjusted according to what you have in the code.
+		System.err.println(Joiner.on("\n").join(obsList));
+		assertTrue(Joiner.on("\n").join(obsList).contains("1   "));
+		assertTrue(Joiner.on("\n").join(obsList).contains("foo na"));
+		
 		// Handling region with no features to print
 		rawList= new ArrayList<String>();
-		List<String> obsList= Utils.tabulateList(rawList);
+		obsList= Utils.tabulateList(rawList, -1);
 		expList= new ArrayList<String>();
 		assertThat(expList, is(obsList));
 		
@@ -830,14 +840,14 @@ public class UtilsTest {
 	@Test
 	public void canInitRegion() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		
-		assertEquals("chrM", Utils.initRegionFromFile("test_data/ds051.short.bam"));
+		assertEquals("chr7:5566778", Utils.initRegionFromFile("test_data/ds051.short.bam"));
+		assertEquals("chr7:5566778", Utils.initRegionFromFile("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
 		assertEquals("chr1:10536", Utils.initRegionFromFile("test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
 		assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
 		assertEquals("chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
 		assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
 		assertEquals("chr1:564666", Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
-		assertEquals("chr1", Utils.initRegionFromFile("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SplicesRep2V2.bam"));
 		assertEquals("1:113054374", Utils.initRegionFromFile("test_data/CEU.exon.2010_06.genotypes.vcf"));
 		
 		boolean pass= false;
@@ -849,12 +859,6 @@ public class UtilsTest {
 		}
 		assertTrue(pass);
 		
-	}
-	
-	@Test
-	public void canInitRegionFromURLBam() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
-		String reg= Utils.initRegionFromFile("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02AlnRep1.bam");
-		assertEquals("chr1", reg);
 	}
 	
 	@Test

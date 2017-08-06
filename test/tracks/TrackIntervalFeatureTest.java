@@ -453,13 +453,20 @@ public class TrackIntervalFeatureTest {
 		assertEquals(1000, subset.size());	
 		
 		// Invalid script: Ugly stackTrace printed. All records returned
-		tif.setAwk("$foo");
+		boolean pass= false;
+		try{
+			tif.setAwk("$foo");
+		} catch(InvalidGenomicCoordsException e){
+			pass= true;
+		}
+		assertTrue(pass);
+		assertEquals("", tif.getAwk()); // Faulty script has been removed.
 		subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(1000, subset.size());
 
 		// awk output is neither empty nor equal to input
 		// Exception expected.
-		boolean pass= false;
+		pass= false;
 		try{
 			tif.setAwk("'{print 999}'");
 		} catch(InvalidGenomicCoordsException e){

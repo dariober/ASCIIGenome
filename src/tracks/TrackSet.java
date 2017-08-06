@@ -25,6 +25,7 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import filter.FlagToFilter;
+import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -145,11 +146,13 @@ public class TrackSet {
 		if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
 			this.addBamTrackFromSourceName(sourceName, gc, trackTag);
 		
+		} else if( Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF) ){
+			this.addIntervalFeatureTrackFromVCF(sourceName, gc, trackTag);
+			
 		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
 				  || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGBED)
 		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
-		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)
-			      || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
+		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)){
 			this.addIntervalFeatureTrackFromSourceName(sourceName, gc, trackTag);
 		
 		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG) 
@@ -166,7 +169,7 @@ public class TrackSet {
 		}	
 		
 	}
-	
+
 	private void addToOpenedFiles(String sourceName){
 		if(this.getOpenedFiles().contains(sourceName)){ // Remove and add as last opened
 			this.openedFiles.remove(sourceName);
@@ -192,6 +195,24 @@ public class TrackSet {
 		tif.setTrackTag(trackId);
 		this.trackList.add(tif);
 	}
+	
+	private void addIntervalFeatureTrackFromVCF(String sourceName, GenomicCoords gc, String trackTag) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		
+		int idForTrack= this.getNextTrackId();
+		String trackId= new File(sourceName).getName() + "#" + idForTrack;
+		
+		// If this VCF file has sequence dictionary, check the coordinates in gc are compatible
+		// If they are not, throw an exception which force resetting the coords.
+		SAMSequenceDictionary seqDict = Utils.getVCFHeader(sourceName).getSequenceDictionary();
+		
+		if(seqDict != null && seqDict.getSequence(gc.getChrom()) == null){
+			throw new InvalidGenomicCoordsException();
+		}
+		TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
+		tif.setTrackTag(trackId);
+		this.trackList.add(tif);
+	}
+
 	
 	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
@@ -1452,7 +1473,7 @@ public class TrackSet {
 		if(print){
 			for(Track tr : this.getTrackList()){
 				if(tr instanceof TrackBookmark){
-					List<String> marks= Utils.tabulateList(((TrackBookmark)tr).asList());
+					List<String> marks= Utils.tabulateList(((TrackBookmark)tr).asList(), -1);
 					messages= Joiner.on("\n").join(marks);
 					return messages + "\n";
 				}
@@ -1719,22 +1740,22 @@ public class TrackSet {
 //        }
 	}
 	
-	/** Call the update method for all tracks in trackset. Updating can be time
-	 * consuming especially for tracks associated to bam files. But be careful when 
-	 * avoiding updating as it can lead to catastrophic out of sync data. 
-	 * @throws SQLException 
-	 * @throws InvalidRecordException 
-	 * @throws InvalidGenomicCoordsException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
-	 * @throws MalformedURLException */
-	public void setGenomicCoordsAndUpdateTracks(GenomicCoords gc) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-
-		for(Track tr : this.getTrackList()){
-			tr.setGc(gc);
-			// tr.update();
-		}
-	}
+//	/** Call the update method for all tracks in trackset. Updating can be time
+//	 * consuming especially for tracks associated to bam files. But be careful when 
+//	 * avoiding updating as it can lead to catastrophic out of sync data. 
+//	 * @throws SQLException 
+//	 * @throws InvalidRecordException 
+//	 * @throws InvalidGenomicCoordsException 
+//	 * @throws IOException 
+//	 * @throws ClassNotFoundException 
+//	 * @throws MalformedURLException */
+//	public void setGenomicCoordsAndUpdateTracks(GenomicCoords gc) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+//
+//		for(Track tr : this.getTrackList()){
+//			tr.setGc(gc);
+//			// tr.update();
+//		}
+//	}
 	
 	@Override
 	/** For debugging and convenience only. This method not to be used for seriuous stuff. 

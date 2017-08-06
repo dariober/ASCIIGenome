@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,12 +29,6 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
-import htsjdk.tribble.AbstractFeatureReader;
-import htsjdk.tribble.readers.LineIterator;
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFCodec;
-import htsjdk.variant.vcf.VCFFileReader;
-import htsjdk.variant.vcf.VCFHeader;
 
 /**
  * Class to set up the horizontal axis on screen. 
@@ -150,7 +143,6 @@ public class GenomicCoords implements Cloneable {
 
 		// Set Dictionary
 		this.setSamSeqDictFromAnySource(cleanList, includeGenomeFile);
-
 		// Try to set fasta sequence
 		for(String x : cleanList){
 			try{
@@ -511,6 +503,7 @@ public class GenomicCoords implements Cloneable {
 	 * @throws InvalidColourException 
 	 * */
 	public String getChromIdeogram(int nDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+		
 		if(this.samSeqDict == null || this.samSeqDict.size() == 0){
 			return null;
 		}
@@ -746,19 +739,10 @@ public class GenomicCoords implements Cloneable {
 
 	private boolean setSamSeqDictFromVCF(String vcf) throws MalformedURLException {
 
-		VCFHeader vcfHeader;
-		if( Utils.urlFileExists(vcf) ){
-			URL url= new URL(vcf);
-			AbstractFeatureReader<VariantContext, LineIterator> reader = AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
-			vcfHeader = (VCFHeader) reader.getHeader();
-		} else {
-			VCFFileReader reader = new VCFFileReader(new File(vcf));
-			vcfHeader= reader.getFileHeader();
-			reader.close();
-		}
-		if(vcfHeader.getSequenceDictionary() != null){
+		SAMSequenceDictionary samSeqDict= Utils.getVCFHeader(vcf).getSequenceDictionary();
+		if(samSeqDict != null){
 			this.setSamSeqDictSource(new File(vcf).getAbsolutePath());
-			this.setSamSeqDict(vcfHeader.getSequenceDictionary());
+			this.setSamSeqDict(samSeqDict);
 			return true;
 		}
 		return false;

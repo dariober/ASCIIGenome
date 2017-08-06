@@ -192,8 +192,9 @@ public class TrackIntervalFeature extends Track {
 	/** Return true if string is visible, i.e. it
 	 * passes the regex filters. Note that regex filters are applied to the raw string.
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
 	 * */
-	protected Boolean featureIsVisible(String x) throws InvalidGenomicCoordsException{
+	protected Boolean featureIsVisible(String x) throws InvalidGenomicCoordsException, IOException{
 		
 		if(x.contains("__ignore_me__")){
 			return false;
@@ -219,10 +220,16 @@ public class TrackIntervalFeature extends Track {
 		try {
 			isVisible= Utils.passAwkFilter(x, this.getAwk());
 		} catch (Exception e) {
-			// 
+			System.err.print(Utils.padEndMultiLine("Invalid awk script.", this.getGc().getUserWindowSize()));
+			try {
+				this.setAwk("");
+			} catch (ClassNotFoundException | InvalidRecordException | SQLException e1) {
+				e1.printStackTrace();
+			}
+			throw new InvalidGenomicCoordsException();
 		}
 		if(isVisible == null){
-			System.err.println("Awk output must be either empty or equal to input.");
+			System.err.print(Utils.padEndMultiLine("Awk output must be either empty or equal to input.", this.getGc().getUserWindowSize()));
 			try {
 				this.setAwk(""); // Remove the faulty awk script.
 			} catch (ClassNotFoundException | IOException | InvalidRecordException | SQLException e) {

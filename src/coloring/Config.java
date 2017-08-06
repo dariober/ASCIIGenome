@@ -69,7 +69,7 @@ public class Config {
 		for(ConfigKey key : ConfigKey.values()){
 			help.add(key + "\t" + Config.get(key) + "\t#\t" + key.getDescription());
 		}
-		List<String> table = Utils.tabulateList(help);
+		List<String> table = Utils.tabulateList(help, -1);
 		return Joiner.on("\n").join(table);
 	}
 	

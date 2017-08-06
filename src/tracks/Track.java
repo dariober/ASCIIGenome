@@ -455,7 +455,7 @@ public abstract class Track {
 				break;
 			}
 		}
-		List<String> tabList= Utils.tabulateList(featureList);
+		List<String> tabList= Utils.tabulateList(featureList, this.getGc().getUserWindowSize());
 		StringBuilder sb= new StringBuilder();
 		if( ! omitString.isEmpty()){
 			sb.append(omitString + "\n");

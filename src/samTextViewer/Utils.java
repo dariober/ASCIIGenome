@@ -414,7 +414,9 @@ public class Utils {
 				srf.validationStringency(ValidationStringency.SILENT);
 				samReader = srf.open(new File(x));
 			}
-			region= samReader.getFileHeader().getSequence(0).getSequenceName();
+			// region= samReader.getFileHeader().getSequence(0).getSequenceName();
+			SAMRecord rec = samReader.iterator().next(); 
+			region= rec.getContig() + ":" + rec.getAlignmentStart();
 			samReader.close();
 			return region;
 		
@@ -443,9 +445,10 @@ public class Utils {
 		
 		} else if(Utils.isUcscGenePredSource(x)){
 			return initRegionFromUcscGenePredSource(x);
-			
+		
 		} else {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
+			// VCF files are also included here since they are either gzip or plain ASCII.
 			BufferedReader br;
 			GZIPInputStream gzipStream;
 			if(x.toLowerCase().endsWith(".gz") || x.toLowerCase().endsWith(".bgz")){
@@ -1050,8 +1053,15 @@ public class Utils {
 		return mapping;
 	}
 
-	/*Nicely tabulate list of rows. Each row is tab separated **/
-	public static List<String> tabulateList(List<String> rawList) {
+	/* Nicely tabulate list of rows. Each row is tab separated 
+	 * The terminalWidth param is used to decide whether rows should be flushed left instead of
+	 * being nicely tabulated. If the amount of white space in a cell is too much relative to 
+	 * terminalWidth, then flush left. With special value: -1 never flush left, with 0 always flush.
+	 * **/
+	public static List<String> tabulateList(List<String> rawList, int terminalWidth) {
+		// This method could be streamlined to be more efficient. There are quite a few
+		// Lists moved around that could be avoided. However, the size of the table is
+		// typically small enough that we prefer a clearer layout over efficiency.
 		
 		// * Split each row in a list of strings. I.e. make list of lists
 		List<ArrayList<String>> rawTable= new ArrayList<ArrayList<String>>();
@@ -1069,7 +1079,7 @@ public class Utils {
 		}
 				
 		// * Iterate through each column 
-		List<ArrayList<String>> paddedTable= new ArrayList<ArrayList<String>>();
+		List<List<String>> paddedTable= new ArrayList<List<String>>();
 		
 		for(int i= 0; i < ncol; i++){
 			// Collect all items in column i in a list. I.e. select column i
@@ -1094,18 +1104,55 @@ public class Utils {
 				String padded= String.format("%-" + maxStr + "s", col.get(j));
 				col.set(j, padded);
 			}
-			paddedTable.add((ArrayList<String>) col);
+			paddedTable.add((List<String>) col);
 		}
-		// Each list in padded table is a column. We need to create rows as strings
-		List<String> outputTable= new ArrayList<String>();
+
+		// In paddedTable each inner list is a column. Transpose to have
+		// inner list as row as it is more convenient from now on.
+		List<List<String>> tTable= new ArrayList<List<String>>();
 		for(int r= 0; r < rawList.size(); r++){
-			StringBuilder row= new StringBuilder();
+			List<String> row= new ArrayList<String>();
 			for(int c= 0; c < paddedTable.size(); c++){
-				row.append(paddedTable.get(c).get(r) + " ");
+				row.add(paddedTable.get(c).get(r));
 			}
+			tTable.add(row);
+		}
+		
+		// If a cell (String) has too many spaces to the right, flush left, i.e. trim(),
+		// that cell and all the cells to right on that row. This is to prevent odd
+		// formatting where a long string in one cell makes all the other cells look very empty.
+		terminalWidth= terminalWidth < 0 ? Integer.MAX_VALUE : terminalWidth;
+		for(List<String> row : tTable){
+			boolean flush= false;
+			for(int i= 0; i < row.size(); i++){
+				if(! flush){
+					int whiteSize= row.get(i).length() - row.get(i).trim().length();
+					if(whiteSize > terminalWidth/4.0){
+						// The rest of this row will be flushed
+						flush= true;						
+					}
+				}
+				if(flush){
+					row.set(i, row.get(i).trim());
+				}
+			}
+		}
+
+		// Finally, join row into a list of single, printable strings:		
+		List<String> outputTable= new ArrayList<String>();
+		for(List<String> lstRow : tTable){
+			String row= Joiner.on(" ").join(lstRow); // Here you decide what separates columns.
 			outputTable.add(row.toString().trim());
 		}
 		return outputTable;
+//		for(int r= 0; r < rawList.size(); r++){
+//			StringBuilder row= new StringBuilder();
+//			for(int c= 0; c < paddedTable.size(); c++){
+//				row.append(paddedTable.get(c).get(r) + " ");
+//			}
+//			outputTable.add(row.toString().trim());
+//		}
+//		return outputTable;
 	}
 
 	/** Function to round x and y to a number of digits enough to show the difference in range
@@ -1251,7 +1298,7 @@ public class Utils {
 			String row= tabList.get(i) + "\t" + bar;
 			tabList.set(i, row);
 		}
-		List<String> table= Utils.tabulateList(tabList);
+		List<String> table= Utils.tabulateList(tabList, -1);
 		StringBuilder out= new StringBuilder();
 		for(String x : table){
 			out.append(x).append("\n");
@@ -1882,6 +1929,21 @@ public class Utils {
 		return terminalWidth;
 	}
 
+	/**Get VCFHeader from the given source which could be URL or local file.*/
+	public static VCFHeader getVCFHeader(String source) throws MalformedURLException{
+		VCFHeader vcfHeader;
+		if( Utils.urlFileExists(source) ){
+			URL url= new URL(source);
+			AbstractFeatureReader<VariantContext, LineIterator> reader = AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
+			vcfHeader = (VCFHeader) reader.getHeader();
+		} else {
+			VCFFileReader reader = new VCFFileReader(new File(source), false); // Set requiredIndex false!
+			vcfHeader= reader.getFileHeader();
+			reader.close();
+		}
+		return vcfHeader;
+	}
+	
 	public static VCFHeaderVersion getVCFHeaderVersion(VCFHeader vcfHeader){
 		Iterator<VCFHeaderLine> iter = vcfHeader.getMetaDataInInputOrder().iterator();
 		while(iter.hasNext()){

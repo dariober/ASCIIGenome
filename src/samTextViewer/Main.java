@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -93,8 +94,9 @@ public class Main {
 		// This part only prepares a dummy GenomicCoords object to initialize the start position:
 		// ----------------------------
 		
-		region= initRegion(region, inputFileList, fasta, null, debug);
-		
+		if(region == null || region.isEmpty()){
+			region= initRegion(inputFileList, fasta, null, debug);			
+		}		
 		int terminalWidth= Utils.getTerminalWidth();
 		GenomicCoords initGc= new GenomicCoords(region, terminalWidth, null, null);
 		
@@ -208,62 +210,95 @@ public class Main {
 		}
 	}
 
-	// private static Config config= new Config(null);
-	
-//	public static Config getConfig(){
-//		return new Config(main.);
-//	}
-		
 	/** Return a suitable region to start. If a region is already given, do nothing.
 	 * This method is a mess and should be cleaned up together with GenomicCoords class.
 	 * @throws InvalidGenomicCoordsException 
 	 * */
-	public static String initRegion(String region, List<String> inputFileList, String fasta, String genome, int debug ) throws IOException, InvalidGenomicCoordsException{
-
-		if( region != null && ! region.isEmpty() ){
-			return region;
-		}
-
-		// Try to initialize from fasta
-		if(fasta != null && ! fasta.trim().isEmpty()){ 
-			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
-			region= faSeqFile.nextSequence().getName();
-			faSeqFile.close();
-			return region;
-		}
-		
-		/* Prepare genomic coordinates to fetch. This should probably be a function in itself */
-		// Create a dummy gc object just to get the sequence dict.
-		GenomicCoords gc= new GenomicCoords(Utils.getTerminalWidth());
-		
-		List<String>initGenomeList= new ArrayList<String>(inputFileList);
-		
-		if(genome != null && ! genome.trim().isEmpty()){
-			initGenomeList.add(genome);
-		}
-		gc.setGenome(initGenomeList, false);
-		
-		SAMSequenceDictionary samSeqDict = gc.getSamSeqDict();
+	public static String initRegion(List<String> inputFileList, String fasta, String genome, int debug ) throws IOException, InvalidGenomicCoordsException{
+		// Preferably we start from a position that has a feature rather than from the start of a 
+		// random chrom.
 		
 		System.err.print("Initializing coordinates... ");
-		if(samSeqDict != null && ! samSeqDict.isEmpty()){
-			region= samSeqDict.getSequence(0).getSequenceName();
-			System.err.println("");
-		} else {
-			for(String x : initGenomeList){
-				try {
-					region= Utils.initRegionFromFile(x);
-					System.err.println("Done from: " + x);
-					break;
-				} catch(Exception e){
-					System.err.println("\nCould not initilize from file " + x);
-					if(debug > 0){
-						e.printStackTrace();
-					}
+		// First search for files that can init chrom and position
+		List<String> skipped= new ArrayList<String>();
+		for(String x : inputFileList){
+			TrackFormat fmt = Utils.getFileTypeFromName(x);
+			if(fmt.equals(TrackFormat.TDF)){
+				skipped.add(x);
+				continue;
+			}
+			try {
+				String region= Utils.initRegionFromFile(x);
+				System.err.println("Done from: " + x);
+				return region;
+			} catch(Exception e){
+				System.err.println("\nCould not initilize from file " + x);
+				if(debug > 0){
+					e.printStackTrace();
 				}
 			}
 		}
-		return region;
+		// Try to initialize from fasta
+		if(fasta != null && ! fasta.trim().isEmpty()){ 
+			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
+			String region= faSeqFile.nextSequence().getName();
+			faSeqFile.close();
+			return region;
+		}
+		// Try genome file
+		if(genome != null && ! genome.trim().isEmpty()){
+			GenomicCoords gc= new GenomicCoords(Utils.getTerminalWidth());
+			gc.setGenome(Arrays.asList(new String[] {genome}), false);
+			SAMSequenceDictionary samSeqDict = gc.getSamSeqDict();
+			String region= samSeqDict.getSequence(0).getSequenceName();
+			return region;
+		}
+		// Failing that, look for any file that gives at least chrom
+		for(String x : skipped){
+			try {
+				String region= Utils.initRegionFromFile(x);
+				System.err.println("Done from: " + x);
+				return region;
+			} catch(Exception e){
+				System.err.println("\nCould not initilize from file " + x);
+				if(debug > 0){
+					e.printStackTrace();
+				}
+			}
+		}
+		// It appears everything failed to initialise...
+		return "";
+//		List<String>initGenomeList= new ArrayList<String>(inputFileList);
+		
+		/* Prepare genomic coordinates to fetch. This should probably be a function in itself */
+		// Create a dummy gc object just to get the sequence dict.
+//		GenomicCoords gc= new GenomicCoords(Utils.getTerminalWidth());
+//		
+//		if(genome != null && ! genome.trim().isEmpty()){
+//			initGenomeList.add(genome);
+//		}
+//		gc.setGenome(initGenomeList, false);
+//		
+//		SAMSequenceDictionary samSeqDict = gc.getSamSeqDict();
+
+//		if(samSeqDict != null && ! samSeqDict.isEmpty()){
+//			region= samSeqDict.getSequence(0).getSequenceName();
+//			System.err.println("");
+//		} else {
+//			for(String x : initGenomeList){
+//				try {
+//					region= Utils.initRegionFromFile(x);
+//					System.err.println("Done from: " + x);
+//					break;
+//				} catch(Exception e){
+//					System.err.println("\nCould not initilize from file " + x);
+//					if(debug > 0){
+//						e.printStackTrace();
+//					}
+//				}
+//			}
+//		}
+//		return region;
 	}
 	
 	/** If exec is a file, parse it to return a string suitable for execution.  

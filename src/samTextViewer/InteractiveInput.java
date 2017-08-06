@@ -239,7 +239,6 @@ public class InteractiveInput {
 					
 				} else if(cmdTokens.get(0).equals("trackHeight")){
 					proc.getTrackSet().setTrackHeightForRegex(cmdTokens);
-					// proc.getTrackSet().setGenomicCoordsAndUpdateTracks(proc.getGenomicCoordsHistory().current());
 					
 				} else if((cmdTokens.get(0).equals("colorTrack") || cmdTokens.get(0).equals("colourTrack"))){
 					proc.getTrackSet().setTrackColourForRegex(cmdTokens); 
@@ -289,25 +288,24 @@ public class InteractiveInput {
 									// It may be that you are in position that doesn't exist in the sequence dictionary that
 									// came with this new file. To recover, find an existing position, move there and try to reload the 
 									// file. This fixes issue#23
-									String region= Main.initRegion(null, globbed, null, null, debug);
+									String region= Main.initRegion(globbed, null, null, debug);
 									proc.getGenomicCoordsHistory().add(new GenomicCoords(region, terminalWidth, samSeqDict, fasta));
-									proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);							
+									proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
 								} catch (Exception x){
 									msg= Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
 									System.err.println(msg);
 								}
 							}
-							
+
 							if(proc.getGenomicCoordsHistory().current().getSamSeqDict() == null || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
 								GenomicCoords gc= proc.getGenomicCoordsHistory().current();
 								// We are adding tracks. Check if we can set genome but do not treat these files as genome files.
 								gc.setGenome(Arrays.asList(new String[] {sourceName}), false);
 							}
-							
 						}
 					}
-					
-				} else if(cmdTokens.get(0).equals("dropTracks")){
+				} 
+				else if(cmdTokens.get(0).equals("dropTracks")){
 					if(cmdTokens.size() <= 1){
 						System.err.println(Utils.padEndMultiLine("List one or more tracks to drop or `dropTracks -h` for help.", proc.getWindowSize()));
 						this.interactiveInputExitCode= ExitCode.ERROR;
@@ -409,8 +407,7 @@ public class InteractiveInput {
 					}
 
 				} catch (InvalidGenomicCoordsException e){
-					
-					String region= Main.initRegion(null, proc.getTrackSet().getFilenameList(), null, null, debug);
+					String region= Main.initRegion(proc.getTrackSet().getFilenameList(), null, null, debug);
 					proc.getGenomicCoordsHistory().add(new GenomicCoords(region, terminalWidth, samSeqDict, fasta));
 					System.err.println(Utils.padEndMultiLine("Invalid genomic coordinates found. Resetting to "  + region, proc.getWindowSize()));
 					if(debug > 0){
@@ -716,7 +713,7 @@ public class InteractiveInput {
 			cmd= cmd.subList(cmd.size() - nmax, cmd.size());
 		}
 		
-		List<String> cmdTab= Utils.tabulateList(cmd);
+		List<String> cmdTab= Utils.tabulateList(cmd, -1);
 		String tab= "";
 		for(String x : cmdTab){
 			tab += (x + "\n");

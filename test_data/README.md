@@ -37,6 +37,7 @@ Derived data
 ```
 ## This gzip is in repo but unzipped is not:
 gunzip -c CEU.exon.2010_06.genotypes.vcf.gz > CEU.exon.2010_06.genotypes.vcf
+gunzip -c ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz > ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf
 
 ## Pileup counting *everything*
 samtools mpileup -A -q 0 -Q 0 -x --ff 0 ear045.oxBS.actb.bam > ear045.oxBS.actb.pileup
