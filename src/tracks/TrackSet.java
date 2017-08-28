@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 import coloring.Xterm256;
 import exceptions.BamIndexNotFoundException;
@@ -54,18 +55,8 @@ public class TrackSet {
 		for(String sourceName : inputFileList){
 			try{
 				if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
-					//
-					// BAM FILE
-					//
-					if(!Utils.bamHasIndex(sourceName)){
-						System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
-						System.err.println("samtools index '" + sourceName + "'\n");
-						throw new BamIndexNotFoundException();
-					}
-					
 					/* Coverage track */
 					TrackPileup trackPileup= new TrackPileup(sourceName, gc);
-	
 					trackPileup.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
 					this.trackList.add(trackPileup);
 					
@@ -103,6 +94,7 @@ public class TrackSet {
 				}
 			} catch(Exception e){
 				System.err.println(e.getMessage());
+				e.printStackTrace();
 				System.err.println("Cannot add " + sourceName + "; skipping");
 				try {
 					TimeUnit.SECONDS.sleep(3);
@@ -166,8 +158,7 @@ public class TrackSet {
 		
 		for(Track tr : this.getTrackList()){
 			this.addToOpenedFiles(tr.getFilename());
-		}	
-		
+		}			
 	}
 
 	private void addToOpenedFiles(String sourceName){
@@ -216,12 +207,6 @@ public class TrackSet {
 	
 	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		if(!Utils.bamHasIndex(sourceName)){
-			System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
-			System.err.println("samtools index '" + sourceName + "'\n");
-			throw new BamIndexNotFoundException();
-		}
-		
 		/* BAM Coverage track */
 		int idForTrack= this.getNextTrackId();
 		String coverageTrackId= new File(sourceName).getName() + "#" + idForTrack;
@@ -1968,17 +1953,6 @@ public class TrackSet {
 			nmax= Integer.parseInt(args.get(args.indexOf("-n") + 1));
 		}
 		
-//		String re= ".*";
-//		if(args.size() > 0){
-//			if(args.get(0).equals("-grep")){
-//				if(args.size() >= 2){
-//					re= args.get(1);
-//				}
-//			} else {
-//				System.err.println("Invalid argument: " + args.get(0));
-//				throw new InvalidCommandLineException();
-//			}
-//		}
 		Pattern pattern= Pattern.compile(re); // .matcher(x).find();
 		List<String> opened= new ArrayList<String>();
 		for(String x : this.getOpenedFiles()){
@@ -1989,7 +1963,33 @@ public class TrackSet {
 		if(opened.size() > nmax){ // Trim list to 
 			opened= opened.subList(opened.size() - nmax, opened.size());
 		}
+		// Add index. 
+		// We add the index of the file from the full list of opened files, not 
+		// from the list returned by recentlyOpened.
+		List<String> openedFilesRev= Lists.reverse(new ArrayList<String>(this.getOpenedFiles()));
+		List<String> toshow= Lists.reverse(opened);
+		for(int i= 0; i < opened.size(); i++){
+			int idx= openedFilesRev.indexOf(toshow.get(i)) + 1;
+			toshow.set(i, idx + "\t" + toshow.get(i));
+		}
+		toshow= Lists.reverse(toshow);
+		return Joiner.on("\n").join(Utils.tabulateList(toshow, -1));
+	}
 
-		return Joiner.on("\n").join(opened);
+	/** Merge the set of opened files with the given (historic) list. 
+	 * */ 
+	public void addHistoryFiles(List<String> historyFiles) {
+		LinkedHashSet<String> union= new LinkedHashSet<String>();
+		for(String x : historyFiles){
+			union.add(x);
+		}
+		LinkedHashSet<String> now= this.getOpenedFiles();
+		for(String file : now){ // If a file is in the current track set and in the history file, put it last. I.e. last opened. 
+			if(union.contains(file)){
+				union.remove(file);
+			}
+			union.add(file);
+		}
+		this.setOpenedFiles(union);
 	}
 }

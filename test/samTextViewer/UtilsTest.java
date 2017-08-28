@@ -10,14 +10,16 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -31,7 +33,10 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
+import com.esotericsoftware.yamlbeans.YamlReader;
+import com.esotericsoftware.yamlbeans.YamlWriter;
 import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -41,13 +46,16 @@ import faidx.UnindexableFastaFileException;
 import filter.FirstOfPairFilter;
 import filter.FlagToFilter;
 import filter.ReadNegativeStrandFilter;
+import htsjdk.samtools.SAMFileWriter;
+import htsjdk.samtools.SAMFileWriterFactory;
+import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
-import htsjdk.variant.vcf.VCFFileReader;
 import jline.console.ConsoleReader;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
@@ -61,6 +69,28 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void canSortAndIndexSamOrBam() throws IOException{
+	
+		Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.bam", "sorted.bam", true);
+		assertTrue(new File("sorted.bai").length() > 1000);
+		assertTrue(new File("sorted.bam").length() > 1000);
+
+		// With SAM input
+		Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.sam", "sorted1.bam", true);
+		assertTrue(new File("sorted1.bai").length() > 1000);
+		assertTrue(new File("sorted1.bam").length() > 1000);
+		
+		// Works also with URL
+		File sorted2= new File("sorted2.bam"); 
+		
+		Utils.sortAndIndexSamOrBam("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.noindex.bam", 
+				sorted2.getAbsolutePath(), true);
+		assertTrue(new File("sorted2.bai").length() > 1000);
+		assertTrue(new File("sorted2.bam").length() > 1000);
+
+	}
 	
 	@Test
 	public void roundNumber(){
@@ -90,14 +120,6 @@ public class UtilsTest {
 		list.add(inList2);
 		list.add(inList3);
 		System.err.println(list);
-		// Collections<T> elems= new ArrayList<T>();
-//		final List<String> outList= new ArrayList<String>();
-//		Parallel.For(list, new Parallel.Operation<String>() {
-//		    public void perform(String parameter) {
-//		        outList.add(parameter + "X");
-//		    };
-//		});
-//		System.err.println(outList);
 		
 		// final List<String> outList= new ArrayList<String>();
 		ExecutorService exec = Executors.newFixedThreadPool(2);

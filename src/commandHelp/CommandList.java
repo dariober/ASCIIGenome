@@ -954,14 +954,21 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("addTracks"); cmd.setArgs("[file or URL]..."); cmd.inSection= Section.GENERAL; 
+		cmd.setName("addTracks"); cmd.setArgs("[files | URLs | indexes]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Add tracks from local or remote files. ");
-		cmd.setAdditionalDescription("For local files, glob characters (wildcard) are expanded as in Bash "
+		cmd.setAdditionalDescription("The list of files to open can be a list of file names or URLs. "
+				+ "For local files, glob characters (wildcard) are expanded as in Bash "
 				+ "(but note that currently globs in directory names are not expanded.)\n"
+				+ "\n"
+				+ "Alternatively, the files to open can be given as numeric indexes of recently opened "
+				+ "files (see command :code:`recentlyOpened`). The last opened file has index 1, "
+				+ "the second last 2, etc.\n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
-				+ "    addTracks peaks.bed genes.*.gtf\n"
-				+ "    addTracks http://remote/host/peaks.bed\n"
+				+ "    addTracks peaks.bed genes.*.gtf~~~~~~~~<- Note use of wildecard\n"
+				+ "    addTracks http://remote/host/peaks.bed <- From URL\n"
+				+ "    addTracks 1 2 3 ~~~~~~~~~~~~~~~~~~~~~~~<- The three most recent files\n"
 				+ "");
 		cmdList.add(cmd);
 

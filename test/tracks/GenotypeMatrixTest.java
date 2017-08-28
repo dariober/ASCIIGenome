@@ -8,14 +8,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.base.Joiner;
 
 import coloring.Config;
 import coloring.Xterm256;

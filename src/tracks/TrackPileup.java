@@ -55,13 +55,16 @@ public class TrackPileup extends TrackWiggles {
 	protected TrackPileup(String bam, GenomicCoords gc) throws IOException, ClassNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 
 		if(!Utils.bamHasIndex(bam)){
-			System.err.println("\nAlignment file " + bam + " has no index.\n");
-			throw new RuntimeException();
+			File temp= File.createTempFile("asciigenome.", ".bam");
+			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
+			this.setWorkFilename(temp.getAbsolutePath());
+		} else {
+			this.setWorkFilename(bam);
 		}
 		this.setFilename(bam);
-		this.setWorkFilename(bam);
 		this.setGc(gc);
-		this.alnRecCnt= Utils.getAlignedReadCount(bam);
+		this.alnRecCnt= Utils.getAlignedReadCount(this.getWorkFilename());
+		this.setLastModified();
 		
 	}
 
@@ -69,6 +72,8 @@ public class TrackPileup extends TrackWiggles {
 	
 	@Override
 	public void update() throws InvalidGenomicCoordsException, IOException{
+		
+		// this.updateWorkFileName();
 		
 		if(this.getyMaxLines() == 0){
 			return;
@@ -96,7 +101,21 @@ public class TrackPileup extends TrackWiggles {
 		List<Double> screenScores= this.prepareScreenScores();
 		this.setScreenScores(screenScores);
 	}
-	
+
+//	private void updateWorkFileName() {
+//		
+//		long modified;
+//		UrlValidator urlValidator = new UrlValidator();
+//		if(urlValidator.isValid(this.getFilename())){
+//			modified= this.getLastModified();
+//		} else {
+//			modified= new File(this.getFilename()).lastModified();
+//		}
+//		if(this.getLastModified() < modified){
+//
+//		}
+//	}
+
 	private List<Double> prepareScreenScores() throws InvalidGenomicCoordsException, IOException{
 		// We need to walk along the genomic window spanned by the current coordinates and 
 		// collect depth. Depth as to be binned into screen scores.

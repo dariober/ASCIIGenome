@@ -1,5 +1,6 @@
 package tracks;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -50,11 +51,13 @@ public class TrackReads extends Track{
 	public TrackReads(String bam, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		if(!Utils.bamHasIndex(bam)){
-			System.err.println("\nAlignment file " + bam + " has no index.\n");
-			throw new RuntimeException();
+			File temp= File.createTempFile("asciigenome.", ".bam");
+			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
+			this.setWorkFilename(temp.getAbsolutePath());
+		} else {
+			this.setWorkFilename(bam);
 		}
 		this.setFilename(bam);
-		this.setWorkFilename(bam);
 		this.setGc(gc);
 	}
 	
@@ -178,6 +181,10 @@ public class TrackReads extends Track{
 			// Find a read in input whose start is greater then end of current
 			for(int i=0; i < textReads.size(); i++){
 				TextRead tr= textReads.get(i);
+//				if(tr.getSamRecord().getProperPairFlag()){
+//					// If the read is properly paired, try to find its mate.
+//					
+//				}
 				if(tr.getTextStart() > line.get(line.size()-1).getTextEnd()+gap){ // +2 because we want some space between adjacent reads
 					listOfLines.get(listOfLines.size()-1).add(tr); // Append to the last line. 
 					trToRemove.add(tr);

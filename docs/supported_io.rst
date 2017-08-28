@@ -28,8 +28,8 @@ possible but ASCIIGenome will first download them locally.
    "`tdf <https://www.broadinstitute.org/igv/TDF>`_", ":code:`.tdf`", "Useful for quantitative data on very large intervals."
    "", "*Other*", ""
    "`vcf <https://en.wikipedia.org/wiki/Variant_Call_Format>`_", ":code:`.vcf`", "Can be gzipped (:code:`.gz`)"
-   "`bam <https://samtools.github.io/hts-specs/SAMv1.pdf>`_", ":code:`.bam`", "Must be Sorted and indexed. 
-
+   "`bam and sam <https://samtools.github.io/hts-specs/SAMv1.pdf>`_", ":code:`.bam`", "BAMs without index and SAM files 
+   are first sorted and indexed.
    Remote URLs are painfully slow (*same for IGV*)." 
 
 Note that the recognition of the extension is *case insensitive*, so *.bigBed* is the 

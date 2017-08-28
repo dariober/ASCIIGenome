@@ -10,6 +10,10 @@ completely hiding them.
 
 * A pair of single quotes (`''`) at the command prompt is understood as an empty argument. 
 
+* SAM and BAM files without index are now acceptable input. They are sorted and indexed to temporary file and then loaded (this of course can take 
+a long time for large files).
+
+* `addTracks` accepts a list of file indexes pointing to the list of recently opened files.
 
 New in 1.9.0
 ============

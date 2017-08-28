@@ -178,6 +178,7 @@ public class TrackSetTest {
 		assertTrue(msg.length() > 10);
 	}
 	
+	@Test
 	public void canAddTrackFromSourcename() throws InvalidGenomicCoordsException, IOException, BamIndexNotFoundException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", 80, null, null);
@@ -190,6 +191,7 @@ public class TrackSetTest {
 		trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
 		assertEquals(4, trackSet.getTrackList().size());
 		
+		trackSet.addTrackFromSource("test_data/ds051.noindex.sam", gc, null);
 	}
 		
 	@Test // Disable to save time

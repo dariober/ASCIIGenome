@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -13,6 +14,7 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 
 import coloring.Config;
 import coloring.ConfigKey;
@@ -272,6 +274,10 @@ public class InteractiveInput {
 					
 					List<String> globbed = Utils.globFiles(cmdTokens);
 					if(globbed.size() == 0){
+						globbed= this.openFilesFromIndexes(proc.getTrackSet().getOpenedFiles(), cmdTokens);
+					}
+					
+					if(globbed.size() == 0){
 						String msg= Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
 						System.err.println(msg);
 						this.interactiveInputExitCode= ExitCode.ERROR;
@@ -436,6 +442,31 @@ public class InteractiveInput {
 		}
 		messages= "";
 		return proc;
+	}
+
+	/**Get the items (files) corresponding to the indexes. Errors are silently ignored.
+	 * */
+	private List<String> openFilesFromIndexes(LinkedHashSet<String> openedFiles, List<String> indexes) {
+		List<String> files= new ArrayList<String>();
+		List<Integer> idxs= new ArrayList<Integer>();
+		for(String x : indexes){
+			try{
+				idxs.add(Integer.parseInt(x));
+			} catch(NumberFormatException e){
+				// Return empty list
+				return files;
+				//
+			}
+		}
+		for(int i : idxs){
+			try{
+				String x= Lists.reverse(new ArrayList<String>(openedFiles)).get(i - 1);
+				files.add(x);
+			} catch (Exception e){
+				//
+			}
+		}
+		return files;
 	}
 
 	private String gotoOnCurrentChrom(List<String> cmdTokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException {

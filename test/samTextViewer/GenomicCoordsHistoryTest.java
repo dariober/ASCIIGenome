@@ -24,7 +24,7 @@ public class GenomicCoordsHistoryTest {
 		GenomicCoords checkGc= new GenomicCoords("chr1:1-10000", 80, null, "test_data/chr7.fa");
 
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
-		gch.readHistory(new File("test_data/asciigenome_history"), checkGc);
+		gch.readHistory("test_data/asciigenome.yaml", checkGc);
 		assertEquals(2, gch.getHistory().size());
 		assertEquals("chr7:10-1000", gch.getHistory().get(0).toStringRegion());
 		
@@ -33,13 +33,13 @@ public class GenomicCoordsHistoryTest {
 		checkGc= new GenomicCoords("chr1:1-10000", 80, null, null);
 
 		gch= new GenomicCoordsHistory();
-		gch.readHistory(new File("test_data/asciigenome_history"), checkGc);
+		gch.readHistory("test_data/asciigenome.yaml", checkGc);
 		assertEquals(4, gch.getHistory().size());
 		assertEquals("bar:10-1000", gch.getHistory().get(0).toStringRegion());
 
 		// Behavior with missing or file
 		gch= new GenomicCoordsHistory();
-		gch.readHistory(new File("test_data/nonsense"), checkGc);
+		gch.readHistory("test_data/nonsense", checkGc);
 	}
 	
 	@Test
@@ -48,7 +48,7 @@ public class GenomicCoordsHistoryTest {
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		// History is mixture of positions read from file, some of which invalid, and
 		// positions visited in this session.
-		gch.readHistory(new File("test_data/asciigenome_history"), new GenomicCoords("chr7:1-100", 80, null, "test_data/chr7.fa"));
+		gch.readHistory("test_data/asciigenome.yaml", new GenomicCoords("chr7:1-100", 80, null, "test_data/chr7.fa"));
 		GenomicCoords g1= new GenomicCoords("chr7:1-100", 80, null, "test_data/chr7.fa");
 		GenomicCoords g2= new GenomicCoords("chr7:2-100", 80, null, "test_data/chr7.fa");
 		GenomicCoords g3= new GenomicCoords("chr7:3-100", 80, null, "test_data/chr7.fa");
@@ -61,23 +61,24 @@ public class GenomicCoordsHistoryTest {
 		gch.add(g5);
 		
 		int maxPos= 100;
-		List<String> hist= gch.prepareHistoryForHistoryFile(new File("test_data/asciigenome_history"), maxPos);
+		List<String> hist= gch.prepareHistoryForHistoryFile("test_data/asciigenome.yaml", maxPos);
+		
 		assertEquals(9, hist.size()); // 2 valid pos from history + 2 invalid + 5 from current session
-		assertEquals("## pos ##bar:10-1000", hist.get(0));
-		assertEquals("## pos ##chr7:5-100", hist.get(hist.size()-1));
+		assertEquals("bar:10-1000", hist.get(0));
+		assertEquals("chr7:5-100", hist.get(hist.size()-1));
 
 		maxPos= 2;
-		hist= gch.prepareHistoryForHistoryFile(new File("test_data/asciigenome_history"), maxPos);
+		hist= gch.prepareHistoryForHistoryFile("test_data/asciigenome.yaml", maxPos);
 		assertEquals(maxPos, hist.size());
-		assertEquals("## pos ##chr7:4-100", hist.get(0));
-		assertEquals("## pos ##chr7:5-100", hist.get(1));
+		assertEquals("chr7:4-100", hist.get(0));
+		assertEquals("chr7:5-100", hist.get(1));
 
 		maxPos= 0; // Don't write history
-		hist= gch.prepareHistoryForHistoryFile(new File("test_data/asciigenome_history"), maxPos);
+		hist= gch.prepareHistoryForHistoryFile("test_data/asciigenome.yaml", maxPos);
 		assertEquals(0, hist.size());
 		
 		// Behave nicely with missing file
-		hist= gch.prepareHistoryForHistoryFile(new File("test_data/nonsense"), 100);
+		hist= gch.prepareHistoryForHistoryFile("test_data/nonsense", 100);
 
 	}
 	

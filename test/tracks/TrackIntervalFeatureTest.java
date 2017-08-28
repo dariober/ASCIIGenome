@@ -24,6 +24,7 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
 
 public class TrackIntervalFeatureTest {
 	
@@ -674,6 +675,28 @@ public class TrackIntervalFeatureTest {
 		tif.setPrintRawLineCount(5);
 		assertEquals(5 + 1, tif.printLines().split("\n").length); // +1 for the string of omitted count.
 		
+	}
+	
+	@Test
+	public void canPrintNormalizedVcfLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException, InvalidCommandLineException{
+		
+		GenomicCoords gc= new GenomicCoords("1:645709-645975", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setNoFormat(true);
+		tif.setPrintNormalizedVcf(true);
+		
+		assertEquals(3, tif.printLines().split("\n").length);
+		assertTrue(tif.printLines().contains(" HG00096 GT"));
+		
+		// VCF with without samples
+		gc= new GenomicCoords("1:1105467-1105647", 80, null, null);
+		tif= new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setNoFormat(true);
+		tif.setPrintNormalizedVcf(true);
+		
+		assertEquals(1, tif.printLines().split("\n").length);
 	}
 	
 	@Test

@@ -1,13 +1,10 @@
 package samTextViewer;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-
-import org.apache.commons.io.FileUtils;
 
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
@@ -16,7 +13,6 @@ import htsjdk.samtools.SAMSequenceRecord;
 
 public class GenomicCoordsHistory {
 
-	private final String MARKER_FOR_POS= "## pos ##";
 	private int countHistoricPositions= 0; // Number of valid positions read from file ~/.asciigenome_history and
 	                                       // put in list of historic positions.
 	
@@ -162,28 +158,19 @@ public class GenomicCoordsHistory {
 	 * historyFile.
 	 * @throws IOException 
 	 * */
-	public void readHistory(File historyFile, GenomicCoords checkGc) throws IOException {
-		
-		String[] hist = null;
-		try{
-			hist= FileUtils.readFileToString(historyFile).split("\\n");
-		} catch(Exception e){
-			System.err.println("Cannot read positions from file " + historyFile);
-			return;
-		}
+	public void readHistory(String historyFileName, GenomicCoords checkGc) throws IOException {
+
+		ASCIIGenomeHistory ag= new ASCIIGenomeHistory(historyFileName);
 		int terminalWindowSize= Utils.getTerminalWidth();
-		for(String line : hist){
-			if(line.startsWith(MARKER_FOR_POS)){
+		for(String reg : ag.getPositions()){
+			try {
 				// try to create genomicCoords object using checkGc as template
 				// If success, add this position to history list.
-				try {
-					String reg= line.replaceFirst(MARKER_FOR_POS, "");
-					GenomicCoords gc= new GenomicCoords(reg, terminalWindowSize, checkGc.getSamSeqDict(), checkGc.getFastaFile(), false);
-					this.add(gc);
-					this.countHistoricPositions += 1;
-				} catch (Exception e){
-					//
-				}
+				GenomicCoords gc= new GenomicCoords(reg, terminalWindowSize, checkGc.getSamSeqDict(), checkGc.getFastaFile(), false);
+				this.add(gc);
+				this.countHistoricPositions += 1;
+			} catch (Exception e){
+				//
 			}
 		}
 	}
@@ -192,35 +179,28 @@ public class GenomicCoordsHistory {
 	 * the ~/.asciigenome_history file.
 	 * @throws IOException 
 	 * */
-	public List<String> prepareHistoryForHistoryFile(File historyFile, int maxPos) throws IOException {
+	public List<String> prepareHistoryForHistoryFile(String historyFile, int maxPos) throws IOException {
 
 		if(maxPos < 0){
 			maxPos= 0;
 		}
+
+		List<String> positions= new ASCIIGenomeHistory(historyFile).getPositions();
 		
-		List<String> hist= new ArrayList<String>();
-		
-		// First read all the positions from file, valid and non
-		try{
-			String[] histFile= FileUtils.readFileToString(historyFile).split("\\n");
-			for(String line : histFile){
-				if(line.startsWith(MARKER_FOR_POS)){
-					hist.add(line);
-				}
-			}
-		} catch(Exception e){
-			System.err.println("Note: cannot read history file " + historyFile);
-		}
 		// Now add the positions visited in this session
 		for(int i= this.countHistoricPositions; i < this.getHistory().size(); i++){
-			hist.add(MARKER_FOR_POS + this.getHistory().get(i).toStringRegion());
+			String reg= this.getHistory().get(i).toStringRegion();
+			// Remove consecutive duplicates
+			if( positions.size() == 0 || ! reg.equals(positions.get(positions.size()-1))){
+				positions.add(reg);	
+			}
 		}
 
 		// If necessary, trim the full list of positions to the max size
-		if(hist.size() > maxPos){
-			hist= hist.subList(hist.size() - maxPos, hist.size());
+		if(positions.size() > maxPos){
+			positions= positions.subList(positions.size() - maxPos, positions.size());
 		}
-		return hist;
+		return positions;
 	}
 	
 }

@@ -10,7 +10,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -89,6 +91,8 @@ public abstract class Track {
 	 * */
 	private String exportFile= null;
 	private String systemCommandForPrint;
+	private boolean printNormalizedVcf= false;
+	private long lastModified;
 
 	
 	/** Format the title string to add colour or return title as it is if
@@ -691,10 +695,14 @@ public abstract class Track {
 	 * etc.
 	 * */
 	protected abstract List<String> getRecordsAsStrings();
+
+	protected boolean getPrintNormalizedVcf(){
+		return this.printNormalizedVcf;
+	}
 	
-//	protected void setCutScriptForPrinting(String cutScriptForPrinting){
-//		this.cutScriptForPrinting= cutScriptForPrinting;
-//	}
+	protected void setPrintNormalizedVcf(boolean printNormalizedVcf){
+		this.printNormalizedVcf= printNormalizedVcf;
+	}
 	
 	/**Return a single string where title and track have been concatenated.
 	 * Concatenation is done in such way that "title" is not followed by newline if
@@ -800,9 +808,18 @@ public abstract class Track {
 		
 	}
 
-//	public void setGenotypeMatrix(GenotypeMatrix genotypeMatrix) {
-//		this.genotypeMatrix = genotypeMatrix;
-//	}
-	
+	protected void setLastModified() throws IOException {
+		UrlValidator urlValidator = new UrlValidator();
+		if(urlValidator.isValid(this.getFilename())){
+			URL url = new URL(this.getFilename());
+			HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+		    this.lastModified= httpCon.getLastModified();
+		} else {
+			this.lastModified= new File(this.getFilename()).lastModified();
+		}
+	}
+	protected long getLastModified(){
+		return this.lastModified;
+	}
 }
 

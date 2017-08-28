@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import coloring.Xterm256;
@@ -1040,11 +1042,36 @@ public class TrackIntervalFeature extends Track {
 	protected List<String> getRecordsAsStrings() {
 		
 		List<String> featureList= new ArrayList<String>();
-		
 		for(IntervalFeature ift : intervalFeatureList){
-			featureList.add(ift.getRaw());
+			if(this.getTrackFormat().equals(TrackFormat.VCF) && this.getPrintNormalizedVcf()){
+				List<String> line= this.normalizeVcfRecordBySample(this.getVcfHeader().getSampleNamesInOrder(), ift.getRaw());
+				featureList.addAll(line);
+			} else {
+				featureList.add(ift.getRaw());
+			}
 		}
 		return featureList;
+	}
+
+	private List<String> normalizeVcfRecordBySample(List<String> sampleNames, String rawVcfLine) {
+		List<String> tsv= new ArrayList<String>();
+		if(sampleNames.size() == 0){
+			tsv.add(rawVcfLine);
+			return tsv;
+		}
+		List<String>vcfList= Splitter.on("\t").splitToList(rawVcfLine);
+		for(int i= 0; i< sampleNames.size(); i++){
+			List<String> samples= vcfList.subList(9, vcfList.size());
+			List<String> fixed= vcfList.subList(0, 8);
+			String fmtTags= vcfList.get(8);
+			String tabLine= Joiner.on("\t").join(fixed) + "\t" + sampleNames.get(i) + "\t" + fmtTags + "\t" + samples.get(i);
+			tsv.add(tabLine);
+		}
+		return tsv;
+	}
+	
+	private VCFHeader getVcfHeader() {
+		return this.vcfHeader;
 	}
 
 	@Override

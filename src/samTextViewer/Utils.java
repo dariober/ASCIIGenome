@@ -68,6 +68,9 @@ import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import faidx.Faidx;
 import faidx.UnindexableFastaFileException;
+import htsjdk.samtools.SAMFileHeader.SortOrder;
+import htsjdk.samtools.SAMFileWriter;
+import htsjdk.samtools.SAMFileWriterFactory;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
@@ -635,7 +638,7 @@ public class Utils {
 				|| fileName.endsWith(".gff3.bgz.tbi")){
 			return TrackFormat.GFF;
 			
-		} else if(fileName.endsWith(".bam") || fileName.endsWith(".cram")){
+		} else if(fileName.endsWith(".bam") || fileName.endsWith(".sam") || fileName.endsWith(".sam.gz") || fileName.endsWith(".cram")){
 			return TrackFormat.BAM;
 			
 		} else if(fileName.endsWith(".bigwig") || fileName.endsWith(".bw")) {
@@ -1053,11 +1056,11 @@ public class Utils {
 		return mapping;
 	}
 
-	/* Nicely tabulate list of rows. Each row is tab separated 
+	/** Nicely tabulate list of rows. Each row is tab separated 
 	 * The terminalWidth param is used to decide whether rows should be flushed left instead of
 	 * being nicely tabulated. If the amount of white space in a cell is too much relative to 
 	 * terminalWidth, then flush left. With special value: -1 never flush left, with 0 always flush.
-	 * **/
+	 */
 	public static List<String> tabulateList(List<String> rawList, int terminalWidth) {
 		// This method could be streamlined to be more efficient. There are quite a few
 		// Lists moved around that could be avoided. However, the size of the table is
@@ -1092,13 +1095,13 @@ public class Utils {
 				}
 			}
 			// Get the longest string in this column
-			int maxStr= 0;
+			int maxStr= 1;
 			for(String x : col){
 				if(x.length() > maxStr){
 					maxStr= x.length();
 				}
 			}
-			// ** Pass thorugh the column again and pad with spaces to match length of longest string
+			// ** Pass through the column again and pad with spaces to match length of longest string
 			// maxStr+=1; // +1 is for separating
 			for(int j= 0; j < col.size(); j++){
 				String padded= String.format("%-" + maxStr + "s", col.get(j));
@@ -1953,6 +1956,55 @@ public class Utils {
 			}
 		}
 		return null;
+	}
+
+	/** Sort and index input sam or bam.
+	 * @throws IOException 
+	 * */
+	public static void sortAndIndexSamOrBam(String inSamOrBam, String sortedBam, boolean deleteOnExit) throws IOException {
+
+//		 final SamReader reader = SamReaderFactory.makeDefault().open(new File(inSamOrBam));
+//		 reader.getFileHeader().setSortOrder(SortOrder.coordinate);
+//		 final SAMFileWriter writer = new SAMFileWriterFactory().makeSAMOrBAMWriter(reader.getFileHeader(), false, new File(sortedBam));
+//
+//		 for (final SAMRecord rec : reader) {
+//			 System.err.println(rec);
+//			 writer.addAlignment(rec);
+//	     }
+//		 reader.close();
+//	     writer.close();
+		
+		/*  ------------------------------------------------------ */
+		/* This chunk prepares SamReader from local bam or URL bam */
+		UrlValidator urlValidator = new UrlValidator();
+		SamReaderFactory srf=SamReaderFactory.make();
+		srf.validationStringency(ValidationStringency.SILENT);
+		SamReader samReader;
+		if(urlValidator.isValid(inSamOrBam)){
+			samReader = SamReaderFactory.makeDefault().open(SamInputResource.of(new URL(inSamOrBam)));
+		} else {
+			samReader= srf.open(new File(inSamOrBam));
+		}
+		/*  ------------------------------------------------------ */
+		
+		samReader.getFileHeader().setSortOrder(SortOrder.coordinate);
+		
+		File out= new File(sortedBam);
+		if(deleteOnExit){
+			out.deleteOnExit();
+			File idx= new File(out.getAbsolutePath().replaceAll("\\.bam$", "") + ".bai");
+			idx.deleteOnExit();
+		}
+		
+		SAMFileWriter outputSam= new SAMFileWriterFactory()
+				.setCreateIndex(true)
+				.makeSAMOrBAMWriter(samReader.getFileHeader(), false, out);
+
+		for (final SAMRecord samRecord : samReader) {
+			outputSam.addAlignment(samRecord);
+        }
+		samReader.close();
+		outputSam.close();
 	}
 
 }

@@ -9,11 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.io.File;
 import java.io.IOException;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+
+import org.apache.commons.io.FilenameUtils;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -135,7 +138,35 @@ class GenotypeMatrix {
         }
     }
     
-    /**Return true if ANY of the variants in the given sample pass the filters in javascript.
+    /** Parse sampleNames to remove redundant substring(s)
+     * */
+    private List<String> cleanSampleNames(List<String> sampleNames) {
+    	
+    	List<String>cleanNames= new ArrayList<String>();
+    	for(String x : sampleNames){
+        	// Strip dir name if any and see names are still unique 
+    		cleanNames.add(new File(x).getName());
+    	}
+    	Set<String> unique= new HashSet<String>(cleanNames);
+
+    	if(unique.size() == sampleNames.size()){
+    		// Try stripping also extension
+        	List<String>cleanNames2= new ArrayList<String>();
+        	for(String x : cleanNames){
+        		cleanNames2.add(FilenameUtils.removeExtension(x));
+        	}
+        	Set<String> unique2= new HashSet<String>(cleanNames2);
+        	if(unique2.size() == sampleNames.size()){
+        		return cleanNames2;
+        	} else {
+        		return cleanNames;
+        	}
+    	} else {
+        	return sampleNames;
+    	}
+	}
+
+	/**Return true if ANY of the variants in the given sample pass the filters in javascript.
      * @throws InvalidGenomicCoordsException 
      * @throws IOException */
     private boolean isPassedFilter(Map<VariantContext, String> vcfRecordWithScript, String sampleName, VCFHeader vcfHeader) {
@@ -382,8 +413,12 @@ class GenotypeMatrix {
 		
 		StringBuilder sb= new StringBuilder();
     	
-    	for(final String sample : this.matrix.keySet()){
-    		String printName= sample.replaceAll(this.subSampleRegex.get("pattern"), this.subSampleRegex.get("replacement"));
+		List<String> realNames= new ArrayList<String>(this.matrix.keySet());
+		List<String> cleanNames = this.cleanSampleNames(realNames);
+		
+    	for(int j= 0; j < realNames.size(); j++){
+    		String sample= realNames.get(j);
+    		String printName= cleanNames.get(j).replaceAll(this.subSampleRegex.get("pattern"), this.subSampleRegex.get("replacement"));
     		List<FeatureChar> fmtName = this.formatName(printName); 
     		List<FeatureChar> row = this.matrix.get(sample);
     		for(int i= 0; i < row.size(); i++){

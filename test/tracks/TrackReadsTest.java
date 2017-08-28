@@ -284,4 +284,12 @@ public class TrackReadsTest {
 		TrackReads tr= new TrackReads("test_data/ds051.actb.bam", gc);
 		assertEquals("", tr.printToScreen());
 	}
+	
+	@Test
+	public void canConstructFromUnsortedInput() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
+		// If the genomic window is too large do not process the bam file and return zero height track.
+		GenomicCoords gc= new GenomicCoords("chr7:1-100000000",80, samSeqDict, fastaFile);
+		TrackReads tr= new TrackReads("test_data/ds051.noindex.sam", gc);
+		assertEquals("", tr.printToScreen());
+	}
 }
