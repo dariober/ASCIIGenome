@@ -15,6 +15,8 @@ a long time for large files).
 
 * `addTracks` accepts a list of file indexes pointing to the list of recently opened files.
 
+* `readsAsPairs` command can show paired-end reads joined up. 
+
 New in 1.9.0
 ============
 

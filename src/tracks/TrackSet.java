@@ -1664,6 +1664,48 @@ public class TrackSet {
         }
         return messages;
 	}
+
+	public void setReadsAsPairsForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException {
+
+		List<String> args= new ArrayList<String>(tokens);
+		args.remove(0);
+
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
+
+		Boolean readsAsPairs= null;
+		if(args.contains("-on")){
+			readsAsPairs= true;
+			args.remove("-on");
+		}
+		if(args.contains("-off")){
+			readsAsPairs= false;
+			args.remove("-off");
+		}
+		
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(args.size() > 0){
+            trackNameRegex= args;
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+        for(Track tr : tracksToReset){
+        	if(readsAsPairs == null){
+    			if(tr.getReadsAsPairs()){ // Invert setting
+    				tr.setReadsAsPairs(false);
+    			} else {
+    				tr.setReadsAsPairs(true);
+    			}
+        	} else if(readsAsPairs) {
+        		tr.setReadsAsPairs(true);
+        	} else {
+        		tr.setReadsAsPairs(false);
+        	}
+        }
+	}
 	
 	public void setFeatureGapForRegex(List<String> tokens) throws InvalidCommandLineException {
 
@@ -1705,24 +1747,6 @@ public class TrackSet {
         		tr.setGap(0);
         	}
         }
-
-//		
-//        List<String> trackNameRegex= new ArrayList<String>();
-//        if(tokens.size() >= 2){
-//            trackNameRegex= tokens.subList(1, tokens.size());
-//        } else {
-//            trackNameRegex.add(".*"); // Default: Capture everything
-//        }
-//
-//        // And set as required:
-//        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-//        for(Track tr : tracksToReset){
-//			if(tr.getGap() == 0){ // Invert setting
-//				tr.setGap(1);
-//			} else {
-//				tr.setGap(0);
-//			}
-//        }
 	}
 	
 //	/** Call the update method for all tracks in trackset. Updating can be time

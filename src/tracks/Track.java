@@ -76,6 +76,7 @@ public abstract class Track {
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
 	private int gap= 1;
+	protected boolean readsAsPairs= false;
 	protected boolean rpm= false;
 	protected static final int f_FLAG= 0; private int f_flag= f_FLAG;
 	protected static final int F_FLAG= 4; private int F_flag= F_FLAG;
@@ -821,5 +822,14 @@ public abstract class Track {
 	protected long getLastModified(){
 		return this.lastModified;
 	}
+
+	public boolean getReadsAsPairs(){
+		return this.readsAsPairs;
+	}
+
+	public void setReadsAsPairs(boolean readsAsPairs) throws InvalidGenomicCoordsException, IOException {
+		this.readsAsPairs= readsAsPairs;
+	}
+
 }
 

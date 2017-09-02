@@ -589,6 +589,20 @@ public class CommandList {
 		cmdList.add(cmd);		
 
 		cmd= new CommandHelp();
+		cmd.setName("readsAsPairs"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Show SAM records as pairs.\n");
+		cmd.setAdditionalDescription("If set, properly paired reads in the current window are showed "
+				+ "joined up by tildes.\n"
+				+ "\n"
+				+ "* :code:`-on|-off` Turn on/off the pairing mode. Or toggle between the two modes if none of these flags is set.\n"
+				+ "\n"
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
+				+ "* :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.\n"
+				);
+		cmdList.add(cmd);		
+		
+		cmd= new CommandHelp();
 		cmd.setName("gap"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Display features with or without a separating gap. ");
 		cmd.setAdditionalDescription("With :code:`gap -on` (default) features which on screen do not have "
@@ -1198,6 +1212,7 @@ public class CommandList {
 		paramList.add("colorTrack");
 		paramList.add("featureColorForRegex");
 		paramList.add(Command.featureDisplayMode.getCmdDescr());
+		paramList.add("readsAsPairs");
 		paramList.add("hideTitle");
 		paramList.add("genotype");
 		paramList.add("editNames");

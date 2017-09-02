@@ -2007,4 +2007,14 @@ public class Utils {
 		outputSam.close();
 	}
 
+	/**True if SAM read names are equal. Read name strings are parsed to remove
+	 * parts that are not part of the name.  
+	 * */
+	public static boolean equalReadNames(String readName, String readName2) {
+		return cleanSamReadName(readName).equals(cleanSamReadName(readName2));
+	}
+	private static String cleanSamReadName(String readName){
+				return readName.replaceAll(" .*", "")
+				               .replaceAll("/1$|/2$", "");		
+	}
 }

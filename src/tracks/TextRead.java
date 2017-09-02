@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.base.Joiner;
-
 import coloring.Config;
 import coloring.ConfigKey;
 import exceptions.InvalidColourException;
@@ -97,6 +95,16 @@ class TextRead extends IntervalFeature{
 	}
 	
 	/*       M e t h o d s       */
+
+	protected List<FeatureChar> getTextReadAsFeatureChars(boolean bs, boolean noFormat) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
+		List<Character> unformatted;
+		if(!bs){
+			unformatted= this.getConsRead();
+		} else {
+			unformatted= this.convertDnaReadToTextReadBS();
+		}
+		return this.readFormatter(unformatted, noFormat, bs);
+	}
 	
 	/**
 	 * Return read ready to be printed on track. 
@@ -116,21 +124,27 @@ class TextRead extends IntervalFeature{
 		} else {
 			unformatted= this.convertDnaReadToTextReadBS();
 		}
-		if(withReadName){ // Replace bases with read name. As long as it fits
-			int upTo= (unformatted.size() < this.samRecord.getReadName().length()) 
-					? unformatted.size() 
-					: this.samRecord.getReadName().length();  
-			for(int i= 0; i< upTo; i++){
-				char nchar= (char) this.samRecord.getReadName().getBytes()[i];
-				unformatted.set(i, nchar);
-			}
-			if(unformatted.size() > upTo){ // Add a separator btw read name and sequence
-				unformatted.set(upTo, '/');
-			}
-			return Joiner.on("").join(unformatted);
-		} else {
-			return readFormatter(unformatted, noFormat, bs);
+		List<FeatureChar> fmt = this.readFormatter(unformatted, noFormat, bs);
+		StringBuilder sb= new StringBuilder();
+		for(FeatureChar x : fmt){
+			sb.append(x.format(noFormat));
 		}
+		return sb.toString();
+//		if(withReadName){ // Replace bases with read name. As long as it fits
+//			int upTo= (unformatted.size() < this.samRecord.getReadName().length()) 
+//					? unformatted.size() 
+//					: this.samRecord.getReadName().length();  
+//			for(int i= 0; i< upTo; i++){
+//				char nchar= (char) this.samRecord.getReadName().getBytes()[i];
+//				unformatted.set(i, nchar);
+//			}
+//			if(unformatted.size() > upTo){ // Add a separator btw read name and sequence
+//				unformatted.set(upTo, '/');
+//			}
+//			return Joiner.on("").join(unformatted);
+//		} else {
+//			return readFormatter(unformatted, noFormat, bs);
+//		}
 	}
 	
 	/**
@@ -148,17 +162,17 @@ class TextRead extends IntervalFeature{
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidColourException 
 	 */
-	private String readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+	private List<FeatureChar> readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		
-		if(noFormat){ // Essentially nothing to do in this case
-			return Joiner.on("").join(read);
-		}
+//		if(noFormat){ // Essentially nothing to do in this case
+//			return Joiner.on("").join(read);
+//		}
 
 		byte[] baseQual= this.samRecord.getBaseQualities();
 		boolean baseQualIsPresent= baseQual.length > 0 ? true : false;
 		int SHADE_BASEQ= Integer.parseInt(Config.get(ConfigKey.shade_baseq));
 
-		StringBuilder formatted= new StringBuilder();		
+		List<FeatureChar> formatted= new ArrayList<FeatureChar>();		
 		int qIdx= 0;
 		for(int i= 0; i < read.size(); i++){ // Each base is formatted independently from the others
 			FeatureChar c= new FeatureChar(); 
@@ -212,9 +226,9 @@ class TextRead extends IntervalFeature{
 				c.setBgColor(Config.get(ConfigKey.background));
 				c.setFgColor(Config.get(ConfigKey.foreground));
 			}
-			formatted.append(c.format(noFormat));
+			formatted.add(c);
 		}
-		return formatted.toString();
+		return formatted;
 	}
 	
 	/**

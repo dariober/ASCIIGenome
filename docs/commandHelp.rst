@@ -701,13 +701,17 @@ List recently opened files.  Files are listed with their absolute path.
 addTracks
 +++++++++
 
-:code:`addTracks [file or URL]...`
+:code:`addTracks [files | URLs | indexes]...`
 
-Add tracks from local or remote files.  For local files, glob characters (wildcard) are expanded as in Bash (but note that currently globs in directory names are not expanded.)
+Add tracks from local or remote files.  The list of files to open can be a list of file names or URLs. For local files, glob characters (wildcard) are expanded as in Bash (but note that currently globs in directory names are not expanded.)
+
+Alternatively, the files to open can be given as numeric indexes of recently opened files (see command :code:`recentlyOpened`). The last opened file has index 1, the second last 2, etc.
+
 Examples::
 
-    addTracks peaks.bed genes.*.gtf
-    addTracks http://remote/host/peaks.bed
+    addTracks peaks.bed genes.*.gtf        <- Note use of wildecard
+    addTracks http://remote/host/peaks.bed <- From URL
+    addTracks 1 2 3                        <- The three most recent files
 
 
 dropTracks

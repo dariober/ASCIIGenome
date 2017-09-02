@@ -265,6 +265,9 @@ public class InteractiveInput {
 					
 				} else if (cmdTokens.get(0).equals("gap")){
 					proc.getTrackSet().setFeatureGapForRegex(cmdTokens);
+				
+				} else if (cmdTokens.get(0).equals("readsAsPairs")){
+					proc.getTrackSet().setReadsAsPairsForRegex(cmdTokens);
 					
 				} else if(cmdTokens.get(0).equals("gffNameAttr")) {
 					proc.getTrackSet().setAttributeForGFFName(cmdTokens);

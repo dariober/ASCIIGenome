@@ -76,9 +76,6 @@ java -Xmx500m -jar $stvExe refSeq.hg19.short.sort.bed.gz -ni
 echo "FROM URL"
 java -Xmx500m -jar $stvExe http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/wgEncodeSydhTfbsGm12878P300bStdPk.narrowPeak.gz -ni
 
-#echo "FROM UCSC"
-#java -Xmx500m -jar $stvExe dm6:refGene -ni
-
 echo "BIGWIG FROM URL"
 java -Xmx500m -jar $stvExe -r chr7:5494331-5505851 http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/wgEncodeSydhTfbsGm12878Nrf1IggmusSig.bigWig -ni
 

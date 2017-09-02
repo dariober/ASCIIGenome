@@ -71,6 +71,15 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void canTestForEqualReadNames(){
+		assertTrue(Utils.equalReadNames("foo", "foo"));
+		assertTrue(Utils.equalReadNames("foo index1", "foo index2"));
+		assertTrue(Utils.equalReadNames("foo/1", "foo/2"));
+		assertTrue( ! Utils.equalReadNames("foo", "bar"));
+		assertTrue( ! Utils.equalReadNames("foo/1foo", "foo/2foo"));
+	}
+	
+	@Test
 	public void canSortAndIndexSamOrBam() throws IOException{
 	
 		Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.bam", "sorted.bam", true);

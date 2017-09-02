@@ -148,27 +148,27 @@ public class TextReadTest {
 		assertEquals("", textRead.getPrintableTextRead(false, true, false).replaceAll("_", ""));
 		
 	}
-	
-	@Test
-	public void canPrintWithReadName() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 
-		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", 80, samSeqDict, fastaFile);
-		
-		SAMRecord rec= new SAMRecord(null);
-		rec.setAlignmentStart(5566780);
-		rec.setCigarString("24M");
-		rec.setReadBases("AACCGGTTAACCGGTTAACCGGTT".getBytes());
-		rec.setReadName("Read1");
-		
-		TextRead textRead= new TextRead(rec, gc);
-		assertEquals("Read1/>>>>", textRead.getPrintableTextRead(false, true, true));
-		
-		rec.setReadName("VeryLongReadNameMoreThanReadSequence");
-		textRead= new TextRead(rec, gc);
-		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
-		
-		rec.setReadName("VeryLongRead");
-		textRead= new TextRead(rec, gc);
-		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
-	}
+//	@Test
+//	public void canPrintWithReadName() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+//
+//		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", 80, samSeqDict, fastaFile);
+//		
+//		SAMRecord rec= new SAMRecord(null);
+//		rec.setAlignmentStart(5566780);
+//		rec.setCigarString("24M");
+//		rec.setReadBases("AACCGGTTAACCGGTTAACCGGTT".getBytes());
+//		rec.setReadName("Read1");
+//		
+//		TextRead textRead= new TextRead(rec, gc);
+//		assertEquals("Read1/>>>>", textRead.getPrintableTextRead(false, true, true));
+//		
+//		rec.setReadName("VeryLongReadNameMoreThanReadSequence");
+//		textRead= new TextRead(rec, gc);
+//		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
+//		
+//		rec.setReadName("VeryLongRead");
+//		textRead= new TextRead(rec, gc);
+//		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
+//	}
 }

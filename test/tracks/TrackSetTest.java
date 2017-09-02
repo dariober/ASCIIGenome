@@ -360,6 +360,24 @@ public class TrackSetTest {
 		assertEquals("", ts.getTrack(t2).getAwk());
 		assertEquals("", ts.getTrack(t3).getAwk());
 	}
+
+	@Test
+	public void canSetReadsAsPairs() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+
+		TrackSet ts= new TrackSet();
+		Track t1= new TrackIntervalFeature(null); t1.setFilename("foo.bam");  ts.addTrack(t1, "foo.bam");
+		Track t2= new TrackIntervalFeature(null); t2.setFilename("bar.bam"); ts.addTrack(t2, "bar.bam");
+		Track t3= new TrackIntervalFeature(null); t3.setFilename("foo.bam"); ts.addTrack(t3, "foo.bam");
+		
+		String cmdInput= "readsAsPairs foo.*#\\d";
+		ts.setReadsAsPairsForRegex(Utils.tokenize(cmdInput, " "));
+		assertTrue(ts.getTrack(t1).getReadsAsPairs());
+		assertTrue(! ts.getTrack(t2).getReadsAsPairs());
+		
+		ts.setReadsAsPairsForRegex(Utils.tokenize(cmdInput, " ")); // Was set true, now becomes false
+		assertTrue(! ts.getTrack(t1).getReadsAsPairs());
+	}
+
 	
 	@Test
 	public void canSetBSMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{

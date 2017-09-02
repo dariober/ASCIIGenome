@@ -6,9 +6,12 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 
 import coloring.Config;
 import coloring.ConfigKey;
@@ -18,12 +21,9 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
 import samTextViewer.GenomicCoords;
 
 public class TrackReadsTest {
@@ -38,32 +38,6 @@ public class TrackReadsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	public static String fastaFile= "test_data/chr7.fa";
 
-	@Test
-	public void nano(){
-		SamReaderFactory srf=SamReaderFactory.make();
-		srf.validationStringency(ValidationStringency.STRICT);
-		samReader= srf.open(new File("/Users/db291g/Downloads/chrY.sorted.bam"));
-		SAMRecordIterator iter = samReader.iterator();
-		while(iter.hasNext()){
-			SAMRecord rec = iter.next();
-//			System.err.println(rec.getSAMString());
-			System.err.println(rec.getAlignmentStart() + " " +  rec.getAlignmentEnd());	
-		}		
-	}
-	
-//	@Test
-//	public void softClip(){
-//		SamReaderFactory srf=SamReaderFactory.make();
-//		srf.validationStringency(ValidationStringency.SILENT);
-//		samReader= srf.open(new File("/Users/db291g/Tritume/soft_clip.bam"));
-//		SAMRecordIterator iter = samReader.iterator();
-//		while(iter.hasNext()){
-//			SAMRecord rec = iter.next();
-//			System.err.println(rec.getSAMString());
-//			System.err.println(rec.getAlignmentStart() + " " +  rec.getAlignmentEnd());	
-//		}
-//	}
-	
 	@Test
 	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{
 		
@@ -134,6 +108,36 @@ public class TrackReadsTest {
 		System.out.println(tr.getRecordsAsStrings().size());
 		System.out.println((t3-t2)/1000.0);
 		
+	}
+	
+	@Test
+	public void canShowReadsAsPairs() throws Exception{
+		GenomicCoords gc= new GenomicCoords("chr7:1-80", 80, null, null);
+		TrackReads tr= new TrackReads("test_data/pairs.sam", gc);
+		tr.setNoFormat(true);
+		// Still unpaired
+		assertTrue(tr.printToScreen().startsWith("NANAN  gcgcgcgcgc  ntntn "));
+		assertTrue(tr.printToScreen().contains("ATATATATAT  "));
+		
+		tr.setReadsAsPairs(true); // Switch on pairing
+		
+		// Properly paired
+		assertTrue(tr.printToScreen().contains(" GGGGG~~~~~~~~~~~~~~~ggggg "));
+		
+		// Overlapping pair
+		assertTrue(tr.printToScreen().contains("ATATATAgcgcgcgcgc "));
+		System.err.println(tr.printToScreen());
+		
+		// Pair where one read is fully contained in the other
+		assertTrue(tr.printToScreen().contains(" CCaaaaaaCC "));
+		
+		// Properly paired but mate is not in the window
+		assertTrue(tr.printToScreen().contains("TTTTT  "));
+		
+		// Properly paired flag is set but mateAlignmentStart is not set. Treat as unpaired:
+		assertTrue(tr.printToScreen().contains("NANAN  "));
+		assertTrue(tr.printToScreen().contains(" ntntn "));
+			
 	}
 	
 	@Test
