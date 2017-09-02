@@ -589,7 +589,7 @@ public class CommandList {
 		cmdList.add(cmd);		
 
 		cmd= new CommandHelp();
-		cmd.setName("readsAsPairs"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("readsAsPairs"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
 		cmd.setBriefDescription("Show SAM records as pairs.\n");
 		cmd.setAdditionalDescription("If set, properly paired reads in the current window are showed "
 				+ "joined up by tildes.\n"
@@ -892,7 +892,9 @@ public class CommandList {
 		cmd= new CommandHelp();
 		cmd.setName("setConfig"); cmd.setArgs("<file|tag> | <key> <value>"); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Set configuration arguments.");
-		String confHelp= Config.help().replaceAll(" ", "~");
+		String confHelp= Config.help().replaceAll(" ", "~")
+				.replaceAll("^", "~~~~").
+				replaceAll("\n", "\n~~~~"); // These are to indent for code block
 		cmd.setAdditionalDescription("\n"
 				+ "\n"
 				+ "If only one argument is given then the entire settings are replaced. "

@@ -29,6 +29,7 @@ public enum Command {
 	grep("grep"),
 	gffNameAttr("gffNameAttr"),
 	gap("gap"),
+	readsAsPairs("readsAsPairs"),
 	trackHeight("trackHeight"),
 	colorTrack("colorTrack"),
 	hideTitle("hideTitle"),

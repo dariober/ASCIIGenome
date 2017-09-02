@@ -72,6 +72,16 @@ shasum -a 256 ASCIIGenome-1.10.0.zip
 vi install/brew/asciigenome.rb ## Edit version and sha
 ```
 
+Test brew installation with 
+
+```
+brew install https://raw.githubusercontent.com/dariober/ASCIIGenome/master/install/brew/asciigenome.rb
+# Or more likely:
+brew upgrade https://raw.githubusercontent.com/dariober/ASCIIGenome/master/install/brew/asciigenome.rb
+
+/usr/local/Cellar/asciigenome/1.10.0/bin/ASCIIGenome # Full path to make sure you use the brew version
+```
+
 ### Update bioconda
 
 Similar to brew: edit [meta.yaml](https://github.com/bioconda/bioconda-recipes/blob/master/recipes/asciigenome/meta.yaml) 
