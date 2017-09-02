@@ -6,9 +6,12 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 
 import coloring.Config;
 import coloring.ConfigKey;
@@ -33,10 +36,8 @@ public class TrackReadsTest {
 	static SamReaderFactory srf=SamReaderFactory.make();
 	static SamReader samReader= srf.open(new File("test_data/ds051.actb.bam"));
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
-
-	
 	public static String fastaFile= "test_data/chr7.fa";
-	
+
 	@Test
 	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{
 		
@@ -110,6 +111,36 @@ public class TrackReadsTest {
 	}
 	
 	@Test
+	public void canShowReadsAsPairs() throws Exception{
+		GenomicCoords gc= new GenomicCoords("chr7:1-80", 80, null, null);
+		TrackReads tr= new TrackReads("test_data/pairs.sam", gc);
+		tr.setNoFormat(true);
+		// Still unpaired
+		assertTrue(tr.printToScreen().startsWith("NANAN  gcgcgcgcgc  ntntn "));
+		assertTrue(tr.printToScreen().contains("ATATATATAT  "));
+		
+		tr.setReadsAsPairs(true); // Switch on pairing
+		
+		// Properly paired
+		assertTrue(tr.printToScreen().contains(" GGGGG~~~~~~~~~~~~~~~ggggg "));
+		
+		// Overlapping pair
+		assertTrue(tr.printToScreen().contains("ATATATAgcgcgcgcgc "));
+		System.err.println(tr.printToScreen());
+		
+		// Pair where one read is fully contained in the other
+		assertTrue(tr.printToScreen().contains(" CCaaaaaaCC "));
+		
+		// Properly paired but mate is not in the window
+		assertTrue(tr.printToScreen().contains("TTTTT  "));
+		
+		// Properly paired flag is set but mateAlignmentStart is not set. Treat as unpaired:
+		assertTrue(tr.printToScreen().contains("NANAN  "));
+		assertTrue(tr.printToScreen().contains(" ntntn "));
+			
+	}
+	
+	@Test
 	public void canReturnReadsAsRawStrings() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
@@ -172,7 +203,8 @@ public class TrackReadsTest {
 		TrackReads tr= new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
 		
 		// Same as: samtools view -F 4 -c ear045.oxBS.actb.bam chr7:5565600-5567600
-		assertTrue(tr.getTitle().contains("2961"));
+		// AND excluding also reads fully soft-clipped
+		assertTrue(tr.getTitle().contains("2436"));
 	}
 	
 	@Test
@@ -254,6 +286,14 @@ public class TrackReadsTest {
 		// If the genomic window is too large do not process the bam file and return zero height track.
 		GenomicCoords gc= new GenomicCoords("chr7:1-100000000",80, samSeqDict, fastaFile);
 		TrackReads tr= new TrackReads("test_data/ds051.actb.bam", gc);
+		assertEquals("", tr.printToScreen());
+	}
+	
+	@Test
+	public void canConstructFromUnsortedInput() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
+		// If the genomic window is too large do not process the bam file and return zero height track.
+		GenomicCoords gc= new GenomicCoords("chr7:1-100000000",80, samSeqDict, fastaFile);
+		TrackReads tr= new TrackReads("test_data/ds051.noindex.sam", gc);
 		assertEquals("", tr.printToScreen());
 	}
 }

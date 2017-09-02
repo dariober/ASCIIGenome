@@ -9,16 +9,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 import coloring.Xterm256;
 import exceptions.BamIndexNotFoundException;
@@ -27,6 +26,7 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import filter.FlagToFilter;
+import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -55,18 +55,8 @@ public class TrackSet {
 		for(String sourceName : inputFileList){
 			try{
 				if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
-					//
-					// BAM FILE
-					//
-					if(!Utils.bamHasIndex(sourceName)){
-						System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
-						System.err.println("samtools index '" + sourceName + "'\n");
-						throw new BamIndexNotFoundException();
-					}
-					
 					/* Coverage track */
 					TrackPileup trackPileup= new TrackPileup(sourceName, gc);
-	
 					trackPileup.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
 					this.trackList.add(trackPileup);
 					
@@ -104,6 +94,7 @@ public class TrackSet {
 				}
 			} catch(Exception e){
 				System.err.println(e.getMessage());
+				e.printStackTrace();
 				System.err.println("Cannot add " + sourceName + "; skipping");
 				try {
 					TimeUnit.SECONDS.sleep(3);
@@ -147,11 +138,13 @@ public class TrackSet {
 		if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
 			this.addBamTrackFromSourceName(sourceName, gc, trackTag);
 		
+		} else if( Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF) ){
+			this.addIntervalFeatureTrackFromVCF(sourceName, gc, trackTag);
+			
 		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED) 
 				  || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGBED)
 		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
-		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)
-			      || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)){
+		          || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)){
 			this.addIntervalFeatureTrackFromSourceName(sourceName, gc, trackTag);
 		
 		} else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG) 
@@ -165,10 +158,9 @@ public class TrackSet {
 		
 		for(Track tr : this.getTrackList()){
 			this.addToOpenedFiles(tr.getFilename());
-		}	
-		
+		}			
 	}
-	
+
 	private void addToOpenedFiles(String sourceName){
 		if(this.getOpenedFiles().contains(sourceName)){ // Remove and add as last opened
 			this.openedFiles.remove(sourceName);
@@ -195,14 +187,26 @@ public class TrackSet {
 		this.trackList.add(tif);
 	}
 	
+	private void addIntervalFeatureTrackFromVCF(String sourceName, GenomicCoords gc, String trackTag) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		
+		int idForTrack= this.getNextTrackId();
+		String trackId= new File(sourceName).getName() + "#" + idForTrack;
+		
+		// If this VCF file has sequence dictionary, check the coordinates in gc are compatible
+		// If they are not, throw an exception which force resetting the coords.
+		SAMSequenceDictionary seqDict = Utils.getVCFHeader(sourceName).getSequenceDictionary();
+		
+		if(seqDict != null && seqDict.getSequence(gc.getChrom()) == null){
+			throw new InvalidGenomicCoordsException();
+		}
+		TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
+		tif.setTrackTag(trackId);
+		this.trackList.add(tif);
+	}
+
+	
 	private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		if(!Utils.bamHasIndex(sourceName)){
-			System.err.println("\nNo index found for '" + sourceName + "'. Index can be generated with ");
-			System.err.println("samtools index '" + sourceName + "'\n");
-			throw new BamIndexNotFoundException();
-		}
-		
 		/* BAM Coverage track */
 		int idForTrack= this.getNextTrackId();
 		String coverageTrackId= new File(sourceName).getName() + "#" + idForTrack;
@@ -651,18 +655,67 @@ public class TrackSet {
         }
 	}
 
+	public void setGenotypeMatrix(List<String> cmdTokens) throws InvalidCommandLineException {
+		List<String> argList= new ArrayList<String>(cmdTokens);
+		argList.remove(0);
+
+		// Collect arguments
+		String nRows= Utils.getArgForParam(argList, "-n", null);
+		String selectSampleRegex= Utils.getArgForParam(argList, "-s", null);
+		List<String> subSampleRegex= Utils.getNArgsForParam(argList, "-r", 2);
+		String jsScriptFilter= Utils.getArgForParam(argList, "-f", null);
+		
+		boolean invertSelection= Utils.argListContainsFlag(argList, "-v");
+		
+		// Regex to capture tracks: All positional args left
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(argList.size() > 0){
+            trackNameRegex= argList;
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+        
+        // Set as appropriate
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+        for(Track tr : tracksToReset){
+        	if(nRows != null){
+        		int n= Integer.valueOf(nRows) >= 0 ? Integer.valueOf(nRows) : Integer.MAX_VALUE;
+        		tr.getGenotypeMatrix().setnMaxSamples(n);
+        	}
+        	if(selectSampleRegex != null){
+            	tr.getGenotypeMatrix().setSelectSampleRegex(selectSampleRegex);
+        	}
+        	if(subSampleRegex != null){
+        		String rplc= subSampleRegex.get(1);
+        		rplc= ! rplc.equals("\"\"") ? rplc : ""; 
+            	tr.getGenotypeMatrix().setSubSampleRegex(subSampleRegex.get(0), rplc);
+        	}
+        	if(jsScriptFilter != null){
+            	tr.getGenotypeMatrix().setJsScriptFilter(jsScriptFilter);
+        	}
+        }
+
+	}	
+	
 	public void setFeatureColorForRegex(List<String> cmdTokens) throws InvalidCommandLineException, InvalidColourException {
 
 		List<String> argList= new ArrayList<String>(cmdTokens);
 		argList.remove(0); // Remove cmd name
 		
-		// Collect all regex/color pairs from input
-		Map<String, String> colorForRegex= new LinkedHashMap<String, String>();
+		// Collect all regex/color pairs from input. We move left to right along the command 
+		// arguments and collect -r/-R and set the regex inversion accordingly.
+		List<Argument> colorForRegex= new ArrayList<Argument>();
 		new Xterm256();
-		while(true){
-			List<String> pair = Utils.getNArgsForParam(argList, "-r", 2);
-			if(pair == null){
-				break;
+		while(argList.contains("-r") || argList.contains("-R")){
+			int r= argList.indexOf("-r") >= 0 ? argList.indexOf("-r") : Integer.MAX_VALUE;
+			int R= argList.indexOf("-R") >= 0 ? argList.indexOf("-R") : Integer.MAX_VALUE;
+			List<String> pair;
+			boolean invert= false;
+			if(r < R){
+				pair = Utils.getNArgsForParam(argList, "-r", 2);
+			} else {
+				pair = Utils.getNArgsForParam(argList, "-R", 2);
+				invert= true;
 			}
 			String pattern= pair.get(0);
 			try{ // Check valid regex
@@ -670,15 +723,10 @@ public class TrackSet {
 			} catch(PatternSyntaxException e){
 		    	System.err.println("Invalid regex: " + pattern);
 		    	throw new InvalidCommandLineException();
-			}	
-			String xcolor= pair.get(1);
-			Xterm256.colorNameToXterm256(xcolor); // Check this is a valid colour 
-			if(colorForRegex.containsKey(pattern)){
-				// We remove an exiting key and add it new instead of updating its value. 
-				// In this way the new pattern is last in the linked list and has priority over the preceding ones. 
-				colorForRegex.remove(pattern);
 			}
-			colorForRegex.put(pattern, xcolor);
+			Argument xcolor= new Argument(pair.get(0), pair.get(1), invert);
+			Xterm256.colorNameToXterm256(xcolor.getArg()); // Check this is a valid colour 
+			colorForRegex.add(xcolor);
 		}
 		if(colorForRegex.size() == 0){
 			colorForRegex= null;
@@ -703,8 +751,6 @@ public class TrackSet {
 	
 	public void setTrackColourForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidColourException{
 
-		new Xterm256();
-		
 		// MEMO of subcommand syntax:
 		// 0 trackColour
 		// 1 Colour
@@ -951,12 +997,60 @@ public class TrackSet {
 		// Set script
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
-			tr.setAwk(awk);;
+        	if(tr instanceof TrackPileup || tr instanceof TrackReads){
+        		// Replace special variables
+        		awk= awk.replace("$QNAME", "$1")
+        				.replace("$FLAG", "$2")
+        				.replace("$RNAME", "$3")
+        				.replace("$POS", "$4")
+        				.replace("$MAPQ", "$5")
+        				.replace("$CIGAR", "$6")
+        				.replace("$RNEXT", "$7")
+        				.replace("$PNEXT", "$8")
+        				.replace("$TLEN", "$9")
+        				.replace("$SEQ", "$10")
+        				.replace("$QUAL", "$11");
+        	}
+        	else if(tr.getTrackFormat().equals(TrackFormat.VCF)){
+        		awk= awk.replace("$CHROM", "$1")
+        				.replace("$POS", "$2")
+        				.replace("$ID", "$3")
+        				.replace("$REF", "$4")
+        				.replace("$ALT", "$5")
+        				.replace("$QUAL", "$6")
+        				.replace("$FILTER", "$7")
+        				.replace("$INFO", "$8")
+        				.replace("$FORMAT", "$9");
+        	}
+        	else if(tr.getTrackFormat().equals(TrackFormat.GFF) || tr.getTrackFormat().equals(TrackFormat.GTF)){
+        		awk= awk.replace("$SEQNAME", "$1")
+        				.replace("$SOURCE", "$2")
+        				.replace("$FEATURE", "$3")
+        				.replace("$START", "$4")
+        				.replace("$END", "$5")
+        				.replace("$SCORE", "$6")
+        				.replace("$STRAND", "$7")
+        				.replace("$FRAME", "$8")
+        				.replace("$ATTRIBUTE", "$9");
+        	}
+        	else if(tr.getTrackFormat().equals(TrackFormat.BED)){
+        		awk= awk.replace("$CHROM", "$1")
+        				.replace("$START", "$2")
+        				.replace("$END", "$3")
+        				.replace("$NAME", "$4")
+        				.replace("$SCORE", "$5")
+        				.replace("$STRAND", "$6")
+        				.replace("$THICKSTART", "$7")
+        				.replace("$THICKEND", "$8")
+        				.replace("$RGB", "$9")
+        				.replace("$BLOCKCOUNT", "$10")
+        				.replace("$BLOCKSIZES", "$11")
+        				.replace("$BLOCKSTARTS", "$12");
+        	}
+        	tr.setAwk(awk);
         }
-		
 	}
 
-	
 	/** Set filter for IntervalFeature tracks. 
 	 * @throws SQLException 
 	 * @throws InvalidRecordException 
@@ -1364,7 +1458,7 @@ public class TrackSet {
 		if(print){
 			for(Track tr : this.getTrackList()){
 				if(tr instanceof TrackBookmark){
-					List<String> marks= Utils.tabulateList(((TrackBookmark)tr).asList());
+					List<String> marks= Utils.tabulateList(((TrackBookmark)tr).asList(), -1);
 					messages= Joiner.on("\n").join(marks);
 					return messages + "\n";
 				}
@@ -1570,6 +1664,48 @@ public class TrackSet {
         }
         return messages;
 	}
+
+	public void setReadsAsPairsForRegex(List<String> tokens) throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException {
+
+		List<String> args= new ArrayList<String>(tokens);
+		args.remove(0);
+
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
+
+		Boolean readsAsPairs= null;
+		if(args.contains("-on")){
+			readsAsPairs= true;
+			args.remove("-on");
+		}
+		if(args.contains("-off")){
+			readsAsPairs= false;
+			args.remove("-off");
+		}
+		
+        // Regex
+        List<String> trackNameRegex= new ArrayList<String>();
+        if(args.size() > 0){
+            trackNameRegex= args;
+        } else {
+            trackNameRegex.add(".*"); // Default: Capture everything
+        }
+
+        // And set as required:
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+        for(Track tr : tracksToReset){
+        	if(readsAsPairs == null){
+    			if(tr.getReadsAsPairs()){ // Invert setting
+    				tr.setReadsAsPairs(false);
+    			} else {
+    				tr.setReadsAsPairs(true);
+    			}
+        	} else if(readsAsPairs) {
+        		tr.setReadsAsPairs(true);
+        	} else {
+        		tr.setReadsAsPairs(false);
+        	}
+        }
+	}
 	
 	public void setFeatureGapForRegex(List<String> tokens) throws InvalidCommandLineException {
 
@@ -1611,42 +1747,24 @@ public class TrackSet {
         		tr.setGap(0);
         	}
         }
-
-//		
-//        List<String> trackNameRegex= new ArrayList<String>();
-//        if(tokens.size() >= 2){
-//            trackNameRegex= tokens.subList(1, tokens.size());
-//        } else {
-//            trackNameRegex.add(".*"); // Default: Capture everything
-//        }
-//
-//        // And set as required:
-//        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true);
-//        for(Track tr : tracksToReset){
-//			if(tr.getGap() == 0){ // Invert setting
-//				tr.setGap(1);
-//			} else {
-//				tr.setGap(0);
-//			}
-//        }
 	}
 	
-	/** Call the update method for all tracks in trackset. Updating can be time
-	 * consuming especially for tracks associated to bam files. But be careful when 
-	 * avoiding updating as it can lead to catastrophic out of sync data. 
-	 * @throws SQLException 
-	 * @throws InvalidRecordException 
-	 * @throws InvalidGenomicCoordsException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
-	 * @throws MalformedURLException */
-	public void setGenomicCoordsAndUpdateTracks(GenomicCoords gc) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-
-		for(Track tr : this.getTrackList()){
-			tr.setGc(gc);
-			// tr.update();
-		}
-	}
+//	/** Call the update method for all tracks in trackset. Updating can be time
+//	 * consuming especially for tracks associated to bam files. But be careful when 
+//	 * avoiding updating as it can lead to catastrophic out of sync data. 
+//	 * @throws SQLException 
+//	 * @throws InvalidRecordException 
+//	 * @throws InvalidGenomicCoordsException 
+//	 * @throws IOException 
+//	 * @throws ClassNotFoundException 
+//	 * @throws MalformedURLException */
+//	public void setGenomicCoordsAndUpdateTracks(GenomicCoords gc) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+//
+//		for(Track tr : this.getTrackList()){
+//			tr.setGc(gc);
+//			// tr.update();
+//		}
+//	}
 	
 	@Override
 	/** For debugging and convenience only. This method not to be used for seriuous stuff. 
@@ -1859,17 +1977,6 @@ public class TrackSet {
 			nmax= Integer.parseInt(args.get(args.indexOf("-n") + 1));
 		}
 		
-//		String re= ".*";
-//		if(args.size() > 0){
-//			if(args.get(0).equals("-grep")){
-//				if(args.size() >= 2){
-//					re= args.get(1);
-//				}
-//			} else {
-//				System.err.println("Invalid argument: " + args.get(0));
-//				throw new InvalidCommandLineException();
-//			}
-//		}
 		Pattern pattern= Pattern.compile(re); // .matcher(x).find();
 		List<String> opened= new ArrayList<String>();
 		for(String x : this.getOpenedFiles()){
@@ -1880,7 +1987,33 @@ public class TrackSet {
 		if(opened.size() > nmax){ // Trim list to 
 			opened= opened.subList(opened.size() - nmax, opened.size());
 		}
+		// Add index. 
+		// We add the index of the file from the full list of opened files, not 
+		// from the list returned by recentlyOpened.
+		List<String> openedFilesRev= Lists.reverse(new ArrayList<String>(this.getOpenedFiles()));
+		List<String> toshow= Lists.reverse(opened);
+		for(int i= 0; i < opened.size(); i++){
+			int idx= openedFilesRev.indexOf(toshow.get(i)) + 1;
+			toshow.set(i, idx + "\t" + toshow.get(i));
+		}
+		toshow= Lists.reverse(toshow);
+		return Joiner.on("\n").join(Utils.tabulateList(toshow, -1));
+	}
 
-		return Joiner.on("\n").join(opened);
-	}	
+	/** Merge the set of opened files with the given (historic) list. 
+	 * */ 
+	public void addHistoryFiles(List<String> historyFiles) {
+		LinkedHashSet<String> union= new LinkedHashSet<String>();
+		for(String x : historyFiles){
+			union.add(x);
+		}
+		LinkedHashSet<String> now= this.getOpenedFiles();
+		for(String file : now){ // If a file is in the current track set and in the history file, put it last. I.e. last opened. 
+			if(union.contains(file)){
+				union.remove(file);
+			}
+			union.add(file);
+		}
+		this.setOpenedFiles(union);
+	}
 }

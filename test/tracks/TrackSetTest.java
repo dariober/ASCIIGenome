@@ -2,6 +2,7 @@ package tracks;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,9 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
+import coloring.Xterm256;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -26,6 +29,12 @@ import samTextViewer.Utils;
 
 public class TrackSetTest {
 
+	@Before
+	public void config() throws IOException, InvalidConfigException{
+		new Config(null);
+		new Xterm256();
+	}
+	
 	@Test
 	public void canConstructTrackSetFromURL() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException{
 
@@ -169,6 +178,7 @@ public class TrackSetTest {
 		assertTrue(msg.length() > 10);
 	}
 	
+	@Test
 	public void canAddTrackFromSourcename() throws InvalidGenomicCoordsException, IOException, BamIndexNotFoundException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
 		GenomicCoords gc= new GenomicCoords("chr7:1-100", 80, null, null);
@@ -181,6 +191,7 @@ public class TrackSetTest {
 		trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
 		assertEquals(4, trackSet.getTrackList().size());
 		
+		trackSet.addTrackFromSource("test_data/ds051.noindex.sam", gc, null);
 	}
 		
 	@Test // Disable to save time
@@ -349,6 +360,24 @@ public class TrackSetTest {
 		assertEquals("", ts.getTrack(t2).getAwk());
 		assertEquals("", ts.getTrack(t3).getAwk());
 	}
+
+	@Test
+	public void canSetReadsAsPairs() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
+
+		TrackSet ts= new TrackSet();
+		Track t1= new TrackIntervalFeature(null); t1.setFilename("foo.bam");  ts.addTrack(t1, "foo.bam");
+		Track t2= new TrackIntervalFeature(null); t2.setFilename("bar.bam"); ts.addTrack(t2, "bar.bam");
+		Track t3= new TrackIntervalFeature(null); t3.setFilename("foo.bam"); ts.addTrack(t3, "foo.bam");
+		
+		String cmdInput= "readsAsPairs foo.*#\\d";
+		ts.setReadsAsPairsForRegex(Utils.tokenize(cmdInput, " "));
+		assertTrue(ts.getTrack(t1).getReadsAsPairs());
+		assertTrue(! ts.getTrack(t2).getReadsAsPairs());
+		
+		ts.setReadsAsPairsForRegex(Utils.tokenize(cmdInput, " ")); // Was set true, now becomes false
+		assertTrue(! ts.getTrack(t1).getReadsAsPairs());
+	}
+
 	
 	@Test
 	public void canSetBSMode() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
@@ -596,6 +625,40 @@ public class TrackSetTest {
 		assertEquals(10, ts.getTrack(t2).getyMaxLines());
 		assertEquals(10, ts.getTrack(t3).getyMaxLines());
 		
+	}
+
+	@Test
+	public void canHandleGenotypeMatrix() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+		TrackSet ts= new TrackSet();
+		GenomicCoords gc= new GenomicCoords("1:577583-759855", 80, null, null);
+		String vcf= "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
+		Track t1= new TrackIntervalFeature(vcf, gc); ts.addTrack(t1, "x"); t1.setNoFormat(true);
+
+		// Number of samples
+		ts.setGenotypeMatrix(Utils.tokenize("genotype -n 1", " "));
+		assertTrue(ts.getTrack(t1).printToScreen().contains("HG00096"));
+		assertTrue( ! ts.getTrack(t1).printToScreen().contains("HG00097"));
+		
+		// Sample regex
+		ts.setGenotypeMatrix(Utils.tokenize("genotype -n -1 -s 96|97", " "));
+		assertTrue(ts.getTrack(t1).printToScreen().contains("HG00096"));
+		assertTrue( ! ts.getTrack(t1).printToScreen().contains("HG00099"));
+
+		// Edit name by regex
+		ts.setGenotypeMatrix(Utils.tokenize("genotype -n -1 -s .* -r HG __", " "));
+		assertTrue(ts.getTrack(t1).printToScreen().contains("__00096"));
+	}
+
+	@Test
+	public void canFilterGenotypeMatrix() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+		TrackSet ts= new TrackSet();
+		GenomicCoords gc= new GenomicCoords("1:113054356-113054534", 80, null, null);
+		String vcf= "test_data/CEU.exon.2010_06.genotypes.vcf";
+		Track t1= new TrackIntervalFeature(vcf, gc); ts.addTrack(t1, "x"); t1.setNoFormat(true);
+		
+		// Number of samples
+		ts.setGenotypeMatrix(Utils.tokenize("genotype -n -1 -f 'DP > 100'", " "));
+		System.err.println(ts.getTrack(t1).printToScreen());
 	}
 	
 	@Test

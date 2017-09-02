@@ -10,13 +10,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -75,6 +76,7 @@ public abstract class Track {
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
 	private int gap= 1;
+	protected boolean readsAsPairs= false;
 	protected boolean rpm= false;
 	protected static final int f_FLAG= 0; private int f_flag= f_FLAG;
 	protected static final int F_FLAG= 4; private int F_flag= F_FLAG;
@@ -85,11 +87,13 @@ public abstract class Track {
 	private TrackFormat trackFormat;
 	protected String awk= ""; 
 	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
-	
+	private GenotypeMatrix genotypeMatrix= new GenotypeMatrix();
 	/** A file to export track data
 	 * */
 	private String exportFile= null;
 	private String systemCommandForPrint;
+	private boolean printNormalizedVcf= false;
+	private long lastModified;
 
 	
 	/** Format the title string to add colour or return title as it is if
@@ -456,7 +460,7 @@ public abstract class Track {
 				break;
 			}
 		}
-		List<String> tabList= Utils.tabulateList(featureList);
+		List<String> tabList= Utils.tabulateList(featureList, this.getGc().getUserWindowSize());
 		StringBuilder sb= new StringBuilder();
 		if( ! omitString.isEmpty()){
 			sb.append(omitString + "\n");
@@ -692,10 +696,14 @@ public abstract class Track {
 	 * etc.
 	 * */
 	protected abstract List<String> getRecordsAsStrings();
+
+	protected boolean getPrintNormalizedVcf(){
+		return this.printNormalizedVcf;
+	}
 	
-//	protected void setCutScriptForPrinting(String cutScriptForPrinting){
-//		this.cutScriptForPrinting= cutScriptForPrinting;
-//	}
+	protected void setPrintNormalizedVcf(boolean printNormalizedVcf){
+		this.printNormalizedVcf= printNormalizedVcf;
+	}
 	
 	/**Return a single string where title and track have been concatenated.
 	 * Concatenation is done in such way that "title" is not followed by newline if
@@ -760,7 +768,9 @@ public abstract class Track {
 			// Record whether a read passes the sam filters. If necessary, we also 
 			// store the raw reads for awk.
 			SAMRecord rec= filterSam.next();
-			if(!rec.getReadUnmappedFlag() && !aggregateFilter.filterOut(rec)){
+			if(!rec.getReadUnmappedFlag() && 
+			        !aggregateFilter.filterOut(rec) &&
+			        rec.getAlignmentEnd() >= rec.getAlignmentStart()){
 				results.add(true);
 			} else {
 				results.add(false);
@@ -783,10 +793,43 @@ public abstract class Track {
 		return results;
 	}
 
-	protected void setColorForRegex(Map<String, String> xcolorForRegex) {
-		// TODO Auto-generated method stub
+	protected void setColorForRegex(List<Argument> xcolorForRegex) {
 		
 	}
-	
+
+	public GenotypeMatrix getGenotypeMatrix() {
+		return genotypeMatrix;
+	}
+
+	/** Iterate through the features in this track and set background colour.
+	 * colorForRegex: Key= Regex to capture features; Value= Colour to use for the captures features.
+	 * @throws InvalidColourException 
+	 * */
+	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException {
+		
+	}
+
+	protected void setLastModified() throws IOException {
+		UrlValidator urlValidator = new UrlValidator();
+		if(urlValidator.isValid(this.getFilename())){
+			URL url = new URL(this.getFilename());
+			HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+		    this.lastModified= httpCon.getLastModified();
+		} else {
+			this.lastModified= new File(this.getFilename()).lastModified();
+		}
+	}
+	protected long getLastModified(){
+		return this.lastModified;
+	}
+
+	public boolean getReadsAsPairs(){
+		return this.readsAsPairs;
+	}
+
+	public void setReadsAsPairs(boolean readsAsPairs) throws InvalidGenomicCoordsException, IOException {
+		this.readsAsPairs= readsAsPairs;
+	}
+
 }
 

@@ -1,0 +1,17 @@
+@SQ	SN:chr7	LN:159138663	UR:Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome.fa	M5:618366e953d6aaad97dbe4777c29375e
+r0	99	chr7	1	30	5M	=	0	0	NANAN	*
+r0	147	chr7	20	30	5M	=	0	0	ntntn	*
+r1	99	chr7	1	30	10M	=	20	0	AAAAAAAAAA	*
+r1	147	chr7	20	30	10M	=	1	0	aaaaaaaaaa	*
+r2	99	chr7	40	30	10M	=	60	0	CCCCCCCCCC	*
+r2	147	chr7	60	30	10M	=	40	0	cccccccccc	*
+r3	99	chr7	13	30	5M	=	33	0	GGGGG	*
+r3	147	chr7	33	30	5M	=	13	0	ggggg	*
+r4	99	chr7	1	30	5M	=	100	0	ttttt	*
+r5	99	chr7	1	30	10M	=	8	0	ATATATATAT	*
+r5	147	chr7	8	30	10M	=	1	0	GCGCGCGCGC	*
+r6	99	chr7	40	30	10M	=	42	0	CCCCCCCCCC	*
+r6	147	chr7	42	30	6M	=	40	0	aaaaaa	*
+r7	321	chr7	35	30	3M	=	0	0	NNN	*	
+r7	99	chr7	40	30	10M	=	40	0	TTTTTTTTTT	*
+r7	147	chr7	40	30	6M	=	40	0	gggggg	*

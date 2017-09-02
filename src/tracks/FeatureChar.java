@@ -4,6 +4,7 @@ import coloring.Config;
 import coloring.ConfigKey;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
+import htsjdk.variant.variantcontext.Genotype;
 
 /**Class to model a *single* character printed on terminal representing 
  * an interval feature. 
@@ -14,11 +15,13 @@ class FeatureChar {
 	private String bgColor; 	/** The background colour to use */
 	private String fgColor;
 	private boolean invertFgBgColor= false;
+	private boolean underline= false;
 	
 	/*  C O N S T R U C T O R  */
 	
 	protected FeatureChar(){
-
+		this.fgColor= Config.get(ConfigKey.foreground);
+		this.bgColor= Config.get(ConfigKey.background);
 	}
 	
 	/*  M E T H O D S  */
@@ -31,10 +34,12 @@ class FeatureChar {
 		if(noFormat){
 			return sb.append(this.getText()).toString();
 		}
-		new Xterm256();
 		sb.append("\033[");
 		if(this.invertFgBgColor){
 			sb.append("7;");
+		}
+		if(this.isUnderline()){
+			sb.append("4;");
 		}
 		sb.append("48;5;");
 		sb.append(Xterm256.colorNameToXterm256(this.getBgColor()));
@@ -80,6 +85,28 @@ class FeatureChar {
 		this.invertFgBgColor= true;
 	}
 	
+	public void addFormatGenotype(Genotype gt) {
+		if(gt == null){
+			this.setText(' ');
+		}
+		else if(gt.isHomRef()){
+			this.setText('.');
+			this.setBgColor(Config.get(ConfigKey.feature_background_no_strand));
+		}
+		else if(gt.isHomVar()){
+			this.setText('O');
+			this.setBgColor(Config.get(ConfigKey.feature_background_negative_strand));
+		}
+		else if(gt.isHet()){
+			this.setText('E');
+			this.setBgColor(Config.get(ConfigKey.feature_background_positive_strand));
+		} 
+		else {
+			this.setText('?');
+		}
+	}
+
+	
 	@Override
 	public String toString(){
 		try {
@@ -101,26 +128,33 @@ class FeatureChar {
 	}
 	
 	protected String getBgColor() {
-		String color = this.bgColor;
-		if(color == null){
-			color= Config.get(ConfigKey.background);
-		}
-		return color;
+		return this.bgColor;
 	}
 	
 	protected void setBgColor(String bgColor) {
+		if(bgColor == null){
+			bgColor= Config.get(ConfigKey.background);
+		}
 		this.bgColor = bgColor;
 	}
 	
 	protected String getFgColor() {
-		String color = this.fgColor;
-		if(color == null){
-			color= Config.get(ConfigKey.foreground);
-		}
-		return color;
+		return this.fgColor;
 	}
 	
 	protected void setFgColor(String fgColor) {
+		if(fgColor == null){
+			fgColor= Config.get(ConfigKey.foreground);
+		}
 		this.fgColor = fgColor;
 	}
+
+	public boolean isUnderline() {
+		return underline;
+	}
+
+	public void setUnderline(boolean underline) {
+		this.underline = underline;
+	}
+
 }

@@ -5,8 +5,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -30,8 +30,8 @@ public class TrackBookmarkTest {
 		TrackBookmark bm= new TrackBookmark(gc, "book1");
 		bm.printToScreen(); // This is to populate the ideograms.
 		
-		Map<String, String> colorForRegex= new HashMap<String, String>();
-		colorForRegex.put(".*", "216");
+		List<Argument> colorForRegex= new ArrayList<Argument>();
+		colorForRegex.add(new Argument(".*", "216", false));
 		bm.setColorForRegex(colorForRegex);
 		assertTrue(bm.printToScreen().contains("216"));
 

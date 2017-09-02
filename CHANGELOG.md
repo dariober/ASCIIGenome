@@ -1,3 +1,25 @@
+New in 1.10.0
+============
+
+There are several additions in this release:
+
+* VCF: better representation of structural variants. Previous versions had very limited support for SV. 
+
+* `readsAsPairs` command can show paired-end reads joined up.
+
+* `featureColorForRegex` can set colour for features NOT matching a regex. Useful to dim features without 
+completely hiding them.
+
+* `awk` recognises column headers for bam, vcf, gtf/gff, bed tracks, like `$POS $START $FEATURE` etc, similar to [bioawk](https://github.com/lh3/bioawk).
+
+* A pair of single quotes (`''`) at the command prompt is understood as an empty argument. 
+
+* SAM and BAM files without index are now acceptable input. They are sorted and indexed to temporary file and then loaded (this of course can take 
+a long time for large files).
+
+* `addTracks` accepts a list of file indexes pointing to the list of recently opened files.
+
+
 New in 1.9.0
 ============
 

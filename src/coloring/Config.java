@@ -28,6 +28,8 @@ public class Config {
 
 	public Config(String source) throws IOException, InvalidConfigException {
 		
+		new Xterm256();
+		
 		String RawConfigFile= Config.getConfigFileAsString(source).replaceAll("\t", " ").toLowerCase();
 		
 		// This will give one string per line
@@ -54,6 +56,11 @@ public class Config {
 				throw new InvalidConfigException();
 			}
 		}
+		try {
+			colorNameToInt();
+		} catch (InvalidColourException e) {
+			e.printStackTrace();
+		}
 	}
 
 	// M E T H O D S
@@ -62,7 +69,7 @@ public class Config {
 		for(ConfigKey key : ConfigKey.values()){
 			help.add(key + "\t" + Config.get(key) + "\t#\t" + key.getDescription());
 		}
-		List<String> table = Utils.tabulateList(help);
+		List<String> table = Utils.tabulateList(help, -1);
 		return Joiner.on("\n").join(table);
 	}
 	
@@ -104,6 +111,20 @@ public class Config {
 		
 	} 
 	
+	/** We convert the color names to the corresponding int. This is because looking up
+	 *  by int is much faster than by name. 
+	 * @throws InvalidColourException 
+	 * */
+	private static void colorNameToInt() throws InvalidColourException{
+		for(ConfigKey key : config.keySet()){
+			if(ConfigKey.nonColorKeys().contains(key)){
+				continue;
+			}
+			int colorInt = Xterm256.colorNameToXterm256(config.get(key));
+			config.put(key, Integer.toString(colorInt));
+		}
+	}
+	
 	/** Get xterm256 color corresponding to this configuration key
 	 * */
 	public static int get256Color(ConfigKey key) throws InvalidColourException{
@@ -117,8 +138,9 @@ public class Config {
 		return config.get(key);
 	}		
 
-	public static void set(ConfigKey key, String value){
+	public static void set(ConfigKey key, String value) throws InvalidColourException{
 		config.put(key, value);
+		colorNameToInt();
 	}
 	
 //	/**Return the key-value map of configuration parameters

@@ -175,4 +175,11 @@ public class TrackPileupTest {
 		assertEquals(0, tr.getDepth().size());
 	}
 
+	@Test
+	public void canConstructFromUnsortedInput() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
+		TrackPileup tr= new TrackPileup("/Users/db291g/Tritume/reads.sam", gc); // test_data/ds051.noindex.sam
+		// tr.update();
+	}
+	
 }

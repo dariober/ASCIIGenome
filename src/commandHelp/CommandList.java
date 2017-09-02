@@ -442,11 +442,31 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-V` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
-				+ "*ADDITIONAL FUNCTION(s)*\n"
+				+ "*ADDITIONAL FEATURES*\n"
 				+ "\n"
 				+ "* :code:`getSamTag(<tag>)` Return the value of the given sam tag. "
 				+ "A record is filtered out if the tag is not found. "
 				+ "This function is usually meaningless on non-sam records where sam tags are not present.\n"
+				+ "\n"
+				+ "* Column headers. The following variables are replaced by the appropriate column indexes, so they "
+				+ "can be used to easily select columns. Make sure the track types are selected to be compatible "
+				+ "with the headers (see examples).\n"
+				+ "\n"
+				+ "- bam tracks::\n"
+				+ "\n"
+				+ "    $QNAME, $FLAG, $RNAME, $POS, $MAPQ, $CIGAR, $RNEXT, $PNEXT, $TLEN, $SEQ, $QUAL\n"
+				+ "\n"
+				+ "- vcf tracks::\n"
+				+ "\n"
+				+ "    $CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT\n"
+				+ "\n"
+				+ "- gtf and gff tracks::\n"
+				+ "\n"
+				+ "    $SEQNAME, $SOURCE, $FEATURE, $START, $END, $SCORE, $STRAND, $FRAME, $ATTRIBUTE\n"
+				+ "\n"
+				+ "- bed tracks::\n"
+				+ "\n"
+				+ "    $CHROM, $START, $END, $NAME, $SCORE, $STRAND, $THICKSTART, $THICKEND, $RGB, $BLOCKCOUNT, $BLOCKSIZES, $BLOCKSTARTS\n"
 				+ "\n"
 				+ "*EXAMPLES*\n"
 				+ "\n"
@@ -481,6 +501,14 @@ public class CommandList {
 				+ "\n"
 				+ "    awk 'getSamTag(\"NM\") > 0'\n"
 				+ "\n"
+				+ "* Using header variables::\n"
+				+ "\n"
+				+ "    awk '$FEATURE \\~ \"CDS\" && $START > 1234' .gff\n"
+				+ "\n"
+				+ "Applying bam headers to gff will throw an error, probably an ugly one::\n"
+				+ "\n"
+				+ "    awk '$MAPQ > 10' .gff ~-> ERROR\n"
+				+ "\n"
 				+ "With no args, turn off awk for all tracks.\n"
 				+ "\n"
 				+ "*NOTES & LIMITATIONS*\n"
@@ -508,16 +536,13 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("featureColorForRegex"); cmd.setArgs("[-r regex color] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("featureColorForRegex"); cmd.setArgs("[-r/-R regex color] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Set colour for features captured by regex. ");
 		cmd.setAdditionalDescription(""
 				+ "This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color "
 				+ "for the lines captured by "
-				+ "a regex. It is useful to highlight features containg a string of interset, "
+				+ "a regex. It is useful to highlight features containg a string of interest, "
 				+ "such as 'CDS' in gff files.\n"
-				+ "\n"
-				+ "For available colors see :code:`colorTrack -h`. As for :code:`colorTrack` "
-				+ "colors can be specified by name, name prefix, or integer in range 0-255.\n"
 				+ "\n"
 				+ "Options:\n"
 				+ "\n"
@@ -526,6 +551,9 @@ public class CommandList {
 				+ "This option takes exactly two arguments and can be given zero or more times. "
 				+ "If this option is not present colors are reset to default.\n"
 				+ "\n"
+				+ ":code:`-R <regex> <color>` Same as :code:`-r` but sets color for features NOT "
+				+ "matched by regex.\n"
+				+ "\n"
 				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ ":code:`[track_regex]` Apply to tracks captured by this list of regexes.\n"
@@ -533,7 +561,12 @@ public class CommandList {
 				+ "Example::\n"
 				+ "\n"
 				+ "    featureColorForRegex -r CDS plum2 -r exon grey\n"
-				+ "    featureColorForRegex bed -> Reset to default the track matching 'bed'"
+				+ "    featureColorForRegex bed~~~~~~~~~-> Reset to default the track matching 'bed'\n"
+				+ "	   featureColorForRegex -R CDS grey -> Grey all features except those matching CDS\n"
+				+ "\n"
+				+ "Colors can be specified by name, name prefix, or integer in range 0-255. Available colours:\n"
+				+ "\n"
+				+ Xterm256.colorShowForTerminal().replaceAll(" ", "~") 
 				+ "\n");
 		cmdList.add(cmd);
 		
@@ -555,6 +588,20 @@ public class CommandList {
 				+ "Without arguments toggle between expanded and collapsed mode. ");
 		cmdList.add(cmd);		
 
+		cmd= new CommandHelp();
+		cmd.setName("readsAsPairs"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Show SAM records as pairs.\n");
+		cmd.setAdditionalDescription("If set, properly paired reads in the current window are showed "
+				+ "joined up by tildes.\n"
+				+ "\n"
+				+ "* :code:`-on|-off` Turn on/off the pairing mode. Or toggle between the two modes if none of these flags is set.\n"
+				+ "\n"
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
+				+ "* :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.\n"
+				);
+		cmdList.add(cmd);		
+		
 		cmd= new CommandHelp();
 		cmd.setName("gap"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Display features with or without a separating gap. ");
@@ -682,6 +729,81 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
+		cmd.setName("genotype"); cmd.setArgs("[-n 10] [-s .*] [-r pattern rplc] [-f expr] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Customise the genotype rows printed under the VCF tracks. ");
+		cmd.setAdditionalDescription(""
+				+ "\n"
+				+ "\n"
+				+ ":code:`-n` Display up to this many samples (rows). -1 for no limit.\n"
+				+ "\n"
+				+ ":code:`-s` Select samples matching this regex.\n"
+				+ "\n"
+				+ ":code:`-r` Edit sample names to replace <pattern> with <replacement>. Names are edited only for "
+				+     "display. To completely hide names replace with empty string :code:`-r .* ''`. "
+				+     "To restore original names use a regex matching nothing e.g. '^$'\n"
+				+ "\n"
+				+ ":code:`-f` Filter samples using an expression in javascript syntax. See below for details.\n"
+				+ "\n"
+				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
+				+ "FILTER EXPRESSION\n"
+				+ "\n"
+				+ "Samples can be filtered by applying arbitrary expressions to the VCF records. "
+				+ "The VCF fields of a sample are accessed using the syntax :code:`{TAG}`.\n"
+				+ "\n"
+				+ "TAG is one of the fixed fields: CHROM, POS, ID, REF, ALT, QUAL, FILTER, or one of "
+				+ "the INFO or FORMAT tags. In case of ambiguity, the prefix 'INFO/' or 'FMT/' "
+				+ "should be used to identify the target "
+				+ "tag (e.g. :code:`{FMT/ID}` will access the ID field in FORMAT rather than the ID in the header).\n"
+				+ "\n"
+				+ "The value(s) in a TAG are converted to the appropriate data type (Integer, String, etc). "
+				+ "Tags holding more than one value are returned as arrays whose individual values "
+				+ "should be accessed using the syntax :code:`[index]`. "
+				+ "E.g. :code:`{ALT}[0]` will access the first alternate allele.\n"
+				+ "\n"
+				+ "Note that the ALT and FILTER fields are always arrays, even if only one allele is present.\n"
+				+ "\n"
+				+ "After substitution of the :code:`{TAG}` placeholders with the actual values, the expression string "
+				+ "is evaluated as a javascript script so any valid JS code is allowed including the common operators: "
+				+ ":code:`> < == != && ||`.\n"
+				+ "\n"
+				+ "Importantly, the result of the expression must be a boolean, i.e. it must evaluate to true or false.\n"
+				+ "\n"
+				+ "For each sample, the expression is evaluated for each VCF record in the current window "
+				+ "and if ANY record returns *true*, the sample is filtered-in. To apply the filter "
+				+ "to specific records either include only those records using e.g. commands :code:`grep` "
+				+ "or :code:`awk` or make the expression more selective, e.g. by including the POS field.\n"
+				+ "\n"
+				+ "As elsewhere in ASCIIGenome, if the argument (expression) contains spaces it "
+				+ "must be enclosed in single quotes and single quotes inside the expression must be escaped. "
+				+ "To remove the expression filter pass a blank string as argument :code:`-f ' '` (note "
+				+ "the white space between single quotes).\n"
+				+ "\n"
+				+ "The following tags can be used to filter on the genotype. When substituted, they evaluate to "
+				+ "true according to the sample genotype. Testing the :code:`{GT}` tag, e.g. "
+				+ ":code:`{GT} == \"0/1\"`, achieves a similar result and gives more control "
+				+ "but using these tags is less error prone:\n"
+				+ "\n"
+				+ "* :code:`{HOM}` genotype is homozygote.\n\n"
+				+ "* :code:`{HET}` genotype is heterozygote.\n\n"
+				+ "* :code:`{HOM_REF}` genotype is homozygote reference.\n\n"
+				+ "* :code:`{HOM_VAR}` homozygote for an ALT allele.\n\n"
+				+ "* :code:`{HET_NON_REF}` heterozygote and all alleles are non-reference.\n\n"
+				+ "* :code:`{CALLED}` at least one allele is not a missing value ('.' in vcf).\n\n"
+				+ "* :code:`{NO_CALL}` No allele is called (e.g. it appears as ./. in vcf).\n\n"
+				+ "* :code:`{MIXED}` genotype is comprised of both calls and no-calls.\n"
+				+ "\n"
+				+ "Examples of filters::\n"
+				+ "\n"
+				+ "    genotype -f '{DP} > 30' -> Display samples having DP > 30\n"
+				+ "    genotype -f '{DP} > 30 && {ID} == \"rs99\"' -> Select also for ID\n"
+				+ "    genotype -f '{FMT/XA} > 30 && {INFO/XA} == \"foo\"' -> Disambiguate tags\n"
+				+ "    genotype -f '{ALT}[0] == \"C\"' ~-> Access the first ALT allele\n"
+				+ "    genotype -f '{HOM_REF} == false' -> Discard if homozygote ref.\n"
+				+ "\n");
+		cmdList.add(cmd);
+		
+		cmd= new CommandHelp();
 		cmd.setName("editNames"); cmd.setArgs("[-t] [-v] <pattern> <replacement> [track_re=.*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Edit track names by substituting regex pattern with replacement.");
 		cmd.setAdditionalDescription("Pattern and replacement are required arguments, "
@@ -691,11 +813,11 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
-				+ "Use \"\" (empty double quotes) to replace pattern with nothing. "
+				+ "Use \'\' (empty string in single quotes) to replace pattern with nothing. "
 				+ "Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::\n"
 				+ "\n"
-				+ "    editNames fk123_ \"\"~~~~~~~-> hela.bam#1, hela.bed#2\n"
-				+ "    editNames fk123_ \"\" bam ~~-> hela.bam#1, fk123_hela.bed#2\n"
+				+ "    editNames fk123_ '' ~~~~~~-> hela.bam#1, hela.bed#2\n"
+				+ "    editNames fk123_ '' bam ~~-> hela.bam#1, fk123_hela.bed#2\n"
 				+ "    editNames _ ' ' ~~~~~~~~~~-> fk123 hela.bam#1,  fk123 hela.bed#2\n"
 				+ "    editNames ^.*# cells ~~~~~-> cells#1, cells#2\n"
 				+ "    editNames ^ xx_ ~~~~~~~~~~-> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)\n"
@@ -846,14 +968,21 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("addTracks"); cmd.setArgs("[file or URL]..."); cmd.inSection= Section.GENERAL; 
+		cmd.setName("addTracks"); cmd.setArgs("[files | URLs | indexes]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Add tracks from local or remote files. ");
-		cmd.setAdditionalDescription("For local files, glob characters (wildcard) are expanded as in Bash "
+		cmd.setAdditionalDescription("The list of files to open can be a list of file names or URLs. "
+				+ "For local files, glob characters (wildcard) are expanded as in Bash "
 				+ "(but note that currently globs in directory names are not expanded.)\n"
+				+ "\n"
+				+ "Alternatively, the files to open can be given as numeric indexes of recently opened "
+				+ "files (see command :code:`recentlyOpened`). The last opened file has index 1, "
+				+ "the second last 2, etc.\n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
-				+ "    addTracks peaks.bed genes.*.gtf\n"
-				+ "    addTracks http://remote/host/peaks.bed\n"
+				+ "    addTracks peaks.bed genes.*.gtf~~~~~~~~<- Note use of wildecard\n"
+				+ "    addTracks http://remote/host/peaks.bed <- From URL\n"
+				+ "    addTracks 1 2 3 ~~~~~~~~~~~~~~~~~~~~~~~<- The three most recent files\n"
 				+ "");
 		cmdList.add(cmd);
 
@@ -1083,7 +1212,9 @@ public class CommandList {
 		paramList.add("colorTrack");
 		paramList.add("featureColorForRegex");
 		paramList.add(Command.featureDisplayMode.getCmdDescr());
+		paramList.add("readsAsPairs");
 		paramList.add("hideTitle");
+		paramList.add("genotype");
 		paramList.add("editNames");
 		paramList.add("ylim");
 		paramList.add("dataCol");

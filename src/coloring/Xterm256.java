@@ -532,12 +532,6 @@ public class Xterm256 {
 		contrastColor.put(254, "grey19");
 		contrastColor.put(255, "grey19");
 		
-//		// Populate the map int -> name.
-//		for(String x : xtermNameToNumber.keySet()){
-//			System.err.println(x);
-//			intColorToName.put(xtermNameToNumber.get(x), x);
-//		}
-
 	}
 
 	public static final Color xterm256ToColor(int xterm256) throws InvalidColourException{

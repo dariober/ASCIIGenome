@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.base.Joiner;
-
 import coloring.Config;
 import coloring.ConfigKey;
 import exceptions.InvalidColourException;
@@ -33,7 +31,7 @@ AACCTTGGCC---------------------------------------
 -------------AACCTTGGCC--------------------------
 --------------AA----CCTT-------------------------
  */
-class TextRead {
+class TextRead extends IntervalFeature{
 	
 	// Characters for methylation coding. NB: M and U are valid DNA chars in IUPAC!
 	private final static char charM= 'M';
@@ -64,7 +62,7 @@ class TextRead {
 	
 	/*    C o n s t r u c t o r s    */
 		
-	public TextRead(SAMRecord rec, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
+	protected TextRead(SAMRecord rec, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
 		// At least part of the read must be in the window
 		//            |  window  |
 		//                         |------| read
@@ -97,6 +95,16 @@ class TextRead {
 	}
 	
 	/*       M e t h o d s       */
+
+	protected List<FeatureChar> getTextReadAsFeatureChars(boolean bs, boolean noFormat) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
+		List<Character> unformatted;
+		if(!bs){
+			unformatted= this.getConsRead();
+		} else {
+			unformatted= this.convertDnaReadToTextReadBS();
+		}
+		return this.readFormatter(unformatted, noFormat, bs);
+	}
 	
 	/**
 	 * Return read ready to be printed on track. 
@@ -116,21 +124,27 @@ class TextRead {
 		} else {
 			unformatted= this.convertDnaReadToTextReadBS();
 		}
-		if(withReadName){ // Replace bases with read name. As long as it fits
-			int upTo= (unformatted.size() < this.samRecord.getReadName().length()) 
-					? unformatted.size() 
-					: this.samRecord.getReadName().length();  
-			for(int i= 0; i< upTo; i++){
-				char nchar= (char) this.samRecord.getReadName().getBytes()[i];
-				unformatted.set(i, nchar);
-			}
-			if(unformatted.size() > upTo){ // Add a separator btw read name and sequence
-				unformatted.set(upTo, '/');
-			}
-			return Joiner.on("").join(unformatted);
-		} else {
-			return readFormatter(unformatted, noFormat, bs);
+		List<FeatureChar> fmt = this.readFormatter(unformatted, noFormat, bs);
+		StringBuilder sb= new StringBuilder();
+		for(FeatureChar x : fmt){
+			sb.append(x.format(noFormat));
 		}
+		return sb.toString();
+//		if(withReadName){ // Replace bases with read name. As long as it fits
+//			int upTo= (unformatted.size() < this.samRecord.getReadName().length()) 
+//					? unformatted.size() 
+//					: this.samRecord.getReadName().length();  
+//			for(int i= 0; i< upTo; i++){
+//				char nchar= (char) this.samRecord.getReadName().getBytes()[i];
+//				unformatted.set(i, nchar);
+//			}
+//			if(unformatted.size() > upTo){ // Add a separator btw read name and sequence
+//				unformatted.set(upTo, '/');
+//			}
+//			return Joiner.on("").join(unformatted);
+//		} else {
+//			return readFormatter(unformatted, noFormat, bs);
+//		}
 	}
 	
 	/**
@@ -148,20 +162,22 @@ class TextRead {
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidColourException 
 	 */
-	private String readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+	private List<FeatureChar> readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		
-		if(noFormat){ // Essentially nothing to do in this case
-			return Joiner.on("").join(read);
-		}
+//		if(noFormat){ // Essentially nothing to do in this case
+//			return Joiner.on("").join(read);
+//		}
 
 		byte[] baseQual= this.samRecord.getBaseQualities();
 		boolean baseQualIsPresent= baseQual.length > 0 ? true : false;
 		int SHADE_BASEQ= Integer.parseInt(Config.get(ConfigKey.shade_baseq));
 
-		StringBuilder formatted= new StringBuilder();		
+		List<FeatureChar> formatted= new ArrayList<FeatureChar>();		
 		int qIdx= 0;
 		for(int i= 0; i < read.size(); i++){ // Each base is formatted independently from the others
-			char c= read.get(i);
+			FeatureChar c= new FeatureChar(); 
+			c.setText(read.get(i));
+			
 			boolean shadeBaseQ= false;
 			if(baseQualIsPresent && this.gc.isSingleBaseResolution && qIdx < baseQual.length){
 				int bq= (int) baseQual[qIdx];
@@ -170,64 +186,49 @@ class TextRead {
 					shadeBaseQ= true;
 				}
 			}
-			formatted.append("\033["); // Start format 
 			if(this.samRecord.getReadPairedFlag() && this.samRecord.getSecondOfPairFlag()){
-				formatted.append("4;"); // Underline 2nd in pair
+				c.setUnderline(true);
 			}
 			
 			if(this.samRecord.getMappingQuality() < SHADE_MAPQ || shadeBaseQ){ // Grey out low mapq/base qual
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.shade_low_mapq)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.foreground));
-			} else if(Character.toUpperCase(c) == charM){
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.methylated_background)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.methylated_foreground));
-			} else if(Character.toUpperCase(c) == charU){
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.unmethylated_background)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.unmethylated_foreground));
-			} else if(Character.toUpperCase(c) == 'A'){
-				formatted.append("38;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.seq_a));
-			} else if(Character.toUpperCase(c) == 'C') {
-				formatted.append("38;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.seq_c));
-			} else if(Character.toUpperCase(c) == 'G') {
-				formatted.append("38;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.seq_g));
-			} else if(Character.toUpperCase(c) == 'T') {
-				formatted.append("38;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.seq_t));
-			} else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.feature_background_positive_strand)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.foreground));
-			} else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.feature_background_negative_strand)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.foreground));
-			} else {
-				formatted.append("48;5;"); 
-				formatted.append(Config.get256Color(ConfigKey.background)); 
-				formatted.append(";38;5;");
-				formatted.append(Config.get256Color(ConfigKey.foreground));
+				c.setBgColor(Config.get(ConfigKey.shade_low_mapq));
+				c.setFgColor(Config.get(ConfigKey.foreground));
+			} 
+			else if(Character.toUpperCase(c.getText()) == charM){
+				c.setBgColor(Config.get(ConfigKey.methylated_background));
+				c.setFgColor(Config.get(ConfigKey.methylated_foreground));
+			} 
+			else if(Character.toUpperCase(c.getText()) == charU){
+				c.setBgColor(Config.get(ConfigKey.unmethylated_background));
+				c.setFgColor(Config.get(ConfigKey.unmethylated_foreground));
+			} 
+			else if(Character.toUpperCase(c.getText()) == 'A'){
+				c.setFgColor(Config.get(ConfigKey.seq_a));
+			} 
+			else if(Character.toUpperCase(c.getText()) == 'C') {
+				c.setFgColor(Config.get(ConfigKey.seq_c));
+			} 
+			else if(Character.toUpperCase(c.getText()) == 'G') {
+				c.setFgColor(Config.get(ConfigKey.seq_g));
+			} 
+			else if(Character.toUpperCase(c.getText()) == 'T') {
+				c.setFgColor(Config.get(ConfigKey.seq_t));
+			} 
+			else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
+				c.setBgColor(Config.get(ConfigKey.feature_background_positive_strand));
+				c.setFgColor(Config.get(ConfigKey.foreground));
+			} 
+			else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
+				c.setBgColor(Config.get(ConfigKey.feature_background_negative_strand));
+				c.setFgColor(Config.get(ConfigKey.foreground));
+			} 
+			else {
+				c.setBgColor(Config.get(ConfigKey.background));
+				c.setFgColor(Config.get(ConfigKey.foreground));
 			}
-			formatted.append("m");
-			formatted.append(c);
-			// End by setting removing all formatting and reset back/fore-ground
-			formatted.append("\033[0m\033[38;5;");
-			formatted.append(Config.get256Color(ConfigKey.foreground));
-			formatted.append(";48;5;");
-			formatted.append(Config.get256Color(ConfigKey.background));
-			formatted.append("m");
+			formatted.add(c);
 		}
-		return formatted.toString();
+		return formatted;
 	}
 	
 	/**

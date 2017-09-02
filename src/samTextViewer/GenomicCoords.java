@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -142,7 +143,6 @@ public class GenomicCoords implements Cloneable {
 
 		// Set Dictionary
 		this.setSamSeqDictFromAnySource(cleanList, includeGenomeFile);
-
 		// Try to set fasta sequence
 		for(String x : cleanList){
 			try{
@@ -503,6 +503,7 @@ public class GenomicCoords implements Cloneable {
 	 * @throws InvalidColourException 
 	 * */
 	public String getChromIdeogram(int nDist, boolean noFormat) throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+		
 		if(this.samSeqDict == null || this.samSeqDict.size() == 0){
 			return null;
 		}
@@ -722,9 +723,33 @@ public class GenomicCoords implements Cloneable {
 				}
 			}
 		}
+		// If we still haven't found a sequence dict, try looking for a VCF file.
+		for(String testfile : testfiles){ 
+			try{
+				isSet= this.setSamSeqDictFromVCF(testfile);
+				if(isSet){
+					return isSet;
+				}
+			} catch(Exception e){
+				//
+			}
+		}
 		return isSet;
 	}
 
+	private boolean setSamSeqDictFromVCF(String vcf) throws MalformedURLException {
+
+		SAMSequenceDictionary samSeqDict= Utils.getVCFHeader(vcf).getSequenceDictionary();
+		if(samSeqDict != null){
+			this.setSamSeqDictSource(new File(vcf).getAbsolutePath());
+			this.setSamSeqDict(samSeqDict);
+			return true;
+		}
+		return false;
+
+	}
+
+	
 	private boolean setSamSeqDictFromFasta(String fasta) throws IOException{
 		
 		IndexedFastaSequenceFile fa= null;

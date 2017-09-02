@@ -10,6 +10,8 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -17,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -28,15 +31,12 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
-import org.jline.reader.History;
-import org.jline.reader.LineReader;
-import org.jline.reader.LineReaderBuilder;
-import org.jline.reader.impl.history.DefaultHistory;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
 import org.junit.Test;
 
+import com.esotericsoftware.yamlbeans.YamlReader;
+import com.esotericsoftware.yamlbeans.YamlWriter;
 import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
 
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -46,12 +46,19 @@ import faidx.UnindexableFastaFileException;
 import filter.FirstOfPairFilter;
 import filter.FlagToFilter;
 import filter.ReadNegativeStrandFilter;
+import htsjdk.samtools.SAMFileWriter;
+import htsjdk.samtools.SAMFileWriterFactory;
+import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import jline.console.ConsoleReader;
+import jline.console.history.History;
+import jline.console.history.MemoryHistory;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
 
@@ -62,6 +69,37 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void canTestForEqualReadNames(){
+		assertTrue(Utils.equalReadNames("foo", "foo"));
+		assertTrue(Utils.equalReadNames("foo index1", "foo index2"));
+		assertTrue(Utils.equalReadNames("foo/1", "foo/2"));
+		assertTrue( ! Utils.equalReadNames("foo", "bar"));
+		assertTrue( ! Utils.equalReadNames("foo/1foo", "foo/2foo"));
+	}
+	
+	@Test
+	public void canSortAndIndexSamOrBam() throws IOException{
+	
+		Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.bam", "sorted.bam", true);
+		assertTrue(new File("sorted.bai").length() > 1000);
+		assertTrue(new File("sorted.bam").length() > 1000);
+
+		// With SAM input
+		Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.sam", "sorted1.bam", true);
+		assertTrue(new File("sorted1.bai").length() > 1000);
+		assertTrue(new File("sorted1.bam").length() > 1000);
+		
+		// Works also with URL
+		File sorted2= new File("sorted2.bam"); 
+		
+		Utils.sortAndIndexSamOrBam("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.noindex.bam", 
+				sorted2.getAbsolutePath(), true);
+		assertTrue(new File("sorted2.bai").length() > 1000);
+		assertTrue(new File("sorted2.bam").length() > 1000);
+
+	}
 	
 	@Test
 	public void roundNumber(){
@@ -91,14 +129,6 @@ public class UtilsTest {
 		list.add(inList2);
 		list.add(inList3);
 		System.err.println(list);
-		// Collections<T> elems= new ArrayList<T>();
-//		final List<String> outList= new ArrayList<String>();
-//		Parallel.For(list, new Parallel.Operation<String>() {
-//		    public void perform(String parameter) {
-//		        outList.add(parameter + "X");
-//		    };
-//		});
-//		System.err.println(outList);
 		
 		// final List<String> outList= new ArrayList<String>();
 		ExecutorService exec = Executors.newFixedThreadPool(2);
@@ -362,11 +392,11 @@ public class UtilsTest {
 		// Note single quotes around the awk script
 		assertTrue(Utils.passAwkFilter("chr1\t10\t100", "-v VAR=5 '$2 > VAR && $1'"));
 		
-		// Using single quotes inside awk is tricky. 
+		// Using single quotes inside awk is tricky. Use the code \x027 to represent it.
 		// See https://www.gnu.org/software/gawk/manual/html_node/Quoting.html 
 		// and see http://stackoverflow.com/questions/9899001/how-to-escape-single-quote-in-awk-inside-printf
 		// for using '\'' as a single quote
-		assertTrue(Utils.passAwkFilter("chr'1", "'$1 == \"chr'\''1\"'"));
+		assertTrue(Utils.passAwkFilter("chr'1", "'$1 ~ \"chr\"\\x027\"1\"'"));
 		
 		assertTrue( ! Utils.passAwkFilter("'chr1\t10\t100", "-v VAR=50 '$2 > VAR'"));
 		
@@ -481,23 +511,12 @@ public class UtilsTest {
 	@Test
 	public void testHistory() throws IOException{
 		
-		Terminal terminal = TerminalBuilder.builder()
-			      .nativeSignals(true)
-			      .signalHandler(Terminal.SignalHandler.SIG_IGN)
-			      .build();
-		 LineReader console= LineReaderBuilder.builder()
-			      .terminal(terminal)
-			      .build();
-		
-		//LineReader console= new ConsoleReader();
+		ConsoleReader console= new ConsoleReader();
 		//History history= new History(new File(System.getProperty("user.home") + File.separator + ".asciigenome_history"));
-		
-		History history= new DefaultHistory();
-		
+		History history= new MemoryHistory();
 		history.add("foobar");
 		history.add("baz");
-		history.attach(console);
-		//console.setHistory(history);
+		console.setHistory(history);
 		System.out.println(console.getHistory());
 	}
 	
@@ -612,17 +631,17 @@ public class UtilsTest {
 		
 		// Fully contained feature
 		intv.clear();
-		intv.add(new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
-		intv.add(new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
+		intv.add(new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
 		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
 		assertEquals(100, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
 		assertEquals(1000, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
 		
 		// Partial overlap contained feature
 		intv.clear();
-		intv.add(new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
-		intv.add(new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
-		intv.add(new IntervalFeature("chr1 . . 500 5000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
+		intv.add(new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
+		intv.add(new IntervalFeature("chr1 . . 500 5000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
 		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
 		assertEquals(100, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
 		assertEquals(5000, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
@@ -630,53 +649,53 @@ public class UtilsTest {
 		/* MEMO: Start of bed features must be augmented by 1 */
 		// One feature
 		intv.clear();
-		intv.add(new IntervalFeature("chr1 0 10 x1".replaceAll(" ", "\t"), TrackFormat.BED));
+		intv.add(new IntervalFeature("chr1 0 10 x1".replaceAll(" ", "\t"), TrackFormat.BED, null));
 		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
 		// Test the name is taken from the original feature since only one interval is merged (i.e. no merging at all)
 		assertEquals(intv.get(0).getName(), Utils.mergeIntervalFeatures(intv, false).get(0).getName());
 		
 		// One feature overalapping
-		intv.add(new IntervalFeature("chr1 5 10".replaceAll(" ", "\t"), TrackFormat.BED));
-		IntervalFeature expected= new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED);
+		intv.add(new IntervalFeature("chr1 5 10".replaceAll(" ", "\t"), TrackFormat.BED, null));
+		IntervalFeature expected= new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, null);
 		
 		assertEquals(expected.getFrom(), Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
 		assertTrue(expected.equals(Utils.mergeIntervalFeatures(intv, false).get(0)));
 
-		intv.add(new IntervalFeature("chr1 20 100".replaceAll(" ", "\t"), TrackFormat.BED));
+		intv.add(new IntervalFeature("chr1 20 100".replaceAll(" ", "\t"), TrackFormat.BED, null));
 		assertEquals(2, Utils.mergeIntervalFeatures(intv, false).size());
 		assertEquals(21, Utils.mergeIntervalFeatures(intv, false).get(1).getFrom());
 		assertEquals(100, Utils.mergeIntervalFeatures(intv, false).get(1).getTo());
 		
-		intv.add(new IntervalFeature("chr1 30 110".replaceAll(" ", "\t"), TrackFormat.BED));
-		intv.add(new IntervalFeature("chr1 50 110".replaceAll(" ", "\t"), TrackFormat.BED));
+		intv.add(new IntervalFeature("chr1 30 110".replaceAll(" ", "\t"), TrackFormat.BED, null));
+		intv.add(new IntervalFeature("chr1 50 110".replaceAll(" ", "\t"), TrackFormat.BED, null));
 		assertEquals(2, Utils.mergeIntervalFeatures(intv, false).size());
 		assertEquals(21, Utils.mergeIntervalFeatures(intv, false).get(1).getFrom());
 		assertEquals(110, Utils.mergeIntervalFeatures(intv, false).get(1).getTo());
 		
 		// Touching features get merged into a single one
 		intv.clear();
-		intv.add(new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED));
-		intv.add(new IntervalFeature("chr1 10 20".replaceAll(" ", "\t"), TrackFormat.BED));
+		intv.add(new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, null));
+		intv.add(new IntervalFeature("chr1 10 20".replaceAll(" ", "\t"), TrackFormat.BED, null));
 		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
 		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
 		assertEquals(20, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
 
 		// Touching GFF feature 
 		intv.clear();
-		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
-		intv.add(new IntervalFeature("chr1 . . 11 20 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
+		intv.add(new IntervalFeature("chr1 . . 11 20 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
 		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
 		assertEquals(1, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
 		assertEquals(20, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
 
 		// Nothing to merge 
 		intv.clear();
-		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
-		intv.add(new IntervalFeature("chr1 . . 20 30 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
-		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
+		intv.add(new IntervalFeature("chr1 . . 20 30 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
+		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
 		assertEquals(3, Utils.mergeIntervalFeatures(intv, false).size());
 		
-		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+		intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, null));
 		assertEquals(3, Utils.mergeIntervalFeatures(intv, false).size());
 		
 	}
@@ -741,8 +760,7 @@ public class UtilsTest {
 		rawList.add("1\tfoo\tna\t2"); // Missing last field
 		rawList.add("1\tfoo\tna\t2\t10");
 		rawList.add("1\tfoo\t\t2\t10"); // Empty cell
-		
-
+	
 		List<String> expList= new ArrayList<String>();
 		expList.add("1    genedb      gene 2964 45090");
 		expList.add("chr1 genedb_long gene 2964 45090");
@@ -750,9 +768,18 @@ public class UtilsTest {
 		expList.add("1    foo         na   2    10");
 		expList.add("1    foo              2    10");
 
+		List<String> obsList= Utils.tabulateList(rawList, -1);
+		assertThat(obsList, is(obsList));
+		
+		// Flush left "foo" rows as it has too much white space
+		obsList= Utils.tabulateList(rawList, 5*4); // *4 has to be adjusted according to what you have in the code.
+		System.err.println(Joiner.on("\n").join(obsList));
+		assertTrue(Joiner.on("\n").join(obsList).contains("1   "));
+		assertTrue(Joiner.on("\n").join(obsList).contains("foo na"));
+		
 		// Handling region with no features to print
 		rawList= new ArrayList<String>();
-		List<String> obsList= Utils.tabulateList(rawList);
+		obsList= Utils.tabulateList(rawList, -1);
 		expList= new ArrayList<String>();
 		assertThat(expList, is(obsList));
 		
@@ -844,14 +871,15 @@ public class UtilsTest {
 	@Test
 	public void canInitRegion() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		
-		assertEquals("chrM", Utils.initRegionFromFile("test_data/ds051.short.bam"));
+		assertEquals("chr7:5566778", Utils.initRegionFromFile("test_data/ds051.short.bam"));
+		assertEquals("chr7:5566778", Utils.initRegionFromFile("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
 		assertEquals("chr1:10536", Utils.initRegionFromFile("test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
 		assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
 		assertEquals("chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
 		assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
 		assertEquals("chr1:564666", Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
-		assertEquals("chr1", Utils.initRegionFromFile("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SplicesRep2V2.bam"));
+		assertEquals("1:113054374", Utils.initRegionFromFile("test_data/CEU.exon.2010_06.genotypes.vcf"));
 		
 		boolean pass= false;
 		try{
@@ -862,13 +890,6 @@ public class UtilsTest {
 		}
 		assertTrue(pass);
 		
-		// assertTrue(Utils.initRegionFromFile("hg19:refGene").startsWith("chr1:"));
-	}
-	
-	@Test
-	public void canInitRegionFromURLBam() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
-		String reg= Utils.initRegionFromFile("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02AlnRep1.bam");
-		assertEquals("chr1", reg);
 	}
 	
 	@Test
@@ -1087,7 +1108,10 @@ public class UtilsTest {
 		// Unusual input:
 		assertEquals(null, Utils.tokenize(null, " "));
 		assertTrue(Utils.tokenize("", " ").size() == 0);
-		assertTrue(Utils.tokenize("   ", " ").size() == 0);
+//		assertTrue(Utils.tokenize("   ", " ").size() == 0);
+		
+		// Empty token:
+		assertTrue(Utils.tokenize("foo -f '' -bar", " ").get(2).isEmpty());
 		
 		// Reverse token
 		String cmdInput= "goto chr1 0 100";

@@ -34,7 +34,6 @@ public class TrackProcessor {
 	private String snapshotFile= null;
 	private boolean appendToSnapshotFile= false;
 	private boolean stripAnsi= true;
-	// int windowSize= 160;
 	private boolean showGruler= true;
 	private boolean showCruler= true;
 	
@@ -48,22 +47,23 @@ public class TrackProcessor {
 	/* M E T H O D S */
 
 	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, DocumentException, InvalidColourException{
-		
+
 		final GenomicCoords currentGC= this.genomicCoordsHistory.current();
-		
+
 		StringBuilder outputString= new StringBuilder();
+
+		currentGC.getChromIdeogram(20, this.noFormat);
 		
 		if(currentGC.getChromIdeogram(20, this.noFormat) != null){
 			outputString.append(currentGC.getChromIdeogram(20, this.noFormat) + "\n");
 		}			
-
+		
 		// Update tracks to new genomic coords
 		for(Track track : trackSet.getTrackList()){
 			if( ! track.getGc().equalCoordsAndWindowSize(currentGC) ){
 				track.setGc(currentGC);
 			}			
 		}
-
 		// Set new y limits as required. This step has to come after the positioning to new coordinates because
 		// we may need to autoscale to global min or max.
 		this.getTrackSet().setAutoYLimits();

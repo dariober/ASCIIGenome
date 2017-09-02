@@ -1,14 +1,19 @@
 package tracks;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
+
+import com.google.common.hash.Hashing;
 
 import coloring.Config;
 import coloring.ConfigKey;
@@ -27,8 +32,8 @@ import samTextViewer.Utils;
  */
 public class TrackReads extends Track{
 
-	private List<List<TextRead>> readStack;
-	private boolean withReadName= false;
+	private List<List<SamSequenceFragment>> readStack;
+	// private boolean withReadName= false;
 	private long nRecsInWindow= -1;
 	private int userWindowSize;
 	
@@ -48,11 +53,13 @@ public class TrackReads extends Track{
 	public TrackReads(String bam, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
 		if(!Utils.bamHasIndex(bam)){
-			System.err.println("\nAlignment file " + bam + " has no index.\n");
-			throw new RuntimeException();
+			File temp= File.createTempFile("asciigenome.", ".bam");
+			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
+			this.setWorkFilename(temp.getAbsolutePath());
+		} else {
+			this.setWorkFilename(bam);
 		}
 		this.setFilename(bam);
-		this.setWorkFilename(bam);
 		this.setGc(gc);
 	}
 	
@@ -68,7 +75,7 @@ public class TrackReads extends Track{
 		
 		this.userWindowSize= this.getGc().getUserWindowSize();
 		
-		this.readStack= new ArrayList<List<TextRead>>();
+		this.readStack= new ArrayList<List<SamSequenceFragment>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
 
 			List<TextRead> textReads= new ArrayList<TextRead>();
@@ -86,11 +93,18 @@ public class TrackReads extends Track{
 			
 			float probSample= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack)) / this.nRecsInWindow;
 			
+			// Add this random String to the read name so different screenshot will generate 
+			// different samples. 
+			String rndOffset= Integer.toString(new Random().nextInt());
+			                                                            
 			ListIterator<Boolean> pass = passFilter.listIterator();
 			while(sam.hasNext() && textReads.size() < Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack))){
 				SAMRecord rec= sam.next();
 				if( pass.next() ){
-					Random rand = new Random();
+					// Get read name (template name in fact), w/o the suffixes and what comes after the first blank.
+					String templ_name= rec.getReadName().replaceAll(" .*", "").replaceAll("/1$|/2$", "");
+					long v= Hashing.md5().hashBytes((templ_name + rndOffset).getBytes()).asLong();
+					Random rand = new Random(v);
 					if(rand.nextFloat() < probSample){ // Downsampler
 						TextRead tr= new TextRead(rec, this.getGc());
 						textReads.add(tr);
@@ -123,9 +137,13 @@ public class TrackReads extends Track{
 		}
 		StringBuilder printable= new StringBuilder();
 		for(Double idx : keep){
-			List<TextRead> line= this.readStack.get((int)Math.rint(idx));
+			List<SamSequenceFragment> line= this.readStack.get((int)Math.rint(idx));
+//			for(TextRead tr : line){
+//				tr.setIdeogram(tr.getIdeogram(true, false), false);
+//				this.changeFeatureColor(this.getColorForRegex()); // For each TextRead in this interval set colour according to regex in List<Argument>
+//			}
 			try {
-				printable.append(linePrinter(line, this.bisulf, this.isNoFormat(), withReadName));
+				printable.append(linePrinter(line, this.bisulf, this.isNoFormat()));
 				printable.append("\n");
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -149,42 +167,97 @@ public class TrackReads extends Track{
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<List<TextRead>> stackReads(List<TextRead> textReads) throws InvalidGenomicCoordsException, IOException{
+	private List<List<SamSequenceFragment>> stackReads(List<TextRead> textReads) throws InvalidGenomicCoordsException, IOException{
 		
-		List<List<TextRead>> listOfLines= new ArrayList<List<TextRead>>();
+		List<List<SamSequenceFragment>> listOfLines= new ArrayList<List<SamSequenceFragment>>();
 		if(textReads.size() == 0){
 			return listOfLines;
 		}
-		List<TextRead> line= new ArrayList<TextRead>();
-		line.add(textReads.get(0)); 
-		textReads.remove(0);
+
+		List<SamSequenceFragment> fragments= this.makeFragments(textReads, this.getReadsAsPairs()); 
+		List<SamSequenceFragment> line= new ArrayList<SamSequenceFragment>(); // All fragments going in the same line
+		line.add(fragments.get(0)); 
+		fragments.remove(0);
 		listOfLines.add(line);
 		int gap= (this.getGc().isSingleBaseResolution) ? 1 : 0; // If reads are very compressed, do not add space between adjacent ones.
 		while(true){
-			ArrayList<TextRead> trToRemove= new ArrayList<TextRead>();
-			// Find a read in input whose start is greater then end of current
-			for(int i=0; i < textReads.size(); i++){
-				TextRead tr= textReads.get(i);
-				if(tr.getTextStart() > line.get(line.size()-1).getTextEnd()+gap){ // +2 because we want some space between adjacent reads
-					listOfLines.get(listOfLines.size()-1).add(tr); // Append to the last line. 
-					trToRemove.add(tr);
+			ArrayList<SamSequenceFragment> fragToRemove= new ArrayList<SamSequenceFragment>();
+			// Find a fragment in input whose start is greater then end of current
+			for(int i=0; i < fragments.size(); i++){
+				SamSequenceFragment frag= fragments.get(i);
+				if(frag.getTextStart() > line.get(line.size()-1).getTextEnd()+gap){ // +2 because we want some space between adjacent reads
+					listOfLines.get(listOfLines.size()-1).add(frag); // Append to the last line. 
+					fragToRemove.add(frag);
 				}
 			} // At the end of the loop you have put in line as many reads as you can. 
-			for(TextRead tr : trToRemove){ 
-				textReads.remove(textReads.indexOf(tr));
+			for(SamSequenceFragment tr : fragToRemove){ 
+				fragments.remove(fragments.indexOf(tr));
 			}
 			// Create a new line, add the first textRead in list
-			if(textReads.size() > 0){
-				line= new ArrayList<TextRead>();
-				line.add(textReads.get(0));
+			if(fragments.size() > 0){
+				line= new ArrayList<SamSequenceFragment>();
+				line.add(fragments.get(0));
 				listOfLines.add(line);
-				textReads.remove(0);
+				fragments.remove(0);
 			} else {
 				break;
 			}
 		}
 		return listOfLines;
 	}
+	
+	/**Match reads in textReads list to return a list fragments. Fragments are
+	 * returned sorted by start position. 
+	 * @param paired If true try to match up read pairs in the same fragment. If false, each read
+	 * is a fragment so the resulting list is effectively the same as the input.  
+	 * */
+	private List<SamSequenceFragment> makeFragments(List<TextRead> textReads, boolean asPair) {
+
+		List<SamSequenceFragment> fragments= new ArrayList<SamSequenceFragment>();
+		
+		while(textReads.size() > 0){
+			// Keep going until all reads have been moved to the list of fragments.
+			TextRead tr= textReads.get(0);
+			textReads.remove(0);
+			if( ! asPair || ! tr.getSamRecord().getProperPairFlag()){
+				SamSequenceFragment frag= new SamSequenceFragment(tr);
+				if(! asPair){ 
+					frag.setSingleton(true);
+				}
+				fragments.add(frag);
+			}
+			else {
+				// Find the mate of this read, if present.
+				TextRead mate= null;
+				for(TextRead candidateMate : textReads){
+					if(candidateMate.getSamRecord().getProperPairFlag() && 
+					   Utils.equalReadNames(tr.getSamRecord().getReadName(), candidateMate.getSamRecord().getReadName()) &&
+					   tr.getSamRecord().getAlignmentStart() == candidateMate.getSamRecord().getMateAlignmentStart()){
+						mate= candidateMate;
+						break;
+					}
+				} // After this loop either we have found a mate or not. Either way, create a fragment from a singleton or a pair.
+				if(mate == null){
+					fragments.add(new SamSequenceFragment(tr));
+				} else {
+					fragments.add(new SamSequenceFragment(tr, mate));
+					textReads.remove(mate);
+				}
+			}
+		}
+		sortFragmentsByStartPosition(fragments); // This may be redundant.
+		return fragments;
+	}
+
+    private void sortFragmentsByStartPosition(List<SamSequenceFragment> fragments){
+    	  Collections.sort(fragments, new Comparator<SamSequenceFragment>() {
+    	      @Override
+    	      public int compare(final SamSequenceFragment frag1, final SamSequenceFragment frag2) {
+    	          return Integer.compare(frag1.getLeftRead().getSamRecord().getAlignmentStart(), 
+    	        		                 frag2.getLeftRead().getSamRecord().getAlignmentStart());
+    	      }
+    	  });    	
+    }
 	
 	/** Prepare a printable string of each output line. 
 	 * @param textReads List reads to print out on the same line.
@@ -194,16 +267,16 @@ public class TrackReads extends Track{
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws InvalidColourException 
 	 */
-	private String linePrinter(List<TextRead> textReads, boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
+	private String linePrinter(List<SamSequenceFragment> fragments, boolean bs, boolean noFormat) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
 		StringBuilder sb= new StringBuilder();
 
 		int curPos= 0; // Position on the line, needed to pad with blanks btw reads.
-		for(TextRead tr : textReads){
-			String line= StringUtils.repeat(" ", (tr.getTextStart()-1) - curPos);
+		for(SamSequenceFragment frag : fragments){
+			String line= StringUtils.repeat(" ", (frag.getTextStart()-1) - curPos); // Left pad with spaces
 			sb.append(line);
-			String printableRead= tr.getPrintableTextRead(bs, noFormat, withReadName);
+			String printableRead= frag.getPrintableFragment(bs, noFormat);
 			sb.append(printableRead);
-			curPos= tr.getTextEnd();
+			curPos= frag.getTextEnd();
 		}
 		int nchars= Utils.stripAnsiCodes(sb.toString()).length();
 		if(nchars < this.userWindowSize){
@@ -263,38 +336,17 @@ public class TrackReads extends Track{
 				+ awk; 
 		return this.formatTitle(xtitle) + "\n";
 	}
-//	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
-//		
-//		if(this.isHideTitle()){
-//			return "";
-//		}
-//		String samtools= "";
-//		if( ! (this.get_F_flag() == Track.F_FLAG) ){
-//			samtools += " -F " + this.get_F_flag();
-//		}
-//		if( ! (this.get_f_flag() == Track.f_FLAG) ){
-//			samtools += " -f " + this.get_f_flag();
-//		}
-//		if( ! (this.getMapq() == Track.MAPQ) ){
-//			samtools += " -q " + this.getMapq();
-//		}
-//		if( ! samtools.isEmpty()){
-//			samtools= "; samtools" + samtools;
-//		}
-//		String title= this.getTrackTag()
-//				+ samtools;
-//		
-//		//String xtitle= Utils.padEndMultiLine(title, this.getGc().getUserWindowSize());
-//		return this.formatTitle(title) + "\n";
-//	}
-	
+
 	@Override
 	protected List<String> getRecordsAsStrings() {
 		List<String> featureList= new ArrayList<String>();
 		
-		for(List<TextRead> x : this.readStack){
-			for(TextRead txr : x ){
-				featureList.add(txr.getSamRecord().getSAMString());
+		for(List<SamSequenceFragment> x : this.readStack){
+			for(SamSequenceFragment frag : x){
+				featureList.add(frag.getLeftRead().getSamRecord().getSAMString());
+				if(frag.getRightRead() != null){
+					featureList.add(frag.getRightRead().getSamRecord().getSAMString());	
+				}
 			}
 		}
 		return featureList;
@@ -313,13 +365,15 @@ public class TrackReads extends Track{
 		return this.awk;
 	}
 
+	@Override
+	public boolean getReadsAsPairs(){
+		return this.readsAsPairs;
+	}
 	
-	public boolean isWithReadName() {
-		return withReadName;
+	@Override
+	public void setReadsAsPairs(boolean readsAsPairs) throws InvalidGenomicCoordsException, IOException {
+		this.readsAsPairs= readsAsPairs;
+		this.update();
 	}
 
-	public void setWithReadName(boolean withReadName) {
-		this.withReadName = withReadName;
-	}
-	
 }

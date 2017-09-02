@@ -1,7 +1,6 @@
 package samTextViewer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -152,6 +151,27 @@ public class GenomicCoordsTest {
 		System.out.println(gc);
 		System.out.println(gc2);
 		// assertTrue(gc2.equalCoords(gc));		
+	}
+	
+	@Test
+	public void canInitializeSamSeqDictFromVCF() throws IOException, InvalidGenomicCoordsException{
+		GenomicCoords  gc= new GenomicCoords("1", 80, null, null);
+		gc.setGenome(Arrays.asList(new String[] {"test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"}), true);
+		assertEquals(25, gc.getSamSeqDict().size());
+		
+		gc= new GenomicCoords("1", 80, null, null);
+		gc.setGenome(Arrays.asList(new String[] {"https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"}), true);
+		assertEquals(25, gc.getSamSeqDict().size());
+
+		// Not indexed
+		gc= new GenomicCoords("1", 80, null, null);
+		gc.setGenome(Arrays.asList(new String[] {"test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf"}), true);
+		assertEquals(25, gc.getSamSeqDict().size());
+		
+		// VCF w/o sequence dict
+		gc= new GenomicCoords("1", 80, null, null);
+		gc.setGenome(Arrays.asList(new String[] {"CEU.exon.2010_06.genotypes.vcf.gz"}), true);
+		assertNull(gc.getSamSeqDict());
 	}
 	
 	@Test

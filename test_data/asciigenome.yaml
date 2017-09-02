@@ -1,0 +1,22 @@
+files: 
+- /var/folders/13/jfm_jsqj0ps04hv35fm90hqnr87nq_/T/asciigenome.798771811615695376.hg19_genes.gtf.gz
+- /Users/berald01/svn_git/ASCIIGenome/test_data/hg19_genes.gtf.gz
+- /Users/berald01/svn_git/ASCIIGenome/test_data/adjacent.bam
+- /Users/berald01/svn_git/ASCIIGenome/test_data/ds051.2.bam
+- /Users/berald01/svn_git/ASCIIGenome/test_data/ds051.sample.bam
+- /Users/berald01/svn_git/ASCIIGenome/test_data/ds051.short.bam
+- /Users/berald01/svn_git/ASCIIGenome/test_data/ds051.short2.bam
+- /Users/berald01/svn_git/ASCIIGenome/test_data/junction.bam
+positions: 
+- bar:10-1000
+- foo:10-1000
+- chr7:10-1000
+- chr7:10-10000
+commands: 
+- q
+- awk -h
+- q
+- :1
+- posHistory
+- q
+

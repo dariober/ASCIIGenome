@@ -52,7 +52,6 @@ import org.broad.igv.bbfile.BigBedIterator;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
-import org.jline.terminal.Terminal;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -69,6 +68,9 @@ import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import faidx.Faidx;
 import faidx.UnindexableFastaFileException;
+import htsjdk.samtools.SAMFileHeader.SortOrder;
+import htsjdk.samtools.SAMFileWriter;
+import htsjdk.samtools.SAMFileWriterFactory;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
@@ -79,8 +81,16 @@ import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.index.tabix.TabixFormat;
+import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.readers.TabixReader;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFCodec;
+import htsjdk.variant.vcf.VCFFileReader;
+import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFHeaderLine;
+import htsjdk.variant.vcf.VCFHeaderVersion;
 import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
@@ -293,7 +303,7 @@ public class Utils {
 			} 
 			else {
 				// No overlap add merged interval to list and reset new merged interval
-				IntervalFeature x= new IntervalFeature(mergedChrom + "\t" + (mergedFrom-1) + "\t" + mergedTo, TrackFormat.BED);
+				IntervalFeature x= new IntervalFeature(mergedChrom + "\t" + (mergedFrom-1) + "\t" + mergedTo, TrackFormat.BED, null);
 				x.setScreenFrom(mergedScreenFrom);
 				x.setScreenTo(mergedScreenTo);
 				if(strand.size() == 1){
@@ -407,7 +417,9 @@ public class Utils {
 				srf.validationStringency(ValidationStringency.SILENT);
 				samReader = srf.open(new File(x));
 			}
-			region= samReader.getFileHeader().getSequence(0).getSequenceName();
+			// region= samReader.getFileHeader().getSequence(0).getSequenceName();
+			SAMRecord rec = samReader.iterator().next(); 
+			region= rec.getContig() + ":" + rec.getAlignmentStart();
 			samReader.close();
 			return region;
 		
@@ -436,9 +448,10 @@ public class Utils {
 		
 		} else if(Utils.isUcscGenePredSource(x)){
 			return initRegionFromUcscGenePredSource(x);
-			
+		
 		} else {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
+			// VCF files are also included here since they are either gzip or plain ASCII.
 			BufferedReader br;
 			GZIPInputStream gzipStream;
 			if(x.toLowerCase().endsWith(".gz") || x.toLowerCase().endsWith(".bgz")){
@@ -465,8 +478,12 @@ public class Utils {
 				if(line.startsWith("#") || line.isEmpty() || line.startsWith("track ")){
 					continue;
 				}
-				IntervalFeature feature= new IntervalFeature(line, fmt);
-				region= feature.getChrom() + ":" + feature.getFrom(); 
+				if(fmt.equals(TrackFormat.VCF)){
+					region= line.split("\t")[0] + ":" + line.split("\t")[1]; 
+				} else {
+					IntervalFeature feature= new IntervalFeature(line, fmt, null);
+					region= feature.getChrom() + ":" + feature.getFrom();
+				}
 				br.close();
 				return region;
 			}
@@ -621,7 +638,7 @@ public class Utils {
 				|| fileName.endsWith(".gff3.bgz.tbi")){
 			return TrackFormat.GFF;
 			
-		} else if(fileName.endsWith(".bam") || fileName.endsWith(".cram")){
+		} else if(fileName.endsWith(".bam") || fileName.endsWith(".sam") || fileName.endsWith(".sam.gz") || fileName.endsWith(".cram")){
 			return TrackFormat.BAM;
 			
 		} else if(fileName.endsWith(".bigwig") || fileName.endsWith(".bw")) {
@@ -1039,8 +1056,15 @@ public class Utils {
 		return mapping;
 	}
 
-	/*Nicely tabulate list of rows. Each row is tab separated **/
-	public static List<String> tabulateList(List<String> rawList) {
+	/** Nicely tabulate list of rows. Each row is tab separated 
+	 * The terminalWidth param is used to decide whether rows should be flushed left instead of
+	 * being nicely tabulated. If the amount of white space in a cell is too much relative to 
+	 * terminalWidth, then flush left. With special value: -1 never flush left, with 0 always flush.
+	 */
+	public static List<String> tabulateList(List<String> rawList, int terminalWidth) {
+		// This method could be streamlined to be more efficient. There are quite a few
+		// Lists moved around that could be avoided. However, the size of the table is
+		// typically small enough that we prefer a clearer layout over efficiency.
 		
 		// * Split each row in a list of strings. I.e. make list of lists
 		List<ArrayList<String>> rawTable= new ArrayList<ArrayList<String>>();
@@ -1058,7 +1082,7 @@ public class Utils {
 		}
 				
 		// * Iterate through each column 
-		List<ArrayList<String>> paddedTable= new ArrayList<ArrayList<String>>();
+		List<List<String>> paddedTable= new ArrayList<List<String>>();
 		
 		for(int i= 0; i < ncol; i++){
 			// Collect all items in column i in a list. I.e. select column i
@@ -1071,30 +1095,67 @@ public class Utils {
 				}
 			}
 			// Get the longest string in this column
-			int maxStr= 0;
+			int maxStr= 1;
 			for(String x : col){
 				if(x.length() > maxStr){
 					maxStr= x.length();
 				}
 			}
-			// ** Pass thorugh the column again and pad with spaces to match length of longest string
+			// ** Pass through the column again and pad with spaces to match length of longest string
 			// maxStr+=1; // +1 is for separating
 			for(int j= 0; j < col.size(); j++){
 				String padded= String.format("%-" + maxStr + "s", col.get(j));
 				col.set(j, padded);
 			}
-			paddedTable.add((ArrayList<String>) col);
+			paddedTable.add((List<String>) col);
 		}
-		// Each list in padded table is a column. We need to create rows as strings
-		List<String> outputTable= new ArrayList<String>();
+
+		// In paddedTable each inner list is a column. Transpose to have
+		// inner list as row as it is more convenient from now on.
+		List<List<String>> tTable= new ArrayList<List<String>>();
 		for(int r= 0; r < rawList.size(); r++){
-			StringBuilder row= new StringBuilder();
+			List<String> row= new ArrayList<String>();
 			for(int c= 0; c < paddedTable.size(); c++){
-				row.append(paddedTable.get(c).get(r) + " ");
+				row.add(paddedTable.get(c).get(r));
 			}
+			tTable.add(row);
+		}
+		
+		// If a cell (String) has too many spaces to the right, flush left, i.e. trim(),
+		// that cell and all the cells to right on that row. This is to prevent odd
+		// formatting where a long string in one cell makes all the other cells look very empty.
+		terminalWidth= terminalWidth < 0 ? Integer.MAX_VALUE : terminalWidth;
+		for(List<String> row : tTable){
+			boolean flush= false;
+			for(int i= 0; i < row.size(); i++){
+				if(! flush){
+					int whiteSize= row.get(i).length() - row.get(i).trim().length();
+					if(whiteSize > terminalWidth/4.0){
+						// The rest of this row will be flushed
+						flush= true;						
+					}
+				}
+				if(flush){
+					row.set(i, row.get(i).trim());
+				}
+			}
+		}
+
+		// Finally, join row into a list of single, printable strings:		
+		List<String> outputTable= new ArrayList<String>();
+		for(List<String> lstRow : tTable){
+			String row= Joiner.on(" ").join(lstRow); // Here you decide what separates columns.
 			outputTable.add(row.toString().trim());
 		}
 		return outputTable;
+//		for(int r= 0; r < rawList.size(); r++){
+//			StringBuilder row= new StringBuilder();
+//			for(int c= 0; c < paddedTable.size(); c++){
+//				row.append(paddedTable.get(c).get(r) + " ");
+//			}
+//			outputTable.add(row.toString().trim());
+//		}
+//		return outputTable;
 	}
 
 	/** Function to round x and y to a number of digits enough to show the difference in range
@@ -1240,7 +1301,7 @@ public class Utils {
 			String row= tabList.get(i) + "\t" + bar;
 			tabList.set(i, row);
 		}
-		List<String> table= Utils.tabulateList(tabList);
+		List<String> table= Utils.tabulateList(tabList, -1);
 		StringBuilder out= new StringBuilder();
 		for(String x : table){
 			out.append(x).append("\n");
@@ -1273,11 +1334,16 @@ public class Utils {
 			return null;
 		}
 		
+		// This is a hack to allow empty tokens to be passed at the command line. 
+		// An empty 
+		x= x.replace("''", "' '");
+		
 		// See also http://stackoverflow.com/questions/38161437/inconsistent-behaviour-of-strtokenizer-to-split-string
 		StrTokenizer str= new StrTokenizer(x);
     	str.setTrimmerMatcher(StrMatcher.spaceMatcher());
 		str.setDelimiterString(delimiterString);
 		str.setQuoteChar('\'');
+		// str.setIgnoreEmptyTokens(false);
 		ArrayList<String> tokens= (ArrayList<String>) str.getTokenList();
 		for(int i= 0; i < tokens.size(); i++){
 			String tok= tokens.get(i).trim();
@@ -1857,13 +1923,98 @@ public class Utils {
 
 	/**Get terminal width. 
 	 * */
-	public static int getTerminalWidth(Terminal terminal) throws IOException {
+	public static int getTerminalWidth() throws IOException {
 		// The argument terminal could be initialized inside this method but it takes ~3 sec to do that.
-		int terminalWidth= terminal.getWidth(); // jline.TerminalFactory.get().getWidth(); 
+		int terminalWidth= jline.TerminalFactory.get().getWidth(); 
 		if(terminalWidth <= 0){
 			terminalWidth= 80;
 		}
 		return terminalWidth;
 	}
+
+	/**Get VCFHeader from the given source which could be URL or local file.*/
+	public static VCFHeader getVCFHeader(String source) throws MalformedURLException{
+		VCFHeader vcfHeader;
+		if( Utils.urlFileExists(source) ){
+			URL url= new URL(source);
+			AbstractFeatureReader<VariantContext, LineIterator> reader = AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
+			vcfHeader = (VCFHeader) reader.getHeader();
+		} else {
+			VCFFileReader reader = new VCFFileReader(new File(source), false); // Set requiredIndex false!
+			vcfHeader= reader.getFileHeader();
+			reader.close();
+		}
+		return vcfHeader;
+	}
 	
+	public static VCFHeaderVersion getVCFHeaderVersion(VCFHeader vcfHeader){
+		Iterator<VCFHeaderLine> iter = vcfHeader.getMetaDataInInputOrder().iterator();
+		while(iter.hasNext()){
+			VCFHeaderLine hl = iter.next();
+			if(hl.getKey().equals("fileformat")){
+				return VCFHeaderVersion.toHeaderVersion(hl.getValue());
+			}
+		}
+		return null;
+	}
+
+	/** Sort and index input sam or bam.
+	 * @throws IOException 
+	 * */
+	public static void sortAndIndexSamOrBam(String inSamOrBam, String sortedBam, boolean deleteOnExit) throws IOException {
+
+//		 final SamReader reader = SamReaderFactory.makeDefault().open(new File(inSamOrBam));
+//		 reader.getFileHeader().setSortOrder(SortOrder.coordinate);
+//		 final SAMFileWriter writer = new SAMFileWriterFactory().makeSAMOrBAMWriter(reader.getFileHeader(), false, new File(sortedBam));
+//
+//		 for (final SAMRecord rec : reader) {
+//			 System.err.println(rec);
+//			 writer.addAlignment(rec);
+//	     }
+//		 reader.close();
+//	     writer.close();
+		
+		/*  ------------------------------------------------------ */
+		/* This chunk prepares SamReader from local bam or URL bam */
+		UrlValidator urlValidator = new UrlValidator();
+		SamReaderFactory srf=SamReaderFactory.make();
+		srf.validationStringency(ValidationStringency.SILENT);
+		SamReader samReader;
+		if(urlValidator.isValid(inSamOrBam)){
+			samReader = SamReaderFactory.makeDefault().open(SamInputResource.of(new URL(inSamOrBam)));
+		} else {
+			samReader= srf.open(new File(inSamOrBam));
+		}
+		/*  ------------------------------------------------------ */
+		
+		samReader.getFileHeader().setSortOrder(SortOrder.coordinate);
+		
+		File out= new File(sortedBam);
+		if(deleteOnExit){
+			out.deleteOnExit();
+			File idx= new File(out.getAbsolutePath().replaceAll("\\.bam$", "") + ".bai");
+			idx.deleteOnExit();
+		}
+		
+		SAMFileWriter outputSam= new SAMFileWriterFactory()
+				.setCreateIndex(true)
+				.makeSAMOrBAMWriter(samReader.getFileHeader(), false, out);
+
+		for (final SAMRecord samRecord : samReader) {
+			outputSam.addAlignment(samRecord);
+        }
+		samReader.close();
+		outputSam.close();
+	}
+
+	/**True if SAM read names are equal. Read name strings are parsed to remove
+	 * parts that are not part of the name.  
+	 * */
+	public static boolean equalReadNames(String readName, String readName2) {
+		return cleanSamReadName(readName).equals(cleanSamReadName(readName2));
+	}
+	private static String cleanSamReadName(String readName){
+				return readName.replaceAll(" .*", "")
+				               .replaceAll("/1$|/2$", "");		
+	}
 }

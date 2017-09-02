@@ -24,11 +24,26 @@ ASCIIGenome="$1 --debug 2 -ni"
 
 set -x
 
+## Can show read pairs
+$ASCIIGenome -x 'readsAsPairs' ../test_data/pairs.sam > /dev/null
+
+## Init from VCF
+$ASCIIGenome ../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'show genome' > /dev/null
+$ASCIIGenome https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'show genome' > /dev/null
+
+## Genotype matrix
+$ASCIIGenome ../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'goto 1:1117997-1204429 && genotype -f {HOM} && genotype -n 1' > /dev/null
+$ASCIIGenome ../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'goto 1:1117997-1204429 && genotype -s HG00096' > /dev/null
+
 ## Set color for features
 $ASCIIGenome ../test_data/hg19_genes_head.gtf -x "goto chr1:6267-17659 && featureColorForRegex -r DDX11L1 red -r WASH7P blue" > /dev/null
 
 ## Test awk with getSamTag()
 $ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && awk 'getSamTag(\"NM\") > 0'" > /dev/null
+
+## Test header names. Note escape on $
+$ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && bookmark && awk '\$POS > 5500000' actb.bam" > /dev/null
+$ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && bookmark && awk '\$START > 5500000' Book" > /dev/null
 
 ## Can show/hide track settings
 $ASCIIGenome ../test_data/ds051.actb.bam -x 'goto chr7:5568803-5568975 && show genome && show genome' > /dev/null
