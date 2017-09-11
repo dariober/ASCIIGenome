@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,7 +36,7 @@ public class TextReadTest {
 	}
 	
 	@Test
-	public void getNoAlignedBasesFromCigar() {
+	public void getNumAlignedBasesFromCigar() {
 		// A reminder of how cigar works.
 		SAMRecord rec= new SAMRecord(null);
 		rec.setCigarString("2M2D4M");
@@ -76,6 +77,33 @@ public class TextReadTest {
 		assertFalse(el.getOperator().consumesReferenceBases());
 	}
 
+	@Test
+	public void canShowInsertion() throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+		
+		GenomicCoords gc= new GenomicCoords("chr7:1-80", 80, null, null);
+		SAMRecord rec= new SAMRecord(null);
+		rec.setAlignmentStart(1);
+		rec.setCigarString("1M3I5M1I3M");
+		rec.setReadBases("AnnnACCGGnACT".getBytes());
+		
+		TextRead tr= new TextRead(rec, gc);
+		assertEquals(2, StringUtils.countMatches(tr.getPrintableTextRead(false, false, false), "7")); // 7: code for "invert" colours
+
+		// Ensure it is the first base being marked. I.e. the "A".
+		System.err.println(tr.getPrintableTextRead(false, false, false));
+		assertTrue(tr.getPrintableTextRead(false, false, false).replaceAll("A.*", "").contains("7"));
+
+		rec.setCigarString("4M");
+		rec.setReadBases("ACTG".getBytes());
+		tr= new TextRead(rec, gc);
+		assertTrue(! tr.getPrintableTextRead(false, false, false).contains("7"));
+		
+		rec.setCigarString("1M");
+		rec.setReadBases("A".getBytes());
+		tr= new TextRead(rec, gc);
+		System.err.println(tr.getPrintableTextRead(false, false, false));
+	}
+	
 	@Test
 	public void canPrintDNARead() throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 		

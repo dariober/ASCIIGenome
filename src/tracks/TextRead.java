@@ -89,9 +89,6 @@ class TextRead extends IntervalFeature{
 		this.setTextStart();
 		this.setTextEnd();
 		this.setTextPositionsOfSkippedBases();
-//		for(int[] x : this.textPositionsOfSkippedBases){
-//			System.err.println(x[0] + " " + x[1]);
-//		}
 	}
 	
 	/*       M e t h o d s       */
@@ -163,14 +160,11 @@ class TextRead extends IntervalFeature{
 	 * @throws InvalidColourException 
 	 */
 	private List<FeatureChar> readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
-		
-//		if(noFormat){ // Essentially nothing to do in this case
-//			return Joiner.on("").join(read);
-//		}
 
 		byte[] baseQual= this.samRecord.getBaseQualities();
 		boolean baseQualIsPresent= baseQual.length > 0 ? true : false;
 		int SHADE_BASEQ= Integer.parseInt(Config.get(ConfigKey.shade_baseq));
+		List<Integer> positionsOfInsertions = this.getPositionsOfInsertions();
 
 		List<FeatureChar> formatted= new ArrayList<FeatureChar>();		
 		int qIdx= 0;
@@ -188,6 +182,10 @@ class TextRead extends IntervalFeature{
 			}
 			if(this.samRecord.getReadPairedFlag() && this.samRecord.getSecondOfPairFlag()){
 				c.setUnderline(true);
+			}
+			
+			if(positionsOfInsertions.contains(i)){
+				c.setInvertFgBgColor(true);
 			}
 			
 			if(this.samRecord.getMappingQuality() < SHADE_MAPQ || shadeBaseQ){ // Grey out low mapq/base qual
@@ -275,6 +273,25 @@ class TextRead extends IntervalFeature{
 				genomicPosition += el.getLength();
 			}
 		}
+	}
+
+	/**Get positions on the read where insertions start. 
+	 * @return 
+	 * */
+	private List<Integer> getPositionsOfInsertions() throws InvalidGenomicCoordsException, IOException{
+		int posOnRead= 0;
+		List<Integer> positionsOfInsertions= new ArrayList<Integer>(); 
+		List<CigarElement> cigar = this.getSamRecord().getCigar().getCigarElements();
+		for(CigarElement el : cigar){
+			if(el.getOperator().equals(CigarOperator.INSERTION)){
+				// -1 because we mark the base before the start of the insertion.
+				positionsOfInsertions.add(posOnRead-1);
+			};
+			if(el.getOperator().consumesReferenceBases()){
+				posOnRead += el.getLength();
+			}
+		}
+		return positionsOfInsertions;
 	}
 	
 	/** If the windowSize and genomic span are not mapped 1:1, i.e. 1 bp : 1 char, then
