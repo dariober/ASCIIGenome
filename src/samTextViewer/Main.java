@@ -384,7 +384,7 @@ public class Main {
 	 * */
 	private static void writeYamlHistory(ASCIIGenomeHistory current, 
 										 final History cmdHistory, 
-										 TrackSet trackSet,
+										 final TrackSet trackSet,
 			                             final GenomicCoordsHistory gch 
 			                             ){
 	
@@ -421,26 +421,6 @@ public class Main {
 				List<String> lastPos= gch.prepareHistoryForHistoryFile(newYamlHistory.getFileName(), 100);
 				newYamlHistory.setPositions(lastPos);
 
-//				// Sessions
-//				Map<Integer, List<String>> currentSessions = current.getSessions();
-//				if(currentSessions == null){
-//					currentSessions= new LinkedHashMap<Integer, List<String>>(); 
-//				}
-//				boolean found= false;
-//				System.err.println(currentSessions);
-//				for(int x : currentSessions.keySet()){
-//					if(currentSessions.get(x).equals(trackSet.getFilenameList())){
-//						found= true;
-//						break;
-//					}
-//				}
-//				System.err.println(trackSet.getFilenameList());
-//				if( ! found && ! trackSet.getFilenameList().isEmpty()){
-//					int nextKey= currentSessions.keySet().size() + 1;
-//					currentSessions.put(nextKey, trackSet.getFilenameList());
-//				}
-//				newYamlHistory.setSessions(currentSessions);
-				
 				// Write yaml
 				newYamlHistory.write();
 				
