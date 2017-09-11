@@ -88,9 +88,14 @@ class GenotypeMatrix {
 	    		vcfRecordWithScript.put(ctx.getVariantContext(), js);
 	    	}
 		}
-    	
+		List<String> samples= new ArrayList<String>();
+		if(vcfHeader != null){
+			samples= vcfHeader.getGenotypeSamples(); 
+		} else {
+			samples= variantList.get(0).getVariantContext().getSampleNamesOrderedByName();
+		}
     	int n= 0;
-        for(String sampleName : variantList.get(0).getVariantContext().getSampleNamesOrderedByName()){
+        for(String sampleName : samples){
 
     		if(n >= this.getnMaxSamples() && this.getnMaxSamples() >= 0){
     			break;

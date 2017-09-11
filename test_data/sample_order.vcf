@@ -1,0 +1,4 @@
+##fileformat=VCFv4.1
+##contig=<ID=1,length=249250621>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HG03	HG01	HG02
+1	200000	ALU_umary_ALU_2	A	<INS:ME:ALU>	.	.	AC=35	XT	foo	bar	baz
