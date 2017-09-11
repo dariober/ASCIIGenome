@@ -82,7 +82,7 @@ class FeatureChar {
 			this.setFgColor(Config.get(ConfigKey.seq_other));
 		}
 		this.setBgColor(Config.get(ConfigKey.background));
-		this.invertFgBgColor= true;
+		this.setInvertFgBgColor(true);
 	}
 	
 	public void addFormatGenotype(Genotype gt) {
@@ -155,6 +155,10 @@ class FeatureChar {
 
 	public void setUnderline(boolean underline) {
 		this.underline = underline;
+	}
+
+	public void setInvertFgBgColor(boolean invert) {
+		this.invertFgBgColor= invert;
 	}
 
 }
