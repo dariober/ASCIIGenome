@@ -90,9 +90,13 @@ public class TextReadTest {
 		assertEquals(2, StringUtils.countMatches(tr.getPrintableTextRead(false, false, false), "7")); // 7: code for "invert" colours
 
 		// Ensure it is the first base being marked. I.e. the "A".
-		System.err.println(tr.getPrintableTextRead(false, false, false));
 		assertTrue(tr.getPrintableTextRead(false, false, false).replaceAll("A.*", "").contains("7"));
 
+		// Hide insertion if resolution is not single base
+		GenomicCoords gc2= new GenomicCoords("chr7:1-80", 79, null, null);
+		tr= new TextRead(rec, gc2);
+		assertTrue( ! tr.getPrintableTextRead(false, false, false).contains("7"));
+		
 		rec.setCigarString("4M");
 		rec.setReadBases("ACTG".getBytes());
 		tr= new TextRead(rec, gc);
@@ -101,8 +105,7 @@ public class TextReadTest {
 		rec.setCigarString("1M");
 		rec.setReadBases("A".getBytes());
 		tr= new TextRead(rec, gc);
-		System.err.println(tr.getPrintableTextRead(false, false, false));
-	}
+	}	
 	
 	@Test
 	public void canPrintDNARead() throws InvalidGenomicCoordsException, IOException, InvalidColourException {

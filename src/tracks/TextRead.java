@@ -164,7 +164,11 @@ class TextRead extends IntervalFeature{
 		byte[] baseQual= this.samRecord.getBaseQualities();
 		boolean baseQualIsPresent= baseQual.length > 0 ? true : false;
 		int SHADE_BASEQ= Integer.parseInt(Config.get(ConfigKey.shade_baseq));
-		List<Integer> positionsOfInsertions = this.getPositionsOfInsertions();
+		
+		List<Integer> positionsOfInsertions= new ArrayList<Integer>();
+		if(this.gc.isSingleBaseResolution){
+			positionsOfInsertions = this.getPositionsOfInsertions();
+		}
 
 		List<FeatureChar> formatted= new ArrayList<FeatureChar>();		
 		int qIdx= 0;
@@ -184,7 +188,7 @@ class TextRead extends IntervalFeature{
 				c.setUnderline(true);
 			}
 			
-			if(positionsOfInsertions.contains(i)){
+			if(this.gc.isSingleBaseResolution && positionsOfInsertions.contains(i)){
 				c.setInvertFgBgColor(true);
 			}
 			
