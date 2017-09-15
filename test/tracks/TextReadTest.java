@@ -6,10 +6,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.base.Splitter;
 
 import coloring.Config;
 import exceptions.InvalidColourException;
@@ -87,15 +91,16 @@ public class TextReadTest {
 		rec.setReadBases("AnnnACCGGnACT".getBytes());
 		
 		TextRead tr= new TextRead(rec, gc);
-		assertEquals(2, StringUtils.countMatches(tr.getPrintableTextRead(false, false, false), "7")); // 7: code for "invert" colours
+		// 7: code for "invert" colours. Checking for "[7;" is brittle since it assumes 7 is the first code.
+		assertEquals(2, StringUtils.countMatches(tr.getPrintableTextRead(false, false, false), "[7;")); 
 
 		// Ensure it is the first base being marked. I.e. the "A".
-		assertTrue(tr.getPrintableTextRead(false, false, false).replaceAll("A.*", "").contains("7"));
+		assertTrue(tr.getPrintableTextRead(false, false, false).replaceAll("A.*", "").contains("[7;"));
 
 		// Hide insertion if resolution is not single base
 		GenomicCoords gc2= new GenomicCoords("chr7:1-80", 79, null, null);
 		tr= new TextRead(rec, gc2);
-		assertTrue( ! tr.getPrintableTextRead(false, false, false).contains("7"));
+		assertTrue( ! tr.getPrintableTextRead(false, false, false).contains("[7;"));
 		
 		rec.setCigarString("4M");
 		rec.setReadBases("ACTG".getBytes());
@@ -106,6 +111,20 @@ public class TextReadTest {
 		rec.setReadBases("A".getBytes());
 		tr= new TextRead(rec, gc);
 	}	
+	
+	@Test
+	public void canShadeBaseQuality() throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+		GenomicCoords gc= new GenomicCoords("chr7:1-80", 80, null, null);
+		SAMRecord rec= new SAMRecord(null);
+		rec.setAlignmentStart(1);
+		rec.setCigarString("2M3D8M");
+		rec.setMappingQuality(30);
+		rec.setReadBases("AAAAATTTTT".getBytes());
+		rec.setBaseQualities("!!!!!IIIII".getBytes());
+		System.err.println(rec.getSAMString());
+		TextRead tr= new TextRead(rec, gc);
+		System.err.println(Splitter.on("m").omitEmptyStrings().splitToList(tr.getPrintableTextRead(false, false, false)));
+	}
 	
 	@Test
 	public void canPrintDNARead() throws InvalidGenomicCoordsException, IOException, InvalidColourException {
@@ -177,7 +196,6 @@ public class TextReadTest {
 		assertTrue("_", textRead.getPrintableTextRead(false, true, false).startsWith("_"));
 		assertTrue("_", textRead.getPrintableTextRead(false, true, false).endsWith("_"));
 		assertEquals("", textRead.getPrintableTextRead(false, true, false).replaceAll("_", ""));
-		
 	}
 
 //	@Test

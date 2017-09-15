@@ -1,3 +1,21 @@
+New in 1.11.0
+============
+
+* Fix bug where shaded base qualities were occasionally shifted.
+
+* Insertions in reads are visible. The base preceding an insertion has fore/background colour inverted.
+
+* Re-established compatibility with Java 1.7. Release 1.10.0 was accidently compiled for Java 1.8.
+
+* Validation of VCF header is more relaxed. The original validation imposed by htsjdk was is very 
+  which occasionally caused files to be rejected for minor bugs.
+
+* `genotype` matrix prints samples in the same order as in the VCF instead of using alphanumeric order.
+
+* Indel variants start from POS+1 if the first base of the variant equals the reference.  
+
+* `grep` applies also to bam tracks.
+
 New in 1.10.0
 ============
 

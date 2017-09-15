@@ -301,15 +301,24 @@ public class InteractiveInput {
 									proc.getGenomicCoordsHistory().add(new GenomicCoords(region, terminalWidth, samSeqDict, fasta));
 									proc.getTrackSet().addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
 								} catch (Exception x){
+									x.printStackTrace();
 									msg= Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
 									System.err.println(msg);
 								}
 							}
 
 							if(proc.getGenomicCoordsHistory().current().getSamSeqDict() == null || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0){
-								GenomicCoords gc= proc.getGenomicCoordsHistory().current();
-								// We are adding tracks. Check if we can set genome but do not treat these files as genome files.
-								gc.setGenome(Arrays.asList(new String[] {sourceName}), false);
+								GenomicCoords testSeqDict= new GenomicCoords("default", Utils.getTerminalWidth(), null, null); 
+								List<String> candidateSourceGenome= new ArrayList<String>();
+								candidateSourceGenome.add(sourceName);
+								testSeqDict.setGenome(candidateSourceGenome, false);
+								if(testSeqDict.getSamSeqDict() != null){
+									candidateSourceGenome.add(0, "cmd");
+									proc.getGenomicCoordsHistory().setGenome(candidateSourceGenome);
+								}
+//								GenomicCoords gc= proc.getGenomicCoordsHistory().current();
+//								// We are adding tracks. Check if we can set genome but do not treat these files as genome files.
+//								gc.setGenome(Arrays.asList(new String[] {sourceName}), false);
 							}
 						}
 					}
@@ -536,10 +545,9 @@ public class InteractiveInput {
 		if(testSeqDict.getSamSeqDict() != null){
 			proc.getGenomicCoordsHistory().setGenome(tokens);
 		} else {
-			System.err.println(Utils.padEndMultiLine("Cannot set genome from " + tokens, proc.getWindowSize()));
+			System.err.println(Utils.padEndMultiLine("Cannot set genome from " + tokens, Utils.getTerminalWidth()));
 			this.interactiveInputExitCode= ExitCode.ERROR;
 		}
-		
 	}
 
 	/** Execute arbitrary system command and print its output

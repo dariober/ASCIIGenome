@@ -139,7 +139,6 @@ public class TrackReads extends Track{
 		for(Double idx : keep){
 			List<SamSequenceFragment> line= this.readStack.get((int)Math.rint(idx));
 //			for(TextRead tr : line){
-//				tr.setIdeogram(tr.getIdeogram(true, false), false);
 //				this.changeFeatureColor(this.getColorForRegex()); // For each TextRead in this interval set colour according to regex in List<Argument>
 //			}
 			try {
@@ -282,7 +281,7 @@ public class TrackReads extends Track{
 		if(nchars < this.userWindowSize){
 			sb.append(StringUtils.repeat(' ', this.userWindowSize - nchars));
 		}
-		return this.highlightMidCharacter(sb.toString()); // highlightMidCharacter(fmtLine);
+		return this.highlightMidCharacter(sb.toString());
 	}
 
 	/** Find the mid character and add some formatting to highlight it.
@@ -376,4 +375,14 @@ public class TrackReads extends Track{
 		this.update();
 	}
 
+	@Override
+	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.hideRegex= hideRegex;
+		this.update();
+	}
+	@Override
+	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.showRegex= showRegex;
+		this.update();
+	}
 }

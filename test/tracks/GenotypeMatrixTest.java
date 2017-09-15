@@ -11,6 +11,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.base.Splitter;
+
 import coloring.Config;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
@@ -329,9 +331,22 @@ public class GenotypeMatrixTest {
 		assertTrue(linf.size() > 0); // Make sure we do have some features otherwise the test is meaningless.
 		
 		GenotypeMatrix gm= new GenotypeMatrix();
-		// gm.makeMatrix(linf, 80, null);
 		String x= gm.printToScreen(true, linf, 80, null);
 		assertTrue(x.isEmpty());
 	}
 
+	@Test
+	public void sampleOrderIsTheSameAsInVcf() throws Exception{
+		GenomicCoords gc= new GenomicCoords("1:199982-200052", 70, null, null);
+		TrackIntervalFeature vcf= new TrackIntervalFeature("test_data/sample_order.vcf", gc);
+		List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+
+		GenotypeMatrix gm= new GenotypeMatrix();
+		String x= gm.printToScreen(true, linf, 80, vcf.getVcfHeader());
+
+		assertTrue(x.split("\n")[0].startsWith("HG03"));
+		assertTrue(x.split("\n")[1].startsWith("HG01"));
+		assertTrue(x.split("\n")[2].startsWith("HG02"));
+	}
+	
 }

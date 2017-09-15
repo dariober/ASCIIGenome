@@ -198,6 +198,30 @@ public class TrackReadsTest {
 	}
 
 	@Test
+	public void canFilterReadsWithGrep() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000",80, samSeqDict, null);
+		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
+		tr.setNoFormat(true);
+		tr.setyMaxLines(1000);
+		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
+		tr.setShowRegex("NCNNNCCC");
+		tr.setHideRegex("\\t5566779\\t");
+		assertEquals(4, tr.printToScreen().split("\n").length);
+	}
+
+	@Test
+	public void canFilterReadsWithGrepAndAwk() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000",80, samSeqDict, null);
+		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
+		tr.setNoFormat(true);
+		tr.setyMaxLines(1000);
+		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
+		tr.setShowRegex("NCNNNCCC");
+		tr.setAwk("'$4 != 5566779'");
+		assertEquals(4, tr.printToScreen().split("\n").length);
+	}
+
+	@Test
 	public void canShowReadCount() throws Exception{
 		GenomicCoords gc= new GenomicCoords("chr7:5565600-5567600", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/ear045.oxBS.actb.bam", gc);

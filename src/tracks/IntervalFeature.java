@@ -76,7 +76,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 			this.setRaw(line);
 			this.trackFormat= TrackFormat.VCF;
 			this.chrom= this.variantContext.getContig();
-			this.from= this.variantContext.getStart();
+			this.from= this.setFromForVCF();
 			this.to= this.setToForVCF();
 			this.name= this.variantContext.getID();
 
@@ -84,6 +84,18 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 			System.err.println("Format " + format + " not supported");
 			throw new RuntimeException();
 		}
+	}
+
+	private int setFromForVCF() {
+		int from= this.variantContext.getStart();
+		int to= this.setToForVCF();
+		if(from == to){
+			return from; // SNV
+		} 
+		else if(this.variantContext.getReference().getBases()[0] == this.variantContext.getAlleles().get(0).getBases()[0]){
+			return from + 1;
+		}
+		return from;
 	}
 
 	private int setToForVCF() {

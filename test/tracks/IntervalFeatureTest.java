@@ -350,6 +350,36 @@ public class IntervalFeatureTest {
 	}
 	
 	@Test
+	public void handleSpaceInVCFInfoAndInvalidKey(){
+		// This reading would fail on the original htsjdk-1.141 
+		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed.vcf.gz"));
+		reader.query("chr1", 1, 16000000);
+	}
+
+	@Test
+	public void handleMalformedHeader(){
+		// This reading would fail on the original htsjdk-1.141 
+		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header.vcf.gz"));
+	}
+	
+	@Test
+	public void handleUnsupportedVersion(){
+		// This reading would fail on the original htsjdk-1.141 
+		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header2.vcf.gz"));
+	}
+
+	@Test
+	public void handleMissingVersionLine(){
+		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header4.vcf.gz"));
+	}
+	
+	@Test
+	public void handleMissingInfoLinesInHeader(){
+		// This is fine also with original htsjdk-1.141 
+		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header3.vcf.gz"));
+	}
+	
+	@Test
 	public void canFormatVCFLine() throws InvalidGenomicCoordsException, InvalidColourException, IOException, InvalidConfigException{
 		
 		List<Double> rulerMap= new ArrayList<Double>();
@@ -376,13 +406,14 @@ public class IntervalFeatureTest {
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfCodec);
 		ift.mapToScreen(rulerMap);
 		assertEquals('D', ift.getIdeogram(true, true).get(0).getText());
-		assertEquals(4, ift.getIdeogram(true, true).size());
+		assertEquals(3, ift.getIdeogram(true, true).size());
 		
 		// Insertion
 		vcfLine= "1 10 . C CTTG 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
 		ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfCodec);
 		ift.mapToScreen(rulerMap);
 		assertEquals("I", ift.getIdeogram(true, true).get(0).format(true));
+		assertEquals(3, ift.getIdeogram(true, true).size());
 		
 		// Multiple alleles
 		vcfLine= "1 10 . C CTTG,A 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");

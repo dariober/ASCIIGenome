@@ -98,7 +98,9 @@ public class GenomicCoordsHistory {
 			gc.setGenome(tokens, true);
 			if( ! this.isValidPosition(gc, gc.getSamSeqDict())){
 				toDelete.add(gc);
-			} 
+			} else {
+				gc.setRefSeq();
+			}
 		}
 
 		for(GenomicCoords gc : toDelete){

@@ -161,7 +161,7 @@ public class GenomicCoords implements Cloneable {
 		}
 	}
 	
-	private void setRefSeq() throws IOException, InvalidGenomicCoordsException{
+	protected void setRefSeq() throws IOException, InvalidGenomicCoordsException{
 		if(this.fastaFile == null ||  ! this.isSingleBaseResolution){
 			this.refSeq= null;
 			return;
@@ -872,7 +872,6 @@ public class GenomicCoords implements Cloneable {
 			System.err.println("Invalid feature size. Must be > 0, got " + size);
 			throw new InvalidGenomicCoordsException();
 		}
-		
 		if(slop > 0){
 			double center= (size/2.0) + gc.getFrom();
 			gc.from= (int)Math.rint(center - (size * slop));

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/htsjdk/htsjdk-1.141/dist/htsjdk-1.141.jar"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="resources"/>
 	<classpathentry excluding="test_data/*" kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="/Users/db291g/git_repos/htsjdk-1.141/dist/htsjdk-1.141.1.jar" sourcepath="/Users/db291g/git_repos/htsjdk-1.141/src"/>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/commons-lang3/commons-lang3-3.4.jar"/>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/slf4j/slf4j-1.7.13/slf4j-api-1.7.13.jar"/>
 	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT.jar" sourcepath="/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT-sources.jar">

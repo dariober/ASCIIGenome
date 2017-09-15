@@ -1640,22 +1640,26 @@ public class Utils {
 		// Get github versions
 		URL url = new URL("https://api.github.com/repos/dariober/ASCIIGenome/tags");
 		br = new BufferedReader(new InputStreamReader(url.openStream()));
-//		if(br == null){
-//			System.err.println("Note: Couldn't check for updates.");
-//			thisAndGitVersion.add(ArgParse.VERSION); // If timed out assume up to date.
-//		}
 
-        String line;
+		String line;
         StringBuilder sb= new StringBuilder();
         while ((line = br.readLine()) != null) {
         	sb.append(line + '\n');
         }
 
         JsonElement jelement = new JsonParser().parse(sb.toString());
-        JsonArray  jarr = jelement.getAsJsonArray(); //.getAsJsonObject();
-        JsonObject jobj = jarr.get(0).getAsJsonObject();
-        String tag= jobj.get("name").getAsString().replaceFirst("v", "");
+        JsonArray  jarr = jelement.getAsJsonArray();
+        Iterator<JsonElement> iter = jarr.iterator();
         
+        String tag= null;
+        while(iter.hasNext()){
+        	// Get the first tag starting with v[0-9]. I.e. skip tags like "v.1.10"
+            JsonObject jobj = (JsonObject) iter.next();
+            tag= jobj.get("name").getAsString().replaceFirst("v", "");
+            if(tag.matches("^\\d")){
+            	break;
+            }
+        }
         thisAndGitVersion.add(tag);
         return thisAndGitVersion;
 	}
@@ -2017,4 +2021,5 @@ public class Utils {
 				return readName.replaceAll(" .*", "")
 				               .replaceAll("/1$|/2$", "");		
 	}
+	
 }

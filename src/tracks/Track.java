@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -94,6 +95,8 @@ public abstract class Track {
 	private String systemCommandForPrint;
 	private boolean printNormalizedVcf= false;
 	private long lastModified;
+	final static public String HIDE_REGEX= "^$"; protected String hideRegex= HIDE_REGEX;
+	final static public String SHOW_REGEX= ".*"; protected String showRegex= SHOW_REGEX;
 
 	
 	/** Format the title string to add colour or return title as it is if
@@ -530,31 +533,6 @@ public abstract class Track {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-
-//		ProcessBuilder builder = new ProcessBuilder(cmd);
-//		Process process = builder.start();
-//		// OutputStream stdin = process.getOutputStream();
-//		InputStream stdout = process.getInputStream();
-//		InputStream stderr = process.getErrorStream();
-//        // BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
-//        
-//        Scanner err = new Scanner(stderr);
-//        if(err.hasNext()){
-//            while (err.hasNextLine()) {
-//                System.err.println(err.nextLine());
-//            }
-//            err.close();
-//            throw new InvalidCommandLineException();
-//        }
-//        err.close();
-        
-//        Scanner scanner = new Scanner(stdout);
-//        List<String> outRecords= new ArrayList<String>(); 
-//        while (scanner.hasNextLine()) {
-//            outRecords.add(scanner.nextLine());
-//        }
-//        System.err.println(outRecords);
-//        scanner.close();
         tmp.delete();
 		return outRecords;
 	}
@@ -562,89 +540,6 @@ public abstract class Track {
 	public void setSystemCommandForPrint(String systemCommandForPrint){
 		this.systemCommandForPrint= systemCommandForPrint; 
 	}
-	
-	/** Interprets the content of this.cutScriptForPrinting to cut the input line
-	 * in way similar to Unix cut. Args:
-	 * -d <regex> Delimiter to split line, default '\t'
-	 * -f <idx> Indexes to extract columns, no spaces allowed. E.g. 1,3,5-7
-	 * @throws InvalidCommandLineException
-	 * The parsing and interpretation of this.cutScriptForPrinting is done for a single line
-	 * meaning that for many lines in input this is inefficient. However it should be ok for now,
-	 * but consider passing List<String> as input so the interpretation is done once only. 
-	 * */
-//	private String cutLine(String line) throws InvalidCommandLineException {
-//		if(this.cutScriptForPrinting == null || this.cutScriptForPrinting.isEmpty()){
-//			return line;
-//		}
-//		List<String> args= Utils.tokenize(this.cutScriptForPrinting, " ");
-//		String fields= Utils.getArgForParam(args, "-f");
-//		if(fields == null){
-//			//No fields given: Nothing to cut just return line as it is
-//			return line; 
-//		}
-//		String delim= Utils.getArgForParam(args, "-d");
-//		if(delim == null){
-//			delim= "\t"; 
-//		}
-//		// Split the line at delim
-//		List<String> lst= Arrays.asList(line.split(delim));
-//		List<Integer> idxs = (expandStringOfFieldsToIndexes(fields));
-//		List<String> outLst= new ArrayList<String>();
-//		for(int i : idxs){
-//			i--; // To make it zero-based
-//			if(i < 0){
-//				throw new InvalidCommandLineException();
-//			}
-//			if(i >= lst.size()){
-//				i= lst.size() - 1;
-//			}
-//			outLst.add(lst.get(i));
-//		}
-//		// We always re-join on tab, regardless of delimiter!
-//		return Joiner.on("\t").join(outLst);
-//	}
-
-	/** Expand the string of fileds to return the individual indexes.
-	 * E.g. "1-3,5-7,10-" -> [1,2,3,5,6,7,10, Integer.MAX_VALUE].
-	 * Integer.MAX_VALUE signals that the fields from the last index to the end should be returned.    
-	 * @throws InvalidCommandLineException 
-	 * */
-//	private List<Integer> expandStringOfFieldsToIndexes(String fields) throws InvalidCommandLineException{
-//		List<Integer> idxs= new ArrayList<Integer>();
-//		
-//		// A bunch of checks for the validity of the input
-//		String checkOnlyDigits= fields.replaceAll(",", "").replaceAll("-", "");
-//		if( ( ! checkOnlyDigits.matches("[0-9]+")) || 
-//			  checkOnlyDigits.startsWith("0") ||
-//			  fields.contains("--") ||
-//			  fields.startsWith("-")){
-//			throw new InvalidCommandLineException();
-//		}
-//		if(fields.endsWith("-")){
-//			fields= fields.replaceAll("-$", "");
-//		}
-//		List<String> lst= Splitter.on(",").omitEmptyStrings().splitToList(fields);
-//		for(String x : lst){
-//			if(x.contains("-")){
-//				// This part expands the string "5-8" to [5,6,7,8]. "8-5" expanded to [8,7,6,5]
-//				String[] fromTo = x.split("-");
-//				int from= Integer.parseInt(fromTo[0]);
-//				int to= Integer.parseInt(fromTo[1]);
-//				if(from < to){
-//					for(int i= from; i <= to; i++){
-//						idxs.add(i);
-//					}
-//				} else {
-//					for(int i= from; i >= to; i--){
-//						idxs.add(i);
-//					}
-//				}
-//			} else {
-//				idxs.add(Integer.parseInt(x));
-//			}
-//		}
-//		return idxs;
-//	}
 	
 	/**Return the export file name. The variable %r is expanded to coordinates. 
 	 * */
@@ -659,14 +554,6 @@ public abstract class Track {
 	public void setExportFile(String exportFile) {
 		this.exportFile = exportFile;
 	}
-
-//	public boolean isAppendToExportFile() {
-//		return appendToExportFile;
-//	}
-//
-//	public void setAppendToExportFile(boolean appendToExportFile) {
-//		this.appendToExportFile = appendToExportFile;
-//	}
 
 	protected TrackFormat getTrackFormat() {
 		return trackFormat;
@@ -763,31 +650,56 @@ public abstract class Track {
 		// boolean[] results= new boolean[(int) this.nRecsInWindow];
 		List<Boolean> results= new ArrayList<Boolean>();
 		
-		StringBuilder sb= new StringBuilder();
+		StringBuilder awkDataInput= new StringBuilder();
 		while(filterSam.hasNext()){ 
 			// Record whether a read passes the sam filters. If necessary, we also 
 			// store the raw reads for awk.
 			SAMRecord rec= filterSam.next();
+			boolean passed;
 			if(!rec.getReadUnmappedFlag() && 
 			        !aggregateFilter.filterOut(rec) &&
 			        rec.getAlignmentEnd() >= rec.getAlignmentStart()){
-				results.add(true);
+				passed= true;
 			} else {
-				results.add(false);
+				passed= false;
 			}
-			if(this.getAwk() != null && ! this.getAwk().isEmpty()){
-				sb.append(rec.getSAMString());	
+			if(passed){
+				// grep
+				String raw= rec.getSAMString().replaceAll("\n$", "");
+				boolean showIt= true;
+				if(this.showRegex != null && ! this.showRegex.equals(".*")){
+					showIt= Pattern.compile(this.showRegex).matcher(raw).find();
+				}
+				boolean hideIt= false;
+				if(!this.hideRegex.isEmpty()){
+					hideIt= Pattern.compile(this.hideRegex).matcher(raw).find();	
+				}
+				if(!showIt || hideIt){
+					passed= false;
+				}
+			}
+			results.add(passed);
+			if(passed && this.getAwk() != null && ! this.getAwk().isEmpty()){
+				// We pass to awk only records that have been kept so far.
+				awkDataInput.append(rec.getSAMString());	
 			}
 		}
+		
 		// Apply the awk filter, if given
 		if(this.getAwk() != null && ! this.getAwk().isEmpty()){
-			String[] rawLines= sb.toString().split("\n");
+			String[] rawLines= awkDataInput.toString().replaceAll("\n$", "").split("\n");
 			boolean[] awkResults= Utils.passAwkFilter(rawLines, this.getAwk());
 			// Compare the results array with awk filtered. Flip as appropriate the results array
-			for(int j= 0; j < results.size(); j++){
-				if( ! awkResults[j] ){
-					results.set(j, false);
-				} // if results[i]==false there so no need to compare to awk result: Record is out.
+			int awkIdx= 0;
+			int i= 0;
+			for(boolean isPassed : results){
+				if(isPassed){
+					if( ! awkResults[awkIdx]){
+						results.set(i, false);
+					}
+					awkIdx++;
+				}
+				i++;
 			}
 		}
 		return results;
@@ -830,6 +742,6 @@ public abstract class Track {
 	public void setReadsAsPairs(boolean readsAsPairs) throws InvalidGenomicCoordsException, IOException {
 		this.readsAsPairs= readsAsPairs;
 	}
-
+	
 }
 

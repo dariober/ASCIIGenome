@@ -2,6 +2,7 @@ package tracks;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import coloring.Config;
@@ -93,16 +94,6 @@ class TextRead extends IntervalFeature{
 	
 	/*       M e t h o d s       */
 
-	protected List<FeatureChar> getTextReadAsFeatureChars(boolean bs, boolean noFormat) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
-		List<Character> unformatted;
-		if(!bs){
-			unformatted= this.getConsRead();
-		} else {
-			unformatted= this.convertDnaReadToTextReadBS();
-		}
-		return this.readFormatter(unformatted, noFormat, bs);
-	}
-	
 	/**
 	 * Return read ready to be printed on track. 
 	 * @param refSeq Reference sequence. Can be null in which case bases are displayed as they are.
@@ -115,13 +106,7 @@ class TextRead extends IntervalFeature{
 	 * @throws InvalidColourException 
 	 */
 	public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName) throws IOException, InvalidGenomicCoordsException, InvalidColourException{
-		List<Character> unformatted;
-		if(!bs){
-			unformatted= this.getConsRead();
-		} else {
-			unformatted= this.convertDnaReadToTextReadBS();
-		}
-		List<FeatureChar> fmt = this.readFormatter(unformatted, noFormat, bs);
+		List<FeatureChar> fmt = this.getTextReadAsFeatureChars(bs);
 		StringBuilder sb= new StringBuilder();
 		for(FeatureChar x : fmt){
 			sb.append(x.format(noFormat));
@@ -145,95 +130,6 @@ class TextRead extends IntervalFeature{
 	}
 	
 	/**
-	 * Return the read chars in read as nicely formatted string. This method only adds non-ascii formatting
-	 * to the individual bases (chars). The bases themselves and their capitalization are not touched.
-	 * Formatting depends on the base (actg, m/u) and on the read it comes from (strand & mate).
-	 * 
-	 * For formatting see http://misc.flogisoft.com/bash/tip_colors_and_formatting
-	 * and http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
-	 * 
-	 * @param read
-	 * @param noFormat
-	 * @return
-	 * @throws IOException 
-	 * @throws InvalidGenomicCoordsException 
-	 * @throws InvalidColourException 
-	 */
-	private List<FeatureChar> readFormatter(List<Character> read, boolean noFormat, boolean bs) throws InvalidGenomicCoordsException, IOException, InvalidColourException{
-
-		byte[] baseQual= this.samRecord.getBaseQualities();
-		boolean baseQualIsPresent= baseQual.length > 0 ? true : false;
-		int SHADE_BASEQ= Integer.parseInt(Config.get(ConfigKey.shade_baseq));
-		
-		List<Integer> positionsOfInsertions= new ArrayList<Integer>();
-		if(this.gc.isSingleBaseResolution){
-			positionsOfInsertions = this.getPositionsOfInsertions();
-		}
-
-		List<FeatureChar> formatted= new ArrayList<FeatureChar>();		
-		int qIdx= 0;
-		for(int i= 0; i < read.size(); i++){ // Each base is formatted independently from the others
-			FeatureChar c= new FeatureChar(); 
-			c.setText(read.get(i));
-			
-			boolean shadeBaseQ= false;
-			if(baseQualIsPresent && this.gc.isSingleBaseResolution && qIdx < baseQual.length){
-				int bq= (int) baseQual[qIdx];
-				qIdx++;
-				if(bq < SHADE_BASEQ){
-					shadeBaseQ= true;
-				}
-			}
-			if(this.samRecord.getReadPairedFlag() && this.samRecord.getSecondOfPairFlag()){
-				c.setUnderline(true);
-			}
-			
-			if(this.gc.isSingleBaseResolution && positionsOfInsertions.contains(i)){
-				c.setInvertFgBgColor(true);
-			}
-			
-			if(this.samRecord.getMappingQuality() < SHADE_MAPQ || shadeBaseQ){ // Grey out low mapq/base qual
-				c.setBgColor(Config.get(ConfigKey.shade_low_mapq));
-				c.setFgColor(Config.get(ConfigKey.foreground));
-			} 
-			else if(Character.toUpperCase(c.getText()) == charM){
-				c.setBgColor(Config.get(ConfigKey.methylated_background));
-				c.setFgColor(Config.get(ConfigKey.methylated_foreground));
-			} 
-			else if(Character.toUpperCase(c.getText()) == charU){
-				c.setBgColor(Config.get(ConfigKey.unmethylated_background));
-				c.setFgColor(Config.get(ConfigKey.unmethylated_foreground));
-			} 
-			else if(Character.toUpperCase(c.getText()) == 'A'){
-				c.setFgColor(Config.get(ConfigKey.seq_a));
-			} 
-			else if(Character.toUpperCase(c.getText()) == 'C') {
-				c.setFgColor(Config.get(ConfigKey.seq_c));
-			} 
-			else if(Character.toUpperCase(c.getText()) == 'G') {
-				c.setFgColor(Config.get(ConfigKey.seq_g));
-			} 
-			else if(Character.toUpperCase(c.getText()) == 'T') {
-				c.setFgColor(Config.get(ConfigKey.seq_t));
-			} 
-			else if(!this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
-				c.setBgColor(Config.get(ConfigKey.feature_background_positive_strand));
-				c.setFgColor(Config.get(ConfigKey.foreground));
-			} 
-			else if(this.samRecord.getReadNegativeStrandFlag() && !(bs && this.gc.isSingleBaseResolution)){
-				c.setBgColor(Config.get(ConfigKey.feature_background_negative_strand));
-				c.setFgColor(Config.get(ConfigKey.foreground));
-			} 
-			else {
-				c.setBgColor(Config.get(ConfigKey.background));
-				c.setFgColor(Config.get(ConfigKey.foreground));
-			}
-			formatted.add(c);
-		}
-		return formatted;
-	}
-	
-	/**
 	 * Obtain the start position of the read on screen. Screen positions are 1-based. 
 	 * @return
 	 * @throws IOException 
@@ -249,11 +145,6 @@ class TextRead extends IntervalFeature{
 	}
 	
 	private void setTextEnd() throws InvalidGenomicCoordsException, IOException{
-		//if(rec.getAlignmentEnd() >= gc.getTo()){
-		//	this.textEnd= gc.getUserWindowSize() < gc.getGenomicWindowSize() ?  
-		//			gc.getUserWindowSize() : gc.getGenomicWindowSize();
-		//	return;
-		//}
 		this.textEnd= Utils.getIndexOfclosestValue(samRecord.getAlignmentEnd(), gc.getMapping()) + 1;
 		return;
 	}
@@ -279,30 +170,11 @@ class TextRead extends IntervalFeature{
 		}
 	}
 
-	/**Get positions on the read where insertions start. 
-	 * @return 
-	 * */
-	private List<Integer> getPositionsOfInsertions() throws InvalidGenomicCoordsException, IOException{
-		int posOnRead= 0;
-		List<Integer> positionsOfInsertions= new ArrayList<Integer>(); 
-		List<CigarElement> cigar = this.getSamRecord().getCigar().getCigarElements();
-		for(CigarElement el : cigar){
-			if(el.getOperator().equals(CigarOperator.INSERTION)){
-				// -1 because we mark the base before the start of the insertion.
-				positionsOfInsertions.add(posOnRead-1);
-			};
-			if(el.getOperator().consumesReferenceBases()){
-				posOnRead += el.getLength();
-			}
-		}
-		return positionsOfInsertions;
-	}
-	
 	/** If the windowSize and genomic span are not mapped 1:1, i.e. 1 bp : 1 char, then
 	 * represent reads as simplified bases */
-	private List<Character> getSquashedRead(){
-				
-		ArrayList<Character> squashedRead= new ArrayList<Character>();
+	private List<FeatureChar> getSquashedRead(){
+		
+		ArrayList<FeatureChar> squashedRead= new ArrayList<FeatureChar>();
 		char xc;
 		if(this.samRecord.getReadNegativeStrandFlag()){
 			xc= charRev;
@@ -310,11 +182,25 @@ class TextRead extends IntervalFeature{
 			xc= charFwd;
 		}
 		for(int i= this.textStart; i <= this.textEnd; i++){
+			FeatureChar sq= new FeatureChar();
+			// Set char to print
 			if(this.textPositionIsSkipped(i)){
-				squashedRead.add(this.SKIP);
+				sq.setText(this.SKIP);
 			} else {
-				squashedRead.add(xc);
+				sq.setText(xc);
 			}
+			// Set formatting
+			if(!this.samRecord.getReadNegativeStrandFlag()){
+				sq.setFgColor(Config.get(ConfigKey.feature_background_positive_strand));
+			} 
+			else if(this.samRecord.getReadNegativeStrandFlag()){
+				sq.setFgColor(Config.get(ConfigKey.feature_background_negative_strand));
+			} 
+
+			if(this.samRecord.getMappingQuality() < SHADE_MAPQ){
+				sq.setBgColor(Config.get(ConfigKey.shade_low_mapq));
+			}
+			squashedRead.add(sq);
 		}
 		return squashedRead;
 	}
@@ -335,15 +221,23 @@ class TextRead extends IntervalFeature{
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<Character> getDnaRead() throws InvalidGenomicCoordsException, IOException {
+	protected List<FeatureChar> getTextReadAsFeatureChars(boolean bs) throws InvalidGenomicCoordsException, IOException {
 
 		if( ! this.gc.isSingleBaseResolution){
 			return this.getSquashedRead();
 		}
 		
 		// Accumulate here the read bases inside the window 
-		ArrayList<Character> dnaRead= new ArrayList<Character>();
+		ArrayList<FeatureChar> dnaRead= new ArrayList<FeatureChar>();
 		byte[] readBases= samRecord.getReadBases();
+		byte[] baseQual= this.samRecord.getBaseQualities();
+		
+		byte[] ref= null;
+		if(this.gc.getRefSeq() != null){
+			ref= Arrays.copyOfRange(this.gc.getRefSeq(), this.textStart-1, this.textEnd);
+		}
+		int SHADE_BASEQ= Integer.parseInt(Config.get(ConfigKey.shade_baseq));
+		
 		// Walk along the aligned read and append bases to textRead as long as
 		// the genomic position of the base is inside the genomic coords of the window
 		int curBaseGenomicPos= samRecord.getAlignmentStart();
@@ -351,34 +245,97 @@ class TextRead extends IntervalFeature{
 		List<CigarElement> cigarEls= samRecord.getCigar().getCigarElements();
 		for(CigarElement el : cigarEls){
 			if(el.getOperator() == CigarOperator.M || el.getOperator() == CigarOperator.EQ || el.getOperator() == CigarOperator.X){
+				// Add nucleotide chars to growing read
 				for(int i= 0; i < el.getLength(); i++){
+					FeatureChar xc= new FeatureChar();
 					if(curBaseGenomicPos >= gc.getFrom() && curBaseGenomicPos <= gc.getTo()){
 						// If base is inside window:
 						if(readBases.length > 0){
-							dnaRead.add((char)readBases[curBaseReadPos]);
+							xc.setText((char)readBases[curBaseReadPos]);
 						} else { // If sam record has no read seq stored put N
-							dnaRead.add('N');
+							xc.setText('N');
 						}
+						
+						if(ref != null){
+							char refBase= Character.toUpperCase((char) ref[dnaRead.size()]);
+							if(bs){
+								this.convertDnaBaseToTextBS(xc, refBase);
+							}
+							if(Character.toUpperCase(xc.getText()) == refBase){
+								if(this.samRecord.getReadNegativeStrandFlag()){
+									xc.setText(',');
+								} else {
+									xc.setText('.');
+								}
+							}
+						}
+						
+						// Add formatting as appropriate
+						if(this.samRecord.getMappingQuality() < SHADE_MAPQ){
+							xc.setBgColor(Config.get(ConfigKey.shade_low_mapq));
+							xc.setFgColor(Config.get(ConfigKey.foreground));
+						}
+						else if(bs && Character.toUpperCase(xc.getText()) == charM){
+							xc.setBgColor(Config.get(ConfigKey.methylated_background));
+							xc.setFgColor(Config.get(ConfigKey.methylated_foreground));
+						} 
+						else if(bs && Character.toUpperCase(xc.getText()) == charU){
+							xc.setBgColor(Config.get(ConfigKey.unmethylated_background));
+							xc.setFgColor(Config.get(ConfigKey.unmethylated_foreground));
+						} 
+						else if(Character.toUpperCase(xc.getText()) == 'A'){
+							xc.setFgColor(Config.get(ConfigKey.seq_a));
+						} 
+						else if(Character.toUpperCase(xc.getText()) == 'C') {
+							xc.setFgColor(Config.get(ConfigKey.seq_c));
+						} 
+						else if(Character.toUpperCase(xc.getText()) == 'G') {
+							xc.setFgColor(Config.get(ConfigKey.seq_g));
+						} 
+						else if(Character.toUpperCase(xc.getText()) == 'T') {
+							xc.setFgColor(Config.get(ConfigKey.seq_t));
+						} 
+						else if(!bs && !this.samRecord.getReadNegativeStrandFlag()){
+								xc.setFgColor(Config.get(ConfigKey.feature_background_positive_strand));
+						} 
+						else if(!bs && this.samRecord.getReadNegativeStrandFlag()){
+								xc.setFgColor(Config.get(ConfigKey.feature_background_negative_strand));
+						}
+						
+						if(baseQual.length > 0){
+							int bq= (int) baseQual[i];
+							if(bq < SHADE_BASEQ){
+								xc.setBgColor(Config.get(ConfigKey.shade_low_mapq));
+							}
+						}
+						dnaRead.add(xc);
 					}
 					curBaseGenomicPos++; // M consumes read and ref bases. So increment them
 					curBaseReadPos++;
 				}
 			} else if(el.getOperator() == CigarOperator.D || el.getOperator() == CigarOperator.N){
+				// Add gap chars to growing read
 				for(int i= 0; i < el.getLength(); i++){
+					FeatureChar xc= new FeatureChar();
 					if(curBaseGenomicPos >= gc.getFrom() && curBaseGenomicPos <= gc.getTo()){
 						if(el.getOperator() == CigarOperator.D){
-							dnaRead.add(DEL);
+							xc.setText(this.DEL);
+							xc.setInvertFgBgColor(true);
 						} else if(el.getOperator() == CigarOperator.N){ 
-							dnaRead.add(SKIP);
+							xc.setText(this.SKIP);
 						} else {
 							System.err.println("Unexpected operator");
 							throw new RuntimeException();
 						}
+						dnaRead.add(xc);
 					}
 					curBaseGenomicPos++;
 				}
 			} else if(el.getOperator() == CigarOperator.I) {
-				curBaseReadPos += el.getLength(); // Insertions in the reference are missed
+				if(dnaRead.size() > 0){ // If the insertion is outside the terminal window, there is no base to mark
+					dnaRead.get(dnaRead.size()-1).setInvertFgBgColor(true);
+				}
+				curBaseReadPos += el.getLength();
 			} else if(el.getOperator() == CigarOperator.S){
 				curBaseReadPos += el.getLength();
 			} else if(el.getOperator() == CigarOperator.H){
@@ -390,11 +347,11 @@ class TextRead extends IntervalFeature{
 				throw new RuntimeException();
 			}
 		}
-		for(int i= 0; i < dnaRead.size(); i++){
+		for(FeatureChar x : dnaRead){
 			if(this.samRecord.getReadNegativeStrandFlag()){
-				dnaRead.set(i, Character.toLowerCase(dnaRead.get(i)));
+				x.setText(Character.toLowerCase(x.getText()));
 			} else {
-				dnaRead.set(i, Character.toUpperCase(dnaRead.get(i)));
+				x.setText(Character.toUpperCase(x.getText()));
 			}
 		}
 		return dnaRead;
@@ -406,34 +363,38 @@ class TextRead extends IntervalFeature{
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<Character> getConsRead() throws IOException, InvalidGenomicCoordsException {
-		
-		List<Character> dnaRead= this.getDnaRead();
-		if(this.gc.getRefSeq() == null){
-			return dnaRead;
-		}
-		List<Character> consRead= new ArrayList<Character>();
-		int posOnRead= 0;
-		for(int i= this.textStart - 1; i < this.textEnd; i++){
-			char base= Character.toUpperCase( dnaRead.get(posOnRead) );
-			char ref= (char) Character.toUpperCase(this.gc.getRefSeq()[i]);
-			if( base == ref){
-				if(this.samRecord.getReadNegativeStrandFlag()){
-					consRead.add(',');
-				} else {
-					consRead.add('.');
-				}
-			} else {
-				if(this.samRecord.getReadNegativeStrandFlag()){
-					consRead.add(Character.toLowerCase(base));
-				} else {
-					consRead.add(base);
-				}				
-			}
-			posOnRead++;
-		}
-		return consRead;
-	}
+//	private List<FeatureChar> getConsRead(boolean bs) throws IOException, InvalidGenomicCoordsException {
+//		
+//		List<FeatureChar> dnaRead= this.getDnaRead(bs);
+//		if(this.gc.getRefSeq() == null){
+//			return dnaRead;
+//		}
+//		List<FeatureChar> consRead= new ArrayList<FeatureChar>();
+//		int posOnRead= 0;
+//		for(int i= this.textStart - 1; i < this.textEnd; i++){
+//			char base= Character.toUpperCase( dnaRead.get(posOnRead).getText() );
+//			char ref= (char) Character.toUpperCase(this.gc.getRefSeq()[i]);
+//			if( base == ref){
+//				FeatureChar xc= new FeatureChar();
+//				if(this.samRecord.getReadNegativeStrandFlag()){
+//					xc.setText(',');
+//				} else {
+//					xc.setText('.');
+//				}
+//				consRead.add(xc);
+//			} else {
+//				FeatureChar xc= new FeatureChar();
+//				if(this.samRecord.getReadNegativeStrandFlag()){
+//					xc.setText(Character.toLowerCase(base));
+//				} else {
+//					xc.setText(Character.toUpperCase(base));
+//				}	
+//				consRead.add(xc);
+//			}
+//			posOnRead++;
+//		}
+//		return consRead;
+//	}
 
 	/** Memo: You compare the reads with these bases on the reference:
 	   1st |  2nd
@@ -447,15 +408,11 @@ class TextRead extends IntervalFeature{
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
 	 */
-	private List<Character> convertDnaReadToTextReadBS() throws IOException, InvalidGenomicCoordsException{
+	private void convertDnaBaseToTextBS(FeatureChar dnaBase, char refBase) throws IOException, InvalidGenomicCoordsException{
 	
 		if(this.gc.getRefSeq() == null){ // Effectively don't convert 
-			return this.getConsRead();
+			return;
 		}
-		
-		// for(int i=0; i < this.gc.getRefSeq().length; i++){ // Make ref uppercase
-		// 	this.gc.getRefSeq()[i]= (byte) Character.toUpperCase(this.gc.getRefSeq()[i]);
-		// }
 		
 		// For convenience extract flags from sam record
 		boolean isSecondOfPair= false;
@@ -464,53 +421,47 @@ class TextRead extends IntervalFeature{
 		}
 		boolean isForwardStrand= !this.samRecord.getReadNegativeStrandFlag();
 		
-		List<Character> textReadBS= this.getConsRead(); // Iterate through each base to set methyl state
-		for(int i= 0; i < textReadBS.size(); i++){
-			char ref= (char) this.gc.getRefSeq()[i + this.textStart - 1];
-			ref= Character.toUpperCase(ref);
-			char read= textReadBS.get(i);
-			if( ( isForwardStrand && !isSecondOfPair ) || ( !isForwardStrand && isSecondOfPair )){
-				// Look for C on the reference
-				if(isForwardStrand){ // +strand, first in pair or unpaired
-					if(ref == 'C' && read == '.'){
-						textReadBS.set(i, charM);
-					} else if(ref == 'C' && read == 'T'){
-						textReadBS.set(i, charU);
-					} else {
-						// Nothing to change
-					}
-				} else { // -ve strand, 2nd in pair
-					// Look for c=',' -> m; 't' -> u
-					if(ref == 'C' && read == ','){
-						textReadBS.set(i, charm);
-					} else if(ref == 'C' && read == 't'){
-						textReadBS.set(i, charu);
-					} else {
-						// Nothing to change
-					}
+		char dnaChar= Character.toUpperCase(dnaBase.getText());
+		if( ( isForwardStrand && !isSecondOfPair ) || ( !isForwardStrand && isSecondOfPair )){
+			// Look for C on the reference
+			if(isForwardStrand){ // +strand, first in pair or unpaired
+				if(refBase == 'C' && dnaChar == 'C'){
+					dnaBase.setText(charM);
+				} else if(refBase == 'C' && dnaChar == 'T'){
+					dnaBase.setText(charU);
+				} else {
+					// Nothing to change
 				}
-			} else if( ( !isForwardStrand && !isSecondOfPair ) || ( isForwardStrand && isSecondOfPair )){
-				// Look for G on the reference
-				if(!isForwardStrand){ // -ve strand; first in pair or unpaired
-					if(ref == 'G' && read == ','){
-						textReadBS.set(i, 'm');
-					} else if(ref == 'G' && read == 'a'){
-						textReadBS.set(i, 'u');
-					} else {
-						// Nothing to change
-					}
-				} else { // -ve strand, 2nd in pair
-					if(ref == 'G' && read == '.'){
-						textReadBS.set(i, 'M');
-					} else if(ref == 'G' && read == 'A'){
-						textReadBS.set(i, 'U');
-					} else {
-						// Nothing to change
-					}
+			} else { // -ve strand, 2nd in pair
+				// Look for c=',' -> m; 't' -> u
+				if(refBase == 'C' && dnaChar == 'C'){
+					dnaBase.setText(charm);
+				} else if(refBase == 'C' && dnaBase.getText() == 'T'){
+					dnaBase.setText(charu);
+				} else {
+					// Nothing to change
+				}
+			}
+		} else if( ( !isForwardStrand && !isSecondOfPair ) || ( isForwardStrand && isSecondOfPair )){
+			// Look for G on the reference
+			if(!isForwardStrand){ // -ve strand; first in pair or unpaired
+				if(refBase == 'G' && dnaChar == 'G'){
+					dnaBase.setText('m');
+				} else if(refBase == 'G' && dnaChar == 'A'){
+					dnaBase.setText('u');
+				} else {
+					// Nothing to change
+				}
+			} else { // -ve strand, 2nd in pair
+				if(refBase == 'G' && dnaChar == 'G'){
+					dnaBase.setText('M');
+				} else if(refBase == 'G' && dnaChar == 'A'){
+					dnaBase.setText('U');
+				} else {
+					// Nothing to change
 				}
 			}
 		}
-		return textReadBS;
 	}
 	
 	public String toString(double bpPerScreenColumn){

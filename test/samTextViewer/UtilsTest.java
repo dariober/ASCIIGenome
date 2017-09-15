@@ -418,6 +418,13 @@ public class UtilsTest {
 		}
 		assertTrue(pass);
 	}
+
+	// @Test
+	public void canFilterVcfTagWithAwk() throws IOException{
+		String rec= "chr1 100 . A G 100 PASS AC=10,5;AF=0.5 GT:DP 0|1:3,4 1|1:10,20".replaceAll(" ", "\t");
+		assertTrue(Utils.passAwkFilter(rec, "'getVcfTag(\"AF\")[0] == 0.5'"));
+		assertTrue(Utils.passAwkFilter(rec, "'getVcfTag(\"DP\")[0] == 0.5'"));
+	}
 	
 	@Test
 	public void canFilterSamTagWithAwk() throws IOException{
@@ -452,7 +459,9 @@ public class UtilsTest {
 	public void canCheckForUpdates() throws IOException{
 		
 		List<String> up= Utils.checkUpdates(50000);
-			
+		
+		System.err.println(up);
+		
 		assertEquals(2, up.size());
 		assertTrue(Character.isDigit(up.get(0).charAt(0)));
 		assertTrue(Character.isDigit(up.get(1).charAt(0)));

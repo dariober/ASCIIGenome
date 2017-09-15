@@ -91,14 +91,14 @@ class SamSequenceFragment {
 				lst.add(x);
 			}
 			int i= 0;
-			for(FeatureChar x : this.getLeftRead().getTextReadAsFeatureChars(bs, noFormat)){
+			for(FeatureChar x : this.getLeftRead().getTextReadAsFeatureChars(bs)){
 				lst.set(i, x);
 				i++;
 			}
 			// Fill up with the right read. NB: Reads might be fully contained one into the other
 			// Where does the right read starts from?
 			int from= this.getRightRead().getTextStart() - this.getLeftRead().getTextStart(); 
-			for(FeatureChar x :  this.getRightRead().getTextReadAsFeatureChars(bs, noFormat)){
+			for(FeatureChar x :  this.getRightRead().getTextReadAsFeatureChars(bs)){
 				lst.set(from, x);
 				from++;
 			}

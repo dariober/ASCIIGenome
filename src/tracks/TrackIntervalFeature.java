@@ -39,8 +39,8 @@ public class TrackIntervalFeature extends Track {
 	protected List<IntervalFeature> intervalFeatureList= new ArrayList<IntervalFeature>();  
 	/**For GTF/GFF data: Use this attribute to get the feature names 
 	 * */
-	final static private String HIDE_REGEX= "^$";  private String hideRegex= HIDE_REGEX;
-	final static private String SHOW_REGEX= ".*"; 	private String showRegex= SHOW_REGEX;
+//	final static private String HIDE_REGEX= "^$";  private String hideRegex= HIDE_REGEX;
+//	final static private String SHOW_REGEX= ".*"; 	private String showRegex= SHOW_REGEX;
 	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
 	private VCFHeader vcfHeader= null;
@@ -203,13 +203,13 @@ public class TrackIntervalFeature extends Track {
 		}
 		
 		boolean showIt= true;
-		if(this.showRegex != null && ! this.showRegex.equals(".*")){
-			showIt= Pattern.compile(this.showRegex).matcher(x).find();
+		if(this.getShowRegex() != null && ! this.getShowRegex().equals(".*")){
+			showIt= Pattern.compile(this.getShowRegex()).matcher(x).find();
 		}
 
 		boolean hideIt= false;
-		if(!this.hideRegex.isEmpty()){
-			hideIt= Pattern.compile(this.hideRegex).matcher(x).find();	
+		if(!this.getHideRegex().isEmpty()){
+			hideIt= Pattern.compile(this.getHideRegex()).matcher(x).find();	
 		}
 		Boolean isVisible= false;
 		if(showIt && !hideIt){
@@ -972,6 +972,15 @@ public class TrackIntervalFeature extends Track {
 	public String getHideRegex() {
 		return this.hideRegex;
 	}
+	@Override
+	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.showRegex= showRegex;
+		this.update();
+	}
+	@Override
+	public String getShowRegex() {
+		return this.showRegex;
+	}
 
 	@Override
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
@@ -995,16 +1004,6 @@ public class TrackIntervalFeature extends Track {
 		return this.awk;
 	}
 	
-	@Override
-	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		this.showRegex= showRegex;
-		this.update();
-	}
-	@Override
-	public String getShowRegex() {
-		return this.showRegex;
-	}
-
 	@Override
 	public List<String> getChromosomeNames(){
 		ArrayList<String> x = new ArrayList<String>(this.getReader().getChromosomes());
@@ -1070,7 +1069,7 @@ public class TrackIntervalFeature extends Track {
 		return tsv;
 	}
 	
-	private VCFHeader getVcfHeader() {
+	protected VCFHeader getVcfHeader() {
 		return this.vcfHeader;
 	}
 

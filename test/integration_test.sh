@@ -24,6 +24,9 @@ ASCIIGenome="$1 --debug 2 -ni"
 
 set -x
 
+## Can avoid history positions not compatible with current genome
+$ASCIIGenome -x 'addTracks ../test_data/pairs.sam && p' > /dev/null
+
 ## Can show read pairs
 $ASCIIGenome -x 'readsAsPairs' ../test_data/pairs.sam > /dev/null
 

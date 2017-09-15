@@ -191,9 +191,20 @@ public class TrackSetTest {
 		trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
 		assertEquals(4, trackSet.getTrackList().size());
 		
-		trackSet.addTrackFromSource("test_data/ds051.noindex.sam", gc, null);
+		trackSet.addTrackFromSource("test_data/ds051.noindex.sam", gc, null);		
 	}
+	
+	@Test
+	public void canAddTrackVcfWithContigWithoutLength() throws InvalidGenomicCoordsException, IOException, BamIndexNotFoundException, InvalidRecordException, ClassNotFoundException, SQLException{
+		// Original htsjdk throws this error since the input vcf does indeed miss the 
+		// length of the contig.
+		// htsjdk.tribble.TribbleException: Contig chr1 does not have a length field.
 		
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", 80, null, null);
+		TrackSet trackSet= new TrackSet();
+		trackSet.addTrackFromSource("test_data/malformed_header.vcf.gz", gc, null);
+	}
+	
 	@Test // Disable to save time
 	public void canInitializeFromListOfFileNames() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
