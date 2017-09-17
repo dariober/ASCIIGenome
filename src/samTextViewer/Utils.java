@@ -110,6 +110,20 @@ public class Utils {
 	    return bd.doubleValue();
 	}
 	
+	/**Extract template name from sam record read name. I.e. remove
+	 * everything after first backspace and possible /1 /2 suffixes.
+	 * Avoid using replaceAll() for this as it is much slower.  
+	 * */
+	public static String templateNameFromSamReadName(String readName){
+		if(readName.contains(" ")){
+			readName= readName.substring(0, readName.indexOf(" "));
+		}
+		if(readName.endsWith("/1") || readName.endsWith("/2")){
+			readName= readName.substring(0, readName.length() - 2);
+		}
+		return readName;
+	}
+	
 	/** Returns true of the list of arguments argList contains the given flag
 	 * IMPORTANT SIDE EFFECT: If found, the argument flag is removed from the list. 
 	 * */
@@ -1928,7 +1942,6 @@ public class Utils {
 	/**Get terminal width. 
 	 * */
 	public static int getTerminalWidth() throws IOException {
-		// The argument terminal could be initialized inside this method but it takes ~3 sec to do that.
 		int terminalWidth= jline.TerminalFactory.get().getWidth(); 
 		if(terminalWidth <= 0){
 			terminalWidth= 80;

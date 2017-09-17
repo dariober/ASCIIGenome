@@ -408,11 +408,10 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:10000-100000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
-		tif.setHideRegex("\texon\t");
+		tif.setShowHideRegex(Track.SHOW_REGEX, "\texon\t");
 		assertTrue(tif.getIntervalFeatureList().size() == 3);
 
-		tif.setHideRegex("^$");
-		tif.setShowRegex("WASH7P");
+		tif.setShowHideRegex("WASH7P", "^$");
 		assertTrue(tif.getIntervalFeatureList().size() == 11);
 	}
 	
@@ -423,8 +422,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:10000-100000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 
-		tif.setShowRegex("start_codon");
-		tif.setHideRegex("OR4F");
+		tif.setShowHideRegex("start_codon", "OR4F");
 		List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(40, subset.size());
 
@@ -485,7 +483,7 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 
 		tif.setAwk("'$3 == \"start_codon\"");
-		tif.setHideRegex("OR4F");
+		tif.setShowHideRegex(Track.SHOW_REGEX, "OR4F");
 		List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(40, subset.size());
 
@@ -497,10 +495,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:1", 80, null, null);
 		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-
-		
-		tif.setShowRegex(".*exon.*");
-		tif.setHideRegex(".*DDX11L1.*");
+		tif.setShowHideRegex(".*exon.*", ".*DDX11L1.*");
 		GenomicCoords curr = tif.coordsOfNextFeature(gc, false);
 		assertEquals(14362, (int) curr.getFrom());
 		
@@ -512,9 +507,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:1", 80, null, null);
 		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-		
-		tif.setShowRegex(".*exon.*");
-		tif.setHideRegex(".*DDX11L1.*");
+		tif.setShowHideRegex(".*exon.*", ".*DDX11L1.*");
 		GenomicCoords curr = tif.findNextMatch(gc, ".*gene_id.*");
 		assertEquals(14362, (int) curr.getFrom());
 	}

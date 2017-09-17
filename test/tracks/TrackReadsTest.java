@@ -12,6 +12,7 @@ import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.google.common.base.Stopwatch;
 
 import coloring.Config;
 import coloring.ConfigKey;
@@ -24,6 +25,7 @@ import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
+import net.sourceforge.argparse4j.impl.Arguments;
 import samTextViewer.GenomicCoords;
 
 public class TrackReadsTest {
@@ -59,6 +61,17 @@ public class TrackReadsTest {
 		gc= new GenomicCoords("chr7:19999-20050", 80, null, null);
 		tr= new TrackReads("test_data/missingReadSeq.bam", gc);
 		tr.printToScreen();
+	}
+
+	@Test
+	public void canChangeReadColourOnRegex() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566943", 80, null, null);
+		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
+		List<Argument> list= new ArrayList<Argument>();
+		Argument re= new Argument("NCNNNCCC", "red1", false);
+		list.add(re);
+		tr.changeFeatureColor(list);
+		assertTrue(tr.printToScreen().contains("196;"));
 	}
 	
 	@Test
@@ -204,8 +217,7 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
 		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
-		tr.setShowRegex("NCNNNCCC");
-		tr.setHideRegex("\\t5566779\\t");
+		tr.setShowHideRegex("NCNNNCCC", "\\t5566779\\t");
 		assertEquals(4, tr.printToScreen().split("\n").length);
 	}
 
@@ -216,7 +228,7 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
 		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
-		tr.setShowRegex("NCNNNCCC");
+		tr.setShowHideRegex("NCNNNCCC", Track.HIDE_REGEX);
 		tr.setAwk("'$4 != 5566779'");
 		assertEquals(4, tr.printToScreen().split("\n").length);
 	}
@@ -320,4 +332,5 @@ public class TrackReadsTest {
 		TrackReads tr= new TrackReads("test_data/ds051.noindex.sam", gc);
 		assertEquals("", tr.printToScreen());
 	}
+	
 }

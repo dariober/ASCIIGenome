@@ -1185,4 +1185,19 @@ public class UtilsTest {
 		assertTrue(Utils.tildeToHomeDir("~/foo/bar/baz").startsWith("/Users/") || Utils.tildeToHomeDir("~/foo/bar/baz").startsWith("/home/"));
 	}
 	
+	@Test
+	public void canGetTemplateNameFromReadName(){
+		assertEquals("keepme", Utils.templateNameFromSamReadName("keepme"));
+		assertEquals("keepme", Utils.templateNameFromSamReadName("keepme "));
+		assertEquals("keepme", Utils.templateNameFromSamReadName("keepme   foo bar"));
+		assertEquals("keepme", Utils.templateNameFromSamReadName("keepme/1"));
+		assertEquals("keepme", Utils.templateNameFromSamReadName("keepme/2"));
+		assertEquals("keepme", Utils.templateNameFromSamReadName("keepme /2"));
+		Stopwatch sw= Stopwatch.createStarted();
+		String x= "HSQ9103:404:C6F0VANXX:1:2208:4363:50381 foo bar /1";
+		for(int i= 0; i < 1000000; i++){
+			String s= Utils.templateNameFromSamReadName(x);
+		}
+		System.err.println(sw.stop());
+	}
 }

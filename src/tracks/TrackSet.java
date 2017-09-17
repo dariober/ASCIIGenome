@@ -1066,8 +1066,8 @@ public class TrackSet {
 		}		
 		args.remove(0); // Remove command name
 
-		String showRegex= ".*";  // Show all
-		String hideRegex= "^$";  // Hide nothing
+		String showRegex= Track.SHOW_REGEX; // Default
+		String hideRegex= Track.HIDE_REGEX;
 		
 		// Get args:
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
@@ -1114,8 +1114,7 @@ public class TrackSet {
         // And set as required:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
-			tr.setShowRegex(showRegex);
-			tr.setHideRegex(hideRegex);
+        	tr.setShowHideRegex(showRegex, hideRegex);
         }
 	}
 	

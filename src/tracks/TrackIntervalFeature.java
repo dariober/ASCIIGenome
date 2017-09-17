@@ -45,7 +45,6 @@ public class TrackIntervalFeature extends Track {
 	private BBFileReader bigBedReader;
 	private VCFHeader vcfHeader= null;
 	
-	/** The outer key is the regex matching feature. */ 
 	private List<Argument> colorForRegex= null;
 	private VCFCodec vcfCodec;
 		
@@ -964,24 +963,33 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
-	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+	public void setShowHideRegex(String showRegex, String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.showRegex= showRegex;
 		this.hideRegex= hideRegex;
 		this.update();
 	}
+	
 	@Override
 	public String getHideRegex() {
 		return this.hideRegex;
 	}
-	@Override
-	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		this.showRegex= showRegex;
-		this.update();
-	}
+
 	@Override
 	public String getShowRegex() {
 		return this.showRegex;
 	}
 
+//	@Override
+//	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+//		this.hideRegex= hideRegex;
+//		this.update();
+//	}
+//	@Override
+//	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+//		this.showRegex= showRegex;
+//		this.update();
+//	}
+	
 	@Override
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 

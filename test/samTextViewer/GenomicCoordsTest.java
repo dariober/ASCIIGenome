@@ -389,14 +389,20 @@ public class GenomicCoordsTest {
 		gc.centerAndExtendGenomicCoords(gc, size, 5.0); 
 		assertEquals(1, (int)gc.getFrom());
 		
-		// No extension
-		gc= new GenomicCoords("chr1:1-300", 80, null, null);
-		size= 100;
-		gc.centerAndExtendGenomicCoords(gc, size, 0);
+	}
+	
+	@Test
+	public void canPutFeatureInMidOfWindow() throws InvalidGenomicCoordsException, IOException{
+		// This test depends on terminalwidth being 80 as detected by Utils.getTerminalWidth. 
+		// The paramter terminalWidth GenomicCoords is not relevant. 
+		GenomicCoords gc= new GenomicCoords("chr1:100-1000", 200, null, null);
 		System.err.println(gc);
-		assertEquals(1, (int)gc.getFrom());
-		assertEquals(300, (int)gc.getTo());
-		
+		int size= 1; // not relevant
+		double slop= 0;
+		gc.centerAndExtendGenomicCoords(gc, size, slop);
+		System.err.println(gc);
+		assertEquals(60, (int)gc.getFrom());
+		assertEquals(139, (int)gc.getTo());
 	}
 
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -73,8 +74,6 @@ public class TrackPileup extends TrackWiggles {
 	@Override
 	public void update() throws InvalidGenomicCoordsException, IOException{
 		
-		// this.updateWorkFileName();
-		
 		if(this.getyMaxLines() == 0){
 			return;
 		}
@@ -90,13 +89,17 @@ public class TrackPileup extends TrackWiggles {
 		samReader= Utils.getSamReader(this.getWorkFilename());
 		Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 		
-		this.loci= new TreeMap<Integer, Locus>();
+		Map<Integer, Locus> accumulator= new HashMap<Integer, Locus>(); 
 		ListIterator<Boolean> pass = passFilter.listIterator();
 		while(sam.hasNext()){
 			SAMRecord rec= sam.next();
 			if( pass.next() ){
-					this.add(rec);
+				this.add(rec, accumulator);
 			}
+		}
+		this.loci= new TreeMap<Integer, Locus>();
+		for(int pos : accumulator.keySet()){
+			this.loci.put(pos, accumulator.get(pos));
 		}
 		List<Double> screenScores= this.prepareScreenScores();
 		this.setScreenScores(screenScores);
@@ -150,7 +153,7 @@ public class TrackPileup extends TrackWiggles {
 	
 	/** Update the map of loci with the information in this record. 
 	 * */
-	private void add(SAMRecord samRecord){
+	private void add(SAMRecord samRecord, Map<Integer, Locus> accumulator){
 		
 		// Is this read forward or reverse? First or second in pair?
 		boolean isFirstOFPair= ! samRecord.getFirstOfPairFlag();
@@ -189,11 +192,11 @@ public class TrackPileup extends TrackWiggles {
 				char base= samRecord.getReadBases().length == 0 ? 'N' : (char) samRecord.getReadBases()[readPos-1];				
 								
 				// Start collecting info	
-				if( ! this.loci.containsKey(refPos)){
+				if( ! accumulator.containsKey(refPos)){
 					// Add this position to the map.
-					this.loci.put(refPos, new Locus(this.getGc().getChrom(), refPos));
+					accumulator.put(refPos, new Locus(this.getGc().getChrom(), refPos));
 				}
-				this.loci.get(refPos).add(base, isReverse, isFirstOFPair);
+				accumulator.get(refPos).add(base, isReverse, isFirstOFPair);
 			}
 		}
 		// Now we need to increment counts corresponding to deletions in the reference
@@ -203,11 +206,11 @@ public class TrackPileup extends TrackWiggles {
 				if(refPos < this.getGc().getFrom() || refPos > this.getGc().getTo()){
 					continue; // Position is outside user's coordinates.
 				}
-				if( ! this.loci.containsKey(refPos)){
+				if( ! accumulator.containsKey(refPos)){
 					// Add this position to the map.
-					this.loci.put(refPos, new Locus(this.getGc().getChrom(), refPos));
+					accumulator.put(refPos, new Locus(this.getGc().getChrom(), refPos));
 				}
-				this.loci.get(refPos).add('D', isReverse, isFirstOFPair);
+				accumulator.get(refPos).add('D', isReverse, isFirstOFPair);
 			}
 		}
 	}
@@ -381,4 +384,12 @@ public class TrackPileup extends TrackWiggles {
 	public void setRpm(boolean rpm){
 		this.rpm= rpm;
 	}
+	
+	@Override
+	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException{
+		this.showRegex= showRegex;
+		this.hideRegex= hideRegex;
+		this.update();
+	}
+
 }

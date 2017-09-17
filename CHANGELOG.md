@@ -16,6 +16,12 @@ New in 1.11.0
 
 * `grep` applies also to bam tracks.
 
+* Add `-c` option to `next` command. Useful to browse small features such as SNV and indels.
+
+* Some speed improvement in processing BAM tracks. The improvement is more noticeable when 
+  loads of reads are processed. For example, a window spanning 85 kb and containing ~2 million reads
+  takes ~35 sec in this version compared to ~1:30 min in v1.10.0.  
+
 New in 1.10.0
 ============
 

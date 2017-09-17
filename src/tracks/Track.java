@@ -254,18 +254,19 @@ public abstract class Track {
 	
 	public abstract String getAwk();
 	
-	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { 
-	
+//	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {}
+//	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {}
+
+	/** Setter for both showRegex and hideRegex, if only one is set, use
+	 * Tracks.SHOW_REGEX or Tracks.HIDE_REGEX for the other. This is to prevent
+	 * calling update() twice when only one is needed.*/
+	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+
 	}
-	
+
 	public String getHideRegex() { 
 		return ""; 
 	}
-	
-	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException { 
-
-	}
-	
 	public String getShowRegex() { 
 		return ""; 
 	}
@@ -650,7 +651,7 @@ public abstract class Track {
 		// boolean[] results= new boolean[(int) this.nRecsInWindow];
 		List<Boolean> results= new ArrayList<Boolean>();
 		
-		StringBuilder awkDataInput= new StringBuilder();
+		List<String> awkDataInput= new ArrayList<String>();
 		while(filterSam.hasNext()){ 
 			// Record whether a read passes the sam filters. If necessary, we also 
 			// store the raw reads for awk.
@@ -663,15 +664,16 @@ public abstract class Track {
 			} else {
 				passed= false;
 			}
-			if(passed){
+			String raw= null;
+			if(passed && (! this.showRegex.equals(SHOW_REGEX) || ! this.hideRegex.equals(HIDE_REGEX))){
 				// grep
-				String raw= rec.getSAMString().replaceAll("\n$", "");
+				raw= rec.getSAMString().trim();
 				boolean showIt= true;
-				if(this.showRegex != null && ! this.showRegex.equals(".*")){
+				if(! this.showRegex.equals(SHOW_REGEX)){
 					showIt= Pattern.compile(this.showRegex).matcher(raw).find();
 				}
 				boolean hideIt= false;
-				if(!this.hideRegex.isEmpty()){
+				if(! this.hideRegex.equals(HIDE_REGEX)){
 					hideIt= Pattern.compile(this.hideRegex).matcher(raw).find();	
 				}
 				if(!showIt || hideIt){
@@ -681,13 +683,17 @@ public abstract class Track {
 			results.add(passed);
 			if(passed && this.getAwk() != null && ! this.getAwk().isEmpty()){
 				// We pass to awk only records that have been kept so far.
-				awkDataInput.append(rec.getSAMString());	
+				if(raw == null){
+					raw= rec.getSAMString().trim();
+				}
+				awkDataInput.add(raw);
 			}
 		}
 		
 		// Apply the awk filter, if given
 		if(this.getAwk() != null && ! this.getAwk().isEmpty()){
-			String[] rawLines= awkDataInput.toString().replaceAll("\n$", "").split("\n");
+			String[] rawLines= new String[awkDataInput.size()];
+			rawLines= awkDataInput.toArray(rawLines);
 			boolean[] awkResults= Utils.passAwkFilter(rawLines, this.getAwk());
 			// Compare the results array with awk filtered. Flip as appropriate the results array
 			int awkIdx= 0;

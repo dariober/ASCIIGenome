@@ -6,13 +6,17 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Stopwatch;
 
 import coloring.Config;
 import exceptions.InvalidColourException;
@@ -162,6 +166,19 @@ public class TrackPileupTest {
 	}
 
 	@Test
+	public void canFilterReadsWithGrepAndAwk() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000",80, null, null);
+		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
+		tr.setNoFormat(true);
+		tr.setyMaxLines(1000);
+		assertTrue(tr.getTitle().contains("22/22")); // N. reads before filtering
+		tr.setShowHideRegex("NCNNNCCC", Track.HIDE_REGEX);
+		tr.setAwk("'$4 != 5566779'");
+		assertTrue(tr.getTitle().contains("4/22"));
+	}
+
+	
+	@Test
 	public void canCollectCoverageAtOnePos() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr7:5588536-5588536", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
@@ -180,6 +197,5 @@ public class TrackPileupTest {
 		GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
 		TrackPileup tr= new TrackPileup("/Users/db291g/Tritume/reads.sam", gc); // test_data/ds051.noindex.sam
 		// tr.update();
-	}
-	
+	}	
 }

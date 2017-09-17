@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -17,6 +18,7 @@ import com.google.common.hash.Hashing;
 
 import coloring.Config;
 import coloring.ConfigKey;
+import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -36,6 +38,7 @@ public class TrackReads extends Track{
 	// private boolean withReadName= false;
 	private long nRecsInWindow= -1;
 	private int userWindowSize;
+	private List<Argument> colorForRegex= null;
 	
 	/* C o n s t r u c t o r s */
 	/**
@@ -91,18 +94,19 @@ public class TrackReads extends Track{
 			samReader= Utils.getSamReader(this.getWorkFilename());
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 			
-			float probSample= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack)) / this.nRecsInWindow;
+			float max_reads= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack));
+			float probSample= max_reads / this.nRecsInWindow;
 			
 			// Add this random String to the read name so different screenshot will generate 
 			// different samples. 
 			String rndOffset= Integer.toString(new Random().nextInt());
 			                                                            
 			ListIterator<Boolean> pass = passFilter.listIterator();
-			while(sam.hasNext() && textReads.size() < Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack))){
+			while(sam.hasNext() && textReads.size() < max_reads){
 				SAMRecord rec= sam.next();
 				if( pass.next() ){
 					// Get read name (template name in fact), w/o the suffixes and what comes after the first blank.
-					String templ_name= rec.getReadName().replaceAll(" .*", "").replaceAll("/1$|/2$", "");
+					String templ_name= Utils.templateNameFromSamReadName(rec.getReadName());
 					long v= Hashing.md5().hashBytes((templ_name + rndOffset).getBytes()).asLong();
 					Random rand = new Random(v);
 					if(rand.nextFloat() < probSample){ // Downsampler
@@ -136,11 +140,9 @@ public class TrackReads extends Track{
 			keep= Utils.seqFromToLenOut(0, this.readStack.size()-1, this.readStack.size());
 		}
 		StringBuilder printable= new StringBuilder();
+		// this.changeFeatureColor(null);
 		for(Double idx : keep){
 			List<SamSequenceFragment> line= this.readStack.get((int)Math.rint(idx));
-//			for(TextRead tr : line){
-//				this.changeFeatureColor(this.getColorForRegex()); // For each TextRead in this interval set colour according to regex in List<Argument>
-//			}
 			try {
 				printable.append(linePrinter(line, this.bisulf, this.isNoFormat()));
 				printable.append("\n");
@@ -376,13 +378,68 @@ public class TrackReads extends Track{
 	}
 
 	@Override
-	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException{
+		this.showRegex= showRegex;
 		this.hideRegex= hideRegex;
 		this.update();
 	}
+	
+//	@Override
+//	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+//		this.hideRegex= hideRegex;
+//		this.update();
+//	}
+//	@Override
+//	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+//		this.showRegex= showRegex;
+//		this.update();
+//	}
+	
 	@Override
-	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		this.showRegex= showRegex;
-		this.update();
+	public void changeFeatureColor(List<Argument> args){
+		List<List<SamSequenceFragment>> stack = this.readStack;
+		for(List<SamSequenceFragment> frags : stack){
+			for(SamSequenceFragment frag : frags){
+				List<TextRead> reads= new ArrayList<TextRead>();
+				reads.add(frag.getLeftRead());
+				if(frag.getRightRead() != null){
+					reads.add(frag.getRightRead());	
+				}
+				for(TextRead tr : reads){
+					for(Argument arg : args){
+						String regex= arg.getKey();
+						String color= arg.getArg();
+						boolean matched= Pattern.compile(regex).matcher(tr.getSamRecord().getSAMString()).find();
+						if(arg.isInvert()){
+							matched= ! matched;
+						}
+						if(matched){
+							// tr.getTextReadAsFeatureChars(this.isBisulf());
+							// f.setFgColor(color);
+						}
+					}
+				}
+			}
+		}
 	}
+	
+	@Override
+	protected void setColorForRegex(List<Argument> xcolorForRegex) {
+		if(xcolorForRegex == null){
+			this.colorForRegex= null;
+			return;
+		} else {
+			if(this.colorForRegex == null){
+				this.colorForRegex= new ArrayList<Argument>();
+			}
+			for(Argument p : xcolorForRegex){
+				this.colorForRegex.add(p);
+			}
+		}
+	}
+
+	private List<Argument> getColorForRegex() {
+		return this.colorForRegex;
+	}
+
 }

@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -655,6 +654,11 @@ public class InteractiveInput {
 			start= true;
 			args.remove("-start");
 		}
+		boolean center= false;
+		if(args.contains("-c")){
+			center= true;
+			args.remove("-c");
+		}
 		boolean getPrevious= false;
 		if(args.contains("-back")){
 			getPrevious= true;
@@ -665,6 +669,8 @@ public class InteractiveInput {
 		}
 		if(start){
 			proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, -1.0, getPrevious));
+		} else if(center){
+			proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, 0, getPrevious));
 		} else {
 			proc.getGenomicCoordsHistory().add(proc.getTrackSet().goToNextFeatureOnFile(trackId, gc, zo, getPrevious));
 		}
