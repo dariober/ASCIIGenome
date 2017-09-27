@@ -96,28 +96,6 @@ public class TrackBookmarkTest {
 		bm.removeBookmark(gc);
 		assertTrue(bm.getIntervalFeatureList().size() == 0);
 	}
-
-	@Test
-	public void canExportSetting() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
-
-		GenomicCoords gc= new GenomicCoords("chr1:1-100", 80, null, null);
-		TrackBookmark bm= new TrackBookmark(gc, "book1");
-		bm.setNoFormat(true);
-		
-		gc= new GenomicCoords("chr1:200-300", 80, null, null);
-		bm.setGc(gc);
-		bm.addBookmark(gc, "book2");
-
-		gc= new GenomicCoords("chr2:2000-3000", 80, null, null);
-		bm.setGc(gc);
-		bm.addBookmark(gc, "'foo bar'"); // Note use of single quotes.
-		
-		assertTrue(bm.settingsToString().contains("goto chr1:1-100"));
-		assertTrue(bm.settingsToString().contains("goto chr2:2000-3000"));
-		assertTrue(bm.settingsToString().contains("'foo bar'"));
-		
-		// System.out.println(bm.settingsToString());
-	}
 	
 	@Test
 	public void canPrintBookmarksAsList() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{

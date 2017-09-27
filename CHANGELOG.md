@@ -1,6 +1,29 @@
 New in 1.11.0
 ============
 
+Speed
+-----
+
+A few improvements to increase speed
+
+* Speed improved in printing tracks of bam alignment. Depending on the file system, the improvement can be 
+  quite large, now taking milliseconds instead of seconds. Explanation: The library size of a bam file was 
+  recalculated each time the screen was refreshed. This can be very fast on some systems but on others 
+  it can take up to a few seconds.
+
+* Following from previous point: library size is not calculated by default. This can make ASCIIGenome
+  faster to load a bam track.
+
+* Some speed improvement in processing BAM tracks. The improvement is more noticeable when 
+  loads of reads are processed. For example, a window spanning 85 kb and containing ~2 million reads
+  takes ~35 sec in this version compared to ~1:30 min in v1.10.0.  
+
+* Pileup data is cached so that it doesn't need to be recalculated. This makes commands like `f/b/ff/bb` and `zi` 
+  much faster. 
+
+Bug fixes & additions
+---------------------
+
 * Fix bug where shaded base qualities were occasionally shifted.
 
 * Insertions in reads are visible. The base preceding an insertion has fore/background colour inverted.
@@ -18,9 +41,6 @@ New in 1.11.0
 
 * Add `-c` option to `next` command. Useful to browse small features such as SNV and indels.
 
-* Some speed improvement in processing BAM tracks. The improvement is more noticeable when 
-  loads of reads are processed. For example, a window spanning 85 kb and containing ~2 million reads
-  takes ~35 sec in this version compared to ~1:30 min in v1.10.0.  
 
 New in 1.10.0
 ============

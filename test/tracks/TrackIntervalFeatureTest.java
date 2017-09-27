@@ -4,17 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.base.Stopwatch;
-import com.google.common.hash.Hashing;
 
 import coloring.Config;
 import coloring.Xterm256;
@@ -24,7 +19,6 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
-import samTextViewer.Utils;
 
 public class TrackIntervalFeatureTest {
 	
@@ -408,8 +402,9 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:10000-100000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
-		tif.setShowHideRegex(Track.SHOW_REGEX, "\texon\t");
-		assertTrue(tif.getIntervalFeatureList().size() == 3);
+		
+		tif.setShowHideRegex(FeatureFilter.SHOW_REGEX, "\texon\t");
+		assertEquals(3, tif.getIntervalFeatureList().size());
 
 		tif.setShowHideRegex("WASH7P", "^$");
 		assertTrue(tif.getIntervalFeatureList().size() == 11);
@@ -483,7 +478,7 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 
 		tif.setAwk("'$3 == \"start_codon\"");
-		tif.setShowHideRegex(Track.SHOW_REGEX, "OR4F");
+		tif.setShowHideRegex(FeatureFilter.SHOW_REGEX, "OR4F");
 		List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(40, subset.size());
 

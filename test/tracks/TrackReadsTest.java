@@ -11,9 +11,6 @@ import java.util.List;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.google.common.base.Stopwatch;
-
 import coloring.Config;
 import coloring.ConfigKey;
 import coloring.Xterm256;
@@ -22,10 +19,10 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import net.sourceforge.argparse4j.impl.Arguments;
 import samTextViewer.GenomicCoords;
 
 public class TrackReadsTest {
@@ -95,33 +92,6 @@ public class TrackReadsTest {
 
 	}
 	
-//	@Test 
-	public void testSpeed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
-		GenomicCoords gc= new GenomicCoords("chr7:5567700-5567872", 80, null, null);
-		SamReader sr= srf.open(new File("test_data/MT.bam"));
-//		SAMRecordIterator reads = sr.query("chr7", gc.getFrom(), gc.getTo(), false);
-//		int n= 0;
-//		long t0= System.currentTimeMillis();
-//		while(reads.hasNext()){
-//			SAMRecord rec= reads.next();
-//			Cigar cigar= rec.getCigar();
-//			List<AlignmentBlock> blocks = rec.getAlignmentBlocks();
-//			rec.getReferencePositionAtReadPosition(0);
-//			n++;
-//			TextRead txr= new TextRead(rec, gc);
-//			txr.getPrintableTextRead(false, true, false, gc.getBpPerScreenColumn());
-//		}
-//		long t1= System.currentTimeMillis();
-//		System.out.println((t1-t0)/1000.0);
-//		System.out.println(n);
-		
-		long t2= System.currentTimeMillis();
-		TrackReads tr= new TrackReads("test_data/MT.bam", gc);
-		long t3= System.currentTimeMillis();
-		System.out.println(tr.getRecordsAsStrings().size());
-		System.out.println((t3-t2)/1000.0);
-		
-	}
 	
 	@Test
 	public void canShowReadsAsPairs() throws Exception{
@@ -198,6 +168,42 @@ public class TrackReadsTest {
 	}
 	
 	@Test
+	public void canFilterReadsContainingVariants() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr7:1000001-1000081",100, samSeqDict, fastaFile);
+		TrackReads tr= new TrackReads("test_data/variant_reads.sam", gc);
+		tr.setNoFormat(true);
+		tr.setyMaxLines(1000);
+		assertEquals(10, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
+
+		tr.setVariantReadInInterval("chr7", 1000001, 1000001);
+		assertEquals(1, tr.printToScreen().split("\n").length);
+		assertTrue(tr.printToScreen().startsWith("A"));
+
+		tr.setVariantReadInInterval("chr7", 1000015, 1000015);
+		assertEquals(1, tr.printToScreen().split("\n").length);
+		assertTrue(tr.printToScreen().trim().endsWith("T"));
+
+		tr.setVariantReadInInterval("chr7", 1000003, 1000003); // Test deletion
+		assertEquals(1, tr.printToScreen().split("\n").length);
+		assertTrue(tr.printToScreen().contains("-"));
+		
+		tr.setVariantReadInInterval("chr7", 1000005, 1000005); // Test deletion
+		assertEquals(1, tr.printToScreen().split("\n").length);
+
+		tr.setVariantReadInInterval("chr7", 1000002, 1000002); // Test insertion
+		assertEquals(2, tr.printToScreen().split("\n").length);
+		
+		tr.setVariantReadInInterval("chr7", 1000014, 1000014); // No variants at this site
+		assertEquals("", tr.printToScreen().trim());
+		
+		tr.setVariantReadInInterval("chr7", 1000003, 1000010); // Test range
+		assertEquals(3, tr.printToScreen().split("\n").length);
+		assertTrue(tr.printToScreen().contains("-"));
+		assertTrue(tr.printToScreen().contains("AG"));
+
+	}
+	
+	@Test
 	public void canFilterReadsWithAwk() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000",80, samSeqDict, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
@@ -228,7 +234,7 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
 		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
-		tr.setShowHideRegex("NCNNNCCC", Track.HIDE_REGEX);
+		tr.setShowHideRegex("NCNNNCCC", FeatureFilter.HIDE_REGEX);
 		tr.setAwk("'$4 != 5566779'");
 		assertEquals(4, tr.printToScreen().split("\n").length);
 	}

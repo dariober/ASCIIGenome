@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,8 +22,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
-import com.google.common.base.Joiner;
-
 import coloring.Config;
 import coloring.ConfigKey;
 import coloring.Xterm256;
@@ -32,11 +29,13 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.CigarElement;
+import htsjdk.samtools.CigarOperator;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.filter.AggregateFilter;
-import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
@@ -79,14 +78,10 @@ public abstract class Track {
 	private int gap= 1;
 	protected boolean readsAsPairs= false;
 	protected boolean rpm= false;
-	protected static final int f_FLAG= 0; private int f_flag= f_FLAG;
-	protected static final int F_FLAG= 4; private int F_flag= F_FLAG;
-	protected static final int MAPQ= 0; private int mapq= MAPQ;
-	protected List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
 	private boolean hideTrack= false; 
 	private boolean hideTitle= false;
 	private TrackFormat trackFormat;
-	protected String awk= ""; 
+	 
 	private int printRawLineCount= -1; // Number of lines to print. Same as `head -n 10`
 	private GenotypeMatrix genotypeMatrix= new GenotypeMatrix();
 	/** A file to export track data
@@ -95,9 +90,8 @@ public abstract class Track {
 	private String systemCommandForPrint;
 	private boolean printNormalizedVcf= false;
 	private long lastModified;
-	final static public String HIDE_REGEX= "^$"; protected String hideRegex= HIDE_REGEX;
-	final static public String SHOW_REGEX= ".*"; protected String showRegex= SHOW_REGEX;
-
+	
+	private FeatureFilter featureFilter= new FeatureFilter(); 
 	
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
@@ -116,34 +110,7 @@ public abstract class Track {
 			return "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;" + colourCode + "m" + title;
 		}
 	}
-	
-	/** Returns a string that parsed by `-exec` loads the current track with 
-	 * the current settings (color, height, etc...).
-	 * This method is currently quite approximative and it doesn't reproduce carefully all the settings.
-	 * @throws IOException 
-	 * @throws UnsupportedEncodingException 
-	 * */
-	public String settingsToString() throws UnsupportedEncodingException, IOException{
-		String name= "^" + this.getTrackTag().replaceAll("(#|@)\\d+$", "");
-		List<String> set= new ArrayList<String>();
-		set.add("addTracks " + this.getFilename());
-		set.add("colorTrack " + this.getTitleColour() + " " + name);
-		set.add("trackHeight " + this.getyMaxLines() + " " + name);
-		set.add("ylim " + this.getYLimitMin() + " " + this.getYLimitMax() + " " + name);
-		set.add("samtools -q " + this.getMapq() + " -f " + this.get_f_flag() + " -F " + this.get_F_flag() + " " + name);
-		set.add("grep -i " + this.getShowRegex() + " -e " + this.getHideRegex() + " " + name);
-		if(this.isRpm()){
-			set.add("rpm " + name);
-		}
-		if(this.isBisulf()){
-			set.add("BSseq " + name);
-		}
-		if(this.isHideTitle()){
-			set.add("hideTitle " + name);
-		}
-		return Joiner.on(" && ").join(set);
-	}
-	
+		
 	/* Printers */
 	public String printToScreen() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		return null;
@@ -158,10 +125,6 @@ public abstract class Track {
 				"; track class: " + this.getClass().getSimpleName();
 	}
 	
-	/* Setters and getters */
-	//public void setTitle(String title){
-	//	this.title= title;
-	//}
 	public abstract String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException;
 	
 	public int getyMaxLines() {
@@ -232,43 +195,41 @@ public abstract class Track {
 		this.yLimitMax = ymax; 
 	}
 
-	/** Return filter making sure the AlignedFilter to discard unmapped is set.
-	 * */
-	public List<SamRecordFilter> getSamRecordFilter() { 
-		AlignedFilter unmapped = new AlignedFilter(true);
-		if(!this.samRecordFilter.contains(unmapped)){
-			this.samRecordFilter.add(unmapped); // Unmapped reads are always discarded	
-		}
-		return this.samRecordFilter; 
-	}
 
-	protected void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		this.samRecordFilter = samRecordFilter;
+	void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.getFeatureFilter().setSamRecordFilter(samRecordFilter);
 		this.update();
 	}
 	
 	public boolean isBisulf() { return this.bisulf; }
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
-	public abstract void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException;
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.getFeatureFilter().setAwk(awk);
+		this.update();
+	};
 	
-	public abstract String getAwk();
+	public String getAwk(){
+		return this.getFeatureFilter().getAwk();
+	};
 	
-//	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {}
-//	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {}
-
+	protected FeatureFilter getFeatureFilter(){
+		return this.featureFilter;
+	}
+	
 	/** Setter for both showRegex and hideRegex, if only one is set, use
 	 * Tracks.SHOW_REGEX or Tracks.HIDE_REGEX for the other. This is to prevent
 	 * calling update() twice when only one is needed.*/
 	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
-
+		this.getFeatureFilter().setShowHideRegex(showRegex, hideRegex);
+		this.update();
 	}
 
 	public String getHideRegex() { 
-		return ""; 
+		return this.getFeatureFilter().getHideRegex();
 	}
-	public String getShowRegex() { 
-		return ""; 
+	public String getShowRegex() {
+		return this.getFeatureFilter().getShowRegex();
 	}
 	
 	public String getTitleColour() {
@@ -332,34 +293,34 @@ public abstract class Track {
 	
 	/** This int is just a setting but is NOT translated to a filter! */
 	protected int get_f_flag() {
-		return f_flag;
+		return this.getFeatureFilter().get_f_flag();
 	}
 
 	/** This int is just a setting but is NOT translated to a filter! */
 	protected void set_f_flag(int f_flag) {
-		this.f_flag = f_flag;
+		this.getFeatureFilter().set_f_flag(f_flag);
 	}
 
 	/** You should use a converter to get int from list of filters. 
 	 * */
 	/** This int is just a setting but is NOT translated to a filter! */
 	protected int get_F_flag() {
-		return F_flag;
+		return this.getFeatureFilter().get_F_flag();
 	}
 
 	/** This int is just a setting but is NOT translated to a filter! */
 	protected void set_F_flag(int F_flag) {
-		this.F_flag = F_flag;
+		this.getFeatureFilter().set_F_flag(F_flag);
 	}
 
 	/** This int is just a setting but is NOT translated to a filter! */
 	public int getMapq() {
-		return mapq;
+		return this.getFeatureFilter().getMapq();
 	}
 
 	/** This int is just a setting but is NOT translated to a filter! */
 	protected void setMapq(int mapq) {
-		this.mapq = mapq;
+		this.getFeatureFilter().setMapq(mapq);
 	}
 	
 	public List<String> printPileupList(){
@@ -620,7 +581,6 @@ public abstract class Track {
 		String track= this.printToScreen();
 		String title= this.getTitle();
 		int titleLen= Utils.stripAnsiCodes(title).trim().length();
-
 		String sProfile= Utils.stripAnsiCodes(track);
 		if(sProfile.trim().isEmpty()){ // No features in this profile
 			return title.replaceAll("\n", "") + track; 	
@@ -636,21 +596,29 @@ public abstract class Track {
 		return title + track; 
 	}
 	
-	/**Returns a list of boolean indicating whether the reads in samReader pass the 
-	 * sam and awk filters.
-	 * @throws IOException 
-	 * */
-	public List<Boolean> filterReads(SamReader samReader) throws IOException{
+	public List<Boolean> filterReads(SamReader samReader, String chrom, int from, int to) throws IOException{
 
-		Iterator<SAMRecord> filterSam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
+		Iterator<SAMRecord> filterSam= samReader.query(chrom, from, to, false);
 		
-		AggregateFilter aggregateFilter= new AggregateFilter(this.getSamRecordFilter());
+		AggregateFilter aggregateFilter= new AggregateFilter(this.getFeatureFilter().getSamRecordFilter());
 
 		// This array will contain true/false to indicate whether a record passes the 
 		// sam filters AND the awk filter (if given).
 		// boolean[] results= new boolean[(int) this.nRecsInWindow];
 		List<Boolean> results= new ArrayList<Boolean>();
-		
+
+		byte[] faSeq= null;
+		if(this.getFeatureFilter().getVariantChrom().equals(this.getGc().getChrom()) &&
+		   this.getFeatureFilter().getVariantFrom() <= this.getGc().getTo() &&
+		   this.getGc().getFrom() <= this.getFeatureFilter().getVariantTo()){
+			// Get sequence to test whether the read is variant in the requested interval.
+			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(this.getGc().getFastaFile()));
+			faSeq= faSeqFile.getSubsequenceAt(
+					this.getFeatureFilter().getVariantChrom(), 
+					this.getFeatureFilter().getVariantFrom(), 
+					this.getFeatureFilter().getVariantTo()).getBases();
+			faSeqFile.close();
+		}
 		List<String> awkDataInput= new ArrayList<String>();
 		while(filterSam.hasNext()){ 
 			// Record whether a read passes the sam filters. If necessary, we also 
@@ -664,17 +632,85 @@ public abstract class Track {
 			} else {
 				passed= false;
 			}
+			
+			// Filter for variant
+			if(faSeq != null){
+				int varFrom= this.getFeatureFilter().getVariantFrom();
+				int varTo= this.getFeatureFilter().getVariantTo();
+				// If above we retrieved the sequence it means some positions need to be scanned for variant reads
+				passed= false; // Change to true as soon as we find a SNP in this read in the given interval
+				int readPos= 0;
+				int refPos= rec.getAlignmentStart();
+				for(CigarElement cigar : rec.getCigar().getCigarElements()){
+					if(cigar.getOperator().equals(CigarOperator.SOFT_CLIP)){
+						readPos += cigar.getLength();
+					}
+					else if(cigar.getOperator().equals(CigarOperator.MATCH_OR_MISMATCH)){
+						for(int i= 0; i < cigar.getLength(); i++){
+							if(refPos >= varFrom && refPos <= varTo && rec.getReadLength() > 0){
+								byte readBase= rec.getReadBases()[readPos];
+								byte refBase= faSeq[refPos-varFrom];
+								if(readBase != refBase){
+									passed= true;
+									break;
+								}
+							}
+							readPos++;
+							refPos++;
+						}
+					}
+					else if(cigar.getOperator().equals(CigarOperator.DELETION)){ // Consumes ref base, not read base
+						// REF  ACTGTTTTACTG
+						// READ   TG----AC
+						//          ^^^^
+						for(int i= 0; i < cigar.getLength(); i++){
+							if(refPos >= varFrom && refPos <= varTo){
+								passed= true;
+								break;
+							}
+							refPos++;							
+						}
+					}
+					else if(cigar.getOperator().equals(CigarOperator.INSERTION)){ // Consumes read, not ref 
+						//  REF ACTG----ACTG
+						// READ   TGttttAC
+						//         ^    
+						for(int i= 0; i < cigar.getLength(); i++){
+							if(refPos >= varFrom && refPos <= varTo){
+								passed= true;
+								break;
+							}
+							readPos++;							
+						}
+					} 
+					else if(cigar.getOperator().equals(CigarOperator.HARD_CLIP)){ 
+						//
+					} 
+					else if(cigar.getOperator().equals(CigarOperator.SKIPPED_REGION)){ // Same deletion but it's not a mismatch 
+						refPos += cigar.getLength();
+					} 
+					else if(cigar.getOperator().equals(CigarOperator.PADDING)){ 
+						// Not sure what to do with this...
+					} 
+					if(passed){
+						break;
+					}
+				}
+			}
+			
 			String raw= null;
-			if(passed && (! this.showRegex.equals(SHOW_REGEX) || ! this.hideRegex.equals(HIDE_REGEX))){
+
+			if(passed && (! this.getFeatureFilter().getShowRegex().equals(FeatureFilter.SHOW_REGEX) || 
+					      ! this.getFeatureFilter().getHideRegex().equals(FeatureFilter.HIDE_REGEX))){
 				// grep
 				raw= rec.getSAMString().trim();
 				boolean showIt= true;
-				if(! this.showRegex.equals(SHOW_REGEX)){
-					showIt= Pattern.compile(this.showRegex).matcher(raw).find();
+				if(! this.getFeatureFilter().getShowRegex().equals(FeatureFilter.SHOW_REGEX)){
+					showIt= Pattern.compile(this.getFeatureFilter().getShowRegex()).matcher(raw).find();
 				}
 				boolean hideIt= false;
-				if(! this.hideRegex.equals(HIDE_REGEX)){
-					hideIt= Pattern.compile(this.hideRegex).matcher(raw).find();	
+				if(! this.getFeatureFilter().getHideRegex().equals(FeatureFilter.HIDE_REGEX)){
+					hideIt= Pattern.compile(this.getFeatureFilter().getHideRegex()).matcher(raw).find();	
 				}
 				if(!showIt || hideIt){
 					passed= false;
@@ -689,7 +725,7 @@ public abstract class Track {
 				awkDataInput.add(raw);
 			}
 		}
-		
+
 		// Apply the awk filter, if given
 		if(this.getAwk() != null && ! this.getAwk().isEmpty()){
 			String[] rawLines= new String[awkDataInput.size()];
@@ -710,7 +746,46 @@ public abstract class Track {
 		}
 		return results;
 	}
+	
+	/**Returns a list of boolean indicating whether the reads in samReader pass the 
+	 * sam and awk filters.
+	 * @throws IOException 
+	 * */
+//	public List<Boolean> filterReads(SamReader samReader) throws IOException{
+//		return this.filterReads(samReader, this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+//	}
 
+//	private SAMRecord getNextSamRecordOnChrom(String chrom, int from) throws IOException, InvalidGenomicCoordsException{
+//		
+//		int qend= (from - 1) < 0 ? 0 : (from - 1);
+//
+//		SamReader samReader= Utils.getSamReader(this.getWorkFilename());
+//		SAMRecordIterator iter = samReader.queryAlignmentStart(chrom, qend);
+//		while(true){
+//			SAMRecord line= iter.next();
+//			if(line == null){
+//				return null;
+//			}
+//			// Create a reader at the position of this read and test whether any read here passes
+//			// filters.
+//			SamReader cur= Utils.getSamReader(this.getWorkFilename());
+//			List<Boolean> passed = this.filterReads(cur, line.getReferenceName(), line.getAlignmentStart(), line.getAlignmentStart());
+//			
+//		}
+//		
+//		// TabixBigBedIterator iter= this.getReader().query(chrom, qend, Integer.MAX_VALUE);
+//		while(true){
+//			SAMRecord line= iter.next();
+//			if(line == null){
+//				return null;
+//			}
+//			IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.getVCFCodec());
+//			if(x.getFrom() > from && this.featureIsVisible(x.getRaw())){
+//				return x;
+//			}
+//		}
+//	}
+	
 	protected void setColorForRegex(List<Argument> xcolorForRegex) {
 		
 	}
@@ -747,6 +822,24 @@ public abstract class Track {
 
 	public void setReadsAsPairs(boolean readsAsPairs) throws InvalidGenomicCoordsException, IOException {
 		this.readsAsPairs= readsAsPairs;
+	}
+	
+	/**Set filter to extract reads containing variant at the given interval.
+	 * from, to: 1-based coordinates (first base of chr1 is `chr1:1-1`).
+	 * @throws SQLException 
+	 * @throws InvalidRecordException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 * @throws MalformedURLException 
+	 * */
+	public void setVariantReadInInterval(String chrom, int from, int to) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		if(from > to){
+			System.err.println("Invalid coordinates for filter from > to: " + from + ", " + to);
+			throw new InvalidGenomicCoordsException();
+		}
+		this.getFeatureFilter().setVariantReadInInterval(chrom, from, to);
+		this.update();
 	}
 	
 }

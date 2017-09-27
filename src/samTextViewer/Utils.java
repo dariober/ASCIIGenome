@@ -56,7 +56,6 @@ import org.broad.igv.tdf.TDFReader;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -426,7 +425,7 @@ public class Utils {
 			SamReader samReader;
 			if(urlValidator.isValid(x)){
 				samReader = SamReaderFactory.makeDefault().open(SamInputResource.of(new URL(x)));
-			} else {			
+			} else {
 				SamReaderFactory srf=SamReaderFactory.make();
 				srf.validationStringency(ValidationStringency.SILENT);
 				samReader = srf.open(new File(x));
@@ -460,8 +459,8 @@ public class Utils {
 			System.err.println("Cannot initialize from " + x);
 			throw new RuntimeException();
 		
-		} else if(Utils.isUcscGenePredSource(x)){
-			return initRegionFromUcscGenePredSource(x);
+//		} else if(Utils.isUcscGenePredSource(x)){
+//			return initRegionFromUcscGenePredSource(x);
 		
 		} else {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
@@ -550,21 +549,20 @@ public class Utils {
 		return region;
 	}
 	
-	private static String initRegionFromUcscGenePredSource(String x) throws ClassNotFoundException, IOException, InvalidCommandLineException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		
-		String xfile= new UcscGenePred(x, 1).getTabixFile();
-		GZIPInputStream gzipStream;
-		InputStream fileStream = new FileInputStream(xfile);
-		gzipStream = new GZIPInputStream(fileStream);
-		Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
-		BufferedReader br = new BufferedReader(decoder);
-		String line= br.readLine();
-		br.close();
-		List<String> xlist= Lists.newArrayList(Splitter.on("\t").split(line));
-		String region= xlist.get(0) + ":" + xlist.get(3) + "-" + xlist.get(4);
-		return region;
-		
-	}
+//	private static String initRegionFromUcscGenePredSource(String x) throws ClassNotFoundException, IOException, InvalidCommandLineException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+//		
+//		String xfile= new UcscGenePred(x, 1).getTabixFile();
+//		GZIPInputStream gzipStream;
+//		InputStream fileStream = new FileInputStream(xfile);
+//		gzipStream = new GZIPInputStream(fileStream);
+//		Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+//		BufferedReader br = new BufferedReader(decoder);
+//		String line= br.readLine();
+//		br.close();
+//		List<String> xlist= Lists.newArrayList(Splitter.on("\t").split(line));
+//		String region= xlist.get(0) + ":" + xlist.get(3) + "-" + xlist.get(4);
+//		return region;
+//	}
 
 	public static boolean bamHasIndex(String bam) throws IOException{
 
@@ -2031,8 +2029,13 @@ public class Utils {
 		return cleanSamReadName(readName).equals(cleanSamReadName(readName2));
 	}
 	private static String cleanSamReadName(String readName){
-				return readName.replaceAll(" .*", "")
-				               .replaceAll("/1$|/2$", "");		
+		int blank= readName.indexOf(" ");
+		if(blank >= 0){
+			readName= readName.substring(0, blank);
+		}
+		if(readName.length() > 2 && (readName.endsWith("/1") || readName.endsWith("/2"))){
+			readName= readName.substring(0, readName.length()-2);
+		}
+		return readName;
 	}
-	
 }

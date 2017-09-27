@@ -57,12 +57,14 @@ public class TrackSet {
 				if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)){
 					/* Coverage track */
 					TrackPileup trackPileup= new TrackPileup(sourceName, gc);
-					trackPileup.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
+					// trackPileup.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
+					trackPileup.setTrackTag(sourceName + "#" + this.getNextTrackId());
 					this.trackList.add(trackPileup);
 					
 					/* Read track */
 					TrackReads trackReads= new TrackReads(sourceName, gc);
-					trackReads.setTrackTag(new File(sourceName).getName() + "@" + this.getNextTrackId());
+					// trackReads.setTrackTag(new File(sourceName).getName() + "@" + this.getNextTrackId());
+					trackReads.setTrackTag(sourceName + "@" + this.getNextTrackId());
 					this.trackList.add(trackReads);
 				}
 				
@@ -75,7 +77,8 @@ public class TrackSet {
 					// Annotatation
 					//
 					TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
-					this.addTrack(tif, new File(sourceName).getName());
+					// this.addTrack(tif, new File(sourceName).getName());
+					this.addTrack(tif, sourceName);
 				} 
 	
 				else if(Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG) 
@@ -85,7 +88,8 @@ public class TrackSet {
 					// Wiggles
 					//
 					TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
-					this.addTrack(tw, new File(sourceName).getName());
+					// this.addTrack(tw, new File(sourceName).getName());
+					this.addTrack(tw, sourceName);
 					
 				} else {
 					// NB: You never get here because Utils.getFileTypeFromName returns
@@ -171,7 +175,8 @@ public class TrackSet {
 	private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException{
 		
 		int idForTrack= this.getNextTrackId();
-		String trackId= new File(sourceName).getName() + "#" + idForTrack;
+		// String trackId= new File(sourceName).getName() + "#" + idForTrack;
+		String trackId= sourceName + "#" + idForTrack;
 		
 		TrackWiggles tw= new TrackWiggles(sourceName, gc, 4);
 		tw.setTrackTag(trackId);
@@ -181,7 +186,8 @@ public class TrackSet {
 	private void addIntervalFeatureTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		int idForTrack= this.getNextTrackId();
-		String trackId= new File(sourceName).getName() + "#" + idForTrack;
+		// String trackId= new File(sourceName).getName() + "#" + idForTrack;
+		String trackId= sourceName + "#" + idForTrack;
 		TrackIntervalFeature tif= new TrackIntervalFeature(sourceName, gc);
 		tif.setTrackTag(trackId);
 		this.trackList.add(tif);
@@ -190,7 +196,8 @@ public class TrackSet {
 	private void addIntervalFeatureTrackFromVCF(String sourceName, GenomicCoords gc, String trackTag) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		
 		int idForTrack= this.getNextTrackId();
-		String trackId= new File(sourceName).getName() + "#" + idForTrack;
+		// String trackId= new File(sourceName).getName() + "#" + idForTrack;
+		String trackId= sourceName + "#" + idForTrack;
 		
 		// If this VCF file has sequence dictionary, check the coordinates in gc are compatible
 		// If they are not, throw an exception which force resetting the coords.
@@ -209,7 +216,8 @@ public class TrackSet {
 
 		/* BAM Coverage track */
 		int idForTrack= this.getNextTrackId();
-		String coverageTrackId= new File(sourceName).getName() + "#" + idForTrack;
+		// String coverageTrackId= new File(sourceName).getName() + "#" + idForTrack;
+		String coverageTrackId= sourceName + "#" + idForTrack;
 		
 		TrackPileup trackPileup= new TrackPileup(sourceName, gc);
 		trackPileup.setTrackTag(coverageTrackId);
@@ -217,7 +225,8 @@ public class TrackSet {
 		
 		/* Reads */
 		idForTrack= this.getNextTrackId();
-		String trackId= new File(sourceName).getName() + "@" + idForTrack;
+		// String trackId= new File(sourceName).getName() + "@" + idForTrack;
+		String trackId= sourceName + "@" + idForTrack;
 
 		TrackReads trackReads= new TrackReads(sourceName, gc);
 		trackReads.setTrackTag(trackId);
@@ -1066,8 +1075,8 @@ public class TrackSet {
 		}		
 		args.remove(0); // Remove command name
 
-		String showRegex= Track.SHOW_REGEX; // Default
-		String hideRegex= Track.HIDE_REGEX;
+		String showRegex= FeatureFilter.SHOW_REGEX; // Default
+		String hideRegex= FeatureFilter.HIDE_REGEX;
 		
 		// Get args:
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
@@ -1543,9 +1552,9 @@ public class TrackSet {
 		args.remove(0); // Remove name of command
 		
 		// Defaults:
-		int f= 0;
-		int F= 4; // Always remove unmapped
-		int q= 0;
+		int f= FeatureFilter.f_FLAG;
+		int F= FeatureFilter.F_FLAG;
+		int q= FeatureFilter.MAPQ;
 		
 		// Get args:
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
@@ -1585,7 +1594,6 @@ public class TrackSet {
         }
         
         for(Track tr : tracksToReset){
-            
         	tr.set_f_flag(f);
         	tr.set_F_flag(F);
         	tr.setMapq(q);

@@ -54,17 +54,6 @@ public class TrackTest {
 	}
 	
 	@Test
-	public void canExportSettings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
-		
-		String bgzFn= "test_data/refSeq.hg19.short.sort.bed.gz"; // "test_data/refSeq.hg19.short.sort.bed.gz";
-		GenomicCoords gc= new GenomicCoords("chr1:16000000-20000000", 80, null, null);
-		TrackIntervalFeature tif= new TrackIntervalFeature(bgzFn, gc);
-		tif.setTrackTag("name.bed#12");
-		System.out.println(tif.settingsToString());
-		
-	}
-	
-	@Test
 	public void canParsePrintableLinesWithSystemCommand() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
 
 		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);

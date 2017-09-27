@@ -39,8 +39,6 @@ public class TrackIntervalFeature extends Track {
 	protected List<IntervalFeature> intervalFeatureList= new ArrayList<IntervalFeature>();  
 	/**For GTF/GFF data: Use this attribute to get the feature names 
 	 * */
-//	final static private String HIDE_REGEX= "^$";  private String hideRegex= HIDE_REGEX;
-//	final static private String SHOW_REGEX= ".*"; 	private String showRegex= SHOW_REGEX;
 	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
 	private VCFHeader vcfHeader= null;
@@ -202,7 +200,9 @@ public class TrackIntervalFeature extends Track {
 		}
 		
 		boolean showIt= true;
-		if(this.getShowRegex() != null && ! this.getShowRegex().equals(".*")){
+
+		if(this.getShowRegex() != null && 
+		   ! this.getShowRegex().equals(FeatureFilter.SHOW_REGEX)){
 			showIt= Pattern.compile(this.getShowRegex()).matcher(x).find();
 		}
 
@@ -670,10 +670,10 @@ public class TrackIntervalFeature extends Track {
 		}
 		
 		String grep= "";
-		if( ! this.getShowRegex().equals(SHOW_REGEX) ){
+		if( ! this.getShowRegex().equals(FeatureFilter.SHOW_REGEX) ){
 			grep += " -i " + this.getShowRegex(); 
 		}
-		if( ! this.getHideRegex().equals(HIDE_REGEX) ){
+		if( ! this.getHideRegex().equals(FeatureFilter.HIDE_REGEX) ){
 			grep += " -e " + this.getHideRegex(); 
 		}
 		if( ! grep.isEmpty()){
@@ -963,53 +963,18 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
-	public void setShowHideRegex(String showRegex, String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		this.showRegex= showRegex;
-		this.hideRegex= hideRegex;
-		this.update();
-	}
-	
-	@Override
-	public String getHideRegex() {
-		return this.hideRegex;
-	}
-
-	@Override
-	public String getShowRegex() {
-		return this.showRegex;
-	}
-
-//	@Override
-//	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-//		this.hideRegex= hideRegex;
-//		this.update();
-//	}
-//	@Override
-//	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-//		this.showRegex= showRegex;
-//		this.update();
-//	}
-	
-	@Override
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
-		if(awk.trim().isEmpty()){
-			this.awk= "";
-			
-		} else {
+		if( ! awk.trim().isEmpty()){
 			List<String> arglst= Utils.tokenize(awk, " ");
 			
 			// Do we need to set tab as field sep?
 			if(arglst.size() == 1 || ! arglst.contains("-F")){ // It would be more stringent to check for the script.
 				awk= "-F '\\t' " + awk; 
 			}
-			this.awk= awk;
 		}
+		this.getFeatureFilter().setAwk(awk);
 		this.update();
-	}
-	@Override
-	public String getAwk(){
-		return this.awk;
 	}
 	
 	@Override

@@ -2,14 +2,16 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -23,7 +25,9 @@ import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.CigarOperator;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReader;
+import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.util.IntervalTree;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -36,10 +40,12 @@ public class TrackPileup extends TrackWiggles {
 	 * getDepth(), etc should return a TreeMap for positions to be sorted. Here we use
 	 * HashMap because is faster to build. 
 	 * */
-	private Map<Integer, Locus> loci;
+	private Map<String, Map<Integer, Locus>> loci= new HashMap<String, Map<Integer, Locus>>();
+	@SuppressWarnings("rawtypes")
+	private Map<String, IntervalTree> zeroDepthIntervals= new HashMap<String, IntervalTree>(); 
+	
 	private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList= new ArrayList<ScreenWiggleLocusInfo>();
-	private long nRecsInWindow;
-	private long alnRecCnt;
+	private long alnRecCnt= -1;
 	
 	/*        C O N S T R U C T O R         */
 
@@ -64,13 +70,45 @@ public class TrackPileup extends TrackWiggles {
 		}
 		this.setFilename(bam);
 		this.setGc(gc);
-		this.alnRecCnt= Utils.getAlignedReadCount(this.getWorkFilename());
+		// this.alnRecCnt= Utils.getAlignedReadCount(this.getWorkFilename());
 		this.setLastModified();
 		
 	}
 
+	/*                  F I L T E R S           */
+	@Override
+	void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.getFeatureFilter().setSamRecordFilter(samRecordFilter);
+		this.loci.clear(); // clear cached positions
+		this.zeroDepthIntervals.clear();
+		this.update();
+	}
+	
+	@Override
+	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		this.getFeatureFilter().setShowHideRegex(showRegex, hideRegex);
+		this.loci.clear(); // clear cached positions
+		this.zeroDepthIntervals.clear();
+		this.update();
+	}
+		
+	@Override
+	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.getFeatureFilter().setAwk(awk);
+		this.loci.clear(); // clear cached positions
+		this.zeroDepthIntervals.clear();
+		this.update();
+	}
+
+	@Override 
+	public String getAwk(){
+		// MEMO: You need to override TrackWiggles not Tracks!
+		return this.getFeatureFilter().getAwk();
+	};
+	
 	/*       M E T H O D S        */
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void update() throws InvalidGenomicCoordsException, IOException{
 		
@@ -78,46 +116,65 @@ public class TrackPileup extends TrackWiggles {
 			return;
 		}
 		
-		SamReader samReader= Utils.getSamReader(this.getWorkFilename());
-		List<Boolean> passFilter= this.filterReads(samReader);
-		this.nRecsInWindow= 0;
-		for(boolean x : passFilter){ // The count of reads in window is the count of reads passing filters
-			if(x){
-				this.nRecsInWindow++;
-			}
-		}
-		samReader= Utils.getSamReader(this.getWorkFilename());
-		Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
+		String chrom= this.getGc().getChrom();
 		
-		Map<Integer, Locus> accumulator= new HashMap<Integer, Locus>(); 
-		ListIterator<Boolean> pass = passFilter.listIterator();
-		while(sam.hasNext()){
-			SAMRecord rec= sam.next();
-			if( pass.next() ){
-				this.add(rec, accumulator);
+		if(! this.loci.containsKey(chrom)){
+			this.loci.put(chrom, new HashMap<Integer, Locus>());
+		}
+		if(! this.zeroDepthIntervals.containsKey(chrom)){
+			this.zeroDepthIntervals.put(chrom, new IntervalTree());
+		}
+
+		// Check cache is not growing too much
+		if(this.loci.get(chrom).keySet().size() > 500000){
+			this.loci.get(chrom).clear();
+			this.zeroDepthIntervals.get(chrom).clear();
+		}
+		
+		// Find the positions that we haven't visited before:
+		List<Integer> missingPos= new ArrayList<Integer>();
+		for(int pos= this.getGc().getFrom(); pos <= this.getGc().getTo(); pos++){
+			if( ! this.loci.get(chrom).containsKey(pos) &&  
+				! this.zeroDepthIntervals.get(chrom).overlappers(pos, pos).hasNext()){
+				missingPos.add(pos);
 			}
 		}
-		this.loci= new TreeMap<Integer, Locus>();
-		for(int pos : accumulator.keySet()){
-			this.loci.put(pos, accumulator.get(pos));
+		for(List<Integer> gap : mergePositionsInIntervals(missingPos)){
+
+			int qryFrom= gap.get(0);
+			int qryTo= gap.get(1);
+			
+			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
+			List<Boolean> passFilter= this.filterReads(samReader, chrom, qryFrom, qryTo);
+			
+			samReader= Utils.getSamReader(this.getWorkFilename());
+			
+			Iterator<SAMRecord> sam= samReader.query(chrom, qryFrom, qryTo, false);
+	
+			ListIterator<Boolean> pass = passFilter.listIterator();
+			while(sam.hasNext()){
+				SAMRecord rec= sam.next();
+				if(pass.next()){
+					this.add(rec, qryFrom, qryTo, this.loci.get(chrom));
+				}
+			}
+			
+			// Now add the loci that have been collected in this last update
+			List<Integer> zeroDepthPos= new ArrayList<Integer>();
+			for(int pos= qryFrom; pos <= qryTo; pos++){
+				if( ! this.loci.get(chrom).containsKey(pos)){
+					zeroDepthPos.add(pos);
+				}
+			}
+			List<List<Integer>> zeroDepthGaps = mergePositionsInIntervals(zeroDepthPos);
+			for(List<Integer> z : zeroDepthGaps){
+				this.zeroDepthIntervals.get(chrom).put(z.get(0), z.get(1), null);
+			}
 		}
+
 		List<Double> screenScores= this.prepareScreenScores();
 		this.setScreenScores(screenScores);
 	}
-
-//	private void updateWorkFileName() {
-//		
-//		long modified;
-//		UrlValidator urlValidator = new UrlValidator();
-//		if(urlValidator.isValid(this.getFilename())){
-//			modified= this.getLastModified();
-//		} else {
-//			modified= new File(this.getFilename()).lastModified();
-//		}
-//		if(this.getLastModified() < modified){
-//
-//		}
-//	}
 
 	private List<Double> prepareScreenScores() throws InvalidGenomicCoordsException, IOException{
 		// We need to walk along the genomic window spanned by the current coordinates and 
@@ -130,8 +187,8 @@ public class TrackPileup extends TrackWiggles {
 		}		
 		
 		List<Double> mapping= this.getGc().getMapping();
-		Map<Integer, Integer> depthMap = this.getDepth();
-		for( int refPos : depthMap.keySet()){
+		Map<Integer, Integer> depthMap = this.getDepth(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+		for(int refPos : depthMap.keySet()){
 			int screenIdx= Utils.getIndexOfclosestValue(refPos, mapping);
 			ScreenWiggleLocusInfo sloc = this.screenWiggleLocusInfoList.get(screenIdx);
 			int depth= depthMap.get(refPos);
@@ -151,9 +208,10 @@ public class TrackPileup extends TrackWiggles {
 		return this.screenScores;
 	}
 	
-	/** Update the map of loci with the information in this record. 
+	/** Update the given map of loci with the information in this record. Only consider positions
+	 * between qryFrom and qryTo. 
 	 * */
-	private void add(SAMRecord samRecord, Map<Integer, Locus> accumulator){
+	private void add(SAMRecord samRecord, int qryFrom, int qryTo, Map<Integer, Locus> accumulator){
 		
 		// Is this read forward or reverse? First or second in pair?
 		boolean isFirstOFPair= ! samRecord.getFirstOfPairFlag();
@@ -167,11 +225,11 @@ public class TrackPileup extends TrackWiggles {
 		int readPos= alnBlocks.get(0).getReadStart() - 1; // Leftmost position where the read starts aligning.
 		for(AlignmentBlock block : alnBlocks){
 			
-			if(block.getReferenceStart() > this.getGc().getTo()){
+			if(block.getReferenceStart() > qryTo){
 				// This block is completely to the right of the user's coordinates: Not useful
 				continue; 
 			}
-			if((block.getReferenceStart() + block.getLength() - 1) < this.getGc().getFrom()){
+			if((block.getReferenceStart() + block.getLength() - 1) < qryFrom){
 				// This block is completely to the left of the user's coordinates.
 				// So no useful information here.
 				continue;
@@ -182,15 +240,15 @@ public class TrackPileup extends TrackWiggles {
 				// Iterate through each base of this block
 				refPos++;
 				readPos++;
-				if(refPos < this.getGc().getFrom()){
+				if(refPos < qryFrom){
 					continue; // Skip this position. Part of this block is outside user's coordinates. 
 				}
-				if(refPos > this.getGc().getTo()){
+				if(refPos > qryTo){
 					break; // We have passed the user's endpoint, no need to process this record anymore
 				}
 				// What read base do we have at this position?
 				char base= samRecord.getReadBases().length == 0 ? 'N' : (char) samRecord.getReadBases()[readPos-1];				
-								
+
 				// Start collecting info	
 				if( ! accumulator.containsKey(refPos)){
 					// Add this position to the map.
@@ -203,7 +261,7 @@ public class TrackPileup extends TrackWiggles {
 		List<int[]>deletedBlocks= this.getRefPositionOfDeletedBlocks(samRecord);
 		for(int[] block : deletedBlocks){
 			for(int refPos= block[0]; refPos <= block[1]; refPos++){
-				if(refPos < this.getGc().getFrom() || refPos > this.getGc().getTo()){
+				if(refPos < qryFrom || refPos > qryTo){
 					continue; // Position is outside user's coordinates.
 				}
 				if( ! accumulator.containsKey(refPos)){
@@ -252,14 +310,27 @@ public class TrackPileup extends TrackWiggles {
 		return deletedBlocks;
 	}
 
-	/** Depth at each position. Key: reference position. Value: depth. 
+	/** Depth at each position. Side effect: set sequencing mass. Key: reference position. Value: depth. 
 	 * */
-	protected Map<Integer, Integer> getDepth(){
-		// Important: Use TreeMap to have position sorted. 
-		Map<Integer, Integer> depth= new TreeMap<Integer, Integer>();
-		for(int pos : this.loci.keySet()){
-			Locus loc= this.loci.get(pos);
-			depth.put(pos, loc.getDepth());
+	protected Map<Integer, Integer> getDepth(String chrom, int from, int to){
+		List<Integer> posInWindow= new ArrayList<Integer>();  
+		for(int pos : this.loci.get(chrom).keySet()){
+			if(pos < from || pos > to){
+				// Because of locus caching, some loci maybe outside the current window.
+				continue;
+			} else {
+				posInWindow.add(pos);
+			}
+		}
+		double samplingRate= (200000.0) / posInWindow.size();
+		Random rand = new Random();
+		// Important: Use have positions returned sorted. 
+		Map<Integer, Integer> depth= new LinkedHashMap<Integer, Integer>();
+		for(int pos : posInWindow){
+			int posDepth= this.loci.get(chrom).get(pos).getDepth();
+			if(rand.nextFloat() < samplingRate){
+				depth.put(pos, posDepth);			
+			}
 		}
 		return depth;
 	}
@@ -277,8 +348,8 @@ public class TrackPileup extends TrackWiggles {
 		int i= 0;
 		for(int pos= this.getGc().getFrom(); pos <= this.getGc().getTo(); pos++){
 			char consensus= ' '; // Empty char assuming there is no coverage.
-			if(this.loci.containsKey(pos)){ // If containsKey then the position has coverage.
-				Locus loc= this.loci.get(pos);
+			if(this.loci.get(this.getGc().getChrom()).containsKey(pos)){ // If containsKey then the position has coverage.
+				Locus loc= this.loci.get(this.getGc().getChrom()).get(pos);
 				consensus= loc.getConsensus();
 				if(refSeq != null){
 					char ref= Character.toUpperCase((char) refSeq[loc.pos - this.getGc().getFrom()]);
@@ -330,6 +401,9 @@ public class TrackPileup extends TrackWiggles {
 		
 		String rpmTag= "";
 		if(this.isRpm()){
+			if(this.alnRecCnt == -1){
+				this.alnRecCnt= Utils.getAlignedReadCount(this.getWorkFilename());
+			}
 			range[0]= (range[0] / this.alnRecCnt) * 1000000.0;
 			range[1]= (range[1] / this.alnRecCnt) * 1000000.0;
 			rpmTag= "; rpm";
@@ -341,13 +415,13 @@ public class TrackPileup extends TrackWiggles {
 		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
 
 		String samtools= "";
-		if( ! (this.get_F_flag() == Track.F_FLAG) ){
+		if( ! (this.get_F_flag() == FeatureFilter.F_FLAG) ){
 			samtools += " -F " + this.get_F_flag();
 		}
-		if( ! (this.get_f_flag() == Track.f_FLAG) ){
+		if( ! (this.get_f_flag() == FeatureFilter.f_FLAG) ){
 			samtools += " -f " + this.get_f_flag();
 		}
-		if( ! (this.getMapq() == Track.MAPQ) ){
+		if( ! (this.getMapq() == FeatureFilter.MAPQ) ){
 			samtools += " -q " + this.getMapq();
 		}
 		if( ! samtools.isEmpty()){
@@ -357,39 +431,64 @@ public class TrackPileup extends TrackWiggles {
 		if(!this.getAwk().isEmpty()){
 			awk= "; awk:on";
 		}
-		
+
+		String libsize= "";
+		if(this.alnRecCnt != -1){
+			libsize= "; lib size: " + this.alnRecCnt;
+		}
 		String xtitle= this.getTrackTag() 
 				+ "; ylim[" + ymin + " " + ymax + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
-				+ "; Reads: " + this.nRecsInWindow + "/" + this.alnRecCnt
+				+ libsize
 				+ samtools 
 				+ rpmTag
 				+ awk;
 		// xtitle= Utils.padEndMultiLine(xtitle, this.getGc().getUserWindowSize());
 		return this.formatTitle(xtitle) + "\n";
 	}
- 
-	@Override
-	public String getAwk(){
-		return this.awk;
-	}
-	
-	@Override
-	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		this.awk= awk;
-		this.update();
-	}
 
 	@Override
 	public void setRpm(boolean rpm){
 		this.rpm= rpm;
 	}
-	
-	@Override
-	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException{
-		this.showRegex= showRegex;
-		this.hideRegex= hideRegex;
-		this.update();
+
+	/**Merge the *sorted* list of positions into intervals of consecutive ints.
+	 * */
+	protected static List<List<Integer>> mergePositionsInIntervals(List<Integer> positions){
+		List<Integer> v= new ArrayList<Integer>();
+		v.add(null); v.add(null); 
+        int from= -1;
+        int to= -1;
+        List<List<Integer>> intervals= new ArrayList<List<Integer>>();
+		for(int i : positions){
+		    if(v.get(0) == null){
+		        from= i;
+		        to= i;
+		        v.set(0, from); v.set(1, to);
+		    } else if(i == to){
+		    	continue; // You have duplicate positions.
+		    } else if(i < to){
+		    	System.err.println("Positions are not sorted: " + i + " after " + to);
+		    	throw new RuntimeException();
+		    } else if (i == (to + 1)){
+		    	to= i;
+		    	v.set(0, from);
+		    	v.set(1, i);
+		    } else {
+		    	intervals.add(v);
+		        from= i;
+		        to= i;
+		        v= new ArrayList<Integer>();
+		        v.add(from); v.add(to);
+			}
+		}
+		if(v.get(0) != null){
+		    intervals.add(v);
+		} else {
+			intervals.clear();
+		}
+		return intervals;
 	}
 
+	
 }

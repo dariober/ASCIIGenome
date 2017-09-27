@@ -14,11 +14,11 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.hash.Hashing;
 
 import coloring.Config;
 import coloring.ConfigKey;
-import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -39,6 +39,7 @@ public class TrackReads extends Track{
 	private long nRecsInWindow= -1;
 	private int userWindowSize;
 	private List<Argument> colorForRegex= null;
+	private long alnRecCnt= -1;
 	
 	/* C o n s t r u c t o r s */
 	/**
@@ -66,12 +67,13 @@ public class TrackReads extends Track{
 		this.setGc(gc);
 	}
 	
-	protected TrackReads(){};
+	protected TrackReads(){
+	};
 	
 	/* M e t h o d s */
 	
 	public void update() throws InvalidGenomicCoordsException, IOException{
-		
+
 		if(this.getyMaxLines() == 0){
 			return;
 		}
@@ -81,10 +83,9 @@ public class TrackReads extends Track{
 		this.readStack= new ArrayList<List<SamSequenceFragment>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
 
-			List<TextRead> textReads= new ArrayList<TextRead>();
-			
 			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
-			List<Boolean> passFilter= this.filterReads(samReader);
+			List<Boolean> passFilter= this.filterReads(samReader, this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+
 			this.nRecsInWindow= 0;
 			for(boolean x : passFilter){ // The count of reads in window is the count of reads passing filters
 				if(x){
@@ -100,14 +101,14 @@ public class TrackReads extends Track{
 			// Add this random String to the read name so different screenshot will generate 
 			// different samples. 
 			String rndOffset= Integer.toString(new Random().nextInt());
-			                                                            
+
+			List<TextRead> textReads= new ArrayList<TextRead>();
 			ListIterator<Boolean> pass = passFilter.listIterator();
 			while(sam.hasNext() && textReads.size() < max_reads){
 				SAMRecord rec= sam.next();
 				if( pass.next() ){
-					// Get read name (template name in fact), w/o the suffixes and what comes after the first blank.
 					String templ_name= Utils.templateNameFromSamReadName(rec.getReadName());
-					long v= Hashing.md5().hashBytes((templ_name + rndOffset).getBytes()).asLong();
+					long v= (templ_name + rndOffset).hashCode(); // Hashing.md5().hashBytes((templ_name + rndOffset).getBytes()).asLong();
 					Random rand = new Random(v);
 					if(rand.nextFloat() < probSample){ // Downsampler
 						TextRead tr= new TextRead(rec, this.getGc());
@@ -135,7 +136,8 @@ public class TrackReads extends Track{
 		if(this.readStack.size() == 0){
 			return  "";
 		} else if(this.readStack.size() > yMaxLines){
-			keep= Utils.seqFromToLenOut(0, this.readStack.size()-1, yMaxLines);
+			keep= Utils.seqFromToLenOut(0, yMaxLines, yMaxLines);
+			// keep= Utils.seqFromToLenOut(0, this.readStack.size()-1, yMaxLines);
 		} else {
 			keep= Utils.seqFromToLenOut(0, this.readStack.size()-1, this.readStack.size());
 		}
@@ -215,7 +217,7 @@ public class TrackReads extends Track{
 	private List<SamSequenceFragment> makeFragments(List<TextRead> textReads, boolean asPair) {
 
 		List<SamSequenceFragment> fragments= new ArrayList<SamSequenceFragment>();
-		
+
 		while(textReads.size() > 0){
 			// Keep going until all reads have been moved to the list of fragments.
 			TextRead tr= textReads.get(0);
@@ -307,19 +309,19 @@ public class TrackReads extends Track{
 	
 	@Override
 	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
-		
+
 		if(this.isHideTitle()){
 			return "";
 		}
 		
 		String samtools= "";
-		if( ! (this.get_F_flag() == Track.F_FLAG) ){
+		if( ! (this.get_F_flag() == FeatureFilter.F_FLAG) ){
 			samtools += " -F " + this.get_F_flag();
 		}
-		if( ! (this.get_f_flag() == Track.f_FLAG) ){
+		if( ! (this.get_f_flag() == FeatureFilter.f_FLAG) ){
 			samtools += " -f " + this.get_f_flag();
 		}
-		if( ! (this.getMapq() == Track.MAPQ) ){
+		if( ! (this.getMapq() == FeatureFilter.MAPQ) ){
 			samtools += " -q " + this.getMapq();
 		}
 		if( ! samtools.isEmpty()){
@@ -331,8 +333,12 @@ public class TrackReads extends Track{
 			awk= "; awk:on";
 		}
 		
+		String libsize= "";
+		if(this.alnRecCnt != -1){
+			libsize= "/" + this.alnRecCnt;
+		}
 		String xtitle= this.getTrackTag() 
-				+ "; Reads: " + this.nRecsInWindow + "/" + Utils.getAlignedReadCount(this.getWorkFilename()) 
+				+ "; Reads: " + this.nRecsInWindow + libsize 
 				+ samtools 
 				+ awk; 
 		return this.formatTitle(xtitle) + "\n";
@@ -354,18 +360,7 @@ public class TrackReads extends Track{
 	}
 
 	/* S e t t e r s   and   G e t t e r s */
-
-	@Override
-	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		this.awk= awk;
-		this.update();
-	}
 	
-	@Override
-	public String getAwk(){
-		return this.awk;
-	}
-
 	@Override
 	public boolean getReadsAsPairs(){
 		return this.readsAsPairs;
@@ -377,24 +372,6 @@ public class TrackReads extends Track{
 		this.update();
 	}
 
-	@Override
-	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException{
-		this.showRegex= showRegex;
-		this.hideRegex= hideRegex;
-		this.update();
-	}
-	
-//	@Override
-//	public void setHideRegex(String hideRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-//		this.hideRegex= hideRegex;
-//		this.update();
-//	}
-//	@Override
-//	public void setShowRegex(String showRegex) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-//		this.showRegex= showRegex;
-//		this.update();
-//	}
-	
 	@Override
 	public void changeFeatureColor(List<Argument> args){
 		List<List<SamSequenceFragment>> stack = this.readStack;

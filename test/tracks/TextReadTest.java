@@ -158,6 +158,23 @@ public class TextReadTest {
 	}
 
 	@Test
+	public void canPrintFormattedRead() throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+		
+		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566798", 80, null, null);
+		SAMRecord rec= new SAMRecord(null);
+		rec.setAlignmentStart(5566780);
+		rec.setCigarString("24M");
+		rec.setReadBases("AACCGGTTAACCGGTTAACCGGTT".getBytes());
+		TextRead textRead= new TextRead(rec, gc);
+		
+		rec.setSecondOfPairFlag(false);
+		assertTrue( ! textRead.getPrintableTextRead(true, false, false).contains("4;")); // '4': Underline
+
+		rec.setSecondOfPairFlag(true);
+		assertTrue( textRead.getPrintableTextRead(true, false, false).contains("4;")); // '4': Underline
+	}
+	
+	@Test
 	public void canPrintSquashedRead() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566978", 80, samSeqDict, fastaFile);
 		

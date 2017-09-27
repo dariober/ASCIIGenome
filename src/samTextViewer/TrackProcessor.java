@@ -20,8 +20,6 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import tracks.Track;
-import tracks.TrackBookmark;
-import tracks.TrackReads;
 import tracks.TrackSet;
 
 /** Process a TrackSet given the necessary elements
@@ -168,41 +166,6 @@ public class TrackProcessor {
         }
 		return footer;
 	}
-
-	@Deprecated
-	public void exportTrackSetSettings(String filename) throws IOException{
-		
-		filename= Utils.tildeToHomeDir(filename);
-		
-		BufferedWriter wr= new BufferedWriter(new FileWriter(new File(filename)));
-		if(this.getTrackSet().getTrackList().size() == 0){
-			System.err.println("No track found. Nothing exported.");
-			wr.close();
-			return;
-		}
-		// First we write the bookmark track, if any. Doing it first avoids moving around heavy files.
-		for(Track tr : this.getTrackSet().getTrackList()){
-			if( tr instanceof TrackBookmark ){
-				wr.write(tr.settingsToString() + "\n");
-			}
-		}
-		
-		wr.write("goto " + this.getGenomicCoordsHistory().current().toStringRegion() + "\n");
-		wr.write("setGenome " + this.getGenomicCoordsHistory().current().getSamSeqDictSource() + "\n");
-		String orderTracks= "orderTracks ";
-		for(Track tr : this.getTrackSet().getTrackList()){
-			orderTracks += tr.getTrackTag().replaceAll("(#|@)\\d+$", "") + " ";
-			if(tr instanceof TrackBookmark){
-				continue; // Already done.
-			}
-			if( ! (tr instanceof TrackReads) ){ // Track reads excluded as they are part of TrackCoverage. 
-				                                // This is wrong as you could have one without the other!
-				wr.write(tr.settingsToString() + "\n");
-			}
-		}
-		wr.write(orderTracks + "\n"); // Note that re-ordering may be different from original as the ID part was stripped! 
-		wr.close();
-	} 
 	
 	private String getMemoryStat() throws InvalidGenomicCoordsException, IOException{
 		float mem= (float) ((float)Runtime.getRuntime().totalMemory() / 1000000d);

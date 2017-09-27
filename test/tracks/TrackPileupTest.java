@@ -7,10 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
@@ -23,6 +21,8 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.filter.MappingQualityFilter;
+import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
 
 public class TrackPileupTest {
@@ -33,7 +33,7 @@ public class TrackPileupTest {
 		GenomicCoords gc= new GenomicCoords("chr7:5566779-5566799", 80, null, "test_data/chr7.fa");
 		TrackPileup tc= new TrackPileup("test_data/ds051.short.bam", gc);
 		tc.setNoFormat(true);
-
+		
 		assertTrue(tc.getPrintableConsensusSequence().startsWith("=TT========="));
 		
 		// Advance coordinates and check consensus is updated:
@@ -66,7 +66,7 @@ public class TrackPileupTest {
 		tr.printToScreen();
 		assertTrue(tr.printToScreen().trim().startsWith("_"));
 
-		assertEquals(1, (int)tr.getDepth().entrySet().iterator().next().getValue());
+		assertEquals(1, (int)tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo()).entrySet().iterator().next().getValue());
 
 	}
 	
@@ -117,15 +117,15 @@ public class TrackPileupTest {
 		GenomicCoords gc= new GenomicCoords("chr7:5566736-5566856", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
 		
-		assertEquals(79, tr.getDepth().size());
-		assertEquals(1, (int)tr.getDepth().get(5566778)); // Depths checked against mpileup
-		assertEquals(5, (int)tr.getDepth().get(5566782));
-		assertEquals(18, (int)tr.getDepth().get(5566856));
+		assertEquals(79, tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo()).size());
+		assertEquals(1, (int)tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo()).get(5566778)); // Depths checked against mpileup
+		assertEquals(5, (int)tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo()).get(5566782));
+		assertEquals(18, (int)tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo()).get(5566856));
 		
 		gc= new GenomicCoords("chr7:5522059-5612125", 80, null, null);
 		long t0= System.currentTimeMillis();
 		tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-		Map<Integer, Integer> depth = tr.getDepth();
+		Map<Integer, Integer> depth = tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo());
 		long t1= System.currentTimeMillis();
 		assertTrue(t1-t0 < 10000); // Processing time (in ms) is acceptably small
 		assertTrue(t1-t0 > 100); // But not suspiciously small
@@ -137,7 +137,7 @@ public class TrackPileupTest {
 
 		GenomicCoords gc= new GenomicCoords("chr7:5522059-5612125", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-		Map<Integer, Integer> depth = tr.getDepth();
+		Map<Integer, Integer> depth = tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo());
 
 		// See test_data/README.md for obtaining this test file (samtools mpileup ...)
 		String expPileup= FileUtils.readFileToString(new File("test_data/ear045.oxBS.actb.pileup"));
@@ -164,6 +164,37 @@ public class TrackPileupTest {
 			i++;
 		}				
 	}
+	
+	@Test
+	public void canFilterReadsWithGrep() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000",80, null, null);
+		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
+		tr.setNoFormat(true);
+		tr.setYLimitMin(0);
+		tr.setYLimitMax(10);
+		tr.setShowHideRegex("NCNNNCCC", "\\t5566779\\t");
+		assertEquals(4, tr.printToScreen().trim().split("\n").length);
+	}
+
+	@Test
+	public void canFilterReadsSamtools() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7:5566778",80, null, null);
+		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
+		tr.setNoFormat(true);
+		assertTrue(tr.getTitle().contains("22.0")); // Before filtering
+		List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>();
+		samRecordFilter.add(new MappingQualityFilter(51));
+		tr.setSamRecordFilter(samRecordFilter);
+		
+		assertEquals("", tr.printToScreen().trim());
+
+		samRecordFilter= new ArrayList<SamRecordFilter>();
+		samRecordFilter.add(new MappingQualityFilter(11));
+		tr.setSamRecordFilter(samRecordFilter);
+		assertTrue(tr.getTitle().contains("17.0"));
+		
+	}
 
 	@Test
 	public void canFilterReadsWithGrepAndAwk() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
@@ -171,31 +202,78 @@ public class TrackPileupTest {
 		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
-		assertTrue(tr.getTitle().contains("22/22")); // N. reads before filtering
-		tr.setShowHideRegex("NCNNNCCC", Track.HIDE_REGEX);
+		assertTrue(tr.getTitle().contains("22.0")); // N. reads before filtering
+		// assertTrue(tr.getTitle().contains("22/22")); // N. reads before filtering
+		tr.setShowHideRegex("NCNNNCCC", FeatureFilter.HIDE_REGEX);
 		tr.setAwk("'$4 != 5566779'");
-		assertTrue(tr.getTitle().contains("4/22"));
+		System.err.println(tr.getTitle());
+		assertTrue(tr.getTitle().contains("4.0"));
+		// assertTrue(tr.getTitle().contains("4/22"));
 	}
 
+	@Test
+	public void canMergePositionsIntoIntervals(){
+		
+		List<Integer> x= new ArrayList<Integer>();
+		assertEquals(0, TrackPileup.mergePositionsInIntervals(x).size());
+		
+		x.clear();
+		x.add(1); x.add(3); x.add(9);
+		assertEquals("[[1, 1], [3, 3], [9, 9]]", TrackPileup.mergePositionsInIntervals(x).toString());
+
+		x.clear(); // Handle duplicates
+		x.add(1); x.add(1); x.add(2); x.add(3); x.add(3);
+		assertEquals("[[1, 3]]", TrackPileup.mergePositionsInIntervals(x).toString());
+		
+		x.clear();
+		x.add(1); x.add(2); x.add(3); x.add(4);
+		assertEquals("[[1, 4]]", TrackPileup.mergePositionsInIntervals(x).toString());
+		
+		x.clear();
+		x.add(1); x.add(2); x.add(4); x.add(5); x.add(6); x.add(10); x.add(11);
+		assertEquals("[[1, 2], [4, 6], [10, 11]]", TrackPileup.mergePositionsInIntervals(x).toString());
+
+		x.clear();
+		x.add(1); x.add(2); x.add(4); x.add(5); x.add(6); x.add(11);
+		assertEquals("[[1, 2], [4, 6], [11, 11]]", TrackPileup.mergePositionsInIntervals(x).toString());
+		
+		x.clear();
+		x.add(2); x.add(3); x.add(1);
+		boolean pass= false;
+		try{
+			TrackPileup.mergePositionsInIntervals(x);
+		} catch(RuntimeException e){
+			pass= true;
+		}
+		assertTrue(pass);
+		
+		Stopwatch sw= Stopwatch.createStarted();
+		List<Integer> bigList= new ArrayList<Integer>();
+		for(int i= 0; i < 10000000; i++){
+			bigList.add(i);
+		}
+		System.err.println(sw);
+		sw.reset(); sw.start();
+		TrackPileup.mergePositionsInIntervals(bigList);
+	}
 	
 	@Test
 	public void canCollectCoverageAtOnePos() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr7:5588536-5588536", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-		assertEquals(1, tr.getDepth().size());
+		assertEquals(1, tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo()).size());
 	}
 	
 	@Test
 	public void canHandleZeroReads() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-		assertEquals(0, tr.getDepth().size());
+		assertEquals(0, tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo()).size());
 	}
 
 	@Test
 	public void canConstructFromUnsortedInput() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
-		TrackPileup tr= new TrackPileup("/Users/db291g/Tritume/reads.sam", gc); // test_data/ds051.noindex.sam
-		// tr.update();
+		new TrackPileup("/Users/db291g/Tritume/reads.sam", gc);
 	}	
 }

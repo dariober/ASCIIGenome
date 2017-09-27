@@ -72,11 +72,17 @@ public class UtilsTest {
 	
 	@Test
 	public void canTestForEqualReadNames(){
+		Stopwatch sw= Stopwatch.createStarted();
+		for(int i= 0; i < 10000000; i++){
+			Utils.equalReadNames("HSQ9103:403:C6F0HANXX:5:2302:20709:5219", "HSQ9103:403:C6F0HANXX:5:2302:20709:5219");
+		}
+		System.err.println(sw);
 		assertTrue(Utils.equalReadNames("foo", "foo"));
 		assertTrue(Utils.equalReadNames("foo index1", "foo index2"));
 		assertTrue(Utils.equalReadNames("foo/1", "foo/2"));
 		assertTrue( ! Utils.equalReadNames("foo", "bar"));
 		assertTrue( ! Utils.equalReadNames("foo/1foo", "foo/2foo"));
+		assertTrue( ! Utils.equalReadNames("/1", "/2"));
 	}
 	
 	@Test

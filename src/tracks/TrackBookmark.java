@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
@@ -185,52 +184,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		br.close();
 		
 	}
-	
-	/** Generate a string that parsed by -x/--exec re-creates the current bookmarks.
-	 * @throws IOException 
-	 * @throws UnsupportedEncodingException 
-	 * */
-	@Override
-	public String settingsToString() throws UnsupportedEncodingException, IOException{
-		List<String> set= new ArrayList<String>();
-
-		InputStream fileStream = new FileInputStream(this.getWorkFilename());
-		Reader decoder = new InputStreamReader(new GZIPInputStream(fileStream), "UTF-8");
-		BufferedReader br= new BufferedReader(decoder);
-
-		String rawLine;
-		while( (rawLine = br.readLine()) != null) {
-			if(rawLine.contains("\t__ignore_me__\t")){
-				continue;
-			}
-			set.add(this.rawLineToBookmarkCmd(rawLine));
-		}
-		br.close();
 		
-		set.add("colorTrack " + this.getTitleColour() + " ^" + trackName);
-		set.add("trackHeight " + this.getyMaxLines() + " ^" + trackName);
-		set.add("grep -i " + this.getShowRegex() + " -e " + this.getHideRegex() + " ^" + trackName);
-		if(this.isHideTitle()){
-			set.add("hideTitle ^" + trackName);
-		}
-		
-		return Joiner.on(" && ").join(set);
-	}
-	
-	/** Parse a raw line read from GFF file to return a command string that reproduces this 
-	 * bookmark entry. 
-	 * */
-	private String rawLineToBookmarkCmd(String rawLine){
-		List<String>line= Lists.newArrayList(Splitter.on("\t").split(rawLine));
-		
-		// Get bookmark name. It will not cope well with double quotes in the name!!
-		String name= line.get(8).replaceAll(".*ID=\"", "").replaceAll("\".*", "");
-		
-		String cmd= "goto " + line.get(0) + ":" + line.get(3) + "-" + line.get(4) + " && ";
-		cmd += "bookmark " + name;
-		return cmd;
-	}
-
 	public List<String> asList() throws UnsupportedEncodingException, IOException {
 		List<String> marks= new ArrayList<String>();
 		

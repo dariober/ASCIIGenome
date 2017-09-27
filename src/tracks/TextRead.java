@@ -308,6 +308,9 @@ class TextRead extends IntervalFeature{
 								xc.setBgColor(Config.get(ConfigKey.shade_low_mapq));
 							}
 						}
+						if(this.samRecord.getSecondOfPairFlag()){
+							xc.setUnderline(true);
+						}
 						dnaRead.add(xc);
 					}
 					curBaseGenomicPos++; // M consumes read and ref bases. So increment them

@@ -377,5 +377,4 @@ public class TrackWiggles extends Track {
 		return "";
 	}
 
-
 }
