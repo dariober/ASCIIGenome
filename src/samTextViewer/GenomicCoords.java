@@ -145,18 +145,27 @@ public class GenomicCoords implements Cloneable {
 		this.setSamSeqDictFromAnySource(cleanList, includeGenomeFile);
 		// Try to set fasta sequence
 		for(String x : cleanList){
+			boolean done= true;
 			try{
-				IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(x));
-				this.setFastaFile(x);
-				fa.close();
+				if(new File(x + ".fai").exists()){
+					this.setFastaFile(x);
+				} else {
+					throw new FileNotFoundException();
+				}
+//				IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(x));
+//				this.setFastaFile(x);
+//				fa.close();
 			} catch(FileNotFoundException e){
 				try {
 					new Faidx(new File(x));
 					(new File(x + ".fai")).deleteOnExit();
 					this.setFastaFile(x);
 				} catch (Exception e1) {
-					//
+					done= false;
 				}
+			}
+			if(done){
+				break;
 			}
 		}
 	}
@@ -166,10 +175,13 @@ public class GenomicCoords implements Cloneable {
 			this.refSeq= null;
 			return;
 		}
-		this.refSeq= this.getSequenceFromFasta();		
+		this.refSeq= this.getSequenceFromFasta();
 	}
 	
-	public byte[] getRefSeq() {
+	public byte[] getRefSeq() throws IOException, InvalidGenomicCoordsException {
+		if(this.refSeq == null){
+			this.setRefSeq();
+		}
 		return this.refSeq;
 	}
 	
@@ -752,41 +764,45 @@ public class GenomicCoords implements Cloneable {
 	
 	private boolean setSamSeqDictFromFasta(String fasta) throws IOException{
 		
-		IndexedFastaSequenceFile fa= null;
+		// IndexedFastaSequenceFile fa= null;
 		
 		try{
-			fa= new IndexedFastaSequenceFile(new File(fasta));
+			if(new File(fasta + ".fai").exists() && ! new File(fasta + ".fai").isDirectory()){
+				//
+			} else {
+				throw new FileNotFoundException(); 
+			}
+			// fa= new IndexedFastaSequenceFile(new File(fasta));
 		} catch(FileNotFoundException e){
 			try {
 				new Faidx(new File(fasta));
 				(new File(fasta + ".fai")).deleteOnExit();
-				fa= new IndexedFastaSequenceFile(new File(fasta));
+				// fa= new IndexedFastaSequenceFile(new File(fasta));
 			} catch (Exception e1) {
 				//
 			}
 		}		
 		
-		if(fa.isIndexed()){
-			BufferedReader br= new BufferedReader(new FileReader(new File(fasta + ".fai")));
-			SAMSequenceDictionary seqDict= new SAMSequenceDictionary(); // null;
-			while(true){
-				String line= br.readLine();
-				if(line == null){
-					break;
-				}
-				SAMSequenceRecord ssqRec= new SAMSequenceRecord(
-						line.split("\t")[0], 
-						Integer.parseInt(line.split("\t")[1]));
-				seqDict.addSequence(ssqRec);
+		BufferedReader br= new BufferedReader(new FileReader(new File(fasta + ".fai")));
+		SAMSequenceDictionary seqDict= new SAMSequenceDictionary(); // null;
+		while(true){
+			String line= br.readLine();
+			if(line == null){
+				break;
 			}
-			br.close();
-			fa.close();
-			this.setSamSeqDictSource(new File(fasta).getAbsolutePath());
-			this.setSamSeqDict(seqDict);
-			return true;
+			SAMSequenceRecord ssqRec= new SAMSequenceRecord(
+					line.split("\t")[0], 
+					Integer.parseInt(line.split("\t")[1]));
+			seqDict.addSequence(ssqRec);
 		}
-		fa.close();
-		return false;
+		br.close();
+//			fa.close();
+		this.setSamSeqDictSource(new File(fasta).getAbsolutePath());
+		this.setSamSeqDict(seqDict);
+		return true;
+//		}
+//		fa.close();
+//		return false;
 	}
 	
 	private boolean setSamSeqDictFromBam(String bamfile) {
@@ -966,7 +982,6 @@ public class GenomicCoords implements Cloneable {
 	}
 
 	protected void setFastaFile(String fastaFile) {
-		this.setSamSeqDictSource(fastaFile);
 		this.fastaFile = fastaFile;
 	}
 

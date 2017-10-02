@@ -14,9 +14,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.common.base.Stopwatch;
-import com.google.common.hash.Hashing;
-
 import coloring.Config;
 import coloring.ConfigKey;
 import exceptions.InvalidColourException;
@@ -56,6 +53,8 @@ public class TrackReads extends Track{
 	 */
 	public TrackReads(String bam, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
+		this.setTrackFormat(TrackFormat.BAM);
+		
 		if(!Utils.bamHasIndex(bam)){
 			File temp= File.createTempFile("asciigenome.", ".bam");
 			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
@@ -68,6 +67,7 @@ public class TrackReads extends Track{
 	}
 	
 	protected TrackReads(){
+		this.setTrackFormat(TrackFormat.BAM);
 	};
 	
 	/* M e t h o d s */
@@ -314,36 +314,42 @@ public class TrackReads extends Track{
 			return "";
 		}
 		
-		String samtools= "";
-		if( ! (this.get_F_flag() == FeatureFilter.F_FLAG) ){
-			samtools += " -F " + this.get_F_flag();
-		}
-		if( ! (this.get_f_flag() == FeatureFilter.f_FLAG) ){
-			samtools += " -f " + this.get_f_flag();
-		}
-		if( ! (this.getMapq() == FeatureFilter.MAPQ) ){
-			samtools += " -q " + this.getMapq();
-		}
-		if( ! samtools.isEmpty()){
-			samtools= "; samtools" + samtools;
-		}
-		
-		String awk= "";
-		if(!this.getAwk().isEmpty()){
-			awk= "; awk:on";
-		}
-		
 		String libsize= "";
 		if(this.alnRecCnt != -1){
 			libsize= "/" + this.alnRecCnt;
 		}
 		String xtitle= this.getTrackTag() 
 				+ "; Reads: " + this.nRecsInWindow + libsize 
-				+ samtools 
-				+ awk; 
+				+ this.getTitleForActiveFilters(); 
 		return this.formatTitle(xtitle) + "\n";
 	}
 
+	@Override
+	protected String getTitleForActiveFilters() {
+		List<String> title= new ArrayList<String>();
+		if( ! this.getAwk().equals(FeatureFilter.DEFAULT_AWK)){
+			title.add("awk");
+		}
+		if( ! this.getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX) || ! this.getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX)){
+			title.add("grep");
+		}
+		if( this.get_f_flag() != FeatureFilter.DEFAULT_f_FLAG || 
+			this.get_F_flag() != FeatureFilter.DEFAULT_F_FLAG){
+			title.add("bit-flag");
+		}
+		if(this.getMapq() != FeatureFilter.DEFAULT_MAPQ){
+			title.add("mapq");
+		}
+		if( ! this.getFeatureFilter().getVariantChrom().equals(FeatureFilter.DEFAULT_VARIANT_CHROM)){
+			title.add("var-read");
+		}
+		if(title.size() > 0){
+			return "; filters: " + title.toString(); 
+		} else {
+			return "";	
+		}
+	}
+	
 	@Override
 	protected List<String> getRecordsAsStrings() {
 		List<String> featureList= new ArrayList<String>();

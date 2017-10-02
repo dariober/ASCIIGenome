@@ -6,13 +6,13 @@ Speed
 
 A few improvements to increase speed
 
-* Speed improved in printing tracks of bam alignment. Depending on the file system, the improvement can be 
+* Speed improved in printing tracks of bam alignments. Depending on the file system, the improvement can be 
   quite large, now taking milliseconds instead of seconds. Explanation: The library size of a bam file was 
   recalculated each time the screen was refreshed. This can be very fast on some systems but on others 
   it can take up to a few seconds.
 
 * Following from previous point: library size is not calculated by default. This can make ASCIIGenome
-  faster to load a bam track.
+  faster in loading bam files.
 
 * Some speed improvement in processing BAM tracks. The improvement is more noticeable when 
   loads of reads are processed. For example, a window spanning 85 kb and containing ~2 million reads
@@ -21,8 +21,15 @@ A few improvements to increase speed
 * Pileup data is cached so that it doesn't need to be recalculated. This makes commands like `f/b/ff/bb` and `zi` 
   much faster. 
 
+* Setting a reference fasta sequence via `-fa` or `setGenome` is faster due to *lazy loading* of reference
+ sequence. *I.e.*, a sequence is retrieved from file only if requested. The speed advantage may or may not be noticeable, 
+ depending on filesystem.
+
 Bug fixes & additions
 ---------------------
+
+* New command `filterVariantReads` selects reads with a mismatch in a given reference position. Useful to
+inspect reads supporting alternate alleles.  
 
 * Fix bug where shaded base qualities were occasionally shifted.
 
@@ -30,16 +37,16 @@ Bug fixes & additions
 
 * Re-established compatibility with Java 1.7. Release 1.10.0 was accidently compiled for Java 1.8.
 
-* Validation of VCF header is more relaxed. The original validation imposed by htsjdk was is very 
-  which occasionally caused files to be rejected for minor bugs.
+* Validation of VCF files is more relaxed. The original validation imposed by htsjdk is very stringent
+  causing files to be rejected for minor bugs.
 
 * `genotype` matrix prints samples in the same order as in the VCF instead of using alphanumeric order.
 
-* Indel variants start from POS+1 if the first base of the variant equals the reference.  
+* Indel variants start from POS+1 if the first base of the variant equals the reference.
 
 * `grep` applies also to bam tracks.
 
-* Add `-c` option to `next` command. Useful to browse small features such as SNV and indels.
+* Add `-c` option to `next` command. Useful for browsing small features such as SNV and indels.
 
 
 New in 1.10.0

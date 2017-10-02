@@ -8,9 +8,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -271,7 +273,9 @@ public class TrackSet {
 					+ "Track tag:    " + track.getTrackTag() + "\n" 
 					+ "Input source: " + track.getFilename() + "\n"
 					+ "Working file: " + track.getWorkFilename() + "\n"
-					+ "Track type:   " + Utils.getFileTypeFromName(track.getFilename()) + " " + hd);		
+					+ "Track type:   " + Utils.getFileTypeFromName(track.getFilename()) + " " + hd + "\n"
+					+ "awk script:   " + (! track.getAwk().trim().isEmpty() ? track.getAwk() : "N/A") + "\n"
+					+ "grep:         " + "show " + track.getShowRegex() + "; hide: " + track.getHideRegex());
 		}
 		
 		StringBuilder sb= new StringBuilder();
@@ -952,7 +956,7 @@ public class TrackSet {
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
 	 * */
-	public void setAwkForTrackIntervalFeature(List<String> cmdInput) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+	public void setAwkForTrack(List<String> cmdInput) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 
 		List<String> args= new ArrayList<String>();
 		for(String x : cmdInput){
@@ -1003,63 +1007,150 @@ public class TrackSet {
 			trackNameRegex.add(".*"); // Track regex list not given: Set to capture all of them.
 		}
 		
+		
 		// Set script
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
-        	if(tr instanceof TrackPileup || tr instanceof TrackReads){
-        		// Replace special variables
-        		awk= awk.replace("$QNAME", "$1")
-        				.replace("$FLAG", "$2")
-        				.replace("$RNAME", "$3")
-        				.replace("$POS", "$4")
-        				.replace("$MAPQ", "$5")
-        				.replace("$CIGAR", "$6")
-        				.replace("$RNEXT", "$7")
-        				.replace("$PNEXT", "$8")
-        				.replace("$TLEN", "$9")
-        				.replace("$SEQ", "$10")
-        				.replace("$QUAL", "$11");
-        	}
-        	else if(tr.getTrackFormat().equals(TrackFormat.VCF)){
-        		awk= awk.replace("$CHROM", "$1")
-        				.replace("$POS", "$2")
-        				.replace("$ID", "$3")
-        				.replace("$REF", "$4")
-        				.replace("$ALT", "$5")
-        				.replace("$QUAL", "$6")
-        				.replace("$FILTER", "$7")
-        				.replace("$INFO", "$8")
-        				.replace("$FORMAT", "$9");
-        	}
-        	else if(tr.getTrackFormat().equals(TrackFormat.GFF) || tr.getTrackFormat().equals(TrackFormat.GTF)){
-        		awk= awk.replace("$SEQNAME", "$1")
-        				.replace("$SOURCE", "$2")
-        				.replace("$FEATURE", "$3")
-        				.replace("$START", "$4")
-        				.replace("$END", "$5")
-        				.replace("$SCORE", "$6")
-        				.replace("$STRAND", "$7")
-        				.replace("$FRAME", "$8")
-        				.replace("$ATTRIBUTE", "$9");
-        	}
-        	else if(tr.getTrackFormat().equals(TrackFormat.BED)){
-        		awk= awk.replace("$CHROM", "$1")
-        				.replace("$START", "$2")
-        				.replace("$END", "$3")
-        				.replace("$NAME", "$4")
-        				.replace("$SCORE", "$5")
-        				.replace("$STRAND", "$6")
-        				.replace("$THICKSTART", "$7")
-        				.replace("$THICKEND", "$8")
-        				.replace("$RGB", "$9")
-        				.replace("$BLOCKCOUNT", "$10")
-        				.replace("$BLOCKSIZES", "$11")
-        				.replace("$BLOCKSTARTS", "$12");
-        	}
-        	tr.setAwk(awk);
+        	tr.setAwk(this.replaceAwkHeaders(awk, tr.getTrackFormat()));
         }
 	}
 
+	private String replaceAwkHeaders(final String awkScript, TrackFormat trackFormat) throws InvalidCommandLineException{
+		
+		Map<TrackFormat, Map<String, String>> headers= new HashMap<TrackFormat, Map<String, String>>();
+		
+		Map<String, String> bamHdr= new HashMap<String, String>();
+		bamHdr.put("$QNAME", "$1");
+		bamHdr.put("$FLAG", "$2");
+		bamHdr.put("$RNAME", "$3"); bamHdr.put("$CHROM", "$3"); bamHdr.put("$SEQNAME", "$3");
+		bamHdr.put("$POS", "$4"); bamHdr.put("$START", "$4");
+		bamHdr.put("$MAPQ", "$5");
+		bamHdr.put("$CIGAR", "$6");
+		bamHdr.put("$RNEXT", "$7");
+		bamHdr.put("$PNEXT", "$8");
+		bamHdr.put("$TLEN", "$9");
+		bamHdr.put("$SEQ", "$10");
+		bamHdr.put("$QUAL", "$11");
+		headers.put(TrackFormat.BAM, bamHdr);
+		
+		Map<String, String> vcfHdr= new HashMap<String, String>();
+		vcfHdr.put("$CHROM", "$1"); vcfHdr.put("$RNAME", "$1");
+		vcfHdr.put("$POS", "$2"); vcfHdr.put("$START", "$2");
+		vcfHdr.put("$ID", "$3");
+		vcfHdr.put("$REF", "$4");
+		vcfHdr.put("$ALT", "$5");
+		vcfHdr.put("$QUAL", "$6");
+		vcfHdr.put("$FILTER", "$7");
+		vcfHdr.put("$INFO", "$8");
+		vcfHdr.put("$FORMAT", "$9");
+		headers.put(TrackFormat.VCF, vcfHdr);
+		
+		Map<String, String> gffHdr= new HashMap<String, String>();
+		gffHdr.put("$SEQNAME", "$1"); gffHdr.put("$CHROM", "$1"); gffHdr.put("$RNAME", "$1");
+		gffHdr.put("$SOURCE", "$2");
+		gffHdr.put("$FEATURE", "$3");
+		gffHdr.put("$START", "$4"); gffHdr.put("$POS", "$4");
+		gffHdr.put("$END", "$5");
+		gffHdr.put("$SCORE", "$6");
+		gffHdr.put("$STRAND", "$7");
+		gffHdr.put("$FRAME", "$8");
+		gffHdr.put("$ATTRIBUTE", "$9");
+		headers.put(TrackFormat.GFF, gffHdr);
+		headers.put(TrackFormat.GTF, gffHdr);
+		
+		Map<String, String> bedHdr= new HashMap<String, String>();
+		bedHdr.put("$CHROM", "$1"); bedHdr.put("$RNAME", "$1"); bedHdr.put("$SEQNAME", "$1");
+		bedHdr.put("$START", "$2"); bedHdr.put("$POS", "$2");
+		bedHdr.put("$END", "$3");
+		bedHdr.put("$NAME", "$4");
+		bedHdr.put("$SCORE", "$5");
+		bedHdr.put("$STRAND", "$6");
+		bedHdr.put("$THICKSTART", "$7");
+		bedHdr.put("$THICKEND", "$8");
+		bedHdr.put("$RGB", "$9");
+		bedHdr.put("$BLOCKCOUNT", "$10");
+		bedHdr.put("$BLOCKSIZES", "$11");
+		bedHdr.put("$BLOCKSTARTS", "$12");
+		headers.put(TrackFormat.BED, bedHdr);
+		
+    	Map<String, String> hdrs= headers.get(trackFormat);
+    	if(hdrs == null){
+    		System.err.println("No header associated to track format: " + trackFormat);
+    		throw new RuntimeException();
+    	}
+
+    	String awk2= awkScript;
+    	for(String hdr : hdrs.keySet()){
+    		awk2= awk2.replace(hdr, hdrs.get(hdr));
+    	};
+    	// Check there are no headers associated to other track formats. 
+    	for(TrackFormat fmt : headers.keySet()){
+        	Map<String, String> hdrs2 = headers.get(fmt);
+        	for(String hdr : hdrs2.keySet()){
+        		if(awk2.contains(hdr)){
+        			System.err.println("Column header '" + hdr + "' cannot be applied to track format '" + trackFormat + "'");
+        			throw new InvalidCommandLineException();
+        		}
+        	};
+    	}
+    	return awk2;
+	}
+	
+	public void setFilterVariantReads(List<String> cmdInput) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+
+		List<String> args= new ArrayList<String>();
+		for(String x : cmdInput){
+			args.add(x);
+		}
+		
+		args.remove(0); // Remove command name
+		
+		// Collect arguments
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
+		
+		String region= Utils.getArgForParam(args, "-r", null);
+		String chrom= FeatureFilter.DEFAULT_VARIANT_CHROM;
+		int from= -1;
+		int to= -1;
+		if(region != null && this.getTrackList().size() > 0){
+			
+			if(this.getTrackList().get(0).getGc().getFastaFile() == null){
+				System.err.println("A reference sequence is required to execute this command.");
+				throw new InvalidCommandLineException();
+			}
+			
+			chrom= this.getTrackList().get(0).getGc().getChrom();
+			String[] fromTo= region.trim().replaceAll(" ", "").replaceAll(",", "").split("-");
+			if(fromTo.length > 0){
+				try{
+					from= Integer.parseInt(fromTo[0]);
+					to= Integer.parseInt(fromTo[fromTo.length-1]);
+				} catch(NumberFormatException e) {
+					System.err.println("Cannot parse region into integers: " + region);
+					throw new InvalidCommandLineException();
+				}
+			} else {
+				throw new InvalidCommandLineException(); 
+			}
+		}
+		
+		List<String> trackNameRegex= new ArrayList<String>();
+		
+		// Regex for tracks:
+		if(args.size() == 0){
+			// This will turn off everything
+			trackNameRegex.add(".*");
+		} else {
+			trackNameRegex.addAll(args); // Everything after -off is track re to turn off. 
+		}
+	
+		// Set filter
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+        for(Track tr : tracksToReset){
+        	tr.setVariantReadInInterval(chrom, from, to);
+        }
+	}
+	
 	/** Set filter for IntervalFeature tracks. 
 	 * @throws SQLException 
 	 * @throws InvalidRecordException 
@@ -1075,8 +1166,8 @@ public class TrackSet {
 		}		
 		args.remove(0); // Remove command name
 
-		String showRegex= FeatureFilter.SHOW_REGEX; // Default
-		String hideRegex= FeatureFilter.HIDE_REGEX;
+		String showRegex= FeatureFilter.DEFAULT_SHOW_REGEX; // Default
+		String hideRegex= FeatureFilter.DEFAULT_HIDE_REGEX;
 		
 		// Get args:
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
@@ -1245,19 +1336,6 @@ public class TrackSet {
 		
 	}
 
-	/** Get track given a track tag. See also this.getTrack. Returns null if trackTag not found.
-	 * */
-//	public Track getTrackFromTag(String trackTag){
-//		
-//		for(Track track : this.getTrackList()){
-//			if(track.getTrackTag().equals(trackTag)){
-//				return track;
-//			}
-//		}
-//		return null;
-//	}
-
-	
 	public GenomicCoords findNextMatchOnTrack(String query, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
 		TrackIntervalFeature tif= (TrackIntervalFeature) matchIntervalFeatureTrack(trackId.trim());
@@ -1552,9 +1630,9 @@ public class TrackSet {
 		args.remove(0); // Remove name of command
 		
 		// Defaults:
-		int f= FeatureFilter.f_FLAG;
-		int F= FeatureFilter.F_FLAG;
-		int q= FeatureFilter.MAPQ;
+		int f= FeatureFilter.DEFAULT_f_FLAG;
+		int F= FeatureFilter.DEFAULT_F_FLAG;
+		int q= FeatureFilter.DEFAULT_MAPQ;
 		
 		// Get args:
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
@@ -1755,23 +1833,6 @@ public class TrackSet {
         	}
         }
 	}
-	
-//	/** Call the update method for all tracks in trackset. Updating can be time
-//	 * consuming especially for tracks associated to bam files. But be careful when 
-//	 * avoiding updating as it can lead to catastrophic out of sync data. 
-//	 * @throws SQLException 
-//	 * @throws InvalidRecordException 
-//	 * @throws InvalidGenomicCoordsException 
-//	 * @throws IOException 
-//	 * @throws ClassNotFoundException 
-//	 * @throws MalformedURLException */
-//	public void setGenomicCoordsAndUpdateTracks(GenomicCoords gc) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-//
-//		for(Track tr : this.getTrackList()){
-//			tr.setGc(gc);
-//			// tr.update();
-//		}
-//	}
 	
 	@Override
 	/** For debugging and convenience only. This method not to be used for seriuous stuff. 

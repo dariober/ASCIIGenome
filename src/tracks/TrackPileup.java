@@ -61,6 +61,8 @@ public class TrackPileup extends TrackWiggles {
 	 * */
 	protected TrackPileup(String bam, GenomicCoords gc) throws IOException, ClassNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 
+		this.setTrackFormat(TrackFormat.BAM);
+		
 		if(!Utils.bamHasIndex(bam)){
 			File temp= File.createTempFile("asciigenome.", ".bam");
 			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
@@ -78,25 +80,22 @@ public class TrackPileup extends TrackWiggles {
 	/*                  F I L T E R S           */
 	@Override
 	void setSamRecordFilter(List<SamRecordFilter> samRecordFilter) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.clearCache();
 		this.getFeatureFilter().setSamRecordFilter(samRecordFilter);
-		this.loci.clear(); // clear cached positions
-		this.zeroDepthIntervals.clear();
 		this.update();
 	}
 	
 	@Override
 	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		this.clearCache();
 		this.getFeatureFilter().setShowHideRegex(showRegex, hideRegex);
-		this.loci.clear(); // clear cached positions
-		this.zeroDepthIntervals.clear();
 		this.update();
 	}
 		
 	@Override
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		this.clearCache();
 		this.getFeatureFilter().setAwk(awk);
-		this.loci.clear(); // clear cached positions
-		this.zeroDepthIntervals.clear();
 		this.update();
 	}
 
@@ -105,7 +104,13 @@ public class TrackPileup extends TrackWiggles {
 		// MEMO: You need to override TrackWiggles not Tracks!
 		return this.getFeatureFilter().getAwk();
 	};
-	
+
+	@Override
+	public void setVariantReadInInterval(String chrom, int from, int to) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		this.clearCache();
+		super.setVariantReadInInterval(chrom, from, to);
+	}
+
 	/*       M E T H O D S        */
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -146,7 +151,6 @@ public class TrackPileup extends TrackWiggles {
 			
 			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
 			List<Boolean> passFilter= this.filterReads(samReader, chrom, qryFrom, qryTo);
-			
 			samReader= Utils.getSamReader(this.getWorkFilename());
 			
 			Iterator<SAMRecord> sam= samReader.query(chrom, qryFrom, qryTo, false);
@@ -391,6 +395,32 @@ public class TrackPileup extends TrackWiggles {
 	}
 	
 	@Override
+	protected String getTitleForActiveFilters() {
+		List<String> title= new ArrayList<String>();
+		if( ! this.getAwk().equals(FeatureFilter.DEFAULT_AWK)){
+			title.add("awk");
+		}
+		if( ! this.getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX) || ! this.getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX)){
+			title.add("grep");
+		}
+		if( this.get_f_flag() != FeatureFilter.DEFAULT_f_FLAG || 
+			this.get_F_flag() != FeatureFilter.DEFAULT_F_FLAG){
+			title.add("bit-flag");
+		}
+		if(this.getMapq() != FeatureFilter.DEFAULT_MAPQ){
+			title.add("mapq");
+		}
+		if( ! this.getFeatureFilter().getVariantChrom().equals(FeatureFilter.DEFAULT_VARIANT_CHROM)){
+			title.add("var-read");
+		}
+		if(title.size() > 0){
+			return "; filters: " + title.toString(); 
+		} else {
+			return "";	
+		}
+	}
+	
+	@Override
 	public String getTitle() throws InvalidColourException, InvalidGenomicCoordsException, IOException{
 		
 		if(this.isHideTitle()){
@@ -414,24 +444,6 @@ public class TrackPileup extends TrackWiggles {
 		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
 		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
 
-		String samtools= "";
-		if( ! (this.get_F_flag() == FeatureFilter.F_FLAG) ){
-			samtools += " -F " + this.get_F_flag();
-		}
-		if( ! (this.get_f_flag() == FeatureFilter.f_FLAG) ){
-			samtools += " -f " + this.get_f_flag();
-		}
-		if( ! (this.getMapq() == FeatureFilter.MAPQ) ){
-			samtools += " -q " + this.getMapq();
-		}
-		if( ! samtools.isEmpty()){
-			samtools= "; samtools" + samtools;
-		}
-		String awk= "";
-		if(!this.getAwk().isEmpty()){
-			awk= "; awk:on";
-		}
-
 		String libsize= "";
 		if(this.alnRecCnt != -1){
 			libsize= "; lib size: " + this.alnRecCnt;
@@ -440,10 +452,8 @@ public class TrackPileup extends TrackWiggles {
 				+ "; ylim[" + ymin + " " + ymax + "]" 
 				+ "; range[" + rounded[0] + " " + rounded[1] + "]"
 				+ libsize
-				+ samtools 
 				+ rpmTag
-				+ awk;
-		// xtitle= Utils.padEndMultiLine(xtitle, this.getGc().getUserWindowSize());
+				+ this.getTitleForActiveFilters();
 		return this.formatTitle(xtitle) + "\n";
 	}
 
@@ -490,5 +500,8 @@ public class TrackPileup extends TrackWiggles {
 		return intervals;
 	}
 
-	
+	private void clearCache(){
+		this.loci.clear(); // clear cached positions
+		this.zeroDepthIntervals.clear();
+	}
 }

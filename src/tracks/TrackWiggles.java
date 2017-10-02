@@ -377,4 +377,9 @@ public class TrackWiggles extends Track {
 		return "";
 	}
 
+	@Override
+	protected String getTitleForActiveFilters() {
+		return "";
+	}
+
 }

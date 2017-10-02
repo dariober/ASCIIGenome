@@ -453,7 +453,7 @@ public class CommandList {
 				+ "\n"
 				+ "* Column headers. The following variables are replaced by the appropriate column indexes, so they "
 				+ "can be used to easily select columns. Make sure the track types are selected to be compatible "
-				+ "with the headers (see examples).\n"
+				+ "with the headers.\n"
 				+ "\n"
 				+ "- bam tracks::\n"
 				+ "\n"
@@ -507,10 +507,6 @@ public class CommandList {
 				+ "* Using header variables::\n"
 				+ "\n"
 				+ "    awk '$FEATURE \\~ \"CDS\" && $START > 1234' .gff\n"
-				+ "\n"
-				+ "Applying bam headers to gff will throw an error, probably an ugly one::\n"
-				+ "\n"
-				+ "    awk '$MAPQ > 10' .gff ~-> ERROR\n"
 				+ "\n"
 				+ "With no args, turn off awk for all tracks.\n"
 				+ "\n"
@@ -604,6 +600,38 @@ public class CommandList {
 				+ "* :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.\n"
 				);
 		cmdList.add(cmd);		
+
+		cmd= new CommandHelp();
+		cmd.setName("filterVariantReads"); cmd.setArgs("[-r from-to] [-v] [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
+		cmd.setBriefDescription("Filter reads containing a variant in the given interval.\n");
+		cmd.setAdditionalDescription("filterVariantReads selects for reads where the read sequence "
+				+ "mismatches with the reference sequence in the given interval on the current chromosome. "
+				+ "This command is useful to inspect reads supporting a putative alternate allele at a "
+				+ "variant site.\n"
+				+ "\n"
+				+ "NOTES\n"
+				+ "\n"
+				+ "* filterVariantReads requires a reference fasta sequence to be set, e.g. "
+				+ "via the command line option :code:`-fa <ref.fa>` or with command :code:`setGenome`.\n"
+				+ "\n"
+				+ "* The CIGAR string determines a mismatch between read and reference. Consequently, there may be be an inconsistency "
+				+ "between variant positions in reads and positions in a VCF file if some normalization "
+				+ "or indel realignment has been performed by the variant caller that generated the VCF. In such cases "
+				+ "consider enlarging the target interval :code:`-r`.\n"
+				+ "\n"
+				+ "* The position (POS) of deletions in VCF files refer to the first non-deleted base on the reference. Therefore, "
+				+ "the interval to :code:`-r` should be POS+1 to filter for reads supporting a deletion (but see also the previous point).\n"
+				+ "\n"
+				+ "OPTIONS\n"
+				+ "\n"
+				+ "* :code:`-r from-to` Select reads mismatching in this interval. E.g. :code:`-r 1000-1010` or for a single position "
+				+ ":code:`-r 1000`.\n"
+				+ "\n"
+				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+				+ "\n"
+				+ "* :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.\n"
+				);
+		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
 		cmd.setName("gap"); cmd.setArgs("[-on | -off] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
@@ -1211,6 +1239,7 @@ public class CommandList {
 		paramList.add("bookmark");
 		paramList.add("grep");
 		paramList.add("awk");
+		paramList.add("filterVariantReads");
 		paramList.add("gffNameAttr");
 		paramList.add("gap");
 		paramList.add("trackHeight");

@@ -25,8 +25,8 @@ public class GenomicCoordsHistoryTest {
 
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		gch.readHistory("test_data/asciigenome.yaml", checkGc);
-		assertEquals(2, gch.getHistory().size());
-		assertEquals("chr7:10-1000", gch.getHistory().get(0).toStringRegion());
+		assertEquals(2, gch.getCurrentSessionHistory().size());
+		assertEquals("chr7:10-1000", gch.getCurrentSessionHistory().get(0).toStringRegion());
 		
 		// Initial genomic coords has no sequence dict, so everything in the history
 		// file is loaded:
@@ -34,8 +34,8 @@ public class GenomicCoordsHistoryTest {
 
 		gch= new GenomicCoordsHistory();
 		gch.readHistory("test_data/asciigenome.yaml", checkGc);
-		assertEquals(4, gch.getHistory().size());
-		assertEquals("bar:10-1000", gch.getHistory().get(0).toStringRegion());
+		assertEquals(4, gch.getCurrentSessionHistory().size());
+		assertEquals("bar:10-1000", gch.getCurrentSessionHistory().get(0).toStringRegion());
 
 		// Behavior with missing or file
 		gch= new GenomicCoordsHistory();
@@ -170,7 +170,7 @@ public class GenomicCoordsHistoryTest {
 		GenomicCoords g1z= (GenomicCoords) gch.current().clone();
 		g1z.zoomOut();
 		gch.add(g1z);
-		assertEquals(2, gch.getHistory().size());
+		assertEquals(2, gch.getCurrentSessionHistory().size());
 		// System.out.println(gch.getHistory());
 	}
 	
@@ -193,7 +193,7 @@ public class GenomicCoordsHistoryTest {
 		cmdInput.add("hg19");
 		gch.setGenome(cmdInput);
 		assertTrue(gch.current().getSamSeqDict().toString().length() > 10);
-		assertTrue(gch.getHistory().get(0).getSamSeqDict().toString().length() > 10);
+		assertTrue(gch.getCurrentSessionHistory().get(0).getSamSeqDict().toString().length() > 10);
 
 	}
 
@@ -224,6 +224,6 @@ public class GenomicCoordsHistoryTest {
 		
 		assertEquals("chr7", gch.current().getChrom());
 		assertEquals("test_data/chr7.fa", gch.current().getFastaFile());
-		assertEquals(1, gch.getHistory().size()); // Invalid positions have been removed.
+		assertEquals(1, gch.getCurrentSessionHistory().size()); // Invalid positions have been removed.
 	}
 }

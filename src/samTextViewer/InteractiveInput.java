@@ -93,7 +93,7 @@ public class InteractiveInput {
 					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 				
 				} else if(cmdTokens.get(0).equals("posHistory")){
-					this.posHistory(cmdTokens, proc.getGenomicCoordsHistory().getHistory(), proc.getWindowSize());
+					this.posHistory(cmdTokens, proc.getGenomicCoordsHistory().getCurrentSessionHistory(), proc.getWindowSize());
 					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 
 				} else if(cmdTokens.get(0).equals("history")){
@@ -344,7 +344,10 @@ public class InteractiveInput {
 					proc.getTrackSet().setFilterForTrackIntervalFeature(cmdTokens);
 				
 				} else if(cmdTokens.get(0).equals("awk")){
-					proc.getTrackSet().setAwkForTrackIntervalFeature(cmdTokens);
+					proc.getTrackSet().setAwkForTrack(cmdTokens);
+					
+				} else if(cmdTokens.get(0).equals("filterVariantReads")){
+					proc.getTrackSet().setFilterVariantReads(cmdTokens);
 					
 				} else if(cmdTokens.get(0).equals(Command.rpm.getCmdDescr())) {
 					proc.getTrackSet().setRpmForRegex(cmdTokens);

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMSequenceDictionary;
@@ -13,11 +12,10 @@ import htsjdk.samtools.SAMSequenceRecord;
 
 public class GenomicCoordsHistory {
 
-	private int countHistoricPositions= 0; // Number of valid positions read from file ~/.asciigenome_history and
-	                                       // put in list of historic positions.
+	private List<GenomicCoords> historicPositions= new ArrayList<GenomicCoords>(); // Positions visited in previous sessions.
 	
 	/** List of genomic positions in order as they have been visited.*/
-	private List<GenomicCoords> history= new ArrayList<GenomicCoords>();
+	private List<GenomicCoords> currentSessionHistory= new ArrayList<GenomicCoords>();
 	
 	/** List index stating where we are in history */
 	private int positionTracker= -1;
@@ -31,26 +29,27 @@ public class GenomicCoordsHistory {
 	 * to the last one in history. 
 	 * The position tracker is reset to the last when a new position is added */
 	public void add(GenomicCoords gc) {
-		if(this.history.size() == 0 || !this.history.get(this.history.size() - 1).equalCoords(gc)){
-			this.history.add((GenomicCoords) gc.clone());
+		if(this.currentSessionHistory.size() == 0 || !this.currentSessionHistory.get(this.currentSessionHistory.size() - 1).equalCoords(gc)){
+			this.currentSessionHistory.add((GenomicCoords) gc.clone());
+			this.historicPositions.add((GenomicCoords) gc.clone());
 		}
-		this.positionTracker= this.history.size() - 1;
+		this.positionTracker= this.currentSessionHistory.size() - 1;
 	}
 
 	public GenomicCoords current() {
 		if(positionTracker < 0){
 			return null;
 		}
-		return this.history.get(positionTracker);
+		return this.currentSessionHistory.get(positionTracker);
 	}
 
 	public void previous() {
 
 		int idx= this.positionTracker - 1;
 		
-		if(this.history.size() == 0){
+		if(this.currentSessionHistory.size() == 0){
 			this.positionTracker= -1;
-		} else if(this.history.size() == 1){
+		} else if(this.currentSessionHistory.size() == 1){
 			this.positionTracker= 0;
 		} else if (idx < 0){
 			this.positionTracker= 0;
@@ -64,20 +63,20 @@ public class GenomicCoordsHistory {
 
 		int idx= this.positionTracker + 1;
 		
-		if(this.history.size() == 0){
+		if(this.currentSessionHistory.size() == 0){
 			this.positionTracker= -1;
-		} else if(this.history.size() == 1){
+		} else if(this.currentSessionHistory.size() == 1){
 			this.positionTracker= 0;
-		} else if (idx >= this.history.size()){
-			this.positionTracker= this.history.size() - 1;
+		} else if (idx >= this.currentSessionHistory.size()){
+			this.positionTracker= this.currentSessionHistory.size() - 1;
 		} else {
 			this.positionTracker= idx;
 		}
 		
 	}
 	
-	protected List<GenomicCoords> getHistory() {
-		return history;
+	protected List<GenomicCoords> getCurrentSessionHistory() {
+		return currentSessionHistory;
 	}
 
 	/** Set sequence dictionary and fasta ref, if available for all the genomic coords in this 
@@ -86,6 +85,7 @@ public class GenomicCoordsHistory {
 	 * */
 	public void setGenome(List<String> tokens) throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
 		
+		
 		if(tokens.size() == 0){
 			throw new InvalidCommandLineException();
 		}
@@ -93,26 +93,23 @@ public class GenomicCoordsHistory {
 		List<GenomicCoords> toDelete= new ArrayList<GenomicCoords>();
 		
 		GenomicCoords now= this.current();
-		
-		for(GenomicCoords gc : this.getHistory()){ // Set the genome for each position in history. Invalid positions are removed.
+		for(GenomicCoords gc : this.getCurrentSessionHistory()){ // Set the genome for each position in history. Invalid positions are removed.
 			gc.setGenome(tokens, true);
 			if( ! this.isValidPosition(gc, gc.getSamSeqDict())){
 				toDelete.add(gc);
-			} else {
-				gc.setRefSeq();
 			}
 		}
-
+		
 		for(GenomicCoords gc : toDelete){
-			this.getHistory().remove(gc);
+			this.getCurrentSessionHistory().remove(gc);
 		}
 
-		this.positionTracker= this.getHistory().indexOf(now); // After having removed invalid positions, reset the position tracker to where we were.
+		this.positionTracker= this.getCurrentSessionHistory().indexOf(now); // After having removed invalid positions, reset the position tracker to where we were.
 		
 		if(this.positionTracker < 0){ // The position from where the genome was set is not part of the dictionary 
 			
-			if(this.getHistory().size() > 0){ // Try to move to the last valid position.
-				this.positionTracker= this.getHistory().size() - 1; 	
+			if(this.getCurrentSessionHistory().size() > 0){ // Try to move to the last valid position.
+				this.positionTracker= this.getCurrentSessionHistory().size() - 1; 	
 			
 			} else { // There are no valid positions in the history so create a new one and move there
 
@@ -170,7 +167,7 @@ public class GenomicCoordsHistory {
 				// If success, add this position to history list.
 				GenomicCoords gc= new GenomicCoords(reg, terminalWindowSize, checkGc.getSamSeqDict(), checkGc.getFastaFile(), false);
 				this.add(gc);
-				this.countHistoricPositions += 1;
+				this.historicPositions.add(gc);
 			} catch (Exception e){
 				//
 			}
@@ -187,11 +184,11 @@ public class GenomicCoordsHistory {
 			maxPos= 0;
 		}
 
-		List<String> positions= new ASCIIGenomeHistory(historyFile).getPositions();
+		List<String> positions= new ArrayList<String>(); // new ASCIIGenomeHistory(historyFile).getPositions();
 		
 		// Now add the positions visited in this session
-		for(int i= this.countHistoricPositions; i < this.getHistory().size(); i++){
-			String reg= this.getHistory().get(i).toStringRegion();
+		for(GenomicCoords gc : this.historicPositions){
+			String reg= gc.toStringRegion();
 			// Remove consecutive duplicates
 			if( positions.size() == 0 || ! reg.equals(positions.get(positions.size()-1))){
 				positions.add(reg);	

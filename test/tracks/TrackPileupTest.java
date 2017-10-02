@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
@@ -27,6 +28,11 @@ import samTextViewer.GenomicCoords;
 
 public class TrackPileupTest {
 
+    @BeforeClass
+    public static void init() throws IOException, InvalidConfigException {
+        new Config(null);
+    }
+	
 	@Test
 	public void canPrintConsensusSequence() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 
@@ -53,6 +59,19 @@ public class TrackPileupTest {
 		tc.setNoFormat(true);
 		assertEquals("", tc.getPrintableConsensusSequence());
 
+	}
+
+	@Test
+	public void canFilterReadsContainingVariants() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		GenomicCoords gc= new GenomicCoords("chr7:1000001-1000081",100, null, "test_data/chr7.fa");
+		TrackPileup tp= new TrackPileup("test_data/variant_reads.sam", gc);
+		tp.setNoFormat(true);
+		tp.setyMaxLines(10);
+		assertEquals(10, tp.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
+
+		tp.setVariantReadInInterval("chr7", 1000001, 1000001);
+		System.err.println(tp.printToScreen());
+		assertEquals(1, tp.printToScreen().trim().split("\n").length);
 	}
 	
 	@Test
@@ -98,8 +117,6 @@ public class TrackPileupTest {
 
 	@Test
 	public void canCorrectRangeByRpm() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
-	
-		new Config(null);
 	
 		GenomicCoords gc= new GenomicCoords("chr7:5566776-5566796", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
@@ -204,7 +221,7 @@ public class TrackPileupTest {
 		tr.setyMaxLines(1000);
 		assertTrue(tr.getTitle().contains("22.0")); // N. reads before filtering
 		// assertTrue(tr.getTitle().contains("22/22")); // N. reads before filtering
-		tr.setShowHideRegex("NCNNNCCC", FeatureFilter.HIDE_REGEX);
+		tr.setShowHideRegex("NCNNNCCC", FeatureFilter.DEFAULT_HIDE_REGEX);
 		tr.setAwk("'$4 != 5566779'");
 		System.err.println(tr.getTitle());
 		assertTrue(tr.getTitle().contains("4.0"));

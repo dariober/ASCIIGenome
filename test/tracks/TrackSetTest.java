@@ -343,30 +343,30 @@ public class TrackSetTest {
 		
 		// Set for one track
 		String cmdInput= "awk   '$3 == \"exon\"' #1"; 		
-		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
 		assertEquals("-F '\\t' '$3 == \"exon\"'", ts.getTrack(t1).getAwk());
 		assertEquals("", ts.getTrack(t3).getAwk()); // As default
 		
 		// Use custom delim, some tracks
 		cmdInput= "awk -F _ '$3 == 10' #1 #3"; 	
-		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
 		assertEquals("-F _ '$3 == 10'", ts.getTrack(t1).getAwk());
 		assertEquals("-F _ '$3 == 10'", ts.getTrack(t3).getAwk());
 			
 		// Use custom delim: All tracks
 		cmdInput= "awk -v FOO=foo -F _ '$3 == 20'"; 	
-		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
 		assertEquals("-v FOO=foo -F _ '$3 == 20'", ts.getTrack(t1).getAwk());
 		assertEquals("-v FOO=foo -F _ '$3 == 20'", ts.getTrack(t3).getAwk());
 		
 		// Turn off one track
 		cmdInput= "awk -off #2";
-		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
 		assertEquals("", ts.getTrack(t2).getAwk());
 
 		// Turn off all tracks
 		cmdInput= "awk";
-		ts.setAwkForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
+		ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
 		assertEquals("", ts.getTrack(t1).getAwk());
 		assertEquals("", ts.getTrack(t2).getAwk());
 		assertEquals("", ts.getTrack(t3).getAwk());
@@ -510,6 +510,28 @@ public class TrackSetTest {
 		assertEquals(FeatureDisplayMode.COLLAPSED, t2.getFeatureDisplayMode());
 		assertEquals(FeatureDisplayMode.COLLAPSED, t3.getFeatureDisplayMode());
 
+	}
+	
+	
+	@Test
+	public void canSetVariantReadsFilter() throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+				
+		GenomicCoords gc= new GenomicCoords("chr7:1-1000", 80, null, "test_data/chr7.fa");
+		
+		TrackSet ts= new TrackSet();
+		Track t1= new TrackReads("test_data/ds051.actb.bam", gc); ts.addTrack(t1, "x");
+		Track t2= new TrackReads("test_data/ds051.actb.bam", gc); ts.addTrack(t2, "x");
+		Track t3= new TrackReads("test_data/ds051.actb.bam", gc); ts.addTrack(t3, "x");
+
+		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r 1-10", " "));
+		assertEquals(1, t1.getFeatureFilter().getVariantFrom());
+		assertEquals(10, t1.getFeatureFilter().getVariantTo());
+		assertEquals(1, t2.getFeatureFilter().getVariantFrom());
+		assertEquals(10, t2.getFeatureFilter().getVariantTo());
+		
+		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads #1", " ")); // Remove filter for this regex track
+		assertEquals(FeatureFilter.DEFAULT_VARIANT_CHROM, t1.getFeatureFilter().getVariantChrom());
+		assertEquals("chr7", t2.getFeatureFilter().getVariantChrom());
 	}
 	
 	@Test

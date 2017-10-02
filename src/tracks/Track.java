@@ -369,8 +369,6 @@ public abstract class Track {
 		this.workFilename = workFilename;
 	}
 
-//	public abstract String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException;
-
 	/** Print raw lines after having processed them through `cut`, `clip etc.`.
 	 * This method also add formatting so it returns a single string. 
 	 * It should be used only for printing and not for any computation.
@@ -546,6 +544,9 @@ public abstract class Track {
 	 * */
 	protected abstract List<String> getRecordsAsStrings();
 
+	/**Return a string to be plugged into the title line showing which filters are active on the track*/
+	protected abstract String getTitleForActiveFilters();
+	
 	protected boolean getPrintNormalizedVcf(){
 		return this.printNormalizedVcf;
 	}
@@ -607,18 +608,6 @@ public abstract class Track {
 		// boolean[] results= new boolean[(int) this.nRecsInWindow];
 		List<Boolean> results= new ArrayList<Boolean>();
 
-		byte[] faSeq= null;
-		if(this.getFeatureFilter().getVariantChrom().equals(this.getGc().getChrom()) &&
-		   this.getFeatureFilter().getVariantFrom() <= this.getGc().getTo() &&
-		   this.getGc().getFrom() <= this.getFeatureFilter().getVariantTo()){
-			// Get sequence to test whether the read is variant in the requested interval.
-			IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(this.getGc().getFastaFile()));
-			faSeq= faSeqFile.getSubsequenceAt(
-					this.getFeatureFilter().getVariantChrom(), 
-					this.getFeatureFilter().getVariantFrom(), 
-					this.getFeatureFilter().getVariantTo()).getBases();
-			faSeqFile.close();
-		}
 		List<String> awkDataInput= new ArrayList<String>();
 		while(filterSam.hasNext()){ 
 			// Record whether a read passes the sam filters. If necessary, we also 
@@ -632,84 +621,27 @@ public abstract class Track {
 			} else {
 				passed= false;
 			}
-			
-			// Filter for variant
-			if(faSeq != null){
-				int varFrom= this.getFeatureFilter().getVariantFrom();
-				int varTo= this.getFeatureFilter().getVariantTo();
-				// If above we retrieved the sequence it means some positions need to be scanned for variant reads
-				passed= false; // Change to true as soon as we find a SNP in this read in the given interval
-				int readPos= 0;
-				int refPos= rec.getAlignmentStart();
-				for(CigarElement cigar : rec.getCigar().getCigarElements()){
-					if(cigar.getOperator().equals(CigarOperator.SOFT_CLIP)){
-						readPos += cigar.getLength();
-					}
-					else if(cigar.getOperator().equals(CigarOperator.MATCH_OR_MISMATCH)){
-						for(int i= 0; i < cigar.getLength(); i++){
-							if(refPos >= varFrom && refPos <= varTo && rec.getReadLength() > 0){
-								byte readBase= rec.getReadBases()[readPos];
-								byte refBase= faSeq[refPos-varFrom];
-								if(readBase != refBase){
-									passed= true;
-									break;
-								}
-							}
-							readPos++;
-							refPos++;
-						}
-					}
-					else if(cigar.getOperator().equals(CigarOperator.DELETION)){ // Consumes ref base, not read base
-						// REF  ACTGTTTTACTG
-						// READ   TG----AC
-						//          ^^^^
-						for(int i= 0; i < cigar.getLength(); i++){
-							if(refPos >= varFrom && refPos <= varTo){
-								passed= true;
-								break;
-							}
-							refPos++;							
-						}
-					}
-					else if(cigar.getOperator().equals(CigarOperator.INSERTION)){ // Consumes read, not ref 
-						//  REF ACTG----ACTG
-						// READ   TGttttAC
-						//         ^    
-						for(int i= 0; i < cigar.getLength(); i++){
-							if(refPos >= varFrom && refPos <= varTo){
-								passed= true;
-								break;
-							}
-							readPos++;							
-						}
-					} 
-					else if(cigar.getOperator().equals(CigarOperator.HARD_CLIP)){ 
-						//
-					} 
-					else if(cigar.getOperator().equals(CigarOperator.SKIPPED_REGION)){ // Same deletion but it's not a mismatch 
-						refPos += cigar.getLength();
-					} 
-					else if(cigar.getOperator().equals(CigarOperator.PADDING)){ 
-						// Not sure what to do with this...
-					} 
-					if(passed){
-						break;
-					}
-				}
+
+			// Filter for variant reads: Do it only if there is an intersection between variant interval and current genomic window
+			if(this.getFeatureFilter().getVariantChrom().equals(FeatureFilter.DEFAULT_VARIANT_CHROM)){
+				// Variant read filter is not set. Nothing to do.
+			} else if(passed){ 
+				// Memo: Test filter(s) only if a read is passed==true. 
+				passed= this.isVariantRead(rec);
 			}
 			
 			String raw= null;
 
-			if(passed && (! this.getFeatureFilter().getShowRegex().equals(FeatureFilter.SHOW_REGEX) || 
-					      ! this.getFeatureFilter().getHideRegex().equals(FeatureFilter.HIDE_REGEX))){
+			if(passed && (! this.getFeatureFilter().getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX) || 
+					      ! this.getFeatureFilter().getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX))){
 				// grep
 				raw= rec.getSAMString().trim();
 				boolean showIt= true;
-				if(! this.getFeatureFilter().getShowRegex().equals(FeatureFilter.SHOW_REGEX)){
+				if(! this.getFeatureFilter().getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX)){
 					showIt= Pattern.compile(this.getFeatureFilter().getShowRegex()).matcher(raw).find();
 				}
 				boolean hideIt= false;
-				if(! this.getFeatureFilter().getHideRegex().equals(FeatureFilter.HIDE_REGEX)){
+				if(! this.getFeatureFilter().getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX)){
 					hideIt= Pattern.compile(this.getFeatureFilter().getHideRegex()).matcher(raw).find();	
 				}
 				if(!showIt || hideIt){
@@ -724,10 +656,10 @@ public abstract class Track {
 				}
 				awkDataInput.add(raw);
 			}
-		}
+		} // End loop through reads
 
 		// Apply the awk filter, if given
-		if(this.getAwk() != null && ! this.getAwk().isEmpty()){
+		if(this.getAwk() != null && ! this.getAwk().equals(FeatureFilter.DEFAULT_AWK)){
 			String[] rawLines= new String[awkDataInput.size()];
 			rawLines= awkDataInput.toArray(rawLines);
 			boolean[] awkResults= Utils.passAwkFilter(rawLines, this.getAwk());
@@ -747,45 +679,79 @@ public abstract class Track {
 		return results;
 	}
 	
-	/**Returns a list of boolean indicating whether the reads in samReader pass the 
-	 * sam and awk filters.
-	 * @throws IOException 
-	 * */
-//	public List<Boolean> filterReads(SamReader samReader) throws IOException{
-//		return this.filterReads(samReader, this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
-//	}
+	private boolean isVariantRead(SAMRecord rec) {
+		boolean passed= false;
+		if(this.getFeatureFilter().getVariantChrom().equals(rec.getReferenceName()) &&
+		        this.getFeatureFilter().getVariantFrom() <= rec.getAlignmentEnd() &&
+		        rec.getAlignmentStart() <= this.getFeatureFilter().getVariantTo()){
+			// Variant read filter is set and this read overlaps it. 
+			int varFrom= this.getFeatureFilter().getVariantFrom();
+			int varTo= this.getFeatureFilter().getVariantTo();
+			int readPos= 0;
+			int refPos= rec.getAlignmentStart();
+			for(CigarElement cigar : rec.getCigar().getCigarElements()){
+				if(cigar.getOperator().equals(CigarOperator.SOFT_CLIP)){
+					readPos += cigar.getLength();
+				}
+				else if(cigar.getOperator().equals(CigarOperator.MATCH_OR_MISMATCH)){
+					for(int i= 0; i < cigar.getLength(); i++){
+						if(refPos >= varFrom && refPos <= varTo && rec.getReadLength() > 0){
+							byte readBase= rec.getReadBases()[readPos];
+							byte refBase= this.getFeatureFilter().getFaSeq()[refPos-varFrom];
+							if(readBase != refBase){
+								passed= true;
+								break;
+							}
+						}
+						readPos++;
+						refPos++;
+					}
+				}
+				else if(cigar.getOperator().equals(CigarOperator.DELETION)){ // Consumes ref base, not read base
+					// REF  ACTGTTTTACTG
+					// READ   TG----AC
+					//          ^^^^
+					for(int i= 0; i < cigar.getLength(); i++){
+						if(refPos >= varFrom && refPos <= varTo){
+							passed= true;
+							break;
+						}
+						refPos++;							
+					}
+				}
+				else if(cigar.getOperator().equals(CigarOperator.INSERTION)){ // Consumes read, not ref 
+					//  REF ACTG----ACTG
+					// READ   TGttttAC
+					//         ^    
+					for(int i= 0; i < cigar.getLength(); i++){
+						if(refPos >= varFrom && refPos <= varTo){
+							passed= true;
+							break;
+						}
+						readPos++;							
+					}
+				} 
+				else if(cigar.getOperator().equals(CigarOperator.HARD_CLIP)){ 
+					//
+				} 
+				else if(cigar.getOperator().equals(CigarOperator.SKIPPED_REGION)){ // Same deletion but it's not a mismatch 
+					refPos += cigar.getLength();
+				} 
+				else if(cigar.getOperator().equals(CigarOperator.PADDING)){ 
+					// Not sure what to do with this...
+				} 
+				if(passed){
+					break;
+				}
+			}
+		} 
+		else {
+			// Variant read filter is set and this read does not overlap it.
+			passed= false;
+		}
+		return passed;
+	}
 
-//	private SAMRecord getNextSamRecordOnChrom(String chrom, int from) throws IOException, InvalidGenomicCoordsException{
-//		
-//		int qend= (from - 1) < 0 ? 0 : (from - 1);
-//
-//		SamReader samReader= Utils.getSamReader(this.getWorkFilename());
-//		SAMRecordIterator iter = samReader.queryAlignmentStart(chrom, qend);
-//		while(true){
-//			SAMRecord line= iter.next();
-//			if(line == null){
-//				return null;
-//			}
-//			// Create a reader at the position of this read and test whether any read here passes
-//			// filters.
-//			SamReader cur= Utils.getSamReader(this.getWorkFilename());
-//			List<Boolean> passed = this.filterReads(cur, line.getReferenceName(), line.getAlignmentStart(), line.getAlignmentStart());
-//			
-//		}
-//		
-//		// TabixBigBedIterator iter= this.getReader().query(chrom, qend, Integer.MAX_VALUE);
-//		while(true){
-//			SAMRecord line= iter.next();
-//			if(line == null){
-//				return null;
-//			}
-//			IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.getVCFCodec());
-//			if(x.getFrom() > from && this.featureIsVisible(x.getRaw())){
-//				return x;
-//			}
-//		}
-//	}
-	
 	protected void setColorForRegex(List<Argument> xcolorForRegex) {
 		
 	}
@@ -834,13 +800,20 @@ public abstract class Track {
 	 * @throws MalformedURLException 
 	 * */
 	public void setVariantReadInInterval(String chrom, int from, int to) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		if(chrom.equals(FeatureFilter.DEFAULT_VARIANT_CHROM)){
+			this.getFeatureFilter().setVariantReadInInterval(chrom, from, to, null);
+			this.update();
+			return;
+		}
 		if(from > to){
 			System.err.println("Invalid coordinates for filter from > to: " + from + ", " + to);
 			throw new InvalidGenomicCoordsException();
 		}
-		this.getFeatureFilter().setVariantReadInInterval(chrom, from, to);
+		IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(this.getGc().getFastaFile()));
+		byte[] faSeq= faSeqFile.getSubsequenceAt(chrom, from, to).getBases();
+		faSeqFile.close();
+		this.getFeatureFilter().setVariantReadInInterval(chrom, from, to, faSeq);
 		this.update();
 	}
-	
 }
 

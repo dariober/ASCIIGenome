@@ -19,7 +19,6 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -41,8 +40,7 @@ public class TrackReadsTest {
 	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{
 		
 		String shade = Config.get(ConfigKey.shade_low_mapq);
-		final Xterm256 xterm256= new Xterm256();
-		String xshade = Integer.toString(xterm256.colorNameToXterm256(shade));
+		String xshade = Integer.toString(Xterm256.colorNameToXterm256(shade));
 		
 		GenomicCoords gc= new GenomicCoords("chr7:999-1041", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/missingReadSeq.bam", gc);
@@ -169,9 +167,11 @@ public class TrackReadsTest {
 	
 	@Test
 	public void canFilterReadsContainingVariants() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		
 		GenomicCoords gc= new GenomicCoords("chr7:1000001-1000081",100, samSeqDict, fastaFile);
 		TrackReads tr= new TrackReads("test_data/variant_reads.sam", gc);
 		tr.setNoFormat(true);
+
 		tr.setyMaxLines(1000);
 		assertEquals(10, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
 
@@ -196,11 +196,27 @@ public class TrackReadsTest {
 		tr.setVariantReadInInterval("chr7", 1000014, 1000014); // No variants at this site
 		assertEquals("", tr.printToScreen().trim());
 		
+		tr.setVariantReadInInterval("chr7", 1000031, 1000040); // No read
+		assertEquals("", tr.printToScreen().trim());
+		
+		tr.setVariantReadInInterval("chr7", 2000000, 2000040); // No read
+		assertEquals("", tr.printToScreen().trim());
+		
 		tr.setVariantReadInInterval("chr7", 1000003, 1000010); // Test range
 		assertEquals(3, tr.printToScreen().split("\n").length);
 		assertTrue(tr.printToScreen().contains("-"));
 		assertTrue(tr.printToScreen().contains("AG"));
-
+		
+		tr.setVariantReadInInterval(FeatureFilter.DEFAULT_VARIANT_CHROM, -1, -1); // Remove filter
+		assertEquals(10, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
+		
+		// Genomic window does not overlap the variant range, but a read in this window does overlap.
+		gc= new GenomicCoords("chr7:1000002-1000081",100, samSeqDict, fastaFile);
+		tr= new TrackReads("test_data/variant_reads.sam", gc);
+		tr.setNoFormat(true);
+		tr.setyMaxLines(1000);
+		tr.setVariantReadInInterval("chr7", 1000001, 1000001);
+		assertEquals(1, tr.printToScreen().split("\n").length);
 	}
 	
 	@Test
@@ -234,7 +250,7 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
 		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
-		tr.setShowHideRegex("NCNNNCCC", FeatureFilter.HIDE_REGEX);
+		tr.setShowHideRegex("NCNNNCCC", FeatureFilter.DEFAULT_HIDE_REGEX);
 		tr.setAwk("'$4 != 5566779'");
 		assertEquals(4, tr.printToScreen().split("\n").length);
 	}
@@ -260,6 +276,33 @@ public class TrackReadsTest {
 		
 		assertTrue(tr.getTitle().trim().startsWith("aln.bam#1"));
 		
+	}
+	
+	@Test
+	public void canShowActiveFiltersInTitle() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException{
+		String bam= "test_data/adjacent.bam";
+		GenomicCoords gc= new GenomicCoords("chr7:1-100",80, null, fastaFile);
+		TrackReads tr= new TrackReads(bam, gc);
+		tr.setNoFormat(true);
+		assertTrue( ! tr.getTitle().contains("filters"));
+		
+		tr.setMapq(FeatureFilter.DEFAULT_MAPQ);
+		assertTrue( ! tr.getTitle().contains("filters"));
+		
+		tr.setMapq(10);
+		assertTrue( tr.getTitle().contains("mapq"));
+		
+		tr.set_F_flag(1024);
+		assertTrue( tr.getTitle().contains("flag"));
+		
+		tr.setShowHideRegex(".*", "foo");
+		assertTrue( tr.getTitle().contains("grep"));
+		
+		tr.setVariantReadInInterval("chr7", 10, 100);
+		assertTrue( tr.getTitle().contains("var-read"));
+		
+		tr.setAwk("'2 > 1'");
+		assertTrue( tr.getTitle().contains("awk"));
 	}
 	
 	@Test

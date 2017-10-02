@@ -202,7 +202,7 @@ public class TrackIntervalFeature extends Track {
 		boolean showIt= true;
 
 		if(this.getShowRegex() != null && 
-		   ! this.getShowRegex().equals(FeatureFilter.SHOW_REGEX)){
+		   ! this.getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX)){
 			showIt= Pattern.compile(this.getShowRegex()).matcher(x).find();
 		}
 
@@ -664,28 +664,28 @@ public class TrackIntervalFeature extends Track {
 		if(this.getGap() == 0){
 			gapped= "; ungapped";
 		}
-		String awk= "";
-		if(!this.getAwk().isEmpty()){
-			awk= "; awk:on";
-		}
-		
-		String grep= "";
-		if( ! this.getShowRegex().equals(FeatureFilter.SHOW_REGEX) ){
-			grep += " -i " + this.getShowRegex(); 
-		}
-		if( ! this.getHideRegex().equals(FeatureFilter.HIDE_REGEX) ){
-			grep += " -e " + this.getHideRegex(); 
-		}
-		if( ! grep.isEmpty()){
-			grep= "; grep" + grep; 
-		}
 		String title=  this.getTrackTag() + ";" 
 	                 + " N: " + this.intervalFeatureList.size()
-					 + grep
 	                 + sq
 	                 + gapped 
-	                 + awk;
+	                 + this.getTitleForActiveFilters();
 		return title;
+	}
+	
+	@Override
+	protected String getTitleForActiveFilters() {
+		List<String> title= new ArrayList<String>();
+		if( ! this.getAwk().equals(FeatureFilter.DEFAULT_AWK)){
+			title.add("awk");
+		}
+		if( ! this.getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX) || ! this.getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX)){
+			title.add("grep");
+		}
+		if(title.size() > 0){
+			return "; filters: " + title.toString(); 
+		} else {
+			return "";	
+		}
 	}
 	
 	@Override

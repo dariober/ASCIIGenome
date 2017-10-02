@@ -47,6 +47,8 @@ $ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && awk 'g
 ## Test header names. Note escape on $
 $ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && bookmark && awk '\$POS > 5500000' actb.bam" > /dev/null
 $ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && bookmark && awk '\$START > 5500000' Book" > /dev/null
+$ASCIIGenome ../test_data/CEU.exon.2010_06.genotypes.vcf.gz -x "awk 'length(\$REF) == 1 && length(\$ALT) > 1'" > /dev/null
+$ASCIIGenome ../test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3 -x "awk '\$SOURCE ~ \"havana\"'" > /dev/null
 
 ## Can show/hide track settings
 $ASCIIGenome ../test_data/ds051.actb.bam -x 'goto chr7:5568803-5568975 && show genome && show genome' > /dev/null

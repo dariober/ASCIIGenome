@@ -10,17 +10,18 @@ import htsjdk.samtools.filter.SamRecordFilter;
  * */
 class FeatureFilter {
 	// Grep & Awk
-	final static public String HIDE_REGEX= "^$"; protected String hideRegex= HIDE_REGEX;
-	final static public String SHOW_REGEX= ".*"; protected String showRegex= SHOW_REGEX;
-	private String awk= "";
+	final static public String DEFAULT_HIDE_REGEX= "^$"; protected String hideRegex= DEFAULT_HIDE_REGEX;
+	final static public String DEFAULT_SHOW_REGEX= ".*"; protected String showRegex= DEFAULT_SHOW_REGEX;
+	final static public String DEFAULT_AWK= ""; private String awk= DEFAULT_AWK;
 	// SAM specific
-	public static final int f_FLAG= 0; private int f_flag= f_FLAG;
-	public static final int F_FLAG= 4; private int F_flag= F_FLAG;
-	public static final int MAPQ= 0;   private int mapq= MAPQ;
+	public static final int DEFAULT_f_FLAG= 0; private int f_flag= DEFAULT_f_FLAG;
+	public static final int DEFAULT_F_FLAG= 4; private int F_flag= DEFAULT_F_FLAG;
+	public static final int DEFAULT_MAPQ= 0;   private int mapq= DEFAULT_MAPQ;
 	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
-	public static final String VARIANT_CHROM= ""; String variantChrom= VARIANT_CHROM;
+	public static final String DEFAULT_VARIANT_CHROM= ""; String variantChrom= DEFAULT_VARIANT_CHROM;
 	private int variantFrom= -1;
 	private int variantTo= -1;
+	private byte[] faSeq;
 	
 	//   S E T T E R S    A N D    G E T T E R S
 	
@@ -87,10 +88,11 @@ class FeatureFilter {
 		this.samRecordFilter = samRecordFilter;
 	}
 	
-	public void setVariantReadInInterval(String chrom, int from, int to) {
+	public void setVariantReadInInterval(String chrom, int from, int to, byte[] faSeq) {
 		this.variantChrom= chrom;
 		this.variantFrom= from;
 		this.variantTo= to;
+		this.faSeq= faSeq;
 	}
 	
 	public String getVariantChrom(){
@@ -101,5 +103,13 @@ class FeatureFilter {
 	}
 	public int getVariantTo(){
 		return this.variantTo;
-	}	
+	}
+
+	public byte[] getFaSeq() {
+		return faSeq;
+	}
+
+//	public void setFaSeq(byte[] faSeq) {
+//		this.faSeq = faSeq;
+//	}	
 }

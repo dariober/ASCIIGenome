@@ -403,7 +403,7 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
 		
-		tif.setShowHideRegex(FeatureFilter.SHOW_REGEX, "\texon\t");
+		tif.setShowHideRegex(FeatureFilter.DEFAULT_SHOW_REGEX, "\texon\t");
 		assertEquals(3, tif.getIntervalFeatureList().size());
 
 		tif.setShowHideRegex("WASH7P", "^$");
@@ -478,7 +478,7 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 
 		tif.setAwk("'$3 == \"start_codon\"");
-		tif.setShowHideRegex(FeatureFilter.SHOW_REGEX, "OR4F");
+		tif.setShowHideRegex(FeatureFilter.DEFAULT_SHOW_REGEX, "OR4F");
 		List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(40, subset.size());
 
