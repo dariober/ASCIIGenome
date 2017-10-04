@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +61,7 @@ public class GenomicCoordsHistoryTest {
 		
 		int maxPos= 100;
 		List<String> hist= gch.prepareHistoryForHistoryFile("test_data/asciigenome.yaml", maxPos);
-		
+	
 		assertEquals(9, hist.size()); // 2 valid pos from history + 2 invalid + 5 from current session
 		assertEquals("bar:10-1000", hist.get(0));
 		assertEquals("chr7:5-100", hist.get(hist.size()-1));

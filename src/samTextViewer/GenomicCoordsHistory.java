@@ -12,8 +12,6 @@ import htsjdk.samtools.SAMSequenceRecord;
 
 public class GenomicCoordsHistory {
 
-	private List<GenomicCoords> historicPositions= new ArrayList<GenomicCoords>(); // Positions visited in previous sessions.
-	
 	/** List of genomic positions in order as they have been visited.*/
 	private List<GenomicCoords> currentSessionHistory= new ArrayList<GenomicCoords>();
 	
@@ -31,7 +29,6 @@ public class GenomicCoordsHistory {
 	public void add(GenomicCoords gc) {
 		if(this.currentSessionHistory.size() == 0 || !this.currentSessionHistory.get(this.currentSessionHistory.size() - 1).equalCoords(gc)){
 			this.currentSessionHistory.add((GenomicCoords) gc.clone());
-			this.historicPositions.add((GenomicCoords) gc.clone());
 		}
 		this.positionTracker= this.currentSessionHistory.size() - 1;
 	}
@@ -167,7 +164,6 @@ public class GenomicCoordsHistory {
 				// If success, add this position to history list.
 				GenomicCoords gc= new GenomicCoords(reg, terminalWindowSize, checkGc.getSamSeqDict(), checkGc.getFastaFile(), false);
 				this.add(gc);
-				this.historicPositions.add(gc);
 			} catch (Exception e){
 				//
 			}
@@ -184,14 +180,27 @@ public class GenomicCoordsHistory {
 			maxPos= 0;
 		}
 
-		List<String> positions= new ArrayList<String>(); // new ASCIIGenomeHistory(historyFile).getPositions();
+		List<String> positions= new ASCIIGenomeHistory(historyFile).getPositions(); 
 		
 		// Now add the positions visited in this session
-		for(GenomicCoords gc : this.historicPositions){
-			String reg= gc.toStringRegion();
+		// We need to find the positions that were not inherited from
+		// ASCIIGenomeHistory.
+		List<String> newPositions= new ArrayList<String>();
+		for(GenomicCoords gc : this.currentSessionHistory){
+			newPositions.add(gc.toStringRegion());
+		}
+		
+		for(String x : positions){
+			// Remove from newPositions the positions taken from dot file
+			if(newPositions.get(0).equals(x)){
+				newPositions.remove(0);
+			}
+		}
+
+		for(String x : newPositions){
 			// Remove consecutive duplicates
-			if( positions.size() == 0 || ! reg.equals(positions.get(positions.size()-1))){
-				positions.add(reg);	
+			if( positions.size() == 0 || ! x.equals(positions.get(positions.size()-1))){
+				positions.add(x);	
 			}
 		}
 

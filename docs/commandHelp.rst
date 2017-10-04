@@ -188,7 +188,9 @@ Move to the next feature not overlapping the current coordinates.  By default `n
 
 * :code:`-back` Search backwards. I.e. move to next feature on the left of the current position.
 
-* :code:`-start` Sets the window right at the start of the feature, without centering and zooming out.
+* :code:`-start` Set the window right at the start of the feature, without centering and zooming out.
+
+* :code:`-c` Set the window so that the start of the feature is right in the middle of the window. Useful to browse small features such as SNV and indels.
 
 * :code:`-zo INT` Zoom out INT times after having found the next feature.   Ignored if the `-start` flag is set. If <= 0 the window spans exactly the feature coordinates.   Default 5.
 
@@ -320,7 +322,7 @@ Awk understands numbers and mathematical operators. With awk you can filter reco
 
 * :code:`getSamTag(<tag>)` Return the value of the given sam tag. A record is filtered out if the tag is not found. This function is usually meaningless on non-sam records where sam tags are not present.
 
-* Column headers. The following variables are replaced by the appropriate column indexes, so they can be used to easily select columns. Make sure the track types are selected to be compatible with the headers (see examples).
+* Column headers. The following variables are replaced by the appropriate column indexes, so they can be used to easily select columns. Make sure the track types are selected to be compatible with the headers.
 
 - bam tracks::
 
@@ -369,10 +371,6 @@ Note the use of single quotes to wrap the actual script and the use of double qu
 * Using header variables::
 
     awk '$FEATURE \  "CDS" && $START > 1234' .gff
-
-Applying bam headers to gff will throw an error, probably an ugly one::
-
-    awk '$MAPQ > 10' .gff  -> ERROR
 
 With no args, turn off awk for all tracks.
 
@@ -577,6 +575,31 @@ Show SAM records as pairs.
  If set, properly paired reads in the current window are showed joined up by tildes.
 
 * :code:`-on|-off` Turn on/off the pairing mode. Or toggle between the two modes if none of these flags is set.
+
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
+* :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.
+
+
+filterVariantReads
+++++++++++++++++++
+
+:code:`filterVariantReads [-r from-to] [-v] [track_regex = .*]...`
+
+Filter reads containing a variant in the given interval.
+ filterVariantReads selects for reads where the read sequence mismatches with the reference sequence in the given interval on the current chromosome. This command is useful to inspect reads supporting a putative alternate allele at a variant site.
+
+NOTES
+
+* filterVariantReads requires a reference fasta sequence to be set, e.g. via the command line option :code:`-fa <ref.fa>` or with command :code:`setGenome`.
+
+* The CIGAR string determines a mismatch between read and reference. Consequently, there may be be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval :code:`-r`.
+
+* The position (POS) of deletions in VCF files refer to the first non-deleted base on the reference. Therefore, the interval to :code:`-r` should be POS+1 to filter for reads supporting a deletion (but see also the previous point).
+
+OPTIONS
+
+* :code:`-r from-to` Select reads mismatching in this interval. E.g. :code:`-r 1000-1010` or for a single position :code:`-r 1000`.
 
 * :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
