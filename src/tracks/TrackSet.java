@@ -96,12 +96,12 @@ public class TrackSet {
 				} else {
 					// NB: You never get here because Utils.getFileTypeFromName returns
 					// BED for any file that cannot be classified.
-					System.err.println("Unable to classify " + sourceName + "; skipping"); 								
+					System.err.println( String.format("Unable to classify type of %s, supported types: %s; skipping",
+							sourceName, Arrays.toString(TrackFormat.values())));
 				}
 			} catch(Exception e){
-				System.err.println(e.getMessage());
 				e.printStackTrace();
-				System.err.println("Cannot add " + sourceName + "; skipping");
+				System.err.println(String.format("Cannot add %s, Error: %s; skipping", sourceName, e.getMessage()));
 				try {
 					TimeUnit.SECONDS.sleep(3);
 				} catch (InterruptedException e1) {
