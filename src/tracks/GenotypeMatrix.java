@@ -123,6 +123,9 @@ class GenotypeMatrix {
         	
         	for(IntervalFeature variant : variantList){
         		int col= variant.getScreenMid();
+        		if(col < 0){
+        			continue;
+        		}
                 Genotype gt= variant.getVariantContext().getGenotype(sampleName);
                 FeatureChar fmtGt= new FeatureChar();
                 fmtGt.addFormatGenotype(gt);

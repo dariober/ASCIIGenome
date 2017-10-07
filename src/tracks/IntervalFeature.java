@@ -91,8 +91,11 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		int to= this.setToForVCF();
 		if(from == to){
 			return from; // SNV
-		} 
-		else if(this.variantContext.getReference().getBases()[0] == this.variantContext.getAlleles().get(0).getBases()[0]){
+		}
+		else if(this.variantContext.getReference().getBases().length > 0 &&
+				this.variantContext.getAlleles().size() > 1 &&
+				this.variantContext.getAlleles().get(1).getBases().length > 0 &&
+				this.variantContext.getReference().getBases()[0] == this.variantContext.getAlleles().get(0).getBases()[0]){
 			return from + 1;
 		}
 		return from;
@@ -152,32 +155,6 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	}
 	
 	/* M e t h o d s */
-
-//	private IntervalFeature intervalFeatureFromVcfLine(String vcfLine) throws InvalidGenomicCoordsException{
-//		this.setRaw(vcfLine);
-//		
-//		List<String> vcfList = Lists.newArrayList(Splitter.on("\t").split(vcfLine));
-//		if(vcfList.size() < 8){
-//			throw new RuntimeException("intervalFeatureFromVcfLine: Invalid vcf line:\n" + vcfList);
-//		}
-//				
-//		this.chrom= vcfList.get(0).trim();
-//		this.from= Integer.parseInt(vcfList.get(1)); // Make it 1-based
-//
-//		// Feature coordinates are based on the longest operation, whether insertion or deletion
-//		// or snv (length 1). Note that representing insertions as strings of length > 1 is not
-//		// consistent with the genomic coordinates but it gives a better idea of the size of the 
-//		// insertion.
-//		int offset= vcfList.get(3).length() > vcfList.get(4).length() ? 
-//				vcfList.get(3).length() : 
-//				vcfList.get(4).length();
-//		
-//		this.to= this.from + (offset-1);
-//		this.name= vcfList.get(2);
-//		this.validateIntervalFeature();
-//		return this;
-//		
-//	}
 	
 	private IntervalFeature intervalFeatureFromBedLine (String bedLine) throws InvalidGenomicCoordsException{
 		this.setRaw(bedLine);
@@ -718,6 +695,9 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * Consistent with screenFrom/to we make screen mid
 	 * */
 	protected int getScreenMid() {
+		if(this.getScreenFrom() < 0){
+			return -1; // See TrackIntervalFeatureTest.canProcessIndelAtWindowBoundary() why this can happen
+		}
 		int width= this.getScreenTo() - this.getScreenFrom() + 1;
 		if(width == 1){
 			return this.getScreenFrom();

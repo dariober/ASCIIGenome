@@ -701,6 +701,50 @@ public class TrackIntervalFeatureTest {
 	}
 
 	@Test
+	public void canProcessIndelAtWindowBoundary() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{		
+
+		// VCF record:
+		// 1 113054374 . CTTG C
+		// The genomic start is at 113054374, which is inside the GenomicCoords interval. 
+		// However, the printable coordinates start at 113054374 + 1 because the first 
+		// base is equal to reference. This means that at the boundary we have a feature
+		// that is in this interval but not visible.
+		
+		GenomicCoords gc= new GenomicCoords("1:113054305-113054375", 70, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/CEU.exon.2010_06.genotypes.vcf.gz", gc);
+		tif.setNoFormat(true);
+		
+		// VCF record is in interval and visible:
+		assertEquals(1, tif.getIntervalFeatureList().size());
+		System.err.println(tif.printToScreen());
+		assertTrue(tif.printToScreen().contains("D")); // Deletion
+
+		// Now the end coordinate equals the start of the deletion. Since the first base of the 
+		// deletion is equal to ref, there is nothing to print on screen:
+		gc= new GenomicCoords("1:113054305-113054374", 70, null, null);
+		tif= new TrackIntervalFeature("test_data/CEU.exon.2010_06.genotypes.vcf.gz", gc);
+		tif.setNoFormat(true);
+		// tif.getGenotypeMatrix().setnMaxSamples(0);
+		
+		assertEquals(1, tif.getIntervalFeatureList().size()); // Feature is in interval
+		assertTrue(tif.printToScreen().length() > 70); // But nothing to print
+		assertTrue( ! tif.printToScreen().contains("D")); // No deletion visible 
+		
+//		GenomicCoords gc= new GenomicCoords("1:113054305-113054374", 70, null, null);
+//		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/CEU.exon.2010_06.genotypes.vcf.gz", gc);
+//		tif.getGenotypeMatrix();
+//		
+//		List<IntervalFeature> xset = tif.getFeaturesInInterval("1", 113054305, 113054374);		
+//		System.err.println(xset);
+//		System.err.println(tif.printToScreen());
+//
+//		assertEquals(9, xset.size());
+//		IntervalFeature x = xset.get(1);
+//		assertEquals("1", x.getChrom());
+//		assertEquals(1108138, x.getFrom());		
+	}
+	
+	@Test
 	public void canReadVCFTabix() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{		
 
 		GenomicCoords gc= new GenomicCoords("chr18:1-10000", 80, null, null);
@@ -710,7 +754,8 @@ public class TrackIntervalFeatureTest {
 		assertEquals(9, xset.size());
 		IntervalFeature x = xset.get(1);
 		assertEquals("1", x.getChrom());
-		assertEquals(1108138, x.getFrom());		
+		assertEquals(1108138, x.getFrom());
+		System.err.println(tif.printToScreen());
 	}
 
 	

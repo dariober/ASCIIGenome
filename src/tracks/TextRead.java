@@ -303,8 +303,32 @@ class TextRead extends IntervalFeature{
 						}
 						
 						if(baseQual.length > 0){
+							/*
+							 * 2-9    grey93
+							 * 10-19  grey82
+							 * 20–24  grey58
+							 * 25–29  grey42
+							 * 30–34  no shade
+							 * 35–39  deepskyblue3
+							 * >= 40  deepskyblue3
+							 */
 							int bq= (int) baseQual[i];
 							if(bq < SHADE_BASEQ){
+//								if(bq <= 9){
+//									xc.setBgColor("purple3"); 
+//								} 
+//								else if(bq <= 19){
+//									xc.setBgColor("grey66");
+//								}
+//								else if(bq <= 24){
+//									xc.setBgColor("grey50");
+//								}
+//								else if(bq <= 34){
+//									xc.setBgColor("grey39");
+//								} 
+//								else {
+//									xc.setBgColor(Config.get(ConfigKey.background));
+//								}
 								xc.setBgColor(Config.get(ConfigKey.shade_low_mapq));
 							}
 						}

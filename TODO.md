@@ -10,7 +10,9 @@ FIXME
 Features
 --------
 
-* Indel processing. Check variants like `A,CT` processed ok.
+* Shade base quality to optionally shade a range of qualities with different shades of grey. 
+  `shadeBaseQuality -below_baseq x | -range` where `-below_baseq` shades below bseq *x* as it is now.
+  `-range` sets a level of grey according to quality.
 
 * Converter for ensembl to ucsc chromosome names. This functionality could be included
   in `addTracks` by adding options `-ens2ucsc` and `-ucsc2ens`. E.g. `addTracks -ens2ucsc genes.gtf http://foo/bar/data.bigwig`.

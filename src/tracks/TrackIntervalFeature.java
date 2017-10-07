@@ -587,7 +587,7 @@ public class TrackIntervalFeature extends Track {
 		}
 		for(IntervalFeature intervalFeature : listToPrint){
 			if(intervalFeature.getScreenFrom() == -1){
-				throw new RuntimeException(); // Feature doesn't map to screen, this shouldn't happen
+				continue; // See test canProcessIndelAtWindowBoundary for how this can happen
 			}
 			List<FeatureChar> text = intervalFeature.getIdeogram(false, false);
 			int i= 0;
