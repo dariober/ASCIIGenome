@@ -1,3 +1,8 @@
+New in 1.12.0
+============
+
+* Fixed bug where initialisation failed with VCF or SAM files with no records.  
+
 New in 1.11.0
 ============
 

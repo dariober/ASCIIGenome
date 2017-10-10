@@ -886,6 +886,14 @@ public class UtilsTest {
 	@Test
 	public void canInitRegion() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		
+		// Files with no records
+		assertEquals("chr1", Utils.initRegionFromFile("test_data/norecords.vcf"));
+		assertEquals("Undefined_contig", Utils.initRegionFromFile("test_data/norecords_nodict.vcf"));
+		assertEquals("chr7", Utils.initRegionFromFile("test_data/norecords.sam"));
+		assertEquals("Undefined_contig", Utils.initRegionFromFile("test_data/empty.bedGraph"));
+		assertEquals("Undefined_contig", Utils.initRegionFromFile("test_data/empty2.bedGraph"));
+		// Note: empty bigBed and bigWig seems to fail for reasons independent of ASCIIGenome
+		
 		assertEquals("chr7:5566778", Utils.initRegionFromFile("test_data/ds051.short.bam"));
 		assertEquals("chr7:5566778", Utils.initRegionFromFile("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
@@ -895,6 +903,7 @@ public class UtilsTest {
 		assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
 		assertEquals("chr1:564666", Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
 		assertEquals("1:113054374", Utils.initRegionFromFile("test_data/CEU.exon.2010_06.genotypes.vcf"));
+
 		
 		boolean pass= false;
 		try{

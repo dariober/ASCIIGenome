@@ -71,6 +71,7 @@ import htsjdk.samtools.SAMFileHeader.SortOrder;
 import htsjdk.samtools.SAMFileWriter;
 import htsjdk.samtools.SAMFileWriterFactory;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamInputResource;
@@ -415,6 +416,7 @@ public class Utils {
 	 * @throws InvalidRecordException 
 	 * @throws InvalidCommandLineException 
 	 * @throws ClassNotFoundException */
+	@SuppressWarnings("unused")
 	public static String initRegionFromFile(String x) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		UrlValidator urlValidator = new UrlValidator();
 		String region= "";
@@ -430,10 +432,15 @@ public class Utils {
 				srf.validationStringency(ValidationStringency.SILENT);
 				samReader = srf.open(new File(x));
 			}
-			// region= samReader.getFileHeader().getSequence(0).getSequenceName();
-			SAMRecord rec = samReader.iterator().next(); 
-			region= rec.getContig() + ":" + rec.getAlignmentStart();
-			samReader.close();
+			// Default: Start from the first contig in dictionary
+			region= samReader.getFileHeader().getSequence(0).getSequenceName();
+			SAMRecordIterator iter = samReader.iterator();
+			if(iter.hasNext()){
+				// If there are records in this BAM, init from first record
+				SAMRecord rec = iter.next(); 
+				region= rec.getContig() + ":" + rec.getAlignmentStart();
+				samReader.close();
+			}
 			return region;
 		
 		} else if(fmt.equals(TrackFormat.BIGWIG) && !urlValidator.isValid(x)){
@@ -458,9 +465,6 @@ public class Utils {
 			} 
 			System.err.println("Cannot initialize from " + x);
 			throw new RuntimeException();
-		
-//		} else if(Utils.isUcscGenePredSource(x)){
-//			return initRegionFromUcscGenePredSource(x);
 		
 		} else {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
@@ -498,6 +502,19 @@ public class Utils {
 					region= feature.getChrom() + ":" + feature.getFrom();
 				}
 				br.close();
+				return region;
+			}
+			if(line == null){ // This means the input has no records
+				region= "Undefined_contig";
+				if(fmt.equals(TrackFormat.VCF)){
+					SAMSequenceDictionary seqdict = getVCFHeader(x).getSequenceDictionary();
+					if(seqdict != null){
+						Iterator<SAMSequenceRecord> iter = seqdict.getSequences().iterator();
+						if(iter.hasNext()){
+							region= iter.next().getSequenceName();
+						}
+					}
+				}
 				return region;
 			}
 		} 

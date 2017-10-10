@@ -758,7 +758,6 @@ public class TrackIntervalFeatureTest {
 		System.err.println(tif.printToScreen());
 	}
 
-	
 	@Test
 	public void canReadUnsortedVCF() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{		
 
@@ -770,7 +769,6 @@ public class TrackIntervalFeatureTest {
 		assertEquals("1", x.getChrom());
 		assertEquals(1108138, x.getFrom());
 	}
-
 
 	@Test
 	public void canReadFeaturesOfLengthOne() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{		

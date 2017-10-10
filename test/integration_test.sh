@@ -24,6 +24,9 @@ ASCIIGenome="$1 --debug 2 -ni"
 
 set -x
 
+## Can read VCF with sequence dictionary but with no records
+$ASCIIGenome ../test_data/norecords.vcf
+
 ## Can avoid history positions not compatible with current genome
 $ASCIIGenome -x 'addTracks ../test_data/pairs.sam && p' > /dev/null
 
