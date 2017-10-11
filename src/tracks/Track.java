@@ -693,7 +693,9 @@ public abstract class Track {
 				if(cigar.getOperator().equals(CigarOperator.SOFT_CLIP)){
 					readPos += cigar.getLength();
 				}
-				else if(cigar.getOperator().equals(CigarOperator.MATCH_OR_MISMATCH)){
+				else if(cigar.getOperator().equals(CigarOperator.M) ||
+						cigar.getOperator().equals(CigarOperator.EQ) || 
+						cigar.getOperator().equals(CigarOperator.X)){
 					for(int i= 0; i < cigar.getLength(); i++){
 						if(refPos >= varFrom && refPos <= varTo && rec.getReadLength() > 0){
 							byte readBase= rec.getReadBases()[readPos];

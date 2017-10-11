@@ -244,7 +244,9 @@ class TextRead extends IntervalFeature{
 		int curBaseReadPos= 0; // Position on read. Start from zero walk along the read
 		List<CigarElement> cigarEls= samRecord.getCigar().getCigarElements();
 		for(CigarElement el : cigarEls){
-			if(el.getOperator() == CigarOperator.M || el.getOperator() == CigarOperator.EQ || el.getOperator() == CigarOperator.X){
+			if(el.getOperator().equals(CigarOperator.M) || 
+			   el.getOperator().equals(CigarOperator.EQ) || 
+			   el.getOperator().equals(CigarOperator.X)){
 				// Add nucleotide chars to growing read
 				for(int i= 0; i < el.getLength(); i++){
 					FeatureChar xc= new FeatureChar();
@@ -340,15 +342,15 @@ class TextRead extends IntervalFeature{
 					curBaseGenomicPos++; // M consumes read and ref bases. So increment them
 					curBaseReadPos++;
 				}
-			} else if(el.getOperator() == CigarOperator.D || el.getOperator() == CigarOperator.N){
+			} else if(el.getOperator().equals(CigarOperator.D) || el.getOperator().equals(CigarOperator.N)){
 				// Add gap chars to growing read
 				for(int i= 0; i < el.getLength(); i++){
 					FeatureChar xc= new FeatureChar();
 					if(curBaseGenomicPos >= gc.getFrom() && curBaseGenomicPos <= gc.getTo()){
-						if(el.getOperator() == CigarOperator.D){
+						if(el.getOperator().equals(CigarOperator.D)){
 							xc.setText(this.DEL);
 							xc.setInvertFgBgColor(true);
-						} else if(el.getOperator() == CigarOperator.N){ 
+						} else if(el.getOperator().equals(CigarOperator.N)){ 
 							xc.setText(this.SKIP);
 						} else {
 							System.err.println("Unexpected operator");
@@ -358,16 +360,16 @@ class TextRead extends IntervalFeature{
 					}
 					curBaseGenomicPos++;
 				}
-			} else if(el.getOperator() == CigarOperator.I) {
+			} else if(el.getOperator().equals(CigarOperator.I)) {
 				if(dnaRead.size() > 0){ // If the insertion is outside the terminal window, there is no base to mark
 					dnaRead.get(dnaRead.size()-1).setInvertFgBgColor(true);
 				}
 				curBaseReadPos += el.getLength();
-			} else if(el.getOperator() == CigarOperator.S){
+			} else if(el.getOperator().equals(CigarOperator.S)){
 				curBaseReadPos += el.getLength();
-			} else if(el.getOperator() == CigarOperator.H){
+			} else if(el.getOperator().equals(CigarOperator.H)){
 				// Nothing to do
-			} else if(el.getOperator() == CigarOperator.P){
+			} else if(el.getOperator().equals(CigarOperator.P)){
 				// Nothing to do: NOT SURE is is correct to just ignore padding!
 			} else {
 				System.err.println("Unexpected operator in cigar string for record\n" + samRecord.getSAMString()); 

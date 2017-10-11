@@ -173,10 +173,10 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 
 		tr.setyMaxLines(1000);
-		assertEquals(10, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
+		assertEquals(11, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
 
 		tr.setVariantReadInInterval("chr7", 1000001, 1000001);
-		assertEquals(1, tr.printToScreen().split("\n").length);
+		assertEquals(2, tr.printToScreen().split("\n").length);
 		assertTrue(tr.printToScreen().startsWith("A"));
 
 		tr.setVariantReadInInterval("chr7", 1000015, 1000015);
@@ -208,15 +208,15 @@ public class TrackReadsTest {
 		assertTrue(tr.printToScreen().contains("AG"));
 		
 		tr.setVariantReadInInterval(FeatureFilter.DEFAULT_VARIANT_CHROM, -1, -1); // Remove filter
-		assertEquals(10, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
+		assertEquals(11, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
 		
-		// Genomic window does not overlap the variant range, but a read in this window does overlap.
+		// Genomic window does not overlap the variant range, but n reads in this window do overlap.
 		gc= new GenomicCoords("chr7:1000002-1000081",100, samSeqDict, fastaFile);
 		tr= new TrackReads("test_data/variant_reads.sam", gc);
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
 		tr.setVariantReadInInterval("chr7", 1000001, 1000001);
-		assertEquals(1, tr.printToScreen().split("\n").length);
+		assertEquals(2, tr.printToScreen().split("\n").length);
 	}
 	
 	@Test

@@ -1,7 +1,9 @@
 New in 1.12.0
 ============
 
-* Fixed bug where initialisation failed with VCF or SAM files with no records.  
+* Fixed bug where initialisation failed with VCF or SAM files with no records.
+
+* Command [filterVariantReads](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#filtervariantreads) correctly interprets cigar operators `=` and `X`.
 
 New in 1.11.0
 ============
