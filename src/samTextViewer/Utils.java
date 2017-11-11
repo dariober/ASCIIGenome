@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -86,6 +87,9 @@ import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.variantcontext.writer.Options;
+import htsjdk.variant.variantcontext.writer.VariantContextWriter;
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
@@ -342,7 +346,10 @@ public class Utils {
 				}
 			}
 		}
-		mergedList.get(0).getIdeogram(true, true);
+		for(IntervalFeature x : mergedList){
+			x.getIdeogram(true, true);
+		}
+		//mergedList.get(0).getIdeogram(true, true);
 		return mergedList;
 	}
 	
@@ -1190,7 +1197,7 @@ public class Utils {
 	/** Function to round x and y to a number of digits enough to show the difference in range
 	 * This is for pretty printing only.
 	 * */
-	public static Double[] roundToSignificantDigits(double x, double y, int nSignif) {
+	public static String[] roundToSignificantDigits(double x, double y, int nSignif) {
 
 		Double[] rounded= new Double[2];
 		
@@ -1198,21 +1205,22 @@ public class Utils {
 	    if (diff < 1e-16){
 	    	rounded[0]= x;
 	    	rounded[1]= y;
-	    	return rounded;
 	    }
-	    if(diff > 1){
+	    else if(diff > 1){
 	    	// Round to 2 digits regardless of how large is the diff
 	    	rounded[0]= Math.rint(x * Math.pow(10.0, nSignif))/Math.pow(10.0, nSignif);
 	    	rounded[1]= Math.rint(y * Math.pow(10.0, nSignif))/Math.pow(10.0, nSignif);
-			return rounded;
-	    } else {
+		} else {
 	    	// Diff is small, < 1. See how many digits you need to approximate
 	    	// Get number of leading zeros
 	    	int nzeros= (int) (Math.ceil(Math.abs(Math.log10(diff))) + nSignif);
 	    	rounded[0]= Math.rint(x * Math.pow(10.0, nzeros))/Math.pow(10.0, nzeros);
 	    	rounded[1]= Math.rint(y * Math.pow(10.0, nzeros))/Math.pow(10.0, nzeros);
-	    	return rounded;
-	    }   	        		
+	    }
+	    String[] out= new String[2];
+	    out[0]= rounded[0].toString();
+	    out[1]= rounded[1].toString();
+	    return out;
 	}
 	
 	/** From http://stackoverflow.com/questions/202302/rounding-to-an-arbitrary-number-of-significant-digits */
@@ -1526,12 +1534,12 @@ public class Utils {
 	/** Same as R range(..., na.rm= TRUE) function: Return min and max of 
 	 * list of values ignoring NaNs.
 	 * */
-	public static Double[] range(List<Double> y){
-		Double[] range= new Double[2];
+	public static Float[] range(List<Float> y){
+		Float[] range= new Float[2];
 		
-		Double ymin= Double.NaN;
-		Double ymax= Double.NaN;
-		for(Double x : y){
+		Float ymin= Float.NaN;
+		Float ymax= Float.NaN;
+		for(Float x : y){
 			if(!x.isNaN()){
 				if(x > ymax || ymax.isNaN()){
 					ymax= x;
@@ -2054,5 +2062,32 @@ public class Utils {
 			readName= readName.substring(0, readName.length()-2);
 		}
 		return readName;
+	}
+
+	public static List<String> vcfHeaderToStrings(VCFHeader header) {
+
+	    File fakeVCFFile;
+	    List<String> str= new ArrayList<String>();
+		try {
+			fakeVCFFile = File.createTempFile("vcfheader", ".vcf");
+		    fakeVCFFile.deleteOnExit();
+			final VariantContextWriter writer = new VariantContextWriterBuilder()
+		            .setOutputFile(fakeVCFFile)
+		            .setReferenceDictionary(header.getSequenceDictionary())
+		            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER, Options.WRITE_FULL_FORMAT_FIELD))
+		            .build();
+		    writer.writeHeader(header);
+		    writer.close();
+		    BufferedReader br= new BufferedReader(new FileReader(fakeVCFFile));
+		    String line= br.readLine();
+		    while(line != null){
+		    	str.add(line);
+		    	line= br.readLine();
+		    }
+		    br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return str;
 	}
 }

@@ -403,7 +403,7 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
 		
-		tif.setShowHideRegex(FeatureFilter.DEFAULT_SHOW_REGEX, "\texon\t");
+		tif.setShowHideRegex(Filter.DEFAULT_SHOW_REGEX.getValue(), "\texon\t");
 		assertEquals(3, tif.getIntervalFeatureList().size());
 
 		tif.setShowHideRegex("WASH7P", "^$");
@@ -423,6 +423,17 @@ public class TrackIntervalFeatureTest {
 
 	}
 
+	@Test
+	public void canStackFeaturesInBlocksToOneLine() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		// Test to reproduce issue#80
+		String intervalFileName= "test_data/ovl.gff";
+		GenomicCoords gc= new GenomicCoords("1:1-200", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		tif.setFeatureDisplayMode(FeatureDisplayMode.ONELINE);
+		assertTrue(tif.printToScreen().trim().contains("|||   |||"));
+	}
+	
 	@Test
 	public void canApplyAwk_getFeaturesInInterval() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
@@ -478,7 +489,7 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 
 		tif.setAwk("'$3 == \"start_codon\"");
-		tif.setShowHideRegex(FeatureFilter.DEFAULT_SHOW_REGEX, "OR4F");
+		tif.setShowHideRegex(Filter.DEFAULT_SHOW_REGEX.getValue(), "OR4F");
 		List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(40, subset.size());
 
