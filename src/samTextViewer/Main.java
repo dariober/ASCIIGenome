@@ -149,8 +149,7 @@ public class Main {
 			br.close();
 			System.exit(0);
 		}
-
-		// See if we need to process the exec arg before going to interactive mode. 
+		// See if we need to process the exec arg before going to interactive mode.
 		// Also if we are in non-interactive mode, we process the track set now and later exit 
 		console.clearScreen();
 		console.flush();		
@@ -379,9 +378,7 @@ public class Main {
 	}
 	
 	/** On shutdown, prepare and write the history file. Not that the existing 
-	 * yaml file is overwritten.
-	 * @param session 
-	 * */
+	 * yaml file is overwritten.  */
 	private static void writeYamlHistory(ASCIIGenomeHistory current, 
 										 final History cmdHistory, 
 										 final TrackSet trackSet,

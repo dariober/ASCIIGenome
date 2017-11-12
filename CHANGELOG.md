@@ -5,6 +5,15 @@ New in 1.12.0
 
 * Command [filterVariantReads](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#filtervariantreads) correctly interprets cigar operators `=` and `X`.
 
+* Command [filterVariantReads](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#filtervariantreads) intreprets intervals and offsets. *E.g.*
+`filterVariantReads -r 1000+/-10` or `filterVariantReads -r 1000+10`. **NB** In contrast to v1.11.0, select an interval using colon `-r from:to`. The minus `-` sign will subtract
+the offset from the first positions.
+
+* Add `-all` option to [filterVariantReads](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#filtervariantreads) 
+to retain all reads intersecting interval, not just the variant ones.
+
+* `awk` includes a built-in function, `get(...)`, to retrieve SAM or VCF tags from the respective files. 
+
 New in 1.11.0
 ============
 

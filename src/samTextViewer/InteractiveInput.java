@@ -696,7 +696,7 @@ public class InteractiveInput {
 		// With .startsWith() we allow partial matching of input to argument. I.e. "ge" will be enough to 
 		// recognize "genome".
 		if("genome".startsWith(args.get(0))){
-			showGenome(proc);
+			this.showGenome(proc);
 			return ExitCode.CLEAN_NO_FLUSH;
 		
 		} else if("trackInfo".startsWith(args.get(0))){

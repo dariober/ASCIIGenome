@@ -69,7 +69,7 @@ public class TrackPileupTest {
 		tp.setyMaxLines(10);
 		assertEquals(10, tp.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
 
-		tp.setVariantReadInInterval("chr7", 1000001, 1000001);
+		tp.setVariantReadInInterval("chr7", 1000001, 1000001, true);
 		System.err.println(tp.printToScreen());
 		assertEquals(1, tp.printToScreen().trim().split("\n").length);
 	}
@@ -221,7 +221,7 @@ public class TrackPileupTest {
 		tr.setyMaxLines(1000);
 		assertTrue(tr.getTitle().contains("22.0")); // N. reads before filtering
 		// assertTrue(tr.getTitle().contains("22/22")); // N. reads before filtering
-		tr.setShowHideRegex("NCNNNCCC", FeatureFilter.DEFAULT_HIDE_REGEX);
+		tr.setShowHideRegex("NCNNNCCC", Filter.DEFAULT_HIDE_REGEX.getValue());
 		tr.setAwk("'$4 != 5566779'");
 		System.err.println(tr.getTitle());
 		assertTrue(tr.getTitle().contains("4.0"));

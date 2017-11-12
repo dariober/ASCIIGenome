@@ -10,10 +10,15 @@ import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 
 import coloring.Config;
 import coloring.Xterm256;
@@ -216,8 +221,7 @@ public class TrackSetTest {
 		GenomicCoords gc= new GenomicCoords("chr1:1-100", 80, null, null);
 		TrackSet trackSet= new TrackSet(inputFileList, gc);
 
-		assertEquals(4, trackSet.getTrackList().size()); // MEMO: BAM files add 2 tracks. 
-		
+		assertEquals(4, trackSet.getTrackList().size()); // MEMO: BAM files add 2 tracks. 	
 	}
 	
 	@Test
@@ -370,8 +374,75 @@ public class TrackSetTest {
 		assertEquals("", ts.getTrack(t1).getAwk());
 		assertEquals("", ts.getTrack(t2).getAwk());
 		assertEquals("", ts.getTrack(t3).getAwk());
+		
+		// Invalid function
+		cmdInput= "awk getSamTag()";
+		boolean pass= false;
+		try{
+			ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));	
+		} catch(InvalidCommandLineException e){
+			pass= true;
+		}
+		assertTrue(pass);
+
+		cmdInput= "awk getInfoTag()";
+		pass= false;
+		try{
+			ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));	
+		} catch(InvalidCommandLineException e){
+			pass= true;
+		}
+		assertTrue(pass);
+		
+		Track t4= new TrackWiggles("test_data/ear045.oxBS.actb.tdf", gc, 4); ts.addTrack(t4, "x");
+		cmdInput= "awk '1<2'";
+		ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
+		
 	}
 
+	@Test
+	public void canReplaceOverloadedFunctionInAwk() throws Exception {
+		
+		TrackSet ts= new TrackSet();
+		GenomicCoords gc= new GenomicCoords("chr1:1-100", 80, null, null);
+		Track t1= new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc); ts.addTrack(t1, "vcf");
+		Track t2= new TrackPileup("test_data/ds051.actb.bam", gc); ts.addTrack(t2, "bam");
+		Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.addTrack(t3, "bed");
+		
+		ts.setAwkForTrack(Utils.tokenize("awk 'get(AC) > 2 ||get(GT, 2, 1) && get(INFO/FOO) && get(FMT/BAR)' vcf", " "));
+		assertTrue(ts.getTrack(t1).getAwk().endsWith("'"));
+		assertTrue(ts.getTrack(t1).getAwk().contains("getInfoTag(\"AC\")"));
+		assertTrue(ts.getTrack(t1).getAwk().contains("getFmtTag(\"GT\", 2, 1)"));
+		assertTrue(ts.getTrack(t1).getAwk().contains("getInfoTag(\"INFO/FOO\")"));
+		assertTrue(ts.getTrack(t1).getAwk().contains("getFmtTag(\"FMT/BAR\")"));
+
+		boolean pass= false;
+		try{
+			// BAR not qualified by INFO/ or FMT/
+			ts.setAwkForTrack(Utils.tokenize("awk 'get(BAR)' vcf", " "));
+		} catch(InvalidCommandLineException e){
+			pass= true;
+		}
+		assertTrue(pass);
+		
+		ts.setAwkForTrack(Utils.tokenize("awk 'get( NM ) > 2' bam", " "));
+		assertTrue(ts.getTrack(t2).getAwk().contains("getSamTag(\"NM\")"));
+
+		pass= false;
+		try{
+			// Can't use get() on BED
+			ts.setAwkForTrack(Utils.tokenize("awk 'get(NM)' bed", " "));
+		} catch(InvalidCommandLineException e){
+			pass= true;
+		}
+		assertTrue(pass);
+		
+		// Nothing to replace
+		String awk= "awk 'foo_get() get (bar)' vcf";
+		ts.setAwkForTrack(Utils.tokenize(awk, " "));
+		assertTrue(ts.getTrack(t1).getAwk().contains("foo_get() get (bar)"));
+	}
+	
 	@Test
 	public void canSetReadsAsPairs() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException{
 
@@ -523,14 +594,38 @@ public class TrackSetTest {
 		Track t2= new TrackReads("test_data/ds051.actb.bam", gc); ts.addTrack(t2, "x");
 		Track t3= new TrackReads("test_data/ds051.actb.bam", gc); ts.addTrack(t3, "x");
 
-		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r 1-10", " "));
+		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r 1:10", " "));
 		assertEquals(1, t1.getFeatureFilter().getVariantFrom());
 		assertEquals(10, t1.getFeatureFilter().getVariantTo());
 		assertEquals(1, t2.getFeatureFilter().getVariantFrom());
 		assertEquals(10, t2.getFeatureFilter().getVariantTo());
 		
+		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r 1", " "));
+		assertEquals(1, t1.getFeatureFilter().getVariantFrom());
+		assertEquals(1, t1.getFeatureFilter().getVariantTo());
+		
+		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r '100 +/- 5'", " ")); // With spaces use single quotes
+		assertEquals(95, t1.getFeatureFilter().getVariantFrom());
+		assertEquals(105, t1.getFeatureFilter().getVariantTo());
+		
+		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r 100+-5", " "));
+		assertEquals(95, t1.getFeatureFilter().getVariantFrom());
+		assertEquals(105, t1.getFeatureFilter().getVariantTo());
+		
+		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r 100+5", " "));
+		assertEquals(100, t1.getFeatureFilter().getVariantFrom());
+		assertEquals(105, t1.getFeatureFilter().getVariantTo());
+		
+		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r 100-5", " "));
+		assertEquals(95, t1.getFeatureFilter().getVariantFrom());
+		assertEquals(100, t1.getFeatureFilter().getVariantTo());
+
+		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r 100-200", " "));
+		assertEquals(1, t1.getFeatureFilter().getVariantFrom());
+		assertEquals(100, t1.getFeatureFilter().getVariantTo());
+		
 		ts.setFilterVariantReads(Utils.tokenize("filterVariantReads #1", " ")); // Remove filter for this regex track
-		assertEquals(FeatureFilter.DEFAULT_VARIANT_CHROM, t1.getFeatureFilter().getVariantChrom());
+		assertEquals(Filter.DEFAULT_VARIANT_CHROM.getValue(), t1.getFeatureFilter().getVariantChrom());
 		assertEquals("chr7", t2.getFeatureFilter().getVariantChrom());
 	}
 	

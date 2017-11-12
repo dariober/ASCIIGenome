@@ -1,7 +1,9 @@
 package tracks;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -106,9 +108,9 @@ public class TrackPileup extends TrackWiggles {
 	};
 
 	@Override
-	public void setVariantReadInInterval(String chrom, int from, int to) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+	public void setVariantReadInInterval(String chrom, int from, int to, boolean variantOnly) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		this.clearCache();
-		super.setVariantReadInInterval(chrom, from, to);
+		super.setVariantReadInInterval(chrom, from, to, variantOnly);
 	}
 
 	/*       M E T H O D S        */
@@ -120,67 +122,96 @@ public class TrackPileup extends TrackWiggles {
 		if(this.getyMaxLines() == 0){
 			return;
 		}
-		
-		String chrom= this.getGc().getChrom();
-		
-		if(! this.loci.containsKey(chrom)){
-			this.loci.put(chrom, new HashMap<Integer, Locus>());
-		}
-		if(! this.zeroDepthIntervals.containsKey(chrom)){
-			this.zeroDepthIntervals.put(chrom, new IntervalTree());
-		}
-
-		// Check cache is not growing too much
-		if(this.loci.get(chrom).keySet().size() > 500000){
-			this.loci.get(chrom).clear();
-			this.zeroDepthIntervals.get(chrom).clear();
-		}
-		
-		// Find the positions that we haven't visited before:
-		List<Integer> missingPos= new ArrayList<Integer>();
-		for(int pos= this.getGc().getFrom(); pos <= this.getGc().getTo(); pos++){
-			if( ! this.loci.get(chrom).containsKey(pos) &&  
-				! this.zeroDepthIntervals.get(chrom).overlappers(pos, pos).hasNext()){
-				missingPos.add(pos);
+		if( ! this.useSamtools()){
+			String chrom= this.getGc().getChrom();
+			
+			if(! this.loci.containsKey(chrom)){
+				this.loci.put(chrom, new HashMap<Integer, Locus>());
 			}
-		}
-		for(List<Integer> gap : mergePositionsInIntervals(missingPos)){
-
-			int qryFrom= gap.get(0);
-			int qryTo= gap.get(1);
-			
-			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
-			List<Boolean> passFilter= this.filterReads(samReader, chrom, qryFrom, qryTo);
-			samReader= Utils.getSamReader(this.getWorkFilename());
-			
-			Iterator<SAMRecord> sam= samReader.query(chrom, qryFrom, qryTo, false);
+			if(! this.zeroDepthIntervals.containsKey(chrom)){
+				this.zeroDepthIntervals.put(chrom, new IntervalTree());
+			}
 	
-			ListIterator<Boolean> pass = passFilter.listIterator();
-			while(sam.hasNext()){
-				SAMRecord rec= sam.next();
-				if(pass.next()){
-					this.add(rec, qryFrom, qryTo, this.loci.get(chrom));
-				}
+			// Check cache is not growing too much
+			if(this.loci.get(chrom).keySet().size() > 500000){
+				this.loci.get(chrom).clear();
+				this.zeroDepthIntervals.get(chrom).clear();
 			}
 			
-			// Now add the loci that have been collected in this last update
-			List<Integer> zeroDepthPos= new ArrayList<Integer>();
-			for(int pos= qryFrom; pos <= qryTo; pos++){
-				if( ! this.loci.get(chrom).containsKey(pos)){
-					zeroDepthPos.add(pos);
+			// Find the positions that we haven't visited before:
+			List<Integer> missingPos= new ArrayList<Integer>();
+			for(int pos= this.getGc().getFrom(); pos <= this.getGc().getTo(); pos++){
+				if( ! this.loci.get(chrom).containsKey(pos) &&  
+					! this.zeroDepthIntervals.get(chrom).overlappers(pos, pos).hasNext()){
+					missingPos.add(pos);
 				}
 			}
-			List<List<Integer>> zeroDepthGaps = mergePositionsInIntervals(zeroDepthPos);
-			for(List<Integer> z : zeroDepthGaps){
-				this.zeroDepthIntervals.get(chrom).put(z.get(0), z.get(1), null);
+			for(List<Integer> gap : mergePositionsInIntervals(missingPos)){
+	
+				int qryFrom= gap.get(0);
+				int qryTo= gap.get(1);
+				
+				SamReader samReader= Utils.getSamReader(this.getWorkFilename());
+				List<Boolean> passFilter= this.filterReads(samReader, chrom, qryFrom, qryTo);
+				samReader= Utils.getSamReader(this.getWorkFilename());
+				
+				Iterator<SAMRecord> sam= samReader.query(chrom, qryFrom, qryTo, false);
+		
+				ListIterator<Boolean> pass = passFilter.listIterator();
+				while(sam.hasNext()){
+					SAMRecord rec= sam.next();
+					if(pass.next()){
+						this.add(rec, qryFrom, qryTo, this.loci.get(chrom));
+					}
+				}
+				
+				// Now add the loci that have been collected in this last update
+				List<Integer> zeroDepthPos= new ArrayList<Integer>();
+				for(int pos= qryFrom; pos <= qryTo; pos++){
+					if( ! this.loci.get(chrom).containsKey(pos)){
+						zeroDepthPos.add(pos);
+					}
+				}
+				List<List<Integer>> zeroDepthGaps = mergePositionsInIntervals(zeroDepthPos);
+				for(List<Integer> z : zeroDepthGaps){
+					this.zeroDepthIntervals.get(chrom).put(z.get(0), z.get(1), null);
+				}
 			}
 		}
-
-		List<Double> screenScores= this.prepareScreenScores();
+		List<Float> screenScores= this.prepareScreenScores();
 		this.setScreenScores(screenScores);
 	}
 
-	private List<Double> prepareScreenScores() throws InvalidGenomicCoordsException, IOException{
+	private boolean useSamtools() throws IOException {
+		
+		List<String> cmd= new ArrayList<String>();
+		cmd.add("/bin/sh");
+		cmd.add("-c");
+		cmd.add("samtools --version"); 
+		ProcessBuilder pb = new ProcessBuilder().command(cmd);
+		pb.redirectErrorStream(true);
+		Process p= pb.start();
+		
+		try {
+			p.waitFor();
+		} catch (InterruptedException e) {
+			return false;
+		}
+		if(p.exitValue() != 0){
+			return false;
+		}
+		
+		if(this.getFeatureFilter().hideRegex.equals(Filter.DEFAULT_HIDE_REGEX.getValue()) &&
+		   this.getFeatureFilter().showRegex.equals(Filter.DEFAULT_SHOW_REGEX.getValue()) &&
+		   this.getFeatureFilter().getAwk().equals(Filter.DEFAULT_AWK.getValue()) &&
+		   this.getFeatureFilter().getVariantChrom().equals(Filter.DEFAULT_VARIANT_CHROM.getValue()) &&
+		   ! this.getGc().isSingleBaseResolution){
+			return true;
+		}	
+		return false;
+	}
+
+	private List<Float> prepareScreenScores() throws InvalidGenomicCoordsException, IOException{
 		// We need to walk along the genomic window spanned by the current coordinates and 
 		// collect depth. Depth as to be binned into screen scores.
 		int userWindowSize= this.getGc().getUserWindowSize();
@@ -199,16 +230,16 @@ public class TrackPileup extends TrackWiggles {
 			sloc.increment(depth);
 		}
 
-		List<Double> screenScores= new ArrayList<Double>();
+		List<Float> screenScores= new ArrayList<Float>();
 		for(ScreenWiggleLocusInfo screenLocusInfo: this.screenWiggleLocusInfoList){
-			double score= screenLocusInfo.getMeanScore();
+			float score= screenLocusInfo.getMeanScore();
 			screenScores.add(score);
 		}
 		return screenScores;
 	}
 
 	@Override
-	protected List<Double> getScreenScores(){
+	protected List<Float> getScreenScores(){
 		return this.screenScores;
 	}
 	
@@ -314,9 +345,17 @@ public class TrackPileup extends TrackWiggles {
 		return deletedBlocks;
 	}
 
-	/** Depth at each position. Side effect: set sequencing mass. Key: reference position. Value: depth. 
+	/** Depth at each position. Key: reference position. Value: depth. 
+	 * @throws IOException 
 	 * */
-	protected Map<Integer, Integer> getDepth(String chrom, int from, int to){
+	protected Map<Integer, Integer> getDepth(String chrom, int from, int to) throws IOException{
+		if(this.useSamtools()){
+			try {
+				return this.getDepthSamtools(chrom, from, to);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 		List<Integer> posInWindow= new ArrayList<Integer>();  
 		for(int pos : this.loci.get(chrom).keySet()){
 			if(pos < from || pos > to){
@@ -326,6 +365,7 @@ public class TrackPileup extends TrackWiggles {
 				posInWindow.add(pos);
 			}
 		}
+
 		double samplingRate= (200000.0) / posInWindow.size();
 		Random rand = new Random();
 		// Important: Use have positions returned sorted. 
@@ -337,6 +377,42 @@ public class TrackPileup extends TrackWiggles {
 			}
 		}
 		return depth;
+	}
+	
+	private Map<Integer, Integer> getDepthSamtools(String chrom, int from, int to) throws IOException{
+		String flags= "-q " + this.getFeatureFilter().getMapq() + " -f " + this.getFeatureFilter().get_f_flag() + " -F " + this.getFeatureFilter().get_F_flag();   
+		List<String> cmd= new ArrayList<String>();
+		cmd.add("/bin/sh");
+		cmd.add("-c");
+		cmd.add("samtools view -@ 4 -u " + flags + " " + this.getWorkFilename() + " " + chrom + ":" + from + "-" + to + 
+				" | samtools depth -d 1000000 -");
+		ProcessBuilder pb = new ProcessBuilder().command(cmd);
+		pb.redirectErrorStream(true);
+		Process p= pb.start();
+		
+		BufferedReader reader= new BufferedReader(new InputStreamReader(p.getInputStream()));
+    
+		Map<Integer, Integer> depth= new LinkedHashMap<Integer, Integer>();
+		String line = "";
+		while ((line = reader.readLine())!= null) {
+			String[] rec= line.split("\t");
+			int pos= Integer.valueOf(rec[1]);
+			if(pos >= from && pos <= to){
+				depth.put(pos, Integer.valueOf(rec[2]));
+			}
+		}
+		reader.close();
+
+		try {
+			p.waitFor();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		if(p.exitValue() != 0){
+			throw new IOException();
+		}
+		return depth;
+
 	}
 	
 	private char[] getConsensusSequence() throws IOException {
@@ -397,20 +473,20 @@ public class TrackPileup extends TrackWiggles {
 	@Override
 	protected String getTitleForActiveFilters() {
 		List<String> title= new ArrayList<String>();
-		if( ! this.getAwk().equals(FeatureFilter.DEFAULT_AWK)){
+		if( ! this.getAwk().equals(Filter.DEFAULT_AWK.getValue())){
 			title.add("awk");
 		}
-		if( ! this.getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX) || ! this.getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX)){
+		if( ! this.getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || ! this.getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
 			title.add("grep");
 		}
-		if( this.get_f_flag() != FeatureFilter.DEFAULT_f_FLAG || 
-			this.get_F_flag() != FeatureFilter.DEFAULT_F_FLAG){
+		if( this.get_f_flag() != Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue()) || 
+			this.get_F_flag() != Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue())){
 			title.add("bit-flag");
 		}
-		if(this.getMapq() != FeatureFilter.DEFAULT_MAPQ){
+		if(this.getMapq() != Integer.valueOf(Filter.DEFAULT_MAPQ.getValue())){
 			title.add("mapq");
 		}
-		if( ! this.getFeatureFilter().getVariantChrom().equals(FeatureFilter.DEFAULT_VARIANT_CHROM)){
+		if( ! this.getFeatureFilter().getVariantChrom().equals(Filter.DEFAULT_VARIANT_CHROM.getValue())){
 			title.add("var-read");
 		}
 		if(title.size() > 0){
@@ -427,18 +503,18 @@ public class TrackPileup extends TrackWiggles {
 			return "";
 		}
 		
-		Double[] range = Utils.range(this.getScreenScores());
+		Float[] range = Utils.range(this.getScreenScores());
 		
 		String rpmTag= "";
 		if(this.isRpm()){
 			if(this.alnRecCnt == -1){
 				this.alnRecCnt= Utils.getAlignedReadCount(this.getWorkFilename());
 			}
-			range[0]= (range[0] / this.alnRecCnt) * 1000000.0;
-			range[1]= (range[1] / this.alnRecCnt) * 1000000.0;
+			range[0]= (float) ((range[0] / this.alnRecCnt) * 1000000.0);
+			range[1]= (float) ((range[1] / this.alnRecCnt) * 1000000.0);
 			rpmTag= "; rpm";
 		}
-		Double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
+		String[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
 		
 
 		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();

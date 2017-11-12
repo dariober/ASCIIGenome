@@ -124,9 +124,9 @@ public class TrackWiggles extends Track {
 				TDFUtils.tdfRangeToScreen(this.getWorkFilename(), this.getGc().getChrom(), 
 						this.getGc().getFrom(), this.getGc().getTo(), this.getGc().getMapping());
 		
-		ArrayList<Double> screenScores= new ArrayList<Double>();
+		List<Float> screenScores= new ArrayList<Float>();
 		for(ScreenWiggleLocusInfo x : screenWiggleLocusInfoList){
-			screenScores.add((double)x.getMeanScore());
+			screenScores.add((float)x.getMeanScore());
 		}
 		if(this.isRpm()){
 			screenScores= this.normalizeToRpm(screenScores);
@@ -181,8 +181,8 @@ public class TrackWiggles extends Track {
 			return "";
 		}
 		
-		Double[] range = Utils.range(this.getScreenScores());
-		Double[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
+		Float[] range = Utils.range(this.getScreenScores());
+		String[] rounded= Utils.roundToSignificantDigits(range[0], range[1], 2);
 
 		String ymin= this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
 		String ymax= this.getYLimitMax().isNaN() ? "auto" : this.getYLimitMax().toString();
@@ -236,9 +236,9 @@ public class TrackWiggles extends Track {
 				screenWigLocInfoList.get(idx).increment(bw.getWigValue());
 			} 
 		}
-		ArrayList<Double> screenScores= new ArrayList<Double>();
+		List<Float> screenScores= new ArrayList<Float>();
 		for(ScreenWiggleLocusInfo x : screenWigLocInfoList){
-			screenScores.add((double)x.getMeanScore());
+			screenScores.add((float)x.getMeanScore());
 		}
 		this.setScreenScores(screenScores);		
 	}
@@ -284,24 +284,24 @@ public class TrackWiggles extends Track {
 			System.err.println("\nbgzip " + fileName);
 			System.err.println("tabix -p bed " + fileName + "\n");
 		}
-		ArrayList<Double> screenScores= new ArrayList<Double>();
+		List<Float> screenScores= new ArrayList<Float>();
 		for(ScreenWiggleLocusInfo x : screenWigLocInfoList){
-			screenScores.add((double)x.getMeanScore());
+			screenScores.add((float)x.getMeanScore());
 		}
 		this.setScreenScores(screenScores);
 		return;
 	}
 	
-	private ArrayList<Double> normalizeToRpm(ArrayList<Double> yValues){
-		ArrayList<Double> rpmed= new ArrayList<Double>();
+	private List<Float> normalizeToRpm(List<Float> screenScores){
+		ArrayList<Float> rpmed= new ArrayList<Float>();
 		String x= this.getAttributesFromTDF("totalCount");
 		if(x == null){
 			System.err.println("Warning: Cannot get total counts for " + this.getFilename());
-			return yValues;
+			return screenScores;
 		}
 		Integer totalCount= Integer.parseInt(x);
-		for(int i= 0; i < yValues.size(); i++){
-			rpmed.add(yValues.get(i) / totalCount * 1000000.0);
+		for(int i= 0; i < screenScores.size(); i++){
+			rpmed.add((float) (screenScores.get(i) / totalCount * 1000000.0));
 		}
 		return rpmed;
 	}

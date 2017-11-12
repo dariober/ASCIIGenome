@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import coloring.Config;
@@ -36,14 +35,16 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.variant.vcf.VCFHeader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
 
+import org.apache.commons.io.IOUtils;
+
 public abstract class Track {
 
 	public static String awkFunc= "";
-	
 	static {
 		  try {
 			  InputStream in= Main.class.getResourceAsStream("/functions.awk");
@@ -60,11 +61,11 @@ public abstract class Track {
 	private String workFilename= "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files 
 	private String trackTag= "N/A"; // Tag name for title
 	// private int id= 1;              // A unique identifier for the track. Changed when the track is added to a TrackSet. 
-	protected List<Double> screenScores= new ArrayList<Double>();
+	protected List<Float> screenScores= new ArrayList<Float>();
 	private GenomicCoords gc;
 	private boolean noFormat= false; 
-	private double yLimitMin= Double.NaN; // Same as R ylim()
-	private double yLimitMax= Double.NaN;
+	private float yLimitMin= Float.NaN; // Same as R ylim()
+	private float yLimitMax= Float.NaN;
 	/** Max size of genomic region before the track shuts down to prevent excessive slow down */
 	protected final int MAX_REGION_SIZE= 1000001;   
 	
@@ -92,7 +93,8 @@ public abstract class Track {
 	private long lastModified;
 	
 	private FeatureFilter featureFilter= new FeatureFilter(); 
-	
+	private VCFHeader vcfHeader;
+
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
 	 * @throws InvalidColourException 
@@ -154,10 +156,10 @@ public abstract class Track {
 		this.trackTag = trackTag; 
 	}
 	
-	protected List<Double> getScreenScores() {
+	protected List<Float> getScreenScores() {
 		return screenScores;
 	}
-	protected void setScreenScores(List<Double> screenScores) {
+	protected void setScreenScores(List<Float> screenScores) {
 		this.screenScores = screenScores;
 	}
 
@@ -180,18 +182,18 @@ public abstract class Track {
 		this.noFormat = noFormat; 
 	}
 
-	public Double getYLimitMin() { 
+	public Float getYLimitMin() { 
 		return yLimitMin;
 	}
 	
-	public void setYLimitMin(double ymin) { 
+	public void setYLimitMin(float ymin) { 
 		this.yLimitMin = ymin;
 	}
 
-	public Double getYLimitMax() { 
+	public Float getYLimitMax() { 
 		return yLimitMax; 
 	}
-	public void setYLimitMax(double ymax) { 
+	public void setYLimitMax(float ymax) { 
 		this.yLimitMax = ymax; 
 	}
 
@@ -460,6 +462,12 @@ public abstract class Track {
 		if(sysCmd == null || sysCmd.isEmpty()){
 			return recordsAsStrings;
 		}
+		
+		if(this.trackFormat.equals(TrackFormat.VCF)){
+			List<String> vcf= Utils.vcfHeaderToStrings(this.getVcfHeader());
+			vcf.addAll(recordsAsStrings);
+			recordsAsStrings= vcf;
+		}
 		File tmp= Files.createTempFile("asciigenome.", ".print.tmp").toFile();
 		tmp.deleteOnExit();
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp.getAbsolutePath())));
@@ -484,6 +492,9 @@ public abstract class Track {
 		List<String> outRecords= new ArrayList<String>();
 		String line = "";
 		while ((line = reader.readLine())!= null) {
+			if(this.trackFormat.equals(TrackFormat.VCF) && line.startsWith("#")){
+				continue;
+			}
 			outRecords.add(line);
 		}
 		reader.close();
@@ -623,25 +634,25 @@ public abstract class Track {
 			}
 
 			// Filter for variant reads: Do it only if there is an intersection between variant interval and current genomic window
-			if(this.getFeatureFilter().getVariantChrom().equals(FeatureFilter.DEFAULT_VARIANT_CHROM)){
+			if(this.getFeatureFilter().getVariantChrom().equals(Filter.DEFAULT_VARIANT_CHROM.getValue())){
 				// Variant read filter is not set. Nothing to do.
 			} else if(passed){ 
 				// Memo: Test filter(s) only if a read is passed==true. 
-				passed= this.isVariantRead(rec);
+				passed= this.isVariantRead(rec, this.getFeatureFilter().isVariantOnly());
 			}
 			
 			String raw= null;
 
-			if(passed && (! this.getFeatureFilter().getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX) || 
-					      ! this.getFeatureFilter().getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX))){
+			if(passed && (! this.getFeatureFilter().getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || 
+					      ! this.getFeatureFilter().getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue()))){
 				// grep
 				raw= rec.getSAMString().trim();
 				boolean showIt= true;
-				if(! this.getFeatureFilter().getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX)){
+				if(! this.getFeatureFilter().getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue())){
 					showIt= Pattern.compile(this.getFeatureFilter().getShowRegex()).matcher(raw).find();
 				}
 				boolean hideIt= false;
-				if(! this.getFeatureFilter().getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX)){
+				if(! this.getFeatureFilter().getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
 					hideIt= Pattern.compile(this.getFeatureFilter().getHideRegex()).matcher(raw).find();	
 				}
 				if(!showIt || hideIt){
@@ -659,7 +670,7 @@ public abstract class Track {
 		} // End loop through reads
 
 		// Apply the awk filter, if given
-		if(this.getAwk() != null && ! this.getAwk().equals(FeatureFilter.DEFAULT_AWK)){
+		if(this.getAwk() != null && ! this.getAwk().equals(Filter.DEFAULT_AWK.getValue())){
 			String[] rawLines= new String[awkDataInput.size()];
 			rawLines= awkDataInput.toArray(rawLines);
 			boolean[] awkResults= Utils.passAwkFilter(rawLines, this.getAwk());
@@ -679,12 +690,15 @@ public abstract class Track {
 		return results;
 	}
 	
-	private boolean isVariantRead(SAMRecord rec) {
+	private boolean isVariantRead(SAMRecord rec, boolean variantOnly) {
 		boolean passed= false;
 		if(this.getFeatureFilter().getVariantChrom().equals(rec.getReferenceName()) &&
 		        this.getFeatureFilter().getVariantFrom() <= rec.getAlignmentEnd() &&
 		        rec.getAlignmentStart() <= this.getFeatureFilter().getVariantTo()){
 			// Variant read filter is set and this read overlaps it. 
+			if( ! variantOnly){
+				return true; // No need to check whether read is variant.
+			}
 			int varFrom= this.getFeatureFilter().getVariantFrom();
 			int varTo= this.getFeatureFilter().getVariantTo();
 			int readPos= 0;
@@ -801,8 +815,9 @@ public abstract class Track {
 	 * @throws ClassNotFoundException 
 	 * @throws MalformedURLException 
 	 * */
-	public void setVariantReadInInterval(String chrom, int from, int to) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-		if(chrom.equals(FeatureFilter.DEFAULT_VARIANT_CHROM)){
+	public void setVariantReadInInterval(String chrom, int from, int to, boolean variantOnly) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		this.getFeatureFilter().setVariantOnly(variantOnly);
+		if(chrom.equals(Filter.DEFAULT_VARIANT_CHROM.getValue())){
 			this.getFeatureFilter().setVariantReadInInterval(chrom, from, to, null);
 			this.update();
 			return;
@@ -817,5 +832,14 @@ public abstract class Track {
 		this.getFeatureFilter().setVariantReadInInterval(chrom, from, to, faSeq);
 		this.update();
 	}
+	
+	protected VCFHeader getVcfHeader() {
+		return vcfHeader;
+	}
+
+	protected void setVcfHeader(VCFHeader vcfHeader) {
+		this.vcfHeader = vcfHeader;
+	}
+
 }
 

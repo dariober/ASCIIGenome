@@ -15,10 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import coloring.Xterm256;
@@ -275,7 +277,7 @@ public class TrackSet {
 					+ "Working file: " + track.getWorkFilename() + "\n"
 					+ "Track type:   " + Utils.getFileTypeFromName(track.getFilename()) + " " + hd + "\n"
 					+ "awk script:   " + (! track.getAwk().trim().isEmpty() ? track.getAwk() : "N/A") + "\n"
-					+ "grep:         " + "show " + track.getShowRegex() + "; hide: " + track.getHideRegex());
+					+ "grep:         " + "show: " + track.getShowRegex() + "; hide: " + track.getHideRegex());
 		}
 		
 		StringBuilder sb= new StringBuilder();
@@ -471,9 +473,6 @@ public class TrackSet {
 		}
 		
 		String sys= Utils.getArgForParam(args, "-sys", "");
-//		if(sys == null || sys.toLowerCase().equals("null")){
-//			sys= "";
-//		}
 		if(sys != ""){
 			printMode= PrintRawLine.NO_ACTION;
 		}
@@ -838,7 +837,7 @@ public class TrackSet {
         String yStrMin= this.getYStringLimits()[0];
         String yStrMax= this.getYStringLimits()[1];
         
-		Double[] yrange= {Double.NaN, Double.NaN};
+		Float[] yrange= {Float.NaN, Float.NaN};
 		if(yStrMin.equals("min") || yStrMax.equals("max")){
 			yrange= this.yRangeOfTracks(tracksToReset);
 		}
@@ -873,11 +872,11 @@ public class TrackSet {
 			ymax= newMax;			
 		}
 
-		Double[] yy = Utils.roundToSignificantDigits(ymin, ymax, 2);
+		String[] yy = Utils.roundToSignificantDigits(ymin, ymax, 2);
 		
         for(Track tr : tracksToReset){
-    		tr.setYLimitMin(yy[0]);
-			tr.setYLimitMax(yy[1]);
+    		tr.setYLimitMin(Float.valueOf(yy[0]));
+			tr.setYLimitMax(Float.valueOf(yy[1]));
         }    
 
 	}
@@ -934,9 +933,9 @@ public class TrackSet {
 
 	/** Get the range of all the screen scores of this list of tracks. I.e. the global min and max.
 	 * */
-	private Double[] yRangeOfTracks(List<Track> tracks){
+	private Float[] yRangeOfTracks(List<Track> tracks){
 		
-		List<Double> yall= new ArrayList<Double>();
+		List<Float> yall= new ArrayList<Float>();
 		for(Track tr : tracks){
 			yall.addAll(tr.getScreenScores());
 		}		
@@ -1011,10 +1010,79 @@ public class TrackSet {
 		// Set script
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
-        	tr.setAwk(this.replaceAwkHeaders(awk, tr.getTrackFormat()));
+        	if(awk.contains("getSamTag(") && ! tr.getTrackFormat().equals(TrackFormat.BAM)){
+        		System.err.println("\nFunction getSamTag() can be applied to BAM tracks only. Got:\n" + tr.getTrackTag());
+        		throw new InvalidCommandLineException();
+        	}
+        	if((awk.contains("getInfoTag(") || awk.contains("getFmtTag(")) && ! tr.getTrackFormat().equals(TrackFormat.VCF)){
+        		System.err.println("\nFunction getInfoTag(), getFmtTag() can be applied to VCF tracks only. Got:\n" + tr.getTrackTag());
+        		throw new InvalidCommandLineException();
+        	}
+        	String script= this.replaceAwkHeaders(awk, tr.getTrackFormat());
+        	script= this.replaceAwkFuncs(script, tr);
+        	tr.setAwk(script);
         }
 	}
 
+	/**Replace in awk script the overloaded function name(s) with the actual names and args 
+	 * @throws InvalidCommandLineException 
+	 * */
+	private String replaceAwkFuncs(String awkScript, Track track) throws InvalidCommandLineException{
+
+		final String FUNC= "get"; // Function name to be replaced 
+		
+		// Search for 'foo FUNC(...) bar'. Use parenthesis to get the group "FUNC(...)".  
+		Pattern pattern= Pattern.compile(".*(" + FUNC + "\\(.+?\\)).*");
+		
+		while(awkScript.matches(".*\\b" + FUNC + "\\(.*")){
+			Matcher m = pattern.matcher(awkScript);
+			m.matches();
+			String func= m.group(1); // this looks like "get(DP, 1, 2)"
+			int gapStart= m.start(1);
+			int gapEnd= m.start(1) + func.length();
+
+			// Remove func name and brackets, leave only param list. E.g. ["DP", "1", "2"]
+			String xargs= func.replaceAll(".*\\(", "").replaceAll("\\).*", "");
+			List<String> args= new ArrayList<String>();
+			args.addAll(Splitter.on(",").splitToList(xargs));
+			
+			// Get the first arg i.e., the tag name, possibly in double quotes. 
+			String tag= args.get(0).
+					replaceAll(".*\\(", "").
+					replaceAll("\\).*", "").
+					trim().
+					replaceAll("^\"", "").
+					replaceAll("\"$", "");
+			
+			// Depending on track type and tag we decide what the replacement function is
+			String fname;
+			if(track.getTrackFormat().equals(TrackFormat.BAM)){
+				fname= "getSamTag";
+			} 
+			else if(track.getTrackFormat().equals(TrackFormat.VCF)){
+				if(tag.trim().startsWith("FMT/") || track.getVcfHeader().getFormatHeaderLine(tag) != null){
+					fname= "getFmtTag";
+				}
+				else if(tag.trim().startsWith("INFO/") || track.getVcfHeader().getInfoHeaderLine(tag) != null){
+					fname= "getInfoTag";
+				}
+				else {
+					System.err.println("Tag " + tag + " not found in VCF header of track " + track.getTrackTag() + ".\n"
+							+ "Please use 'INFO/' or 'FMT/' to the tag to search the INFO or FORMAT fields, respectively.");
+					throw new InvalidCommandLineException();
+				}
+			}
+			else {
+				System.err.println("Function " + FUNC + " is not available for track type " + track.getTrackFormat() + ".");
+				throw new InvalidCommandLineException();
+			}
+			args.set(0, '"' + tag + '"');
+			func= fname + "(" + Joiner.on(",").join(args) + ")";
+			awkScript= awkScript.substring(0, gapStart) + func + awkScript.substring(gapEnd, awkScript.length());
+		}
+		return awkScript;
+	}
+	
 	private String replaceAwkHeaders(final String awkScript, TrackFormat trackFormat) throws InvalidCommandLineException{
 		
 		Map<TrackFormat, Map<String, String>> headers= new HashMap<TrackFormat, Map<String, String>>();
@@ -1075,8 +1143,9 @@ public class TrackSet {
 		
     	Map<String, String> hdrs= headers.get(trackFormat);
     	if(hdrs == null){
-    		System.err.println("No header associated to track format: " + trackFormat);
-    		throw new RuntimeException();
+    		// This happens for track types which don't have headers. e.g. TrackWiggle
+    		hdrs= new HashMap<String, String>();
+    		return awkScript;
     	}
 
     	String awk2= awkScript;
@@ -1106,10 +1175,11 @@ public class TrackSet {
 		args.remove(0); // Remove command name
 		
 		// Collect arguments
+		boolean variantOnly= ! Utils.argListContainsFlag(args, "-all");
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 		
 		String region= Utils.getArgForParam(args, "-r", null);
-		String chrom= FeatureFilter.DEFAULT_VARIANT_CHROM;
+		String chrom= Filter.DEFAULT_VARIANT_CHROM.getValue();
 		int from= -1;
 		int to= -1;
 		if(region != null && this.getTrackList().size() > 0){
@@ -1120,18 +1190,53 @@ public class TrackSet {
 			}
 			
 			chrom= this.getTrackList().get(0).getGc().getChrom();
-			String[] fromTo= region.trim().replaceAll(" ", "").replaceAll(",", "").split("-");
-			if(fromTo.length > 0){
-				try{
+			// Find whether the region is a single pos +/- a value or 
+			region= region.trim().replaceAll(" ", "").replaceAll(",", "").replaceAll("/", "");
+			try{
+				if(region.contains("+-") || region.contains("-+")){
+					String[] fromTo= region.replaceAll("\\+", "").split("-");
+					int offset= Integer.parseInt(fromTo[1]);
+					from= Integer.parseInt(fromTo[0]) - offset;
+					to= Integer.parseInt(fromTo[0]) + offset;
+				} 
+				else if(region.contains("-")){
+					String[] fromTo= region.split("-");
+					from= Integer.parseInt(fromTo[0]) - Integer.parseInt(fromTo[1]);
+					to= Integer.parseInt(fromTo[0]);
+				} 
+				else if(region.contains("+")){
+					String[] fromTo= region.split("\\+");
 					from= Integer.parseInt(fromTo[0]);
-					to= Integer.parseInt(fromTo[fromTo.length-1]);
-				} catch(NumberFormatException e) {
-					System.err.println("Cannot parse region into integers: " + region);
-					throw new InvalidCommandLineException();
+					to= Integer.parseInt(fromTo[0]) + Integer.parseInt(fromTo[1]);
 				}
-			} else {
-				throw new InvalidCommandLineException(); 
+				else if(region.contains(":")){
+					String[] fromTo= region.split(":");
+					from= Integer.parseInt(fromTo[0]);
+					to= Integer.parseInt(fromTo[1]);
+				}
+				else {
+					from= Integer.parseInt(region);
+					to= Integer.parseInt(region);
+				}
+			} catch(NumberFormatException e) {
+				System.err.println("Cannot parse region into integers: " + region);
+				throw new InvalidCommandLineException();
 			}
+			if(from < 1) from= 1;
+			if(to < 1) to= 1;
+			if(from > to) from= to;
+			// String[] fromTo= region.trim().replaceAll(" ", "").replaceAll(",", "").split("-");
+//			if(fromTo.length > 0){
+//				try{
+//					from= Integer.parseInt(fromTo[0]);
+//					to= Integer.parseInt(fromTo[fromTo.length-1]);
+//				} catch(NumberFormatException e) {
+//					System.err.println("Cannot parse region into integers: " + region);
+//					throw new InvalidCommandLineException();
+//				}
+//			} else {
+//				throw new InvalidCommandLineException(); 
+//			}
 		}
 		
 		List<String> trackNameRegex= new ArrayList<String>();
@@ -1147,7 +1252,7 @@ public class TrackSet {
 		// Set filter
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
-        	tr.setVariantReadInInterval(chrom, from, to);
+        	tr.setVariantReadInInterval(chrom, from, to, variantOnly);
         }
 	}
 	
@@ -1166,8 +1271,8 @@ public class TrackSet {
 		}		
 		args.remove(0); // Remove command name
 
-		String showRegex= FeatureFilter.DEFAULT_SHOW_REGEX; // Default
-		String hideRegex= FeatureFilter.DEFAULT_HIDE_REGEX;
+		String showRegex= Filter.DEFAULT_SHOW_REGEX.getValue(); // Default
+		String hideRegex= Filter.DEFAULT_HIDE_REGEX.getValue();
 		
 		// Get args:
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
@@ -1630,9 +1735,9 @@ public class TrackSet {
 		args.remove(0); // Remove name of command
 		
 		// Defaults:
-		int f= FeatureFilter.DEFAULT_f_FLAG;
-		int F= FeatureFilter.DEFAULT_F_FLAG;
-		int q= FeatureFilter.DEFAULT_MAPQ;
+		int f= Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue());
+		int F= Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue());
+		int q= Integer.valueOf(Filter.DEFAULT_MAPQ.getValue());
 		
 		// Get args:
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");

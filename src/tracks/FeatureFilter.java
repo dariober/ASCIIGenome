@@ -9,19 +9,32 @@ import htsjdk.samtools.filter.SamRecordFilter;
 /**Group all the filter settings that can be applied to a feature.
  * */
 class FeatureFilter {
+	// IMPORTANT: All filters must have at least one "DEFAULT_" setting which results in the filter 
+	// not being applied.
+	// If you add a filter set also an appropriate DEFAULT_* attribute.  
+	
 	// Grep & Awk
-	final static public String DEFAULT_HIDE_REGEX= "^$"; protected String hideRegex= DEFAULT_HIDE_REGEX;
-	final static public String DEFAULT_SHOW_REGEX= ".*"; protected String showRegex= DEFAULT_SHOW_REGEX;
-	final static public String DEFAULT_AWK= ""; private String awk= DEFAULT_AWK;
-	// SAM specific
-	public static final int DEFAULT_f_FLAG= 0; private int f_flag= DEFAULT_f_FLAG;
-	public static final int DEFAULT_F_FLAG= 4; private int F_flag= DEFAULT_F_FLAG;
-	public static final int DEFAULT_MAPQ= 0;   private int mapq= DEFAULT_MAPQ;
-	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>(); 
-	public static final String DEFAULT_VARIANT_CHROM= ""; String variantChrom= DEFAULT_VARIANT_CHROM;
+	protected String hideRegex= Filter.DEFAULT_HIDE_REGEX.getValue();
+	protected String showRegex= Filter.DEFAULT_SHOW_REGEX.getValue();
+	private String awk= Filter.DEFAULT_AWK.getValue();
+	private int f_flag= Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue());
+	private int F_flag= Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue());
+	private int mapq= Integer.valueOf(Filter.DEFAULT_MAPQ.getValue());
+	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>();
+	String variantChrom= Filter.DEFAULT_VARIANT_CHROM.getValue();
 	private int variantFrom= -1;
 	private int variantTo= -1;
+	private boolean variantOnly= true;
 	private byte[] faSeq;
+
+	//	final static public String DEFAULT_HIDE_REGEX= "^$"; protected String hideRegex= DEFAULT_HIDE_REGEX;
+//	final static public String DEFAULT_SHOW_REGEX= ".*"; protected String showRegex= DEFAULT_SHOW_REGEX;
+//	final static public String DEFAULT_AWK= ""; private String awk= DEFAULT_AWK;
+	// SAM specific
+//	public static final int DEFAULT_f_FLAG= 0; private int f_flag= DEFAULT_f_FLAG;
+//	public static final int DEFAULT_F_FLAG= 4; private int F_flag= DEFAULT_F_FLAG;
+//	public static final int DEFAULT_MAPQ= 0;   private int mapq= DEFAULT_MAPQ;
+//	public static final String DEFAULT_VARIANT_CHROM= ""; String variantChrom= DEFAULT_VARIANT_CHROM;
 	
 	//   S E T T E R S    A N D    G E T T E R S
 	
@@ -107,6 +120,14 @@ class FeatureFilter {
 
 	public byte[] getFaSeq() {
 		return faSeq;
+	}
+
+	public boolean isVariantOnly() {
+		return variantOnly;
+	}
+
+	protected void setVariantOnly(boolean variantOnly) {
+		this.variantOnly = variantOnly;
 	}
 
 //	public void setFaSeq(byte[] faSeq) {

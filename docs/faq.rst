@@ -41,3 +41,16 @@ Can I execute multiple commands inside ``-x/--exec`` or at the command prompt?
 
 Use the ``&&`` to concatenate commands (similar to Unix syntax).  E.g.
 ``colorTrack red && goto chr1:150000 && zo``.
+
+How can I print the header of a VCF file?
+-----------------------------------------
+
+Assuming :code:`bcftools` is available, use the :code:`sys` command, for example::
+
+	sys bcftools view -H my_variants.vcf.gz | less
+
+Of course you can further parse the header by piping to standard Unix tools. For 
+example, to exclude the ``contig`` lines use::
+	
+	sys bcftools view -h mutect/WW00282.vcf.gz | grep -v '##contig' | less
+ 

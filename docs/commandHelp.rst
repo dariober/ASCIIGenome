@@ -584,7 +584,7 @@ Show SAM records as pairs.
 filterVariantReads
 ++++++++++++++++++
 
-:code:`filterVariantReads [-r from-to] [-v] [track_regex = .*]...`
+:code:`filterVariantReads [-r from/to] [-v] [track_regex = .*]...`
 
 Filter reads containing a variant in the given interval.
  filterVariantReads selects for reads where the read sequence mismatches with the reference sequence in the given interval on the current chromosome. This command is useful to inspect reads supporting a putative alternate allele at a variant site.
@@ -593,17 +593,26 @@ NOTES
 
 * filterVariantReads requires a reference fasta sequence to be set, e.g. via the command line option :code:`-fa <ref.fa>` or with command :code:`setGenome`.
 
-* The CIGAR string determines a mismatch between read and reference. Consequently, there may be be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval :code:`-r`.
+* The CIGAR string determines a mismatch between read and reference. Consequently, there may be be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval.
 
 * The position (POS) of deletions in VCF files refer to the first non-deleted base on the reference. Therefore, the interval to :code:`-r` should be POS+1 to filter for reads supporting a deletion (but see also the previous point).
 
 OPTIONS
 
-* :code:`-r from-to` Select reads mismatching in this interval. E.g. :code:`-r 1000-1010` or for a single position :code:`-r 1000`.
+* :code:`-r region` Select reads mismatching in this interval. *region* can be given as: a single position, a position plus and/or minus an offset, an interval. See examples.
 
 * :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 * :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.
+
+EXAMPLES::
+
+    filterVariantReads -r 1000+10   <- From 1000 to 1010
+    filterVariantReads -r 1000-10   <- From 990 to 1000
+    filterVariantReads -r 1000+/-10 <- From 990 to 1010
+    filterVariantReads -r 1000:1100 <- From 1000 to 1100
+    filterVariantReads -r 1000 vars.*vcf <- Apply to tracks captured by `vars.*vcf`
+    filterVariantReads              <- Remove filter for all tracks
 
 
 rpm
@@ -821,9 +830,10 @@ sys
 
 Execute a system command. By default the given :code:`command` is executed as a string passed to Bash as :code:`bash -c string`. With the :code:`-L` option the command is executed literally as it is. Note that with the :code:`-L` option globs are not expanded by Java. Examples::
 
-    sys pwd                    <- Print working directory name
-    sys ls *.bam               <- List files ending in .bam
-    sys samtools index aln.bam <- Exec samtools
+    sys pwd                          <- Print working directory name
+    sys ls *.bam                     <- List files ending in .bam
+    sys bcftools view -h vars.vcf.gz <- Print vcf header
+
 
 q
 +

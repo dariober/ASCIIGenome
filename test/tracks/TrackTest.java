@@ -75,7 +75,21 @@ public class TrackTest {
 		tif.setSystemCommandForPrint("foo");
 		assertEquals("", tif.printLines());
 	}
-		
+
+	@Test
+	public void canParsePrintableLinesWithSystemCommandBcftools() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+
+		GenomicCoords gc= new GenomicCoords("1:1-400000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+		tif.setNoFormat(true);
+		tif.setPrintMode(PrintRawLine.FULL);
+		// Use full path to bcftools only for testing because Eclipse doesn't look into user's PATH
+		tif.setSystemCommandForPrint("/usr/local/bin/bcftools query -f '%CHROM\t%POS\t%AF\t[%GT:]\n'");
+		String out= tif.printLines();
+		assertEquals(2, out.split("\n").length);
+		assertTrue(out.contains("0.00698882"));
+	}
+	
 	@Test
 	public void canParsePrintableLinesWithNoFeatures() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
 

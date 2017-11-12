@@ -10,8 +10,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -19,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -33,8 +30,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
-import com.esotericsoftware.yamlbeans.YamlReader;
-import com.esotericsoftware.yamlbeans.YamlWriter;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 
@@ -46,16 +41,14 @@ import faidx.UnindexableFastaFileException;
 import filter.FirstOfPairFilter;
 import filter.FlagToFilter;
 import filter.ReadNegativeStrandFilter;
-import htsjdk.samtools.SAMFileWriter;
-import htsjdk.samtools.SAMFileWriterFactory;
-import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import htsjdk.variant.vcf.VCFFileReader;
+import htsjdk.variant.vcf.VCFHeader;
 import jline.console.ConsoleReader;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
@@ -69,6 +62,23 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void canGetVCFHeaderAsString(){
+		VCFFileReader reader = new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
+		VCFHeader hdr = reader.getFileHeader();
+		reader.close();
+		List<String> str= Utils.vcfHeaderToStrings(hdr);
+		assertEquals(71, str.size());
+		assertTrue(str.get(str.size()-1).startsWith("#CHROM"));
+		
+		reader = new VCFFileReader(new File("test_data/CEU.exon.2010_06.genotypes.vcf.gz"));
+		hdr = reader.getFileHeader();
+		reader.close();
+		str= Utils.vcfHeaderToStrings(hdr);
+		assertEquals(12, str.size());
+		System.err.println(str);	
+	}
 	
 	@Test
 	public void canTestForEqualReadNames(){
@@ -425,11 +435,52 @@ public class UtilsTest {
 		assertTrue(pass);
 	}
 
-	// @Test
-	public void canFilterVcfTagWithAwk() throws IOException{
-		String rec= "chr1 100 . A G 100 PASS AC=10,5;AF=0.5 GT:DP 0|1:3,4 1|1:10,20".replaceAll(" ", "\t");
-		assertTrue(Utils.passAwkFilter(rec, "'getVcfTag(\"AF\")[0] == 0.5'"));
-		assertTrue(Utils.passAwkFilter(rec, "'getVcfTag(\"DP\")[0] == 0.5'"));
+	@Test
+	public void canFilterInfoVcfWithAwkFunc() throws IOException{
+		String vcf= "chr1 75888 . A T . . IMPRECISE;SVTYPE=DEL;DP=20,30;SVLEN=-32945;FOLD_CHANGE=0.723657;FOLD_CHANGE_LOG=-0.466623;PROBES=21".replaceAll(" ", "\t");
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"IMPRECISE\") == 1'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"ABSENT_TAG\") == 0'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"FOLD_CHANGE\") <= 0.723657'"));
+		assertTrue( ! Utils.passAwkFilter(vcf, "'getInfoTag(\"FOLD_CHANGE\") > 0.723657'"));
+		
+		// Split list of values
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\") == \"20,30\"'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\", 1) == 20'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\", 2) == 30'"));
+		// Out of range
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\", 3) == \"\"'"));
+		
+		// Missing INFO 
+		vcf= "chr1 75888 . A T . . .".replaceAll(" ", "\t");
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"FOO\") == 0'"));
+		
+		// INFO column not there at all
+		vcf= "chr1 75888 . A T . .".replaceAll(" ", "\t");
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"FOO\") == 0'"));
+	}
+
+	@Test
+	public void canFilterFormatVcfWithAwkFunc() throws IOException{
+		String vcf= "chr1 75888 . A T . . . GT:GQ 11:21,10 22:99,100".replaceAll(" ", "\t");
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\") == 11'")); // Default sample_idx= 1
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 1) == 11'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 2) == 22'"));
+		assertTrue( ! Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 2) < 22'"));
+		
+		// Get value from list
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2) == \"99,100\"'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2, 1) == \"99\"'")); 
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2, 2) == \"100\"'"));
+		// Out range
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2, 3) == \"\"'"));
+		
+		// Tag not found
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"ABSENT\", 1) == \"\"'"));
+		
+		// Invalid indexes
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 99) == \"\"'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", \"foobar\") == \"\"'"));
+		
 	}
 	
 	@Test
@@ -570,30 +621,30 @@ public class UtilsTest {
 	
 	@Test
 	public void canGetRangeOfListOfValues(){
-		List<Double> y= new ArrayList<Double>();
-		y.add(1.0);
-		y.add(10.0);
-		y.add(3.0);
-		y.add(Double.NaN);
+		List<Float> y= new ArrayList<Float>();
+		y.add((float) 1.0);
+		y.add((float)10.0);
+		y.add((float)3.0);
+		y.add(Float.NaN);
 		assertEquals(1.0, Utils.range(y)[0], 0.0001); // Min
 		assertEquals(10.0, Utils.range(y)[1], 0.0001); // Max
 		
 		// Only NaN
-		List<Double> nan= new ArrayList<Double>();
-		nan.add(Double.NaN);
-		nan.add(Double.NaN);
-		nan.add(Double.NaN);
+		List<Float> nan= new ArrayList<Float>();
+		nan.add(Float.NaN);
+		nan.add(Float.NaN);
+		nan.add(Float.NaN);
 		assertTrue(Utils.range(nan)[0].isNaN());
 		assertTrue(Utils.range(nan)[1].isNaN());
 		
 		// Length of one
-		List<Double> y1= new ArrayList<Double>();
-		y1.add(1.0);
+		List<Float> y1= new ArrayList<Float>();
+		y1.add((float) 1.0);
 		assertEquals(1.0, Utils.range(y1)[0], 0.0001);
 		assertEquals(1.0, Utils.range(y1)[1], 0.0001);
 		
 		// Zero length
-		List<Double> y0= new ArrayList<Double>();
+		List<Float> y0= new ArrayList<Float>();
 		assertTrue(Utils.range(y0)[0].isNaN());
 		assertTrue(Utils.range(y0)[1].isNaN());
 		
@@ -1007,30 +1058,28 @@ public class UtilsTest {
 	@Test
 	public void canRoundNumbersToSignificantDigits(){
 
-		List<Double> intv = Arrays.asList(Utils.roundToSignificantDigits(85477601.0, 85657825.0, 2));
-		System.err.println(intv);
-		System.err.println((int)Math.rint(intv.get(0)));
+		Arrays.asList(Utils.roundToSignificantDigits(85477601.0, 85657825.0, 2));
 		
 		double x= 1000.123456789;
 		double y= 1001.123456789;
 		int nSignif= 3;
-		Double[] rounded= Utils.roundToSignificantDigits(x, y, nSignif);
-		assertEquals(1000.123, rounded[0], 0.001); // Regular rounding
-		assertEquals(1001.123, rounded[1], 0.001);
+		String[] rounded= Utils.roundToSignificantDigits(x, y, nSignif);
+		assertEquals("1000.123", rounded[0]); // Regular rounding
+		assertEquals("1001.123", rounded[1]);
 		
 		x= 1000.00012345;
 		y= 1000.0012345;
 		nSignif= 2;
 		rounded= Utils.roundToSignificantDigits(x, y, nSignif);
-		assertEquals(1000.00012, rounded[0], 1e-16);
-		assertEquals(1000.00123, rounded[1], 1e-16);		
+		assertEquals("1000.00012", rounded[0]);
+		assertEquals("1000.00123", rounded[1]);		
 		
 		x= 1000.0009876;
 		y= 1000.00987654;
 		nSignif= 3;
 		rounded= Utils.roundToSignificantDigits(x, y, nSignif);
-		assertEquals(1000.000988, rounded[0], 1e-16);
-		assertEquals(1000.009877, rounded[1], 1e-16);		
+		assertEquals("1000.000988", rounded[0]);
+		assertEquals("1000.009877", rounded[1]);		
 		
 	}
 	
@@ -1211,7 +1260,7 @@ public class UtilsTest {
 		Stopwatch sw= Stopwatch.createStarted();
 		String x= "HSQ9103:404:C6F0VANXX:1:2208:4363:50381 foo bar /1";
 		for(int i= 0; i < 1000000; i++){
-			String s= Utils.templateNameFromSamReadName(x);
+			Utils.templateNameFromSamReadName(x);
 		}
 		System.err.println(sw.stop());
 	}

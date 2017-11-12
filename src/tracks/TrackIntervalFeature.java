@@ -41,7 +41,6 @@ public class TrackIntervalFeature extends Track {
 	 * */
 	protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 	private BBFileReader bigBedReader;
-	private VCFHeader vcfHeader= null;
 	
 	private List<Argument> colorForRegex= null;
 	private VCFCodec vcfCodec;
@@ -159,14 +158,14 @@ public class TrackIntervalFeature extends Track {
 	private List<IntervalFeature> getFeaturesInVCFInterval(String chrom, int from, int to) throws IOException, InvalidGenomicCoordsException{
 
 		// Get header if not set yet
-		if(this.vcfHeader == null){
+		if(this.getVcfHeader() == null){
 			if( Utils.urlFileExists(this.getFilename()) ){
 				URL url= new URL(this.getFilename());
 				AbstractFeatureReader<VariantContext, LineIterator> reader = AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
-				this.vcfHeader = (VCFHeader) reader.getHeader();
+				this.setVcfHeader((VCFHeader) reader.getHeader());
 			} else {
 				VCFFileReader reader = new VCFFileReader(new File(this.getWorkFilename()));
-				this.vcfHeader= reader.getFileHeader();
+				this.setVcfHeader(reader.getFileHeader());
 				reader.close();
 			}
 		}
@@ -202,7 +201,7 @@ public class TrackIntervalFeature extends Track {
 		boolean showIt= true;
 
 		if(this.getShowRegex() != null && 
-		   ! this.getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX)){
+		   ! this.getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue())){
 			showIt= Pattern.compile(this.getShowRegex()).matcher(x).find();
 		}
 
@@ -497,7 +496,7 @@ public class TrackIntervalFeature extends Track {
 		// Genotype matrix
 		if(this.getTrackFormat().equals(TrackFormat.VCF)){
 			try {
-				String gtm= this.getGenotypeMatrix().printToScreen(this.isNoFormat(), this.intervalFeatureList, this.getGc().getUserWindowSize(), this.vcfHeader);
+				String gtm= this.getGenotypeMatrix().printToScreen(this.isNoFormat(), this.intervalFeatureList, this.getGc().getUserWindowSize(), this.getVcfHeader());
 				printable.add(gtm);
 			} catch (InvalidColourException | IOException e) {
 				e.printStackTrace();
@@ -590,6 +589,7 @@ public class TrackIntervalFeature extends Track {
 				continue; // See test canProcessIndelAtWindowBoundary for how this can happen
 			}
 			List<FeatureChar> text = intervalFeature.getIdeogram(false, false);
+
 			int i= 0;
 			for(int j= intervalFeature.getScreenFrom(); j <= intervalFeature.getScreenTo(); j++){
 				printable.set(j, text.get(i).format(this.isNoFormat()));
@@ -675,10 +675,10 @@ public class TrackIntervalFeature extends Track {
 	@Override
 	protected String getTitleForActiveFilters() {
 		List<String> title= new ArrayList<String>();
-		if( ! this.getAwk().equals(FeatureFilter.DEFAULT_AWK)){
+		if( ! this.getAwk().equals(Filter.DEFAULT_AWK.getValue())){
 			title.add("awk");
 		}
-		if( ! this.getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX) || ! this.getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX)){
+		if( ! this.getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || ! this.getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
 			title.add("grep");
 		}
 		if(title.size() > 0){
@@ -727,12 +727,12 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	private VCFCodec getVCFCodec() {
-		if(this.vcfHeader == null){
+		if(this.getVcfHeader() == null){
 			return null;
 		}
 		if(this.vcfCodec == null){
 			VCFCodec vcfCodec= new VCFCodec();
-			vcfCodec.setVCFHeader(this.vcfHeader, Utils.getVCFHeaderVersion(this.vcfHeader));
+			vcfCodec.setVCFHeader(this.getVcfHeader(), Utils.getVCFHeaderVersion(this.getVcfHeader()));
 			this.vcfCodec= vcfCodec; 
 		}
 		return this.vcfCodec;
@@ -1042,10 +1042,6 @@ public class TrackIntervalFeature extends Track {
 		return tsv;
 	}
 	
-	protected VCFHeader getVcfHeader() {
-		return this.vcfHeader;
-	}
-
 	@Override
 	protected void setColorForRegex(List<Argument> xcolorForRegex) {
 		if(xcolorForRegex == null){

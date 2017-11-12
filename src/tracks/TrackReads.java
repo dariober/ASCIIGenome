@@ -327,20 +327,20 @@ public class TrackReads extends Track{
 	@Override
 	protected String getTitleForActiveFilters() {
 		List<String> title= new ArrayList<String>();
-		if( ! this.getAwk().equals(FeatureFilter.DEFAULT_AWK)){
+		if( ! this.getAwk().equals(Filter.DEFAULT_AWK.getValue())){
 			title.add("awk");
 		}
-		if( ! this.getShowRegex().equals(FeatureFilter.DEFAULT_SHOW_REGEX) || ! this.getHideRegex().equals(FeatureFilter.DEFAULT_HIDE_REGEX)){
+		if( ! this.getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || ! this.getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
 			title.add("grep");
 		}
-		if( this.get_f_flag() != FeatureFilter.DEFAULT_f_FLAG || 
-			this.get_F_flag() != FeatureFilter.DEFAULT_F_FLAG){
+		if( this.get_f_flag() != Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue()) || 
+			this.get_F_flag() != Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue())){
 			title.add("bit-flag");
 		}
-		if(this.getMapq() != FeatureFilter.DEFAULT_MAPQ){
+		if(this.getMapq() != Integer.valueOf(Filter.DEFAULT_MAPQ.getValue())){
 			title.add("mapq");
 		}
-		if( ! this.getFeatureFilter().getVariantChrom().equals(FeatureFilter.DEFAULT_VARIANT_CHROM)){
+		if( ! this.getFeatureFilter().getVariantChrom().equals(Filter.DEFAULT_VARIANT_CHROM.getValue())){
 			title.add("var-read");
 		}
 		if(title.size() > 0){

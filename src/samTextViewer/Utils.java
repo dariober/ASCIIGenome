@@ -349,7 +349,6 @@ public class Utils {
 		for(IntervalFeature x : mergedList){
 			x.getIdeogram(true, true);
 		}
-		//mergedList.get(0).getIdeogram(true, true);
 		return mergedList;
 	}
 	

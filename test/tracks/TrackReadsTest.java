@@ -175,39 +175,39 @@ public class TrackReadsTest {
 		tr.setyMaxLines(1000);
 		assertEquals(11, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
 
-		tr.setVariantReadInInterval("chr7", 1000001, 1000001);
+		tr.setVariantReadInInterval("chr7", 1000001, 1000001, true);
 		assertEquals(2, tr.printToScreen().split("\n").length);
 		assertTrue(tr.printToScreen().startsWith("A"));
 
-		tr.setVariantReadInInterval("chr7", 1000015, 1000015);
+		tr.setVariantReadInInterval("chr7", 1000015, 1000015, true);
 		assertEquals(1, tr.printToScreen().split("\n").length);
 		assertTrue(tr.printToScreen().trim().endsWith("T"));
 
-		tr.setVariantReadInInterval("chr7", 1000003, 1000003); // Test deletion
+		tr.setVariantReadInInterval("chr7", 1000003, 1000003, true); // Test deletion
 		assertEquals(1, tr.printToScreen().split("\n").length);
 		assertTrue(tr.printToScreen().contains("-"));
 		
-		tr.setVariantReadInInterval("chr7", 1000005, 1000005); // Test deletion
+		tr.setVariantReadInInterval("chr7", 1000005, 1000005, true); // Test deletion
 		assertEquals(1, tr.printToScreen().split("\n").length);
 
-		tr.setVariantReadInInterval("chr7", 1000002, 1000002); // Test insertion
+		tr.setVariantReadInInterval("chr7", 1000002, 1000002, true); // Test insertion
 		assertEquals(2, tr.printToScreen().split("\n").length);
 		
-		tr.setVariantReadInInterval("chr7", 1000014, 1000014); // No variants at this site
+		tr.setVariantReadInInterval("chr7", 1000014, 1000014, true); // No variants at this site
 		assertEquals("", tr.printToScreen().trim());
 		
-		tr.setVariantReadInInterval("chr7", 1000031, 1000040); // No read
+		tr.setVariantReadInInterval("chr7", 1000031, 1000040, true); // No read
 		assertEquals("", tr.printToScreen().trim());
 		
-		tr.setVariantReadInInterval("chr7", 2000000, 2000040); // No read
+		tr.setVariantReadInInterval("chr7", 2000000, 2000040, true); // No read
 		assertEquals("", tr.printToScreen().trim());
 		
-		tr.setVariantReadInInterval("chr7", 1000003, 1000010); // Test range
+		tr.setVariantReadInInterval("chr7", 1000003, 1000010, true); // Test range
 		assertEquals(3, tr.printToScreen().split("\n").length);
 		assertTrue(tr.printToScreen().contains("-"));
 		assertTrue(tr.printToScreen().contains("AG"));
 		
-		tr.setVariantReadInInterval(FeatureFilter.DEFAULT_VARIANT_CHROM, -1, -1); // Remove filter
+		tr.setVariantReadInInterval(Filter.DEFAULT_VARIANT_CHROM.getValue(), -1, -1, true); // Remove filter
 		assertEquals(11, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
 		
 		// Genomic window does not overlap the variant range, but n reads in this window do overlap.
@@ -215,8 +215,22 @@ public class TrackReadsTest {
 		tr= new TrackReads("test_data/variant_reads.sam", gc);
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
-		tr.setVariantReadInInterval("chr7", 1000001, 1000001);
+		tr.setVariantReadInInterval("chr7", 1000001, 1000001, true);
 		assertEquals(2, tr.printToScreen().split("\n").length);
+	}
+
+	@Test
+	public void canFilterReadsInIntervalKeepAll() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7:1000001-1000081",100, samSeqDict, fastaFile);
+		TrackReads tr= new TrackReads("test_data/variant_reads.sam", gc);
+		tr.setNoFormat(true);
+		tr.setVariantReadInInterval("chr7", 1000028, 1000028, true);
+		assertEquals(2, tr.printToScreen().split("\n").length); // Default: only variants
+		
+		tr.setVariantReadInInterval("chr7", 1000028, 1000028, false);
+		System.err.println(tr.printToScreen());
+		assertEquals(4, tr.printToScreen().split("\n").length);
 	}
 	
 	@Test
@@ -250,7 +264,7 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
 		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
-		tr.setShowHideRegex("NCNNNCCC", FeatureFilter.DEFAULT_HIDE_REGEX);
+		tr.setShowHideRegex("NCNNNCCC", Filter.DEFAULT_HIDE_REGEX.getValue());
 		tr.setAwk("'$4 != 5566779'");
 		assertEquals(4, tr.printToScreen().split("\n").length);
 	}
@@ -286,7 +300,7 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 		assertTrue( ! tr.getTitle().contains("filters"));
 		
-		tr.setMapq(FeatureFilter.DEFAULT_MAPQ);
+		tr.setMapq(Integer.valueOf(Filter.DEFAULT_MAPQ.getValue()));
 		assertTrue( ! tr.getTitle().contains("filters"));
 		
 		tr.setMapq(10);
@@ -298,7 +312,7 @@ public class TrackReadsTest {
 		tr.setShowHideRegex(".*", "foo");
 		assertTrue( tr.getTitle().contains("grep"));
 		
-		tr.setVariantReadInInterval("chr7", 10, 100);
+		tr.setVariantReadInInterval("chr7", 10, 100, true);
 		assertTrue( tr.getTitle().contains("var-read"));
 		
 		tr.setAwk("'2 > 1'");
