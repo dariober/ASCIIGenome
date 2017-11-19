@@ -1006,7 +1006,6 @@ public class TrackSet {
 			trackNameRegex.add(".*"); // Track regex list not given: Set to capture all of them.
 		}
 		
-		
 		// Set script
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
@@ -1016,6 +1015,14 @@ public class TrackSet {
         	}
         	if((awk.contains("getInfoTag(") || awk.contains("getFmtTag(")) && ! tr.getTrackFormat().equals(TrackFormat.VCF)){
         		System.err.println("\nFunction getInfoTag(), getFmtTag() can be applied to VCF tracks only. Got:\n" + tr.getTrackTag());
+        		throw new InvalidCommandLineException();
+        	}
+        	if((awk.contains("getGtfTag(") || awk.contains("getGtfTag(")) && ! tr.getTrackFormat().equals(TrackFormat.GTF)){
+        		System.err.println("\nFunction getGtfTag() can be applied to GTF tracks only. Got:\n" + tr.getTrackTag());
+        		throw new InvalidCommandLineException();
+        	}
+        	if((awk.contains("getGffTag(") || awk.contains("getGffTag(")) && ! tr.getTrackFormat().equals(TrackFormat.GFF)){
+        		System.err.println("\nFunction getGffTag() can be applied to GFF tracks only. Got:\n" + tr.getTrackTag());
         		throw new InvalidCommandLineException();
         	}
         	String script= this.replaceAwkHeaders(awk, tr.getTrackFormat());
@@ -1068,9 +1075,15 @@ public class TrackSet {
 				}
 				else {
 					System.err.println("Tag " + tag + " not found in VCF header of track " + track.getTrackTag() + ".\n"
-							+ "Please use 'INFO/' or 'FMT/' to the tag to search the INFO or FORMAT fields, respectively.");
+							+ "Please prepend 'INFO/' or 'FMT/' to the tag to search the INFO or FORMAT fields, respectively.");
 					throw new InvalidCommandLineException();
 				}
+			}
+			else if(track.getTrackFormat().equals(TrackFormat.GTF)){
+				fname= "getGtfTag";
+			}
+			else if(track.getTrackFormat().equals(TrackFormat.GFF)){
+				fname= "getGffTag";
 			}
 			else {
 				System.err.println("Function " + FUNC + " is not available for track type " + track.getTrackFormat() + ".");

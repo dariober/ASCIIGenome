@@ -436,6 +436,52 @@ public class UtilsTest {
 	}
 
 	@Test
+	public void canFilterGtfAwkFunc() throws IOException{
+		// NB: You need to set the field separator to \\t. 
+		
+		String gtf= "GL873520\tchr1\tstop_codon\t8064\t8066\t0.000000\t-\t.\tgene_id 100; trax_id \"ACTB\";";
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"gene_id\") == 100'"));
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"trax_id\") == \"ACTB\"'"));
+		
+		// Empty string if key not found
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"SPAM\") == \"\"'")); 
+		
+		// No attributes at all: Empty string returned
+		gtf= "GL873520\tchr1\tstop_codon\t8064\t8066\t0.000000\t-\t.\t.";
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"gene_id\") == \"\"'"));
+		
+		// No attribute column at all (this would be an invalid GTF, by the way)
+		gtf= "GL873520\tchr1\tstop_codon\t8064\t8066\t0.000000\t-\t.";
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"gene_id\") == \"\"'"));
+	}
+	
+	@Test
+	public void canFilterGffAwkFunc() throws IOException{
+		// NB: You need to set the field separator to \\t. 
+		
+		String x= ".|.|.|.|.|.|.|.|Tag=100; ID = foo : bar ; Alias=spam,bar;".replaceAll("\\|", "\t");
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == 100'"));
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"ID\") == \"foo : bar\"'"));
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"spam,bar\"'"));
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\", 1) == \"spam\"'"));
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\", 2) == \"bar\"'"));
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\", 99) == \"\"'"));
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"SPAM\") == \"\"'"));
+		
+		// NB: Missing tag i.e., empty string, evaluates to 0!!
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"SPAM\") == 0'"));
+		
+		x= ".|.|.|.|.|.|.|.|.".replaceAll("\\|", "\t");
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"\"'"));
+		
+		x= ".|.|.|.|.|.|.|.".replaceAll("\\|", "\t");
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"\"'"));
+		
+		x= ".|.|.|.|.|.|.|.|Tag=\"X\"".replaceAll("\\|", "\t"); // Double quotes are not stripped
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == \"\"X\"\"'"));
+	}
+	
+	@Test
 	public void canFilterInfoVcfWithAwkFunc() throws IOException{
 		String vcf= "chr1 75888 . A T . . IMPRECISE;SVTYPE=DEL;DP=20,30;SVLEN=-32945;FOLD_CHANGE=0.723657;FOLD_CHANGE_LOG=-0.466623;PROBES=21".replaceAll(" ", "\t");
 		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"IMPRECISE\") == 1'"));

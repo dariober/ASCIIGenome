@@ -2,6 +2,18 @@
 # function signature. These variables have underscore as prefix, come after
 # the user variables and they are meant to be ignored by the user.  
 
+function _trim(_x, _char){
+	# For iternal use only.
+    # Return a string where leading and trailing char have been removed from
+    # string x. If _char is missing trim whitespaces.
+    if(_char == ""){
+        _char= "[ \t]"
+    }
+    gsub("^"_char"+", "", _x)
+    gsub(_char"+$", "", _x)
+    return _x
+}
+
 function getSamTag(tag, _idxkey, _key){
     if(NF < 12){
         return ""
@@ -72,4 +84,50 @@ function getFmtTag(tag, sample_idx, value_idx, _fmt_array, _tagIdx, _sample_data
     	split(_sample_data[_tagIdx], _list, ",")
     	return _list[value_idx]
     }
+}
+
+function getGtfTag(tag, _attrs, _attr, _i, _tagval, _n, _retval){
+
+    if(NF < 9){
+        return "" # Not enough fields
+    }
+    _attrs= _trim($9, ";")
+    split(_attrs, _attr, ";")
+
+	for(_i in _attr){
+        _attr[_i]=  _trim(_attr[_i])
+        _n= split(_attr[_i], _tagval, " ")
+            
+        _tagval[1]= _trim(_tagval[1])
+        if(_tagval[1] == tag){
+            _retval= _trim(_trim(_tagval[_n]), "\"")
+            break
+        }
+    }
+    return _retval
+}
+
+function getGffTag(tag, value_idx, _attrs, _attr, _tagval, _i, _n, _vals, _retval){
+    if(NF < 9){
+        return "" # Not enough fields
+    }
+    _attrs= _trim($9, ";")
+    split(_attrs, _attr, ";")
+    for(_i in _attr){
+        _attr[_i]=  _trim(_attr[_i])
+        _n= split(_attr[_i], _tagval, "=")
+
+        _tagval[1]= _trim(_tagval[1])
+        if(_tagval[1] == tag){
+            if(value_idx > 0){
+                # Return only one of the comma-separated values
+                split(_trim(_tagval[_n]), _vals, ",")
+                _retval= _trim(_vals[value_idx])
+            } else {
+                _retval= _trim(_tagval[_n])
+            }
+            break
+        }
+    }
+    return _retval
 }

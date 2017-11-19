@@ -40,16 +40,23 @@ import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
 
-import org.apache.commons.io.IOUtils;
-
 public abstract class Track {
 
 	public static String awkFunc= "";
 	static {
 		  try {
 			  InputStream in= Main.class.getResourceAsStream("/functions.awk");
-			  awkFunc= IOUtils.toString(in);
-			  in.close();
+			  BufferedReader br= new BufferedReader(new InputStreamReader(in));
+			  String line = null;
+			  StringBuilder x= new StringBuilder();
+			  while((line = br.readLine()) != null) {
+			      if(line.trim().startsWith("#")){
+			    	  continue;
+			      }
+				  x.append(line + '\n');
+			  }
+			  awkFunc= x.toString();
+			  br.close();
 		  }
 		  catch (Exception ex) {
 		    /* Handle exception. */
@@ -207,13 +214,22 @@ public abstract class Track {
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+		
+		if( ! awk.trim().isEmpty()){
+			List<String> arglst= Utils.tokenize(awk, " ");
+			
+			// Do we need to set tab as field sep?
+			if(arglst.size() == 1 || ! arglst.contains("-F")){ // It would be more stringent to check for the script.
+				awk= "-F '\\t' " + awk; 
+			}
+		}
 		this.getFeatureFilter().setAwk(awk);
 		this.update();
-	};
+	}
 	
 	public String getAwk(){
 		return this.getFeatureFilter().getAwk();
-	};
+	}
 	
 	protected FeatureFilter getFeatureFilter(){
 		return this.featureFilter;
@@ -391,7 +407,7 @@ public abstract class Track {
 			try{
 				wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
 				for(String line : rawList){
-					wr.write(line + "\n");
+					wr.write(line.replace("\n", "").replace("\r", "") + "\n");
 				}
 				wr.close();
 			} catch(IOException e){

@@ -962,20 +962,20 @@ public class TrackIntervalFeature extends Track {
 		this.intervalFeatureList = intervalFeatureList;
 	}
 
-	@Override
-	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-
-		if( ! awk.trim().isEmpty()){
-			List<String> arglst= Utils.tokenize(awk, " ");
-			
-			// Do we need to set tab as field sep?
-			if(arglst.size() == 1 || ! arglst.contains("-F")){ // It would be more stringent to check for the script.
-				awk= "-F '\\t' " + awk; 
-			}
-		}
-		this.getFeatureFilter().setAwk(awk);
-		this.update();
-	}
+//	@Override
+//	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+//
+//		if( ! awk.trim().isEmpty()){
+//			List<String> arglst= Utils.tokenize(awk, " ");
+//			
+//			// Do we need to set tab as field sep?
+//			if(arglst.size() == 1 || ! arglst.contains("-F")){ // It would be more stringent to check for the script.
+//				awk= "-F '\\t' " + awk; 
+//			}
+//		}
+//		this.getFeatureFilter().setAwk(awk);
+//		this.update();
+//	}
 	
 	@Override
 	public List<String> getChromosomeNames(){
