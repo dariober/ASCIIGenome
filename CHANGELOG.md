@@ -12,7 +12,7 @@ the offset from the first positions.
 * Add `-all` option to [filterVariantReads](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#filtervariantreads) 
 to retain all reads intersecting interval, not just the variant ones.
 
-* [awk](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#awk) includes a built-in function, `get(...)`, to retrieve SAM or VCF tags from the respective files. 
+* [awk](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#awk) includes a built-in function, `get(...)`, to retrieve GFF, GTF, SAM or VCF attribute tags from the respective files. 
 
 New in 1.11.0
 ============
