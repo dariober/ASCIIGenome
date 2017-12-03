@@ -66,7 +66,7 @@ public class TrackPileup extends TrackWiggles {
 		this.setTrackFormat(TrackFormat.BAM);
 		
 		if(!Utils.bamHasIndex(bam)){
-			File temp= File.createTempFile("asciigenome.", ".bam");
+			File temp= Utils.createTempFile(".asciigenome.", ".bam");
 			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
 			this.setWorkFilename(temp.getAbsolutePath());
 		} else {
@@ -76,7 +76,6 @@ public class TrackPileup extends TrackWiggles {
 		this.setGc(gc);
 		// this.alnRecCnt= Utils.getAlignedReadCount(this.getWorkFilename());
 		this.setLastModified();
-		
 	}
 
 	/*                  F I L T E R S           */
@@ -183,11 +182,15 @@ public class TrackPileup extends TrackWiggles {
 	}
 
 	private boolean useSamtools() throws IOException {
+
+		if(this.getSamtoolsPath() == null || this.getSamtoolsPath().trim().isEmpty()){
+			return false;
+		}
 		
 		List<String> cmd= new ArrayList<String>();
 		cmd.add("/bin/sh");
 		cmd.add("-c");
-		cmd.add("samtools --version"); 
+		cmd.add(this.getSamtoolsPath() + " --version"); 
 		ProcessBuilder pb = new ProcessBuilder().command(cmd);
 		pb.redirectErrorStream(true);
 		Process p= pb.start();
@@ -223,6 +226,14 @@ public class TrackPileup extends TrackWiggles {
 		
 		List<Double> mapping= this.getGc().getMapping();
 		Map<Integer, Integer> depthMap = this.getDepth(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+		// Winsorise here:
+//		if(this.getWinsorizeMultiple() > 0){
+//			Map<Integer, Float> depthMapWins= depthMap; 
+//			List<Float> xwin= Utils.winsorise(depthMap.entrySet(), this.getWinsorizeMultiple());
+//			for x in depthMapWins:
+//				//
+//		}
+		
 		for(int refPos : depthMap.keySet()){
 			int screenIdx= Utils.getIndexOfclosestValue(refPos, mapping);
 			ScreenWiggleLocusInfo sloc = this.screenWiggleLocusInfoList.get(screenIdx);
@@ -349,6 +360,7 @@ public class TrackPileup extends TrackWiggles {
 	 * @throws IOException 
 	 * */
 	protected Map<Integer, Integer> getDepth(String chrom, int from, int to) throws IOException{
+		
 		if(this.useSamtools()){
 			try {
 				return this.getDepthSamtools(chrom, from, to);
@@ -380,14 +392,15 @@ public class TrackPileup extends TrackWiggles {
 	}
 	
 	private Map<Integer, Integer> getDepthSamtools(String chrom, int from, int to) throws IOException{
+		
 		String flags= "-q " + this.getFeatureFilter().getMapq() + " -f " + this.getFeatureFilter().get_f_flag() + " -F " + this.getFeatureFilter().get_F_flag();   
 		List<String> cmd= new ArrayList<String>();
 		cmd.add("/bin/sh");
 		cmd.add("-c");
-		cmd.add("samtools view -@ 4 -u " + flags + " " + this.getWorkFilename() + " " + chrom + ":" + from + "-" + to + 
-				" | samtools depth -d 1000000 -");
+		cmd.add(this.getSamtoolsPath() + " view -@ 4 -u " + flags + " " + this.getWorkFilename() + " " + chrom + ":" + from + "-" + to + 
+				" | " + this.getSamtoolsPath() + " depth -d 1000000000 -");
+		
 		ProcessBuilder pb = new ProcessBuilder().command(cmd);
-		pb.redirectErrorStream(true);
 		Process p= pb.start();
 		
 		BufferedReader reader= new BufferedReader(new InputStreamReader(p.getInputStream()));

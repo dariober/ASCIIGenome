@@ -56,7 +56,7 @@ public class TrackReads extends Track{
 		this.setTrackFormat(TrackFormat.BAM);
 		
 		if(!Utils.bamHasIndex(bam)){
-			File temp= File.createTempFile("asciigenome.", ".bam");
+			File temp= Utils.createTempFile(".asciigenome.", ".bam");
 			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
 			this.setWorkFilename(temp.getAbsolutePath());
 		} else {

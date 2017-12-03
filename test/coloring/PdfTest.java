@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.itextpdf.text.DocumentException;
@@ -17,6 +18,11 @@ import exceptions.InvalidConfigException;
 
 public class PdfTest {
 
+	@Before
+	public void init() throws IOException, InvalidConfigException{
+		new Config(null);
+	}
+	
 	@Test
 	public void canProcessAllLines() throws IOException, InvalidColourException, DocumentException{
 
@@ -34,8 +40,6 @@ public class PdfTest {
 	@Test
 	public void getColorFromAnsi() throws IOException, InvalidColourException, InvalidConfigException{
 
-		new Config(null);
-		
 		// Dummy pdf object. It doesn't matter how you create it.
 		String ansiInput= FileUtils.readFileToString(new File("test_data/ansicolor.txt"));
 		Pdf pdf= new Pdf(ansiInput);
@@ -60,7 +64,7 @@ public class PdfTest {
 		
 		String ansiInput= FileUtils.readFileToString(new File("test_data/ansicolor.txt"));
 		
-		File tmp= new File("deleteme.pdf");
+		File tmp= new File("test_data/deleteme.pdf");
 		tmp.deleteOnExit();
 		Pdf pdf= new Pdf(ansiInput);
 		pdf.convert(tmp, 10, false);

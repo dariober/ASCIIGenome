@@ -415,20 +415,6 @@ public class TrackSet {
 		List<String> args= new ArrayList<String>(cmdInput);
 		args.remove(0); // Remove cmd name.
 		
-// -- 8< -------------------- TO BE COMPLETED ------------ 8< ------
-//		String[] argr = args.toArray(new String[args.size()]);
-//	
-//		ArgumentParser parser= Argparse.parser().get(Command.print);
-//				
-//		Namespace opts=null;
-//		try {
-//            opts = parser.parseArgs(argr);
-//		} catch (ArgumentParserException e) {
-//            parser.handleError(e);
-//            throw new ArgumentParserException(null);
-//        }
-// -- 8< -------------------- TO BE COMPLETED ------------ 8< ------
-		
 		// Defaults if no args given
 		PrintRawLine printMode = null;
         int count= 10; // opts.getInt("nlines"); // Default number of lines to print
@@ -442,8 +428,6 @@ public class TrackSet {
         // --------------------------------------------------------------------
         boolean invertSelection= Utils.argListContainsFlag(args, "-v"); // opts.getBoolean("invert");  
 
-		// String cutScript= Utils.getArgForParam(args, "-cut");
-		
         if(args.contains("-clip")){
 			printMode= PrintRawLine.CLIP;
 			args.remove("-clip");
@@ -476,6 +460,18 @@ public class TrackSet {
 		if(sys != ""){
 			printMode= PrintRawLine.NO_ACTION;
 		}
+		
+    	String round= Utils.getArgForParam(args, "-round", "");
+    	Integer printNumDecimals= null;
+    	if( ! round.isEmpty()){
+    		printMode= PrintRawLine.NO_ACTION;
+            try{
+            	printNumDecimals= Integer.valueOf(round);
+    		} catch (NumberFormatException e){
+    			System.err.println("Invalid argument to -round. An integer is expected.");
+    			throw new InvalidCommandLineException();
+    		}    		
+    	}        
 		
 		// Capture the redirection operator and remove operator and filename.
 		int idx= -1; // Position of the redirection operator, -1 if not present.
@@ -527,8 +523,9 @@ public class TrackSet {
 		for(Track tr : tracksToReset){
 			tr.setPrintRawLineCount(count);
 			tr.setSystemCommandForPrint(sys);
+			if(printNumDecimals != null) tr.setPrintNumDecimals(printNumDecimals);
 			if(printMode != null && printMode.equals(PrintRawLine.NO_ACTION)){
-				if(tr.getPrintMode().equals(PrintRawLine.OFF) && (cmdInput.contains("-n") || cmdInput.contains("-sys"))){
+				if(tr.getPrintMode().equals(PrintRawLine.OFF) && (cmdInput.contains("-n") || cmdInput.contains("-sys") || cmdInput.contains("-round"))){
 					// Make -n or -sys switch ON the printing mode
 					// This happens if you exec `print -n INT` with the track set to OFF. 
 					tr.setPrintMode(PrintRawLine.CLIP); 
@@ -1775,6 +1772,9 @@ public class TrackSet {
 			args.remove(idx);
 			args.remove("-q");
 		}
+		
+		String samtoolsPath= Utils.getArgForParam(args, "-path", null);
+		
 		// What is left is positional args of regexes
 		List<String> trackNameRegex= new ArrayList<String>();
 		trackNameRegex.addAll(args);
@@ -1790,6 +1790,10 @@ public class TrackSet {
         }
         
         for(Track tr : tracksToReset){
+        	if(samtoolsPath != null){
+        		tr.setSamtoolsPath(samtoolsPath);
+        		continue;
+        	}
         	tr.set_f_flag(f);
         	tr.set_F_flag(F);
         	tr.setMapq(q);

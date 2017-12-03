@@ -62,7 +62,7 @@ public class Main {
 		String config= opts.getString("config");
 		exec= parseExec(exec);
 		int debug= opts.getInt("debug");
-
+		
 		// Get configuration. Note that we don't need to assign this to a variable. 
 		new Config(config);
 		new Xterm256();
@@ -113,6 +113,8 @@ public class Main {
 		setDefaultTrackHeights(console.getTerminal().getHeight(), trackSet.getTrackList());
 		
 		final TrackProcessor proc= new TrackProcessor(trackSet, gch);
+		proc.setShowMem(opts.getBoolean("showMem"));
+		proc.setShowTime(opts.getBoolean("showTime"));
 		
 		proc.setNoFormat(opts.getBoolean("noFormat"));
 		
@@ -379,7 +381,7 @@ public class Main {
 	
 	/** On shutdown, prepare and write the history file. Not that the existing 
 	 * yaml file is overwritten.  */
-	private static void writeYamlHistory(ASCIIGenomeHistory current, 
+	private static void writeYamlHistory(final ASCIIGenomeHistory current, 
 										 final History cmdHistory, 
 										 final TrackSet trackSet,
 			                             final GenomicCoordsHistory gch 
@@ -418,6 +420,14 @@ public class Main {
 				List<String> lastPos= gch.prepareHistoryForHistoryFile(newYamlHistory.getFileName(), 100);
 				newYamlHistory.setPositions(lastPos);
 
+				// Fasta ref
+				if(gch.current().getFastaFile() != null && ! gch.current().getFastaFile().trim().isEmpty()){
+					List<String> ff= Arrays.asList(new String[] {gch.current().getFastaFile()});
+					newYamlHistory.setReference(ff);					
+				} else {
+					newYamlHistory.setReference(current.getReference());
+				}
+				
 				// Write yaml
 				newYamlHistory.write();
 				

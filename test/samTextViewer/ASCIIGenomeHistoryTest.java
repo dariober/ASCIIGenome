@@ -13,13 +13,14 @@ import java.util.Map;
 import org.junit.Test;
 
 public class ASCIIGenomeHistoryTest {
-
+	
 	@Test
 	public void canReadHistory() throws IOException {
 		ASCIIGenomeHistory ag= new ASCIIGenomeHistory("test_data/asciigenome.yaml");
 		assertEquals(8, ag.getFiles().size());
 		assertEquals(4, ag.getPositions().size());
 		assertEquals(6, ag.getCommandHistory().size());
+		assertEquals(1, ag.getReference().size());
 		
 		ag= new ASCIIGenomeHistory("non-existing.yaml");
 		assertEquals(0, ag.getFiles().size());

@@ -68,7 +68,7 @@ public class TrackIntervalFeature extends Track {
 			if( ! suffix.endsWith(".gz")){
 				suffix += ".gz";
 			}
-			String tmpWorkFile= File.createTempFile("asciigenome.", "." + suffix).getAbsolutePath();
+			String tmpWorkFile= Utils.createTempFile(".asciigenome.", "." + suffix).getAbsolutePath();
 			new File(tmpWorkFile).deleteOnExit();
 			new File(new File(tmpWorkFile).getAbsolutePath() + ".tbi").deleteOnExit();
 			this.setWorkFilename(tmpWorkFile);

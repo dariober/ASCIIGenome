@@ -82,6 +82,8 @@ public abstract class Track {
 	private String gtfAttributeForName= null;
 	/** Should features on with same coords be squashed into a single one? */
 	private PrintRawLine printMode= PrintRawLine.OFF;
+	/** Number of decimal places to show when printing raw lines */
+	private int printNumDecimals= 3;
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
 	private int gap= 1;
 	protected boolean readsAsPairs= false;
@@ -101,7 +103,7 @@ public abstract class Track {
 	
 	private FeatureFilter featureFilter= new FeatureFilter(); 
 	private VCFHeader vcfHeader;
-
+	private String samtoolsPath;
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
 	 * @throws InvalidColourException 
@@ -431,7 +433,7 @@ public abstract class Track {
 		List<String> featureList= new ArrayList<String>();
 		String omitString= "";
 		for(String line : rawList){
-			featureList.add(line);
+			featureList.add(Utils.roundNumbers(line, this.getPrintNumDecimals(), this.getTrackFormat()));
 			count--;
 			if(count == 0){
 				int omitted= rawList.size() - this.getPrintRawLineCount();
@@ -484,7 +486,7 @@ public abstract class Track {
 			vcf.addAll(recordsAsStrings);
 			recordsAsStrings= vcf;
 		}
-		File tmp= Files.createTempFile("asciigenome.", ".print.tmp").toFile();
+		File tmp= Utils.createTempFile(".asciigenome.", ".print.tmp");
 		tmp.deleteOnExit();
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp.getAbsolutePath())));
         for(String line : recordsAsStrings){
@@ -857,5 +859,19 @@ public abstract class Track {
 		this.vcfHeader = vcfHeader;
 	}
 
+	public int getPrintNumDecimals() {
+		return printNumDecimals;
+	}
+
+	public void setPrintNumDecimals(int printNumDecimals) {
+		this.printNumDecimals = printNumDecimals;
+	}
+	
+	public void setSamtoolsPath(String samtoolsPath) {
+		this.samtoolsPath= samtoolsPath;
+	}
+	public String getSamtoolsPath() {
+		return this.samtoolsPath;
+	}
 }
 

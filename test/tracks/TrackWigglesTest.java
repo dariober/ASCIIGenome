@@ -56,14 +56,22 @@ public class TrackWigglesTest {
 	
 	@Test
 	public void canGetDataColumnIndexForBedGraph() throws IOException, NoSuchAlgorithmException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
-		
 		String url= "test_data/test.bedGraph";
 		GenomicCoords gc= new GenomicCoords("chr1:1-30", 80, null, null);
 		TrackWiggles tw= new TrackWiggles(url, gc, 5);
 		assertEquals(0, tw.getScreenScores().get(0), 0.0001);
 	}
-	
-	
+
+	@Test
+	public void invalidBedgraphRecordAsNaN() throws IOException, NoSuchAlgorithmException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
+		
+		GenomicCoords gc= new GenomicCoords("chr1:1-10", 10, null, null);
+		TrackWiggles tw= new TrackWiggles("test_data/invalid-1.bedgraph", gc, 4);
+		assertEquals(tw.getScreenScores().get(0), Float.NaN, 0.0001);
+		assertEquals(tw.getScreenScores().get(1), 10, 0.0001);
+		
+	}
+		
 	@Test
 	public void canParseNonBGZFFile() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
 		

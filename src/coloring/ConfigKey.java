@@ -40,10 +40,8 @@ public enum ConfigKey {
 	 * */
 	public static Set<ConfigKey> nonColorKeys(){
 		Set<ConfigKey> nonColorKeys= new HashSet<ConfigKey>(); 
-
 		nonColorKeys.add(ConfigKey.max_reads_in_stack);
 		nonColorKeys.add(ConfigKey.shade_baseq);
-		
 		return nonColorKeys;
 	}
 	

@@ -918,7 +918,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
+		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-round INT] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Print lines for the tracks matched by `track_regex`. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
 				+ "Features are filtered in/out according to the :code:`grep` command. Options:\n"
@@ -930,6 +930,9 @@ public class CommandList {
 				+ "* :code:`-clip` Clip lines longer than the screen width. This is the default.\n"
 				+ "\n"
 				+ "* :code:`-full` Wrap lines longer than the screen width.\n"
+				+ "\n"
+				+ "* :code:`-round INT` Round numbers to this many decimal places. "
+				+ "What constitutes a number is inferred from context. Default 3, do not round if < 0.\n"
 				+ "\n"
 				+ "* :code:`-off` Turn off printing.\n"
 				+ "\n"
@@ -960,10 +963,13 @@ public class CommandList {
 		cmd= new CommandHelp();
 		cmd.setName("setGenome"); cmd.setArgs("fasta|bam|genome"); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Set genome and reference sequence.");
-		cmd.setAdditionalDescription("The genome, i.e. the list of contig and names and sizes, "
+		cmd.setAdditionalDescription("The genome, i.e. the list of contig names and sizes, "
 				+ "can be extracted from the fasta reference, from a bam file or from "
 				+ "a genome identifier (e.g. hg19). If a fasta file is used also the "
-				+ "reference sequence becomes available.");
+				+ "reference sequence becomes available.\n"
+				+ "\n"
+				+ "Without arguments, set the genome using the last opened fasta file, if any and "
+				+ "if compatible with the current tracks.");
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
@@ -1047,7 +1053,7 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("addTracks"); cmd.setArgs("[files | URLs | indexes]..."); cmd.inSection= Section.GENERAL; 
+		cmd.setName("open"); cmd.setArgs("[files | URLs | indexes]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Add tracks from local or remote files. ");
 		cmd.setAdditionalDescription("The list of files to open can be a list of file names or URLs. "
 				+ "For local files, glob characters (wildcard) are expanded as in Bash "
@@ -1059,9 +1065,9 @@ public class CommandList {
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
-				+ "    addTracks peaks.bed genes.*.gtf~~~~~~~~<- Note use of wildecard\n"
-				+ "    addTracks http://remote/host/peaks.bed <- From URL\n"
-				+ "    addTracks 1 2 3 ~~~~~~~~~~~~~~~~~~~~~~~<- The three most recent files\n"
+				+ "    open peaks.bed genes.*.gtf~~~~~~~~<- Note use of wildecard\n"
+				+ "    open http://remote/host/peaks.bed <- From URL\n"
+				+ "    open 1 2 3 ~~~~~~~~~~~~~~~~~~~~~~~<- The three most recent files\n"
 				+ "");
 		cmdList.add(cmd);
 
@@ -1301,7 +1307,7 @@ public class CommandList {
 		paramList.add(Command.print.getCmdDescr());
 		paramList.add("setGenome");
 		paramList.add("show");
-		paramList.add("addTracks");
+		paramList.add("open");
 		paramList.add("recentlyOpened");
 		paramList.add("dropTracks");
 		paramList.add("orderTracks");

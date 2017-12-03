@@ -108,7 +108,7 @@ public class TrackWiggles extends Track {
 
 	private String tabixBedgraphToTmpFile(String inBdg) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		File tmp = File.createTempFile("asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz");
+		File tmp = Utils.createTempFile(".asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz");
 		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
 		tmp.deleteOnExit();
 		tmpTbi.deleteOnExit();
@@ -266,8 +266,7 @@ public class TrackWiggles extends Track {
 					continue;
 				}
 				if ( !this.isValidBedGraphLine(q) ) {
-					System.err.println("\nInvalid record found: " + q + "\n");
-					throw new InvalidRecordException();
+					continue;
 				}
 				String[] tokens= q.split("\t");
 				int screenFrom= Utils.getIndexOfclosestValue(Integer.valueOf(tokens[1])+1, this.getGc().getMapping());

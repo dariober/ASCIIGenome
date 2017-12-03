@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -112,6 +113,48 @@ public class Utils {
 	    BigDecimal bd = new BigDecimal(Double.toString(value));
 	    bd = bd.setScale(places, RoundingMode.HALF_EVEN);
 	    return bd.doubleValue();
+	}
+	
+	/**Create temp file in the current working directory or in the system's
+	 * tmp dir if failing to create in cwd.*/
+	public static File createTempFile(String prefix, String suffix){
+		File tmp = null;
+		try{
+			tmp= File.createTempFile(prefix, suffix, new File(System.getProperty("user.dir")));
+		} catch(IOException e){
+			try {
+				tmp= File.createTempFile(prefix, suffix);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+		return tmp;
+	}
+	
+	/**Return a buffered reader which iterate through the file or URL. Input may be
+	 * compressed. 
+	 * */
+	public static BufferedReader reader(String fileOrUrl) throws MalformedURLException, IOException{
+		
+		BufferedReader br= null;
+		InputStream gzipStream= null;
+		UrlValidator urlValidator = new UrlValidator();
+		if(fileOrUrl.endsWith(".gz") || fileOrUrl.endsWith(".bgz")){
+			if(urlValidator.isValid(fileOrUrl)) {
+				gzipStream = new GZIPInputStream(new URL(fileOrUrl).openStream());
+			} else {
+				gzipStream = new GZIPInputStream(new FileInputStream(fileOrUrl));
+			}
+			Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+			br = new BufferedReader(decoder);
+		} else if(urlValidator.isValid(fileOrUrl)) {
+			InputStream instream= new URL(fileOrUrl).openStream();
+			Reader decoder = new InputStreamReader(instream, "UTF-8");
+			br = new BufferedReader(decoder);
+		} else {
+			br = new BufferedReader(new FileReader(fileOrUrl));
+		}
+		return br;
 	}
 	
 	/**Extract template name from sam record read name. I.e. remove
@@ -2067,8 +2110,8 @@ public class Utils {
 
 	    File fakeVCFFile;
 	    List<String> str= new ArrayList<String>();
-		try {
-			fakeVCFFile = File.createTempFile("vcfheader", ".vcf");
+	    try {
+	    	fakeVCFFile = Utils.createTempFile(".vcfheader", ".vcf");
 		    fakeVCFFile.deleteOnExit();
 			final VariantContextWriter writer = new VariantContextWriterBuilder()
 		            .setOutputFile(fakeVCFFile)
@@ -2088,5 +2131,70 @@ public class Utils {
 			e.printStackTrace();
 		}
 		return str;
+	}
+
+	/**Parse string x and round the numbers it contains to d decimal places.
+	 * Typically, x is a raw line read from BED, GFF whatever. What makes a number
+	 * is guessed from context without too much sophistication.
+	 * With d < 0, do nothing and return x as it is.  
+	 * */
+	public static String roundNumbers(final String x, int d, TrackFormat trackFormat) {
+		if(d < 0){
+			return x;
+		}
+		// Capture any substring that looks like a number with decimals. Integers are left untouched.
+		Pattern p = Pattern.compile("-?\\d+\\.\\d+"); 
+		String xm= x;
+		if(trackFormat.equals(TrackFormat.GTF)){
+			// We consider "123.123" in double quotes as a number to comply with cufflinks/StringTie. 
+			xm= xm.replaceAll("\"", " ");
+		}
+		
+		Matcher m = p.matcher(xm);
+		List<Integer> starts= new ArrayList<Integer>();
+		List<Integer> ends= new ArrayList<Integer>();
+		List<String> repls= new ArrayList<String>();
+		while (m.find()) {
+			if(m.group().replace("-", "").startsWith("00")){
+				// We treat something like "000.123" as NaN. 
+				continue;
+			}
+			// If these chars precede the captured string, then the string may be an actual number 
+			if(m.start() == 0 || xm.charAt(m.start()-1) == '=' 
+					          || xm.charAt(m.start()-1) == ' '
+					          || xm.charAt(m.start()-1) == ','
+					          || xm.charAt(m.start()-1) == '\t'){
+				// If these chars follow the captured string, then the string is an actual number
+				if(m.end() == xm.length() || xm.charAt(m.end()) == ';'
+							|| xm.charAt(m.end()) == ' '      
+							|| xm.charAt(m.end()) == ','
+							|| xm.charAt(m.end()) == '\t'){
+					DecimalFormat format;
+					if(d == 0){
+						format = new DecimalFormat("0");
+					} else {
+						format = new DecimalFormat("0." + StringUtils.repeat("#", d));
+					}
+					String newval= format.format(Double.valueOf(m.group()));
+					starts.add(m.start());
+					ends.add(m.end());
+					repls.add(newval);
+				}
+			}
+		}
+		if(starts.size() == 0){
+			return x;
+		}
+		StringBuilder formattedX= new StringBuilder();
+		for(int i= 0; i < starts.size(); i++){
+			if(i == 0){
+				formattedX.append(x.substring(0, starts.get(i)));	
+			} else {
+				formattedX.append(x.substring(ends.get(i-1), starts.get(i)));
+			}
+			formattedX.append(repls.get(i));
+		}
+		formattedX.append(x.substring(ends.get(ends.size()-1)));
+		return formattedX.toString();
 	}
 }

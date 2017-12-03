@@ -5,11 +5,15 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.base.Stopwatch;
 import com.itextpdf.text.DocumentException;
 
 import coloring.Config;
@@ -34,6 +38,9 @@ public class TrackProcessor {
 	private boolean stripAnsi= true;
 	private boolean showGruler= true;
 	private boolean showCruler= true;
+	Stopwatch stopWatch= Stopwatch.createUnstarted();
+	private Boolean showMem;
+	private Boolean showTime;
 	
 	/* C O N S T R U C T O R S */
 	
@@ -45,6 +52,8 @@ public class TrackProcessor {
 	/* M E T H O D S */
 
 	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, DocumentException, InvalidColourException{
+
+		this.stopWatch.start();
 
 		final GenomicCoords currentGC= this.genomicCoordsHistory.current();
 
@@ -58,7 +67,7 @@ public class TrackProcessor {
 		
 		// Update tracks to new genomic coords
 		for(Track track : trackSet.getTrackList()){
-			if( ! track.getGc().equalCoordsAndWindowSize(currentGC) ){
+			if( ! track.getGc().equalCoordsAndWindowSize(currentGC) && track.getyMaxLines() > 0 && !track.isHideTrack()){
 				track.setGc(currentGC);
 			}			
 		}
@@ -66,7 +75,7 @@ public class TrackProcessor {
 		// we may need to autoscale to global min or max.
 		this.getTrackSet().setAutoYLimits();
 
-		// Visualize as required
+		// Visualise as required
 		for(Track track : trackSet.getTrackList()){
 			
 			track.setNoFormat(this.noFormat);
@@ -125,6 +134,7 @@ public class TrackProcessor {
 			wr.close();
 		}
 		this.snapshotFile= null;
+		this.stopWatch.reset();
 	}
 	
 	/** String screenshot is the string almost ready to be printed to screen or file.
@@ -154,8 +164,18 @@ public class TrackProcessor {
 	}
 	
 	private String getFooter(GenomicCoords currentGC) throws InvalidGenomicCoordsException, IOException {
-		String footer= currentGC.toString() + "; " + 
-				Math.rint(currentGC.getBpPerScreenColumn() * 10d)/10d + " bp/char; " + this.getMemoryStat();
+		
+		List<String> footList= new ArrayList<String>();
+		footList.add(currentGC.toString());
+		footList.add(Math.rint(currentGC.getBpPerScreenColumn() * 10d)/10d + " bp/char");
+		if(this.getShowMem()){
+			footList.add(this.getMemoryStat());
+		}
+		if(this.getShowTime()){
+			footList.add(this.stopWatch.toString());	
+		}
+		String footer= Joiner.on("; ").join(footList);
+        
         // Add midpoint marker
         int mid= (int) Math.rint(this.getWindowSize() / 2.0);
         int npad= mid - footer.length();
@@ -239,6 +259,18 @@ public class TrackProcessor {
 	protected void setShowCruler(boolean showCruler) {
 		this.showCruler = showCruler;
 	}
+
+	public void setShowMem(Boolean showMem) {
+		this.showMem= showMem;
+	}
+	private boolean getShowMem() {
+		return this.showMem;
+	}
 	
-	
+	public void setShowTime(Boolean showTime) {
+		this.showTime= showTime;
+	}
+	private boolean getShowTime() {
+		return this.showTime;
+	}
 }

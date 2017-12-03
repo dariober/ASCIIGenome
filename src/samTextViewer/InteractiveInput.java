@@ -271,7 +271,7 @@ public class InteractiveInput {
 				} else if(cmdTokens.get(0).equals("gffNameAttr")) {
 					proc.getTrackSet().setAttributeForGFFName(cmdTokens);
 					
-				} else if(cmdTokens.get(0).equals("addTracks")){
+				} else if(cmdTokens.get(0).equals("open") || cmdTokens.get(0).equals("addTracks")){
 					cmdTokens.remove(0);
 					
 					List<String> globbed = Utils.globFiles(cmdTokens);
@@ -539,7 +539,15 @@ public class InteractiveInput {
 		tokens.remove(0);
 		
 		if(tokens.size() == 0){
-			throw new InvalidCommandLineException();
+			// Try to read fasta from history file
+			ASCIIGenomeHistory ag= new ASCIIGenomeHistory();
+			try{
+				tokens.add(ag.getReference().get(0));
+				System.err.println("Using " + ag.getReference().get(0));
+			} catch(Exception e){
+				System.err.println("A previous reference file was not found.");
+				throw new InvalidCommandLineException();	
+			}
 		}
 		
 		GenomicCoords testSeqDict= new GenomicCoords("default", Utils.getTerminalWidth(), null, null); 

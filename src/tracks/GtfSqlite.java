@@ -12,6 +12,7 @@ import java.util.List;
 import com.google.common.base.Splitter;
 
 import exceptions.InvalidRecordException;
+import samTextViewer.Utils;
 
 public class GtfSqlite {
 
@@ -51,7 +52,7 @@ public class GtfSqlite {
 	private void createSQLiteGtfDb() throws IOException {
 		
 	    // Get a tmp file name: Delete tmp file, keep the name.
-	    File tmpfile= File.createTempFile("gtf.", ".tmp.db");
+	    File tmpfile= Utils.createTempFile(".gtf.", ".tmp.db");
 	    tmpfile.deleteOnExit();
 	    String sqlitedbName= tmpfile.getName();
 	    tmpfile.delete();

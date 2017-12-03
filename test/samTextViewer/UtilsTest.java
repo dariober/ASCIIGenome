@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -22,12 +23,16 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math.stat.descriptive.rank.Median;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -64,6 +69,32 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void canWinsoriseData(){
+		Stopwatch sw= Stopwatch.createStarted();
+		
+		Random rnd= new Random();
+		Float[] x= new Float[10000000];
+		
+		for(int i= 0; i < 10000000; i++){
+			//x[i]= rnd.nextFloat();
+			rnd.nextFloat();
+		}
+		System.err.println(sw);
+		sw.reset(); sw.start();
+		DescriptiveStatistics stats = new DescriptiveStatistics();
+
+		// Add the data from the array
+		for( int i = 0; i < x.length; i++) {
+		    stats.addValue(x[i]);
+		}
+
+		// Compute some statistics
+		double median = stats.getPercentile(50);
+		System.err.println(median);
+		System.err.println(sw);
+	}
+	
+	@Test
 	public void canGetVCFHeaderAsString(){
 		VCFFileReader reader = new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
 		VCFHeader hdr = reader.getFileHeader();
@@ -78,6 +109,47 @@ public class UtilsTest {
 		str= Utils.vcfHeaderToStrings(hdr);
 		assertEquals(12, str.size());
 		System.err.println(str);	
+	}
+	
+	@Test
+	public void canRoundNumbersInString(){
+		String x= "chr9.1234x\t9.1234\t2.2 003.1234 DP=4.467; XX=9.987,8.987; \"6.6\" AC=\"8.8\" AC=9.9876= x5.5 7.7x 1-1.2345 x\"9.99\";\tBAR";
+		String fmt= Utils.roundNumbers(x, 2, TrackFormat.BED);
+		assertTrue(fmt.startsWith("chr9.1234x\t"));
+		assertTrue(fmt.contains("\t9.12\t"));
+		assertTrue(fmt.contains(" 003.1234 ")); // More than one leading zeros make NaN
+		assertTrue(fmt.contains("DP=4.47;"));
+		assertTrue(fmt.contains("XX=9.99,8.99;"));
+		assertTrue(fmt.endsWith("\tBAR"));
+		assertTrue(fmt.contains(" AC=9.9876= x5.5 7.7x 1-1.2345 ")); // Not rounded
+		
+		x= "chrx\t10\t20";
+		fmt= Utils.roundNumbers(x, 2, TrackFormat.BED);
+		assertEquals(x, fmt);
+		
+		x= "chrx\t10\t20\t9.9911";
+		fmt= Utils.roundNumbers(x, 2, TrackFormat.BED);
+		assertEquals("chrx\t10\t20\t9.99", fmt);
+		
+		x= "chrx\t10\t20\t9.9910\tFOO";
+		fmt= Utils.roundNumbers(x, 2, TrackFormat.BED);
+		assertEquals("chrx\t10\t20\t9.99\tFOO", fmt);
+		
+		x= "chrx\t10\t20\t9.9910";
+		fmt= Utils.roundNumbers(x, 0, TrackFormat.BED);
+		assertEquals("chrx\t10\t20\t10", fmt);
+		
+		x= "chrx\t10\t20\t9.9910";
+		fmt= Utils.roundNumbers(x, -1, TrackFormat.BED);
+		assertEquals(x, fmt);
+		
+		x= "chrx 10 20 \"9.9910\"";
+		fmt= Utils.roundNumbers(x, 2, TrackFormat.BED);
+		assertEquals(x, fmt);
+		
+		x= "chrx 10 20 \"9.9910\""; // Round inside quotes
+		fmt= Utils.roundNumbers(x, 2, TrackFormat.GTF);
+		assertEquals("chrx 10 20 \"9.99\"", fmt);
 	}
 	
 	@Test
@@ -479,6 +551,7 @@ public class UtilsTest {
 		
 		x= ".|.|.|.|.|.|.|.|Tag=\"X\"".replaceAll("\\|", "\t"); // Double quotes are not stripped
 		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == \"\"X\"\"'"));
+		
 	}
 	
 	@Test

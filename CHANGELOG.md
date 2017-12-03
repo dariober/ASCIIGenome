@@ -1,7 +1,18 @@
 New in 1.12.0
 ============
 
+Bug fixes
+---------
+
 * Fixed bug where initialisation failed with VCF or SAM files with no records.
+
+* Fixed bug causing (some) tracks to be processed even when their height was set to zero. 
+
+* Temporary files are written to the current dir by default and only as a fallback to the system's tmp directory. 
+This is to reduce the risk of filling up the `/tmp/` partition, which usually is quite small.
+
+New features
+------------
 
 * Command [filterVariantReads](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#filtervariantreads) correctly interprets cigar operators `=` and `X`.
 
@@ -13,6 +24,17 @@ the offset from the first positions.
 to retain all reads intersecting interval, not just the variant ones.
 
 * [awk](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#awk) includes a built-in function, `get(...)`, to retrieve GFF, GTF, SAM or VCF attribute tags from the respective files. 
+
+* [print](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#print) rounds numbers to *n* decimal places via the `-round` option. In this
+way the printed lines are more readable.   
+
+* Command `addTracks` renamed to more conventional [open](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#open). 
+`addTracks` is still recognized as an alias.
+
+* Invalid bedgraph records are silently skipped. This is to allow tables with *NA* or similar to be loaded. 
+
+* [setGenome](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#setGenome) executed without arguments (tries to)
+load the last opened fasta file.  
 
 New in 1.11.0
 ============
@@ -193,7 +215,7 @@ New in 1.2.0
 * Fixed important bug creating indexes for vcf files. 
 
 * Positions visited in previous sessions of ASCIIGenome are now available in later sessions.
-  Visited positions are written to the the history file (`~/.asciigenome_history`) and retrieved
+  Visited positions are written to the history file (`~/.asciigenome_history`) and retrieved
   at the start of ASCIIGenome.
 
 * On exit check if a newer version is available on GitHub.

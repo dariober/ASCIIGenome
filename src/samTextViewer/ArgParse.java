@@ -76,6 +76,14 @@ public class ArgParse {
 					+ "If this file is missing use a built-in setting. "
 					+ "For examples of configuration files see https://github.com/dariober/ASCIIGenome/blob/master/resources/config/");
 		
+		parser.addArgument("--showMem", "-sm")
+			.action(Arguments.storeTrue())
+			.help("Show memory usage. Typically used for debugging only.");
+
+		parser.addArgument("--showTime", "-st")
+			.action(Arguments.storeTrue())
+			.help("Show time elapsed to process tracks. Typically used for debugging only.");
+		
 		parser.addArgument("--debug")
 			.type(Integer.class)
 			.choices(0, 1, 2)

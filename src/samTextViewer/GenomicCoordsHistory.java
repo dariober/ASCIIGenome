@@ -192,7 +192,7 @@ public class GenomicCoordsHistory {
 		
 		for(String x : positions){
 			// Remove from newPositions the positions taken from dot file
-			if(newPositions.get(0).equals(x)){
+			if(newPositions.size() > 0 && newPositions.get(0).equals(x)){
 				newPositions.remove(0);
 			}
 		}
