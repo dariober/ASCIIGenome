@@ -56,14 +56,22 @@ public class TrackWigglesTest {
 	
 	@Test
 	public void canGetDataColumnIndexForBedGraph() throws IOException, NoSuchAlgorithmException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
-		
 		String url= "test_data/test.bedGraph";
 		GenomicCoords gc= new GenomicCoords("chr1:1-30", 80, null, null);
 		TrackWiggles tw= new TrackWiggles(url, gc, 5);
 		assertEquals(0, tw.getScreenScores().get(0), 0.0001);
 	}
-	
-	
+
+	@Test
+	public void invalidBedgraphRecordAsNaN() throws IOException, NoSuchAlgorithmException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
+		
+		GenomicCoords gc= new GenomicCoords("chr1:1-10", 10, null, null);
+		TrackWiggles tw= new TrackWiggles("test_data/invalid-1.bedgraph", gc, 4);
+		assertEquals(tw.getScreenScores().get(0), Float.NaN, 0.0001);
+		assertEquals(tw.getScreenScores().get(1), 10, 0.0001);
+		
+	}
+		
 	@Test
 	public void canParseNonBGZFFile() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
@@ -79,8 +87,8 @@ public class TrackWigglesTest {
 		String url= "test_data/test.bedGraph.gz";
 		GenomicCoords gc= new GenomicCoords("chr1:1-30", 80, null, null);
 		TrackWiggles tw= new TrackWiggles(url, gc, 4);
-		tw.setYLimitMax(10.0);
-		tw.setYLimitMin(-10.0);
+		tw.setYLimitMax((float)10.0);
+		tw.setYLimitMin((float)-10.0);
 		tw.setyMaxLines(10);
 		String prof= tw.printToScreen();
 		System.out.println(prof);
@@ -93,8 +101,8 @@ public class TrackWigglesTest {
 		int yMaxLines= 10;
 		GenomicCoords gc= new GenomicCoords("chr1:1-800", 80, null, null);
 		TrackWiggles tw= new TrackWiggles(url, gc, 4);
-		tw.setYLimitMax(Double.NaN);
-		tw.setYLimitMin(Double.NaN);
+		tw.setYLimitMax(Float.NaN);
+		tw.setYLimitMin(Float.NaN);
 		tw.setyMaxLines(yMaxLines);
 		String prof= tw.printToScreen();
 		System.out.println(prof);
@@ -110,22 +118,22 @@ public class TrackWigglesTest {
 		int yMaxLines= 5;
 		GenomicCoords gc= new GenomicCoords("chr1:1-22", 80, null, null);
 		TrackWiggles tw= new TrackWiggles(url, gc, 4);
-		tw.setYLimitMax(Double.NaN);
-		tw.setYLimitMin(Double.NaN);
+		tw.setYLimitMax(Float.NaN);
+		tw.setYLimitMin(Float.NaN);
 		tw.setyMaxLines(yMaxLines);
 		String prof= tw.printToScreen();
 		System.out.println(prof);
 		
 		tw= new TrackWiggles("test_data/positive.bedGraph.gz", gc, 4);
-		tw.setYLimitMax(Double.NaN);
-		tw.setYLimitMin(Double.NaN);
+		tw.setYLimitMax(Float.NaN);
+		tw.setYLimitMin(Float.NaN);
 		tw.setyMaxLines(5);
 		prof= tw.printToScreen();
 		System.out.println(prof);
 		
 		tw= new TrackWiggles("test_data/negative.bedGraph.gz", gc, 4);
-		tw.setYLimitMax(Double.NaN);
-		tw.setYLimitMin(Double.NaN);
+		tw.setYLimitMax(Float.NaN);
+		tw.setYLimitMin(Float.NaN);
 		tw.setyMaxLines(5);
 		// prof= tw.printToScreen();
 
@@ -133,8 +141,8 @@ public class TrackWigglesTest {
 		
 		gc= new GenomicCoords("chr1:1-52", 80, null, null);
 		tw= new TrackWiggles("test_data/posNeg.bedGraph.gz", gc, 4);
-		tw.setYLimitMax(Double.NaN);
-		tw.setYLimitMin(Double.NaN);
+		tw.setYLimitMax(Float.NaN);
+		tw.setYLimitMin(Float.NaN);
 		tw.setyMaxLines(14);
 		System.out.println(tw.printToScreen());
 	}
@@ -177,8 +185,8 @@ public class TrackWigglesTest {
 		}
 
 		TrackWiggles tw= new TrackWiggles(tdfFile, gc, 4);
-		tw.setYLimitMax(Double.NaN);
-		tw.setYLimitMin(Double.NaN);
+		tw.setYLimitMax(Float.NaN);
+		tw.setYLimitMin(Float.NaN);
 		tw.setyMaxLines(40);
 		System.out.println(tw.printToScreen());
 		
@@ -192,9 +200,9 @@ public class TrackWigglesTest {
 		System.out.println("START");
 		GenomicCoords gc= new GenomicCoords("chr7:5540000-5570000", 80, null, null);
 		TrackWiggles tw= new TrackWiggles("test_data/ear045.oxBS.actb.tdf", gc, 4);
-		Double raw= tw.getScreenScores().get(0);
+		Float raw= tw.getScreenScores().get(0);
 		tw.setRpm(true);
-		Double rpm= tw.getScreenScores().get(0);
+		Float rpm= tw.getScreenScores().get(0);
 		assertTrue(rpm > raw);
 	}
 		

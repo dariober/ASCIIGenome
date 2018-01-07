@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -uf -o pipefail
 
 docstring="DESCRIPTION
 Test commands work smoothly and do not throw unexpected exceptions.
@@ -20,14 +20,50 @@ fi
 
 # ------------------------------------------------------------------------------
 
+source bashTestFunctions.sh
+
 ASCIIGenome="$1 --debug 2 -ni"
 
-set -x
+#pprint 'Can highlight pattern'
+#$ASCIIGenome ../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -r 1:1-400000 -x 'print -hl 200000'
 
-## Can avoid history positions not compatible with current genome
-$ASCIIGenome -x 'addTracks ../test_data/pairs.sam && p' > /dev/null
+pprint 'Can explain sam flags'
+$ASCIIGenome -nf -x 'explainSamFlag 2690' > flags.tmp
+grep '^ X ' flags.tmp | grep 'supplementary alignment' > /dev/null
+assertEquals 0 $?
+grep -v ' X ' flags.tmp | grep 'read is PCR or optical duplicate' > /dev/null
+assertEquals 0 $?
+rm flags.tmp
 
-## Can show read pairs
+pprint 'Can avoid history positions not compatible with current genome'
+$ASCIIGenome -x 'goto FOOBAR && open ../test_data/pairs.sam && p' > /dev/null
+assertEquals 0 $?
+
+pprint 'find - CASE INSENSITIVE'
+$ASCIIGenome -nf -x 'print && find .actb' ../test_data/hg19_genes.gtf.gz | grep LACTB > /dev/null
+assertEquals 0 $?
+
+pprint 'find - LITERAL 1'
+$ASCIIGenome -nf -x 'print && find -F .ACTB' ../test_data/hg19_genes.gtf.gz | grep LACTB > /dev/null
+assertEquals 1 $?
+
+pprint 'find - LITERAL 2' # '+' only as regex is invalid
+$ASCIIGenome -nf -x 'goto chr1:1 && print && find -F +' ../test_data/hg19_genes.gtf.gz | grep DDX11L1 > /dev/null
+assertEquals 0 $?
+
+pprint 'find - CASE SENSITIVE'
+$ASCIIGenome -nf -x 'print && find -c actb' ../test_data/hg19_genes.gtf.gz | grep ACTB > /dev/null
+assertEquals 1 $?
+
+pprint 'grep - CASE INSENSITIVE'
+$ASCIIGenome -nf -x 'goto chr1:11874 && print && grep -i ddx\d+' ../test_data/hg19_genes.gtf.gz | grep DDX11L1 > /dev/null
+assertEquals 0 $?
+
+pprint 'Can read VCF with sequence dictionary but with no records'
+$ASCIIGenome ../test_data/norecords.vcf | grep 'test_data/norecords.vcf#' > /dev/null
+assertEquals 0 $?
+
+pprint 'Can show read pairs'
 $ASCIIGenome -x 'readsAsPairs' ../test_data/pairs.sam > /dev/null
 
 ## Init from VCF
@@ -43,6 +79,16 @@ $ASCIIGenome ../test_data/hg19_genes_head.gtf -x "goto chr1:6267-17659 && featur
 
 ## Test awk with getSamTag()
 $ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && awk 'getSamTag(\"NM\") > 0'" > /dev/null
+
+## Test awk with VCF functions
+$ASCIIGenome ../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf -x "goto 1:200000-1000000 && awk 'getInfoTag(\"AC\") > 0'" > /dev/null
+$ASCIIGenome ../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf -x "goto 1:200000-1000000 && awk 'getFmtTag(\"GT\") == \"0|1\"'" > /dev/null
+
+## Test awk with GTF/GFF
+$ASCIIGenome ../test_data/hg19_genes_head.gtf -x "awk 'getGtfTag(\"gene_name\") ~ \"DD\"'" > /dev/null
+$ASCIIGenome ../test_data/hg19_genes_head.gtf -x "awk 'get(\"gene_name\") ~ \"DD\"'" > /dev/null
+$ASCIIGenome ../test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3 -x "awk 'getGffTag(\"ID\") ~ \"ENST\"'" > /dev/null
+$ASCIIGenome ../test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3 -x "awk 'get(\"ID\") ~ \"ENST\"'" > /dev/null
 
 ## Test header names. Note escape on $
 $ASCIIGenome ../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && bookmark && awk '\$POS > 5500000' actb.bam" > /dev/null

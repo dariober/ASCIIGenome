@@ -8,8 +8,8 @@ import samTextViewer.Utils;
 /** Text representation of a continuous profile along the screen positions */
 class TextProfile {
 	
-	private Double yMaxLimit= Double.NaN;   // Store the max depth of the track
-	private Double yMinLimit= Double.NaN;
+	private Float yMaxLimit= Float.NaN;   // Store the max depth of the track
+	private Float yMinLimit= Float.NaN;
 	private double scorePerDot; // Store the scaling factor: Each dot in the profile cooresponds to
 	                            // this many units of yValues. 
 	// Text representation of yValues scled by yMaxLines. Each inner list is a line on screen.
@@ -31,11 +31,11 @@ class TextProfile {
 	 * @param yMimUser, yMaxUser Min and max values for y-axis as set by user. 
 	 * If NaN use min and max from yValues  
 	 */
-	public TextProfile(List<Double> yValues, int yMaxLines, Double yMinUser, Double yMaxUser){
+	public TextProfile(List<Float> yValues, int yMaxLines, Float num1, Float num2){
 				
 		// * Get ymin and ymax of input yValues
-		Double ymin= Utils.range(yValues)[0];
-		Double ymax= Utils.range(yValues)[1];
+		Float ymin= Utils.range(yValues)[0];
+		Float ymax= Utils.range(yValues)[1];
 		
 //		Double ymin= Double.NaN;
 //		Double ymax= Double.NaN;
@@ -50,38 +50,38 @@ class TextProfile {
 //			}
 //		}
 		
-		if(yMinUser.isNaN()){
-			yMinUser= ymin;
+		if(num1.isNaN()){
+			num1= ymin;
 		}
-		if(yMaxUser.isNaN()){
-			yMaxUser= ymax;
+		if(num2.isNaN()){
+			num2= ymax;
 		}
-		this.yMinLimit= yMinUser;
-		this.yMaxLimit= yMaxUser;
-		this.scorePerDot= (double)(yMaxUser - yMinUser) / ((double)yMaxLines * 2); // * 2 because we use ':' for 2 units in a single line.
+		this.yMinLimit= num1;
+		this.yMaxLimit= num2;
+		this.scorePerDot= (double)(num2 - num1) / ((double)yMaxLines * 2); // * 2 because we use ':' for 2 units in a single line.
 
 		// Shift the yValues to zero by subtracting the ymin or ymax.
 		// FIXME: This resetting makes the smallest zero and therefore indistinguishable from "true" zero!
 		double offset= 0;
-		if(yMinUser > 0){
-			offset= yMinUser; 
+		if(num1 > 0){
+			offset= num1; 
 		} 
-		if(yMaxUser < 0){
-			offset= yMaxUser; 
+		if(num2 < 0){
+			offset= num2; 
 		}
 		List<Double> yValuesOffset= new ArrayList<Double>();
 		for(double y : yValues){
 			// Here we set to NaN points outside the ylimits and we offset points as necessary
-			if(yMaxUser > 0 && yMinUser < 0){ // ylim include 0. No point excluded
+			if(num2 > 0 && num1 < 0){ // ylim include 0. No point excluded
 				yValuesOffset.add(y - offset);
-			} else if ( (yMinUser >= 0 && y < yMinUser) || (yMaxUser <= 0 && y > yMaxUser) ){ // y is outside the ylimits
+			} else if ( (num1 >= 0 && y < num1) || (num2 <= 0 && y > num2) ){ // y is outside the ylimits
 				yValuesOffset.add(Double.NaN);
 			} else {
 				yValuesOffset.add(y - offset);
 			}
 		}
 		// Locate zero on y axis. It's silly to generate a sequence just to find the index closest to zero. But anyway...
-		List<Double> yAxis = Utils.seqFromToLenOut(yMinUser, yMaxUser, yMaxLines);
+		List<Double> yAxis = Utils.seqFromToLenOut(num1, num2, yMaxLines);
 		int y0= 0;
 		if(!Utils.allIsNaN(yAxis)){
 			y0= Utils.getIndexOfclosestValue(0, yAxis);

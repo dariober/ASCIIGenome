@@ -190,16 +190,19 @@ class TextRead extends IntervalFeature{
 				sq.setText(xc);
 			}
 			// Set formatting
-			if(!this.samRecord.getReadNegativeStrandFlag()){
+			if(this.samRecord.getMappingQuality() < SHADE_MAPQ){
+				sq.setBgColor(Config.get(ConfigKey.shade_low_mapq));
+			}
+			else if(this.isStructuralVariantRead()){
+				sq.setBgColor(Config.get(ConfigKey.shade_structural_variant));
+			}
+			else if(!this.samRecord.getReadNegativeStrandFlag()){
 				sq.setFgColor(Config.get(ConfigKey.feature_background_positive_strand));
 			} 
 			else if(this.samRecord.getReadNegativeStrandFlag()){
 				sq.setFgColor(Config.get(ConfigKey.feature_background_negative_strand));
 			} 
 
-			if(this.samRecord.getMappingQuality() < SHADE_MAPQ){
-				sq.setBgColor(Config.get(ConfigKey.shade_low_mapq));
-			}
 			squashedRead.add(sq);
 		}
 		return squashedRead;
@@ -213,6 +216,19 @@ class TextRead extends IntervalFeature{
 		}
 		return false;
 	}
+	
+	private boolean isStructuralVariantRead(){
+		if(this.samRecord.getReadPairedFlag() && ! this.samRecord.getProperPairFlag()){
+			return true;
+		}
+		else if(this.samRecord.getAttribute("SA") != null){
+			return true;
+		} 
+		else {
+			return false;
+		}
+	}
+
 	
 	/** Get a representation of the read as it appears aligned to the reference. 
 	 * I.e. clipped ends omitted and deletions appearing as gaps (empty byte).
@@ -240,11 +256,13 @@ class TextRead extends IntervalFeature{
 		
 		// Walk along the aligned read and append bases to textRead as long as
 		// the genomic position of the base is inside the genomic coords of the window
-		int curBaseGenomicPos= samRecord.getAlignmentStart();
+		int curBaseGenomicPos= this.samRecord.getAlignmentStart();
 		int curBaseReadPos= 0; // Position on read. Start from zero walk along the read
-		List<CigarElement> cigarEls= samRecord.getCigar().getCigarElements();
+		List<CigarElement> cigarEls= this.samRecord.getCigar().getCigarElements();
 		for(CigarElement el : cigarEls){
-			if(el.getOperator() == CigarOperator.M || el.getOperator() == CigarOperator.EQ || el.getOperator() == CigarOperator.X){
+			if(el.getOperator().equals(CigarOperator.M) || 
+			   el.getOperator().equals(CigarOperator.EQ) || 
+			   el.getOperator().equals(CigarOperator.X)){
 				// Add nucleotide chars to growing read
 				for(int i= 0; i < el.getLength(); i++){
 					FeatureChar xc= new FeatureChar();
@@ -282,7 +300,11 @@ class TextRead extends IntervalFeature{
 						else if(bs && Character.toUpperCase(xc.getText()) == charU){
 							xc.setBgColor(Config.get(ConfigKey.unmethylated_background));
 							xc.setFgColor(Config.get(ConfigKey.unmethylated_foreground));
-						} 
+						}
+						else if(this.isStructuralVariantRead()){
+							xc.setBgColor(Config.get(ConfigKey.shade_structural_variant));
+							xc.setFgColor(Config.get(ConfigKey.foreground));
+						}
 						else if(Character.toUpperCase(xc.getText()) == 'A'){
 							xc.setFgColor(Config.get(ConfigKey.seq_a));
 						} 
@@ -340,15 +362,15 @@ class TextRead extends IntervalFeature{
 					curBaseGenomicPos++; // M consumes read and ref bases. So increment them
 					curBaseReadPos++;
 				}
-			} else if(el.getOperator() == CigarOperator.D || el.getOperator() == CigarOperator.N){
+			} else if(el.getOperator().equals(CigarOperator.D) || el.getOperator().equals(CigarOperator.N)){
 				// Add gap chars to growing read
 				for(int i= 0; i < el.getLength(); i++){
 					FeatureChar xc= new FeatureChar();
 					if(curBaseGenomicPos >= gc.getFrom() && curBaseGenomicPos <= gc.getTo()){
-						if(el.getOperator() == CigarOperator.D){
+						if(el.getOperator().equals(CigarOperator.D)){
 							xc.setText(this.DEL);
 							xc.setInvertFgBgColor(true);
-						} else if(el.getOperator() == CigarOperator.N){ 
+						} else if(el.getOperator().equals(CigarOperator.N)){ 
 							xc.setText(this.SKIP);
 						} else {
 							System.err.println("Unexpected operator");
@@ -358,16 +380,16 @@ class TextRead extends IntervalFeature{
 					}
 					curBaseGenomicPos++;
 				}
-			} else if(el.getOperator() == CigarOperator.I) {
+			} else if(el.getOperator().equals(CigarOperator.I)) {
 				if(dnaRead.size() > 0){ // If the insertion is outside the terminal window, there is no base to mark
 					dnaRead.get(dnaRead.size()-1).setInvertFgBgColor(true);
 				}
 				curBaseReadPos += el.getLength();
-			} else if(el.getOperator() == CigarOperator.S){
+			} else if(el.getOperator().equals(CigarOperator.S)){
 				curBaseReadPos += el.getLength();
-			} else if(el.getOperator() == CigarOperator.H){
+			} else if(el.getOperator().equals(CigarOperator.H)){
 				// Nothing to do
-			} else if(el.getOperator() == CigarOperator.P){
+			} else if(el.getOperator().equals(CigarOperator.P)){
 				// Nothing to do: NOT SURE is is correct to just ignore padding!
 			} else {
 				System.err.println("Unexpected operator in cigar string for record\n" + samRecord.getSAMString()); 

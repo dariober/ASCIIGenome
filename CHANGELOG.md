@@ -1,3 +1,89 @@
+New in 1.12.0
+============
+
+Bug fixes
+---------
+
+* Fixed bug where initialisation failed with VCF or SAM files with no records.
+
+* Fixed bug causing (some) tracks to be processed even when their height was set to zero. 
+
+* Temporary files are written to the current dir by default and only as a fallback to the system's tmp directory. 
+This is to reduce the risk of filling up the `/tmp/` partition, which usually is quite small.
+
+* [find](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#find) explicitly 
+informs the user that no match was found when the searched pattern returns no matches.
+   
+
+New features
+------------
+
+* Command [filterVariantReads](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#filtervariantreads) correctly interprets cigar operators `=` and `X`.
+
+* Command [filterVariantReads](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#filtervariantreads) intreprets intervals and offsets. *E.g.*
+`filterVariantReads -r 1000+/-10` or `filterVariantReads -r 1000+10`. **NB** In contrast to v1.11.0, select an interval using colon `-r from:to`. The minus `-` sign will subtract
+the offset from the first positions.
+
+* Add `-all` option to [filterVariantReads](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#filtervariantreads) 
+to retain all reads intersecting interval, not just the variant ones.
+
+* [awk](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#awk) includes a built-in function, `get(...)`, to retrieve GFF, GTF, SAM or VCF attribute tags from the respective files. 
+
+* [print](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#print) rounds numbers to *n* decimal places via the `-round` option. In this
+way the printed lines are more readable.   
+
+* `-clip` mode in [print](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#print) gives more readable output. 
+Long SEQ and QUAL fields in bam reads and long REF and ALT sequences in vcf are also clipped. 
+since typically you don't want to read long sequences and quality strings. Also long strings like Oxford Nanopore or PacBio CIGAR strings 
+are shortened. `-full` mode still returns whole shebang which combined with `print -sys 'cut ...'` (or similar) gives readable output.
+
+* `-hl` option in [print](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#print) can highlight matches to a regular expression, similar to vim `/` or
+(`CTRL-F` / `CMD-F` in many GUI programs). In addition, regexes matching a FORMAT tag in VCF records highlight the tag AND the corresponding values. 
+This is useful to quickly scan a sample property across samples. For example, here we highlight the AD format tag in two samples:
+
+<img src="docs/screenshots/print_highlight.png" width="800">  
+
+* Command `addTracks` renamed to more conventional [open](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#open). 
+`addTracks` is still recognized as an alias.
+
+* Invalid bedgraph records are silently skipped. This is to allow tables with *NA* or similar to be loaded. 
+
+* [setGenome](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#setGenome) executed without arguments (tries to)
+load the last opened fasta file.
+
+* [find](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#find) and 
+[grep]([setGenome](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#grep)) now match in **case insensitive** 
+mode by default. Use flag `-c` to enabled case sensitivity. In addition, flag `-F` matches literal strings, not regex.
+
+* New command [explainSamFlag](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#find) to quickly make sense of SAM flags. Similar to 
+[picard/explain-flags](https://broadinstitute.github.io/picard/explain-flags.html). Example:
+
+```
+[h] for help: explainSamFlag 99 173 3840
+
+99 173 3840                                                                    
+ X  X   .    read paired
+ X  .   .    read mapped in proper pair
+ .  X   .    read unmapped
+ .  X   .    mate unmapped
+ .  .   .    read reverse strand
+ X  X   .    mate reverse strand
+ X  .   .    first in pair
+ .  X   .    second in pair
+ .  .   X    not primary alignment
+ .  .   X    read fails platform/vendor quality checks
+ .  .   X    read is PCR or optical duplicate
+ .  .   X    supplementary alignment
+```
+
+* Present a suggestion when a misspelt command is issued. E.g.: 
+
+```
+[h] for help: prnt                                                                                                                                                                   
+Unrecognized command: prnt                                                                                                                                                           
+Maybe you mean print?                                                                                                                                                                
+```
+
 New in 1.11.0
 ============
 
@@ -177,7 +263,7 @@ New in 1.2.0
 * Fixed important bug creating indexes for vcf files. 
 
 * Positions visited in previous sessions of ASCIIGenome are now available in later sessions.
-  Visited positions are written to the the history file (`~/.asciigenome_history`) and retrieved
+  Visited positions are written to the history file (`~/.asciigenome_history`) and retrieved
   at the start of ASCIIGenome.
 
 * On exit check if a newer version is available on GitHub.

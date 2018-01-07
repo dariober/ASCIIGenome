@@ -204,14 +204,20 @@ Find
 find
 ++++
 
-:code:`find [-all] regex [track]`
+:code:`find [-all] [-c] [-F] regex [track]`
 
 Find the first record in `track` containing `regex`. The search for `regex` starts from the *end* of the current window (so the current window is not searched) and moves forward on the current chromosome. At the end  of the current chromosome move to the next chromosomes and then restart at  the start of the initial one. The search stops at the first match found. If `track` is omitted the first interval track found is searched.
-The :code:`-all` flag will return the region containing **all** the regex matches.
+
+* :code:`-all`: Return the region containing **all** the regex matches.
+
+* :code:`-c` Match in CASE SENSITIVE mode. Default is case insensitive (changed in v1.12).
+
+* :code:`-F`: Interpret `regex` as a fixed, literal string instead of as a regex.
+
 Examples::
 
-    find -all ACTB genes.gtf -> Find all the matches of ACTB
-    find 'ACTB gene'         -> Find the first match of 'ACTB gene'
+    find -all ACTB genes.gtf -> Find all the matches of ACTB. Case ignored
+    find -c 'ACTB gene'      -> Find the first match of 'ACTB gene'. Case sensitive
 
 Use single quotes to define patterns containing spaces.
 
@@ -270,7 +276,7 @@ Display
 grep
 ++++
 
-:code:`grep [-i = .*] [-e = ''] [-v] [track_regex = .*]...`
+:code:`grep [-i = .*] [-e = ''] [-c] [-F] [-v] [track_regex = .*]...`
 
 Similar to grep command, filter for features including or excluding patterns. Options:
 
@@ -278,13 +284,15 @@ Similar to grep command, filter for features including or excluding patterns. Op
 
 * :code:`-e regex` Exclude features matching this regex.
 
+* :code:`-c` Match in CASE SENSITIVE mode. Default is case insensitive (changed in v1.12).
+
+* :code:`-F` Interpret `regex` in `-i` and `-e` as a fixed, literal string instead of as a regex.
+
 * :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 * :code:`track_regex` Apply to tracks matched by `track_regex`.
 
 *NOTES*
-
-* For case insensitive matching prepend :code:`(?i)` to regex pattern. E.g. :code:`-i (?i)ACTB` to match also Actb
 
 * Use *single quotes* to delimit patterns containing spaces e.g. :code:`-i 'ACTB gene'`
 
@@ -318,11 +326,33 @@ Awk understands numbers and mathematical operators. With awk you can filter reco
 
 * :code:`-V` Invert selection: apply changes to the tracks not selected by list of track_regex
 
-*ADDITIONAL FEATURES*
+**ADDITIONAL FEATURES**
 
-* :code:`getSamTag(<tag>)` Return the value of the given sam tag. A record is filtered out if the tag is not found. This function is usually meaningless on non-sam records where sam tags are not present.
+Function :code:`get(...)` can indistinctly be applied to GTF, GFF, SAM records and to INFO and FORMAT fields in VCF files. Double quoting around <tag> is optional.
 
-* Column headers. The following variables are replaced by the appropriate column indexes, so they can be used to easily select columns. Make sure the track types are selected to be compatible with the headers.
+* :code:`get(tag)` on **GTF**
+
+Return the value of tag attribute.
+
+* :code:`get(tag, [value_idx])` on **GFF**
+
+Return the value of tag attribute. If the attribute contains multiple values return the value at index value_idx (1-based). If value_idx is missing (as default), return the entire value as it is.
+
+* :code:`get(tag)` on **SAM**
+
+Return the value of the given sam tag.
+
+* :code:`get(tag, [value_index])` on **VCF**
+
+Return the value of the given **INFO** tag. If the tag contains multiple values, optionally return only the value at index *value_index*. If necessary, prepend 'INFO/' to tag to disambiguate it from FORMAT tags or if the header does not contain this tag. If the tag is of type 'Flag', return 1 if present, 0 otherwise.
+
+* :code:`get(tag, [sample_idx], [value_idx])` on **VCF**
+
+Return the value of the **FORMAT** tag for sample index *sample_idx* (default to 1, first sample). If the tag contains multiple values, optionally return the value at index *value_idx*. If necessary, prepend 'FMT/' to tag to disambiguate it from INFO tags or if the header does not contain this tag.  If the tag is of type 'Flag', return 1 if present, 0 otherwise.
+
+* Column headers
+
+The following variables are replaced by the appropriate column indexes, so they can be used to easily select columns. Make sure the track types are selected to be compatible with the headers.
 
 - bam tracks::
 
@@ -364,13 +394,20 @@ Note the use of single quotes to wrap the actual script and the use of double qu
 
     awk -off .gtf .gff
 
-* Return bam records where NM tag (edit distance) is > 0::
+* Return bam records where NM tag (edit distance) is > 0. Double quotes around NM are optional::
 
-    awk 'getSamTag("NM") > 0'
+    awk 'get(NM) > 0' .bam
+
+* Filter vcf records by FORMAT tag. Suppose tag AD in the *second* sample is :code:`63,7`::
+
+    awk 'get(AD, 2)' my.vcf      # Returns string '63,7'
+    awk 'get(AD, 2, 1)' my.vcf   # Returns 63
+    awk 'get(AD, 2, 2)' my.vcf   # Returns 7
+    awk 'get(FMT/AD, 2)' my.vcf  # If AD is also in INFO or missing in header
 
 * Using header variables::
 
-    awk '$FEATURE \  "CDS" && $START > 1234' .gff
+    awk '$FEATURE \  "CDS" && $START > 1234' my.gff
 
 With no args, turn off awk for all tracks.
 
@@ -532,7 +569,7 @@ For example, use column 5 on tracks containing #1 and #3::
 print
 +++++
 
-:code:`print [-n INT] [-full] [-off] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]`
+:code:`print [-n INT] [-full] [-off] [-round INT] [-hl re] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]`
 
 Print lines for the tracks matched by `track_regex`.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the :code:`grep` command. Options:
 
@@ -543,6 +580,10 @@ Print lines for the tracks matched by `track_regex`.  Useful to show exactly wha
 * :code:`-clip` Clip lines longer than the screen width. This is the default.
 
 * :code:`-full` Wrap lines longer than the screen width.
+
+* :code:`-round INT` Round numbers to this many decimal places. What constitutes a number is inferred from context. Default 3, do not round if < 0.
+
+* :code:`-hl regex` Highlight substrings matching regex. If regex matches a FORMAT tag in a VCF record, highlight the tag itself and also the sample values corresponding to that tag.
 
 * :code:`-off` Turn off printing.
 
@@ -584,7 +625,7 @@ Show SAM records as pairs.
 filterVariantReads
 ++++++++++++++++++
 
-:code:`filterVariantReads [-r from-to] [-v] [track_regex = .*]...`
+:code:`filterVariantReads [-r from/to] [-all] [-v] [track_regex = .*]...`
 
 Filter reads containing a variant in the given interval.
  filterVariantReads selects for reads where the read sequence mismatches with the reference sequence in the given interval on the current chromosome. This command is useful to inspect reads supporting a putative alternate allele at a variant site.
@@ -593,17 +634,28 @@ NOTES
 
 * filterVariantReads requires a reference fasta sequence to be set, e.g. via the command line option :code:`-fa <ref.fa>` or with command :code:`setGenome`.
 
-* The CIGAR string determines a mismatch between read and reference. Consequently, there may be be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval :code:`-r`.
+* The CIGAR string determines a mismatch between read and reference. Consequently, there may be be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval.
 
 * The position (POS) of deletions in VCF files refer to the first non-deleted base on the reference. Therefore, the interval to :code:`-r` should be POS+1 to filter for reads supporting a deletion (but see also the previous point).
 
 OPTIONS
 
-* :code:`-r from-to` Select reads mismatching in this interval. E.g. :code:`-r 1000-1010` or for a single position :code:`-r 1000`.
+* :code:`-r region` Select reads mismatching in this interval. *region* can be given as: a single position, a position plus and/or minus an offset, an interval. See examples.
+
+* :code:`-all` Return *all* reads intersecting the :code:`-r` interval, not just the variant ones.
 
 * :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
 * :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.
+
+EXAMPLES::
+
+    filterVariantReads -r 1000+10   <- From 1000 to 1010
+    filterVariantReads -r 1000-10   <- From 990 to 1000
+    filterVariantReads -r 1000+/-10 <- From 990 to 1010
+    filterVariantReads -r 1000:1100 <- From 1000 to 1100
+    filterVariantReads -r 1000 vars.*vcf <- Apply to tracks captured by `vars.*vcf`
+    filterVariantReads              <- Remove filter for all tracks
 
 
 rpm
@@ -664,7 +716,9 @@ setGenome
 
 :code:`setGenome fasta|bam|genome`
 
-Set genome and reference sequence. The genome, i.e. the list of contig and names and sizes, can be extracted from the fasta reference, from a bam file or from a genome identifier (e.g. hg19). If a fasta file is used also the reference sequence becomes available.
+Set genome and reference sequence. The genome, i.e. the list of contig names and sizes, can be extracted from the fasta reference, from a bam file or from a genome identifier (e.g. hg19). If a fasta file is used also the reference sequence becomes available.
+
+Without arguments, set the genome using the last opened fasta file, if any and if compatible with the current tracks.
 
 setConfig
 +++++++++
@@ -686,27 +740,35 @@ Examples::
 
 Parameters and current settings::
 
-    background                         231  # Background colour
-    foreground                         0    # Foreground colour
-    seq_a                              12   # Colour for nucleotide A
-    seq_c                              9    # Colour for nucleotide C
-    seq_g                              2    # Colour for nucleotide G
-    seq_t                              11   # Colour for nucleotide T
-    seq_other                          0    # Colour for any other nucleotide
-    shade_low_mapq                     249  # Colour for shading reads wit low MAPQ
-    methylated_foreground              231  # Foreground colour for methylated C
-    unmethylated_foreground            231  # Foreground colour for unmethylated C
-    methylated_background              9    # Background colour for methylated C
-    unmethylated_background            12   # Background colour for unmethylated C
-    title_colour                       0    # Default Colour for titles
-    feature_background_positive_strand 147  # Colour for features on forward strand
-    feature_background_negative_strand 224  # Colour for features on reverse strand
-    feature_background_no_strand       249  # Colour for features without strand information
-    footer                             12   # Colour for footer line
-    chrom_ideogram                     0    # Colour for chromosome ideogram
-    ruler                              0    # Colour for ruler
-    max_reads_in_stack                 2000 # Max number of reads to accumulate when showing read tracks
-    shade_baseq                        13   # Shade read base when quality is below this threshold
+    background                         231  # Background colour                                          
+    foreground                         0    # Foreground colour                                          
+    seq_a                              12   # Colour for nucleotide A                                    
+    seq_c                              9    # Colour for nucleotide C                                    
+    seq_g                              2    # Colour for nucleotide G                                    
+    seq_t                              11   # Colour for nucleotide T                                    
+    seq_other                          0    # Colour for any other nucleotide                            
+    shade_low_mapq                     249  # Colour for shading reads wit low MAPQ                      
+    methylated_foreground              231  # Foreground colour for methylated C                         
+    unmethylated_foreground            231  # Foreground colour for unmethylated C                       
+    methylated_background              9    # Background colour for methylated C                         
+    unmethylated_background            12   # Background colour for unmethylated C                       
+    title_colour                       0    # Default Colour for titles                                  
+    feature_background_positive_strand 147  # Colour for features on forward strand                      
+    feature_background_negative_strand 224  # Colour for features on reverse strand                      
+    feature_background_no_strand       249  # Colour for features without strand information             
+    footer                             12   # Colour for footer line                                     
+    chrom_ideogram                     0    # Colour for chromosome ideogram                             
+    ruler                              0    # Colour for ruler                                           
+    max_reads_in_stack                 2000 # Max number of reads to accumulate when showing read tracks 
+    shade_baseq                        13   # Shade read base when quality is below this threshold       
+    shade_structural_variant           33   # Background colour for reads suggesting structural variation
+
+explainSamFlag
+++++++++++++++
+
+:code:`explainSamFlag INT [INT ...]`
+
+Explain the list of bitwise SAM flags.  Decode one or more sam flags to human readable form and print them as a table. Similar to https://broadinstitute.github.io/picard/explain-flags.html
 
 show
 ++++
@@ -736,10 +798,10 @@ List recently opened files.  Files are listed with their absolute path.
 
 * :code:`-grep <pattern>` Filter for files (strings) matching pattern. Use single quotes to define patterns containing spaces, e.g. :code:`-grep 'goto chr1'`.
 
-addTracks
-+++++++++
+open
+++++
 
-:code:`addTracks [files | URLs | indexes]...`
+:code:`open [files | URLs | indexes]...`
 
 Add tracks from local or remote files.  The list of files to open can be a list of file names or URLs. For local files, glob characters (wildcard) are expanded as in Bash (but note that currently globs in directory names are not expanded.)
 
@@ -747,9 +809,9 @@ Alternatively, the files to open can be given as numeric indexes of recently ope
 
 Examples::
 
-    addTracks peaks.bed genes.*.gtf        <- Note use of wildecard
-    addTracks http://remote/host/peaks.bed <- From URL
-    addTracks 1 2 3                        <- The three most recent files
+    open peaks.bed genes.*.gtf        <- Note use of wildecard
+    open http://remote/host/peaks.bed <- From URL
+    open 1 2 3                        <- The three most recent files
 
 
 dropTracks
@@ -821,9 +883,10 @@ sys
 
 Execute a system command. By default the given :code:`command` is executed as a string passed to Bash as :code:`bash -c string`. With the :code:`-L` option the command is executed literally as it is. Note that with the :code:`-L` option globs are not expanded by Java. Examples::
 
-    sys pwd                    <- Print working directory name
-    sys ls *.bam               <- List files ending in .bam
-    sys samtools index aln.bam <- Exec samtools
+    sys pwd                          <- Print working directory name
+    sys ls *.bam                     <- List files ending in .bam
+    sys bcftools view -h vars.vcf.gz <- Print vcf header
+
 
 q
 +

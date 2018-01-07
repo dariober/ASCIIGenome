@@ -315,7 +315,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("find"); cmd.setArgs("[-all] regex [track]"); cmd.inSection= Section.FIND; 
+		cmd.setName("find"); cmd.setArgs("[-all] [-c] [-F] regex [track]"); cmd.inSection= Section.FIND; 
 		cmd.setBriefDescription("Find the first record in `track` containing `regex`."); 
 		cmd.setAdditionalDescription(""
 				+ "The search for `regex` starts from the *end* of the current window "
@@ -323,11 +323,17 @@ public class CommandList {
 				+ "At the end  of the current chromosome move to the next chromosomes and then restart at "
 				+ " the start of the initial one. The search stops at the first match found. If `track` is omitted "
 				+ "the first interval track found is searched.\n"
-				+ "The :code:`-all` flag will return the region containing **all** the regex matches.\n"
+				+ "\n"
+				+ "* :code:`-all`: Return the region containing **all** the regex matches.\n"
+				+ "\n"
+				+ "* :code:`-c` Match in CASE SENSITIVE mode. Default is case insensitive (changed in v1.12).\n"
+				+ "\n"
+				+ "* :code:`-F`: Interpret `regex` as a fixed, literal string instead of as a regex.\n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
-				+ "    find -all ACTB genes.gtf~-> Find all the matches of ACTB\n"
-				+ "    find 'ACTB gene'~~~~~~~~~-> Find the first match of 'ACTB gene'\n"
+				+ "    find -all ACTB genes.gtf~-> Find all the matches of ACTB. Case ignored\n"
+				+ "    find -c 'ACTB gene'~~~~~~-> Find the first match of 'ACTB gene'. Case sensitive\n"
 				+ "\n"
 				+ "Use single quotes to define patterns containing spaces."); 
 		cmdList.add(cmd);
@@ -385,7 +391,7 @@ public class CommandList {
 
 		
 		cmd= new CommandHelp();
-		cmd.setName("grep"); cmd.setArgs("[-i = .*] [-e = ''] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("grep"); cmd.setArgs("[-i = .*] [-e = ''] [-c] [-F] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Similar to grep command, filter for features including or excluding patterns.");
 		cmd.setAdditionalDescription(""
 				+ "Options:\n"
@@ -394,13 +400,15 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-e regex` Exclude features matching this regex.\n"
 				+ "\n"
+				+ "* :code:`-c` Match in CASE SENSITIVE mode. Default is case insensitive (changed in v1.12).\n"
+				+ "\n"
+				+ "* :code:`-F` Interpret `regex` in `-i` and `-e` as a fixed, literal string instead of as a regex.\n"
+				+ "\n"
 				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "* :code:`track_regex` Apply to tracks matched by `track_regex`.\n"
 				+ "\n"
 				+ "*NOTES*\n"
-				+ "\n"
-				+ "* For case insensitive matching prepend :code:`(?i)` to regex pattern. E.g. :code:`-i (?i)ACTB` to match also Actb\n"
 				+ "\n"
 				+ "* Use *single quotes* to delimit patterns containing spaces e.g. :code:`-i 'ACTB gene'`\n"
 				+ "\n"
@@ -445,13 +453,41 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-V` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
-				+ "*ADDITIONAL FEATURES*\n"
+				+ "**ADDITIONAL FEATURES**\n"
 				+ "\n"
-				+ "* :code:`getSamTag(<tag>)` Return the value of the given sam tag. "
-				+ "A record is filtered out if the tag is not found. "
-				+ "This function is usually meaningless on non-sam records where sam tags are not present.\n"
+				+ "Function :code:`get(...)` can indistinctly be applied to GTF, GFF, SAM records and to INFO "
+				+ "and FORMAT fields in VCF files. Double quoting around <tag> is optional.\n"
 				+ "\n"
-				+ "* Column headers. The following variables are replaced by the appropriate column indexes, so they "
+				+ "* :code:`get(tag)` on **GTF**\n"
+				+ "\n"
+				+ "Return the value of tag attribute.\n"
+				+ "\n"
+				+ "* :code:`get(tag, [value_idx])` on **GFF**\n"
+				+ "\n"
+				+ "Return the value of tag attribute. If the attribute contains multiple values "
+				+ "return the value at index value_idx (1-based). If value_idx is missing (as default), return the entire value as it is.\n"
+				+ "\n"
+				+ "* :code:`get(tag)` on **SAM**\n"
+				+ "\n"
+				+ "Return the value of the given sam tag.\n"
+				+ "\n"
+				+ "* :code:`get(tag, [value_index])` on **VCF**\n"
+				+ "\n"
+				+ "Return the value of the given "
+				+ "**INFO** tag. If the tag contains multiple values, optionally return only the value at index *value_index*. "
+				+ "If necessary, prepend 'INFO/' to tag to disambiguate it from FORMAT tags or if the header does not "
+				+ "contain this tag. If the tag is of type 'Flag', return 1 if present, 0 otherwise.\n"
+				+ "\n"
+				+ "* :code:`get(tag, [sample_idx], [value_idx])` on **VCF**\n"
+				+ "\n"
+				+ "Return the value of the **FORMAT** tag for sample index *sample_idx* "
+				+ "(default to 1, first sample). If the tag contains multiple values, optionally return the value "
+				+ "at index *value_idx*. If necessary, prepend 'FMT/' to tag to disambiguate it from INFO tags "
+				+ "or if the header does not contain this tag.  If the tag is of type 'Flag', return 1 if present, 0 otherwise.\n"
+				+ "\n"
+				+ "* Column headers\n"
+				+ "\n"
+				+ "The following variables are replaced by the appropriate column indexes, so they "
 				+ "can be used to easily select columns. Make sure the track types are selected to be compatible "
 				+ "with the headers.\n"
 				+ "\n"
@@ -500,13 +536,20 @@ public class CommandList {
 				+ "\n"
 				+ "    awk -off .gtf .gff\n"
 				+ "\n"
-				+ "* Return bam records where NM tag (edit distance) is > 0::\n"
+				+ "* Return bam records where NM tag (edit distance) is > 0. Double quotes around NM are optional::\n"
 				+ "\n"
-				+ "    awk 'getSamTag(\"NM\") > 0'\n"
+				+ "    awk 'get(NM) > 0' .bam\n"
+				+ "\n"
+				+ "* Filter vcf records by FORMAT tag. Suppose tag AD in the *second* sample is :code:`63,7`::\n"
+				+ "\n"
+				+ "    awk 'get(AD, 2)' my.vcf ~~~~~# Returns string '63,7'\n"
+				+ "    awk 'get(AD, 2, 1)' my.vcf ~~# Returns 63\n"
+				+ "    awk 'get(AD, 2, 2)' my.vcf ~~# Returns 7\n"
+				+ "    awk 'get(FMT/AD, 2)' my.vcf ~# If AD is also in INFO or missing in header\n"
 				+ "\n"
 				+ "* Using header variables::\n"
 				+ "\n"
-				+ "    awk '$FEATURE \\~ \"CDS\" && $START > 1234' .gff\n"
+				+ "    awk '$FEATURE \\~ \"CDS\" && $START > 1234' my.gff\n"
 				+ "\n"
 				+ "With no args, turn off awk for all tracks.\n"
 				+ "\n"
@@ -602,7 +645,7 @@ public class CommandList {
 		cmdList.add(cmd);		
 
 		cmd= new CommandHelp();
-		cmd.setName("filterVariantReads"); cmd.setArgs("[-r from-to] [-v] [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
+		cmd.setName("filterVariantReads"); cmd.setArgs("[-r from/to] [-all] [-v] [track_regex = .*]..."); cmd.inSection= Section.ALIGNMENTS; 
 		cmd.setBriefDescription("Filter reads containing a variant in the given interval.\n");
 		cmd.setAdditionalDescription("filterVariantReads selects for reads where the read sequence "
 				+ "mismatches with the reference sequence in the given interval on the current chromosome. "
@@ -617,19 +660,30 @@ public class CommandList {
 				+ "* The CIGAR string determines a mismatch between read and reference. Consequently, there may be be an inconsistency "
 				+ "between variant positions in reads and positions in a VCF file if some normalization "
 				+ "or indel realignment has been performed by the variant caller that generated the VCF. In such cases "
-				+ "consider enlarging the target interval :code:`-r`.\n"
+				+ "consider enlarging the target interval.\n"
 				+ "\n"
 				+ "* The position (POS) of deletions in VCF files refer to the first non-deleted base on the reference. Therefore, "
 				+ "the interval to :code:`-r` should be POS+1 to filter for reads supporting a deletion (but see also the previous point).\n"
 				+ "\n"
 				+ "OPTIONS\n"
 				+ "\n"
-				+ "* :code:`-r from-to` Select reads mismatching in this interval. E.g. :code:`-r 1000-1010` or for a single position "
-				+ ":code:`-r 1000`.\n"
+				+ "* :code:`-r region` Select reads mismatching in this interval. *region* can be given as: a single position, "
+				+ "a position plus and/or minus an offset, an interval. See examples.\n"
+				+ "\n"
+				+ "* :code:`-all` Return *all* reads intersecting the :code:`-r` interval, not just the variant ones.\n"
 				+ "\n"
 				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "* :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.\n"
+				+ "\n"
+				+ "EXAMPLES::\n"
+				+ "\n"
+				+ "    filterVariantReads -r 1000+10 ~~<- From 1000 to 1010\n"
+				+ "    filterVariantReads -r 1000-10 ~~<- From 990 to 1000\n"
+				+ "    filterVariantReads -r 1000+/-10 <- From 990 to 1010\n"
+				+ "    filterVariantReads -r 1000:1100 <- From 1000 to 1100\n"
+				+ "    filterVariantReads -r 1000 vars.*vcf <- Apply to tracks captured by `vars.*vcf`\n"
+				+ "    filterVariantReads ~~~~~~~~~~~~~<- Remove filter for all tracks\n"
 				);
 		cmdList.add(cmd);
 		
@@ -872,7 +926,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
+		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-round INT] [-hl re] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Print lines for the tracks matched by `track_regex`. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
 				+ "Features are filtered in/out according to the :code:`grep` command. Options:\n"
@@ -884,6 +938,12 @@ public class CommandList {
 				+ "* :code:`-clip` Clip lines longer than the screen width. This is the default.\n"
 				+ "\n"
 				+ "* :code:`-full` Wrap lines longer than the screen width.\n"
+				+ "\n"
+				+ "* :code:`-round INT` Round numbers to this many decimal places. "
+				+ "What constitutes a number is inferred from context. Default 3, do not round if < 0.\n"
+				+ "\n"
+				+ "* :code:`-hl regex` Highlight substrings matching regex. If regex matches a FORMAT tag in a VCF record, "
+				+ "highlight the tag itself and also the sample values corresponding to that tag.\n"
 				+ "\n"
 				+ "* :code:`-off` Turn off printing.\n"
 				+ "\n"
@@ -914,10 +974,13 @@ public class CommandList {
 		cmd= new CommandHelp();
 		cmd.setName("setGenome"); cmd.setArgs("fasta|bam|genome"); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Set genome and reference sequence.");
-		cmd.setAdditionalDescription("The genome, i.e. the list of contig and names and sizes, "
+		cmd.setAdditionalDescription("The genome, i.e. the list of contig names and sizes, "
 				+ "can be extracted from the fasta reference, from a bam file or from "
 				+ "a genome identifier (e.g. hg19). If a fasta file is used also the "
-				+ "reference sequence becomes available.");
+				+ "reference sequence becomes available.\n"
+				+ "\n"
+				+ "Without arguments, set the genome using the last opened fasta file, if any and "
+				+ "if compatible with the current tracks.");
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
@@ -948,6 +1011,14 @@ public class CommandList {
 				+ confHelp);
 		cmdList.add(cmd);
 
+		cmd= new CommandHelp();
+		cmd.setName("explainSamFlag"); cmd.setArgs("INT [INT ...]"); cmd.inSection= Section.GENERAL;
+		cmd.setBriefDescription("Explain the list of bitwise SAM flags. ");
+		cmd.setAdditionalDescription("Decode one or more sam flags to human readable form and print them as a table. "
+				+ "Similar to "
+				+ "https://broadinstitute.github.io/picard/explain-flags.html");
+		cmdList.add(cmd);
+		
 		cmd= new CommandHelp();
 		cmd.setName("show"); cmd.setArgs("<arg>"); cmd.inSection= Section.GENERAL;
 		cmd.setBriefDescription("Show or set features to display. ");
@@ -1001,7 +1072,7 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("addTracks"); cmd.setArgs("[files | URLs | indexes]..."); cmd.inSection= Section.GENERAL; 
+		cmd.setName("open"); cmd.setArgs("[files | URLs | indexes]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Add tracks from local or remote files. ");
 		cmd.setAdditionalDescription("The list of files to open can be a list of file names or URLs. "
 				+ "For local files, glob characters (wildcard) are expanded as in Bash "
@@ -1013,9 +1084,9 @@ public class CommandList {
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
-				+ "    addTracks peaks.bed genes.*.gtf~~~~~~~~<- Note use of wildecard\n"
-				+ "    addTracks http://remote/host/peaks.bed <- From URL\n"
-				+ "    addTracks 1 2 3 ~~~~~~~~~~~~~~~~~~~~~~~<- The three most recent files\n"
+				+ "    open peaks.bed genes.*.gtf~~~~~~~~<- Note use of wildecard\n"
+				+ "    open http://remote/host/peaks.bed <- From URL\n"
+				+ "    open 1 2 3 ~~~~~~~~~~~~~~~~~~~~~~~<- The three most recent files\n"
 				+ "");
 		cmdList.add(cmd);
 
@@ -1162,9 +1233,9 @@ public class CommandList {
 				+ "executed literally as it is. Note that with the :code:`-L` option globs "
 				+ "are not expanded by Java. Examples::\n"
 				+ "\n"
-				+ "    sys pwd~~~~~~~~~~~~~~~~~~~~<- Print working directory name\n"
-				+ "    sys ls *.bam ~~~~~~~~~~~~~~<- List files ending in .bam\n"
-				+ "    sys samtools index aln.bam <- Exec samtools"
+				+ "    sys pwd~~~~~~~~~~~~~~~~~~~~~~~~~~<- Print working directory name\n"
+				+ "    sys ls *.bam ~~~~~~~~~~~~~~~~~~~~<- List files ending in .bam\n"
+				+ "    sys bcftools view -h vars.vcf.gz <- Print vcf header\n"
 				+ "");
 		cmdList.add(cmd);
 		
@@ -1213,7 +1284,7 @@ public class CommandList {
 	
 	
 	/* Known commnds */
-	protected static final List<String> cmds(){
+	public static final List<String> cmds(){
 		List<String> paramList= new ArrayList<String>();
 		paramList.add("q");
 		paramList.add("h");
@@ -1254,8 +1325,9 @@ public class CommandList {
 		paramList.add("dataCol");
 		paramList.add(Command.print.getCmdDescr());
 		paramList.add("setGenome");
+		paramList.add("explainSamFlag");
 		paramList.add("show");
-		paramList.add("addTracks");
+		paramList.add("open");
 		paramList.add("recentlyOpened");
 		paramList.add("dropTracks");
 		paramList.add("orderTracks");

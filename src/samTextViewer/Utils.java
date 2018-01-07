@@ -27,10 +27,12 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -45,6 +47,7 @@ import java.util.zip.GZIPInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BedFeature;
@@ -71,6 +74,7 @@ import htsjdk.samtools.SAMFileHeader.SortOrder;
 import htsjdk.samtools.SAMFileWriter;
 import htsjdk.samtools.SAMFileWriterFactory;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamInputResource;
@@ -85,6 +89,9 @@ import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.variantcontext.writer.Options;
+import htsjdk.variant.variantcontext.writer.VariantContextWriter;
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
@@ -107,6 +114,48 @@ public class Utils {
 	    BigDecimal bd = new BigDecimal(Double.toString(value));
 	    bd = bd.setScale(places, RoundingMode.HALF_EVEN);
 	    return bd.doubleValue();
+	}
+	
+	/**Create temp file in the current working directory or in the system's
+	 * tmp dir if failing to create in cwd.*/
+	public static File createTempFile(String prefix, String suffix){
+		File tmp = null;
+		try{
+			tmp= File.createTempFile(prefix, suffix, new File(System.getProperty("user.dir")));
+		} catch(IOException e){
+			try {
+				tmp= File.createTempFile(prefix, suffix);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+		return tmp;
+	}
+	
+	/**Return a buffered reader which iterate through the file or URL. Input may be
+	 * compressed. 
+	 * */
+	public static BufferedReader reader(String fileOrUrl) throws MalformedURLException, IOException{
+		
+		BufferedReader br= null;
+		InputStream gzipStream= null;
+		UrlValidator urlValidator = new UrlValidator();
+		if(fileOrUrl.endsWith(".gz") || fileOrUrl.endsWith(".bgz")){
+			if(urlValidator.isValid(fileOrUrl)) {
+				gzipStream = new GZIPInputStream(new URL(fileOrUrl).openStream());
+			} else {
+				gzipStream = new GZIPInputStream(new FileInputStream(fileOrUrl));
+			}
+			Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+			br = new BufferedReader(decoder);
+		} else if(urlValidator.isValid(fileOrUrl)) {
+			InputStream instream= new URL(fileOrUrl).openStream();
+			Reader decoder = new InputStreamReader(instream, "UTF-8");
+			br = new BufferedReader(decoder);
+		} else {
+			br = new BufferedReader(new FileReader(fileOrUrl));
+		}
+		return br;
 	}
 	
 	/**Extract template name from sam record read name. I.e. remove
@@ -341,7 +390,9 @@ public class Utils {
 				}
 			}
 		}
-		mergedList.get(0).getIdeogram(true, true);
+		for(IntervalFeature x : mergedList){
+			x.getIdeogram(true, true);
+		}
 		return mergedList;
 	}
 	
@@ -415,6 +466,7 @@ public class Utils {
 	 * @throws InvalidRecordException 
 	 * @throws InvalidCommandLineException 
 	 * @throws ClassNotFoundException */
+	@SuppressWarnings("unused")
 	public static String initRegionFromFile(String x) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		UrlValidator urlValidator = new UrlValidator();
 		String region= "";
@@ -430,10 +482,15 @@ public class Utils {
 				srf.validationStringency(ValidationStringency.SILENT);
 				samReader = srf.open(new File(x));
 			}
-			// region= samReader.getFileHeader().getSequence(0).getSequenceName();
-			SAMRecord rec = samReader.iterator().next(); 
-			region= rec.getContig() + ":" + rec.getAlignmentStart();
-			samReader.close();
+			// Default: Start from the first contig in dictionary
+			region= samReader.getFileHeader().getSequence(0).getSequenceName();
+			SAMRecordIterator iter = samReader.iterator();
+			if(iter.hasNext()){
+				// If there are records in this BAM, init from first record
+				SAMRecord rec = iter.next(); 
+				region= rec.getContig() + ":" + rec.getAlignmentStart();
+				samReader.close();
+			}
 			return region;
 		
 		} else if(fmt.equals(TrackFormat.BIGWIG) && !urlValidator.isValid(x)){
@@ -458,9 +515,6 @@ public class Utils {
 			} 
 			System.err.println("Cannot initialize from " + x);
 			throw new RuntimeException();
-		
-//		} else if(Utils.isUcscGenePredSource(x)){
-//			return initRegionFromUcscGenePredSource(x);
 		
 		} else {
 			// Input file appears to be a generic interval file. We expect chrom to be in column 1
@@ -498,6 +552,19 @@ public class Utils {
 					region= feature.getChrom() + ":" + feature.getFrom();
 				}
 				br.close();
+				return region;
+			}
+			if(line == null){ // This means the input has no records
+				region= "Undefined_contig";
+				if(fmt.equals(TrackFormat.VCF)){
+					SAMSequenceDictionary seqdict = getVCFHeader(x).getSequenceDictionary();
+					if(seqdict != null){
+						Iterator<SAMSequenceRecord> iter = seqdict.getSequences().iterator();
+						if(iter.hasNext()){
+							region= iter.next().getSequenceName();
+						}
+					}
+				}
 				return region;
 			}
 		} 
@@ -1109,14 +1176,15 @@ public class Utils {
 			// Get the longest string in this column
 			int maxStr= 1;
 			for(String x : col){
+				x= Utils.stripAnsiCodes(x);
 				if(x.length() > maxStr){
 					maxStr= x.length();
 				}
 			}
 			// ** Pass through the column again and pad with spaces to match length of longest string
-			// maxStr+=1; // +1 is for separating
 			for(int j= 0; j < col.size(); j++){
-				String padded= String.format("%-" + maxStr + "s", col.get(j));
+				int nblanks= maxStr - Utils.stripAnsiCodes(col.get(j)).length();
+				String padded= col.get(j) + StringUtils.repeat(" ", nblanks); // String.format("%-" + maxStr + "s", col.get(j));
 				col.set(j, padded);
 			}
 			paddedTable.add((List<String>) col);
@@ -1141,14 +1209,14 @@ public class Utils {
 			boolean flush= false;
 			for(int i= 0; i < row.size(); i++){
 				if(! flush){
-					int whiteSize= row.get(i).length() - row.get(i).trim().length();
+					int whiteSize= Utils.stripAnsiCodes(row.get(i)).length() - Utils.stripAnsiCodes(row.get(i)).trim().length();
 					if(whiteSize > terminalWidth/4.0){
 						// The rest of this row will be flushed
 						flush= true;						
 					}
 				}
 				if(flush){
-					row.set(i, row.get(i).trim());
+					row.set(i, row.get(i).replaceAll("^ +| +$", ""));
 				}
 			}
 		}
@@ -1157,23 +1225,15 @@ public class Utils {
 		List<String> outputTable= new ArrayList<String>();
 		for(List<String> lstRow : tTable){
 			String row= Joiner.on(" ").join(lstRow); // Here you decide what separates columns.
-			outputTable.add(row.toString().trim());
+			outputTable.add(row.toString()); // Do not use .trim() here otherwise you could strip ANSI formatting
 		}
 		return outputTable;
-//		for(int r= 0; r < rawList.size(); r++){
-//			StringBuilder row= new StringBuilder();
-//			for(int c= 0; c < paddedTable.size(); c++){
-//				row.append(paddedTable.get(c).get(r) + " ");
-//			}
-//			outputTable.add(row.toString().trim());
-//		}
-//		return outputTable;
 	}
 
 	/** Function to round x and y to a number of digits enough to show the difference in range
 	 * This is for pretty printing only.
 	 * */
-	public static Double[] roundToSignificantDigits(double x, double y, int nSignif) {
+	public static String[] roundToSignificantDigits(double x, double y, int nSignif) {
 
 		Double[] rounded= new Double[2];
 		
@@ -1181,21 +1241,22 @@ public class Utils {
 	    if (diff < 1e-16){
 	    	rounded[0]= x;
 	    	rounded[1]= y;
-	    	return rounded;
 	    }
-	    if(diff > 1){
+	    else if(diff > 1){
 	    	// Round to 2 digits regardless of how large is the diff
 	    	rounded[0]= Math.rint(x * Math.pow(10.0, nSignif))/Math.pow(10.0, nSignif);
 	    	rounded[1]= Math.rint(y * Math.pow(10.0, nSignif))/Math.pow(10.0, nSignif);
-			return rounded;
-	    } else {
+		} else {
 	    	// Diff is small, < 1. See how many digits you need to approximate
 	    	// Get number of leading zeros
 	    	int nzeros= (int) (Math.ceil(Math.abs(Math.log10(diff))) + nSignif);
 	    	rounded[0]= Math.rint(x * Math.pow(10.0, nzeros))/Math.pow(10.0, nzeros);
 	    	rounded[1]= Math.rint(y * Math.pow(10.0, nzeros))/Math.pow(10.0, nzeros);
-	    	return rounded;
-	    }   	        		
+	    }
+	    String[] out= new String[2];
+	    out[0]= rounded[0].toString();
+	    out[1]= rounded[1].toString();
+	    return out;
 	}
 	
 	/** From http://stackoverflow.com/questions/202302/rounding-to-an-arbitrary-number-of-significant-digits */
@@ -1509,12 +1570,12 @@ public class Utils {
 	/** Same as R range(..., na.rm= TRUE) function: Return min and max of 
 	 * list of values ignoring NaNs.
 	 * */
-	public static Double[] range(List<Double> y){
-		Double[] range= new Double[2];
+	public static Float[] range(List<Float> y){
+		Float[] range= new Float[2];
 		
-		Double ymin= Double.NaN;
-		Double ymax= Double.NaN;
-		for(Double x : y){
+		Float ymin= Float.NaN;
+		Float ymax= Float.NaN;
+		for(Float x : y){
 			if(!x.isNaN()){
 				if(x > ymax || ymax.isNaN()){
 					ymax= x;
@@ -1978,17 +2039,6 @@ public class Utils {
 	 * */
 	public static void sortAndIndexSamOrBam(String inSamOrBam, String sortedBam, boolean deleteOnExit) throws IOException {
 
-//		 final SamReader reader = SamReaderFactory.makeDefault().open(new File(inSamOrBam));
-//		 reader.getFileHeader().setSortOrder(SortOrder.coordinate);
-//		 final SAMFileWriter writer = new SAMFileWriterFactory().makeSAMOrBAMWriter(reader.getFileHeader(), false, new File(sortedBam));
-//
-//		 for (final SAMRecord rec : reader) {
-//			 System.err.println(rec);
-//			 writer.addAlignment(rec);
-//	     }
-//		 reader.close();
-//	     writer.close();
-		
 		/*  ------------------------------------------------------ */
 		/* This chunk prepares SamReader from local bam or URL bam */
 		UrlValidator urlValidator = new UrlValidator();
@@ -2037,5 +2087,146 @@ public class Utils {
 			readName= readName.substring(0, readName.length()-2);
 		}
 		return readName;
+	}
+
+	public static List<String> vcfHeaderToStrings(VCFHeader header) {
+
+	    File fakeVCFFile;
+	    List<String> str= new ArrayList<String>();
+	    try {
+	    	fakeVCFFile = Utils.createTempFile(".vcfheader", ".vcf");
+		    fakeVCFFile.deleteOnExit();
+			final VariantContextWriter writer = new VariantContextWriterBuilder()
+		            .setOutputFile(fakeVCFFile)
+		            .setReferenceDictionary(header.getSequenceDictionary())
+		            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER, Options.WRITE_FULL_FORMAT_FIELD))
+		            .build();
+		    writer.writeHeader(header);
+		    writer.close();
+		    BufferedReader br= new BufferedReader(new FileReader(fakeVCFFile));
+		    String line= br.readLine();
+		    while(line != null){
+		    	str.add(line);
+		    	line= br.readLine();
+		    }
+		    br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return str;
+	}
+
+	/**Parse string x and round the numbers it contains to d decimal places.
+	 * Typically, x is a raw line read from BED, GFF whatever. What makes a number
+	 * is guessed from context without too much sophistication.
+	 * With d < 0, do nothing and return x as it is.  
+	 * */
+	public static String roundNumbers(final String x, int d, TrackFormat trackFormat) {
+		if(d < 0){
+			return x;
+		}
+		// Capture any substring that looks like a number with decimals. Integers are left untouched.
+		Pattern p = Pattern.compile("-?\\d+\\.\\d+"); 
+		String xm= x;
+		if(trackFormat.equals(TrackFormat.GTF)){
+			// We consider "123.123" in double quotes as a number to comply with cufflinks/StringTie. 
+			xm= xm.replaceAll("\"", " ");
+		}
+		
+		Matcher m = p.matcher(xm);
+		List<Integer> starts= new ArrayList<Integer>();
+		List<Integer> ends= new ArrayList<Integer>();
+		List<String> repls= new ArrayList<String>();
+		while (m.find()) {
+			if(m.group().replace("-", "").startsWith("00")){
+				// We treat something like "000.123" as NaN. 
+				continue;
+			}
+			// If these chars precede the captured string, then the string may be an actual number 
+			if(m.start() == 0 || xm.charAt(m.start()-1) == '=' 
+					          || xm.charAt(m.start()-1) == ' '
+					          || xm.charAt(m.start()-1) == ','
+					          || xm.charAt(m.start()-1) == '\t'){
+				// If these chars follow the captured string, then the string is an actual number
+				if(m.end() == xm.length() || xm.charAt(m.end()) == ';'
+							|| xm.charAt(m.end()) == ' '      
+							|| xm.charAt(m.end()) == ','
+							|| xm.charAt(m.end()) == '\t'){
+					DecimalFormat format;
+					if(d == 0){
+						format = new DecimalFormat("0");
+					} else {
+						format = new DecimalFormat("0." + StringUtils.repeat("#", d));
+					}
+					String newval= format.format(Double.valueOf(m.group()));
+					starts.add(m.start());
+					ends.add(m.end());
+					repls.add(newval);
+				}
+			}
+		}
+		if(starts.size() == 0){
+			return x;
+		}
+		StringBuilder formattedX= new StringBuilder();
+		for(int i= 0; i < starts.size(); i++){
+			if(i == 0){
+				formattedX.append(x.substring(0, starts.get(i)));	
+			} else {
+				formattedX.append(x.substring(ends.get(i-1), starts.get(i)));
+			}
+			formattedX.append(repls.get(i));
+		}
+		formattedX.append(x.substring(ends.get(ends.size()-1)));
+		return formattedX.toString();
+	}
+
+	/**Winsorise vector x. Adapted from https://www.r-bloggers.com/winsorization/.
+	 * */
+	public static List<Float> winsor2(List<Float> x, double multiple) {
+				/*
+				winsor2<- function (x, multiple=3)
+				{
+				   med <- median(x)
+				   y <- x - med
+				   sc <- mad(y, center=0) * multiple
+				   y[ y > sc ] <- sc
+				   y[ y < -sc ] <- -sc
+				   y + med
+				}
+				*/
+		if(multiple <= 0){
+			throw new ArithmeticException(); 
+		}
+		DescriptiveStatistics stats = new DescriptiveStatistics();
+		for(float z : x){
+			stats.addValue(z);
+		}
+		float median = (float)stats.getPercentile(50);
+		List<Float> y= new ArrayList<Float>(x);
+		for(int i= 0; i < x.size(); i++){
+			y.set(i, x.get(i) - median);
+		}
+		float sc= (float) (Utils.medianAbsoluteDeviation(y, 0) * multiple);
+		for(int i= 0; i < y.size(); i++){
+			if(y.get(i) > sc){
+				y.set(i, sc);
+			}
+			else if(y.get(i) < -sc){
+				y.set(i, -sc);
+			}
+			y.set(i, y.get(i) + median);
+		}
+		return y;
+	}
+	/** Translated from R function mad(x, center, constant= 1.4826, na.rm= FALSE, low= FALSE, high= FALSE). 
+	 * */
+	private static float medianAbsoluteDeviation(List<Float> x, float center) {
+		DescriptiveStatistics stats = new DescriptiveStatistics();
+		for(int i= 0; i < x.size(); i++){
+			stats.addValue(Math.abs(x.get(i) - center));
+		}
+		float median= (float)stats.getPercentile(50);
+		return (float)1.4826 * median;
 	}
 }

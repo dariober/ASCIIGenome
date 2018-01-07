@@ -29,6 +29,7 @@ public class ASCIIGenomeHistory {
 	List<String> commands= new ArrayList<String>();
 	Map<Integer, List<String>>sessions= new LinkedHashMap<Integer, List<String>>();
 	private String fileName;
+	private List<String> reference;
 	
 	// C O N S T R U C T O R S
 	
@@ -67,6 +68,12 @@ public class ASCIIGenomeHistory {
 			if(files != null){
 				this.files= files;
 			}
+			
+			List<String> reference= (List<String>) values.get("reference");
+			if(reference != null && reference.size() > 0 && reference.get(0) != null && ! reference.get(0).trim().isEmpty()){
+				this.reference= reference;
+			}
+			
 			Map<Integer, List<String>> sessions= (LinkedHashMap<Integer, List<String>>) values.get("sessions");
 			if(files != null){
 				this.sessions= sessions;
@@ -118,6 +125,10 @@ public class ASCIIGenomeHistory {
 		this.commands = commands;
 	}
 
+	public void setReference(List<String> reference) {
+		this.reference= reference;
+	}
+	
 	public void write(File outYaml) throws IOException {
 
 		Map<String, Object> asciigenome_history= new HashMap<String, Object>();
@@ -144,9 +155,11 @@ public class ASCIIGenomeHistory {
 		List<String> lastPos= this.getPositions();
 		asciigenome_history.put("positions", lastPos);
 
-		// Sessions
-//		Map<Integer, List<String>> sessions= this.getSessions();
-//		asciigenome_history.put("sessions", sessions);
+		// Reference
+		List<String> ref= this.getReference();
+		if(ref != null && ref.size() > 0 && ref.get(0) != null && ! ref.get(0).trim().isEmpty()){
+			asciigenome_history.put("reference", new ArrayList<String>(ref));
+		}
 		
 		// Write yaml
 		YamlWriter writer = new YamlWriter(new FileWriter(outYaml));
@@ -154,14 +167,6 @@ public class ASCIIGenomeHistory {
 	    writer.close();
 
 	}
-	
-//	public Map<Integer, List<String>> getSessions() {
-//		return this.sessions;
-//	}
-//
-//	public void setSessions(Map<Integer, List<String>> sessions) {
-//		this.sessions= sessions;
-//	}
 	
 	public void write() throws IOException {
 		this.write(new File(DEFAULT_FILENAME));
@@ -210,6 +215,10 @@ public class ASCIIGenomeHistory {
 		ag.write(new File(this.getFileName()));
 		ag.write();
 		old.delete();
+	}
+
+	public List<String> getReference() {
+		return this.reference;
 	}
 
 }

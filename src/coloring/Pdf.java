@@ -26,6 +26,7 @@ import com.itextpdf.text.pdf.PdfSmartCopy;
 import com.itextpdf.text.pdf.PdfWriter;
 
 import exceptions.InvalidColourException;
+import samTextViewer.Utils;
 
 public class Pdf {
 
@@ -51,8 +52,8 @@ public class Pdf {
 	public void convert(File pdfOut, float fontSize, boolean append) throws IOException, DocumentException, InvalidColourException {
 
 		// First we write to tmp file then we copy to given destination, possibly appending
-		File tmpPdf= File.createTempFile(pdfOut.getName(), ".pdf");
-		// tmpPdf.deleteOnExit();
+		File tmpPdf= Utils.createTempFile(pdfOut.getName(), ".pdf");
+		tmpPdf.deleteOnExit();
 		
 		List<Paragraph> pdfLines= this.ansiFileToPdfParagraphs(fontSize);
         
@@ -90,9 +91,10 @@ public class Pdf {
 			return;
 		}
 		
-		File template= File.createTempFile("template.", ".pdf");
+		File template= Utils.createTempFile(".template.", ".pdf");;
+		template.deleteOnExit(); 
+		
 		Files.copy(Paths.get(dest.getAbsolutePath()), Paths.get(template.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
-		template.deleteOnExit();
 
 		Document document = new Document();
         FileOutputStream outputStream = new FileOutputStream(template);

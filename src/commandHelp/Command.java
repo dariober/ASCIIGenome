@@ -39,7 +39,7 @@ public enum Command {
 	setGenome("setGenome"),
 	showGenome("showGenome"),
 	infoTracks("infoTracks"),
-	addTracks("addTracks"),
+	open("open"),
 	recentlyOpened("recentlyOpened"),
 	dropTracks("dropTracks"),
 	orderTracks("orderTracks"),

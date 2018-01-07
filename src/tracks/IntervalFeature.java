@@ -290,11 +290,12 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 
 	/* For debugging only */
 	public String toString(){
-		String feature= this.chrom + ":" + this.from + "-" + this.to + ", " 
-				+ this.source + ", " 
-				+ this.score + ", " 
-				+ this.strand;
-		feature += "\nScreen coords from, to: " + this.screenFrom + ", " + this.screenTo;
+		String feature= this.chrom + ":" + this.from + "-" + this.to + 
+				", "; 
+				//+ this.source + ", " 
+				//+ this.score + ", " 
+				//+ this.strand;
+		feature += " Screen coords: " + this.screenFrom + "-" + this.screenTo;
 		return feature;
 	}
 	

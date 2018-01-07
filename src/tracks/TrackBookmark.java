@@ -38,7 +38,7 @@ public class TrackBookmark extends TrackIntervalFeature {
 		// Prepare bookmark file
 		// =====================
 	    // First write out the current position as plain text. Then gzip and index.
-		File bookmarkPlain= File.createTempFile("asciigenome.bookmarks.", ".gff"); // new File("bookmark");
+		File bookmarkPlain= Utils.createTempFile(".asciigenome.bookmarks.", ".gff");
 		bookmarkPlain.deleteOnExit();
 		BufferedWriter wr = new BufferedWriter(new FileWriter(bookmarkPlain));
 		wr.write(this.positionToGffLine(gc, nameForBookmark) + "\n"); // gc.getChrom() + "\t" + (gc.getFrom() - 1) + "\t" + gc.getTo() + "\t" + nameForBookmark + "\n");

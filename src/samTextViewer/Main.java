@@ -62,7 +62,7 @@ public class Main {
 		String config= opts.getString("config");
 		exec= parseExec(exec);
 		int debug= opts.getInt("debug");
-
+		
 		// Get configuration. Note that we don't need to assign this to a variable. 
 		new Config(config);
 		new Xterm256();
@@ -113,6 +113,8 @@ public class Main {
 		setDefaultTrackHeights(console.getTerminal().getHeight(), trackSet.getTrackList());
 		
 		final TrackProcessor proc= new TrackProcessor(trackSet, gch);
+		proc.setShowMem(opts.getBoolean("showMem"));
+		proc.setShowTime(opts.getBoolean("showTime"));
 		
 		proc.setNoFormat(opts.getBoolean("noFormat"));
 		
@@ -149,8 +151,7 @@ public class Main {
 			br.close();
 			System.exit(0);
 		}
-
-		// See if we need to process the exec arg before going to interactive mode. 
+		// See if we need to process the exec arg before going to interactive mode.
 		// Also if we are in non-interactive mode, we process the track set now and later exit 
 		console.clearScreen();
 		console.flush();		
@@ -379,10 +380,8 @@ public class Main {
 	}
 	
 	/** On shutdown, prepare and write the history file. Not that the existing 
-	 * yaml file is overwritten.
-	 * @param session 
-	 * */
-	private static void writeYamlHistory(ASCIIGenomeHistory current, 
+	 * yaml file is overwritten.  */
+	private static void writeYamlHistory(final ASCIIGenomeHistory current, 
 										 final History cmdHistory, 
 										 final TrackSet trackSet,
 			                             final GenomicCoordsHistory gch 
@@ -412,7 +411,14 @@ public class Main {
 				newYamlHistory.setCommands(lastCommands);
 				
 				// List of files
-				List<String>lastFiles= new ArrayList<String>(trackSet.getOpenedFiles());
+				List<String> opened= new ArrayList<String>();
+				for(String f : trackSet.getOpenedFiles()){
+					if(new File(f).getName().startsWith(".asciigenome.")){
+						continue;
+					}
+					opened.add(f);
+				}						
+				List<String>lastFiles= new ArrayList<String>(opened);
 				int max_files= 200; // Maximum number of files to write out to asciigenomo_history.
 				lastFiles= lastFiles.subList(Math.max(0, lastFiles.size() - max_files), lastFiles.size());
 				newYamlHistory.setFiles(lastFiles);
@@ -421,6 +427,15 @@ public class Main {
 				List<String> lastPos= gch.prepareHistoryForHistoryFile(newYamlHistory.getFileName(), 100);
 				newYamlHistory.setPositions(lastPos);
 
+				// Fasta ref
+				if(gch.current().getFastaFile() != null && ! gch.current().getFastaFile().trim().isEmpty()){
+					String fasta= new File(gch.current().getFastaFile()).getAbsolutePath();
+					List<String> ff= Arrays.asList(new String[] {fasta});
+					newYamlHistory.setReference(ff);					
+				} else {
+					newYamlHistory.setReference(current.getReference());
+				}
+				
 				// Write yaml
 				newYamlHistory.write();
 				

@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "1.11.0";
+	public static String VERSION= "1.12.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	public static String WEB_RTD= "http://asciigenome.readthedocs.io/";
 	
@@ -75,6 +75,14 @@ public class ArgParse {
 					+ "If null, first try to read configuration from file '~/.asciigenome_config'. "
 					+ "If this file is missing use a built-in setting. "
 					+ "For examples of configuration files see https://github.com/dariober/ASCIIGenome/blob/master/resources/config/");
+		
+		parser.addArgument("--showMem", "-sm")
+			.action(Arguments.storeTrue())
+			.help("Show memory usage. Typically used for debugging only.");
+
+		parser.addArgument("--showTime", "-st")
+			.action(Arguments.storeTrue())
+			.help("Show time elapsed to process tracks. Typically used for debugging only.");
 		
 		parser.addArgument("--debug")
 			.type(Integer.class)

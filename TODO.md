@@ -10,6 +10,9 @@ FIXME
 Features
 --------
 
+* Use `samtools depth` to compute coverage in `TrackPileup` over large regions. Use of `samtools depth` is avoided when filters except those in `samtools` command 
+are enabled.
+
 * Shade base quality to optionally shade a range of qualities with different shades of grey. 
   `shadeBaseQuality -below_baseq x | -range` where `-below_baseq` shades below bseq *x* as it is now.
   `-range` sets a level of grey according to quality.

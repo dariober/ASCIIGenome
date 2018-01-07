@@ -19,6 +19,7 @@ import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.SequenceUtil;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
 
 public class TrackSeqRegex extends TrackIntervalFeature {
@@ -96,7 +97,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		
 		// Prepare tmp file
 		// ================
-		File tmpfile= File.createTempFile("asciigenome.regexMatchTrack", ".tmp.bed");
+		File tmpfile= Utils.createTempFile(".asciigenome.regexMatchTrack", ".tmp.bed");
 	    String tmpname= tmpfile.getAbsolutePath(); 
 	    // This is a hack: Copy the newly created tmp file to another file. This overcomes some 
 	    // permission (?) problems later with the tabix indexing.

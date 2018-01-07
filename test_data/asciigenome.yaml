@@ -19,4 +19,5 @@ commands:
 - :1
 - posHistory
 - q
-
+reference:
+- /Users/berald01/svn_git/ASCIIGenome/test_data/chr7.fa

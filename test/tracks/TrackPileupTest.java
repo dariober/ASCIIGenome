@@ -7,8 +7,10 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
@@ -69,7 +71,7 @@ public class TrackPileupTest {
 		tp.setyMaxLines(10);
 		assertEquals(10, tp.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
 
-		tp.setVariantReadInInterval("chr7", 1000001, 1000001);
+		tp.setVariantReadInInterval("chr7", 1000001, 1000001, true);
 		System.err.println(tp.printToScreen());
 		assertEquals(1, tp.printToScreen().trim().split("\n").length);
 	}
@@ -77,8 +79,6 @@ public class TrackPileupTest {
 	@Test
 	public void canProcessReadsWithMissingSequence() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
 	
-		new Config(null);
-
 		GenomicCoords gc= new GenomicCoords("chr7:1-1000", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/missingReadSeq.bam", gc);
 		tr.setNoFormat(true);
@@ -90,9 +90,45 @@ public class TrackPileupTest {
 	}
 	
 	@Test
-	public void canPrintProfile() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
+	public void validateSamtoolsDepth() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
+
+		/** Verify that profile from samtools is consistent with the one obtained 
+		 * with built-in Java code. If samtools is not installed this test is pointless*/
+		String samtools= "/usr/local/bin/samtools";
+		assertTrue(new File(samtools).canExecute());
+		
+		GenomicCoords gc= new GenomicCoords("chr7:5565858-5568418", 80, null, null);
+		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
+		tr.setNoFormat(true);
+		tr.setyMaxLines(100);
+		
+		TrackPileup trST= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
+		trST.setNoFormat(true);
+		trST.setSamtoolsPath(samtools);
+		trST.setyMaxLines(100);
+		assertEquals(tr.printToScreen(), trST.printToScreen());
+		
+		// Set MAPQ filter: Java
+		ArrayList<SamRecordFilter> samRecordFilter = new ArrayList<SamRecordFilter>();
+		samRecordFilter.add(new MappingQualityFilter(80));
+		tr.setSamRecordFilter(samRecordFilter);
+		
+		// Set MAPQ filter: samtools (requires update!!)
+		trST.getFeatureFilter().setMapq(80);
+		trST.update();
+		System.err.println(trST.printToScreen());
+		//System.err.println(tr.printToScreen());
+		assertTrue(trST.printToScreen().equals(tr.printToScreen()) && trST.printToScreen().trim().isEmpty());
+		
+		samRecordFilter.clear();
+		tr.setSamRecordFilter(samRecordFilter);
+		trST.getFeatureFilter().setMapq(0);
+		trST.update();
+		
+	}
 	
-		new Config(null);
+	@Test
+	public void canPrintProfile() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
 	
 		GenomicCoords gc= new GenomicCoords("chr7:5566776-5566796", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ds051.short.bam", gc);
@@ -150,28 +186,35 @@ public class TrackPileupTest {
 		System.err.println("Time to parse " + depth.size() + " positions: " + (t1-t0) + " ms");
 	}
 	
-	public static void sameAsMpileup() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+	@Test
+	public void sameAsMpileup() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 
 		GenomicCoords gc= new GenomicCoords("chr7:5522059-5612125", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-		Map<Integer, Integer> depth = tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo());
-
+		tr.setSamtoolsPath(""); // Make sure we don't use samtools.
+		
 		// See test_data/README.md for obtaining this test file (samtools mpileup ...)
 		String expPileup= FileUtils.readFileToString(new File("test_data/ear045.oxBS.actb.pileup"));
 		List<String> expList = Splitter.on("\n").omitEmptyStrings().splitToList(expPileup);
 	
+		// Positions are returned unsorted! We need to sort them first.
+		Map<Integer, Integer> depth = tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo());
+		List<Integer> positions= new ArrayList<Integer>();
+		positions.addAll(depth.keySet());
+		Collections.sort(positions);
+
 		// mpileup and TrackPileup hit the same positions
 		assertEquals(expList.size(), depth.size());
-
+		
 		// Same depth at same positions
 		int i= 0;
-		for(int obsPos : depth.keySet()){
+		for(int obsPos : positions){
 			int obsDepth=depth.get(obsPos);
 			int expPos= Integer.parseInt(Splitter.on("\t").splitToList(expList.get(i)).get(1));
 			int expDepth= Integer.parseInt(Splitter.on("\t").splitToList(expList.get(i)).get(3));
 			try{
 				assertEquals(expPos, obsPos);
-				assertTrue(Math.abs((expDepth - obsDepth)) < 6);
+				assertEquals(expDepth, obsDepth);
 			} catch(AssertionError e){
 				System.err.println("At iteration: " + i);
 				System.err.println(expList.get(i));
@@ -189,7 +232,7 @@ public class TrackPileupTest {
 		tr.setNoFormat(true);
 		tr.setYLimitMin(0);
 		tr.setYLimitMax(10);
-		tr.setShowHideRegex("NCNNNCCC", "\\t5566779\\t");
+		tr.setShowHideRegex(Pattern.compile("NCNNNCCC"), Pattern.compile("\\t5566779\\t"));
 		assertEquals(4, tr.printToScreen().trim().split("\n").length);
 	}
 
@@ -221,7 +264,7 @@ public class TrackPileupTest {
 		tr.setyMaxLines(1000);
 		assertTrue(tr.getTitle().contains("22.0")); // N. reads before filtering
 		// assertTrue(tr.getTitle().contains("22/22")); // N. reads before filtering
-		tr.setShowHideRegex("NCNNNCCC", FeatureFilter.DEFAULT_HIDE_REGEX);
+		tr.setShowHideRegex(Pattern.compile("NCNNNCCC"), Pattern.compile(Filter.DEFAULT_HIDE_REGEX.getValue()));
 		tr.setAwk("'$4 != 5566779'");
 		System.err.println(tr.getTitle());
 		assertTrue(tr.getTitle().contains("4.0"));
@@ -291,6 +334,6 @@ public class TrackPileupTest {
 	@Test
 	public void canConstructFromUnsortedInput() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
-		new TrackPileup("/Users/db291g/Tritume/reads.sam", gc);
+		new TrackPileup("test_data/ds051.noindex.sam", gc);
 	}	
 }

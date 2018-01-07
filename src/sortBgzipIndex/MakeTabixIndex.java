@@ -3,14 +3,8 @@ package sortBgzipIndex;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -19,10 +13,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
-
-import org.apache.commons.validator.routines.UrlValidator;
-
 import com.google.common.base.Joiner;
 
 import exceptions.InvalidRecordException;
@@ -56,7 +46,7 @@ public class MakeTabixIndex {
 	 * */
 	public MakeTabixIndex(String intab, File bgzfOut, TabixFormat fmt) throws IOException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
-		File tmp = File.createTempFile("asciigenome", "makeTabixIndex.tmp.gz");
+		File tmp = Utils.createTempFile(".asciigenome", "makeTabixIndex.tmp.gz");
 		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
 		tmp.deleteOnExit();
 		tmpTbi.deleteOnExit();
@@ -65,8 +55,8 @@ public class MakeTabixIndex {
 			// Try to block compress and create index assuming the file is sorted
 			blockCompressAndIndex(intab, tmp, fmt);
 		} catch(Exception e){
-			// If intab is not sorted, sort it first. 
-			File sorted= File.createTempFile("asciigenome.", ".sorted.tmp");
+			// If intab is not sorted, sort it first.
+			File sorted= Utils.createTempFile(".asciigenome.", ".sorted.tmp");
 			sorted.deleteOnExit();
 			sortByChromThenPos(intab, sorted, fmt);
 			blockCompressAndIndex(sorted.getAbsolutePath(), tmp, fmt);
@@ -112,41 +102,54 @@ public class MakeTabixIndex {
 			}
 			vcfCodec= new VCFCodec();
 			vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
-//		    writeVCFHeader(vcfHeader, writer);
-//		    filePosition= writer.getFilePointer();
 		}
 		// ------------------------------------------------------------
 
+		int nWarnings= 10;
 		while(lin.hasNext()){
 			
 			String line = lin.next().trim();
 			
-			if(line.isEmpty() || line.startsWith("track ")){
-				continue;
-			}
-			if(line.startsWith("#")){
-				writer.write((line + "\n").getBytes());
-				filePosition = writer.getFilePointer();
-				continue;
-			}
-			if(line.startsWith("##FASTA")){
-				break;
-			}			
-			
-			if(first && ! fmt.equals(TabixFormat.VCF)){
-				String dummy= this.makeDummyLine(line, fmt);
-				addLineToIndex(dummy, indexCreator, filePosition, fmt, null, null);
+			try{
+				if(line.isEmpty() || line.startsWith("track ")){
+					continue;
+				}
+				if(line.startsWith("#")){
+					writer.write((line + "\n").getBytes());
+					filePosition = writer.getFilePointer();
+					continue;
+				}
+				if(line.startsWith("##FASTA")){
+					break;
+				}			
 				
-				writer.write(dummy.getBytes());
+				if(first && ! fmt.equals(TabixFormat.VCF)){
+					String dummy= this.makeDummyLine(line, fmt);
+					addLineToIndex(dummy, indexCreator, filePosition, fmt, null, null);
+					
+					writer.write(dummy.getBytes());
+					writer.write('\n');
+					filePosition = writer.getFilePointer();
+					first= false;
+				}
+				addLineToIndex(line, indexCreator, filePosition, fmt, vcfHeader, vcfCodec);
+				
+				writer.write(line.getBytes());
 				writer.write('\n');
 				filePosition = writer.getFilePointer();
-				first= false;
+			} catch(Exception e){
+				if(e.getMessage().contains("added out sequence of order") || e.getMessage().contains("Features added out of order")){
+					// Get a string marker for out-of-order from htsjdk/tribble/index/tabix/TabixIndexCreator.java 
+					throw new InvalidRecordException();
+				}
+				if(nWarnings >= 0){
+					System.err.println("Warning: " + e.getMessage() + ". Skipping:\n" + line);
+				}
+				if(nWarnings == 0){
+					System.err.println("Additional warnings will not be show.");
+				}
+				nWarnings--;
 			}
-			addLineToIndex(line, indexCreator, filePosition, fmt, vcfHeader, vcfCodec);
-			
-			writer.write(line.getBytes());
-			writer.write('\n');
-			filePosition = writer.getFilePointer();
 		}
 
 		writer.flush();
@@ -203,26 +206,8 @@ public class MakeTabixIndex {
 		
 		Connection conn= this.createSQLiteDb("data");
 		PreparedStatement stmtInsert= conn.prepareStatement("INSERT INTO data (contig, pos, posEnd, line) VALUES (?, ?, ?, ?)");
-		
-		BufferedReader br= null;
-		InputStream gzipStream= null;
-		UrlValidator urlValidator = new UrlValidator();
-		if(unsorted.endsWith(".gz") || unsorted.endsWith(".bgz")){
-			if(urlValidator.isValid(unsorted)) {
-				gzipStream = new GZIPInputStream(new URL(unsorted).openStream());
-			} else {
-				gzipStream = new GZIPInputStream(new FileInputStream(unsorted));
-			}
-			Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
-			br = new BufferedReader(decoder);
-		} else if(urlValidator.isValid(unsorted)) {
-			InputStream instream= new URL(unsorted).openStream();
-			Reader decoder = new InputStreamReader(instream, "UTF-8");
-			br = new BufferedReader(decoder);
-		} else {
-			br = new BufferedReader(new FileReader(unsorted));
-		}
-		
+	
+		BufferedReader br= Utils.reader(unsorted);
 		BufferedWriter wr= new BufferedWriter(new FileWriter(sorted));
 		String line;
 		while((line = br.readLine()) != null){
@@ -295,9 +280,8 @@ public class MakeTabixIndex {
 	/** Create a tmp sqlite db and return the connection to it. 
 	 */
 	private Connection createSQLiteDb(String tablename) throws IOException {
-		
-	    this.sqliteFile= File.createTempFile("asciigenome.", ".tmp.sqlite");
-	    this.sqliteFile.deleteOnExit();
+		this.sqliteFile= Utils.createTempFile(".asciigenome.", ".tmp.sqlite");
+		this.sqliteFile.deleteOnExit();
 	    
 	    try {
 			Class.forName("org.sqlite.JDBC");
