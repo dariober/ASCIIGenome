@@ -47,6 +47,7 @@ import java.util.zip.GZIPInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BedFeature;
@@ -1175,14 +1176,15 @@ public class Utils {
 			// Get the longest string in this column
 			int maxStr= 1;
 			for(String x : col){
+				x= Utils.stripAnsiCodes(x);
 				if(x.length() > maxStr){
 					maxStr= x.length();
 				}
 			}
 			// ** Pass through the column again and pad with spaces to match length of longest string
-			// maxStr+=1; // +1 is for separating
 			for(int j= 0; j < col.size(); j++){
-				String padded= String.format("%-" + maxStr + "s", col.get(j));
+				int nblanks= maxStr - Utils.stripAnsiCodes(col.get(j)).length();
+				String padded= col.get(j) + StringUtils.repeat(" ", nblanks); // String.format("%-" + maxStr + "s", col.get(j));
 				col.set(j, padded);
 			}
 			paddedTable.add((List<String>) col);
@@ -1207,14 +1209,14 @@ public class Utils {
 			boolean flush= false;
 			for(int i= 0; i < row.size(); i++){
 				if(! flush){
-					int whiteSize= row.get(i).length() - row.get(i).trim().length();
+					int whiteSize= Utils.stripAnsiCodes(row.get(i)).length() - Utils.stripAnsiCodes(row.get(i)).trim().length();
 					if(whiteSize > terminalWidth/4.0){
 						// The rest of this row will be flushed
 						flush= true;						
 					}
 				}
 				if(flush){
-					row.set(i, row.get(i).trim());
+					row.set(i, row.get(i).replaceAll("^ +| +$", ""));
 				}
 			}
 		}
@@ -1223,17 +1225,9 @@ public class Utils {
 		List<String> outputTable= new ArrayList<String>();
 		for(List<String> lstRow : tTable){
 			String row= Joiner.on(" ").join(lstRow); // Here you decide what separates columns.
-			outputTable.add(row.toString().trim());
+			outputTable.add(row.toString()); // Do not use .trim() here otherwise you could strip ANSI formatting
 		}
 		return outputTable;
-//		for(int r= 0; r < rawList.size(); r++){
-//			StringBuilder row= new StringBuilder();
-//			for(int c= 0; c < paddedTable.size(); c++){
-//				row.append(paddedTable.get(c).get(r) + " ");
-//			}
-//			outputTable.add(row.toString().trim());
-//		}
-//		return outputTable;
 	}
 
 	/** Function to round x and y to a number of digits enough to show the difference in range
@@ -2045,17 +2039,6 @@ public class Utils {
 	 * */
 	public static void sortAndIndexSamOrBam(String inSamOrBam, String sortedBam, boolean deleteOnExit) throws IOException {
 
-//		 final SamReader reader = SamReaderFactory.makeDefault().open(new File(inSamOrBam));
-//		 reader.getFileHeader().setSortOrder(SortOrder.coordinate);
-//		 final SAMFileWriter writer = new SAMFileWriterFactory().makeSAMOrBAMWriter(reader.getFileHeader(), false, new File(sortedBam));
-//
-//		 for (final SAMRecord rec : reader) {
-//			 System.err.println(rec);
-//			 writer.addAlignment(rec);
-//	     }
-//		 reader.close();
-//	     writer.close();
-		
 		/*  ------------------------------------------------------ */
 		/* This chunk prepares SamReader from local bam or URL bam */
 		UrlValidator urlValidator = new UrlValidator();
@@ -2196,5 +2179,54 @@ public class Utils {
 		}
 		formattedX.append(x.substring(ends.get(ends.size()-1)));
 		return formattedX.toString();
+	}
+
+	/**Winsorise vector x. Adapted from https://www.r-bloggers.com/winsorization/.
+	 * */
+	public static List<Float> winsor2(List<Float> x, double multiple) {
+				/*
+				winsor2<- function (x, multiple=3)
+				{
+				   med <- median(x)
+				   y <- x - med
+				   sc <- mad(y, center=0) * multiple
+				   y[ y > sc ] <- sc
+				   y[ y < -sc ] <- -sc
+				   y + med
+				}
+				*/
+		if(multiple <= 0){
+			throw new ArithmeticException(); 
+		}
+		DescriptiveStatistics stats = new DescriptiveStatistics();
+		for(float z : x){
+			stats.addValue(z);
+		}
+		float median = (float)stats.getPercentile(50);
+		List<Float> y= new ArrayList<Float>(x);
+		for(int i= 0; i < x.size(); i++){
+			y.set(i, x.get(i) - median);
+		}
+		float sc= (float) (Utils.medianAbsoluteDeviation(y, 0) * multiple);
+		for(int i= 0; i < y.size(); i++){
+			if(y.get(i) > sc){
+				y.set(i, sc);
+			}
+			else if(y.get(i) < -sc){
+				y.set(i, -sc);
+			}
+			y.set(i, y.get(i) + median);
+		}
+		return y;
+	}
+	/** Translated from R function mad(x, center, constant= 1.4826, na.rm= FALSE, low= FALSE, high= FALSE). 
+	 * */
+	private static float medianAbsoluteDeviation(List<Float> x, float center) {
+		DescriptiveStatistics stats = new DescriptiveStatistics();
+		for(int i= 0; i < x.size(); i++){
+			stats.addValue(Math.abs(x.get(i) - center));
+		}
+		float median= (float)stats.getPercentile(50);
+		return (float)1.4826 * median;
 	}
 }

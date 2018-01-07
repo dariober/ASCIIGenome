@@ -315,7 +315,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("find"); cmd.setArgs("[-all] regex [track]"); cmd.inSection= Section.FIND; 
+		cmd.setName("find"); cmd.setArgs("[-all] [-c] [-F] regex [track]"); cmd.inSection= Section.FIND; 
 		cmd.setBriefDescription("Find the first record in `track` containing `regex`."); 
 		cmd.setAdditionalDescription(""
 				+ "The search for `regex` starts from the *end* of the current window "
@@ -323,11 +323,17 @@ public class CommandList {
 				+ "At the end  of the current chromosome move to the next chromosomes and then restart at "
 				+ " the start of the initial one. The search stops at the first match found. If `track` is omitted "
 				+ "the first interval track found is searched.\n"
-				+ "The :code:`-all` flag will return the region containing **all** the regex matches.\n"
+				+ "\n"
+				+ "* :code:`-all`: Return the region containing **all** the regex matches.\n"
+				+ "\n"
+				+ "* :code:`-c` Match in CASE SENSITIVE mode. Default is case insensitive (changed in v1.12).\n"
+				+ "\n"
+				+ "* :code:`-F`: Interpret `regex` as a fixed, literal string instead of as a regex.\n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
-				+ "    find -all ACTB genes.gtf~-> Find all the matches of ACTB\n"
-				+ "    find 'ACTB gene'~~~~~~~~~-> Find the first match of 'ACTB gene'\n"
+				+ "    find -all ACTB genes.gtf~-> Find all the matches of ACTB. Case ignored\n"
+				+ "    find -c 'ACTB gene'~~~~~~-> Find the first match of 'ACTB gene'. Case sensitive\n"
 				+ "\n"
 				+ "Use single quotes to define patterns containing spaces."); 
 		cmdList.add(cmd);
@@ -385,7 +391,7 @@ public class CommandList {
 
 		
 		cmd= new CommandHelp();
-		cmd.setName("grep"); cmd.setArgs("[-i = .*] [-e = ''] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setName("grep"); cmd.setArgs("[-i = .*] [-e = ''] [-c] [-F] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Similar to grep command, filter for features including or excluding patterns.");
 		cmd.setAdditionalDescription(""
 				+ "Options:\n"
@@ -394,13 +400,15 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-e regex` Exclude features matching this regex.\n"
 				+ "\n"
+				+ "* :code:`-c` Match in CASE SENSITIVE mode. Default is case insensitive (changed in v1.12).\n"
+				+ "\n"
+				+ "* :code:`-F` Interpret `regex` in `-i` and `-e` as a fixed, literal string instead of as a regex.\n"
+				+ "\n"
 				+ "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
 				+ "\n"
 				+ "* :code:`track_regex` Apply to tracks matched by `track_regex`.\n"
 				+ "\n"
 				+ "*NOTES*\n"
-				+ "\n"
-				+ "* For case insensitive matching prepend :code:`(?i)` to regex pattern. E.g. :code:`-i (?i)ACTB` to match also Actb\n"
 				+ "\n"
 				+ "* Use *single quotes* to delimit patterns containing spaces e.g. :code:`-i 'ACTB gene'`\n"
 				+ "\n"
@@ -918,7 +926,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-round INT] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
+		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-round INT] [-hl re] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Print lines for the tracks matched by `track_regex`. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
 				+ "Features are filtered in/out according to the :code:`grep` command. Options:\n"
@@ -933,6 +941,9 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-round INT` Round numbers to this many decimal places. "
 				+ "What constitutes a number is inferred from context. Default 3, do not round if < 0.\n"
+				+ "\n"
+				+ "* :code:`-hl regex` Highlight substrings matching regex. If regex matches a FORMAT tag in a VCF record, "
+				+ "highlight the tag itself and also the sample values corresponding to that tag.\n"
 				+ "\n"
 				+ "* :code:`-off` Turn off printing.\n"
 				+ "\n"
@@ -1000,6 +1011,14 @@ public class CommandList {
 				+ confHelp);
 		cmdList.add(cmd);
 
+		cmd= new CommandHelp();
+		cmd.setName("explainSamFlag"); cmd.setArgs("INT [INT ...]"); cmd.inSection= Section.GENERAL;
+		cmd.setBriefDescription("Explain the list of bitwise SAM flags. ");
+		cmd.setAdditionalDescription("Decode one or more sam flags to human readable form and print them as a table. "
+				+ "Similar to "
+				+ "https://broadinstitute.github.io/picard/explain-flags.html");
+		cmdList.add(cmd);
+		
 		cmd= new CommandHelp();
 		cmd.setName("show"); cmd.setArgs("<arg>"); cmd.inSection= Section.GENERAL;
 		cmd.setBriefDescription("Show or set features to display. ");
@@ -1265,7 +1284,7 @@ public class CommandList {
 	
 	
 	/* Known commnds */
-	protected static final List<String> cmds(){
+	public static final List<String> cmds(){
 		List<String> paramList= new ArrayList<String>();
 		paramList.add("q");
 		paramList.add("h");
@@ -1306,6 +1325,7 @@ public class CommandList {
 		paramList.add("dataCol");
 		paramList.add(Command.print.getCmdDescr());
 		paramList.add("setGenome");
+		paramList.add("explainSamFlag");
 		paramList.add("show");
 		paramList.add("open");
 		paramList.add("recentlyOpened");

@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
@@ -116,6 +116,8 @@ public class TrackPileupTest {
 		// Set MAPQ filter: samtools (requires update!!)
 		trST.getFeatureFilter().setMapq(80);
 		trST.update();
+		System.err.println(trST.printToScreen());
+		//System.err.println(tr.printToScreen());
 		assertTrue(trST.printToScreen().equals(tr.printToScreen()) && trST.printToScreen().trim().isEmpty());
 		
 		samRecordFilter.clear();
@@ -230,7 +232,7 @@ public class TrackPileupTest {
 		tr.setNoFormat(true);
 		tr.setYLimitMin(0);
 		tr.setYLimitMax(10);
-		tr.setShowHideRegex("NCNNNCCC", "\\t5566779\\t");
+		tr.setShowHideRegex(Pattern.compile("NCNNNCCC"), Pattern.compile("\\t5566779\\t"));
 		assertEquals(4, tr.printToScreen().trim().split("\n").length);
 	}
 
@@ -262,7 +264,7 @@ public class TrackPileupTest {
 		tr.setyMaxLines(1000);
 		assertTrue(tr.getTitle().contains("22.0")); // N. reads before filtering
 		// assertTrue(tr.getTitle().contains("22/22")); // N. reads before filtering
-		tr.setShowHideRegex("NCNNNCCC", Filter.DEFAULT_HIDE_REGEX.getValue());
+		tr.setShowHideRegex(Pattern.compile("NCNNNCCC"), Pattern.compile(Filter.DEFAULT_HIDE_REGEX.getValue()));
 		tr.setAwk("'$4 != 5566779'");
 		System.err.println(tr.getTitle());
 		assertTrue(tr.getTitle().contains("4.0"));

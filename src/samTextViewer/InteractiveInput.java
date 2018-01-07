@@ -5,11 +5,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -103,8 +109,10 @@ public class InteractiveInput {
 				
 				} else if(cmdTokens.get(0).equals("show")){
 					this.interactiveInputExitCode= this.show(cmdTokens, proc);
-//					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 									
+				} else if(cmdTokens.get(0).equals("explainSamFlag")){
+					this.interactiveInputExitCode= this.explainSamFlag(cmdTokens, proc);
+					
 				} else if(cmdTokens.get(0).equals("sys")) {
 					this.execSysCmd(cmdString, proc.getWindowSize());
 					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
@@ -364,13 +372,11 @@ public class InteractiveInput {
 					this.next(cmdTokens, proc);
 										
 				} else if(cmdTokens.get(0).equals("find")) {  
-					// Determine whether we match first or all
-					boolean all= false;
-					if(cmdTokens.contains("-all")){
-						all= true;
-						cmdTokens.remove("-all");
-					}
-
+					
+					boolean all= Utils.argListContainsFlag(cmdTokens, "-all");
+					boolean fixedPattern= Utils.argListContainsFlag(cmdTokens, "-F");
+					boolean caseIns= Utils.argListContainsFlag(cmdTokens, "-c");
+					
 					if(cmdTokens.size() < 2){
 						System.err.println(Utils.padEndMultiLine("Error in find command. Expected at least 1 argument got: " + cmdTokens, proc.getWindowSize()));
 						this.interactiveInputExitCode= ExitCode.ERROR;
@@ -381,7 +387,28 @@ public class InteractiveInput {
 					}
 					GenomicCoords gc= (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
 					gc.setTerminalWidth(terminalWidth);
-					proc.getGenomicCoordsHistory().add(proc.getTrackSet().findNextMatchOnTrack(cmdTokens.get(1), cmdTokens.get(2), gc, all));
+					
+					int flag= 0;
+					if(fixedPattern){
+						flag |= Pattern.LITERAL;
+					}
+					if( ! caseIns){
+						flag |= Pattern.CASE_INSENSITIVE;
+					}
+					Pattern pattern;
+					try{
+						pattern= Pattern.compile(cmdTokens.get(1), flag);
+					} catch(PatternSyntaxException e){
+						System.err.println("Invalid regex");
+						throw new InvalidCommandLineException();
+					}
+					GenomicCoords nextGc= proc.getTrackSet().findNextMatchOnTrack(pattern, cmdTokens.get(2), gc, all);
+					if(nextGc.equalCoords(gc)){
+						System.err.println("No match found outside of this window for query '" + cmdTokens.get(1) + "'");
+						this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
+					} else {
+						proc.getGenomicCoordsHistory().add(nextGc);
+					}
 					
 				} else if (cmdTokens.get(0).equals("seqRegex")){
 					try{
@@ -396,9 +423,13 @@ public class InteractiveInput {
 					messages += proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdTokens);
 					
 				} else {
-					System.err.println(Utils.padEndMultiLine("Unrecognized command: " + cmdTokens, proc.getWindowSize()));
+					System.err.println(Utils.padEndMultiLine("Unrecognized command: " + cmdTokens.get(0), proc.getWindowSize()));
+					String suggestions= Joiner.on(" or ").join(this.suggestCommand(cmdTokens.get(0).trim()));
+					if( ! suggestions.isEmpty()){
+						System.err.println(Utils.padEndMultiLine("Maybe you mean " + suggestions + "?", proc.getWindowSize()));
+					}
 					this.interactiveInputExitCode= ExitCode.ERROR;
-					throw new InvalidCommandLineException();
+					// throw new InvalidCommandLineException();
 				}
 			} catch(ArgumentParserException e){
 				this.interactiveInputExitCode= ExitCode.ERROR;
@@ -456,6 +487,61 @@ public class InteractiveInput {
 		}
 		messages= "";
 		return proc;
+	}
+
+	private ExitCode explainSamFlag(List<String> cmdTokens, TrackProcessor proc) throws InvalidCommandLineException, IOException {
+		List<String> args= new ArrayList<String>(cmdTokens);
+		args.remove(0);
+		if(args.size() == 0){
+			System.err.println("One argument is required.");
+			throw new InvalidCommandLineException();
+		}
+		List<Integer> flagsToDecode= new ArrayList<Integer>();
+		for(String x : args){
+			try{
+				flagsToDecode.add(Integer.valueOf(x));
+			} catch (NumberFormatException e){
+				System.err.println(Utils.padEndMultiLine("Expected an integer, got " + x, Utils.getTerminalWidth()));
+				return ExitCode.ERROR;
+			}			
+		}
+		final Map<Integer, String> FLAGS= new LinkedHashMap<Integer, String>();
+		
+		FLAGS.put(1, "read paired");
+		FLAGS.put(2, "read mapped in proper pair");
+		FLAGS.put(4, "read unmapped");
+		FLAGS.put(8, "mate unmapped");
+		FLAGS.put(16, "read reverse strand");
+		FLAGS.put(32, "mate reverse strand");
+		FLAGS.put(64, "first in pair");
+		FLAGS.put(128, "second in pair");
+		FLAGS.put(256, "not primary alignment");
+		FLAGS.put(512, "read fails platform/vendor quality checks");
+		FLAGS.put(1024, "read is PCR or optical duplicate");
+		FLAGS.put(2048, "supplementary alignment");
+		
+		String LEFT_PAD= " ";
+		List<String> table= new ArrayList<String>();
+		table.add(LEFT_PAD + Joiner.on("\t").join(flagsToDecode));
+		
+		System.out.println(Utils.padEndMultiLine("", Utils.getTerminalWidth()));
+		for(Integer i : FLAGS.keySet()){
+			String line= LEFT_PAD;
+			for(int f : flagsToDecode){
+				if((i & f) == i) {
+					line += "X";
+				} else {
+					line += ".";
+				}
+				line += "\t";
+			}
+			line += FLAGS.get(i);
+			table.add(line);
+		}
+		List<String> xtable= Utils.tabulateList(table, Utils.getTerminalWidth());
+		System.out.println(Utils.padEndMultiLine(Joiner.on("\n").join(xtable), Utils.getTerminalWidth()));
+		System.out.println(Utils.padEndMultiLine("", Utils.getTerminalWidth()));
+		return ExitCode.CLEAN_NO_FLUSH;
 	}
 
 	/**Get the items (files) corresponding to the indexes. Errors are silently ignored.
@@ -788,4 +874,81 @@ public class InteractiveInput {
 		this.interactiveInputExitCode= exitCode;
 	}
 
+	private List<String> suggestCommand(String hint){
+		if(hint.length() < 3){
+			return new ArrayList<>();
+		}
+		hint= hint.toLowerCase();
+
+		Map<Integer, List<String>> candidates= new TreeMap<Integer, List<String>>();
+		
+		for(String candidate : CommandList.cmds()){
+			if(candidate.length() < 3){
+				continue;
+			}
+			String x= candidate.toLowerCase();
+			int nm;
+			if(x.length() >= 3 && hint.length() >= 3 && (x.contains(hint) || hint.contains(x))){
+				nm= 0;
+			} else {
+				nm= this.levenshtein(hint, candidate.toLowerCase());
+			}
+			if(candidates.containsKey(nm)){
+				candidates.get(nm).add(candidate);
+			} else {
+				List<String> tier= new ArrayList<String>();
+				tier.add(candidate);
+				candidates.put(nm, tier);
+			}
+		}
+		
+		java.util.Map.Entry<Integer, List<String>> out = candidates.entrySet().iterator().next();
+		return out.getValue();
+	}
+	
+    /**
+     * Calculates Damerau–Levenshtein distance between string {@code a} and
+     * {@code b} with given costs.
+     * 
+     * @param a
+     *            String
+     * @param b
+     *            String
+     * @return Damerau–Levenshtein distance between {@code a} and {@code b}
+     * 
+     * Method from argparse4j
+     */
+    private int levenshtein(String a, String b) {
+    	
+    	 final int SUBSTITUTION_COST = 2;
+    	 final int SWAP_COST = 0;
+    	 final int DELETION_COST = 4;
+    	 final int ADDITION_COST = 1;
+    	
+        int aLen = a.length();
+        int bLen = b.length();
+        int[][] dp = new int[3][bLen + 1];
+        for (int i = 0; i <= bLen; ++i) {
+            dp[1][i] = i;
+        }
+        for (int i = 1; i <= aLen; ++i) {
+            dp[0][0] = i;
+            for (int j = 1; j <= bLen; ++j) {
+                dp[0][j] = dp[1][j - 1]
+                        + (a.charAt(i - 1) == b.charAt(j - 1) ? 0 : SUBSTITUTION_COST);
+                if (i >= 2 && j >= 2 && a.charAt(i - 1) != b.charAt(j - 1)
+                        && a.charAt(i - 2) == b.charAt(j - 1)
+                        && a.charAt(i - 1) == b.charAt(j - 2)) {
+                    dp[0][j] = Math.min(dp[0][j], dp[2][j - 2] + SWAP_COST);
+                }
+                dp[0][j] = Math.min(dp[0][j],
+                        Math.min(dp[1][j] + DELETION_COST, dp[0][j - 1] + ADDITION_COST));
+            }
+            int[] temp = dp[2];
+            dp[2] = dp[1];
+            dp[1] = dp[0];
+            dp[0] = temp;
+        }
+        return dp[1][bLen];
+    }
 }

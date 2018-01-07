@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -87,7 +88,7 @@ public class TrackPileup extends TrackWiggles {
 	}
 	
 	@Override
-	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void setShowHideRegex(Pattern showRegex, Pattern hideRegex) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		this.clearCache();
 		this.getFeatureFilter().setShowHideRegex(showRegex, hideRegex);
 		this.update();
@@ -186,7 +187,6 @@ public class TrackPileup extends TrackWiggles {
 		if(this.getSamtoolsPath() == null || this.getSamtoolsPath().trim().isEmpty()){
 			return false;
 		}
-		
 		List<String> cmd= new ArrayList<String>();
 		cmd.add("/bin/sh");
 		cmd.add("-c");
@@ -203,7 +203,6 @@ public class TrackPileup extends TrackWiggles {
 		if(p.exitValue() != 0){
 			return false;
 		}
-		
 		if(this.getFeatureFilter().hideRegex.equals(Filter.DEFAULT_HIDE_REGEX.getValue()) &&
 		   this.getFeatureFilter().showRegex.equals(Filter.DEFAULT_SHOW_REGEX.getValue()) &&
 		   this.getFeatureFilter().getAwk().equals(Filter.DEFAULT_AWK.getValue()) &&
@@ -399,7 +398,6 @@ public class TrackPileup extends TrackWiggles {
 		cmd.add("-c");
 		cmd.add(this.getSamtoolsPath() + " view -@ 4 -u " + flags + " " + this.getWorkFilename() + " " + chrom + ":" + from + "-" + to + 
 				" | " + this.getSamtoolsPath() + " depth -d 1000000000 -");
-		
 		ProcessBuilder pb = new ProcessBuilder().command(cmd);
 		Process p= pb.start();
 		
@@ -489,7 +487,7 @@ public class TrackPileup extends TrackWiggles {
 		if( ! this.getAwk().equals(Filter.DEFAULT_AWK.getValue())){
 			title.add("awk");
 		}
-		if( ! this.getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || ! this.getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
+		if( ! this.getShowRegex().pattern().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || ! this.getHideRegex().pattern().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
 			title.add("grep");
 		}
 		if( this.get_f_flag() != Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue()) || 

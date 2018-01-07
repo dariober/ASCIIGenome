@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -253,7 +254,7 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
 		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
-		tr.setShowHideRegex("NCNNNCCC", "\\t5566779\\t");
+		tr.setShowHideRegex(Pattern.compile("NCNNNCCC"), Pattern.compile("\\t5566779\\t"));
 		assertEquals(4, tr.printToScreen().split("\n").length);
 	}
 
@@ -264,7 +265,7 @@ public class TrackReadsTest {
 		tr.setNoFormat(true);
 		tr.setyMaxLines(1000);
 		assertEquals(22, tr.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering		
-		tr.setShowHideRegex("NCNNNCCC", Filter.DEFAULT_HIDE_REGEX.getValue());
+		tr.setShowHideRegex(Pattern.compile("NCNNNCCC"), Pattern.compile(Filter.DEFAULT_HIDE_REGEX.getValue()));
 		tr.setAwk("'$4 != 5566779'");
 		assertEquals(4, tr.printToScreen().split("\n").length);
 	}
@@ -309,7 +310,7 @@ public class TrackReadsTest {
 		tr.set_F_flag(1024);
 		assertTrue( tr.getTitle().contains("flag"));
 		
-		tr.setShowHideRegex(".*", "foo");
+		tr.setShowHideRegex(Pattern.compile(".*"), Pattern.compile("foo"));
 		assertTrue( tr.getTitle().contains("grep"));
 		
 		tr.setVariantReadInInterval("chr7", 10, 100, true);

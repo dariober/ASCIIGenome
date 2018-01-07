@@ -27,7 +27,8 @@ public enum ConfigKey {
 	chrom_ideogram("Colour for chromosome ideogram"),
 	ruler("Colour for ruler"),
 	max_reads_in_stack("Max number of reads to accumulate when showing read tracks"), 
-	shade_baseq("Shade read base when quality is below this threshold");
+	shade_baseq("Shade read base when quality is below this threshold"),
+	shade_structural_variant("Background colour for reads suggesting structural variation");
 	
 	private String value;
 

@@ -102,41 +102,54 @@ public class MakeTabixIndex {
 			}
 			vcfCodec= new VCFCodec();
 			vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
-//		    writeVCFHeader(vcfHeader, writer);
-//		    filePosition= writer.getFilePointer();
 		}
 		// ------------------------------------------------------------
 
+		int nWarnings= 10;
 		while(lin.hasNext()){
 			
 			String line = lin.next().trim();
 			
-			if(line.isEmpty() || line.startsWith("track ")){
-				continue;
-			}
-			if(line.startsWith("#")){
-				writer.write((line + "\n").getBytes());
-				filePosition = writer.getFilePointer();
-				continue;
-			}
-			if(line.startsWith("##FASTA")){
-				break;
-			}			
-			
-			if(first && ! fmt.equals(TabixFormat.VCF)){
-				String dummy= this.makeDummyLine(line, fmt);
-				addLineToIndex(dummy, indexCreator, filePosition, fmt, null, null);
+			try{
+				if(line.isEmpty() || line.startsWith("track ")){
+					continue;
+				}
+				if(line.startsWith("#")){
+					writer.write((line + "\n").getBytes());
+					filePosition = writer.getFilePointer();
+					continue;
+				}
+				if(line.startsWith("##FASTA")){
+					break;
+				}			
 				
-				writer.write(dummy.getBytes());
+				if(first && ! fmt.equals(TabixFormat.VCF)){
+					String dummy= this.makeDummyLine(line, fmt);
+					addLineToIndex(dummy, indexCreator, filePosition, fmt, null, null);
+					
+					writer.write(dummy.getBytes());
+					writer.write('\n');
+					filePosition = writer.getFilePointer();
+					first= false;
+				}
+				addLineToIndex(line, indexCreator, filePosition, fmt, vcfHeader, vcfCodec);
+				
+				writer.write(line.getBytes());
 				writer.write('\n');
 				filePosition = writer.getFilePointer();
-				first= false;
+			} catch(Exception e){
+				if(e.getMessage().contains("added out sequence of order") || e.getMessage().contains("Features added out of order")){
+					// Get a string marker for out-of-order from htsjdk/tribble/index/tabix/TabixIndexCreator.java 
+					throw new InvalidRecordException();
+				}
+				if(nWarnings >= 0){
+					System.err.println("Warning: " + e.getMessage() + ". Skipping:\n" + line);
+				}
+				if(nWarnings == 0){
+					System.err.println("Additional warnings will not be show.");
+				}
+				nWarnings--;
 			}
-			addLineToIndex(line, indexCreator, filePosition, fmt, vcfHeader, vcfCodec);
-			
-			writer.write(line.getBytes());
-			writer.write('\n');
-			filePosition = writer.getFilePointer();
 		}
 
 		writer.flush();

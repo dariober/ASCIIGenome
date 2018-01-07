@@ -411,7 +411,14 @@ public class Main {
 				newYamlHistory.setCommands(lastCommands);
 				
 				// List of files
-				List<String>lastFiles= new ArrayList<String>(trackSet.getOpenedFiles());
+				List<String> opened= new ArrayList<String>();
+				for(String f : trackSet.getOpenedFiles()){
+					if(new File(f).getName().startsWith(".asciigenome.")){
+						continue;
+					}
+					opened.add(f);
+				}						
+				List<String>lastFiles= new ArrayList<String>(opened);
 				int max_files= 200; // Maximum number of files to write out to asciigenomo_history.
 				lastFiles= lastFiles.subList(Math.max(0, lastFiles.size() - max_files), lastFiles.size());
 				newYamlHistory.setFiles(lastFiles);
@@ -422,7 +429,8 @@ public class Main {
 
 				// Fasta ref
 				if(gch.current().getFastaFile() != null && ! gch.current().getFastaFile().trim().isEmpty()){
-					List<String> ff= Arrays.asList(new String[] {gch.current().getFastaFile()});
+					String fasta= new File(gch.current().getFastaFile()).getAbsolutePath();
+					List<String> ff= Arrays.asList(new String[] {fasta});
 					newYamlHistory.setReference(ff);					
 				} else {
 					newYamlHistory.setReference(current.getReference());

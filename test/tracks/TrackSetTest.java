@@ -2,23 +2,15 @@ package tracks;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 
 import coloring.Config;
 import coloring.Xterm256;
@@ -319,21 +311,21 @@ public class TrackSetTest {
 		//String cmdInput= "filter exon intron #1"; // Set for #1...
 		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
 
-		assertEquals("exon", ts.getTrack(t1).getShowRegex());
-		assertEquals("intron", ts.getTrack(t1).getHideRegex());
-		assertEquals(".*", ts.getTrack(t3).getShowRegex()); // As default
-		assertEquals("^$", ts.getTrack(t3).getHideRegex());
+		assertEquals("exon", ts.getTrack(t1).getShowRegex().pattern());
+		assertEquals("intron", ts.getTrack(t1).getHideRegex().pattern());
+		assertEquals(".*", ts.getTrack(t3).getShowRegex().pattern()); // As default
+		assertEquals("^$", ts.getTrack(t3).getHideRegex().pattern());
 
 		// cmdInput= "filter exon intron #1 #3"; // Set for #1...
 		cmdInput= "grep -i exon -e intron #1 #3"; // Set for #1...
 		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
-		assertEquals("exon", ts.getTrack(t3).getShowRegex());
-		assertEquals("intron", ts.getTrack(t3).getHideRegex());
+		assertEquals("exon", ts.getTrack(t3).getShowRegex().pattern());
+		assertEquals("intron", ts.getTrack(t3).getHideRegex().pattern());
 
 		cmdInput= "grep"; // Reset all to default
 		ts.setFilterForTrackIntervalFeature(Utils.tokenize(cmdInput, " "));
-		assertEquals(".*", ts.getTrack(t3).getShowRegex()); // As default
-		assertEquals("^$", ts.getTrack(t3).getHideRegex());
+		assertEquals(".*", ts.getTrack(t3).getShowRegex().pattern()); // As default
+		assertEquals("^$", ts.getTrack(t3).getHideRegex().pattern());
 	}
 
 	@Test

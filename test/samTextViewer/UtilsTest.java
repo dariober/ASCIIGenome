@@ -70,28 +70,33 @@ public class UtilsTest {
 	
 	@Test
 	public void canWinsoriseData(){
-		Stopwatch sw= Stopwatch.createStarted();
 		
-		Random rnd= new Random();
-		Float[] x= new Float[10000000];
+		int[] ints = new int[]{-50, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100};
+		List<Float> x= new ArrayList<Float>();
+		for(int z : ints){
+			x.add((float)z);
+		}
+		List<Float> w= Utils.winsor2(x, 3.0);
+		assertEquals(-7.8434, w.get(0), 0.0001);
+		assertEquals(1, w.get(1), 0.0001);
+		assertEquals(18.8434, w.get(w.size()-1), 0.0001);
+
+		w= Utils.winsor2(x, 22);
+		assertEquals(x, w);
+
+		w= Utils.winsor2(x, 1);
+		assertEquals(1.0522, w.get(0), 0.0001);
+		assertEquals(1.0522, w.get(1), 0.0001);
+		assertEquals(2, w.get(2), 0.0001);
+		assertEquals(9.9478, w.get(w.size()-1), 0.0001);
 		
-		for(int i= 0; i < 10000000; i++){
-			//x[i]= rnd.nextFloat();
-			rnd.nextFloat();
+		boolean pass= false;
+		try{
+			Utils.winsor2(x, 0);
+		} catch(Exception e){
+			pass= true;
 		}
-		System.err.println(sw);
-		sw.reset(); sw.start();
-		DescriptiveStatistics stats = new DescriptiveStatistics();
-
-		// Add the data from the array
-		for( int i = 0; i < x.length; i++) {
-		    stats.addValue(x[i]);
-		}
-
-		// Compute some statistics
-		double median = stats.getPercentile(50);
-		System.err.println(median);
-		System.err.println(sw);
+		assertTrue(pass);
 	}
 	
 	@Test
@@ -601,6 +606,23 @@ public class UtilsTest {
 		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", \"foobar\") == \"\"'"));
 		
 	}
+	
+//	@Test
+//	public void canFilterSamStructVarWithAwk() throws IOException{
+//		String rec= "r1 2113 chr1 951  60 50M50H = 1801 851  * * SA:Z:chr1,1951,-,50M50S,60,0".replaceAll(" ", "\t");
+//		rec= "r1 81 chr1 951 60 50M50H = 1801 851 * * SA:Z:chr1,1951,-,50M50S,60,0".replaceAll(" ", "\t");
+//		
+//		assertTrue(Utils.passAwkFilter(rec, "'isSV() > 0'"));
+//		
+//		long t0= System.currentTimeMillis();
+//		int i= 0;
+//		while(i < 1000){
+//			Utils.passAwkFilter(rec, "'getSamTag(\"NH\") > 0'");
+//			i++;
+//		}
+//		long t1= System.currentTimeMillis();
+//		assertTrue((t1-t0) < 3000); // It can filter reasonably fast (?) 
+//	}
 	
 	@Test
 	public void canFilterSamTagWithAwk() throws IOException{

@@ -428,6 +428,13 @@ public class TrackSet {
         // --------------------------------------------------------------------
         boolean invertSelection= Utils.argListContainsFlag(args, "-v"); // opts.getBoolean("invert");  
 
+        Pattern highlightPattern= Pattern.compile("");
+        if(args.contains("-hl")){
+        	printMode= PrintRawLine.CLIP;
+    		String p= Utils.getArgForParam(args, "-hl", "");
+	        highlightPattern= Pattern.compile(p);
+        }
+        
         if(args.contains("-clip")){
 			printMode= PrintRawLine.CLIP;
 			args.remove("-clip");
@@ -512,6 +519,7 @@ public class TrackSet {
 
 			for(Track tr : tracksToReset){
 	        	tr.setExportFile(printToFile);
+	        	tr.setHighlightPattern(highlightPattern);
 	        	tr.printLines();
 	        	tr.setPrintMode(PrintRawLine.OFF); // This is not ideal: redirecting to file also set mode to off
 	        	tr.setExportFile(null); // Reset to null so we don't keep writing to this file once we go to another position. 
@@ -521,6 +529,7 @@ public class TrackSet {
 
 		// Process as required
 		for(Track tr : tracksToReset){
+        	tr.setHighlightPattern(highlightPattern);
 			tr.setPrintRawLineCount(count);
 			tr.setSystemCommandForPrint(sys);
 			if(printNumDecimals != null) tr.setPrintNumDecimals(printNumDecimals);
@@ -1235,18 +1244,6 @@ public class TrackSet {
 			if(from < 1) from= 1;
 			if(to < 1) to= 1;
 			if(from > to) from= to;
-			// String[] fromTo= region.trim().replaceAll(" ", "").replaceAll(",", "").split("-");
-//			if(fromTo.length > 0){
-//				try{
-//					from= Integer.parseInt(fromTo[0]);
-//					to= Integer.parseInt(fromTo[fromTo.length-1]);
-//				} catch(NumberFormatException e) {
-//					System.err.println("Cannot parse region into integers: " + region);
-//					throw new InvalidCommandLineException();
-//				}
-//			} else {
-//				throw new InvalidCommandLineException(); 
-//			}
 		}
 		
 		List<String> trackNameRegex= new ArrayList<String>();
@@ -1281,23 +1278,36 @@ public class TrackSet {
 		}		
 		args.remove(0); // Remove command name
 
-		String showRegex= Filter.DEFAULT_SHOW_REGEX.getValue(); // Default
-		String hideRegex= Filter.DEFAULT_HIDE_REGEX.getValue();
+		Pattern showRegex= Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue()); // Default
+		Pattern hideRegex= Pattern.compile(Filter.DEFAULT_HIDE_REGEX.getValue());
 		
 		// Get args:
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 
-		if(args.contains("-i")){
-			int idx= args.indexOf("-i") + 1; 
-			showRegex= args.get(idx);
-			args.remove(idx);
-			args.remove("-i");
+		int flag= 0;
+		if(Utils.argListContainsFlag(args, "-F")){
+			flag |= Pattern.LITERAL; 
 		}
-		if(args.contains("-e")){
-			int idx= args.indexOf("-e") + 1; 
-			hideRegex= args.get(idx);
-			args.remove(idx);
-			args.remove("-e");
+		if( ! Utils.argListContainsFlag(args, "-c")){
+			flag |= Pattern.CASE_INSENSITIVE;  
+		}
+		
+		try{
+			if(args.contains("-i")){
+				int idx= args.indexOf("-i") + 1;
+				showRegex= Pattern.compile(args.get(idx), flag);
+				args.remove(idx);
+				args.remove("-i");
+			}
+			if(args.contains("-e")){
+				int idx= args.indexOf("-e") + 1; 
+				hideRegex= Pattern.compile(args.get(idx), flag);
+				args.remove(idx);
+				args.remove("-e");
+			}
+		} catch(PatternSyntaxException e){
+	    	System.err.println("Invalid regex");
+	    	throw new InvalidCommandLineException();
 		}
 		// What is left is positional args of regexes
 		List<String> trackNameRegex= new ArrayList<String>();
@@ -1305,24 +1315,6 @@ public class TrackSet {
 		if(trackNameRegex.size() == 0){
 			trackNameRegex.add(".*"); // Default regex for matching tracks
 		}		
-		
-		// SHOW REGEX
-		try{
-			Pattern.compile(showRegex);
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + args);
-	    	System.err.println("showRegex: " + showRegex);
-	    	throw new InvalidCommandLineException();
-		}
-		
-		// HIDE REGEX
-		try{
-			Pattern.compile(hideRegex); 
-		} catch(PatternSyntaxException e){
-	    	System.err.println("Invalid regex in: " + args);
-	    	System.err.println("hideRegex: " + hideRegex);
-	    	throw new InvalidCommandLineException();
-	    }
 		
 		// TRACK REGEXES
         // Regex
@@ -1451,7 +1443,7 @@ public class TrackSet {
 		
 	}
 
-	public GenomicCoords findNextMatchOnTrack(String query, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
+	public GenomicCoords findNextMatchOnTrack(Pattern pattern, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
 		TrackIntervalFeature tif= (TrackIntervalFeature) matchIntervalFeatureTrack(trackId.trim());
 		if(tif == null){
@@ -1461,9 +1453,9 @@ public class TrackSet {
 		System.err.println("Matching on " + tif.getTrackTag());
 		
 		if(all){
-			return tif.genomicCoordsAllChromMatchInGenome(query, currentGc);
+			return tif.genomicCoordsAllChromMatchInGenome(pattern, currentGc);
 		} else {
-			return tif.findNextMatch(currentGc, query);
+			return tif.findNextMatch(currentGc, pattern);
 		}
 	}
 

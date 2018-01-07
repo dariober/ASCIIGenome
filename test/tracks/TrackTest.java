@@ -5,10 +5,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.regex.Pattern;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Stopwatch;
 
 import coloring.Config;
 import exceptions.InvalidColourException;
@@ -17,9 +21,15 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
 
 public class TrackTest {
 
+	@Before
+	public void setConfig() throws IOException, InvalidConfigException{
+		new Config(null);
+	}
+	
 	@Test
 	public void canConcatTitleAndTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidConfigException, InvalidColourException{
 		new Config(null);
@@ -77,6 +87,62 @@ public class TrackTest {
 	}
 
 	@Test
+	public void canHighlightPrintableLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+
+		GenomicCoords gc= new GenomicCoords("1:1-400000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setHighlightPattern(Pattern.compile("200000"));
+		String out= tif.printLines();
+		assertTrue(out.contains("\033[7m200000\033[27m"));
+		
+		// Multiple patterns
+		tif.setHighlightPattern(Pattern.compile("ALU"));
+		out= tif.printLines();
+		assertTrue(out.contains("\033[7mALU\033[27m"));
+
+		// Multiple patterns
+//		tif.setHighlightPattern(Pattern.compile("AF"));
+//		tif.setPrintMode(PrintRawLine.CLIP);
+//		String out= tif.printLines();
+//		String line= Splitter.on("\n").omitEmptyStrings().splitToList(out).get(0);
+//		System.err.println(line);
+//		// assertTrue(out.contains("\033[7mALU\033[27m"));
+		
+		// Pattern start of line
+		tif.setHighlightPattern(Pattern.compile("1"));
+		tif.setPrintMode(PrintRawLine.FULL);
+		out= tif.printLines();
+		assertTrue(out.startsWith("\033[38;5;0;48;5;231m\033[7m1[27m"));
+		
+		// Pattern EOL
+		tif.setHighlightPattern(Pattern.compile("1\\|1"));
+		out= tif.printLines();
+		assertTrue(out.trim().endsWith("1|1\033[27m"));
+		
+		// No pattern
+		tif.setHighlightPattern(Pattern.compile("FOOBAR"));
+		out= tif.printLines();
+		assertTrue( ! out.contains("\033[7m"));
+		
+		// Reset
+		tif.setHighlightPattern(Pattern.compile(""));
+		out= tif.printLines();
+		assertTrue( ! out.contains("\033[7m"));
+		
+		// Highlight FORMAT tag and associated values
+		tif.setHighlightPattern(Pattern.compile("GT"));
+		out= tif.printLines();
+		assertTrue(out.contains("\033[7mGT\033[27m"));
+		assertTrue(out.contains("\033[7m.|.\033[27m"));
+		assertTrue(out.contains("\033[7m0|0\033[27m"));
+		
+		// Turn the string-table to back to a list and ensure that all fields are there
+		List<String> xlist= Splitter.on("\t").omitEmptyStrings().splitToList(out.replaceAll(" +|\n", "\t"));
+		assertEquals(24, xlist.size());
+	}
+	
+	@Test
 	public void canParsePrintableLinesWithSystemCommandBcftools() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
 
 		GenomicCoords gc= new GenomicCoords("1:1-400000", 80, null, null);
@@ -85,6 +151,7 @@ public class TrackTest {
 		tif.setPrintMode(PrintRawLine.FULL);
 		// Use full path to bcftools only for testing because Eclipse doesn't look into user's PATH
 		tif.setSystemCommandForPrint("/usr/local/bin/bcftools query -f '%CHROM\t%POS\t%AF\t[%GT:]\n'");
+		tif.setPrintNumDecimals(-1);
 		String out= tif.printLines();
 		assertEquals(2, out.split("\n").length);
 		assertTrue(out.contains("0.00698882"));
@@ -115,6 +182,30 @@ public class TrackTest {
 	}
 
 	@Test
+	public void canPrintBamWithClippedSeq() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
+		
+		new Config(null);
+		GenomicCoords gc= new GenomicCoords("chr7:5566733-5566903", 160, null, null);
+		TrackReads tif= new TrackReads("test_data/ds051.actb.bam", gc);
+		tif.setNoFormat(true);
+		tif.setPrintMode(PrintRawLine.CLIP);
+		assertTrue(tif.printLines().contains(" CTCAT[+"));
+		assertTrue(tif.printLines().contains(" CCCFF[+"));
+	}
+
+	@Test
+	public void canPrintVcfWithClippedSeq() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
+		new Config(null);
+		GenomicCoords gc= new GenomicCoords("20:1-259", 160, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/CEU.exon.2010_06.genotypes.vcf", gc);
+		tif.setNoFormat(true);
+		tif.setPrintMode(PrintRawLine.CLIP);
+		System.err.println(tif.printLines());
+		assertTrue(tif.printLines().contains(" GCCTG["));
+		assertTrue(tif.printLines().contains(" gcctg["));
+	}
+	
+	@Test
 	public void printIsNotResetAfterExec() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
 		new Config(null);
 		// BAM 
@@ -129,6 +220,7 @@ public class TrackTest {
 		// The sys command is still on
 		gc= new GenomicCoords("chr7:5566733-5566904", 80, null, null);
 		tif.setGc(gc);
+		System.err.println(tif.printLines());
 		assertEquals(2, tif.printLines().split("\n").length);
 		
 		// Now turn it off:

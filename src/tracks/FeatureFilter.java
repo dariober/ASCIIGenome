@@ -2,6 +2,7 @@ package tracks;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
@@ -14,14 +15,14 @@ class FeatureFilter {
 	// If you add a filter set also an appropriate DEFAULT_* attribute.  
 	
 	// Grep & Awk
-	protected String hideRegex= Filter.DEFAULT_HIDE_REGEX.getValue();
-	protected String showRegex= Filter.DEFAULT_SHOW_REGEX.getValue();
+	protected Pattern hideRegex= Pattern.compile(Filter.DEFAULT_HIDE_REGEX.getValue());
+	protected Pattern showRegex= Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue());
 	private String awk= Filter.DEFAULT_AWK.getValue();
 	private int f_flag= Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue());
 	private int F_flag= Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue());
 	private int mapq= Integer.valueOf(Filter.DEFAULT_MAPQ.getValue());
 	private List<SamRecordFilter> samRecordFilter= new ArrayList<SamRecordFilter>();
-	String variantChrom= Filter.DEFAULT_VARIANT_CHROM.getValue();
+	private String variantChrom= Filter.DEFAULT_VARIANT_CHROM.getValue();
 	private int variantFrom= -1;
 	private int variantTo= -1;
 	private boolean variantOnly= true;
@@ -38,16 +39,16 @@ class FeatureFilter {
 	
 	//   S E T T E R S    A N D    G E T T E R S
 	
-	public void setShowHideRegex(String showRegex, String hideRegex) {
+	public void setShowHideRegex(Pattern showRegex, Pattern hideRegex) {
 		this.showRegex= showRegex;
 		this.hideRegex= hideRegex;
 	}
 
-	public String getHideRegex() { 
+	public Pattern getHideRegex() { 
 		return this.hideRegex; 
 	}
 	
-	public String getShowRegex() { 
+	public Pattern getShowRegex() { 
 		return this.showRegex; 
 	}
 

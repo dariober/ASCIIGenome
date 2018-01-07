@@ -91,7 +91,7 @@ public class TrackWiggles extends Track {
 
 		if(this.getTrackFormat().equals(TrackFormat.BIGWIG)){
 			
-			bigWigToScores(this.bigWigReader);
+			this.bigWigToScores(this.bigWigReader);
 			
 		} else if(this.getTrackFormat().equals(TrackFormat.TDF)){
 			
@@ -99,7 +99,7 @@ public class TrackWiggles extends Track {
 			
 		} else if(this.getTrackFormat().equals(TrackFormat.BEDGRAPH)){
 
-			bedGraphToScores(this.getWorkFilename());
+			this.bedGraphToScores(this.getWorkFilename());
 			
 		} else {
 			throw new RuntimeException("Extension (i.e. file type) not recognized for " + this.getWorkFilename());

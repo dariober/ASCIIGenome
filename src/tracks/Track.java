@@ -12,14 +12,17 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.validator.routines.UrlValidator;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 
 import coloring.Config;
 import coloring.ConfigKey;
@@ -104,6 +107,7 @@ public abstract class Track {
 	private FeatureFilter featureFilter= new FeatureFilter(); 
 	private VCFHeader vcfHeader;
 	private String samtoolsPath;
+	private Pattern highlightPattern;
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
 	 * @throws InvalidColourException 
@@ -240,15 +244,15 @@ public abstract class Track {
 	/** Setter for both showRegex and hideRegex, if only one is set, use
 	 * Tracks.SHOW_REGEX or Tracks.HIDE_REGEX for the other. This is to prevent
 	 * calling update() twice when only one is needed.*/
-	public void setShowHideRegex(String showRegex, String hideRegex) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void setShowHideRegex(Pattern showRegex, Pattern hideRegex) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		this.getFeatureFilter().setShowHideRegex(showRegex, hideRegex);
 		this.update();
 	}
 
-	public String getHideRegex() { 
+	public Pattern getHideRegex() { 
 		return this.getFeatureFilter().getHideRegex();
 	}
-	public String getShowRegex() {
+	public Pattern getShowRegex() {
 		return this.getFeatureFilter().getShowRegex();
 	}
 	
@@ -402,6 +406,9 @@ public abstract class Track {
 	public String printLines() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException{
 
 		List<String> rawList= this.execSystemCommand(this.getRecordsAsStrings(), this.getSystemCommandForPrint());
+		for(int i= 0; i < rawList.size(); i++){
+			rawList.set(i, rawList.get(i).trim());
+		}
 		
 		if(this.getExportFile() != null && ! this.getExportFile().isEmpty()){
 			// If an output file has been set, send output there and return. 
@@ -433,7 +440,53 @@ public abstract class Track {
 		List<String> featureList= new ArrayList<String>();
 		String omitString= "";
 		for(String line : rawList){
-			featureList.add(Utils.roundNumbers(line, this.getPrintNumDecimals(), this.getTrackFormat()));
+
+			if(this.getPrintMode().equals(PrintRawLine.CLIP) && (this.getSystemCommandForPrint() == null || this.getSystemCommandForPrint().isEmpty())){
+				
+				if(this.getTrackFormat().equals(TrackFormat.BAM)){
+					// Make SEQ and QUAL shorter
+					String[] bamrec= line.split("\t");
+					int max= 5;
+					if(bamrec[9].length() > 20){
+						bamrec[9]= bamrec[9].substring(0, max) + "[+" + (bamrec[9].length()-max)  + "]";
+					}
+					if(bamrec[10].length() > 20){
+						bamrec[10]= bamrec[10].substring(0, max)  + "[+" + (bamrec[10].length()-max)  + "]";
+					}
+					line= Joiner.on("\t").join(bamrec);
+				}
+				if(this.getTrackFormat().equals(TrackFormat.VCF)){
+					// Make REF and ALT shorter
+					int max= 5;
+					String[] vcfrec= line.split("\t");
+					if(vcfrec[3].length() > 20 && vcfrec[3].toLowerCase().matches("[actgn]+")){
+						vcfrec[3]= vcfrec[3].substring(0, max) + "[+" + (vcfrec[3].length()-max)  + "]";
+					}
+					if(vcfrec[4].length() > 20 && vcfrec[4].toLowerCase().matches("[actgn]+")){
+						vcfrec[4]= vcfrec[4].substring(0, max)  + "[+" + (vcfrec[4].length()-max)  + "]";
+					}
+					line= Joiner.on("\t").join(vcfrec);
+				}
+				// Trim any field that is really long
+				String[] rec= line.split("\t");
+				for(int i= 0; i < rec.length; i++){
+					if(rec[i].length() > 150 && ! rec[i].contains(" ")){
+						rec[i]= rec[i].substring(0, 5) + "..." + rec[i].substring(rec[i].length()-5); 
+					}
+				}
+				line= Joiner.on("\t").join(rec);
+			}
+			line= Utils.roundNumbers(line, this.getPrintNumDecimals(), this.getTrackFormat());
+			
+			if( this.getHighlightPattern() != null && ! this.getHighlightPattern().pattern().isEmpty()){
+				line= this.highlightPattern(line, this.getHighlightPattern());
+				if(this.getTrackFormat().equals(TrackFormat.VCF)){
+					line= this.highlightVcfFormat(line, this.getHighlightPattern());
+				}
+			} 
+			
+			featureList.add(line);
+
 			count--;
 			if(count == 0){
 				int omitted= rawList.size() - this.getPrintRawLineCount();
@@ -448,24 +501,111 @@ public abstract class Track {
 		if( ! omitString.isEmpty()){
 			sb.append(omitString + "\n");
 		}
+		
+		// Trim to fit size ignoring formatting
 		for(String x : tabList){
-			if(x.length() > windowSize){
-				x= x.substring(0, windowSize);
-			}			
-			sb.append(x + "\n");
+			StringBuilder line= new StringBuilder();
+			boolean isAnsiEscape= false;
+			int nAnsiEscape= 0;
+			int nchars= 0;
+			for(int i = 0; i < x.length(); i++){
+			    char c= x.charAt(i);
+			    if(c == '\033'){
+			    	isAnsiEscape= true;
+			    	nAnsiEscape++;
+			    }
+			    if( ! isAnsiEscape ){
+			    	nchars++;
+			    }
+			    if(isAnsiEscape && c == 'm'){
+			    	isAnsiEscape= false;
+			    }
+			    line.append(c);
+			    if(nchars >= windowSize){
+			    	break;
+			    }
+			}
+			if(nAnsiEscape % 2 != 0){
+				line.append("\033[27m"); // If the closing escape have been trimmed off, put it back
+			}
+			sb.append(line.toString() + "\n");
 		}
 		
 		if(this.isNoFormat()){
 			return sb.toString();
+		} else {
+			String formatted=  "\033[38;5;" + Config.get256Color(ConfigKey.foreground) + 
+			";48;5;" + Config.get256Color(ConfigKey.background) + "m" + sb.toString();
+			
+			return formatted; 
 		}
-
-		String formatted=  "\033[38;5;" + Config.get256Color(ConfigKey.foreground) + 
-		";48;5;" + Config.get256Color(ConfigKey.background) + "m" + sb.toString();
-		
-		return formatted; 
-		
 	}
 
+	/**Find the values in the VCF record whose TAG matches pattern and add ANSI highlighting. 
+	 * */
+	private String highlightVcfFormat(String vcf, Pattern p){
+		
+		List<String> xvcf = Splitter.on("\t").splitToList(vcf);
+		if(xvcf.size() < 10){
+			return vcf;
+		}
+		
+		// Get the index of the value(s) to be formatted
+		List<String> tags= Splitter.on(":").splitToList(Utils.stripAnsiCodes(xvcf.get(8))); 
+		List<Integer> hlValueIdx= new ArrayList<Integer>();
+		for(int i= 0; i < tags.size(); i++){
+			// If format tags are GT:AF:AC and pattern is AF, you'll get hlValueIdx= [1] 
+			if(p.matcher(tags.get(i)).find()){
+				hlValueIdx.add(i);
+			}
+		}
+		if(hlValueIdx.size() == 0){
+			return vcf; // Nothing replace
+		}
+		
+		List<String> o= xvcf.subList(0, 9); // Constant fields
+		List<String> outvcf= new ArrayList<String>(o);
+		// For each sample, format the values at index(es) stored in hlValueIdx 
+		for(int i= 9; i < xvcf.size(); i++){
+			String sample= xvcf.get(i); // String of values for this sample, e.g. 0|1:0.14:FR
+			List<String> v= Splitter.on(":").splitToList(sample);
+			List<String> values= new ArrayList<String>(v);
+			for(int idx : hlValueIdx){
+				values.set(idx, "\033[7m" + values.get(idx) + "\033[27m");
+			}
+			String fmtSample= Joiner.on(":").join(values);
+			outvcf.add(fmtSample);
+		}
+		return Joiner.on("\t").join(outvcf);
+	}
+	
+	/**Put some ANSI highlighting to string x where there is a match to pattern
+	 * */
+	private String highlightPattern(String x, Pattern p){
+		Matcher m= p.matcher(x);
+		StringBuilder sb= new StringBuilder();
+		int idx= 0;
+		while(m.find()){
+			String prefix= x.substring(idx, m.start());
+			sb.append(prefix);
+			sb.append("\033[7m");
+			sb.append(m.group());
+			sb.append("\033[27m");
+			idx= m.end();
+		}
+		String prefix= x.substring(idx, x.length());
+		sb.append(prefix);
+		return sb.toString();
+	}
+	
+	private Pattern getHighlightPattern(){
+		return this.highlightPattern;
+	}
+	
+	public void setHighlightPattern(Pattern x){
+		this.highlightPattern= x;
+	}
+	
 	public String getSystemCommandForPrint() {
 		return this.systemCommandForPrint;
 	}
@@ -656,7 +796,7 @@ public abstract class Track {
 				// Variant read filter is not set. Nothing to do.
 			} else if(passed){ 
 				// Memo: Test filter(s) only if a read is passed==true. 
-				passed= this.isVariantRead(rec, this.getFeatureFilter().isVariantOnly());
+				passed= this.isSNVRead(rec, this.getFeatureFilter().isVariantOnly());
 			}
 			
 			String raw= null;
@@ -667,11 +807,11 @@ public abstract class Track {
 				raw= rec.getSAMString().trim();
 				boolean showIt= true;
 				if(! this.getFeatureFilter().getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue())){
-					showIt= Pattern.compile(this.getFeatureFilter().getShowRegex()).matcher(raw).find();
+					showIt= this.getFeatureFilter().getShowRegex().matcher(raw).find();
 				}
 				boolean hideIt= false;
 				if(! this.getFeatureFilter().getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
-					hideIt= Pattern.compile(this.getFeatureFilter().getHideRegex()).matcher(raw).find();	
+					hideIt= this.getFeatureFilter().getHideRegex().matcher(raw).find();	
 				}
 				if(!showIt || hideIt){
 					passed= false;
@@ -707,18 +847,22 @@ public abstract class Track {
 		}
 		return results;
 	}
-	
-	private boolean isVariantRead(SAMRecord rec, boolean variantOnly) {
+
+	/**Return true if samrecord contains a mismatch or insertion/deletion in the target region.
+	 * */
+	private boolean isSNVRead(SAMRecord rec, boolean variantOnly) {
 		boolean passed= false;
+		
+		int varFrom= this.getFeatureFilter().getVariantFrom();
+		int varTo= this.getFeatureFilter().getVariantTo();
+
 		if(this.getFeatureFilter().getVariantChrom().equals(rec.getReferenceName()) &&
-		        this.getFeatureFilter().getVariantFrom() <= rec.getAlignmentEnd() &&
-		        rec.getAlignmentStart() <= this.getFeatureFilter().getVariantTo()){
+		        varFrom <= rec.getAlignmentEnd() &&
+		        rec.getAlignmentStart() <= varTo){
 			// Variant read filter is set and this read overlaps it. 
 			if( ! variantOnly){
 				return true; // No need to check whether read is variant.
 			}
-			int varFrom= this.getFeatureFilter().getVariantFrom();
-			int varTo= this.getFeatureFilter().getVariantTo();
 			int readPos= 0;
 			int refPos= rec.getAlignmentStart();
 			for(CigarElement cigar : rec.getCigar().getCigarElements()){

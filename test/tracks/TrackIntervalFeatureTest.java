@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -403,10 +404,10 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
 		
-		tif.setShowHideRegex(Filter.DEFAULT_SHOW_REGEX.getValue(), "\texon\t");
+		tif.setShowHideRegex(Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue()), Pattern.compile("\texon\t"));
 		assertEquals(3, tif.getIntervalFeatureList().size());
 
-		tif.setShowHideRegex("WASH7P", "^$");
+		tif.setShowHideRegex(Pattern.compile("WASH7P"), Pattern.compile("^$"));
 		assertTrue(tif.getIntervalFeatureList().size() == 11);
 	}
 	
@@ -417,7 +418,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:10000-100000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 
-		tif.setShowHideRegex("start_codon", "OR4F");
+		tif.setShowHideRegex(Pattern.compile("start_codon"), Pattern.compile("OR4F"));
 		List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(40, subset.size());
 
@@ -489,7 +490,7 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 
 		tif.setAwk("'$3 == \"start_codon\"");
-		tif.setShowHideRegex(Filter.DEFAULT_SHOW_REGEX.getValue(), "OR4F");
+		tif.setShowHideRegex(Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue()), Pattern.compile("OR4F"));
 		List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(40, subset.size());
 
@@ -501,7 +502,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:1", 80, null, null);
 		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-		tif.setShowHideRegex(".*exon.*", ".*DDX11L1.*");
+		tif.setShowHideRegex(Pattern.compile(".*exon.*"), Pattern.compile(".*DDX11L1.*"));
 		GenomicCoords curr = tif.coordsOfNextFeature(gc, false);
 		assertEquals(14362, (int) curr.getFrom());
 		
@@ -513,8 +514,8 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:1", 80, null, null);
 		String intervalFileName= "test_data/hg19_genes_head.gtf.gz";
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
-		tif.setShowHideRegex(".*exon.*", ".*DDX11L1.*");
-		GenomicCoords curr = tif.findNextMatch(gc, ".*gene_id.*");
+		tif.setShowHideRegex(Pattern.compile(".*exon.*"), Pattern.compile(".*DDX11L1.*"));
+		GenomicCoords curr = tif.findNextMatch(gc, Pattern.compile(".*gene_id.*"));
 		assertEquals(14362, (int) curr.getFrom());
 	}
 
@@ -535,12 +536,12 @@ public class TrackIntervalFeatureTest {
 		String intervalFileName= "test_data/refSeq.hg19.short.sort-2.bed";
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		
-		IntervalFeature x = tif.findNextRegexInGenome(".*NM_.*", "chr1", 20000000);
+		IntervalFeature x = tif.findNextRegexInGenome(Pattern.compile(".*NM_.*"), "chr1", 20000000);
 		assertTrue(x.getRaw().contains("NM_013943_utr3_5_0_chr1_25167429_f"));
-		x = tif.findNextRegexInGenome(".*NM_.*", "chr1", 80000000);
+		x = tif.findNextRegexInGenome(Pattern.compile(".*NM_.*"), "chr1", 80000000);
 		assertTrue(x.getRaw().contains("NM_001080397_utr3_8_0_chr1_8404074_f"));
 		
-		x = tif.findNextRegexInGenome("NotPresent", "chr1", 1);
+		x = tif.findNextRegexInGenome(Pattern.compile("NotPresent"), "chr1", 1);
 		assertEquals(null, x);
 		
 	}
@@ -626,7 +627,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr18:1-10000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		
-		GenomicCoords matched = tif.genomicCoordsAllChromMatchInGenome(".*\"WASH7P\".*", gc);
+		GenomicCoords matched = tif.genomicCoordsAllChromMatchInGenome(Pattern.compile(".*\"WASH7P\".*"), gc);
 		assertEquals("chr1", matched.getChrom());
 		assertEquals(14362, (int)matched.getFrom());
 		assertEquals(29370, (int)matched.getTo());
@@ -634,7 +635,7 @@ public class TrackIntervalFeatureTest {
 		// No match
 		gc= new GenomicCoords("chr18:1-10000", 80, null, null);
 		tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
-		matched = tif.genomicCoordsAllChromMatchInGenome(".*\"FOOBAR\".*", gc);
+		matched = tif.genomicCoordsAllChromMatchInGenome(Pattern.compile(".*\"FOOBAR\".*"), gc);
 		assertEquals("chr18", matched.getChrom());
 		assertEquals(1, (int)matched.getFrom());
 		assertEquals(10000, (int)matched.getTo());

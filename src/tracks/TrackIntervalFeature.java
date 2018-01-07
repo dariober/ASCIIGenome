@@ -199,16 +199,16 @@ public class TrackIntervalFeature extends Track {
 		}
 		
 		boolean showIt= true;
-
 		if(this.getShowRegex() != null && 
 		   ! this.getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue())){
-			showIt= Pattern.compile(this.getShowRegex()).matcher(x).find();
+			showIt= this.getShowRegex().matcher(x).find();
 		}
 
 		boolean hideIt= false;
-		if(!this.getHideRegex().isEmpty()){
-			hideIt= Pattern.compile(this.getHideRegex()).matcher(x).find();	
+		if(!this.getHideRegex().pattern().isEmpty()){
+			hideIt= this.getHideRegex().matcher(x).find();	
 		}
+
 		Boolean isVisible= false;
 		if(showIt && !hideIt){
 			isVisible= true;
@@ -388,9 +388,9 @@ public class TrackIntervalFeature extends Track {
 		return nextGc;		
 	}
 	
-	public GenomicCoords findNextMatch(GenomicCoords currentGc, String query) throws IOException, InvalidGenomicCoordsException{
+	public GenomicCoords findNextMatch(GenomicCoords currentGc, Pattern pattern) throws IOException, InvalidGenomicCoordsException{
 
-		IntervalFeature nextFeature= findNextRegexInGenome(query, currentGc.getChrom(), currentGc.getTo());
+		IntervalFeature nextFeature= findNextRegexInGenome(pattern, currentGc.getChrom(), currentGc.getTo());
 		if(nextFeature == null){
 			return currentGc;
 		}
@@ -405,9 +405,9 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	/** Execute findAllChromRegexInGenome() and return the extreme coordinates of the matched features */
-	protected GenomicCoords genomicCoordsAllChromMatchInGenome(String query, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException{
+	protected GenomicCoords genomicCoordsAllChromMatchInGenome(Pattern pattern, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException{
 
-		List<IntervalFeature> matchedFeatures = this.findAllChromMatchInGenome(query, currentGc);
+		List<IntervalFeature> matchedFeatures = this.findAllChromMatchInGenome(pattern, currentGc);
 		
 		if(matchedFeatures.size() == 0){
 			return currentGc;
@@ -430,7 +430,7 @@ public class TrackIntervalFeature extends Track {
 	 * The search starts from the beginning of the current chrom and if nothing is found continues
 	 * to the other chroms. 
 	 * @throws InvalidGenomicCoordsException */
-	private List<IntervalFeature> findAllChromMatchInGenome(String query, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException{
+	private List<IntervalFeature> findAllChromMatchInGenome(Pattern pattern, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException{
 		
 		// Accumulate features here
 		List<IntervalFeature> matchedFeatures= new ArrayList<IntervalFeature>(); 
@@ -447,7 +447,7 @@ public class TrackIntervalFeature extends Track {
 			while(true){
 				String line= iter.next();
 				if(line == null) break;
-				boolean matched= Pattern.compile(query).matcher(line).find();
+				boolean matched= pattern.matcher(line).find();
 				if(matched){
 					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.getVCFCodec());
 					if(this.featureIsVisible(x.getRaw())){
@@ -678,7 +678,7 @@ public class TrackIntervalFeature extends Track {
 		if( ! this.getAwk().equals(Filter.DEFAULT_AWK.getValue())){
 			title.add("awk");
 		}
-		if( ! this.getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || ! this.getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
+		if( ! this.getShowRegex().pattern().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || ! this.getHideRegex().pattern().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
 			title.add("grep");
 		}
 		if(title.size() > 0){
@@ -703,7 +703,7 @@ public class TrackIntervalFeature extends Track {
 	 * If not found, search the other chroms, if not found restart from the beginning of
 	 * the current chrom until the "from" position is reached. 
 	 * @throws InvalidGenomicCoordsException */
-	protected IntervalFeature findNextRegexInGenome(String query, String chrom, int from) throws IOException, InvalidGenomicCoordsException{
+	protected IntervalFeature findNextRegexInGenome(Pattern pattern, String chrom, int from) throws IOException, InvalidGenomicCoordsException{
 		
 		int startingPoint= from-1; // -1 because tabix.query from is 0 based (seems so at least)
 		List<String> chromSearchOrder = this.getChromListStartingAt(chrom);
@@ -714,7 +714,7 @@ public class TrackIntervalFeature extends Track {
 			while(true){
 				String line= iter.next();
 				if(line == null) break;
-				boolean matched= Pattern.compile(query).matcher(line).find();
+				boolean matched= pattern.matcher(line).find();
 				if(matched){
 					IntervalFeature x= new IntervalFeature(line, this.getTrackFormat(), this.getVCFCodec());
 					if(x.getFrom() > startingPoint && this.featureIsVisible(x.getRaw())){

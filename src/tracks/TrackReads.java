@@ -330,7 +330,7 @@ public class TrackReads extends Track{
 		if( ! this.getAwk().equals(Filter.DEFAULT_AWK.getValue())){
 			title.add("awk");
 		}
-		if( ! this.getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || ! this.getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
+		if( ! this.getShowRegex().pattern().equals(Filter.DEFAULT_SHOW_REGEX.getValue()) || ! this.getHideRegex().pattern().equals(Filter.DEFAULT_HIDE_REGEX.getValue())){
 			title.add("grep");
 		}
 		if( this.get_f_flag() != Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue()) || 

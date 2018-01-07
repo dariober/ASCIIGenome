@@ -132,7 +132,7 @@ Open some peak and bigWig files from
 
     encode=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs
 
-    ASCIIGenome -g hg19 \
+    ASCIIGenome \
         $encode/wgEncodeSydhTfbsGm10847NfkbTnfaIggrabPk.narrowPeak.gz \
         $encode/wgEncodeSydhTfbsGm10847NfkbTnfaIggrabSig.bigWig \
         $encode/wgEncodeSydhTfbsGm12892Pol2IggmusPk.narrowPeak.gz \
@@ -142,8 +142,9 @@ Open some peak and bigWig files from
 Find the first feature on the first file, then change colour of one of the tracks. Reset y axes to
 span 0 to 50, finally save as pdf to default file name::
 
+	[h] for help: setGenome hg19
     [h] for help: next #1
-    [h] for help: colorTrack red wgEncodeSydhTfbsGm12892Pol2IggmusSig
+    [h] for help: colorTrack pink wgEncodeSydhTfbsGm12892Pol2IggmusSig
     [h] for help: ylim 0 50
     [h] for help: save %r.pdf
 
@@ -151,7 +152,7 @@ Result on terminal screen should look like this:
 
 .. image:: screenshots/chr1_996137-1003137.png
 
-The file is to *chr1_996137-1003137.pdf*, note that the variable :code:`%r` is expanded to the genomic coordinates.
+The screenshot is saved to *chr1_996137-1003137.pdf*, note that the variable :code:`%r` is expanded to the genomic coordinates.
 
 
 Finding & filtering stuff
@@ -161,7 +162,7 @@ Once started, :code:`ASCIIGenome` makes it easy to browse the genome. The pictur
 
 This screenshot has been produced by first loading the *L. major* GTF file::
 
-    ASCIIGenome ftp://ftp.ensemblgenomes.org/pub/release-31/protists/gtf/leishmania_major/Leishmania_major.ASM272v2.31.gtf.gz
+    ASCIIGenome ftp://ftp.ensemblgenomes.org/pub/release-31/protists/gtf/leishmania_major/Leishmania_major.ASM272v2.84.gtf.gz
 
 At the command prompt issue the following commands::
 

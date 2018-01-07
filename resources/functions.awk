@@ -131,3 +131,10 @@ function getGffTag(tag, value_idx, _attrs, _attr, _tagval, _i, _n, _vals, _retva
     }
     return _retval
 }
+
+#function isSV(){
+#    if($2 & 1 == 1 && $2 & 2 == 0){
+#    	return 1
+#    }	
+#    return 0
+#}
