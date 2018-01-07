@@ -1,8 +1,8 @@
 class Asciigenome < Formula
   desc "Text Only Genome Viewer!"
   homepage "https://github.com/dariober/ASCIIGenome"
-  url "https://github.com/dariober/ASCIIGenome/releases/download/v1.11.0/ASCIIGenome-1.11.0.zip"
-  sha256 "61d803fc364b1439c0a284bc09e55d48b37be9909d6973bb97bd0a706ed25dc8"
+  url "https://github.com/dariober/ASCIIGenome/releases/download/v1.12.0/ASCIIGenome-1.12.0.zip"
+  sha256 "fc81eb6e9b308a5c6f9f85904b6493fab3e72d4c301cf4b62a21f514a18201c7"
 
   def install
     jar = "ASCIIGenome.jar"
