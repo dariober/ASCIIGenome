@@ -109,7 +109,7 @@ the steps to [release a new version](#release-new-version), in an iterative way.
 cd ~/git_repos/ASCIIGenome # Or wherever you the repo
 git checkout -b v1.13.0    # Create new branch
 git checkout v1.13.0       # Switch to new branch 
-git push origin v1.13.0    # Add branch to remote     
+git push -u origin v1.13.0 # Add branch to remote     
 ```
 
 ### Set up Eclipse project
