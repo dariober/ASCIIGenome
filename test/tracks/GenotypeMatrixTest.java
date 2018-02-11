@@ -65,7 +65,7 @@ public class GenotypeMatrixTest {
 		assertEquals(2, gm.printToScreen(true, linf, 80, vcfHeader).split("\n").length);
 
 		// Filter by array in FORMAT
-		gm.setJsScriptFilter("{FF}[1] > 0");
+		gm.setJsScriptFilter("{GTFF}[1] > 0");
 		String y= gm.printToScreen(true, linf, 80, vcfHeader);
 		assertTrue(y.contains("sample1"));
 		assertTrue( ! y.contains("sample2") );

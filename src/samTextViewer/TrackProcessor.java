@@ -53,6 +53,9 @@ public class TrackProcessor {
 
 	public void iterateTracks() throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, DocumentException, InvalidColourException{
 
+		if(this.stopWatch.isRunning()){
+			this.stopWatch.reset();
+		}
 		this.stopWatch.start();
 
 		final GenomicCoords currentGC= this.genomicCoordsHistory.current();

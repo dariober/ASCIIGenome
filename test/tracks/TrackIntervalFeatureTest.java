@@ -481,7 +481,7 @@ public class TrackIntervalFeatureTest {
 		assertTrue(pass);
 		
 	}
-
+	
 	@Test
 	public void canApplyAwkAndGrep_getFeaturesInInterval() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 		

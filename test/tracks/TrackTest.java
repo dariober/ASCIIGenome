@@ -12,7 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
-import com.google.common.base.Stopwatch;
 
 import coloring.Config;
 import exceptions.InvalidColourException;
@@ -21,7 +20,6 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
-import samTextViewer.Utils;
 
 public class TrackTest {
 
@@ -29,6 +27,42 @@ public class TrackTest {
 	public void setConfig() throws IOException, InvalidConfigException{
 		new Config(null);
 	}
+	
+//	@Test
+//	public void canSetVariantReadsFilterBasedOnScreenPercent() throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+//		
+//		GenomicCoords gc= new GenomicCoords("chr7:3-101", 1000, null, "test_data/chr7.fa");
+//		
+//		Track t1= new TrackReads("test_data/ds051.actb.bam", gc);
+//
+//		t1.setVariantReadInInterval("0.0", true);
+//		assertEquals(3, t1.getFeatureFilter().getVariantFrom());
+//		assertEquals(3, t1.getFeatureFilter().getVariantTo());
+//		
+//		t1.setVariantReadInInterval("1.0", true);
+//		assertEquals(101, t1.getFeatureFilter().getVariantFrom());
+//		assertEquals(101, t1.getFeatureFilter().getVariantTo());
+//		
+//		//     (101-3+1) * 0.5 = 49.5
+//		// We round to 49.5 to 50. So: 
+//		//     3 + 50 - 1 = 52
+//		t1.setVariantReadInInterval("0.5", true);
+//		assertEquals(52, t1.getFeatureFilter().getVariantFrom());
+//		
+//		gc= new GenomicCoords("chr7:3-102", 1000, null, "test_data/chr7.fa");
+//		t1= new TrackReads("test_data/ds051.actb.bam", gc);
+//		t1.setVariantReadInInterval("0.5", true);
+//		assertEquals(52, t1.getFeatureFilter().getVariantFrom());
+//		
+//		// Must fail
+//		boolean pass= false;
+//		try{
+//			t1.setVariantReadInInterval("foo", true);
+//		} catch(NumberFormatException e){
+//			pass= true;
+//		}
+//		assertTrue(pass);
+//	}
 	
 	@Test
 	public void canConcatTitleAndTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidConfigException, InvalidColourException{
@@ -101,14 +135,6 @@ public class TrackTest {
 		out= tif.printLines();
 		assertTrue(out.contains("\033[7mALU\033[27m"));
 
-		// Multiple patterns
-//		tif.setHighlightPattern(Pattern.compile("AF"));
-//		tif.setPrintMode(PrintRawLine.CLIP);
-//		String out= tif.printLines();
-//		String line= Splitter.on("\n").omitEmptyStrings().splitToList(out).get(0);
-//		System.err.println(line);
-//		// assertTrue(out.contains("\033[7mALU\033[27m"));
-		
 		// Pattern start of line
 		tif.setHighlightPattern(Pattern.compile("1"));
 		tif.setPrintMode(PrintRawLine.FULL);
@@ -140,6 +166,32 @@ public class TrackTest {
 		// Turn the string-table to back to a list and ensure that all fields are there
 		List<String> xlist= Splitter.on("\t").omitEmptyStrings().splitToList(out.replaceAll(" +|\n", "\t"));
 		assertEquals(24, xlist.size());
+	}
+	
+	@Test
+	public void canHighlightFormatInVcfLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+
+		GenomicCoords gc= new GenomicCoords("1:1-20000000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/info_formats.vcf.gz", gc);
+		tif.setPrintMode(PrintRawLine.FULL);
+
+		// Highlight FORMAT tag and associated values
+		tif.setHighlightPattern(Pattern.compile("GT"));
+		String out= tif.printLines();
+		assertTrue(out.contains("\033[7mGT\033[27m"));
+		assertTrue(out.contains("\033[7m1/0\033[27m"));
+		assertTrue(out.contains("\033[7m1|2\033[27m"));
+
+//		// Tag GTFF is not highlighted because the match is partial
+//		assertTrue(out.contains("\033[7m1|2\033[27m:100:0,0"));
+//		
+//		// This should match both:
+//		tif.setHighlightPattern(Pattern.compile("GT|GTFF"));
+//		// TODO: assertTrue(out.contains("\033[7m1|2\033[27m:100:0,0"));
+		
+		// Turn the string-table to back to a list and ensure that all fields are there
+		List<String> xlist= Splitter.on("\t").omitEmptyStrings().splitToList(out.replaceAll(" +|\n", "\t"));
+		assertEquals(33, xlist.size());
 	}
 	
 	@Test

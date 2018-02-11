@@ -36,6 +36,13 @@ public class TrackPileupTest {
     }
 	
 	@Test
+	public void canReloadTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr7:1-200", 80, null, null);
+		TrackPileup tr= new TrackPileup("test_data/pairs.sam", gc);
+		tr.reload();
+	}   
+    
+	@Test
 	public void canPrintConsensusSequence() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 
 		GenomicCoords gc= new GenomicCoords("chr7:5566779-5566799", 80, null, "test_data/chr7.fa");
@@ -65,15 +72,16 @@ public class TrackPileupTest {
 
 	@Test
 	public void canFilterReadsContainingVariants() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+		
 		GenomicCoords gc= new GenomicCoords("chr7:1000001-1000081",100, null, "test_data/chr7.fa");
 		TrackPileup tp= new TrackPileup("test_data/variant_reads.sam", gc);
 		tp.setNoFormat(true);
 		tp.setyMaxLines(10);
-		assertEquals(10, tp.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
+        assertEquals(10, tp.printToScreen().split("\n").length); // N. reads stacked in this interval before filtering
 
-		tp.setVariantReadInInterval("chr7", 1000001, 1000001, true);
-		System.err.println(tp.printToScreen());
-		assertEquals(1, tp.printToScreen().trim().split("\n").length);
+        tp.setVariantReadInInterval("chr7", 1000001, 1000001, true);
+        System.err.println(tp.printToScreen());
+        assertEquals(1, tp.printToScreen().trim().split("\n").length);
 	}
 	
 	@Test
@@ -89,43 +97,37 @@ public class TrackPileupTest {
 
 	}
 	
-	@Test
-	public void validateSamtoolsDepth() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
-
-		/** Verify that profile from samtools is consistent with the one obtained 
-		 * with built-in Java code. If samtools is not installed this test is pointless*/
-		String samtools= "/usr/local/bin/samtools";
-		assertTrue(new File(samtools).canExecute());
-		
-		GenomicCoords gc= new GenomicCoords("chr7:5565858-5568418", 80, null, null);
-		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-		tr.setNoFormat(true);
-		tr.setyMaxLines(100);
-		
-		TrackPileup trST= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-		trST.setNoFormat(true);
-		trST.setSamtoolsPath(samtools);
-		trST.setyMaxLines(100);
-		assertEquals(tr.printToScreen(), trST.printToScreen());
-		
-		// Set MAPQ filter: Java
-		ArrayList<SamRecordFilter> samRecordFilter = new ArrayList<SamRecordFilter>();
-		samRecordFilter.add(new MappingQualityFilter(80));
-		tr.setSamRecordFilter(samRecordFilter);
-		
-		// Set MAPQ filter: samtools (requires update!!)
-		trST.getFeatureFilter().setMapq(80);
-		trST.update();
-		System.err.println(trST.printToScreen());
-		//System.err.println(tr.printToScreen());
-		assertTrue(trST.printToScreen().equals(tr.printToScreen()) && trST.printToScreen().trim().isEmpty());
-		
-		samRecordFilter.clear();
-		tr.setSamRecordFilter(samRecordFilter);
-		trST.getFeatureFilter().setMapq(0);
-		trST.update();
-		
-	}
+//	@Test
+//	public void validateSamtoolsDepth() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
+//
+//		GenomicCoords gc= new GenomicCoords("chr7:5565858-5568418", 80, null, null);
+//		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
+//		tr.setNoFormat(true);
+//		tr.setyMaxLines(100);
+//		
+//		TrackPileup trST= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
+//		trST.setNoFormat(true);
+//		trST.setyMaxLines(100);
+//		assertEquals(tr.printToScreen(), trST.printToScreen());
+//		
+//		// Set MAPQ filter: Java
+//		ArrayList<SamRecordFilter> samRecordFilter = new ArrayList<SamRecordFilter>();
+//		samRecordFilter.add(new MappingQualityFilter(80));
+//		tr.setSamRecordFilter(samRecordFilter);
+//		
+//		// Set MAPQ filter: samtools (requires update!!)
+//		trST.getFeatureFilter().setMapq(80);
+//		trST.update();
+//		System.err.println(trST.printToScreen());
+//		//System.err.println(tr.printToScreen());
+//		assertTrue(trST.printToScreen().equals(tr.printToScreen()) && trST.printToScreen().trim().isEmpty());
+//		
+//		samRecordFilter.clear();
+//		tr.setSamRecordFilter(samRecordFilter);
+//		trST.getFeatureFilter().setMapq(0);
+//		trST.update();
+//		
+//	}
 	
 	@Test
 	public void canPrintProfile() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException{
@@ -191,7 +193,6 @@ public class TrackPileupTest {
 
 		GenomicCoords gc= new GenomicCoords("chr7:5522059-5612125", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-		tr.setSamtoolsPath(""); // Make sure we don't use samtools.
 		
 		// See test_data/README.md for obtaining this test file (samtools mpileup ...)
 		String expPileup= FileUtils.readFileToString(new File("test_data/ear045.oxBS.actb.pileup"));

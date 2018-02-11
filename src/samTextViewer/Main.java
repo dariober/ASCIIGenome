@@ -134,7 +134,7 @@ public class Main {
 			console.clearScreen();
 			console.flush();
 
-			BufferedReader br= batchFileReader(batchFile); // new BufferedReader(new FileReader(new File(batchFile)));
+			BufferedReader br= batchFileReader(batchFile);
 			String line = null;  
 			while ((line = br.readLine()) != null){
 				// Start processing intervals one by one
@@ -149,7 +149,7 @@ public class Main {
 				}
 			}
 			br.close();
-			System.exit(0);
+			return;
 		}
 		// See if we need to process the exec arg before going to interactive mode.
 		// Also if we are in non-interactive mode, we process the track set now and later exit 
@@ -162,7 +162,7 @@ public class Main {
 			itr.processInput(exec, proc, debug);
 			if(opts.getBoolean("nonInteractive")){
 				System.out.print("\033[0m");
-				System.exit(0);
+				return;
 			}
 		}
 

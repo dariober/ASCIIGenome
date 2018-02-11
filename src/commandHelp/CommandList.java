@@ -926,7 +926,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-round INT] [-hl re] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
+		cmd.setName(Command.print.toString()); cmd.setArgs("[-n INT] [-full] [-off] [-round INT] [-hl re] [-esf] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]"); cmd.inSection= Section.DISPLAY; 
 		cmd.setBriefDescription("Print lines for the tracks matched by `track_regex`. ");
 		cmd.setAdditionalDescription("Useful to show exactly what features are present in the current window. "
 				+ "Features are filtered in/out according to the :code:`grep` command. Options:\n"
@@ -944,6 +944,8 @@ public class CommandList {
 				+ "\n"
 				+ "* :code:`-hl regex` Highlight substrings matching regex. If regex matches a FORMAT tag in a VCF record, "
 				+ "highlight the tag itself and also the sample values corresponding to that tag.\n"
+				+ "\n"
+				+ "* :code:`-esf` Explain SAM Flag. Add to SAM flag an abbreviated description.\n"
 				+ "\n"
 				+ "* :code:`-off` Turn off printing.\n"
 				+ "\n"
@@ -998,7 +1000,7 @@ public class CommandList {
 				+ "files see \n"
 				+ "https://github.com/dariober/ASCIIGenome/blob/master/resources/config/\n"
 				+ "\n"
-				+ "If two arguments are are given, they are taken as a key/value pair to reset.\n"
+				+ "If two arguments are given, they are taken as a key/value pair to reset.\n"
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
@@ -1090,6 +1092,20 @@ public class CommandList {
 				+ "");
 		cmdList.add(cmd);
 
+		cmd= new CommandHelp();
+		cmd.setName("reload"); cmd.setArgs("[track_regex = .*]..."); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription("Reload track files. ");
+		cmd.setAdditionalDescription("*reload* is useful when an input track file is edited by external "
+				+ "actions and you want to reload it in the current session. This is easier than "
+				+ "dropping and re-opening tracks with *dropTracks ... && open ...* since track "
+				+ "formattings and filters are preserved.\n"
+				+ "\n"
+				+ "Examples::\n"
+				+ "\n"
+				+ "reload~~~~~~~<- reload all tracks\n"
+				+ "reload .bam~~<- reload files matching '.bam'");
+		cmdList.add(cmd);
+		
 		cmd= new CommandHelp();
 		cmd.setName("dropTracks"); cmd.setArgs("[-t] [-v] track_regex [track_regex]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Drop tracks matching any of the listed regexes.");
@@ -1328,6 +1344,7 @@ public class CommandList {
 		paramList.add("explainSamFlag");
 		paramList.add("show");
 		paramList.add("open");
+		paramList.add("reload");
 		paramList.add("recentlyOpened");
 		paramList.add("dropTracks");
 		paramList.add("orderTracks");

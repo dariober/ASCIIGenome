@@ -87,6 +87,7 @@ public abstract class Track {
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	/** Number of decimal places to show when printing raw lines */
 	private int printNumDecimals= 3;
+	private boolean explainSamFlag= false;
 	private FeatureDisplayMode featureDisplayMode= FeatureDisplayMode.EXPANDED;
 	private int gap= 1;
 	protected boolean readsAsPairs= false;
@@ -106,7 +107,6 @@ public abstract class Track {
 	
 	private FeatureFilter featureFilter= new FeatureFilter(); 
 	private VCFHeader vcfHeader;
-	private String samtoolsPath;
 	private Pattern highlightPattern;
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
@@ -440,41 +440,15 @@ public abstract class Track {
 		List<String> featureList= new ArrayList<String>();
 		String omitString= "";
 		for(String line : rawList){
-
+			
+			if(this.getTrackFormat().equals(TrackFormat.BAM) && this.explainSamFlag){
+				line= this.explainSamFlag(line);
+			}
+			
 			if(this.getPrintMode().equals(PrintRawLine.CLIP) && (this.getSystemCommandForPrint() == null || this.getSystemCommandForPrint().isEmpty())){
 				
-				if(this.getTrackFormat().equals(TrackFormat.BAM)){
-					// Make SEQ and QUAL shorter
-					String[] bamrec= line.split("\t");
-					int max= 5;
-					if(bamrec[9].length() > 20){
-						bamrec[9]= bamrec[9].substring(0, max) + "[+" + (bamrec[9].length()-max)  + "]";
-					}
-					if(bamrec[10].length() > 20){
-						bamrec[10]= bamrec[10].substring(0, max)  + "[+" + (bamrec[10].length()-max)  + "]";
-					}
-					line= Joiner.on("\t").join(bamrec);
-				}
-				if(this.getTrackFormat().equals(TrackFormat.VCF)){
-					// Make REF and ALT shorter
-					int max= 5;
-					String[] vcfrec= line.split("\t");
-					if(vcfrec[3].length() > 20 && vcfrec[3].toLowerCase().matches("[actgn]+")){
-						vcfrec[3]= vcfrec[3].substring(0, max) + "[+" + (vcfrec[3].length()-max)  + "]";
-					}
-					if(vcfrec[4].length() > 20 && vcfrec[4].toLowerCase().matches("[actgn]+")){
-						vcfrec[4]= vcfrec[4].substring(0, max)  + "[+" + (vcfrec[4].length()-max)  + "]";
-					}
-					line= Joiner.on("\t").join(vcfrec);
-				}
-				// Trim any field that is really long
-				String[] rec= line.split("\t");
-				for(int i= 0; i < rec.length; i++){
-					if(rec[i].length() > 150 && ! rec[i].contains(" ")){
-						rec[i]= rec[i].substring(0, 5) + "..." + rec[i].substring(rec[i].length()-5); 
-					}
-				}
-				line= Joiner.on("\t").join(rec);
+				line= this.shortenPrintLine(line);
+				
 			}
 			line= Utils.roundNumbers(line, this.getPrintNumDecimals(), this.getTrackFormat());
 			
@@ -541,6 +515,74 @@ public abstract class Track {
 		}
 	}
 
+	/** Parse line assuming it is a SAM record and add explanation to sam flag;
+	 * */
+	private String explainSamFlag(String line) {
+		
+		String[] xline= line.split("\t");
+		
+		int flag= Integer.valueOf(xline[1]);
+		StringBuilder ex= new StringBuilder();
+		ex.append(flag);
+		ex.append("|");
+		if((flag & 16) == 16) {ex.append("-|");} else {ex.append("+|");}
+		if((flag & 1) == 1) ex.append("pair|");
+		if((flag & 2) == 2) ex.append("prop-p|");
+		if((flag & 4) == 4) ex.append("unmapped|");
+		if((flag & 8) == 8) ex.append("mate-unmap|");
+		if((flag & 32) == 32) ex.append("mate-rev|");
+		if((flag & 64) == 64) ex.append("1st|");
+		if((flag & 128) == 128) ex.append("2nd|");
+		if((flag & 256) == 256) ex.append("not-primary|");
+		if((flag & 512) == 512) ex.append("QC-fail|");
+		if((flag & 1024) == 1024) ex.append("dupl|");
+		if((flag & 2048) == 2048) ex.append("suppl|");
+		
+		xline[1]= ex.toString().replaceAll("\\|$", "");
+		
+		return Joiner.on("\t").join(xline);
+	}
+
+	/**Abbreviate printable fields such as long sequences in VCF 
+	 * alleles and read sequence and quality strings in BAM.
+	 * */
+	private String shortenPrintLine(String line){
+		
+		if(this.getTrackFormat().equals(TrackFormat.BAM)){
+			// Make SEQ and QUAL shorter
+			String[] bamrec= line.split("\t");
+			int max= 5;
+			if(bamrec[9].length() > 20){
+				bamrec[9]= bamrec[9].substring(0, max) + "[+" + (bamrec[9].length()-max)  + "]";
+			}
+			if(bamrec[10].length() > 20){
+				bamrec[10]= bamrec[10].substring(0, max)  + "[+" + (bamrec[10].length()-max)  + "]";
+			}
+			line= Joiner.on("\t").join(bamrec);
+		}
+		if(this.getTrackFormat().equals(TrackFormat.VCF)){
+			// Make REF and ALT shorter
+			int max= 5;
+			String[] vcfrec= line.split("\t");
+			if(vcfrec[3].length() > 20 && vcfrec[3].toLowerCase().matches("[actgn]+")){
+				vcfrec[3]= vcfrec[3].substring(0, max) + "[+" + (vcfrec[3].length()-max)  + "]";
+			}
+			if(vcfrec[4].length() > 20 && vcfrec[4].toLowerCase().matches("[actgn]+")){
+				vcfrec[4]= vcfrec[4].substring(0, max)  + "[+" + (vcfrec[4].length()-max)  + "]";
+			}
+			line= Joiner.on("\t").join(vcfrec);
+		}
+		// Trim any field that is really long
+		String[] rec= line.split("\t");
+		for(int i= 0; i < rec.length; i++){
+			if(rec[i].length() > 150 && ! rec[i].contains(" ")){
+				rec[i]= rec[i].substring(0, 5) + "..." + rec[i].substring(rec[i].length()-5); 
+			}
+		}
+		line= Joiner.on("\t").join(rec);
+		return line;
+	}
+	
 	/**Find the values in the VCF record whose TAG matches pattern and add ANSI highlighting. 
 	 * */
 	private String highlightVcfFormat(String vcf, Pattern p){
@@ -571,7 +613,9 @@ public abstract class Track {
 			List<String> v= Splitter.on(":").splitToList(sample);
 			List<String> values= new ArrayList<String>(v);
 			for(int idx : hlValueIdx){
-				values.set(idx, "\033[7m" + values.get(idx) + "\033[27m");
+				if(idx < values.size()){
+					values.set(idx, "\033[7m" + values.get(idx) + "\033[27m");
+				}
 			}
 			String fmtSample= Joiner.on(":").join(values);
 			outvcf.add(fmtSample);
@@ -766,7 +810,7 @@ public abstract class Track {
 		return title + track; 
 	}
 	
-	public List<Boolean> filterReads(SamReader samReader, String chrom, int from, int to) throws IOException{
+	public List<Boolean> filterReads(SamReader samReader, String chrom, int from, int to) throws IOException {
 
 		Iterator<SAMRecord> filterSam= samReader.query(chrom, from, to, false);
 		
@@ -794,7 +838,8 @@ public abstract class Track {
 			// Filter for variant reads: Do it only if there is an intersection between variant interval and current genomic window
 			if(this.getFeatureFilter().getVariantChrom().equals(Filter.DEFAULT_VARIANT_CHROM.getValue())){
 				// Variant read filter is not set. Nothing to do.
-			} else if(passed){ 
+			}
+			else if(passed){ 
 				// Memo: Test filter(s) only if a read is passed==true. 
 				passed= this.isSNVRead(rec, this.getFeatureFilter().isVariantOnly());
 			}
@@ -995,6 +1040,85 @@ public abstract class Track {
 		this.update();
 	}
 	
+	/**
+	 * @throws InvalidGenomicCoordsException Interpret the variantInterval string, like 123+-5, to return the coordinates 
+	 * of the interval to filter for variants. Return an array of length 2 with
+	 * [start, end], 1-based.
+	 * @throws  
+	 * */
+	private int[] variantIntervalToCoords(String variantInterval) throws InvalidGenomicCoordsException {
+
+		int from= -1;
+		int to= -1;
+		if(variantInterval != null){
+			
+			// Find whether the region is a single pos +/- a value or 
+			variantInterval= variantInterval.trim().replaceAll(" ", "").replaceAll(",", "").replaceAll("/", "");
+			try{
+				if(variantInterval.contains("+-") || variantInterval.contains("-+")){
+					String[] fromTo= variantInterval.replaceAll("\\+", "").split("-");
+					int offset= this.posFromGenomicOrScreen(fromTo[1]);
+					from= this.posFromGenomicOrScreen(fromTo[0]) - offset;
+					to= this.posFromGenomicOrScreen(fromTo[0]) + offset;
+				} 
+				else if(variantInterval.contains("-")){
+					String[] fromTo= variantInterval.split("-");
+					from= this.posFromGenomicOrScreen(fromTo[0]) - this.posFromGenomicOrScreen(fromTo[1]);
+					to= this.posFromGenomicOrScreen(fromTo[0]);
+				} 
+				else if(variantInterval.contains("+")){
+					String[] fromTo= variantInterval.split("\\+");
+					from= this.posFromGenomicOrScreen(fromTo[0]);
+					to= this.posFromGenomicOrScreen(fromTo[0]) + this.posFromGenomicOrScreen(fromTo[1]);
+				}
+				else if(variantInterval.contains(":")){
+					String[] fromTo= variantInterval.split(":");
+					from= this.posFromGenomicOrScreen(fromTo[0]);
+					to= this.posFromGenomicOrScreen(fromTo[1]);
+				}
+				else {
+					from= this.posFromGenomicOrScreen(variantInterval);
+					to= this.posFromGenomicOrScreen(variantInterval);
+				}
+			} catch(NumberFormatException e) {
+				try {
+					throw new NumberFormatException(Utils.padEndMultiLine("Cannot parse region into integers: " + variantInterval, Utils.getTerminalWidth()));
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			}
+			if(from < 1) from= 1;
+			if(to < 1) to= 1;
+			if(from > to) from= to;
+		}
+		return new int[]{from, to};
+	}
+	
+	/**Argument position is parsable to either either an integer or a 
+	 * decimal number. If decimal, return the genomic position corresponding to
+	 * the screen percentile. E.g. 0.5 returns the genomic position at 50% of the screen.  
+	 * @throws InvalidCommandLineException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * */
+	private int posFromGenomicOrScreen(String position) throws InvalidGenomicCoordsException {
+		int reg;
+		try{
+			reg= Integer.parseInt(position);
+			return reg;
+		} catch(NumberFormatException e){
+			//
+		}
+		Double pct= Double.valueOf(position);
+		double offset= this.getGc().getGenomicWindowSize() * pct;
+		if(offset != 0){
+			offset--;
+		}
+		reg= this.getGc().getFrom() + (int)Math.round(offset);
+		return reg;
+	}
+
+	
 	protected VCFHeader getVcfHeader() {
 		return vcfHeader;
 	}
@@ -1011,11 +1135,21 @@ public abstract class Track {
 		this.printNumDecimals = printNumDecimals;
 	}
 	
-	public void setSamtoolsPath(String samtoolsPath) {
-		this.samtoolsPath= samtoolsPath;
+//	public void setSamtoolsPath(String samtoolsPath) {
+//		this.samtoolsPath= samtoolsPath;
+//	}
+//	public String getSamtoolsPath() {
+//		return this.samtoolsPath;
+//	}
+	
+	public abstract void reload() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException;
+
+	/**
+	 * @param explainSamFlag the explainSamFlag to set
+	 */
+	protected void setExplainSamFlag(boolean explainSamFlag) {
+		this.explainSamFlag = explainSamFlag;
 	}
-	public String getSamtoolsPath() {
-		return this.samtoolsPath;
-	}
+	
 }
 

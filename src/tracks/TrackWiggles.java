@@ -2,6 +2,8 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -355,10 +357,6 @@ public class TrackWiggles extends Track {
 	public String printLines(){
 		return "";
 	}
-//	@Override
-//	public String printFeaturesToFile() throws IOException, InvalidGenomicCoordsException, InvalidColourException {
-//		return "";
-//	}
 
 	@Override
 	protected List<String> getRecordsAsStrings() {
@@ -380,5 +378,17 @@ public class TrackWiggles extends Track {
 	protected String getTitleForActiveFilters() {
 		return "";
 	}
+	
+	@Override
+	public void reload() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		if( ! Files.isSameFile(Paths.get(this.getWorkFilename()), Paths.get(this.getFilename()))){
+			TrackWiggles tr= new TrackWiggles(this.getFilename(), this.getGc(), this.getBdgDataColIdx());
+			String fname= this.getWorkFilename();
+			Files.move(Paths.get(tr.getWorkFilename()), Paths.get(fname), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			Files.move(Paths.get(tr.getWorkFilename() + TabixUtils.STANDARD_INDEX_EXTENSION), Paths.get(fname + TabixUtils.STANDARD_INDEX_EXTENSION), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		}
+		this.update();
+	}
+
 
 }

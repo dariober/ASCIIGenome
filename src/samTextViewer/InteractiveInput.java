@@ -10,7 +10,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -321,13 +320,13 @@ public class InteractiveInput {
 									candidateSourceGenome.add(0, "cmd");
 									proc.getGenomicCoordsHistory().setGenome(candidateSourceGenome);
 								}
-//								GenomicCoords gc= proc.getGenomicCoordsHistory().current();
-//								// We are adding tracks. Check if we can set genome but do not treat these files as genome files.
-//								gc.setGenome(Arrays.asList(new String[] {sourceName}), false);
 							}
 						}
 					}
 				} 
+				else if(cmdTokens.get(0).equals("reload")){
+					proc.getTrackSet().reload(cmdTokens);
+				}
 				else if(cmdTokens.get(0).equals("dropTracks")){
 					if(cmdTokens.size() <= 1){
 						System.err.println(Utils.padEndMultiLine("List one or more tracks to drop or `dropTracks -h` for help.", proc.getWindowSize()));
@@ -422,7 +421,7 @@ public class InteractiveInput {
 					
 				} else {
 					System.err.println(Utils.padEndMultiLine("Unrecognized command: " + cmdTokens.get(0), proc.getWindowSize()));
-					String suggestions= Joiner.on(" or ").join(this.suggestCommand(cmdTokens.get(0).trim()));
+					String suggestions= Joiner.on(" or ").join(Utils.suggestCommand(cmdTokens.get(0).trim(), CommandList.cmds()));
 					if( ! suggestions.isEmpty()){
 						System.err.println(Utils.padEndMultiLine("Maybe you mean " + suggestions + "?", proc.getWindowSize()));
 					}
@@ -505,18 +504,18 @@ public class InteractiveInput {
 		}
 		final Map<Integer, String> FLAGS= new LinkedHashMap<Integer, String>();
 		
-		FLAGS.put(1, "read paired");
-		FLAGS.put(2, "read mapped in proper pair");
-		FLAGS.put(4, "read unmapped");
-		FLAGS.put(8, "mate unmapped");
-		FLAGS.put(16, "read reverse strand");
-		FLAGS.put(32, "mate reverse strand");
-		FLAGS.put(64, "first in pair");
-		FLAGS.put(128, "second in pair");
-		FLAGS.put(256, "not primary alignment");
-		FLAGS.put(512, "read fails platform/vendor quality checks");
-		FLAGS.put(1024, "read is PCR or optical duplicate");
-		FLAGS.put(2048, "supplementary alignment");
+		FLAGS.put(1, "read paired [1]");
+		FLAGS.put(2, "read mapped in proper pair [2]");
+		FLAGS.put(4, "read unmapped [4]");
+		FLAGS.put(8, "mate unmapped [8]");
+		FLAGS.put(16, "read reverse strand [16]");
+		FLAGS.put(32, "mate reverse strand [32]");
+		FLAGS.put(64, "first in pair [64]");
+		FLAGS.put(128, "second in pair [128]");
+		FLAGS.put(256, "not primary alignment [256]");
+		FLAGS.put(512, "read fails platform/vendor quality checks [512]");
+		FLAGS.put(1024, "read is PCR or optical duplicate [1024]");
+		FLAGS.put(2048, "supplementary alignment [2048]");
 		
 		String LEFT_PAD= " ";
 		List<String> table= new ArrayList<String>();
@@ -608,12 +607,26 @@ public class InteractiveInput {
 		args.remove(0);
 		if(args.size() == 0){
 			throw new InvalidCommandLineException();
-		} else if(args.size() == 1){
-			new Config(args.get(0));
+		} 
+		if(args.size() == 1){
+			ConfigKey key= ConfigKey.getConfigKeyFromShort(args.get(0));
+			if(ConfigKey.booleanKeys().contains(key)){
+				// If configkey is a type boolean, just flip the boolean
+				key = ConfigKey.valueOf(key.toString());
+				boolean value= ! Utils.asBoolean(Config.get(key));
+				Config.set(key, String.valueOf(value));
+			} else {
+				// configKey is expected to be the name of a configuration file
+				new Config(args.get(0));
+			}
 		} else {
-			ConfigKey key= ConfigKey.valueOf(args.get(0));
+			ConfigKey key= ConfigKey.getConfigKeyFromShort(args.get(0));
 			String value= args.get(1);
-			Config.set(key, value);
+			try{
+				Config.set(key, value);
+			} catch(Exception e){
+				throw new InvalidConfigException();
+			}
 		}
 	}
 
@@ -872,81 +885,4 @@ public class InteractiveInput {
 		this.interactiveInputExitCode= exitCode;
 	}
 
-	private List<String> suggestCommand(String hint){
-		if(hint.length() < 3){
-			return new ArrayList<>();
-		}
-		hint= hint.toLowerCase();
-
-		Map<Integer, List<String>> candidates= new TreeMap<Integer, List<String>>();
-		
-		for(String candidate : CommandList.cmds()){
-			if(candidate.length() < 3){
-				continue;
-			}
-			String x= candidate.toLowerCase();
-			int nm;
-			if(x.length() >= 3 && hint.length() >= 3 && (x.contains(hint) || hint.contains(x))){
-				nm= 0;
-			} else {
-				nm= this.levenshtein(hint, candidate.toLowerCase());
-			}
-			if(candidates.containsKey(nm)){
-				candidates.get(nm).add(candidate);
-			} else {
-				List<String> tier= new ArrayList<String>();
-				tier.add(candidate);
-				candidates.put(nm, tier);
-			}
-		}
-		
-		java.util.Map.Entry<Integer, List<String>> out = candidates.entrySet().iterator().next();
-		return out.getValue();
-	}
-	
-    /**
-     * Calculates Damerau–Levenshtein distance between string {@code a} and
-     * {@code b} with given costs.
-     * 
-     * @param a
-     *            String
-     * @param b
-     *            String
-     * @return Damerau–Levenshtein distance between {@code a} and {@code b}
-     * 
-     * Method from argparse4j
-     */
-    private int levenshtein(String a, String b) {
-    	
-    	 final int SUBSTITUTION_COST = 2;
-    	 final int SWAP_COST = 0;
-    	 final int DELETION_COST = 4;
-    	 final int ADDITION_COST = 1;
-    	
-        int aLen = a.length();
-        int bLen = b.length();
-        int[][] dp = new int[3][bLen + 1];
-        for (int i = 0; i <= bLen; ++i) {
-            dp[1][i] = i;
-        }
-        for (int i = 1; i <= aLen; ++i) {
-            dp[0][0] = i;
-            for (int j = 1; j <= bLen; ++j) {
-                dp[0][j] = dp[1][j - 1]
-                        + (a.charAt(i - 1) == b.charAt(j - 1) ? 0 : SUBSTITUTION_COST);
-                if (i >= 2 && j >= 2 && a.charAt(i - 1) != b.charAt(j - 1)
-                        && a.charAt(i - 2) == b.charAt(j - 1)
-                        && a.charAt(i - 1) == b.charAt(j - 2)) {
-                    dp[0][j] = Math.min(dp[0][j], dp[2][j - 2] + SWAP_COST);
-                }
-                dp[0][j] = Math.min(dp[0][j],
-                        Math.min(dp[1][j] + DELETION_COST, dp[0][j - 1] + ADDITION_COST));
-            }
-            int[] temp = dp[2];
-            dp[2] = dp[1];
-            dp[1] = dp[0];
-            dp[0] = temp;
-        }
-        return dp[1][bLen];
-    }
 }

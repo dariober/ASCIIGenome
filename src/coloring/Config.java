@@ -117,11 +117,10 @@ public class Config {
 	 * */
 	private static void colorNameToInt() throws InvalidColourException{
 		for(ConfigKey key : config.keySet()){
-			if(ConfigKey.nonColorKeys().contains(key)){
-				continue;
+			if(ConfigKey.colorKeys().contains(key)){
+				int colorInt = Xterm256.colorNameToXterm256(config.get(key));
+				config.put(key, Integer.toString(colorInt));
 			}
-			int colorInt = Xterm256.colorNameToXterm256(config.get(key));
-			config.put(key, Integer.toString(colorInt));
 		}
 	}
 	
@@ -139,8 +138,18 @@ public class Config {
 	}		
 
 	public static void set(ConfigKey key, String value) throws InvalidColourException{
-		config.put(key, value);
-		colorNameToInt();
+		if(ConfigKey.booleanKeys().contains(key)){
+			boolean bool= Utils.asBoolean(value);
+			config.put(key, Boolean.toString(bool));
+		} 
+		else if(ConfigKey.integerKeys().contains(key)){
+			Integer.valueOf(value);
+			config.put(key, value);
+		}
+		else {
+			config.put(key, value);
+			colorNameToInt();
+		}
 	}
 	
 //	/**Return the key-value map of configuration parameters

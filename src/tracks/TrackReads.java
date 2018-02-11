@@ -2,6 +2,8 @@ package tracks;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -111,7 +113,7 @@ public class TrackReads extends Track{
 					long v= (templ_name + rndOffset).hashCode(); // Hashing.md5().hashBytes((templ_name + rndOffset).getBytes()).asLong();
 					Random rand = new Random(v);
 					if(rand.nextFloat() < probSample){ // Downsampler
-						TextRead tr= new TextRead(rec, this.getGc());
+						TextRead tr= new TextRead(rec, this.getGc(), Utils.asBoolean(Config.get(ConfigKey.show_soft_clip)));
 						textReads.add(tr);
 					}
 				}
@@ -291,7 +293,7 @@ public class TrackReads extends Track{
 	/** Find the mid character and add some formatting to highlight it.
 	 * */
 	private String highlightMidCharacter(String fmtLine){
-		if(this.isNoFormat()){
+		if(this.isNoFormat() || ! Utils.asBoolean((Config.get(ConfigKey.highlight_mid_char)))){
 			return fmtLine;
 		}
 		List<Integer> idx = Utils.indexOfCharsOnFormattedLine(fmtLine);
@@ -425,4 +427,15 @@ public class TrackReads extends Track{
 		return this.colorForRegex;
 	}
 
+	@Override
+	public void reload() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		if( ! Files.isSameFile(Paths.get(this.getWorkFilename()), Paths.get(this.getFilename()))){
+			TrackReads tr= new TrackReads(this.getFilename(), this.getGc());
+			String fname= this.getWorkFilename();
+			Files.move(Paths.get(tr.getWorkFilename()), Paths.get(fname), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			Files.move(Paths.get(tr.getWorkFilename().replaceAll("\\.bam$", ".bai")), Paths.get(fname.replaceAll("\\.bam$", ".bai")), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		}
+		this.update();
+	}
+	
 }

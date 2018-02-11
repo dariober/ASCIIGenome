@@ -1,7 +1,15 @@
 package coloring;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import com.google.common.base.Joiner;
+
+import exceptions.InvalidConfigException;
+import samTextViewer.Utils;
 
 // See http://stackoverflow.com/questions/15989316/how-to-add-a-description-for-each-entry-of-enum
 // for how this class was prepared.
@@ -28,7 +36,10 @@ public enum ConfigKey {
 	ruler("Colour for ruler"),
 	max_reads_in_stack("Max number of reads to accumulate when showing read tracks"), 
 	shade_baseq("Shade read base when quality is below this threshold"),
-	shade_structural_variant("Background colour for reads suggesting structural variation");
+	shade_structural_variant("Background colour for reads suggesting structural variation"), 
+	highlight_mid_char("Highlight mid-character in read tracks?"), 
+	nucs_as_letters("Show read nucleotides as letters at single base resolution?"),
+	show_soft_clip("Show soft clipped bases in read tracks?");
 	
 	private String value;
 
@@ -39,11 +50,46 @@ public enum ConfigKey {
 	/** 			U P D A T E   M E 
 	 * Configuration parameters that are NOT COLOURS
 	 * */
-	public static Set<ConfigKey> nonColorKeys(){
-		Set<ConfigKey> nonColorKeys= new HashSet<ConfigKey>(); 
-		nonColorKeys.add(ConfigKey.max_reads_in_stack);
-		nonColorKeys.add(ConfigKey.shade_baseq);
-		return nonColorKeys;
+	public static Set<ConfigKey> colorKeys(){
+		Set<ConfigKey> ColorKeys= new HashSet<ConfigKey>(); 
+		ColorKeys.add(ConfigKey.background);
+		ColorKeys.add(ConfigKey.foreground);
+		ColorKeys.add(ConfigKey.seq_a);
+		ColorKeys.add(ConfigKey.seq_c);
+		ColorKeys.add(ConfigKey.seq_g);
+		ColorKeys.add(ConfigKey.seq_t);
+		ColorKeys.add(ConfigKey.seq_other);
+		ColorKeys.add(ConfigKey.shade_low_mapq);
+		ColorKeys.add(ConfigKey.methylated_foreground);
+		ColorKeys.add(ConfigKey.unmethylated_foreground);
+		ColorKeys.add(ConfigKey.methylated_background);
+		ColorKeys.add(ConfigKey.unmethylated_background);
+		ColorKeys.add(ConfigKey.title_colour);
+		ColorKeys.add(ConfigKey.feature_background_positive_strand);
+		ColorKeys.add(ConfigKey.feature_background_negative_strand);
+		ColorKeys.add(ConfigKey.feature_background_no_strand);
+		ColorKeys.add(ConfigKey.footer);
+		ColorKeys.add(ConfigKey.chrom_ideogram);
+		ColorKeys.add(ConfigKey.ruler);
+		ColorKeys.add(ConfigKey.shade_structural_variant);
+		return ColorKeys;
+	}
+
+	/** 			U P D A T E   M E 
+	 * */
+	public static Set<ConfigKey> booleanKeys(){
+		Set<ConfigKey> booleanKeys= new HashSet<ConfigKey>();
+		booleanKeys.add(ConfigKey.highlight_mid_char);
+		booleanKeys.add(ConfigKey.nucs_as_letters);
+		booleanKeys.add(ConfigKey.show_soft_clip);
+		return booleanKeys;
+	}
+	
+	public static Set<ConfigKey> integerKeys(){
+		Set<ConfigKey> integerKeys= new HashSet<ConfigKey>();
+		integerKeys.add(ConfigKey.max_reads_in_stack);
+		integerKeys.add(ConfigKey.shade_baseq);
+		return integerKeys;
 	}
 	
     public static ConfigKey getEnum(String value) {
@@ -66,5 +112,39 @@ public enum ConfigKey {
 		  }
 		  return values;
 	}
+	
+	public static ConfigKey getConfigKeyFromShort(String configkey) throws InvalidConfigException, IOException{
+		List<String> optionKeys= new ArrayList<String>(ConfigKey.getValues());
+		ConfigKey key;
+		if(optionKeys.contains(configkey)){
+			key= ConfigKey.valueOf(configkey);
+		} else {
+			List<String> candidates = Utils.suggestCommand(configkey, optionKeys);
+			if(candidates.size() == 0){
+				System.err.println(Utils.padEndMultiLine("No config key found for " + configkey, Utils.getTerminalWidth()));
+				throw new InvalidConfigException();
+			}
+			if(candidates.size() > 1){
+				System.err.println(Utils.padEndMultiLine("Did you mean " + Joiner.on(" or ").join(candidates) + "?", Utils.getTerminalWidth()));
+				throw new InvalidConfigException();
+			}
+			String candidate= candidates.get(0);
+			boolean found= false;
+			for(String x : optionKeys){
+				if(x.toLowerCase().contains(configkey.toLowerCase())){
+					found= true;
+					break;
+				}
+			}
+			if( ! found){
+				System.err.println(Utils.padEndMultiLine("No config key found for " + configkey, Utils.getTerminalWidth()));
+				throw new InvalidConfigException();
+			}
+			System.err.println(Utils.padEndMultiLine("Setting " + candidate, Utils.getTerminalWidth()));
+			key= ConfigKey.valueOf(candidate);
+		}
+		return key;
+	}
+
 	
 }

@@ -1,6 +1,14 @@
 TODO
 ====
 
+* Read from `stdin`, useful for quick look ups like `intersectBed -a x.vcf -b y.bed | ASCIIGenome -`.
+In practice, this would simply read from stdin and write to a temp file which is then sorted, compressed and indexed. 
+Ok for small files, fewer then 1/2M records (?), inpractical otherwise. 
+You need to guess the format of the input. Unless you enforce syntax like `ASCIIGenome -.vcf`, which is awkward.
+
+ 
+* Display soft clipped bases.  
+
 FIXME
 -----
 
@@ -39,10 +47,7 @@ while(System.currentTimeInMiilis() < (now + 10000)){
 } 
 ```
 
-* Allow the user to set the `tmp` directory. By default use a `tmp` other then 
-  the system default. On Linux the `tmp` is often pretty small.
-
-* Add `-I` flag to `grep` to make it case insensitive.
+* Allow the user to set the `tmp` directory.
 
 * Option to log transform quantitative data.
 

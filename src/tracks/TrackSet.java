@@ -426,8 +426,13 @@ public class TrackSet {
         
 		// PARSE ARGS
         // --------------------------------------------------------------------
-        boolean invertSelection= Utils.argListContainsFlag(args, "-v"); // opts.getBoolean("invert");  
+        boolean invertSelection= Utils.argListContainsFlag(args, "-v");
 
+        boolean esf= Utils.argListContainsFlag(args, "-esf");
+        if(esf){
+        	printMode= PrintRawLine.CLIP;
+        }
+        
         Pattern highlightPattern= Pattern.compile("");
         if(args.contains("-hl")){
         	printMode= PrintRawLine.CLIP;
@@ -529,6 +534,7 @@ public class TrackSet {
 
 		// Process as required
 		for(Track tr : tracksToReset){
+			tr.setExplainSamFlag(esf);
         	tr.setHighlightPattern(highlightPattern);
 			tr.setPrintRawLineCount(count);
 			tr.setSystemCommandForPrint(sys);
@@ -1185,7 +1191,7 @@ public class TrackSet {
 	}
 	
 	public void setFilterVariantReads(List<String> cmdInput) throws InvalidCommandLineException, MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-
+		
 		List<String> args= new ArrayList<String>();
 		for(String x : cmdInput){
 			args.add(x);
@@ -1196,55 +1202,73 @@ public class TrackSet {
 		// Collect arguments
 		boolean variantOnly= ! Utils.argListContainsFlag(args, "-all");
 		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
-		
+
 		String region= Utils.getArgForParam(args, "-r", null);
 		String chrom= Filter.DEFAULT_VARIANT_CHROM.getValue();
 		int from= -1;
 		int to= -1;
 		if(region != null && this.getTrackList().size() > 0){
-			
-			if(this.getTrackList().get(0).getGc().getFastaFile() == null){
-				System.err.println("A reference sequence is required to execute this command.");
-				throw new InvalidCommandLineException();
-			}
-			
-			chrom= this.getTrackList().get(0).getGc().getChrom();
-			// Find whether the region is a single pos +/- a value or 
-			region= region.trim().replaceAll(" ", "").replaceAll(",", "").replaceAll("/", "");
-			try{
-				if(region.contains("+-") || region.contains("-+")){
-					String[] fromTo= region.replaceAll("\\+", "").split("-");
-					int offset= Integer.parseInt(fromTo[1]);
-					from= Integer.parseInt(fromTo[0]) - offset;
-					to= Integer.parseInt(fromTo[0]) + offset;
-				} 
-				else if(region.contains("-")){
-					String[] fromTo= region.split("-");
-					from= Integer.parseInt(fromTo[0]) - Integer.parseInt(fromTo[1]);
-					to= Integer.parseInt(fromTo[0]);
-				} 
-				else if(region.contains("+")){
-					String[] fromTo= region.split("\\+");
-					from= Integer.parseInt(fromTo[0]);
-					to= Integer.parseInt(fromTo[0]) + Integer.parseInt(fromTo[1]);
-				}
-				else if(region.contains(":")){
-					String[] fromTo= region.split(":");
-					from= Integer.parseInt(fromTo[0]);
-					to= Integer.parseInt(fromTo[1]);
-				}
-				else {
-					from= Integer.parseInt(region);
-					to= Integer.parseInt(region);
-				}
-			} catch(NumberFormatException e) {
-				System.err.println("Cannot parse region into integers: " + region);
-				throw new InvalidCommandLineException();
-			}
-			if(from < 1) from= 1;
-			if(to < 1) to= 1;
-			if(from > to) from= to;
+		        
+		        if(this.getTrackList().get(0).getGc().getFastaFile() == null){
+		                System.err.println("A reference sequence is required to execute this command.");
+		                throw new InvalidCommandLineException();
+		        }
+		        
+		        chrom= this.getTrackList().get(0).getGc().getChrom();
+		        // Find whether the region is a single pos +/- a value or  
+		        region= region.trim().replaceAll(" ", "").replaceAll(",", "").replaceAll("/", "");
+		        try{
+		                if(region.contains("+-") || region.contains("-+")){
+		                        String[] fromTo= region.replaceAll("\\+", "").split("-"); 
+		                        int offset= Integer.parseInt(fromTo[1]);
+		                        from= Integer.parseInt(fromTo[0]) - offset;
+		                        to= Integer.parseInt(fromTo[0]) + offset;
+		                }               
+		                else if(region.contains("-")){
+		                        String[] fromTo= region.split("-");
+		                        from= Integer.parseInt(fromTo[0]) - Integer.parseInt(fromTo[1]);
+		                        to= Integer.parseInt(fromTo[0]);
+		                }               
+		                else if(region.contains("+")){
+		                        String[] fromTo= region.split("\\+");
+		                        from= Integer.parseInt(fromTo[0]);
+		                        to= Integer.parseInt(fromTo[0]) + Integer.parseInt(fromTo[1]);
+		                }               
+		                else if(region.contains(":")){
+		                        String[] fromTo= region.split(":");
+		                        from= Integer.parseInt(fromTo[0]);
+		                        to= Integer.parseInt(fromTo[1]);
+		                }               
+		                else {          
+		                        from= Integer.parseInt(region);
+		                        to= Integer.parseInt(region);
+		                }               
+		        } catch(NumberFormatException e) {
+		                System.err.println("Cannot parse region into integers: " + region);
+		                throw new InvalidCommandLineException();
+		        }
+		        if(from < 1) from= 1;
+		        if(to < 1) to= 1;
+		        if(from > to) from= to; 
 		}
+		// -----------------------------------------------
+		// Stub for filtering by records in another track 
+//		String track= Utils.getArgForParam(args, "-t", null);
+//		if(track != null){
+//			List<String>pattern= new ArrayList<String>();
+//			pattern.add(track);
+//			List<Track> tname= this.matchTracks(pattern, true, false);
+//			if(tname.size() == 0){
+//				// Handle no track matched
+//			}
+//			TrackIntervalFeature tr= (TrackIntervalFeature)this.getTrack(tname.get(0));
+//			tr.getIntervalFeatureList();
+//			// List<String> chroms=
+//			// List<Integer> starts=
+//			// List<ends> ends=
+//		}
+		// Modify Track.setVariantReadInInterval() to accept a list of chrom, start, end positions.
+		// -----------------------------------------------
 		
 		List<String> trackNameRegex= new ArrayList<String>();
 		
@@ -1765,8 +1789,6 @@ public class TrackSet {
 			args.remove("-q");
 		}
 		
-		String samtoolsPath= Utils.getArgForParam(args, "-path", null);
-		
 		// What is left is positional args of regexes
 		List<String> trackNameRegex= new ArrayList<String>();
 		trackNameRegex.addAll(args);
@@ -1782,10 +1804,7 @@ public class TrackSet {
         }
         
         for(Track tr : tracksToReset){
-        	if(samtoolsPath != null){
-        		tr.setSamtoolsPath(samtoolsPath);
-        		continue;
-        	}
+
         	tr.set_f_flag(f);
         	tr.set_F_flag(F);
         	tr.setMapq(q);
@@ -2197,5 +2216,21 @@ public class TrackSet {
 			union.add(file);
 		}
 		this.setOpenedFiles(union);
+	}
+
+	public void reload(List<String> cmdTokens) throws InvalidCommandLineException, ClassNotFoundException, InvalidGenomicCoordsException, IOException, InvalidRecordException, SQLException {
+		List<String> args= new ArrayList<String>(cmdTokens);
+		args.remove(0); //Remove cmd name
+		boolean invertSelection= Utils.argListContainsFlag(args, "-v");
+
+		if(args.size() == 0){
+			args.add(".*");
+		}
+		List<String> trackNameRegex= new ArrayList<String>(args);
+       
+        List<Track> tracksToReload= this.matchTracks(trackNameRegex, true, invertSelection);
+        for(Track tr : tracksToReload){
+        	tr.reload();
+        }
 	}
 }

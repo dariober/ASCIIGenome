@@ -63,6 +63,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * vcfHeader can be null if trackformat is not VCF.
 	 */
 	public IntervalFeature(String line, TrackFormat format, VCFCodec vcfCodec) throws InvalidGenomicCoordsException{
+
 		if(format.equals(TrackFormat.BED) || format.equals(TrackFormat.BEDGRAPH) || format.equals(TrackFormat.BIGBED)){
 			this.intervalFeatureFromBedLine(line);
 			this.trackFormat= TrackFormat.BED;

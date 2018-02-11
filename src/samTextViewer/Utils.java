@@ -40,6 +40,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -1441,7 +1442,7 @@ public class Utils {
 		
 		String snapshotFile= cmdInput.trim().replaceAll("^save", "").trim();
 		
-		String region= gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo();
+		String region= gc.getChrom() + "_" + gc.getFrom() + "_" + gc.getTo();
 		
 		if(snapshotFile.isEmpty()){
 			snapshotFile= REGVAR + ".txt"; 
@@ -2228,5 +2229,115 @@ public class Utils {
 		}
 		float median= (float)stats.getPercentile(50);
 		return (float)1.4826 * median;
+	}
+
+	/**Interpret x to return boolean. Similar to Boolean.valueOf() but more
+	 * flexible. Basically, return true if x is "true" or "yes" or a prefix of "true" or "yes".
+	 * Return false if x is "false" or "no" or a prefix of false/no. Case insensitive. 
+	 * Throw exception otherwise.
+	 * See tests. 
+	 * */
+	public static Boolean asBoolean(String x) {
+
+		if(x == null || x.trim().isEmpty()){
+			throw new IllegalArgumentException();
+		}
+
+		x= x.trim().toLowerCase();
+		if("true".matches("^" + x + ".*") || "yes".matches("^" + x + ".*")){
+			return true;
+		}
+		if("false".matches("^" + x + ".*") || "no".matches("^" + x + ".*")){
+			return false;
+		}
+		throw new IllegalArgumentException();
+	}
+	
+	public static List<String> suggestCommand(String hint, List<String> options){
+		if(hint.length() < 3){
+			return new ArrayList<>();
+		}
+		hint= hint.toLowerCase();
+
+		Map<Integer, List<String>> candidates= new TreeMap<Integer, List<String>>();
+		
+		for(String candidate : options){
+			if(candidate.length() < 3){
+				continue;
+			}
+			String x= candidate.toLowerCase();
+			int nm;
+			if(x.length() >= 3 && hint.length() >= 3 && (x.contains(hint) || hint.contains(x))){
+				nm= 0;
+			} else {
+				nm= levenshtein(hint, candidate.toLowerCase());
+			}
+			if(candidates.containsKey(nm)){
+				candidates.get(nm).add(candidate);
+			} else {
+				List<String> tier= new ArrayList<String>();
+				tier.add(candidate);
+				candidates.put(nm, tier);
+			}
+		}
+		
+		java.util.Map.Entry<Integer, List<String>> out = candidates.entrySet().iterator().next();
+		return out.getValue();
+	}
+	
+    /**
+     * Calculates Damerau–Levenshtein distance between string {@code a} and
+     * {@code b} with given costs.
+     * 
+     * @param a
+     *            String
+     * @param b
+     *            String
+     * @return Damerau–Levenshtein distance between {@code a} and {@code b}
+     * 
+     * Method from argparse4j
+     */
+    private static int levenshtein(String a, String b) {
+    	
+    	 final int SUBSTITUTION_COST = 2;
+    	 final int SWAP_COST = 0;
+    	 final int DELETION_COST = 4;
+    	 final int ADDITION_COST = 1;
+    	
+        int aLen = a.length();
+        int bLen = b.length();
+        int[][] dp = new int[3][bLen + 1];
+        for (int i = 0; i <= bLen; ++i) {
+            dp[1][i] = i;
+        }
+        for (int i = 1; i <= aLen; ++i) {
+            dp[0][0] = i;
+            for (int j = 1; j <= bLen; ++j) {
+                dp[0][j] = dp[1][j - 1]
+                        + (a.charAt(i - 1) == b.charAt(j - 1) ? 0 : SUBSTITUTION_COST);
+                if (i >= 2 && j >= 2 && a.charAt(i - 1) != b.charAt(j - 1)
+                        && a.charAt(i - 2) == b.charAt(j - 1)
+                        && a.charAt(i - 1) == b.charAt(j - 2)) {
+                    dp[0][j] = Math.min(dp[0][j], dp[2][j - 2] + SWAP_COST);
+                }
+                dp[0][j] = Math.min(dp[0][j],
+                        Math.min(dp[1][j] + DELETION_COST, dp[0][j - 1] + ADDITION_COST));
+            }
+            int[] temp = dp[2];
+            dp[2] = dp[1];
+            dp[1] = dp[0];
+            dp[0] = temp;
+        }
+        return dp[1][bLen];
+    }
+
+	public static boolean isOverlapping(int xStart, int xEnd, int yStart, int yEnd) {
+		if(xStart > xEnd || yStart > yEnd){
+			throw new ArithmeticException();
+		}
+		if(xEnd < yStart || yEnd < xStart){
+			return false;
+		}
+		return true;
 	}
 }

@@ -3,6 +3,8 @@ package tracks;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,6 +28,7 @@ import exceptions.InvalidRecordException;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.readers.TabixReader;
+import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
@@ -77,7 +80,7 @@ public class TrackIntervalFeature extends Track {
 			new MakeTabixIndex(filename, new File( this.getWorkFilename() ), Utils.trackFormatToTabixFormat(this.getTrackFormat()));	
 
 			this.setWorkFilename(tmpWorkFile);
-			this.tabixReader= new TabixReader(new File(this.getWorkFilename()).getAbsolutePath());
+			this.tabixReader= this.getTabixReader(this.getWorkFilename());
 			
 		} else { // This means the input is tabix indexed.
 			this.setWorkFilename(filename);
@@ -443,7 +446,6 @@ public class TrackIntervalFeature extends Track {
 		for(String curChrom : chromSearchOrder){
 		
 			TabixBigBedIterator iter = this.getReader().query(curChrom , 0, Integer.MAX_VALUE);
-			// Iterator iter = this.iteratorFromQuery(curChrom , 0, Integer.MAX_VALUE); // this.tabixReader.query(curChrom , 0, Integer.MAX_VALUE);
 			while(true){
 				String line= iter.next();
 				if(line == null) break;
@@ -987,7 +989,7 @@ public class TrackIntervalFeature extends Track {
 	private TabixBigBedReader getReader(){
 		
 		if(this.bigBedReader != null && this.tabixReader != null){
-			System.err.println("You cannot have tabix and bigBed readers bot set!");
+			System.err.println("You cannot have both tabix and bigBed readers set!");
 			throw new RuntimeException();
 		}
 	
@@ -999,6 +1001,11 @@ public class TrackIntervalFeature extends Track {
 			System.err.println("Tabix and bigBed reader both null.");
 			throw new RuntimeException();
 		}
+	}
+
+	
+	private TabixReader getTabixReader(String tabixFile) throws IOException {
+		return new TabixReader(new File(tabixFile).getAbsolutePath());
 	}
 	
 	/** This setter is for TrackBookmark to work.*/
@@ -1084,4 +1091,18 @@ public class TrackIntervalFeature extends Track {
 			}
 		}
 	}
+	
+	@Override
+	public void reload() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		if( ! Files.isSameFile(Paths.get(this.getWorkFilename()), Paths.get(this.getFilename()))){
+			TrackIntervalFeature tr= new TrackIntervalFeature(this.getFilename(), this.getGc());
+			String fname= this.getWorkFilename();
+			Files.move(Paths.get(tr.getWorkFilename()), Paths.get(fname), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			Files.move(Paths.get(tr.getWorkFilename() + TabixUtils.STANDARD_INDEX_EXTENSION), 
+					Paths.get(fname + TabixUtils.STANDARD_INDEX_EXTENSION), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		}
+		this.tabixReader= this.getTabixReader(this.getWorkFilename());
+		this.update();
+	}
+
 }

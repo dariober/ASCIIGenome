@@ -69,6 +69,55 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void canTestForOverlappingSegments(){
+		// Intersect/contained
+		assertTrue(Utils.isOverlapping(1, 10, 8, 20));
+		assertTrue(Utils.isOverlapping(1, 10, 2, 5));
+		assertTrue(Utils.isOverlapping(1, 10, -2, 5));
+		
+		// One bp overlap
+		assertTrue(Utils.isOverlapping(1, 10, 10, 15));
+		assertTrue(Utils.isOverlapping(1, 10, -10, 1));
+
+		assertTrue( ! Utils.isOverlapping(1, 10, 11, 20));
+		assertTrue( ! Utils.isOverlapping(1, 10, -10, 0));
+		
+		boolean pass= false;
+		try{
+			Utils.isOverlapping(10, 1, 11, 20);
+		} catch(ArithmeticException e){
+			pass= true;
+		}
+		assertTrue(pass);
+	}
+	
+	@Test
+	public void canGetBoolean(){
+		assertTrue(Utils.asBoolean("true"));
+		assertTrue(Utils.asBoolean("T"));
+		assertTrue(Utils.asBoolean("Y"));
+		assertTrue(Utils.asBoolean("ye"));
+		assertTrue(!Utils.asBoolean("FALSE"));
+		assertTrue(!Utils.asBoolean("N"));
+		
+		boolean pass= false;
+		try{
+			Utils.asBoolean("FOO");
+		} catch(IllegalArgumentException e){
+			pass= true;			
+		}
+		assertTrue(pass);
+		
+		pass= false;
+		try{
+			Utils.asBoolean("");
+		} catch(IllegalArgumentException e){
+			pass= true;			
+		}
+		assertTrue(pass);
+	}
+	
+	@Test
 	public void canWinsoriseData(){
 		
 		int[] ints = new int[]{-50, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100};
@@ -1339,7 +1388,7 @@ public class UtilsTest {
 	public void canGetWritableFileOrNull() throws InvalidGenomicCoordsException, IOException{
 		GenomicCoords gc= new GenomicCoords("chr7:1-200", 80, samSeqDict, fastaFile);
 		String x= Utils.parseCmdinputToGetSnapshotFile("save", gc);
-		assertEquals("chr7_1-200.txt", x);
+		assertEquals("chr7_1_200.txt", x);
 		x= Utils.parseCmdinputToGetSnapshotFile("save /tmp/foo.txt", gc);
 		assertEquals("/tmp/foo.txt", x);
 	}

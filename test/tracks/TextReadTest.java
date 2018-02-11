@@ -90,7 +90,7 @@ public class TextReadTest {
 		rec.setCigarString("1M3I5M1I3M");
 		rec.setReadBases("AnnnACCGGnACT".getBytes());
 		
-		TextRead tr= new TextRead(rec, gc);
+		TextRead tr= new TextRead(rec, gc, false);
 		// 7: code for "invert" colours. Checking for "[7;" is brittle since it assumes 7 is the first code.
 		assertEquals(2, StringUtils.countMatches(tr.getPrintableTextRead(false, false, false), "[7;")); 
 
@@ -99,17 +99,17 @@ public class TextReadTest {
 
 		// Hide insertion if resolution is not single base
 		GenomicCoords gc2= new GenomicCoords("chr7:1-80", 79, null, null);
-		tr= new TextRead(rec, gc2);
+		tr= new TextRead(rec, gc2, false);
 		assertTrue( ! tr.getPrintableTextRead(false, false, false).contains("[7;"));
 		
 		rec.setCigarString("4M");
 		rec.setReadBases("ACTG".getBytes());
-		tr= new TextRead(rec, gc);
+		tr= new TextRead(rec, gc, false);
 		assertTrue(! tr.getPrintableTextRead(false, false, false).contains("7"));
 		
 		rec.setCigarString("1M");
 		rec.setReadBases("A".getBytes());
-		tr= new TextRead(rec, gc);
+		tr= new TextRead(rec, gc, false);
 	}	
 	
 	@Test
@@ -122,9 +122,48 @@ public class TextReadTest {
 		rec.setReadBases("AAAAATTTTT".getBytes());
 		rec.setBaseQualities("!!!!!IIIII".getBytes());
 		System.err.println(rec.getSAMString());
-		TextRead tr= new TextRead(rec, gc);
+		TextRead tr= new TextRead(rec, gc, false);
 		System.err.println(Splitter.on("m").omitEmptyStrings().splitToList(tr.getPrintableTextRead(false, false, false)));
 	}
+	
+//	@Test
+//	public void canShowSoftClips() throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+//		
+//		GenomicCoords gc= new GenomicCoords("chr7:1-80", 80, null, null);
+//		SAMRecord rec= new SAMRecord(null);
+//		rec.setAlignmentStart(1);
+//		rec.setCigarString("1S10M5S3H");
+//
+//		TextRead textRead= new TextRead(rec, gc, true);
+//
+//		System.err.println(textRead.getSoftUnclippedAlignmentStart(textRead.getSamRecord()));
+//		
+//		assertEquals(15, textRead.getTextEnd());
+//		assertEquals(1, textRead.getTextStart());
+//		// We start with N even if the first operation is S. This is because the 
+//		// alignment starts at 1 so the first soft clip base(s) is lost on the left. 
+//		assertTrue(textRead.getPrintableTextRead(false, true, false).startsWith("N"));
+//		assertTrue(textRead.getPrintableTextRead(false, true, false).endsWith("S"));
+//		
+//		rec.setCigarString("10S");
+//		textRead= new TextRead(rec, gc, true);
+//		assertEquals(10, textRead.getTextEnd());
+//		assertEquals(1, textRead.getTextStart());
+//		
+//		rec.setCigarString("1S10M");
+//		rec.setAlignmentStart(2);
+//		textRead= new TextRead(rec, gc, true);
+//		assertEquals(1, textRead.getTextStart());
+//		
+//		rec.setAlignmentStart(3);
+//		textRead= new TextRead(rec, gc, true);
+//		assertEquals(2, textRead.getTextStart());
+//		
+//		rec.setCigarString("1S2S10M");
+//		rec.setAlignmentStart(4);
+//		textRead= new TextRead(rec, gc, true);
+//		assertEquals(1, textRead.getTextStart());
+//	}
 	
 	@Test
 	public void canPrintDNARead() throws InvalidGenomicCoordsException, IOException, InvalidColourException {
@@ -136,7 +175,7 @@ public class TextReadTest {
 		rec.setReadNegativeStrandFlag(true);
 		rec.setReadBases("AACCGGTTAACCGGTTAACCGGTT".getBytes());
 		
-		TextRead textRead= new TextRead(rec, gc);
+		TextRead textRead= new TextRead(rec, gc, false);
 		assertEquals(textRead.getTextStart(), 3);
 		assertEquals(textRead.getTextEnd(), 21);
 		assertEquals("AACCGGTTAACCGGTTAAC".length(), textRead.getTextEnd() - textRead.getTextStart() + 1);
@@ -148,11 +187,11 @@ public class TextReadTest {
 
 
 		gc= new GenomicCoords("chr7:5566778-5566798", 80, samSeqDict, null);
-		textRead= new TextRead(rec, gc);
+		textRead= new TextRead(rec, gc, false);
 		assertEquals("aaccggttaaccggttaac", textRead.getPrintableTextRead(false, true, false));
 
 		gc= new GenomicCoords("chr7:5566780-5566782", 80, samSeqDict, fastaFile);
-		textRead= new TextRead(rec, gc);
+		textRead= new TextRead(rec, gc, false);
 		System.out.println(textRead.getPrintableTextRead(true, true, false));
 		System.out.println(textRead.getPrintableTextRead(true, false, false));		
 	}
@@ -165,7 +204,7 @@ public class TextReadTest {
 		rec.setAlignmentStart(5566780);
 		rec.setCigarString("24M");
 		rec.setReadBases("AACCGGTTAACCGGTTAACCGGTT".getBytes());
-		TextRead textRead= new TextRead(rec, gc);
+		TextRead textRead= new TextRead(rec, gc, false);
 		
 		rec.setSecondOfPairFlag(false);
 		assertTrue( ! textRead.getPrintableTextRead(true, false, false).contains("4;")); // '4': Underline
@@ -183,7 +222,7 @@ public class TextReadTest {
 		rec.setCigarString("24M");
 		rec.setReadBases("AACCGGTTAACCGGTTAACCGGTT".getBytes());
 		
-		TextRead textRead= new TextRead(rec, gc);
+		TextRead textRead= new TextRead(rec, gc, false);
 		assertEquals(2, textRead.getTextStart());
 		assertEquals(11, textRead.getTextEnd());
 		assertEquals(textRead.getTextEnd() - textRead.getTextStart() + 1, ">>>>>>>>>>".length());
@@ -200,7 +239,7 @@ public class TextReadTest {
 		rec.setAlignmentStart(1);
 		rec.setCigarString("70M200N50M200N10M");
 		
-		TextRead textRead= new TextRead(rec, gc);
+		TextRead textRead= new TextRead(rec, gc, false);
 		System.out.println(textRead.getPrintableTextRead(false, true, false));
 		assertTrue(textRead.getPrintableTextRead(false, true, false).startsWith(">"));
 		assertTrue(textRead.getPrintableTextRead(false, true, false).endsWith(">"));
@@ -208,7 +247,7 @@ public class TextReadTest {
 
 		// Very large skipped region: Only show the skipped part.
 		rec.setCigarString("1M5000N1M");
-		textRead= new TextRead(rec, gc);
+		textRead= new TextRead(rec, gc, false);
 		System.out.println(textRead.getPrintableTextRead(false, true, false));
 		assertTrue("_", textRead.getPrintableTextRead(false, true, false).startsWith("_"));
 		assertTrue("_", textRead.getPrintableTextRead(false, true, false).endsWith("_"));
@@ -226,15 +265,15 @@ public class TextReadTest {
 //		rec.setReadBases("AACCGGTTAACCGGTTAACCGGTT".getBytes());
 //		rec.setReadName("Read1");
 //		
-//		TextRead textRead= new TextRead(rec, gc);
+//		TextRead textRead= new TextRead(rec, gc, false);
 //		assertEquals("Read1/>>>>", textRead.getPrintableTextRead(false, true, true));
 //		
 //		rec.setReadName("VeryLongReadNameMoreThanReadSequence");
-//		textRead= new TextRead(rec, gc);
+//		textRead= new TextRead(rec, gc, false);
 //		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
 //		
 //		rec.setReadName("VeryLongRead");
-//		textRead= new TextRead(rec, gc);
+//		textRead= new TextRead(rec, gc, false);
 //		assertEquals("VeryLongRe", textRead.getPrintableTextRead(false, true, true));
 //	}
 }

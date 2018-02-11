@@ -37,6 +37,13 @@ public class TrackReadsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	public static String fastaFile= "test_data/chr7.fa";
 
+ 	@Test
+ 	public void canReloadTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+ 		GenomicCoords gc= new GenomicCoords("chr7:1-200", 80, null, null);
+ 		TrackReads tr= new TrackReads("test_data/pairs.sam", gc);
+ 		tr.reload();
+ 	}
+	
 	@Test
 	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{
 		
@@ -59,7 +66,7 @@ public class TrackReadsTest {
 		tr.printToScreen();
 	}
 
-	@Test
+	// @Test // STUB
 	public void canChangeReadColourOnRegex() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 		GenomicCoords gc= new GenomicCoords("chr7:5566778-5566943", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
@@ -91,6 +98,17 @@ public class TrackReadsTest {
 
 	}
 	
+	public void canExplainSamFlag() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+ 		
+		GenomicCoords gc= new GenomicCoords("chr7:5529094-5529267", 80, null, null);
+		TrackReads tr= new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
+		tr.setNoFormat(true);
+		tr.setPrintMode(PrintRawLine.FULL);
+		tr.setExplainSamFlag(true);
+		String printable = tr.printLines();
+		System.err.println(printable);
+		assertTrue(printable.contains("163|+|pair|prop-p|mate-rev|2nd"));
+	}
 	
 	@Test
 	public void canShowReadsAsPairs() throws Exception{
@@ -138,8 +156,6 @@ public class TrackReadsTest {
 	
 	@Test
 	public void canPrintReads() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException, InvalidCommandLineException{
-		
-		new Config(null);
 		
 		GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 		TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
@@ -347,23 +363,6 @@ public class TrackReadsTest {
 		tr.setNoFormat(noFormat);
 		tr.setyMaxLines(yMaxLines);
 		assertTrue(tr.printToScreen().split("\n").length == 1);
-	}
-
-	@Test
-	public void test() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidConfigException {
-		
-		new Config(null);
-		
-		String bam= "test_data/ds051.actb.bam";
-		int yMaxLines= 50;
-		boolean bs= false;
-		GenomicCoords gc= new GenomicCoords("chr7:5566770-5566870",80, samSeqDict, fastaFile);
-			
-		TrackReads tr= new TrackReads(bam, gc);
-		tr.setBisulf(bs);
-		tr.setNoFormat(true);
-		tr.setyMaxLines(yMaxLines);
-		System.out.print(tr.printToScreen());
 	}
 
 	@Test
