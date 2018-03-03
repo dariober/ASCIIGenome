@@ -41,31 +41,43 @@ Or the same with::
 INT
 +++
 
-:code:`INT [INT]`
+:code:`INT from [c | to]`
 
-Go to position `INT` or to region `INT INT` on current chromosome. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt.
+Go to position `from` or to region `from to` on current chromosome. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt.
+
+* :code:`c` set the position of *from* at the center of the screen. 
+
+* :code:`to` set the new window in the region delimited by *from* and *to*. 
 
 Examples::
 
     10                   -> Will jump to position 10 
     10 1000              -> Go to region 10-1000 
     10 250 500 750 1000  -> Same as above again
+    750 c                -> Put the position 750 right in the middle
+    750c                 -> Same as '750 c' space is optional
 
 
 
 PERCENT
 +++++++
 
-:code:`PERCENT [PERCENT]`
+:code:`PERCENT from [c | to]`
 
 Zoom into the current window delimited by given PERCENT of screen. PERCENT is a number in the range 0-1 mapping to the given percent of the current genomic window. Similar to the `:code:INT` command, one number moves the genomic window to the position located at PERCENT and two numbers will zoom into the region PERCENT-PERCENT.
 This command is useful to quickly focus an a feature of interest, such as a ChIP-Seq peak or a variant.
+
+* :code:`c` set the position of *from* at the center of the screen. 
+
+* :code:`to` set the new window in the region delimited by *from* and *to*. 
 
 Examples::
 
     0.25      -> Jump to position at 25% of current screen.
     .25       -> Same as above.
     .25 .75   -> Zoom into the interval between 25-75% of current screen.
+    .25 c     -> Put the position at 25% of current screen right in the middle.
+    .25c      -> Same as '.25 c' (space is optional).
 
 
 

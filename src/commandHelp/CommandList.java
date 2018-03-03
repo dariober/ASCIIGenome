@@ -162,23 +162,29 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("INT"); cmd.setArgs("[INT]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("INT"); cmd.setArgs("from [c | to]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription(""
-				+ "Go to position `INT` or to region `INT INT` on current chromosome.");
+				+ "Go to position `from` or to region `from to` on current chromosome.");
 		cmd.setAdditionalDescription(""
 				+ "If a list of integers is given, the first and last are taken as *from* and *to*. "
 				+ "This is handy to copy and paste intervals from the ruler above the prompt.\n"
+				+ "\n"
+				+ "* :code:`c` set the position of *from* at the center of the screen. \n"
+				+ "\n"
+				+ "* :code:`to` set the new window in the region delimited by *from* and *to*. \n"
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    10~~~~~~~~~~~~~~~~~~~-> Will jump to position 10 \n"
 				+ "    10 1000~~~~~~~~~~~~~~-> Go to region 10-1000 \n"
 				+ "    10 250 500 750 1000~~-> Same as above again\n"
+				+ "    750 c~~~~~~~~~~~~~~~~-> Put the position 750 right in the middle\n"
+				+ "    750c~~~~~~~~~~~~~~~~~-> Same as '750 c' space is optional\n"
 				+ "\n");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("PERCENT"); cmd.setArgs("[PERCENT]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("PERCENT"); cmd.setArgs("from [c | to]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription(""
 				+ "Zoom into the current window delimited by given PERCENT of screen.");
 		cmd.setAdditionalDescription(""
@@ -189,11 +195,17 @@ public class CommandList {
 				+ "This command is useful to quickly focus an a feature of interest, such as "
 				+ "a ChIP-Seq peak or a variant.\n"
 				+ "\n"
+				+ "* :code:`c` set the position of *from* at the center of the screen. \n"
+				+ "\n"
+				+ "* :code:`to` set the new window in the region delimited by *from* and *to*. \n"
+				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
 				+ "    0.25~~~~~~-> Jump to position at 25% of current screen.\n"
 				+ "    .25~~~~~~~-> Same as above.\n"
 				+ "    .25 .75~~~-> Zoom into the interval between 25-75% of current screen.\n"
+				+ "    .25 c~~~~~-> Put the position at 25% of current screen right in the middle.\n"
+				+ "    .25c~~~~~~-> Same as '.25 c' (space is optional).\n"
 				+ "\n");
 		cmdList.add(cmd);
 		

@@ -566,19 +566,34 @@ public class InteractiveInput {
 		return files;
 	}
 
-	private String gotoOnCurrentChrom(List<String> cmdTokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException {
+	/** Parse the given list of options and move to new coordinates.
+	 * Visibility set to protected only for testing.
+	 * */
+	protected String gotoOnCurrentChrom(List<String> cmdTokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException {
 		List<String> args= new ArrayList<String>(cmdTokens);
+		int regFrom;
+		int regTo;
+		
+		boolean center= false;
+		if(args.get(0).endsWith("c")){
+			center= true;
+			args.set(0, args.get(0).replaceAll("c$", ""));
+		}
+		if(args.size() > 1 && args.get(1).equals("c")){
+			center= true;
+			args.remove(1);
+		}
+		
 		if(Float.valueOf(args.get(0)) < 1){
 			// Switch to screen percent coordinates
 			float pctFrom= Float.parseFloat(args.get(0));
 			// Which is the screen column matching this percent?
 			int screenIdx= (int) Math.rint(pctFrom * gc.getUserWindowSize());
 			// Which is the genomic coordinate corresponding to this screen index?
-			int regFrom= (int) Math.rint(gc.getMapping().get(screenIdx));
+			regFrom= (int) Math.rint(gc.getMapping().get(screenIdx));
 
 			// Same for end position. Accounting for possibility that only one pct value is given
-			int regTo;
-			if(args.size() > 1){
+			if(args.size() > 1 && ! center){
 				float pctTo= Float.parseFloat(args.get(1));
 				if(pctTo > 1){
 					System.err.println("Coordinate interval given as percent of screen width must be between 0 and 1. Got " + args);
@@ -589,16 +604,39 @@ public class InteractiveInput {
 					screenIdx= gc.getMapping().size() - 1;
 				}
 				regTo= (int) Math.rint(gc.getMapping().get(screenIdx));
-			} else {
-				regTo= regFrom + gc.getGenomicWindowSize();
+			
+			} 
+			else if(center){
+				regFrom= regFrom - (int)Math.floor(gc.getGenomicWindowSize()/2) - 1;
+				regFrom= regFrom < 1 ? 1 : regFrom;
+				regTo= regFrom + gc.getGenomicWindowSize() - 1;
+			} 
+			else {
+				regTo= regFrom + gc.getGenomicWindowSize() - 1;
 			}
 			if(regTo < regFrom){
 				System.err.println("Invalid coordinates: end < start for argument(s): " + args);
 				throw new InvalidGenomicCoordsException();				
 			}
-			return gc.getChrom() + ":" + regFrom + "-" + regTo; 
+			//return gc.getChrom() + ":" + regFrom + "-" + regTo; 
 		}
-		String newRegion= gc.getChrom()+ ":" + Utils.parseGoToRegion(Joiner.on(" ").join(args)); // You shouldn't return to string!
+		else if(args.size() == 1 && ! center){
+			regFrom= Integer.valueOf(args.get(0));
+			regTo= regFrom + gc.getUserWindowSize() - 1;
+		}
+		else if(! center){
+			regFrom= Integer.valueOf(args.get(0));
+			regTo= Integer.valueOf(args.get(args.size()-1));
+		}
+		else if(center){
+			regFrom= Integer.valueOf(args.get(0)) - (int)Math.floor(gc.getGenomicWindowSize()/2);
+			regFrom= regFrom < 1 ? 1 : regFrom;
+			regTo= regFrom + gc.getGenomicWindowSize() - 1;
+		}
+		else {
+			throw new IllegalArgumentException();
+		}
+		String newRegion= gc.getChrom()+ ":" + regFrom + "-" + regTo;
 		return newRegion;
 	}
 

@@ -1,15 +1,20 @@
 package samTextViewer;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -39,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -98,10 +104,13 @@ import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderVersion;
+import jline.console.ConsoleReader;
 import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
+import tracks.TrackIntervalFeature;
 import ucsc.UcscGenePred;
+import utils.BedLine;
 
 /**
  * @author berald01
@@ -1315,22 +1324,23 @@ public class Utils {
 	         return false;
 	      }
 	}
-
-//	public static List<String> checkAvailableInput(List<String> inputFileList){
-//		
-//	}
 	
 	/** Add track(s) to list of input files 
 	 * @param inputFileList Existing list of files to be extended
 	 * @param newFileNames List of files to append
 	 * @throws InvalidCommandLineException 
+	 * @throws IOException 
 	 */
-	public static void addSourceName(List<String> inputFileList, List<String> newFileNames, int debug) throws InvalidCommandLineException {
+	public static void addSourceName(List<String> inputFileList, List<String> newFileNames, int debug) throws InvalidCommandLineException, IOException {
 
 		List<String> dropMe= new ArrayList<String>();
 		List<String> addMe= new ArrayList<String>();
-		for(String x : newFileNames){
-			x= x.trim();
+		for(int i= 0; i < newFileNames.size(); i++){
+			String x= newFileNames.get(i).trim();
+			if(x.equals("-")){
+				x= prepareStdinFile().getAbsolutePath();
+				newFileNames.set(i, x);
+			}
 			if(!new File(x).isFile() && !Utils.urlFileExists(x) && !Utils.isUcscGenePredSource(x)){
 				dropMe.add(x);
 				System.err.println("Unable to add " + x);
@@ -1346,10 +1356,181 @@ public class Utils {
 		for(String x : addMe){
 			newFileNames.add(x);
 		}
-		inputFileList.addAll(newFileNames);
-		
+		inputFileList.addAll(newFileNames);		
 	}
 
+	/** Read file from stdin and write to a tmp file with name extension 
+	 * consistent with the input format.
+	 * This method should be private. Set to protected only for testing. 
+	 * */
+	protected static File prepareStdinFile() throws IOException{
+		Scanner sc = new Scanner(System.in);
+		File tmp= createTempFile("stdin.", "");
+		tmp.deleteOnExit();
+		BufferedWriter bw= new BufferedWriter(new FileWriter(tmp));
+		while(sc.hasNextLine()) {
+			bw.write(sc.nextLine() + "\n");
+		}
+		bw.close();
+		TrackFormat fmt= sniffFile(tmp);
+		String fmtName;
+		if(fmt.equals(TrackFormat.BAM)){
+			fmtName= tmp.getAbsoluteFile() + ".sam";
+		} else if(fmt.equals(TrackFormat.VCF)){
+			fmtName= tmp.getAbsoluteFile() + ".vcf";
+		} else if(fmt.equals(TrackFormat.BEDGRAPH)){
+			fmtName= tmp.getAbsoluteFile() + ".bedGraph";
+		} else if(fmt.equals(TrackFormat.BED)){
+			fmtName= tmp.getAbsoluteFile() + ".bed";
+		} else if(fmt.equals(TrackFormat.GFF)){
+			fmtName= tmp.getAbsoluteFile() + ".gff3";
+		} else if(fmt.equals(TrackFormat.GTF)){
+			fmtName= tmp.getAbsoluteFile() + ".gtf";
+		} else {
+			throw new IOException("Cannot determine track format of stdin.");
+		}
+		File fmtFile= new File(fmtName);
+		fmtFile.deleteOnExit();
+		tmp.renameTo(fmtFile);
+		tmp.delete();
+		return fmtFile;
+	}
+	
+	/** Read a sample of file x and return its track format. 
+	 * This method is not generic so keep it private. Input file must be uncompressed,
+	 * must have header if SAM or VCF.
+	 * @throws IOException 
+	 * */
+	public static TrackFormat sniffFile(File x) throws IOException{
+
+		try{
+			VCFFileReader vcf= new VCFFileReader(x, false);
+			for(@SuppressWarnings("unused") VariantContext rec : vcf){
+				//
+			}
+			vcf.close();
+			return TrackFormat.VCF;
+		} catch(Exception e){
+			//
+		}
+		
+		try{
+			SamReader sam = SamReaderFactory.make().open(x);
+			for(@SuppressWarnings("unused") SAMRecord rec : sam){
+				//
+			}
+			sam.close();
+			return TrackFormat.BAM;
+		} catch(Exception e){
+			//
+		}
+
+		BufferedReader br= new BufferedReader(new FileReader(x));
+		int maxLines= 100000;
+		boolean firstLine= true;
+		String line= null;
+		List<String[]> sample= new ArrayList<String[]>();
+		while((line= br.readLine()) != null){
+			line= line.trim();
+			if(line.isEmpty()){
+				continue;
+			}
+			if(firstLine && line.startsWith("##") && line.contains("gff-version")){
+				br.close();
+				return TrackFormat.GFF;
+			}
+			firstLine= false;
+			if(line.startsWith("#")){
+				continue;
+			}
+			sample.add(line.split("\t"));
+			maxLines--;
+			if(maxLines == 0){
+				br.close();
+				break;
+			}
+		}
+		br.close();
+		// Try GTF format. We don't distiguish here between GTF and GFF.
+		boolean isGtf= true;
+		for(String[] s : sample){
+			if(s.length < 8){
+				isGtf= false;
+				break;
+			}
+			try{
+				int start= Integer.valueOf(s[3]);
+				int end= Integer.valueOf(s[4]);
+				if(start > end || start < 1 || end < 1){
+					isGtf= false;
+					break;
+				}
+			} catch(NumberFormatException e){
+				isGtf= false;
+				break;				
+			}
+			if( ! (s[6].equals("+") || s[6].equals("-") || s[6].equals("."))){
+				isGtf= false;
+				break;								
+			}
+		}
+		if(isGtf){
+			return TrackFormat.GTF;
+		}
+		
+		// Try bedgraph
+		boolean isBedgraph= true;
+		for(String[] bdg : sample){
+			if(bdg.length < 4){
+				isBedgraph= false;
+				break;
+			}
+			
+			try{
+				Integer.valueOf(bdg[1]);
+				Integer.valueOf(bdg[2]);
+				Double.valueOf(bdg[3]);
+			} catch(NumberFormatException e){
+				isBedgraph= false;
+				break;				
+			}
+			if(Integer.valueOf(bdg[1]) < 0 || Integer.valueOf(bdg[2]) < 0 || Integer.valueOf(bdg[1]) > Integer.valueOf(bdg[2])){
+				isBedgraph= false;
+				break;
+			}
+		}
+		if(isBedgraph){
+			return TrackFormat.BEDGRAPH;
+		}
+		
+		// Last option: BED
+		boolean isBed= true;
+		for(String[] bed : sample){
+			if(bed.length < 3){
+				isBed= false;
+				break;
+			}
+			int start;
+			int end;
+			try{
+				start= Integer.valueOf(bed[1]);
+				end= Integer.valueOf(bed[2]);
+			} catch(NumberFormatException e){
+				isBed= false;
+				break;				
+			}
+			if(start < 0 || end < 0 || start > end){
+				isBed= false;
+				break;
+			}
+		}
+		if(isBed){
+			return TrackFormat.BED;	
+		} else {
+			throw new IOException("Input format cannot be determined.");
+		}
+	}
+	
 	public static String printSamSeqDict(SAMSequenceDictionary samSeqDict, int graphSize){
 		
 		if(samSeqDict == null || samSeqDict.isEmpty()){

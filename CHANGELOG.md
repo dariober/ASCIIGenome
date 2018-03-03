@@ -1,6 +1,9 @@
 New in 1.13.0
 ============
 
+* Commands `INT` and `PERCENT` accept the suffix `c` to put the position INT or PERCENT right at the center of the screen. 
+Followed by the command `zi` or `zo`, this is useful to quickly zoom-in into a peak or variant of interest.
+
 * The highlighting of the mid-character in read tracks can be turned off `setConfig highlight_mid_char false`.  
 
 * Fixed bug where Stopwatch in `TrackProcessor` was started when already running. This happened after an uncaught exception.

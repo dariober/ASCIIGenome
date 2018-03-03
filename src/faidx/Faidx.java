@@ -56,7 +56,6 @@ public class Faidx {
 				char x= (char)buffer.get();
 				
 				if( ! CharMatcher.ASCII.matches(x) ){
-					System.err.println(fasta.getAbsolutePath() + " contains non-ASCII characters.");
 					throw new UnindexableFastaFileException();			
 				}
 				

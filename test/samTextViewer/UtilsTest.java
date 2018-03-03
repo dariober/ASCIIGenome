@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -67,6 +69,65 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+
+	/**Read inputFile and convert it to a stdin stream. Similar to doing:
+	 * 		myProg < inputFile
+	 * */
+	private void simulateStdin(String inputFile) throws IOException{
+		String stdin = FileUtils.readFileToString(new File(inputFile));
+		ByteArrayInputStream in = new ByteArrayInputStream(stdin.getBytes());
+		System.setIn(in);
+	}
+	
+	@Test
+	public void canReadFromStdin() throws IOException{
+		
+		simulateStdin("test_data/ds051.noindex.sam");
+		File fout= Utils.prepareStdinFile();
+		assertTrue(fout.getName().endsWith(".sam"));
+		assertTrue(fout.exists());
+		assertTrue(fout.length() > 100);
+		
+		simulateStdin("test_data/CHD.exon.2010_03.sites.vcf");
+		fout= Utils.prepareStdinFile();
+		assertTrue(fout.getName().endsWith(".vcf"));
+		assertTrue(fout.exists());
+		assertTrue(fout.length() > 100);
+		
+		// NB: No header so we save it as *.gtf
+		simulateStdin("test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3");
+		fout= Utils.prepareStdinFile();
+		assertTrue(fout.getName().endsWith(".gtf"));
+		assertTrue(fout.exists());
+		assertTrue(fout.length() > 100);
+		
+		simulateStdin("test_data/hg19_genes_head.gtf");
+		fout= Utils.prepareStdinFile();
+		assertTrue(fout.getName().endsWith(".gtf"));
+		assertTrue(fout.exists());
+		assertTrue(fout.length() > 100);
+		
+		simulateStdin("test_data/dataCol.bedGraph");
+		fout= Utils.prepareStdinFile();
+		assertTrue(fout.getName().endsWith(".bedGraph"));
+		assertTrue(fout.exists());
+		assertTrue(fout.length() > 100);
+		
+		simulateStdin("test_data/refSeq.bed");
+		fout= Utils.prepareStdinFile();
+		assertTrue(fout.getName().endsWith(".bed"));
+		assertTrue(fout.exists());
+		assertTrue(fout.length() > 50);
+		
+		boolean pass= false;
+		try{
+			simulateStdin("test_data/seq_cg.fa");
+			fout= Utils.prepareStdinFile();
+		} catch(IOException e){
+			pass= true;
+		}
+		assertTrue(pass);
+	}
 	
 	@Test
 	public void canTestForOverlappingSegments(){
@@ -1310,6 +1371,19 @@ public class UtilsTest {
 		newFileNames.add("nonsense");
 		Utils.addSourceName(inputFileList, newFileNames, 0);
 		assertEquals(3, inputFileList.size());
+	}
+
+	@Test
+	public void canAddTrackFromStdin() throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException{
+		List<String> inputFileList= new ArrayList<String>();
+		List<String> newFileNames= new ArrayList<String>();
+		newFileNames.add("-");
+
+		this.simulateStdin("test_data/hg19_genes_head.gtf");
+		Utils.addSourceName(inputFileList, newFileNames, 0);
+		assertEquals(1, inputFileList.size());
+		assertTrue(new File(inputFileList.get(0)).exists());
+		assertTrue(inputFileList.get(0).endsWith(".gtf"));
 	}
 	
 	@Test

@@ -777,7 +777,6 @@ public class GenomicCoords implements Cloneable {
 			try {
 				new Faidx(new File(fasta));
 				(new File(fasta + ".fai")).deleteOnExit();
-				// fa= new IndexedFastaSequenceFile(new File(fasta));
 			} catch (Exception e1) {
 				//
 			}
