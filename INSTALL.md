@@ -8,14 +8,13 @@ Installation
 ------------
 
 Download the latest version of ASCIIGenome as a zip file from
-https://github.com/dariober/ASCIIGenome/releases and unzip the file.  (you may
-already have done that). 
+https://github.com/dariober/ASCIIGenome/releases and unzip it.
 
-Than simply copy the `ASCIIGenome` script and the `ASCIIGenome.jar` file to a
+Then, copy the `ASCIIGenome` script and the `ASCIIGenome.jar` file to a
 convenient directory on your `PATH`. Remember to make the `ASCIIGenome` script
 executable.
 
-Fo example, replace here x.y.z with the latest version:
+For example (replace x.y.z with the latest version):
 
 ``` 
 wget https://github.com/dariober/ASCIIGenome/releases/download/vX.Y.Z/ASCIIGenome-x.y.z.zip
@@ -34,7 +33,8 @@ Minimal example
 Now you should be all set to go, e.g.:
 
 ```
-ASCIIGenome ftp://ftp.ensembl.org/pub/release-89/gff3/homo_sapiens/Homo_sapiens.GRCh38.89.chromosome.Y.gff3.gz
+ASCIIGenome http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/functional_annotation/filtered/ALL.chr21.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.annotation.vcf.gz
 ```
 
-At the ASCIIGenome command prompt type `h` for general help or `<cmd> -h` for help on command `<cmd>`.
+At the ASCIIGenome command prompt type `h` for general help or `<cmd> -h` for
+help on command `<cmd>` (e.g. `print -h`).
