@@ -5,16 +5,13 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -104,13 +101,10 @@ import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderVersion;
-import jline.console.ConsoleReader;
 import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
-import tracks.TrackIntervalFeature;
 import ucsc.UcscGenePred;
-import utils.BedLine;
 
 /**
  * @author berald01
@@ -2413,8 +2407,7 @@ public class Utils {
 	}
 
 	/**Interpret x to return boolean. Similar to Boolean.valueOf() but more
-	 * flexible. Basically, return true if x is "true" or "yes" or a prefix of "true" or "yes".
-	 * Return false if x is "false" or "no" or a prefix of false/no. Case insensitive. 
+	 * flexible. See code and tests for exact behaviour. Case insensitive. 
 	 * Throw exception otherwise.
 	 * See tests. 
 	 * */
@@ -2425,10 +2418,10 @@ public class Utils {
 		}
 
 		x= x.trim().toLowerCase();
-		if("true".matches("^" + x + ".*") || "yes".matches("^" + x + ".*")){
+		if("true".matches("^" + x + ".*") || "yes".matches("^" + x + ".*") || x.equals("on")){
 			return true;
 		}
-		if("false".matches("^" + x + ".*") || "no".matches("^" + x + ".*")){
+		if("false".matches("^" + x + ".*") || "no".matches("^" + x + ".*") || x.equals("off")){
 			return false;
 		}
 		throw new IllegalArgumentException();

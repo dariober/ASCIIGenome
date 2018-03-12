@@ -15,9 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -25,16 +23,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math.stat.descriptive.rank.Median;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -154,12 +148,16 @@ public class UtilsTest {
 	
 	@Test
 	public void canGetBoolean(){
+		
 		assertTrue(Utils.asBoolean("true"));
 		assertTrue(Utils.asBoolean("T"));
 		assertTrue(Utils.asBoolean("Y"));
 		assertTrue(Utils.asBoolean("ye"));
+		assertTrue(Utils.asBoolean("On"));
+		
 		assertTrue(!Utils.asBoolean("FALSE"));
 		assertTrue(!Utils.asBoolean("N"));
+		assertTrue(!Utils.asBoolean("OFF"));
 		
 		boolean pass= false;
 		try{
