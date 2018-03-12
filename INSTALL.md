@@ -8,18 +8,19 @@ Installation
 ------------
 
 Download the latest version of ASCIIGenome as a zip file from
-https://github.com/dariober/ASCIIGenome/releases and unzip it.
+https://github.com/dariober/ASCIIGenome/releases and unzip it. For example
+(replace x.y.z with the latest version):
+
+```
+wget https://github.com/dariober/ASCIIGenome/releases/download/vX.Y.Z/ASCIIGenome-x.y.z.zip
+unzip ASCIIGenome-x.y.z.zip
+```
 
 Then, copy the `ASCIIGenome` script and the `ASCIIGenome.jar` file to a
 convenient directory on your `PATH`. Remember to make the `ASCIIGenome` script
 executable.
 
-For example (replace x.y.z with the latest version):
-
 ``` 
-wget https://github.com/dariober/ASCIIGenome/releases/download/vX.Y.Z/ASCIIGenome-x.y.z.zip
-unzip ASCIIGenome-x.y.z.zip
-
 cd ASCIIGenome-x.y.z/ 
 chmod a+x ASCIIGenome # Make script executable
 
