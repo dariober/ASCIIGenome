@@ -1,38 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="resources"/>
-	<classpathentry excluding="test_data/*" kind="src" path="test"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="/Users/db291g/git_repos/htsjdk-1.141/dist/htsjdk-1.141.1.jar" sourcepath="/Users/db291g/git_repos/htsjdk-1.141/src"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/commons-lang3/commons-lang3-3.4.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/slf4j/slf4j-1.7.13/slf4j-api-1.7.13.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT.jar" sourcepath="/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT-sources.jar">
+	<classpathentry kind="src" path="src/main/java">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:file:/Users/db291g/eclipse/libraries/jline2/target/jline-2.14-SNAPSHOT-javadoc.jar!/"/>
+			<attribute name="FROM_GRADLE_MODEL" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/commons-validator/commons-validator-1.5.1/commons-validator-1.5.1.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/biojava/biojava-genome-4.1.0.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/slf4j/slf4j-1.7.13/slf4j-simple-1.7.13.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/itext/itext5-5.5.10/itextpdf-5.5.10.jar" sourcepath="/Users/db291g/eclipse/libraries/itext/itext5-5.5.10/itextpdf-5.5.10-sources.jar">
+	<classpathentry kind="src" path="src/main/resources">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:file:/Users/db291g/eclipse/libraries/itext/itext5-5.5.10/itextpdf-5.5.10-javadoc.jar!/"/>
+			<attribute name="FROM_GRADLE_MODEL" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/biojava/bytecode-1.9.3-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/jawk_hoijui/Jawk/target/jawk-1.03-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/argparse4j/argparse4j-0.7.0/target/argparse4j-0.7.0.jar" sourcepath="/Users/db291g/eclipse/libraries/argparse4j/argparse4j-0.7.0/target/argparse4j-0.7.0-sources.jar">
+	<classpathentry kind="src" path="src/test/java">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:file:/Users/db291g/eclipse/libraries/argparse4j/argparse4j-0.7.0/target/argparse4j-0.7.0-javadoc.jar!/"/>
+			<attribute name="FROM_GRADLE_MODEL" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/igv-2.3.61/igv.jar"/>
-	<classpathentry kind="lib" path="/Users/db291g/eclipse/libraries/yamlbeans/yamlbeans-1.12.jar" sourcepath="/Users/db291g/eclipse/libraries/yamlbeans/yamlbeans-1.12-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:file:/Users/db291g/eclipse/libraries/yamlbeans/yamlbeans-1.12-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

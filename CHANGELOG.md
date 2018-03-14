@@ -23,6 +23,11 @@ experimenting with files and you want to quickly see them updated in *ASCIIGenom
 
 * Fix minor bug: `%r` in `save` command is expanded to `chr_from_to`, consistent with save in `print`. Before `%r` expanded to `chr_from-to`. 
 
+Refactor
+--------
+
+ASCIIGenome project refactored to use the [gradle](https://gradle.org/) built tool. 
+
 New in 1.12.0
 ============
 
