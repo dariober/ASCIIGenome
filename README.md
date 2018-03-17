@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/dariober/ASCIIGenome.svg?branch=v1.13.0)](https://travis-ci.org/dariober/ASCIIGenome)
+[![License](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/dariober/ASCIIGenome)
+[![Language](http://img.shields.io/badge/language-java-brightgreen.svg)](https://www.java.com/)
 
 Text Only Genome Viewer!
 ========================
