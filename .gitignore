@@ -4,3 +4,4 @@ docs/_build
 docs/_static
 /target/
 /.gradle/
+build/
