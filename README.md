@@ -1,3 +1,5 @@
+https://travis-ci.org/dariober/ASCIIGenome.svg?branch=v1.13.0
+
 Text Only Genome Viewer!
 ========================
 
