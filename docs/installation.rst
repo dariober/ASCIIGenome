@@ -4,7 +4,10 @@ Installation
 Quick start 
 ------------------------
 
-In the commands below replace version number with the latest from `releases <https://github.com/dariober/ASCIIGenome/releases>`_::
+Basically, download :code:`ASCIIGenome-X.Y.Z.zip` from `releases <https://github.com/dariober/ASCIIGenome/releases>`_, 
+unzip, copy :code:`ASCIIGenome` and :code:`ASCIIGenome.jar` to a directory of your liking and that's it.
+
+For example, in the commands below replace version number with the latest from `releases <https://github.com/dariober/ASCIIGenome/releases>`_::
 
     wget https://github.com/dariober/ASCIIGenome/releases/download/vX.Y.Z/ASCIIGenome-x.y.z.zip
     unzip ASCIIGenome-x.y.z.zip
@@ -13,6 +16,7 @@ In the commands below replace version number with the latest from `releases <htt
     chmod a+x ASCIIGenome
     cp ASCIIGenome.jar /usr/local/bin/ # Or else in your PATH e.g. ~/bin/
     cp ASCIIGenome /usr/local/bin/     # Or else in your PATH e.g. ~/bin/
+
 
 With Homebrew
 ------------------------------
@@ -60,5 +64,20 @@ Then reload the profile file or log off and log back in to make the changes effe
 
 Note the helper is a bash script. To set the amount of memory available to java use the :code:`-Xmx` option as e.g. :code:`java -Xmx1500m -jar ...`.
 
-If for some reason the text formatting misbehaves, disable it with the :code:`-nf` option.
+If for some reason the text formatting misbehave, disable it with the :code:`-nf` option.
 
+Compiling the source code
+-------------------------
+
+From version 1.13 ASCIIGenome is built using the `gradle build tool <https://gradle.org/>`_. If you want to edit the source code and 
+re-compile it to an executable jar, all you need to do is::
+
+    # Get source
+    git clone https://github.com/dariober/ASCIIGenome.git
+    cd ASCIIGenome
+    
+    ./gradlew clean
+    ./gradlew build -x test
+
+The executable jar file will be in :code:`build/libs/ASCIIGenome.jar`. 
+The :code:`-x test` option builds the code without running the tests. 

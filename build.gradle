@@ -9,6 +9,87 @@ if(JavaVersion.current() < jversion) {
 	throw new GradleException("Java >= " + jversion + " is required but you are running " + JavaVersion.current())
 }
 
+/** Return the MD5 sum of the give File object */
+ext.generateMD5 = { file ->
+	def digest = java.security.MessageDigest.getInstance("MD5")
+	file.eachByte( 4096 ) { buffer, length ->
+		digest.update( buffer, 0, length )
+	}
+	new BigInteger(1, digest.digest()).toString(16).padLeft(32, '0')
+}
+
+/** Gunzip the given file. Same as `gunzip -c dir/myfile.txt.gz > dir/myfile.txt`. 
+String filename must have extension .gz */
+ext.gunzip = { filename ->
+    file(filename.replaceFirst('\\.gz$', '')).withOutputStream { os ->
+  	  os << resources.gzip(filename).read()
+  	}
+}
+
+/* Fetch test data not in repos
+ */
+
+File targetFile= new File('test_data/chr7.fa')
+String targetMD5= "30c3693ead968844a769a90a801a900f"
+
+if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
+	println "Downloading " + targetFile.name
+	File fgz= new File("test_data", targetFile.name + ".gz")
+
+    new URL('http://hgdownload.cse.ucsc.edu/goldenpath/hg19/chromosomes/chr7.fa.gz').withInputStream{ i -> fgz.withOutputStream{ it << i }}
+    
+    ext.gunzip(fgz.absolutePath)
+    
+    fgz.delete()
+    if(ext.generateMD5(targetFile) != targetMD5){
+        throw new GradleException("Corrupted file " + targetFile)
+    }
+}
+
+targetFile= new File('test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb')
+targetMD5= "22872e389c2161f444c2a0fccc292b19"
+
+if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
+	println "Downloading " + targetFile.name
+    new URL('http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/byDataType/openchrom/jan2011/fdrPeaks/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb').withInputStream{ i -> fgz.withOutputStream{ it << i }}
+    
+    if(ext.generateMD5(targetFile) != targetMD5){
+        throw new GradleException("Corrupted file " + targetFile)
+    }
+}
+
+targetFile= new File('test_data/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz')
+targetMD5= "c464351e66f8a9c4cb2b4c85c7f870e5"
+
+if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
+	println "Downloading " + targetFile.name
+    new URL('ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz').withInputStream{ i -> targetFile.withOutputStream{ it << i }}
+    
+    if(ext.generateMD5(targetFile) != targetMD5){
+        throw new GradleException("Corrupted file " + targetFile)
+    }
+}
+
+targetFile= new File('test_data/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf')
+targetMD5= "6783ca5e6df2ce1075e1e0c924ad7d37"
+
+if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
+	println "Downloading " + targetFile.name
+    File fgz= new File("test_data", targetFile.name + ".gz")
+    new URL('ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase1/analysis_results/input_call_sets/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf.gz').withInputStream{ i -> fgz.withOutputStream{ it << i }}
+    
+    ext.gunzip(fgz.absolutePath)
+	fgz.delete()  
+    if(ext.generateMD5(targetFile) != targetMD5){
+        throw new GradleException("Corrupted file " + targetFile)
+    }
+}
+
+ext.gunzip("test_data/CEU.exon.2010_06.genotypes.vcf.gz")
+ext.gunzip("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz")
+
+/* ------ */
+
 repositories {
     jcenter()
     maven { url 'https://jitpack.io' }

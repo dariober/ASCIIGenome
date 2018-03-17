@@ -1,6 +1,10 @@
 TODO
 ====
 
+* Move files from svn_gitignore.txt to .gitignore
+
+* Move commands to prepare test files from test_data/README.md to build.gradle 
+
 * Read from `stdin`, useful for quick look ups like `intersectBed -a x.vcf -b y.bed | ASCIIGenome -`.
 In practice, this would simply read from stdin and write to a temp file which is then sorted, compressed and indexed. 
 Ok for small files, fewer then 1/2M records (?), inpractical otherwise. 

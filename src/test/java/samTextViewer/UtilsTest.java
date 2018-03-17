@@ -1180,8 +1180,7 @@ public class UtilsTest {
 		assertEquals(TrackFormat.VCF,
 		Utils.getFileTypeFromName("test/gz.vcf.bgz"));
 		
-		assertEquals(TrackFormat.BIGWIG,
-		Utils.getFileTypeFromName("http://foo/bar/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
+		assertEquals(TrackFormat.BIGWIG, Utils.getFileTypeFromName("http://foo/bar/wgEncode.bigWig"));
 	} 
 
 	@Test
@@ -1198,7 +1197,7 @@ public class UtilsTest {
 		assertEquals("chr7:5566778", Utils.initRegionFromFile("test_data/ds051.short.bam"));
 		assertEquals("chr7:5566778", Utils.initRegionFromFile("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
-		assertEquals("chr1:10536", Utils.initRegionFromFile("test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
+		assertEquals("chr1:17744", Utils.initRegionFromFile("test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
 		assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
 		assertEquals("chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
 		assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
@@ -1466,12 +1465,6 @@ public class UtilsTest {
 		assertEquals("/tmp/foo.txt", x);
 	}
 
-//	@Test
-//	public void testPng() throws IOException{
-//		Utils.convertTextFileToGraphic(new File("test_data/chr7_5564857-5570489.txt"), new File("tmp.png"));
-//		new File("tmp.png").deleteOnExit();
-//	}
-	
 	@Test
 	public void canConvertCoordsToString(){
 		assertEquals("chr1:1-100", Utils.coordinatesToString("chr1", 1, 100));
@@ -1481,14 +1474,6 @@ public class UtilsTest {
 		assertEquals("chr1:1", Utils.coordinatesToString("chr1", null, -1));
 		assertEquals("chr1:10", Utils.coordinatesToString("chr1", 10, 9));
 	}
-	
-//	@Test
-//	public void canTestForUcscSource(){
-//		assertTrue(Utils.isUcscGenePredSource("dm6:refGene"));
-//		assertTrue(Utils.isUcscGenePredSource("test_data/refGene.hg19.chr7.txt.gz"));
-//		assertTrue(Utils.isUcscGenePredSource("http://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/refGene.txt.gz"));
-//		assertTrue(!Utils.isUcscGenePredSource("test_data/hg19_genes.gtf.gz"));
-//	}
 	
 	@Test
 	public void canExpandTildeToHomeDir(){

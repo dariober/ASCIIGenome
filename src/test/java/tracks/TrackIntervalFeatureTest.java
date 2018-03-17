@@ -807,24 +807,5 @@ public class TrackIntervalFeatureTest {
 		assertEquals(878407+1, xset.get(0).getFrom());
 		
 	}
-
-	// @Test
-	public void canConstructFromUcscGenePred() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
-
-		// From database
-		TrackIntervalFeature tif= new TrackIntervalFeature("dm6:refGene", new GenomicCoords("chr3R", 80, null, null));		
-		List<IntervalFeature> xset = tif.getFeaturesInInterval("chr3R", 1, 6000000);
-		assertTrue(xset.size() > 1000);		
-		
-		// From local file
-		tif= new TrackIntervalFeature("test_data/refGene.hg19.chr7.txt.gz", new GenomicCoords("chr7", 80, null, null));
-		xset = tif.getFeaturesInInterval("chr7", 5000000, 6000000);
-		assertTrue(xset.size() > 100);
-		
-		// From direct url connection
-		tif= new TrackIntervalFeature("http://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/refGene.txt.gz", new GenomicCoords("chr3R", 80, null, null));		
-		xset = tif.getFeaturesInInterval("chr3R", 1, 6000000);
-		assertTrue(xset.size() > 1000);		
-	}
 	
 }

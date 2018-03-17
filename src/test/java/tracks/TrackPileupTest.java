@@ -3,16 +3,18 @@ package tracks;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,6 +37,24 @@ public class TrackPileupTest {
         new Config(null);
     }
 	
+	private List<String> gzipFileToList(String gzipFileName) {
+		GZIPInputStream gzip;
+		try {
+			gzip = new GZIPInputStream(new FileInputStream(gzipFileName));
+			BufferedReader br = new BufferedReader(new InputStreamReader(gzip));
+			List<String> lines= new ArrayList<String>();
+			String line= "";
+			while((line= br.readLine()) != null){
+				lines.add(line.trim());
+			}
+			br.close();
+			return lines;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+    
 	@Test
 	public void canReloadTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr7:1-200", 80, null, null);
@@ -194,9 +214,9 @@ public class TrackPileupTest {
 		GenomicCoords gc= new GenomicCoords("chr7:5522059-5612125", 80, null, null);
 		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
 		
-		// See test_data/README.md for obtaining this test file (samtools mpileup ...)
-		String expPileup= FileUtils.readFileToString(new File("test_data/ear045.oxBS.actb.pileup"));
-		List<String> expList = Splitter.on("\n").omitEmptyStrings().splitToList(expPileup);
+		// Pileup file created with:
+		// samtools mpileup -A -q 0 -Q 0 -x --ff 0 test_data/ear045.oxBS.actb.bam | cut -f 1-4 | gzip > test_data/ear045.oxBS.actb.pileup.gz
+		List<String> expList = this.gzipFileToList("test_data/ear045.oxBS.actb.pileup.gz");
 	
 		// Positions are returned unsorted! We need to sort them first.
 		Map<Integer, Integer> depth = tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo());

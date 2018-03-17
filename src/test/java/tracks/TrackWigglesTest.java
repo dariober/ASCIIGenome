@@ -145,20 +145,6 @@ public class TrackWigglesTest {
 		System.out.println(tw.printToScreen());
 	}
 	
-	// @Test
-	public void canPrintWiggleTrack() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException {
-		
-		// * Check big* are 0 or 1 based
-		
-		// String url= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12892R2x75Th1014Il200SigRep3V4.bigWig";
-		String url= "/Users/berald01/Downloads/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig";
-		
-		GenomicCoords gc= new GenomicCoords("chrM:1-1000", 80, null, null);
-		
-		new TrackWiggles(url, gc, 4);
-	
-	}
-	
 	@Test
 	/** Snippet to extract totalCount from TDF, useful for normalizing signal. 
 	 * */
