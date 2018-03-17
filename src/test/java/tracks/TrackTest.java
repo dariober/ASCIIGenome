@@ -248,13 +248,11 @@ public class TrackTest {
 	@Test
 	public void canPrintVcfWithClippedSeq() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException{
 		new Config(null);
-		GenomicCoords gc= new GenomicCoords("20:1-259", 160, null, null);
-		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/CEU.exon.2010_06.genotypes.vcf", gc);
+		GenomicCoords gc= new GenomicCoords("1:1019492-1019672", 160, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
 		tif.setNoFormat(true);
 		tif.setPrintMode(PrintRawLine.CLIP);
-		System.err.println(tif.printLines());
-		assertTrue(tif.printLines().contains(" GCCTG["));
-		assertTrue(tif.printLines().contains(" gcctg["));
+		assertTrue(tif.printLines().contains(" GTCAC["));
 	}
 	
 	@Test
