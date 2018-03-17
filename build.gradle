@@ -52,7 +52,7 @@ targetMD5= "22872e389c2161f444c2a0fccc292b19"
 
 if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
 	println "Downloading " + targetFile.name
-    new URL('http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/byDataType/openchrom/jan2011/fdrPeaks/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb').withInputStream{ i -> fgz.withOutputStream{ it << i }}
+    new URL('http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/byDataType/openchrom/jan2011/fdrPeaks/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb').withInputStream{ i -> targetFile.withOutputStream{ it << i }}
     
     if(ext.generateMD5(targetFile) != targetMD5){
         throw new GradleException("Corrupted file " + targetFile)
