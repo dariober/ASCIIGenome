@@ -131,6 +131,13 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+test {
+    testLogging {
+        events "failed"
+        exceptionFormat "short"
+    }
+}
+
 jacocoTestReport {
     reports {
         xml.enabled true
