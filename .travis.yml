@@ -2,7 +2,6 @@ language: java
 
 jdk:
   - oraclejdk8
-  - oraclejdk7
 
 after_success:
     - if [ -e ./gradlew ]; then ./gradlew jacocoTestReport;else gradle jacocoTestReport;fi

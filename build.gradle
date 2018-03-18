@@ -91,6 +91,13 @@ ext.gunzip("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz")
 
 /* ------ */
 
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}
+
 repositories {
     jcenter()
     maven { url 'https://jitpack.io' }
@@ -129,13 +136,6 @@ dependencies {
 	compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.21.0.1'
 	
     testCompile 'junit:junit:4.12'
-}
-
-test {
-    testLogging {
-        events "failed"
-        exceptionFormat "short"
-    }
 }
 
 jacocoTestReport {
