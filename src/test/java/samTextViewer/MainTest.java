@@ -2,16 +2,13 @@ package samTextViewer;
 
 import static org.junit.Assert.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 import com.itextpdf.text.DocumentException;
@@ -70,6 +67,29 @@ public class MainTest {
 		System.err.println(out);
 		assertTrue(out.get(1).contains("Unable to set"));
 	}
+	
+	@Test
+	public void canIgnoreComments() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
+		String[] args= new String[] {"-ni", "-nf", "--exec", "print && grep -i NCTNTCCN", "test_data/ds051.short.bam"};
+		List<String> woComm = this.runMain(args);
+		
+		args= new String[] {"-ni", "-nf", "--exec", "print && grep -i NCTNTCCN // A comment", "test_data/ds051.short.bam"};
+		List<String> withComm = this.runMain(args);
+		assertEquals(woComm, withComm);
+		
+		args= new String[] {"-ni", "-nf", "--exec", "goto chr7", "test_data/ds051.short.bam"};
+		woComm= this.runMain(args);
+		
+		args= new String[] {"-ni", "-nf", "--exec", "goto chr7//comment", "test_data/ds051.short.bam"};
+		withComm= this.runMain(args);
+		
+		assertEquals(woComm, withComm);
+		
+		args= new String[] {"-ni", "-nf", "--exec", "goto chr7 // comment", "test_data/ds051.short.bam"};
+		withComm= this.runMain(args);
+		
+		assertEquals(woComm, withComm);
+	}	
 	
 	/* H E L P E R S */
 	

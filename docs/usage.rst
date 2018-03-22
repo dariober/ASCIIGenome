@@ -45,19 +45,22 @@ Some features of Unix console are enabled:
 * Arrow keys UP and DOWN scroll previous commands.
 * TAB auto-completes commands.
 * ENTER without any argument repeats the previous command.
+* Input after the :code:`//` string is treated as comment and it is ignore (new in v1.13.0).
 
 Examples::
 
-    [h] for help: ff <ENTER>   # Move forward
-    [h] for help: <ENTER>      # Move forward again...
-    [h] for help: <ENTER>      # ... and again
-    [h] for help: col <TAB>    # Is expanded to colorTrack
-    [h] for help: <ARROW UP>   # Shows previous command
-    [h] for help: h <ENTER>    # Show help.
+    [h] for help: ff <ENTER>              # Move forward
+    [h] for help: <ENTER>                 # Move forward again...
+    [h] for help: <ENTER>                 # ... and again
+    [h] for help: col <TAB>               # Is expanded to colorTrack
+    [h] for help: <ARROW UP>              # Shows previous command
+    [h] for help: goto chr1 // Hi there   # Comments are allowed
+    [h] for help: h <ENTER>               # Show help.
 
-When track names are passed as arguments, it is not necessary to give the full name as
-partial matching is enabled. This is handy since track names have an ID appended as suffix which can
-be used in place of the full name, e.g. `next myLongfileName.bed#1` can be also typed as `next #1`.
+When track names are passed as arguments, it is not necessary to give the full
+name as partial matching is enabled. This is handy since track names have an ID
+appended as suffix which can be used in place of the full name, e.g. `next
+myLongfileName.bed#1` can be also typed as `next #1`.
 
-These are just some functionalities to give an idea behind *ASCIIGenome*. See :ref:`Supported_input_and_output` for 
-the individual commands available.
+These are just some functionalities to give an idea behind *ASCIIGenome*. See
+:ref:`Supported_input_and_output` for the individual commands available.

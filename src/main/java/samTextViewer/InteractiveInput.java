@@ -54,6 +54,8 @@ public class InteractiveInput {
 	 * */
 	protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc, int debug) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException{
 
+		cmdConcatInput= cmdConcatInput.replaceAll("//.*", "").trim();
+		
 		int terminalWidth= Utils.getTerminalWidth();
 		
 		// cmdInputList: List of individual commands in tokens to be issued. 

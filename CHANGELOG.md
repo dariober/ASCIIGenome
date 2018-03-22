@@ -23,6 +23,8 @@ experimenting with files and you want to quickly see them updated in *ASCIIGenom
 
 * Fix minor bug: `%r` in `save` command is expanded to `chr_from_to`, consistent with save in `print`. Before `%r` expanded to `chr_from-to`. 
 
+* Enable comments in command line with `//`. E.g `goto chr1 // A comment`
+
 Refactor
 --------
 
