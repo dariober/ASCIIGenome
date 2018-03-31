@@ -1,3 +1,39 @@
+New in 1.13.0
+============
+
+* Commands `INT` and `PERCENT` accept the suffix `c` to put the position INT or PERCENT right at the center of the screen. 
+Followed by the command `zi` or `zo`, this is useful to quickly zoom-in into a peak or variant of interest.
+
+* The highlighting of the mid-character in read tracks can be turned off `setConfig highlight_mid_char false`.  
+
+* Fixed bug where Stopwatch in `TrackProcessor` was started when already running. This happened after an uncaught exception.
+
+* Fixed in `print -hl` causing an out-of-bound index accessing VCF samples with incomplete fields.
+
+* New command [reload](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#reload) updates the current view after a file has been modified. This is useful when you are 
+experimenting with files and you want to quickly see them updated in *ASCIIGenome*.
+
+* Reads can be shown as `>` and `<` chracters also at single base resolution via configuration key `nucs_as_letters`.
+
+* Second-in-pair reads are shown underlined also when base pair resolution is greater than 1.
+
+* Easier setting of configuration. The configuration key is fuzzy matched so it doesn't have to be spelt in full.
+
+* [print](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#print) has option `-esf` to explain SAM flags.
+
+* Fix minor bug: `%r` in `save` command is expanded to `chr_from_to`, consistent with save in `print`. Before `%r` expanded to `chr_from-to`. 
+
+* Enable comments in command line with `//`. E.g `goto chr1 // A comment`
+
+Refactor
+--------
+
+* ASCIIGenome project refactored to use the [gradle](https://gradle.org/) built tool.
+
+* Add continuous integration via [Travis CI](https://travis-ci.org/dariober/ASCIIGenome) 
+
+* Add code coverage via [codecov](https://codecov.io/gh/dariober/ASCIIGenome)
+
 New in 1.12.0
 ============
 

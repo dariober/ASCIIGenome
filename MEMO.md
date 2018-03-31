@@ -11,11 +11,14 @@ Release new version
 Steps to follow once you are happy with the changes to a development branch and
 you want to release it as a new version.
 
-* Ensure all tests succeed. In Eclipse, in panel *Package explorer*, right-click on the test
-  source directory, then launch `Run As -> JUnit Test`. This will run all the tests
-  under `test`, which should mean all of them.
+Test and build jar file. All tests should PASS.
 
-* Make sure the version set in `ArgParse.VERSION` is correct.
+```
+./gradlew clean
+./gradlew build 
+``` 
+
+* Make sure the version set in `ArgParse.VERSION` is bumped as appropriate.
 
 * Commit changes to repository.
 
@@ -28,7 +31,7 @@ git merge --no-ff <my-branch> # Merge branch into master
 git push
 ```
 
-### Upload to github
+### Upload release to github
 
 We need to create a zip file containing the jar and the helper bash script. This 
 is what users will download and use.
@@ -40,19 +43,19 @@ is what users will download and use.
 ```
 cd ~/git_repos/ASCIIGenome ## Or wherever the latest local dir is
 
-mkdir ASCIIGenome-1.11.0        ## The 1.11.0 tag should match the version in ArgParse.VERSION
+mkdir ASCIIGenome-1.12.0        ## The 1.12.0 tag should match the version in ArgParse.VERSION
 
 ## Copy helper script and jar file to future zip dir
-cp ASCIIGenome ASCIIGenome-1.11.0/
-cp ~/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-1.11.0/
-cp INSTALL.md ASCIIGenome-1.11.0/
+cp ASCIIGenome ASCIIGenome-1.12.0/
+cp ~/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-1.12.0/
+cp INSTALL.md ASCIIGenome-1.12.0/
 
 ## Zip up
-zip -r ASCIIGenome-1.11.0.zip ASCIIGenome-1.11.0
-rm -r ASCIIGenome-1.11.0
+zip -r ASCIIGenome-1.12.0.zip ASCIIGenome-1.12.0
+rm -r ASCIIGenome-1.12.0
 ```
 
-### Upload ASCIIGenome-1.11.0.zip to github 
+### Upload ASCIIGenome-1.12.0.zip to github 
 
 * Create a new release (*Draft new release*). Format of the name must be v*X.Y.Z*
   e.g. *v1.2.3*. As always, X.Y.Z must match throughout.
@@ -63,13 +66,22 @@ rm -r ASCIIGenome-1.11.0
 
 ### Update brew formula 
 
-Edit `install/brew/asciigenome.rb` to change **release version** and **sha sum** of the zip file.
+* Edit `install/brew/asciigenome.rb` to change **release version** and **sha sum** of the zip file.
 
 Get sha256 sum with:
 
 ```
-shasum -a 256 ASCIIGenome-1.11.0.zip
+shasum -a 256 ASCIIGenome-1.12.0.zip
 vi install/brew/asciigenome.rb ## Edit version and sha
+```
+
+* Add, commit and push edits:
+
+```
+git status
+git add
+git commit -m 'Update brew'
+git push
 ```
 
 Test brew installation with 
@@ -79,7 +91,7 @@ brew install https://raw.githubusercontent.com/dariober/ASCIIGenome/master/insta
 # Or more likely:
 brew upgrade https://raw.githubusercontent.com/dariober/ASCIIGenome/master/install/brew/asciigenome.rb
 
-/usr/local/Cellar/asciigenome/1.11.0/bin/ASCIIGenome # Full path to make sure you use the brew version
+/usr/local/Cellar/asciigenome/1.12.0/bin/ASCIIGenome # Full path to make sure you use the brew version
 ```
 
 ### Update bioconda
@@ -96,25 +108,12 @@ the steps to [release a new version](#release-new-version), in an iterative way.
 
 ### Create a new branch:
 
-* Go to the master page https://github.com/dariober/ASCIIGenome
-
-* From scroll down menu `Branch: master` type in a new for the new branch and create 
-the new branch.
-
-* Check out the new branch:
-
 ```
-cd /Users/berald01/git_repos/
-svn co https://github.com/dariober/ASCIIGenome
+cd ~/git_repos/ASCIIGenome # Or wherever you the repo
+git checkout -b v1.13.0    # Create new branch
+git checkout v1.13.0       # Switch to new branch 
+git push -u origin v1.13.0 # Add branch to remote     
 ```
-
-This command effectively checks out the entire repository. If
-`/Users/berald01/git_repos/` already contains dir `ASCIIGenome` with the trunk and
-old branches, svn will not download them again. That's good because downloading
-the entire repository takes a while.
-
-* Get hold of test data that is not in the repository. See `README.md` in `test_data`
-to download and prepare them or just copy it from one of the old branches.
 
 ### Set up Eclipse project
 

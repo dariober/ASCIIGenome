@@ -41,31 +41,43 @@ Or the same with::
 INT
 +++
 
-:code:`INT [INT]`
+:code:`INT from [c | to]`
 
-Go to position `INT` or to region `INT INT` on current chromosome. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt.
+Go to position `from` or to region `from to` on current chromosome. If a list of integers is given, the first and last are taken as *from* and *to*. This is handy to copy and paste intervals from the ruler above the prompt.
+
+* :code:`c` set the position of *from* at the center of the screen. 
+
+* :code:`to` set the new window in the region delimited by *from* and *to*. 
 
 Examples::
 
     10                   -> Will jump to position 10 
     10 1000              -> Go to region 10-1000 
     10 250 500 750 1000  -> Same as above again
+    750 c                -> Put the position 750 right in the middle
+    750c                 -> Same as '750 c' space is optional
 
 
 
 PERCENT
 +++++++
 
-:code:`PERCENT [PERCENT]`
+:code:`PERCENT from [c | to]`
 
 Zoom into the current window delimited by given PERCENT of screen. PERCENT is a number in the range 0-1 mapping to the given percent of the current genomic window. Similar to the `:code:INT` command, one number moves the genomic window to the position located at PERCENT and two numbers will zoom into the region PERCENT-PERCENT.
 This command is useful to quickly focus an a feature of interest, such as a ChIP-Seq peak or a variant.
+
+* :code:`c` set the position of *from* at the center of the screen. 
+
+* :code:`to` set the new window in the region delimited by *from* and *to*. 
 
 Examples::
 
     0.25      -> Jump to position at 25% of current screen.
     .25       -> Same as above.
     .25 .75   -> Zoom into the interval between 25-75% of current screen.
+    .25 c     -> Put the position at 25% of current screen right in the middle.
+    .25c      -> Same as '.25 c' (space is optional).
 
 
 
@@ -400,10 +412,10 @@ Note the use of single quotes to wrap the actual script and the use of double qu
 
 * Filter vcf records by FORMAT tag. Suppose tag AD in the *second* sample is :code:`63,7`::
 
-    awk 'get(AD, 2)' my.vcf      # Returns string '63,7'
-    awk 'get(AD, 2, 1)' my.vcf   # Returns 63
-    awk 'get(AD, 2, 2)' my.vcf   # Returns 7
-    awk 'get(FMT/AD, 2)' my.vcf  # If AD is also in INFO or missing in header
+    awk 'get(AD, 2) ...' my.vcf      # get() returns string '63,7'
+    awk 'get(AD, 2, 1) ...' my.vcf   # get() returns 63
+    awk 'get(AD, 2, 2) ...' my.vcf   # get() returns 7
+    awk 'get(FMT/AD, 2) ...' my.vcf  # If AD is also in INFO or missing in header
 
 * Using header variables::
 
@@ -569,7 +581,7 @@ For example, use column 5 on tracks containing #1 and #3::
 print
 +++++
 
-:code:`print [-n INT] [-full] [-off] [-round INT] [-hl re] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]`
+:code:`print [-n INT] [-full] [-off] [-round INT] [-hl re] [-esf] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]`
 
 Print lines for the tracks matched by `track_regex`.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the :code:`grep` command. Options:
 
@@ -584,6 +596,8 @@ Print lines for the tracks matched by `track_regex`.  Useful to show exactly wha
 * :code:`-round INT` Round numbers to this many decimal places. What constitutes a number is inferred from context. Default 3, do not round if < 0.
 
 * :code:`-hl regex` Highlight substrings matching regex. If regex matches a FORMAT tag in a VCF record, highlight the tag itself and also the sample values corresponding to that tag.
+
+* :code:`-esf` Explain SAM Flag. Add to SAM flag an abbreviated description.
 
 * :code:`-off` Turn off printing.
 
@@ -628,13 +642,13 @@ filterVariantReads
 :code:`filterVariantReads [-r from/to] [-all] [-v] [track_regex = .*]...`
 
 Filter reads containing a variant in the given interval.
- filterVariantReads selects for reads where the read sequence mismatches with the reference sequence in the given interval on the current chromosome. This command is useful to inspect reads supporting a putative alternate allele at a variant site.
+ :code:`filterVariantReads` selects for reads where the read sequence mismatches with the reference sequence in the given interval on the current chromosome. This command is useful to inspect reads supporting a putative alternate allele at a variant site.
 
 NOTES
 
-* filterVariantReads requires a reference fasta sequence to be set, e.g. via the command line option :code:`-fa <ref.fa>` or with command :code:`setGenome`.
+* :code:`filterVariantReads` requires a reference fasta sequence to be set, e.g. via the command line option :code:`-fa <ref.fa>` or with command :code:`setGenome`.
 
-* The CIGAR string determines a mismatch between read and reference. Consequently, there may be be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval.
+* The CIGAR string determines a mismatch between read and reference. Consequently, there may be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval.
 
 * The position (POS) of deletions in VCF files refer to the first non-deleted base on the reference. Therefore, the interval to :code:`-r` should be POS+1 to filter for reads supporting a deletion (but see also the previous point).
 
@@ -730,7 +744,7 @@ Set configuration arguments.
 If only one argument is given then the entire settings are replaced. Configuration can be set with one of the built-in themes: 'black_on_white', 'white_on_black', 'metal'. Alternatively, configuration can be read from file. For examples files see 
 https://github.com/dariober/ASCIIGenome/blob/master/resources/config/
 
-If two arguments are are given, they are taken as a key/value pair to reset.
+If two arguments are given, they are taken as a key/value pair to reset.
 
 Examples::
 
@@ -740,28 +754,31 @@ Examples::
 
 Parameters and current settings::
 
-    background                         231  # Background colour                                          
-    foreground                         0    # Foreground colour                                          
-    seq_a                              12   # Colour for nucleotide A                                    
-    seq_c                              9    # Colour for nucleotide C                                    
-    seq_g                              2    # Colour for nucleotide G                                    
-    seq_t                              11   # Colour for nucleotide T                                    
-    seq_other                          0    # Colour for any other nucleotide                            
-    shade_low_mapq                     249  # Colour for shading reads wit low MAPQ                      
-    methylated_foreground              231  # Foreground colour for methylated C                         
-    unmethylated_foreground            231  # Foreground colour for unmethylated C                       
-    methylated_background              9    # Background colour for methylated C                         
-    unmethylated_background            12   # Background colour for unmethylated C                       
-    title_colour                       0    # Default Colour for titles                                  
-    feature_background_positive_strand 147  # Colour for features on forward strand                      
-    feature_background_negative_strand 224  # Colour for features on reverse strand                      
-    feature_background_no_strand       249  # Colour for features without strand information             
-    footer                             12   # Colour for footer line                                     
-    chrom_ideogram                     0    # Colour for chromosome ideogram                             
-    ruler                              0    # Colour for ruler                                           
-    max_reads_in_stack                 2000 # Max number of reads to accumulate when showing read tracks 
-    shade_baseq                        13   # Shade read base when quality is below this threshold       
-    shade_structural_variant           33   # Background colour for reads suggesting structural variation
+    background                         231   # Background colour                                          
+    foreground                         0     # Foreground colour                                          
+    seq_a                              12    # Colour for nucleotide A                                    
+    seq_c                              9     # Colour for nucleotide C                                    
+    seq_g                              2     # Colour for nucleotide G                                    
+    seq_t                              11    # Colour for nucleotide T                                    
+    seq_other                          0     # Colour for any other nucleotide                            
+    shade_low_mapq                     249   # Colour for shading reads wit low MAPQ                      
+    methylated_foreground              231   # Foreground colour for methylated C                         
+    unmethylated_foreground            231   # Foreground colour for unmethylated C                       
+    methylated_background              9     # Background colour for methylated C                         
+    unmethylated_background            12    # Background colour for unmethylated C                       
+    title_colour                       0     # Default Colour for titles                                  
+    feature_background_positive_strand 147   # Colour for features on forward strand                      
+    feature_background_negative_strand 224   # Colour for features on reverse strand                      
+    feature_background_no_strand       249   # Colour for features without strand information             
+    footer                             12    # Colour for footer line                                     
+    chrom_ideogram                     0     # Colour for chromosome ideogram                             
+    ruler                              0     # Colour for ruler                                           
+    max_reads_in_stack                 2000  # Max number of reads to accumulate when showing read tracks 
+    shade_baseq                        13    # Shade read base when quality is below this threshold       
+    shade_structural_variant           33    # Background colour for reads suggesting structural variation
+    highlight_mid_char                 true  # Highlight mid-character in read tracks?                    
+    nucs_as_letters                    true  # Show read nucleotides as letters at single base resolution?
+    show_soft_clip                     false # Show soft clipped bases in read tracks?                    
 
 explainSamFlag
 ++++++++++++++
@@ -813,6 +830,20 @@ Examples::
     open http://remote/host/peaks.bed <- From URL
     open 1 2 3                        <- The three most recent files
 
+
+reload
+++++++
+
+:code:`reload [track_regex = .*]...`
+
+Reload track files.  *reload* is useful when an input track file is edited by external actions and you want to reload it in the current session. This is easier than dropping and re-opening tracks with *dropTracks ... && open ...* since track formattings and filters are preserved.
+
+A track is dropped if it cannot be reloaded, for example when the sequence disctionary has become incompatible with the current one.
+
+Examples::
+
+reload       <- reload all tracks
+reload .bam  <- reload files matching '.bam'
 
 dropTracks
 ++++++++++
