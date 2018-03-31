@@ -11,25 +11,14 @@ Release new version
 Steps to follow once you are happy with the changes to a development branch and
 you want to release it as a new version.
 
-Test and build jar file. All tests should PASS.
+* Make sure the version set in `ArgParse.VERSION` is bumped as appropriate.
+
+* Test and build jar file. All tests should PASS.
 
 ```
 ./gradlew clean
 ./gradlew build 
 ``` 
-
-* Make sure the version set in `ArgParse.VERSION` is bumped as appropriate.
-
-* Commit changes to repository.
-
-* Merge branch to master: 
-
-```
-git merge master              # Resolve conflict
-git checkout master           # Switch to master  
-git merge --no-ff <my-branch> # Merge branch into master
-git push
-```
 
 ### Upload release to github
 
@@ -43,19 +32,21 @@ is what users will download and use.
 ```
 cd ~/git_repos/ASCIIGenome ## Or wherever the latest local dir is
 
-mkdir ASCIIGenome-1.12.0        ## The 1.12.0 tag should match the version in ArgParse.VERSION
+VERSION='1.12.0' # To match ArgParse.VERSION
+
+mkdir ASCIIGenome-${VERSION}
 
 ## Copy helper script and jar file to future zip dir
-cp ASCIIGenome ASCIIGenome-1.12.0/
-cp ~/Dropbox/Public/ASCIIGenome.jar ASCIIGenome-1.12.0/
-cp INSTALL.md ASCIIGenome-1.12.0/
+cp ASCIIGenome ASCIIGenome-${VERSION}/
+cp build/libs//ASCIIGenome.jar ASCIIGenome-${VERSION}/
+cp INSTALL.md ASCIIGenome-${VERSION}/
 
 ## Zip up
-zip -r ASCIIGenome-1.12.0.zip ASCIIGenome-1.12.0
-rm -r ASCIIGenome-1.12.0
+zip -r ASCIIGenome-${VERSION}.zip ASCIIGenome-${VERSION}
+rm -r ASCIIGenome-${VERSION}
 ```
 
-### Upload ASCIIGenome-1.12.0.zip to github 
+### Upload ASCIIGenome-x.y.z.zip to github 
 
 * Create a new release (*Draft new release*). Format of the name must be v*X.Y.Z*
   e.g. *v1.2.3*. As always, X.Y.Z must match throughout.
@@ -71,7 +62,7 @@ rm -r ASCIIGenome-1.12.0
 Get sha256 sum with:
 
 ```
-shasum -a 256 ASCIIGenome-1.12.0.zip
+shasum -a 256 ASCIIGenome-${VERSION}.zip
 vi install/brew/asciigenome.rb ## Edit version and sha
 ```
 
@@ -84,14 +75,24 @@ git commit -m 'Update brew'
 git push
 ```
 
-Test brew installation with 
+* (Untested) Merge branch to master: 
+
+```
+git merge master              # Resolve conflict
+git checkout master           # Switch to master  
+git merge --no-ff <my-branch> # Merge branch into master
+git push
+```
+
+Test brew installation 
+----------------------
 
 ```
 brew install https://raw.githubusercontent.com/dariober/ASCIIGenome/master/install/brew/asciigenome.rb
 # Or more likely:
 brew upgrade https://raw.githubusercontent.com/dariober/ASCIIGenome/master/install/brew/asciigenome.rb
 
-/usr/local/Cellar/asciigenome/1.12.0/bin/ASCIIGenome # Full path to make sure you use the brew version
+/usr/local/Cellar/asciigenome/${VERSION}/bin/ASCIIGenome # Full path to make sure you use the brew version
 ```
 
 ### Update bioconda
