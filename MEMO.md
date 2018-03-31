@@ -11,11 +11,14 @@ Release new version
 Steps to follow once you are happy with the changes to a development branch and
 you want to release it as a new version.
 
-* Ensure all tests succeed. In Eclipse, in panel *Package explorer*, right-click on the test
-  source directory, then launch `Run As -> JUnit Test`. This will run all the tests
-  under `test`, which should mean all of them.
+Test and build jar file. All tests should PASS.
 
-* Make sure the version set in `ArgParse.VERSION` is correct.
+```
+./gradlew clean
+./gradlew build 
+``` 
+
+* Make sure the version set in `ArgParse.VERSION` is bumped as appropriate.
 
 * Commit changes to repository.
 
@@ -28,7 +31,7 @@ git merge --no-ff <my-branch> # Merge branch into master
 git push
 ```
 
-### Upload to github
+### Upload release to github
 
 We need to create a zip file containing the jar and the helper bash script. This 
 is what users will download and use.

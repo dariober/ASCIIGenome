@@ -523,7 +523,6 @@ public class TrackPileup extends TrackWiggles {
 			String fname= this.getWorkFilename();
 			Files.move(Paths.get(tr.getWorkFilename()), Paths.get(fname), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 			Files.move(Paths.get(tr.getWorkFilename().replaceAll("\\.bam$", ".bai")), Paths.get(fname.replaceAll("\\.bam$", ".bai")), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
 		}
 		this.clearCache();
 		this.update();

@@ -28,7 +28,11 @@ experimenting with files and you want to quickly see them updated in *ASCIIGenom
 Refactor
 --------
 
-ASCIIGenome project refactored to use the [gradle](https://gradle.org/) built tool. 
+* ASCIIGenome project refactored to use the [gradle](https://gradle.org/) built tool.
+
+* Add continuous integration via [Travis CI](https://travis-ci.org/dariober/ASCIIGenome) 
+
+* Add code coverage via [codecov](https://codecov.io/gh/dariober/ASCIIGenome)
 
 New in 1.12.0
 ============
