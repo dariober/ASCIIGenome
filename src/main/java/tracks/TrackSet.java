@@ -2230,7 +2230,12 @@ public class TrackSet {
        
         List<Track> tracksToReload= this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReload){
-        	tr.reload();
+        	try{
+        		tr.reload();
+        	} catch(Exception e) {
+        		System.err.println(e.toString());
+            	this.trackList.remove(tr);
+        	}
         }
 	}
 }

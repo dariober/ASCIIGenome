@@ -412,10 +412,10 @@ Note the use of single quotes to wrap the actual script and the use of double qu
 
 * Filter vcf records by FORMAT tag. Suppose tag AD in the *second* sample is :code:`63,7`::
 
-    awk 'get(AD, 2)' my.vcf      # Returns string '63,7'
-    awk 'get(AD, 2, 1)' my.vcf   # Returns 63
-    awk 'get(AD, 2, 2)' my.vcf   # Returns 7
-    awk 'get(FMT/AD, 2)' my.vcf  # If AD is also in INFO or missing in header
+    awk 'get(AD, 2) ...' my.vcf      # get() returns string '63,7'
+    awk 'get(AD, 2, 1) ...' my.vcf   # get() returns 63
+    awk 'get(AD, 2, 2) ...' my.vcf   # get() returns 7
+    awk 'get(FMT/AD, 2) ...' my.vcf  # If AD is also in INFO or missing in header
 
 * Using header variables::
 
@@ -642,13 +642,13 @@ filterVariantReads
 :code:`filterVariantReads [-r from/to] [-all] [-v] [track_regex = .*]...`
 
 Filter reads containing a variant in the given interval.
- filterVariantReads selects for reads where the read sequence mismatches with the reference sequence in the given interval on the current chromosome. This command is useful to inspect reads supporting a putative alternate allele at a variant site.
+ :code:`filterVariantReads` selects for reads where the read sequence mismatches with the reference sequence in the given interval on the current chromosome. This command is useful to inspect reads supporting a putative alternate allele at a variant site.
 
 NOTES
 
-* filterVariantReads requires a reference fasta sequence to be set, e.g. via the command line option :code:`-fa <ref.fa>` or with command :code:`setGenome`.
+* :code:`filterVariantReads` requires a reference fasta sequence to be set, e.g. via the command line option :code:`-fa <ref.fa>` or with command :code:`setGenome`.
 
-* The CIGAR string determines a mismatch between read and reference. Consequently, there may be be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval.
+* The CIGAR string determines a mismatch between read and reference. Consequently, there may be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval.
 
 * The position (POS) of deletions in VCF files refer to the first non-deleted base on the reference. Therefore, the interval to :code:`-r` should be POS+1 to filter for reads supporting a deletion (but see also the previous point).
 
@@ -837,6 +837,8 @@ reload
 :code:`reload [track_regex = .*]...`
 
 Reload track files.  *reload* is useful when an input track file is edited by external actions and you want to reload it in the current session. This is easier than dropping and re-opening tracks with *dropTracks ... && open ...* since track formattings and filters are preserved.
+
+A track is dropped if it cannot be reloaded, for example when the sequence disctionary has become incompatible with the current one.
 
 Examples::
 
