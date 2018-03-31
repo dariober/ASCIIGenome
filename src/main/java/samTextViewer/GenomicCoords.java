@@ -895,9 +895,9 @@ public class GenomicCoords implements Cloneable {
 		}
 		if(slop == 0){
 			// Decrease gc.from so that the start of the feature is in the middle of the screen
-			int newFrom= gc.from - (int)Utils.getTerminalWidth() / 2;
+			int newFrom= gc.from - this.getTerminalWidth() / 2;
 			newFrom= newFrom < 1 ? 1 : newFrom;
-			int newTo= newFrom + Utils.getTerminalWidth() - 1;
+			int newTo= newFrom + this.getTerminalWidth() - 1;
 			gc.from= newFrom;
 			gc.to= newTo;
 		}
