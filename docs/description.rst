@@ -21,10 +21,14 @@ Some key features:
 * Easy navigation and searching of features and sequence motifs and filtering options.
 * Support for BS-Seq alignment.
 
-Support
--------
+Getting help
+------------
 
-Any and all comments, bugs and issues can be reported on `GitHub <https://github.com/dariober/ASCIIGenome/issues>`_ or by posting a question on `Biostars.org <https://www.biostars.org/>`_ with tag ASCIIGenome.
+Feel free to send any comment, bug, or issues to one or more of the following:
+
+* Open an issue on `GitHub <https://github.com/dariober/ASCIIGenome/issues>`_ 
+* Post a question on `Biostars.org <https://www.biostars.org/>`_ or `bioinformatics.stackexchange.com <https://bioinformatics.stackexchange.com/>`_ (recommended: send a notification email to :code:`dario<dot>beraldi<at>gmail<dot>com` so I read the question).
+* Send email to :code:`dario<dot>beraldi<at>gmail<dot>.com`
 
 .. image:: screenshots/composite.png
 
