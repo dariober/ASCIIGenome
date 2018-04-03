@@ -40,6 +40,7 @@ public enum Command {
 	showGenome("showGenome"),
 	infoTracks("infoTracks"),
 	open("open"),
+	reload("reload"),
 	recentlyOpened("recentlyOpened"),
 	dropTracks("dropTracks"),
 	orderTracks("orderTracks"),
