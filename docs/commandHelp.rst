@@ -842,8 +842,8 @@ A track is dropped if it cannot be reloaded, for example when the sequence disct
 
 Examples::
 
-reload       <- reload all tracks
-reload .bam  <- reload files matching '.bam'
+    reload       <- reload all tracks
+    reload .bam  <- reload files matching '.bam'
 
 dropTracks
 ++++++++++
