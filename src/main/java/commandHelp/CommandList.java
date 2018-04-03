@@ -1117,8 +1117,8 @@ public class CommandList {
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
-				+ "reload~~~~~~~<- reload all tracks\n"
-				+ "reload .bam~~<- reload files matching '.bam'");
+				+ "    reload~~~~~~~<- reload all tracks\n"
+				+ "    reload .bam~~<- reload files matching '.bam'");
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
