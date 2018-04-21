@@ -1,5 +1,10 @@
+New in 1.14.0
+=============
+
+* Fixed bug causing base quality shading to shift right with soft clipping.
+
 New in 1.13.0
-============
+=============
 
 * Commands `INT` and `PERCENT` accept the suffix `c` to put the position INT or PERCENT right at the center of the screen. 
 Followed by the command `zi` or `zo`, this is useful to quickly zoom-in into a peak or variant of interest.

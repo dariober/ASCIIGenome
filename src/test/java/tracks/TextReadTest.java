@@ -16,6 +16,7 @@ import org.junit.Test;
 import com.google.common.base.Splitter;
 
 import coloring.Config;
+import coloring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
@@ -124,6 +125,26 @@ public class TextReadTest {
 		System.err.println(rec.getSAMString());
 		TextRead tr= new TextRead(rec, gc, false);
 		System.err.println(Splitter.on("m").omitEmptyStrings().splitToList(tr.getPrintableTextRead(false, false, false)));
+	}
+
+	@Test
+	public void canShadeBaseQualityWithSoftClip() throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+		// Ensure this is the colour we expect with low base quality
+		assertEquals("249", Config.get(ConfigKey.shade_low_mapq)); 
+		
+		GenomicCoords gc= new GenomicCoords("chr7:100-170", 80, null, null);
+		SAMRecord rec= new SAMRecord(null);
+		rec.setAlignmentStart(100);
+		rec.setCigarString("2S4M");
+		rec.setMappingQuality(30);
+		rec.setReadBases("NNNNNN".getBytes());
+		rec.setBaseQualityString("##ABC#");
+		TextRead tr= new TextRead(rec, gc, false);
+		List<String> printable= Splitter.on("N").omitEmptyStrings().splitToList(tr.getPrintableTextRead(false, false, false));
+		assertTrue( ! printable.get(0).contains("249")); // Base qual= A
+		assertTrue( ! printable.get(1).contains("249")); // Base qual= B
+		assertTrue( ! printable.get(2).contains("249")); // Base qual= C
+		assertTrue( printable.get(3).contains("249")); // Base qual= #
 	}
 	
 //	@Test
