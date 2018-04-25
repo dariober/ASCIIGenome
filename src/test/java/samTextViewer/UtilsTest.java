@@ -1482,11 +1482,10 @@ public class UtilsTest {
 	
 	@Test
 	public void canExpandTildeToHomeDir(){
-		
 		//No change
 		assertEquals("/foo/bar/baz", Utils.tildeToHomeDir("/foo/bar/baz"));
 		
-		// Exand to home dir
+		// Expand to home dir
 		assertTrue(Utils.tildeToHomeDir("~/foo/bar/baz").startsWith(File.separator));
 
 		// No change

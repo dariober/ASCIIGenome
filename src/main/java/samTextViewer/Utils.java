@@ -1649,7 +1649,7 @@ public class Utils {
 	/** Expand ~/ to user's home dir in file path name. See tests for behaviour
 	 * */
 	public static String tildeToHomeDir(String path){
-		return path.replaceAll("^~" + File.separator, System.getProperty("user.home") + File.separator);
+		return path.replaceAll("^~" + Pattern.quote(File.separator), System.getProperty("user.home") + File.separator);
 	}
 	
 	/**
@@ -1824,8 +1824,8 @@ public class Utils {
 				continue;
 			}
 			x= Utils.tildeToHomeDir(x);
-			x= x.replaceAll(File.separator + "+$", ""); // Remove trailing dir sep
-			x= x.replaceAll(File.separator + "+", File.separator); // Remove double dir sep like "/foo//bar" -> /foo/bar 
+			x= x.replaceAll(Pattern.quote(File.separator) + "+$", ""); // Remove trailing dir sep
+			x= x.replaceAll(Pattern.quote(File.separator) + "+", File.separator); // Remove double dir sep like "/foo//bar" -> /foo/bar 
 
 			String location;
 			if(new File(x).isDirectory()){
