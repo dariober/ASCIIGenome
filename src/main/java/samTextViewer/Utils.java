@@ -1899,17 +1899,18 @@ public class Utils {
         JsonElement jelement = new JsonParser().parse(sb.toString());
         JsonArray  jarr = jelement.getAsJsonArray();
         Iterator<JsonElement> iter = jarr.iterator();
-        
-        String tag= null;
+
+        List<String> tag= new ArrayList<String>();
         while(iter.hasNext()){
-        	// Get the first tag starting with v[0-9]. I.e. skip tags like "v.1.10"
+        	// Get all tags
             JsonObject jobj = (JsonObject) iter.next();
-            tag= jobj.get("name").getAsString().replaceFirst("v", "");
-            if(tag.matches("^\\d")){
-            	break;
-            }
+            tag.add(jobj.get("name").getAsString().replaceAll("^[^0-9]*", "").trim());
         }
-        thisAndGitVersion.add(tag);
+        if(tag.size() == 0){
+        	thisAndGitVersion.add("0");
+        } else {
+        	thisAndGitVersion.add(tag.get(0));
+        }
         return thisAndGitVersion;
 	}
 	
