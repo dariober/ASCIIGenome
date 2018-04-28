@@ -3,6 +3,10 @@ New in 1.14.0
 
 * Fixed bug causing base quality shading to shift right with soft clipping.
 
+* Fixed bug in checking latest version on repository.
+
+* Fix reading configuration file from command line.
+
 New in 1.13.0
 =============
 

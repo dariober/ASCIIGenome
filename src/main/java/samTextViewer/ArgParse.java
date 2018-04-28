@@ -71,12 +71,12 @@ public class ArgParse {
 		parser.addArgument("--config", "-c")
 			.type(String.class)
 			.required(false)
-			.setDefault("metal")
+			.setDefault("null")
 			.help("Source of configuration settings. It can be a local file or a tag matching a\n" 
 				   + "built-in configuration: 'black_on_white', 'white_on_black', 'metal'. If null,\n" 
 				   + "first try to read configuration from file '~/.asciigenome_config'. If this\n" 
 				   + "file is missing use a built-in setting. For examples of configuration files\n" 
-				   + "see https://github.com/dariober/ASCIIGenome/blob/master/resources/config/");
+				   + "see https://github.com/dariober/ASCIIGenome/tree/master/src/main/resources/config");
 					
 		parser.addArgument("--showMem", "-sm")
 			.action(Arguments.storeTrue())

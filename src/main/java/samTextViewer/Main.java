@@ -64,7 +64,16 @@ public class Main {
 		int debug= opts.getInt("debug");
 		
 		// Get configuration. Note that we don't need to assign this to a variable. 
-		new Config(config);
+		if(config.equals("null")){
+			File def= new File(System.getProperty("user.home"), ".asciigenome_config");
+			if(def.isFile()){
+				new Config(def.getAbsolutePath());		
+			} else {
+				new Config("metal");
+			}			
+		} else {
+			new Config(config);
+		}
 		new Xterm256();
 
 		ASCIIGenomeHistory asciiGenomeHistory= new ASCIIGenomeHistory();
