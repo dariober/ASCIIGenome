@@ -63,7 +63,7 @@ public class MakeTabixIndex {
 			sorted.delete();
 		}
 		
-		// This renaming and the use of File tmp allows to block compress and index an inout file in place.
+		// This renaming and the use of File tmp allows to block compress and index an input file in place.
 		// Original intab file is overwritten of course!
 		tmp.renameTo(bgzfOut);
 		File bgzfOutTbi= new File(bgzfOut.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
@@ -85,17 +85,16 @@ public class MakeTabixIndex {
 			
 		TabixIndexCreator indexCreator=new TabixIndexCreator(fmt);
 		
-		boolean first= true;
+		// boolean first= true;
 		
 		// This is relevant to vcf files only: Prepare header and codec
 		// ------------------------------------------------------------
 		VCFHeader vcfHeader= null;
 		VCFCodec vcfCodec= null;
 		if(fmt.equals(TabixFormat.VCF)){
-			
 			try{
 				VCFFileReader vcfr= new VCFFileReader(new File(intab), false);
-			    vcfHeader= vcfr.getFileHeader(); // new VCFHeader();
+			    vcfHeader= vcfr.getFileHeader();
 			    vcfr.close();
 			} catch(MalformedFeatureFile e){
 				vcfHeader= new VCFHeader();
@@ -122,16 +121,7 @@ public class MakeTabixIndex {
 				if(line.startsWith("##FASTA")){
 					break;
 				}			
-				
-				if(first && ! fmt.equals(TabixFormat.VCF)){
-					String dummy= this.makeDummyLine(line, fmt);
-					addLineToIndex(dummy, indexCreator, filePosition, fmt, null, null);
-					
-					writer.write(dummy.getBytes());
-					writer.write('\n');
-					filePosition = writer.getFilePointer();
-					first= false;
-				}
+
 				addLineToIndex(line, indexCreator, filePosition, fmt, vcfHeader, vcfCodec);
 				
 				writer.write(line.getBytes());
@@ -140,6 +130,7 @@ public class MakeTabixIndex {
 			} catch(Exception e){
 				if(e.getMessage().contains("added out sequence of order") || e.getMessage().contains("Features added out of order")){
 					// Get a string marker for out-of-order from htsjdk/tribble/index/tabix/TabixIndexCreator.java 
+					writer.close();
 					throw new InvalidRecordException();
 				}
 				if(nWarnings >= 0){
@@ -245,38 +236,6 @@ public class MakeTabixIndex {
 		this.sqliteFile.delete();
 	}
 
-	/** Create a dummy line overcome the problem of first line ignored by tabix idnex creator.
-	 * This is a horrible hack and it should be fixed in Tabix.
-	 * See issue #38
-	 * */
-	private String makeDummyLine(String line, TabixFormat fmt){
-		
-		String[] feature= line.split("\t");
-		
-		List<String> dummy= new ArrayList<String>();
-		dummy.add(feature[0]); // chrom
-		
-		if(fmt.equals(TabixFormat.BED)){
-			dummy.add("0");
-			dummy.add("1");
-			dummy.add("__ignore_me__");
-			
-		} else if(fmt.equals(TabixFormat.GFF)){
-			dummy.add("__ignore_me__");
-			dummy.add("__ignore_me__");
-			dummy.add("1");
-			dummy.add("2");
-			dummy.add(".");
-			dummy.add(".");
-			dummy.add(".");
-		
-		} else {
-			return "";
-		}
-		
-		return Joiner.on("\t").join(dummy);
-	}
-			
 	/** Create a tmp sqlite db and return the connection to it. 
 	 */
 	private Connection createSQLiteDb(String tablename) throws IOException {

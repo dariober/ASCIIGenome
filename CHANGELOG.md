@@ -1,6 +1,13 @@
 New in 1.14.0
 =============
 
+**Java version 1.8 is now required**
+
+* Update htsjdk to version [2.14](https://github.com/samtools/htsjdk/tree/1bbd3cf3885d897b03fdb5369cc6bb4736c52538). 
+As before, htsjdk has been modifed to be more lenient on input validation. 
+See [here](https://github.com/dariober/htsjdk) and `build.gradle` for the exact version loaded.
+IGV package also updated to 2.4.10.   
+
 * Fixed bug causing base quality shading to shift right with soft clipping.
 
 * Fixed bug in checking latest version on repository.

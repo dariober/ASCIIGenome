@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-def jversion= JavaVersion.VERSION_1_7
+def jversion= JavaVersion.VERSION_1_8
 
 sourceCompatibility= jversion 
 targetCompatibility= jversion
@@ -29,7 +29,6 @@ ext.gunzip = { filename ->
 
 /* Fetch test data not in repos
  */
-
 File targetFile= new File('test_data/chr7.fa')
 String targetMD5= "30c3693ead968844a769a90a801a900f"
 
@@ -118,9 +117,9 @@ dependencies {
 	
 	compile group: 'net.sourceforge.argparse4j', name: 'argparse4j', version: '0.8.1'
 	compile group: 'jline', name: 'jline', version: '2.14.5'
-	compile files('libs/htsjdk-1.141.1.jar')
-	compile 'com.github.dariober:Jawk:e5c8f26'
-	compile 'com.github.igvteam:igv:v2.3.61'
+    compile 'com.github.dariober:Jawk:e5c8f26'
+    compile 'com.github.dariober:htsjdk:37d8bd9'
+	compile 'com.github.igvteam:igv:v2.4.10'
 
 	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
 	compile group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'

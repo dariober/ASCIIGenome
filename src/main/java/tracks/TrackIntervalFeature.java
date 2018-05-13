@@ -142,9 +142,9 @@ public class TrackIntervalFeature extends Track {
 					break;
 				}
 				IntervalFeature intervalFeature= new IntervalFeature(q, this.getTrackFormat(), null);
-				if(intervalFeature.getRaw().contains("\t__ignore_me__")){ // Hack to circumvent issue #38
-					continue;
-				}
+//				if(intervalFeature.getRaw().contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+//					continue;
+//				}
 				xFeatures.add(intervalFeature);
 			} 
 		}
@@ -182,9 +182,9 @@ public class TrackIntervalFeature extends Track {
 				break;
 			}
 			IntervalFeature intervalFeature= new IntervalFeature(q, TrackFormat.VCF, this.getVCFCodec());
-			if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
-				continue;
-			}
+//			if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+//				continue;
+//			}
 			xFeatures.add(intervalFeature);
 		} 
 		return xFeatures;
@@ -197,9 +197,9 @@ public class TrackIntervalFeature extends Track {
 	 * */
 	protected Boolean featureIsVisible(String x) throws InvalidGenomicCoordsException, IOException{
 		
-		if(x.contains("__ignore_me__")){
-			return false;
-		}
+//		if(x.contains("__ignore_me__")){
+//			return false;
+//		}
 		
 		boolean showIt= true;
 		if(this.getShowRegex() != null && 

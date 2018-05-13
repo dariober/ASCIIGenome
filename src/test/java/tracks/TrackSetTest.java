@@ -721,6 +721,7 @@ public class TrackSetTest {
 		GenomicCoords gc= new GenomicCoords("1:1-200000000", 80, null, null);
 		
 		TrackSet ts= new TrackSet();
+
 		Track t1= new TrackIntervalFeature(intervalFileName, gc); ts.addTrack( t1, "x");
 		Track t2= new TrackIntervalFeature(intervalFileName, gc); ts.addTrack(t2, "x");
 		Track t3= new TrackIntervalFeature(intervalFileName, gc); ts.addTrack(t3, "x");
@@ -744,7 +745,6 @@ public class TrackSetTest {
 		assertEquals(99, ts.getTrack(t1).getyMaxLines());
 		assertEquals(10, ts.getTrack(t2).getyMaxLines());
 		assertEquals(10, ts.getTrack(t3).getyMaxLines());
-		
 	}
 
 	@Test
