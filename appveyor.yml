@@ -1,0 +1,14 @@
+build: off
+
+test_script:
+  - git clone https://github.com/dariober/ASCIIGenome.git
+  - cd ASCIIGenome
+  - ./gradlew build
+  - java -jar build/libs/ASCIIGenome.jar -h
+    #- java -version
+    #- java -jar ASCIIGenome.jar -v
+    #- java -jar ASCIIGenome.jar -ni -x "bookmark && zo && zo && bookmark"
+    #- java -jar ASCIIGenome.jar -nf -ni -x commands.ag hg19_genes_head.gtf.gz
+    #- java -jar ASCIIGenome.jar -ni -x commands.ag hg19_genes_head.gtf.gz
+    #- java -jar ASCIIGenome.jar -r chr1:8404073 -x 'print' -ni refSeq.hg19.short.bed.gz
+    #- java -jar ASCIIGenome.jar -ni -x commands.ag ds051.noindex.sam 
