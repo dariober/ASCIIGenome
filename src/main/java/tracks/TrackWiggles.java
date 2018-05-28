@@ -85,6 +85,13 @@ public class TrackWiggles extends Track {
 
 	/*  M e t h o d s  */
 	@Override
+	public void close(){
+		if(this.bigWigReader != null){
+			this.bigWigReader.close();
+		}
+	}
+	
+	@Override
 	public void update() throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException {
 
 		if(this.bdgDataColIdx < 4){
@@ -318,17 +325,14 @@ public class TrackWiggles extends Track {
 		for(int i= 0; i < getGc().getUserWindowSize(); i++){
 			screenWigLocInfoList.add(new ScreenWiggleLocusInfo());
 		}
-		
+
+		TabixReader tabixReader= new TabixReader(fileName);
 		try {
-			TabixReader tabixReader= new TabixReader(fileName);
 			Iterator qry= tabixReader.query(this.getGc().getChrom(), this.getGc().getFrom()-1, this.getGc().getTo());
 			while(true){
 				String q = qry.next();
 				if(q == null){
 					break;
-				}
-				if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
-					continue;
 				}
 				if ( !this.isValidBedGraphLine(q) ) {
 					continue;
@@ -347,7 +351,10 @@ public class TrackWiggles extends Track {
 			System.err.println("Is the file sorted and indexed? After sorting by position (sort e.g. -k1,1 -k2,2n), compress with bgzip and index with e.g.:");
 			System.err.println("\nbgzip " + fileName);
 			System.err.println("tabix -p bed " + fileName + "\n");
+		} finally {
+			tabixReader.close();
 		}
+
 		List<Float> screenScores= new ArrayList<Float>();
 		for(ScreenWiggleLocusInfo x : screenWigLocInfoList){
 			screenScores.add((float)x.getMeanScore());

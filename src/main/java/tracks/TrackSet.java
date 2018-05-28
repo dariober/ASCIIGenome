@@ -3,6 +3,8 @@ package tracks;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,8 +53,6 @@ public class TrackSet {
 	private LinkedHashSet<String> openedFiles= new LinkedHashSet<String>();
 	
 	/*   C o n s t r u c t o r s   */
-	
-	public TrackSet(){}
 	
 	public TrackSet(List<String> inputFileList, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
@@ -118,7 +118,28 @@ public class TrackSet {
 		for(Track tr : this.getTrackList()){
 			this.addToOpenedFiles(tr.getFilename());
 		}
+		
+		Runtime.getRuntime().addShutdownHook(new ShutDownTask(this));
+		
 	}
+	
+	private class ShutDownTask extends Thread{
+		
+		private TrackSet trackSet;
+
+		public ShutDownTask(TrackSet trackSet){
+			this.trackSet= trackSet;
+		}
+
+		@Override
+		public void run(){
+			for(Track tr : trackSet.getTrackList()){
+				tr.close();
+			}
+		}
+		
+	}
+
 	
 	/*   M e t h o d s   */
 

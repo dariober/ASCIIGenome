@@ -28,7 +28,17 @@ public class TrackIntervalFeatureTest {
 		new Config(null);
 		new Xterm256();
 	}
+	
+	@Test
+	public void canCloseFiles() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		tif.close();
 		
+		tif= new TrackIntervalFeature("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb", gc);
+		tif.close();
+	}
+	
 	@Test
 	public void canColorGTFFeaturesByRegex()  throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 

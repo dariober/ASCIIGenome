@@ -33,11 +33,11 @@ public class TrackProcessorTest {
 		GenomicCoordsHistory gch= new GenomicCoordsHistory();
 		gch.add(gc);
 		
-		TrackSet trackSet= new TrackSet();
+		TrackSet trackSet= new TrackSet(new ArrayList<String>(), gc);
 		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
 		trackSet.addTrackFromSource("test_data/ear045.oxBS.actb.bam", gc, null);
 		trackSet.addTrackFromSource("test_data/ear045.oxBS.actb.tdf", gc, null);
-		TrackProcessor tp= new TrackProcessor(trackSet, gch); 
+		new TrackProcessor(trackSet, gch); 
 		// tp.iterateTracks();
 	}
 }
