@@ -14,6 +14,11 @@ IGV package also updated to 2.4.10.
 
 * Fix reading configuration file from command line.
 
+* Fix an off-by-one error in `find` command with indels.
+
+* Fix at least some issues running on Windows have been fixed (see [issue#83](issue
+  [#55]https://github.com/dariober/ASCIIGenome/issues/55)).
+
 New in 1.13.0
 =============
 

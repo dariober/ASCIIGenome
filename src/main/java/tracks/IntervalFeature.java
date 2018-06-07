@@ -89,16 +89,17 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 
 	private int setFromForVCF() {
 		int from= this.variantContext.getStart();
-		int to= this.setToForVCF();
-		if(from == to){
-			return from; // SNV
-		}
-		else if(this.variantContext.getReference().getBases().length > 0 &&
-				this.variantContext.getAlleles().size() > 1 &&
-				this.variantContext.getAlleles().get(1).getBases().length > 0 &&
-				this.variantContext.getReference().getBases()[0] == this.variantContext.getAlleles().get(0).getBases()[0]){
-			return from + 1;
-		}
+		this.setToForVCF();
+//		int to= this.setToForVCF();
+//		if(from == to){
+//			return from; // SNV
+//		}
+//		else if(this.variantContext.getReference().getBases().length > 0 &&
+//				this.variantContext.getAlleles().size() > 1 &&
+//				this.variantContext.getAlleles().get(1).getBases().length > 0 &&
+//				this.variantContext.getReference().getBases()[0] == this.variantContext.getAlleles().get(0).getBases()[0]){
+//			return from + 1;
+//		}
 		return from;
 	}
 
@@ -152,7 +153,6 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	
 	/**Only used to make TextRead(...) work*/
 	protected IntervalFeature() {
-		
 	}
 	
 	/* M e t h o d s */
@@ -251,11 +251,26 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * */
 	public void mapToScreen(List<Double> rulerMap) {
 
+		int xfrom= this.from;
+		int xto= this.to;
+		
+		// For INDELS where the first base of the ALT allele is the same as the REF allele,
+		// we bump the start position by 1 so that 1bp indels are shown as 1 character rather than 2.
+		if(this.trackFormat.equals(TrackFormat.VCF) &&
+			this.variantContext.getReference().getBases().length > 0 &&
+			this.variantContext.getAlleles().size() > 1 &&
+			this.variantContext.getAlleles().get(1).getBases().length > 0 &&
+			this.variantContext.getReference().getBases()[0] == this.variantContext.getAlleles().get(1).getBases()[0]){
+			xfrom= xfrom + 1;
+			if(xfrom > xto){ // This can happen for multiallelic. See docstring this.variantContext.getEnd()
+				xto= xfrom;
+			}
+		}
 		/*        |============| <- ruler
 		 *   ===                  ===  <- Interval(s) 
 		 */	
-		if((this.from < rulerMap.get(0) && this.to < rulerMap.get(0)) ||
-				(this.from > rulerMap.get(rulerMap.size()-1)) && this.to > rulerMap.get(rulerMap.size()-1)){
+		if((xfrom < rulerMap.get(0) && xto < rulerMap.get(0)) ||
+				(xfrom > rulerMap.get(rulerMap.size()-1)) && xto > rulerMap.get(rulerMap.size()-1)){
 			this.screenFrom= -1;
 			this.screenTo= -1;
 			return;
@@ -266,15 +281,15 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		 *        |============| <- ruler
 		 *   ===================== <- Interval 
 		 */
-		if(this.from <= rulerMap.get(0) && this.to >= rulerMap.get(rulerMap.size()-1)){
+		if(xfrom <= rulerMap.get(0) && this.to >= rulerMap.get(rulerMap.size()-1)){
 			this.screenFrom= 0;
 			this.screenTo= rulerMap.size()-1;
 			return;
 		}
 		
 		// Feature is all or partially contained
-		screenFrom= Utils.getIndexOfclosestValue(this.from, rulerMap);
-		screenTo= Utils.getIndexOfclosestValue(this.to, rulerMap);
+		screenFrom= Utils.getIndexOfclosestValue(xfrom, rulerMap);
+		screenTo= Utils.getIndexOfclosestValue(xto, rulerMap);
 		/*        |============|      <- ruler
 		 *   ========   ===    =====  <- Interval(s) 
 		 */	

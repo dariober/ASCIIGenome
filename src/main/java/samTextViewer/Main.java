@@ -7,11 +7,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -32,12 +30,7 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import faidx.UnindexableFastaFileException;
-import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
-import htsjdk.samtools.SamInputResource;
-import htsjdk.samtools.SamReader;
-import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import jline.console.ConsoleReader;
 import jline.console.completer.StringsCompleter;
@@ -178,7 +171,8 @@ public class Main {
 			itr.processInput(exec, proc, debug);
 			if(opts.getBoolean("nonInteractive")){
 				System.out.print("\033[0m");
-				System.exit(0);
+				return;
+				//System.exit(0);
 			}
 		}
 

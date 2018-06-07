@@ -104,10 +104,11 @@ public class TrackTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
 		tif.setNoFormat(true);
 		tif.setPrintMode(PrintRawLine.FULL);
-		tif.setSystemCommandForPrint("grep WASH7P | sort -k5,5nr");
+		tif.setSystemCommandForPrint("grep WASH7P | sort -k5,5nr | sed 's/WASH/wash/'");
 		String out= tif.printLines();
 		// Same as `awk '$4 <= 100000' hg19_genes_head.gtf | grep WASH7P | sort -k5,5nr | wc -l`
 		assertEquals(11, Splitter.on("\n").omitEmptyStrings().splitToList(out).size()); // 11 lines grepped.
+		assertTrue(out.contains("wash"));
 	}
 
 	@Test

@@ -1,14 +1,12 @@
 package samTextViewer;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -41,7 +39,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -1331,10 +1328,10 @@ public class Utils {
 		List<String> addMe= new ArrayList<String>();
 		for(int i= 0; i < newFileNames.size(); i++){
 			String x= newFileNames.get(i).trim();
-			if(x.equals("-")){
-				x= prepareStdinFile().getAbsolutePath();
-				newFileNames.set(i, x);
-			}
+//			if(x.equals("-")){
+//				x= prepareStdinFile().getAbsolutePath();
+//				newFileNames.set(i, x);
+//			}
 			if(!new File(x).isFile() && !Utils.urlFileExists(x) && !Utils.isUcscGenePredSource(x)){
 				dropMe.add(x);
 				System.err.println("Unable to add " + x);
@@ -1357,38 +1354,38 @@ public class Utils {
 	 * consistent with the input format.
 	 * This method should be private. Set to protected only for testing. 
 	 * */
-	protected static File prepareStdinFile() throws IOException{
-		Scanner sc = new Scanner(System.in);
-		File tmp= createTempFile("stdin.", "");
-		tmp.deleteOnExit();
-		BufferedWriter bw= new BufferedWriter(new FileWriter(tmp));
-		while(sc.hasNextLine()) {
-			bw.write(sc.nextLine() + "\n");
-		}
-		bw.close();
-		TrackFormat fmt= sniffFile(tmp);
-		String fmtName;
-		if(fmt.equals(TrackFormat.BAM)){
-			fmtName= tmp.getAbsoluteFile() + ".sam";
-		} else if(fmt.equals(TrackFormat.VCF)){
-			fmtName= tmp.getAbsoluteFile() + ".vcf";
-		} else if(fmt.equals(TrackFormat.BEDGRAPH)){
-			fmtName= tmp.getAbsoluteFile() + ".bedGraph";
-		} else if(fmt.equals(TrackFormat.BED)){
-			fmtName= tmp.getAbsoluteFile() + ".bed";
-		} else if(fmt.equals(TrackFormat.GFF)){
-			fmtName= tmp.getAbsoluteFile() + ".gff3";
-		} else if(fmt.equals(TrackFormat.GTF)){
-			fmtName= tmp.getAbsoluteFile() + ".gtf";
-		} else {
-			throw new IOException("Cannot determine track format of stdin.");
-		}
-		File fmtFile= new File(fmtName);
-		fmtFile.deleteOnExit();
-		tmp.renameTo(fmtFile);
-		tmp.delete();
-		return fmtFile;
-	}
+//	protected static File prepareStdinFile() throws IOException{
+//		Scanner sc = new Scanner(System.in);
+//		File tmp= createTempFile("stdin.", "");
+//		tmp.deleteOnExit();
+//		BufferedWriter bw= new BufferedWriter(new FileWriter(tmp));
+//		while(sc.hasNextLine()) {
+//			bw.write(sc.nextLine() + "\n");
+//		}
+//		bw.close();
+//		TrackFormat fmt= sniffFile(tmp);
+//		String fmtName;
+//		if(fmt.equals(TrackFormat.BAM)){
+//			fmtName= tmp.getAbsoluteFile() + ".sam";
+//		} else if(fmt.equals(TrackFormat.VCF)){
+//			fmtName= tmp.getAbsoluteFile() + ".vcf";
+//		} else if(fmt.equals(TrackFormat.BEDGRAPH)){
+//			fmtName= tmp.getAbsoluteFile() + ".bedGraph";
+//		} else if(fmt.equals(TrackFormat.BED)){
+//			fmtName= tmp.getAbsoluteFile() + ".bed";
+//		} else if(fmt.equals(TrackFormat.GFF)){
+//			fmtName= tmp.getAbsoluteFile() + ".gff3";
+//		} else if(fmt.equals(TrackFormat.GTF)){
+//			fmtName= tmp.getAbsoluteFile() + ".gtf";
+//		} else {
+//			throw new IOException("Cannot determine track format of stdin.");
+//		}
+//		File fmtFile= new File(fmtName);
+//		fmtFile.deleteOnExit();
+//		tmp.renameTo(fmtFile);
+//		tmp.delete();
+//		return fmtFile;
+//	}
 	
 	/** Read a sample of file x and return its track format. 
 	 * This method is not generic so keep it private. Input file must be uncompressed,
