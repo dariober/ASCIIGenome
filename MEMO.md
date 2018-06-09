@@ -25,8 +25,6 @@ you want to release it as a new version.
 We need to create a zip file containing the jar and the helper bash script. This 
 is what users will download and use.
 
-* From eclipse, write out the definitive jar file. 
-
 * Prepare zip
 
 ```
