@@ -75,12 +75,13 @@ git commit -m 'Update brew'
 git push
 ```
 
-* (Untested) Merge branch to master: 
+* Merge branch to master: 
 
 ```
 git merge master              # Resolve conflict
 git checkout master           # Switch to master  
 git merge --no-ff <my-branch> # Merge branch into master
+git commit -m 'Merge to master'
 git push
 ```
 
