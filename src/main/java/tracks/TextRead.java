@@ -339,7 +339,7 @@ class TextRead extends IntervalFeature{
 		int curBaseReadPos= 0; // Position on read. Start from zero walk along the read
 		List<CigarElement> cigarEls= this.samRecord.getCigar().getCigarElements();
 		for(CigarElement el : cigarEls){
-			if(el.getOperator().equals(CigarOperator.M) || 
+			if(el.getOperator().equals(CigarOperator.MATCH_OR_MISMATCH) || 
 			   el.getOperator().equals(CigarOperator.EQ) || 
 			   el.getOperator().equals(CigarOperator.X)){
 				// Add nucleotide chars to growing read
@@ -413,7 +413,7 @@ class TextRead extends IntervalFeature{
 							 * 35–39  deepskyblue3
 							 * >= 40  deepskyblue3
 							 */
-							int bq= (int) baseQual[i];
+							int bq= (int) baseQual[curBaseReadPos];
 							if(bq < SHADE_BASEQ){
 								xc.setBgColor(Config.get(ConfigKey.shade_low_mapq));
 							}

@@ -778,7 +778,7 @@ Parameters and current settings::
     shade_structural_variant           33    # Background colour for reads suggesting structural variation
     highlight_mid_char                 true  # Highlight mid-character in read tracks?                    
     nucs_as_letters                    true  # Show read nucleotides as letters at single base resolution?
-    show_soft_clip                     false # Show soft clipped bases in read tracks?                    
+    show_soft_clip                     false # NOT IN USE YET - Show soft clipped bases in read tracks?   
 
 explainSamFlag
 ++++++++++++++

@@ -28,7 +28,7 @@ ASCIIGenome can also be installed through `brew <http://brew.sh>`_ / `Linux Brew
 A little more detail
 --------------------
 
-:code:`ASCIIGenome.jar` requires **Java 1.7+** and this should be the only requirement. There is virtually no installation needed as :code:`ASCIIGenome` is pure Java and should work on most (all?) platforms. Download the zip file :code:`ASCIIGenome-x.x.x.zip` from `releases <https://github.com/dariober/ASCIIGenome/releases>`_, unzip it and execute the jar file with::
+:code:`ASCIIGenome.jar` requires **Java 1.8+** and this should be the only requirement. There is virtually no installation needed as :code:`ASCIIGenome` is pure Java and should work on most (all?) platforms. Download the zip file :code:`ASCIIGenome-x.x.x.zip` from `releases <https://github.com/dariober/ASCIIGenome/releases>`_, unzip it and execute the jar file with::
 
     java -jar /path/to/ASCIIGenome.jar --help
 

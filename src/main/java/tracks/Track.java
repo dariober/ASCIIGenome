@@ -1144,6 +1144,10 @@ public abstract class Track {
 	
 	public abstract void reload() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException;
 
+	/**Close readers associated to this track. 
+	 * */
+	public abstract void close();
+	
 	/**
 	 * @param explainSamFlag the explainSamFlag to set
 	 */

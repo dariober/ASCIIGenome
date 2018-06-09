@@ -1,5 +1,26 @@
+New in 1.14.0
+=============
+
+**Java version 1.8 is now required**
+
+* Update htsjdk to version [2.14](https://github.com/samtools/htsjdk/tree/1bbd3cf3885d897b03fdb5369cc6bb4736c52538). 
+As before, htsjdk has been modifed to be more lenient on input validation. 
+See [here](https://github.com/dariober/htsjdk) and `build.gradle` for the exact version loaded.
+IGV package also updated to 2.4.10.   
+
+* Fixed bug causing base quality shading to shift right with soft clipping.
+
+* Fixed bug in checking latest version on repository.
+
+* Fix reading configuration file from command line.
+
+* Fix an off-by-one error in `find` command with indels.
+
+* Fix at least some issues running on Windows have been fixed (see [issue#83](issue
+  [#55]https://github.com/dariober/ASCIIGenome/issues/55)).
+
 New in 1.13.0
-============
+=============
 
 * Commands `INT` and `PERCENT` accept the suffix `c` to put the position INT or PERCENT right at the center of the screen. 
 Followed by the command `zi` or `zo`, this is useful to quickly zoom-in into a peak or variant of interest.

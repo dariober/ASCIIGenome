@@ -67,12 +67,13 @@ public class TrackReads extends Track{
 		this.setFilename(bam);
 		this.setGc(gc);
 	}
-	
-	protected TrackReads(){
-		this.setTrackFormat(TrackFormat.BAM);
-	};
-	
+		
 	/* M e t h o d s */
+	
+	@Override
+	public void close(){
+		
+	}
 	
 	public void update() throws InvalidGenomicCoordsException, IOException{
 
@@ -87,7 +88,8 @@ public class TrackReads extends Track{
 
 			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
 			List<Boolean> passFilter= this.filterReads(samReader, this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
-
+			samReader.close();
+			
 			this.nRecsInWindow= 0;
 			for(boolean x : passFilter){ // The count of reads in window is the count of reads passing filters
 				if(x){
@@ -96,7 +98,7 @@ public class TrackReads extends Track{
 			}
 			samReader= Utils.getSamReader(this.getWorkFilename());
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
-			
+
 			float max_reads= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack));
 			float probSample= max_reads / this.nRecsInWindow;
 			
@@ -118,6 +120,7 @@ public class TrackReads extends Track{
 					}
 				}
 			}
+			samReader.close();
 			this.readStack= stackReads(textReads);
 		} else {
 			this.nRecsInWindow= -1;

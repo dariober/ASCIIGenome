@@ -73,13 +73,12 @@ public class TrackIntervalFeature extends Track {
 			}
 			String tmpWorkFile= Utils.createTempFile(".asciigenome.", "." + suffix).getAbsolutePath();
 			new File(tmpWorkFile).deleteOnExit();
-			new File(new File(tmpWorkFile).getAbsolutePath() + ".tbi").deleteOnExit();
+			new File(tmpWorkFile + TabixUtils.STANDARD_INDEX_EXTENSION).deleteOnExit();
 			this.setWorkFilename(tmpWorkFile);
 
 			this.setTrackFormat(Utils.getFileTypeFromName(new File(filename).getName()));
-			new MakeTabixIndex(filename, new File( this.getWorkFilename() ), Utils.trackFormatToTabixFormat(this.getTrackFormat()));	
-
-			this.setWorkFilename(tmpWorkFile);
+			new MakeTabixIndex(filename, new File(this.getWorkFilename()), Utils.trackFormatToTabixFormat(this.getTrackFormat()));	
+			
 			this.tabixReader= this.getTabixReader(this.getWorkFilename());
 			
 		} else { // This means the input is tabix indexed.
@@ -88,6 +87,7 @@ public class TrackIntervalFeature extends Track {
 			this.tabixReader= new TabixReader(this.getWorkFilename());
 		}
 		this.setGc(gc);
+
 	}
 
 	protected TrackIntervalFeature(GenomicCoords gc){
@@ -95,6 +95,17 @@ public class TrackIntervalFeature extends Track {
 	}
 	
 	/* M e t h o d s */
+
+	@Override
+	public void close(){
+		if(this.tabixReader != null){
+			this.tabixReader.close();
+		}
+		if(this.bigBedReader != null){
+			System.err.println("TERE");
+			this.bigBedReader.close();
+		}
+	}
 	
 	@Override
 	/** Collect features mapping to the current genomic coordinates and update the list of interval features
@@ -142,9 +153,9 @@ public class TrackIntervalFeature extends Track {
 					break;
 				}
 				IntervalFeature intervalFeature= new IntervalFeature(q, this.getTrackFormat(), null);
-				if(intervalFeature.getRaw().contains("\t__ignore_me__")){ // Hack to circumvent issue #38
-					continue;
-				}
+//				if(intervalFeature.getRaw().contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+//					continue;
+//				}
 				xFeatures.add(intervalFeature);
 			} 
 		}
@@ -182,9 +193,9 @@ public class TrackIntervalFeature extends Track {
 				break;
 			}
 			IntervalFeature intervalFeature= new IntervalFeature(q, TrackFormat.VCF, this.getVCFCodec());
-			if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
-				continue;
-			}
+//			if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
+//				continue;
+//			}
 			xFeatures.add(intervalFeature);
 		} 
 		return xFeatures;
@@ -197,9 +208,9 @@ public class TrackIntervalFeature extends Track {
 	 * */
 	protected Boolean featureIsVisible(String x) throws InvalidGenomicCoordsException, IOException{
 		
-		if(x.contains("__ignore_me__")){
-			return false;
-		}
+//		if(x.contains("__ignore_me__")){
+//			return false;
+//		}
 		
 		boolean showIt= true;
 		if(this.getShowRegex() != null && 
@@ -963,21 +974,6 @@ public class TrackIntervalFeature extends Track {
 	protected void setIntervalFeatureList(List<IntervalFeature> intervalFeatureList) {
 		this.intervalFeatureList = intervalFeatureList;
 	}
-
-//	@Override
-//	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
-//
-//		if( ! awk.trim().isEmpty()){
-//			List<String> arglst= Utils.tokenize(awk, " ");
-//			
-//			// Do we need to set tab as field sep?
-//			if(arglst.size() == 1 || ! arglst.contains("-F")){ // It would be more stringent to check for the script.
-//				awk= "-F '\\t' " + awk; 
-//			}
-//		}
-//		this.getFeatureFilter().setAwk(awk);
-//		this.update();
-//	}
 	
 	@Override
 	public List<String> getChromosomeNames(){
@@ -1003,7 +999,6 @@ public class TrackIntervalFeature extends Track {
 		}
 	}
 
-	
 	private TabixReader getTabixReader(String tabixFile) throws IOException {
 		return new TabixReader(new File(tabixFile).getAbsolutePath());
 	}
@@ -1015,7 +1010,6 @@ public class TrackIntervalFeature extends Track {
 	protected TabixReader getTabixReader() {
 		return this.tabixReader;
 	}
-
 
 	@Override
 	protected List<String> getRecordsAsStrings() {

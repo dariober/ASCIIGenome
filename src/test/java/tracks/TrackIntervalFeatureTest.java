@@ -28,7 +28,17 @@ public class TrackIntervalFeatureTest {
 		new Config(null);
 		new Xterm256();
 	}
+	
+	@Test
+	public void canCloseFiles() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		tif.close();
 		
+		tif= new TrackIntervalFeature("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb", gc);
+		tif.close();
+	}
+	
 	@Test
 	public void canColorGTFFeaturesByRegex()  throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 
@@ -546,6 +556,18 @@ public class TrackIntervalFeatureTest {
 		
 	}
 
+	@Test
+	public void canFindIndel() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+
+		GenomicCoords gc= new GenomicCoords("1:113050000", 80, null, null);
+		String intervalFileName= "test_data/CEU.exon.2010_06.genotypes.vcf.gz";
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+
+		IntervalFeature x = tif.findNextRegexInGenome(Pattern.compile(".*113054374.*"), "1", 113050000);
+		assertTrue(x.getRaw().contains("\t113054374\t"));
+		assertEquals(113054374, x.getFrom());
+	}
+	
 	@Test
 	/** This should address issues #50 where a feature starting at the begining
 	 * of the chrom is ignored

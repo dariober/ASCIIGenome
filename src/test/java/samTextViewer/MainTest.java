@@ -72,7 +72,6 @@ public class MainTest {
 	public void canIgnoreComments() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
 		String[] args= new String[] {"-ni", "-nf", "--exec", "print && grep -i NCTNTCCN", "test_data/ds051.short.bam"};
 		List<String> woComm = this.runMain(args);
-		
 		args= new String[] {"-ni", "-nf", "--exec", "print && grep -i NCTNTCCN // A comment", "test_data/ds051.short.bam"};
 		List<String> withComm = this.runMain(args);
 		assertEquals(woComm, withComm);

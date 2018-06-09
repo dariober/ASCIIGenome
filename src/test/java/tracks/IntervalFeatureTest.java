@@ -42,14 +42,14 @@ public class IntervalFeatureTest {
 	public void beahviourOfIsNumber() {
 
 		// Valid numbers
-		assertTrue(NumberUtils.isNumber("1.1"));
-		assertTrue(NumberUtils.isNumber("001"));
-		assertTrue(NumberUtils.isNumber("0x0004")); // Also valid
-		assertTrue(NumberUtils.isNumber("-1.1e9"));
+		assertTrue(NumberUtils.isCreatable("1.1"));
+		assertTrue(NumberUtils.isCreatable("001"));
+		assertTrue(NumberUtils.isCreatable("0x0004")); // Also valid
+		assertTrue(NumberUtils.isCreatable("-1.1e9"));
 		// Invalid numbers
-		assertFalse(NumberUtils.isNumber("1.1 ")); // Note trailing space
-		assertFalse(NumberUtils.isNumber(""));
-		assertFalse(NumberUtils.isNumber("001.1"));
+		assertFalse(NumberUtils.isCreatable("1.1 ")); // Note trailing space
+		assertFalse(NumberUtils.isCreatable(""));
+		assertFalse(NumberUtils.isCreatable("001.1"));
 	}
 
 	@Test 
@@ -354,29 +354,34 @@ public class IntervalFeatureTest {
 		// This reading would fail on the original htsjdk-1.141 
 		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed.vcf.gz"));
 		reader.query("chr1", 1, 16000000);
+		reader.close();
 	}
 
 	@Test
 	public void handleMalformedHeader(){
 		// This reading would fail on the original htsjdk-1.141 
 		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header.vcf.gz"));
+		reader.close();
 	}
 	
 	@Test
 	public void handleUnsupportedVersion(){
 		// This reading would fail on the original htsjdk-1.141 
 		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header2.vcf.gz"));
+		reader.close();
 	}
 
 	@Test
 	public void handleMissingVersionLine(){
 		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header4.vcf.gz"));
+		reader.close();
 	}
 	
 	@Test
 	public void handleMissingInfoLinesInHeader(){
 		// This is fine also with original htsjdk-1.141 
 		VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header3.vcf.gz"));
+		reader.close();
 	}
 	
 	@Test

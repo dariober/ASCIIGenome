@@ -64,7 +64,16 @@ public class Main {
 		int debug= opts.getInt("debug");
 		
 		// Get configuration. Note that we don't need to assign this to a variable. 
-		new Config(config);
+		if(config.equals("null")){
+			File def= new File(System.getProperty("user.home"), ".asciigenome_config");
+			if(def.isFile()){
+				new Config(def.getAbsolutePath());		
+			} else {
+				new Config("metal");
+			}			
+		} else {
+			new Config(config);
+		}
 		new Xterm256();
 
 		ASCIIGenomeHistory asciiGenomeHistory= new ASCIIGenomeHistory();
@@ -163,6 +172,7 @@ public class Main {
 			if(opts.getBoolean("nonInteractive")){
 				System.out.print("\033[0m");
 				return;
+				//System.exit(0);
 			}
 		}
 
@@ -386,65 +396,64 @@ public class Main {
 										 final TrackSet trackSet,
 			                             final GenomicCoordsHistory gch 
 			                             ){
-	
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			public void run() {
 
-			ASCIIGenomeHistory newYamlHistory= null;
-			try {
-				newYamlHistory = new ASCIIGenomeHistory(null);
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			} 
-			try{
-				// List of commands
-				ListIterator<Entry> iter = cmdHistory.entries();
-				List<String>lastCommands= new ArrayList<String>();
-				int max_cmds= 2000; // Maximum number of commands to write out to asciigenomo_history.
-				while(iter.hasNext()){
-					if(max_cmds == 0){
-						break;
+				ASCIIGenomeHistory newYamlHistory= null;
+				try {
+					newYamlHistory = new ASCIIGenomeHistory(null);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				} 
+				try{
+					// List of commands
+					ListIterator<Entry> iter = cmdHistory.entries();
+					List<String>lastCommands= new ArrayList<String>();
+					int max_cmds= 2000; // Maximum number of commands to write out to asciigenomo_history.
+					while(iter.hasNext()){
+						if(max_cmds == 0){
+							break;
+						}
+						max_cmds--;
+						lastCommands.add(iter.next().value().toString());
 					}
-					max_cmds--;
-					lastCommands.add(iter.next().value().toString());
-				}
-				newYamlHistory.setCommands(lastCommands);
-				
-				// List of files
-				List<String> opened= new ArrayList<String>();
-				for(String f : trackSet.getOpenedFiles()){
-					if(new File(f).getName().startsWith(".asciigenome.")){
-						continue;
+					newYamlHistory.setCommands(lastCommands);
+					
+					// List of files
+					List<String> opened= new ArrayList<String>();
+					for(String f : trackSet.getOpenedFiles()){
+						if(new File(f).getName().startsWith(".asciigenome.")){
+							continue;
+						}
+						opened.add(f);
+					}						
+					List<String>lastFiles= new ArrayList<String>(opened);
+					int max_files= 200; // Maximum number of files to write out to asciigenomo_history.
+					lastFiles= lastFiles.subList(Math.max(0, lastFiles.size() - max_files), lastFiles.size());
+					newYamlHistory.setFiles(lastFiles);
+					
+					// Positions
+					List<String> lastPos= gch.prepareHistoryForHistoryFile(newYamlHistory.getFileName(), 100);
+					newYamlHistory.setPositions(lastPos);
+	
+					// Fasta ref
+					if(gch.current().getFastaFile() != null && ! gch.current().getFastaFile().trim().isEmpty()){
+						String fasta= new File(gch.current().getFastaFile()).getAbsolutePath();
+						List<String> ff= Arrays.asList(new String[] {fasta});
+						newYamlHistory.setReference(ff);					
+					} else {
+						newYamlHistory.setReference(current.getReference());
 					}
-					opened.add(f);
-				}						
-				List<String>lastFiles= new ArrayList<String>(opened);
-				int max_files= 200; // Maximum number of files to write out to asciigenomo_history.
-				lastFiles= lastFiles.subList(Math.max(0, lastFiles.size() - max_files), lastFiles.size());
-				newYamlHistory.setFiles(lastFiles);
-				
-				// Positions
-				List<String> lastPos= gch.prepareHistoryForHistoryFile(newYamlHistory.getFileName(), 100);
-				newYamlHistory.setPositions(lastPos);
-
-				// Fasta ref
-				if(gch.current().getFastaFile() != null && ! gch.current().getFastaFile().trim().isEmpty()){
-					String fasta= new File(gch.current().getFastaFile()).getAbsolutePath();
-					List<String> ff= Arrays.asList(new String[] {fasta});
-					newYamlHistory.setReference(ff);					
-				} else {
-					newYamlHistory.setReference(current.getReference());
+					
+					// Write yaml
+					newYamlHistory.write();
+					
+				} catch (Exception e) {
+					e.printStackTrace();
+						System.err.println("Unable to write history to " + newYamlHistory.getFileName());
+					}
 				}
-				
-				// Write yaml
-				newYamlHistory.write();
-				
-			} catch (Exception e) {
-				e.printStackTrace();
-					System.err.println("Unable to write history to " + newYamlHistory.getFileName());
-				}
-			}
-	    }, "Shutdown-thread"));
+		    }, "Shutdown-thread"));
 	}
 	
 	/** On exit print a message informing a new version of ASCIIGenome is available

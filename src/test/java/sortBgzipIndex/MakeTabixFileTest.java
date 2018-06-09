@@ -35,6 +35,21 @@ public class MakeTabixFileTest {
 	} 
 	
 	@Test
+	public void canHandleBgzExtension() throws Exception{
+		// This effectively tests IOUtils
+		String infile= "test_data/bgz_noindex.vcf.bgz";
+		File outfile= new File("test_data/tmp.vcf.gz");
+		outfile.deleteOnExit();
+		
+		File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
+		expectedTbi.deleteOnExit();
+
+		new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+		vcfTester(outfile.getCanonicalPath());
+		
+	}
+	
+	@Test
 	public void canCompressAndIndexHeaderlessVCF() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
 
 		String infile= "test_data/noheader.vcf";

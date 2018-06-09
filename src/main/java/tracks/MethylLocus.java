@@ -1,10 +1,10 @@
 package tracks;
 
 import filter.ReadFromTopStrandFilter;
-// import htsjdk.samtools.util.SamLocusIterator.LocusInfo;
-import samTextViewer.SamLocusIterator.LocusInfo;
-// import htsjdk.samtools.util.SamLocusIterator.RecordAndOffset;
-import samTextViewer.SamLocusIterator.RecordAndOffset;
+import htsjdk.samtools.util.SamLocusIterator.LocusInfo;
+//import samTextViewer.SamLocusIterator.LocusInfo;
+import htsjdk.samtools.util.SamLocusIterator.RecordAndOffset;
+//import samTextViewer.SamLocusIterator.RecordAndOffset;
 
 /**
  * Info at a cytosine site necessary for methylation calling
@@ -76,7 +76,7 @@ class MethylLocus {
 			return;
 		} 
 		
-		for(RecordAndOffset recOff : this.locus.getRecordAndPositions()){
+		for(RecordAndOffset recOff : this.locus.getRecordAndOffsets()){
 
 			boolean readIsTopStrand= !(new ReadFromTopStrandFilter(true)).filterOut(recOff.getRecord());
 			char readBase= Character.toUpperCase((char)recOff.getReadBase());

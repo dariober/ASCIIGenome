@@ -11,6 +11,7 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.util.Interval;
 import htsjdk.samtools.util.IntervalList;
+import htsjdk.samtools.util.SamLocusIterator;
 
 public class SamLocusIteratorTest {
     private SamReader createSamFileReader(final String samExample) {
@@ -77,7 +78,7 @@ public class SamLocusIteratorTest {
         int pos = 165;
         for (final SamLocusIterator.LocusInfo li : sli) {
             assertEquals(pos++, li.getPosition());
-            assertEquals(2, li.getRecordAndPositions().size());
+            assertEquals(2, li.getRecordAndOffsets().size());
         }
 
     }

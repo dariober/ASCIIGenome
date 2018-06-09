@@ -152,6 +152,8 @@ public class TrackPileup extends TrackWiggles {
 			
 			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
 			List<Boolean> passFilter= this.filterReads(samReader, chrom, qryFrom, qryTo);
+			samReader.close();
+			
 			samReader= Utils.getSamReader(this.getWorkFilename());
 			
 			Iterator<SAMRecord> sam= samReader.query(chrom, qryFrom, qryTo, false);
@@ -163,7 +165,7 @@ public class TrackPileup extends TrackWiggles {
 					this.add(rec, qryFrom, qryTo, this.loci.get(chrom));
 				}
 			}
-			
+			samReader.close();
 			// Now add the loci that have been collected in this last update
 			List<Integer> zeroDepthPos= new ArrayList<Integer>();
 			for(int pos= qryFrom; pos <= qryTo; pos++){

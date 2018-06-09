@@ -39,7 +39,7 @@ public enum ConfigKey {
 	shade_structural_variant("Background colour for reads suggesting structural variation"), 
 	highlight_mid_char("Highlight mid-character in read tracks?"), 
 	nucs_as_letters("Show read nucleotides as letters at single base resolution?"),
-	show_soft_clip("Show soft clipped bases in read tracks?");
+	show_soft_clip("NOT IN USE YET - Show soft clipped bases in read tracks?");
 	
 	private String value;
 
