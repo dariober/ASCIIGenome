@@ -14,11 +14,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
 import com.google.common.base.Joiner;
@@ -38,7 +41,10 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFInfoHeaderLine;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
@@ -102,6 +108,7 @@ public abstract class Track {
 	 * */
 	private String exportFile= null;
 	private String systemCommandForPrint;
+	private String printFormattedVep= null;
 	private boolean printNormalizedVcf= false;
 	private long lastModified;
 	
@@ -445,6 +452,11 @@ public abstract class Track {
 				line= this.explainSamFlag(line);
 			}
 			
+			if(this.getTrackFormat().equals(TrackFormat.VCF) && this.getPrintFormattedVep() != null){
+				String vepTag= this.getPrintFormattedVep().isEmpty() ? "CSQ" : this.getPrintFormattedVep(); 
+				line= this.printFormattedVep(line, vepTag);
+			}
+			
 			if(this.getPrintMode().equals(PrintRawLine.CLIP) && (this.getSystemCommandForPrint() == null || this.getSystemCommandForPrint().isEmpty())){
 				
 				line= this.shortenPrintLine(line);
@@ -543,6 +555,76 @@ public abstract class Track {
 		return Joiner.on("\t").join(xline);
 	}
 
+	/** Print VCF record with VEP annotation in a readable format;
+	 * */
+	private String printFormattedVep(String line, String vepTag) {
+		
+		List<String> vepArgs = this.parseVepTag(vepTag);
+		String infoTag= vepArgs.get(0);
+		List<String> requiredHeader= new ArrayList<String>();
+		for(int i= 1; i < vepArgs.size(); i++){
+			requiredHeader.add(vepArgs.get(i).toLowerCase());
+		}
+		
+		VCFInfoHeaderLine vcfHdr = this.getVcfHeader().getInfoHeaderLine(infoTag);
+		if(vcfHdr == null){
+			return line;
+		}
+		String description= vcfHdr.getDescription();
+		Map<Integer, String> hdrIndexToName= new HashMap<Integer, String>();
+		List<String> header= Splitter.on("|").splitToList(description.replaceAll(".*Format: ", ""));
+		for(int i= 0; i < header.size(); i++){
+			hdrIndexToName.put(i, header.get(i).toLowerCase());
+		}
+		int pad= 0;
+		for(String x : hdrIndexToName.values()){
+			if(requiredHeader.size() == 0 || requiredHeader.contains(x)){
+				if(x.length() > pad){
+					pad= x.length(); 
+				}
+			}
+		}
+				
+		VCFCodec vcfCodec= new VCFCodec();
+		vcfCodec.setVCFHeader(this.getVcfHeader(), Utils.getVCFHeaderVersion(this.getVcfHeader()));
+		VariantContext variantContext= vcfCodec.decode(line);
+		
+		List<String> annotation= variantContext.getAttributeAsStringList(infoTag, "");
+		
+		String plugable= "...";
+		if( ! requiredHeader.contains("null")){ 
+			List<String> fmtCsq= new ArrayList<String>();
+			for(String feature : annotation){
+				List<String> lst= Splitter.on("|").splitToList(feature);
+				List<String> fmtFeature= new ArrayList<String>();
+				for(int i= 0; i < lst.size(); i++){
+					if(lst.get(i).isEmpty()){
+						continue;
+					}
+					if(requiredHeader.size() > 0 && ! requiredHeader.contains(hdrIndexToName.get(i))){
+						continue;
+					}
+					String hdr= header.get(i);
+					hdr= StringUtils.rightPad(hdr, pad, " ");
+					fmtFeature.add("" + hdr + ": " + lst.get(i));
+				}
+				fmtCsq.add(Joiner.on("\n").join(fmtFeature));
+			}
+			plugable= "\n" + Joiner.on("\n----\n").join(fmtCsq) + "\n";
+		}
+		String[] xline= line.split("\t");
+		xline[7]= xline[7].replace(Joiner.on(",").join(annotation), plugable); 
+		
+		return Joiner.on("\t").join(xline).trim();
+	}
+	
+	/**Parse vepTag containing the INFO tag for the VEP annotation (typically CSQ)
+	 * and an optional list of header names to keep for printing.*/
+	private List<String> parseVepTag(String vepTag){
+		List<String> vepArgs= Splitter.on(",").splitToList(vepTag);
+		return vepArgs;
+	}
+	
 	/**Abbreviate printable fields such as long sequences in VCF 
 	 * alleles and read sequence and quality strings in BAM.
 	 * */
@@ -1046,53 +1128,53 @@ public abstract class Track {
 	 * [start, end], 1-based.
 	 * @throws  
 	 * */
-	private int[] variantIntervalToCoords(String variantInterval) throws InvalidGenomicCoordsException {
-
-		int from= -1;
-		int to= -1;
-		if(variantInterval != null){
-			
-			// Find whether the region is a single pos +/- a value or 
-			variantInterval= variantInterval.trim().replaceAll(" ", "").replaceAll(",", "").replaceAll("/", "");
-			try{
-				if(variantInterval.contains("+-") || variantInterval.contains("-+")){
-					String[] fromTo= variantInterval.replaceAll("\\+", "").split("-");
-					int offset= this.posFromGenomicOrScreen(fromTo[1]);
-					from= this.posFromGenomicOrScreen(fromTo[0]) - offset;
-					to= this.posFromGenomicOrScreen(fromTo[0]) + offset;
-				} 
-				else if(variantInterval.contains("-")){
-					String[] fromTo= variantInterval.split("-");
-					from= this.posFromGenomicOrScreen(fromTo[0]) - this.posFromGenomicOrScreen(fromTo[1]);
-					to= this.posFromGenomicOrScreen(fromTo[0]);
-				} 
-				else if(variantInterval.contains("+")){
-					String[] fromTo= variantInterval.split("\\+");
-					from= this.posFromGenomicOrScreen(fromTo[0]);
-					to= this.posFromGenomicOrScreen(fromTo[0]) + this.posFromGenomicOrScreen(fromTo[1]);
-				}
-				else if(variantInterval.contains(":")){
-					String[] fromTo= variantInterval.split(":");
-					from= this.posFromGenomicOrScreen(fromTo[0]);
-					to= this.posFromGenomicOrScreen(fromTo[1]);
-				}
-				else {
-					from= this.posFromGenomicOrScreen(variantInterval);
-					to= this.posFromGenomicOrScreen(variantInterval);
-				}
-			} catch(NumberFormatException e) {
-				try {
-					throw new NumberFormatException(Utils.padEndMultiLine("Cannot parse region into integers: " + variantInterval, Utils.getTerminalWidth()));
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
-			}
-			if(from < 1) from= 1;
-			if(to < 1) to= 1;
-			if(from > to) from= to;
-		}
-		return new int[]{from, to};
-	}
+//	private int[] variantIntervalToCoords(String variantInterval) throws InvalidGenomicCoordsException {
+//
+//		int from= -1;
+//		int to= -1;
+//		if(variantInterval != null){
+//			
+//			// Find whether the region is a single pos +/- a value or 
+//			variantInterval= variantInterval.trim().replaceAll(" ", "").replaceAll(",", "").replaceAll("/", "");
+//			try{
+//				if(variantInterval.contains("+-") || variantInterval.contains("-+")){
+//					String[] fromTo= variantInterval.replaceAll("\\+", "").split("-");
+//					int offset= this.posFromGenomicOrScreen(fromTo[1]);
+//					from= this.posFromGenomicOrScreen(fromTo[0]) - offset;
+//					to= this.posFromGenomicOrScreen(fromTo[0]) + offset;
+//				} 
+//				else if(variantInterval.contains("-")){
+//					String[] fromTo= variantInterval.split("-");
+//					from= this.posFromGenomicOrScreen(fromTo[0]) - this.posFromGenomicOrScreen(fromTo[1]);
+//					to= this.posFromGenomicOrScreen(fromTo[0]);
+//				} 
+//				else if(variantInterval.contains("+")){
+//					String[] fromTo= variantInterval.split("\\+");
+//					from= this.posFromGenomicOrScreen(fromTo[0]);
+//					to= this.posFromGenomicOrScreen(fromTo[0]) + this.posFromGenomicOrScreen(fromTo[1]);
+//				}
+//				else if(variantInterval.contains(":")){
+//					String[] fromTo= variantInterval.split(":");
+//					from= this.posFromGenomicOrScreen(fromTo[0]);
+//					to= this.posFromGenomicOrScreen(fromTo[1]);
+//				}
+//				else {
+//					from= this.posFromGenomicOrScreen(variantInterval);
+//					to= this.posFromGenomicOrScreen(variantInterval);
+//				}
+//			} catch(NumberFormatException e) {
+//				try {
+//					throw new NumberFormatException(Utils.padEndMultiLine("Cannot parse region into integers: " + variantInterval, Utils.getTerminalWidth()));
+//				} catch (IOException e1) {
+//					e1.printStackTrace();
+//				}
+//			}
+//			if(from < 1) from= 1;
+//			if(to < 1) to= 1;
+//			if(from > to) from= to;
+//		}
+//		return new int[]{from, to};
+//	}
 	
 	/**Argument position is parsable to either either an integer or a 
 	 * decimal number. If decimal, return the genomic position corresponding to
@@ -1101,22 +1183,22 @@ public abstract class Track {
 	 * @throws InvalidGenomicCoordsException 
 	 * @throws IOException 
 	 * */
-	private int posFromGenomicOrScreen(String position) throws InvalidGenomicCoordsException {
-		int reg;
-		try{
-			reg= Integer.parseInt(position);
-			return reg;
-		} catch(NumberFormatException e){
-			//
-		}
-		Double pct= Double.valueOf(position);
-		double offset= this.getGc().getGenomicWindowSize() * pct;
-		if(offset != 0){
-			offset--;
-		}
-		reg= this.getGc().getFrom() + (int)Math.round(offset);
-		return reg;
-	}
+//	private int posFromGenomicOrScreen(String position) throws InvalidGenomicCoordsException {
+//		int reg;
+//		try{
+//			reg= Integer.parseInt(position);
+//			return reg;
+//		} catch(NumberFormatException e){
+//			//
+//		}
+//		Double pct= Double.valueOf(position);
+//		double offset= this.getGc().getGenomicWindowSize() * pct;
+//		if(offset != 0){
+//			offset--;
+//		}
+//		reg= this.getGc().getFrom() + (int)Math.round(offset);
+//		return reg;
+//	}
 
 	
 	protected VCFHeader getVcfHeader() {
@@ -1135,13 +1217,6 @@ public abstract class Track {
 		this.printNumDecimals = printNumDecimals;
 	}
 	
-//	public void setSamtoolsPath(String samtoolsPath) {
-//		this.samtoolsPath= samtoolsPath;
-//	}
-//	public String getSamtoolsPath() {
-//		return this.samtoolsPath;
-//	}
-	
 	public abstract void reload() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException;
 
 	/**Close readers associated to this track. 
@@ -1153,6 +1228,14 @@ public abstract class Track {
 	 */
 	protected void setExplainSamFlag(boolean explainSamFlag) {
 		this.explainSamFlag = explainSamFlag;
+	}
+
+	public String getPrintFormattedVep() {
+		return printFormattedVep;
+	}
+
+	public void setPrintFormattedVep(String printFormattedVep) {
+		this.printFormattedVep = printFormattedVep;
 	}
 	
 }

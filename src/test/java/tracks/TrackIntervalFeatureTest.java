@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.base.Splitter;
+
 import coloring.Config;
 import coloring.Xterm256;
 import exceptions.InvalidColourException;
@@ -719,6 +721,59 @@ public class TrackIntervalFeatureTest {
 		tif.setPrintNormalizedVcf(true);
 		
 		assertEquals(1, tif.printLines().split("\n").length);
+	}
+	
+	@Test
+	public void canPrintFormattedVepAnnotation() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+		GenomicCoords gc= new GenomicCoords("chr1:14327-14836", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/vep.vcf", gc);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setNoFormat(true);
+		String woVep= tif.printLines();
+		tif.setPrintFormattedVep("");
+		String printed= tif.printLines();
+		assertTrue(Splitter.on("\n").splitToList(tif.printLines()).size() > 50);
+		assertTrue(printed.contains("Consequence "));
+		assertTrue( ! printed.contains("SWISSPROT"));
+		
+		// INFO tag not found: Do nothing
+		tif.setPrintFormattedVep("csq_na");
+		printed= tif.printLines();
+		assertEquals(woVep, printed);
+		
+		//Only ask for some headers, case insensitive
+		tif.setPrintFormattedVep("CSQ,ConseQUENCE,Allele");
+		printed= tif.printLines();
+		assertTrue(printed.contains("Consequence"));
+		assertTrue(printed.contains("Allele"));
+		assertTrue( ! printed.contains("IMPACT"));
+		
+		// Omit CSQ
+		tif.setPrintFormattedVep("CSQ,null");
+		printed= tif.printLines();
+		assertTrue(printed.contains("CSQ=... "));
+		
+		// No effect without VEP tag
+		gc= new GenomicCoords("1:1105468-34435998", 80, null, null);
+		tif= new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf", gc);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setNoFormat(true);
+		tif.setPrintFormattedVep(null);
+		woVep= tif.printLines();
+		tif.setPrintFormattedVep("");
+		String withVep= tif.printLines();
+		assertEquals(woVep, withVep);
+		
+		// No effect on non-VCF track
+		gc= new GenomicCoords("chr18:1-10000", 80, null, null);
+		tif= new TrackIntervalFeature("test_data/refSeq.hg19.short.bed", gc);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setNoFormat(true);
+		tif.setPrintFormattedVep(null);
+		woVep= tif.printLines();
+		tif.setPrintFormattedVep("");
+		withVep= tif.printLines();
+		assertEquals(woVep, withVep);
 	}
 	
 	@Test
