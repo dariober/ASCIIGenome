@@ -488,9 +488,12 @@ public class Utils {
 			SAMRecordIterator iter = samReader.iterator();
 			if(iter.hasNext()){
 				// If there are records in this BAM, init from first record
-				SAMRecord rec = iter.next(); 
-				region= rec.getContig() + ":" + rec.getAlignmentStart();
-				samReader.close();
+				SAMRecord rec = iter.next();
+				if(rec.getContig() != null){
+					// See issue#86 for why we need to check null
+					region= rec.getContig() + ":" + rec.getAlignmentStart();
+					samReader.close();					
+				}
 			}
 			return region;
 		

@@ -118,7 +118,7 @@ public class Main {
 
 		final TrackSet trackSet= new TrackSet(inputFileList, gch.current());
 		trackSet.addHistoryFiles(asciiGenomeHistory.getFiles());
-
+		
 		setDefaultTrackHeights(console.getTerminal().getHeight(), trackSet.getTrackList());
 		
 		final TrackProcessor proc= new TrackProcessor(trackSet, gch);
@@ -356,7 +356,7 @@ public class Main {
 			}			
 			return;
 		}
-				
+		
 		// This is the list of heights that will be set at the end:
 		List<Integer> trackHeights= new ArrayList<Integer>();
 		for(int i= 0; i < trackList.size(); i++){

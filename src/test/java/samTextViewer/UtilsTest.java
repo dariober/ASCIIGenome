@@ -1222,6 +1222,13 @@ public class UtilsTest {
 	}
 	
 	@Test
+	public void canInitRegionWithMissingContig() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
+		// Reproduce issue#86
+		System.err.println(Utils.initRegionFromFile("test_data/missing_contig.sam"));
+		assertEquals("chr7", Utils.initRegionFromFile("test_data/missing_contig.sam"));
+	}
+	
+	@Test
 	public void testBamHasIndex() throws IOException{
 		assertTrue(Utils.bamHasIndex("test_data/ds051.short.bam"));
 		assertTrue(!Utils.bamHasIndex("test_data/ds051.noindex.bam"));
