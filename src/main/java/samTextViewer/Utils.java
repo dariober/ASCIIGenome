@@ -130,6 +130,7 @@ public class Utils {
 				e1.printStackTrace();
 			}
 		}
+		tmp.deleteOnExit();
 		return tmp;
 	}
 	
@@ -491,9 +492,9 @@ public class Utils {
 				SAMRecord rec = iter.next();
 				if(rec.getContig() != null){
 					// See issue#86 for why we need to check null
-					region= rec.getContig() + ":" + rec.getAlignmentStart();
-					samReader.close();					
+					region= rec.getContig() + ":" + rec.getAlignmentStart();					
 				}
+				samReader.close();
 			}
 			return region;
 		
@@ -1353,43 +1354,6 @@ public class Utils {
 		inputFileList.addAll(newFileNames);		
 	}
 
-	/** Read file from stdin and write to a tmp file with name extension 
-	 * consistent with the input format.
-	 * This method should be private. Set to protected only for testing. 
-	 * */
-//	protected static File prepareStdinFile() throws IOException{
-//		Scanner sc = new Scanner(System.in);
-//		File tmp= createTempFile("stdin.", "");
-//		tmp.deleteOnExit();
-//		BufferedWriter bw= new BufferedWriter(new FileWriter(tmp));
-//		while(sc.hasNextLine()) {
-//			bw.write(sc.nextLine() + "\n");
-//		}
-//		bw.close();
-//		TrackFormat fmt= sniffFile(tmp);
-//		String fmtName;
-//		if(fmt.equals(TrackFormat.BAM)){
-//			fmtName= tmp.getAbsoluteFile() + ".sam";
-//		} else if(fmt.equals(TrackFormat.VCF)){
-//			fmtName= tmp.getAbsoluteFile() + ".vcf";
-//		} else if(fmt.equals(TrackFormat.BEDGRAPH)){
-//			fmtName= tmp.getAbsoluteFile() + ".bedGraph";
-//		} else if(fmt.equals(TrackFormat.BED)){
-//			fmtName= tmp.getAbsoluteFile() + ".bed";
-//		} else if(fmt.equals(TrackFormat.GFF)){
-//			fmtName= tmp.getAbsoluteFile() + ".gff3";
-//		} else if(fmt.equals(TrackFormat.GTF)){
-//			fmtName= tmp.getAbsoluteFile() + ".gtf";
-//		} else {
-//			throw new IOException("Cannot determine track format of stdin.");
-//		}
-//		File fmtFile= new File(fmtName);
-//		fmtFile.deleteOnExit();
-//		tmp.renameTo(fmtFile);
-//		tmp.delete();
-//		return fmtFile;
-//	}
-	
 	/** Read a sample of file x and return its track format. 
 	 * This method is not generic so keep it private. Input file must be uncompressed,
 	 * must have header if SAM or VCF.
@@ -2272,8 +2236,7 @@ public class Utils {
 	    List<String> str= new ArrayList<String>();
 	    try {
 	    	fakeVCFFile = Utils.createTempFile(".vcfheader", ".vcf");
-		    fakeVCFFile.deleteOnExit();
-			final VariantContextWriter writer = new VariantContextWriterBuilder()
+		    final VariantContextWriter writer = new VariantContextWriterBuilder()
 		            .setOutputFile(fakeVCFFile)
 		            .setReferenceDictionary(header.getSequenceDictionary())
 		            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER, Options.WRITE_FULL_FORMAT_FIELD))

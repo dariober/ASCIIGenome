@@ -50,7 +50,6 @@ public class MakeTabixIndex {
 		
 		File tmp = Utils.createTempFile(".asciigenome", "makeTabixIndex.tmp.gz");
 		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
-		tmp.deleteOnExit();
 		tmpTbi.deleteOnExit();
 		
 		try{
@@ -249,7 +248,6 @@ public class MakeTabixIndex {
 	 */
 	private Connection createSQLiteDb(String tablename) throws IOException {
 		this.sqliteFile= Utils.createTempFile(".asciigenome.", ".tmp.sqlite");
-		this.sqliteFile.deleteOnExit();
 	    
 	    try {
 			Class.forName("org.sqlite.JDBC");

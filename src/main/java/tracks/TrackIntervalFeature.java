@@ -72,7 +72,6 @@ public class TrackIntervalFeature extends Track {
 				suffix += ".gz";
 			}
 			String tmpWorkFile= Utils.createTempFile(".asciigenome.", "." + suffix).getAbsolutePath();
-			new File(tmpWorkFile).deleteOnExit();
 			new File(tmpWorkFile + TabixUtils.STANDARD_INDEX_EXTENSION).deleteOnExit();
 			this.setWorkFilename(tmpWorkFile);
 

@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -1224,7 +1223,6 @@ public class UtilsTest {
 	@Test
 	public void canInitRegionWithMissingContig() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		// Reproduce issue#86
-		System.err.println(Utils.initRegionFromFile("test_data/missing_contig.sam"));
 		assertEquals("chr7", Utils.initRegionFromFile("test_data/missing_contig.sam"));
 	}
 	

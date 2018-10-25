@@ -53,7 +53,6 @@ public class Pdf {
 
 		// First we write to tmp file then we copy to given destination, possibly appending
 		File tmpPdf= Utils.createTempFile(pdfOut.getName(), ".pdf");
-		tmpPdf.deleteOnExit();
 		
 		List<Paragraph> pdfLines= this.ansiFileToPdfParagraphs(fontSize);
         
@@ -91,8 +90,7 @@ public class Pdf {
 			return;
 		}
 		
-		File template= Utils.createTempFile(".template.", ".pdf");;
-		template.deleteOnExit(); 
+		File template= Utils.createTempFile(".template.", ".pdf");
 		
 		Files.copy(Paths.get(dest.getAbsolutePath()), Paths.get(template.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
 

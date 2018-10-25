@@ -753,7 +753,6 @@ public abstract class Track {
 			recordsAsStrings= vcf;
 		}
 		File tmp= Utils.createTempFile(".asciigenome.", ".print.tmp");
-		tmp.deleteOnExit();
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp.getAbsolutePath())));
         for(String line : recordsAsStrings){
         	writer.append(line.replaceAll("\n$", ""));

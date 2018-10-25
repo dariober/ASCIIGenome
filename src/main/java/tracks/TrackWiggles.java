@@ -120,7 +120,6 @@ public class TrackWiggles extends Track {
 		
 		File tmp = Utils.createTempFile(".asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz");
 		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
-		tmp.deleteOnExit();
 		tmpTbi.deleteOnExit();
 
 		new MakeTabixIndex(inBdg, tmp, TabixFormat.BED);
