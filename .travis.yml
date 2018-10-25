@@ -3,6 +3,9 @@ language: java
 jdk:
   - oraclejdk8
 
+before_install:
+    - wget http://hgdownload.cse.ucsc.edu/goldenpath/hg19/chromosomes/chr7.fa.gz
+
 script:
     - cp ASCIIGenome build/libs/
     - cd src/test/java
