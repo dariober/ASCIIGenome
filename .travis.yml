@@ -4,7 +4,8 @@ jdk:
   - oraclejdk8
 
 before_install:
-    - wget http://hgdownload.cse.ucsc.edu/goldenpath/hg19/chromosomes/chr7.fa.gz
+    - cd test_data
+    - wget ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz
 
 script:
     - cp ASCIIGenome build/libs/
