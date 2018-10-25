@@ -13,7 +13,14 @@ ASCIIGenome bash script:
     ./integration_test.sh /path/to/ASCIIGenome
 "
 
-if [[ $1 == "" || $1 == "-h" ]]
+#if [ -z ${1+x} ]; 
+#    then echo "var is unset"; 
+#else 
+#    echo "var is set to '$1'"; 
+#fi
+#exit
+
+if [[ -z "${1+x}" || $1 == "-h" || $1 == "--help" ]]
 then
     echo "$docstring"
     exit 1
