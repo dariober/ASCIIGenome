@@ -3,10 +3,6 @@ language: java
 jdk:
   - oraclejdk8
 
-before_install:
-    - cd test_data
-    - wget ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.7.gff3.gz
-
 script:
     - cp ASCIIGenome build/libs/
     - cd src/test/java
