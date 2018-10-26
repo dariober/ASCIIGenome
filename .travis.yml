@@ -4,6 +4,7 @@ jdk:
   - oraclejdk8
 
 script:
+    - ./gradlew build 
     - cp ASCIIGenome build/libs/
     - cd src/test/java
     - bash integration_test.sh ../../../build/libs/ASCIIGenome
