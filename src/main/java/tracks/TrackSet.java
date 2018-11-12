@@ -102,11 +102,7 @@ public class TrackSet {
 				System.err.println(e.getMessage());
 				e.printStackTrace();
 				System.err.println("Cannot add " + sourceName + "; skipping");
-				try {
-					TimeUnit.SECONDS.sleep(3);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
+				System.exit(1);
 			}
 		}	
 		this.tracksForYLimits.addAll(this.getTrackList());

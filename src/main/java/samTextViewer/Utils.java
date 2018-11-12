@@ -1332,16 +1332,10 @@ public class Utils {
 		List<String> addMe= new ArrayList<String>();
 		for(int i= 0; i < newFileNames.size(); i++){
 			String x= newFileNames.get(i).trim();
-//			if(x.equals("-")){
-//				x= prepareStdinFile().getAbsolutePath();
-//				newFileNames.set(i, x);
-//			}
 			if(!new File(x).isFile() && !Utils.urlFileExists(x) && !Utils.isUcscGenePredSource(x)){
 				dropMe.add(x);
 				System.err.println("Unable to add " + x);
-				if(debug == 2){
-					throw new InvalidCommandLineException();
-				}
+				throw new InvalidCommandLineException();
 			} 
 		}
 		for(String x : dropMe){
