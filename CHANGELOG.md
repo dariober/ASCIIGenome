@@ -1,7 +1,13 @@
 New in 1.15.0
 =============
 
-* Fix issue#86
+* Change behaviour of `bookmark` command. The argument to bookmark the region can have the chromosome prefix `<chr>:` omitted. 
+In such case, use the current chromosome. The command `bookmark 100` will bookmark position 100 on current chromosome while
+`bookmark chr1` will fail instead of bookmarking the entire chromosome.  
+
+* Command help can be invoked also with `?my_cmd` or `help my_cmd`
+
+* Various issues fixed
 
 New in 1.14.0
 =============

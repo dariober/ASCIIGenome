@@ -16,7 +16,7 @@ public class CommandHelp {
 	private String briefDescription;
 	private String additionalDescription= "";
 	protected Section inSection= Section.GENERAL;
-	private int LINE_LEN= 100;
+	private int LINE_LEN= 70;
 	
 	/* C o n s t r u c t o r */
 	
@@ -42,7 +42,7 @@ public class CommandHelp {
 		
 		String helpStr= this.name + " " + this.args + "\n";
 		String fullDescr= this.briefDescription + " " + this.additionalDescription;
-		for(String line : this.wrapLines(fullDescr, 80 - INDENT.length())){
+		for(String line : this.wrapLines(fullDescr, LINE_LEN - INDENT.length())){
 			helpStr += (INDENT + line + "\n");
 		}
 		return helpStr.trim() + "\n";

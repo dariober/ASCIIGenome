@@ -1682,7 +1682,13 @@ public class TrackSet {
 
 		GenomicCoords bookmarkRegion= null;
 		if(args.size() > 0){
-			List<String> strRegion= Utils.parseStringCoordsToList(args.get(0));
+			String region= args.get(0);
+			if( ! region.contains(":")){
+				// Region presumably looks like: "123" or "123-1234". Prepend chromosome from the genomicCoords object
+				Long.parseLong(region.replace("-", ""));
+				region= gc.getChrom() + ":" + region;
+			}
+			List<String> strRegion= Utils.parseStringCoordsToList(region);
 			if(strRegion.get(1) == null){
 				strRegion.set(1, "1");
 			}

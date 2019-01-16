@@ -17,7 +17,14 @@ import exceptions.InvalidCommandLineException;
 public class CommandList {
 	
 	private static String SEE_ALSO= "\nFull documentation at: http://asciigenome.readthedocs.io/\n";
-		
+	private static String CMD_HELP= "For help on individual commands use one of::\n"
+			+ "\n"
+			+ "    command -h\n"
+			+ "    ?command\n"
+			+ "    help command\n"
+			+ "\n"
+			+ "e.g. `ylim -h`";
+	
 	private static String reStructuredTextHelp() throws InvalidCommandLineException, InvalidColourException{
 
 		String intro = ".. _command_reference:"
@@ -114,7 +121,11 @@ public class CommandList {
 	}
 	
 	public static String briefHelp() throws InvalidCommandLineException, InvalidColourException{
-		String help= "\n      N a v i g a t i o n \n\n";
+		String help= "This a list of available commands with their brief description.\n"
+				+ CMD_HELP 
+				+ "\n"
+				+ "\n"
+				+ "      N a v i g a t i o n \n\n";
 		for(CommandHelp x : CommandList.getCommandsForSection(Section.NAVIGATION)){
 			help += (x.printBriefHelp());
 		}
@@ -380,7 +391,7 @@ public class CommandList {
 		cmd.setAdditionalDescription(""
 				+ "Without arguments, add the current position to the bookmark track. Options:\n"
 				+ "\n"
-				+ "* :code:`chrom:from-to` Bookmark this region. Can be chrom:from-to or chrom:from or chrom only.\n"
+				+ "* :code:`chrom:from-to` Bookmark this region. If chrom is omitted, use the current chromosome.\n"
 				+ "\n"
 				+ "* :code:`-d` Remove the bookmark at coordinates [chrom:from-to].\n"
 				+ "\n"
@@ -392,8 +403,10 @@ public class CommandList {
 				+ "\n"
 				+ "Examples::\n"
 				+ "\n"
-				+ "    bookmark~~~~~~~~~~~~~~-> Add the current position to bookmarks.\n"
-				+ "    bookmark chr1:100 ~~~~-> Bookamrk position chr1:100\n"
+				+ "    bookmark~~~~~~~~~~~~~~-> Add the current window to bookmarks.\n"
+				+ "    bookmark 100 ~~~~~~~~~-> Bookmark position 100 on current chrom\n"
+				+ "    bookmark 100-110~~~~~~-> Bookmark position 100-110 on current chrom\n"
+				+ "    bookmark chr1:100 ~~~~-> Bookmark position chr1:100\n"
 				+ "    bookmark -d chr1:100~~-> Delete bookmark at chr1:100\n"
 				+ "    bookmark > books.txt~~-> Save to file books.txt\n"
 				+ "    bookmark -print ~~~~~~-> Show table of bookmarks\n"
@@ -1277,13 +1290,13 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("h"); cmd.setArgs("-h"); cmd.inSection= Section.GENERAL; 
-		cmd.setBriefDescription("h and -h show this help.\n"
-				+ "For help on commands: `command -h`, e.g. :code:`ylim -h`");
+		cmd.setName("h"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
+		cmd.setBriefDescription(":code:`help`, :code:`h`, :code:`-h`, and :code:`?` show this help.\n"
+				+ CMD_HELP);
 		cmd.setAdditionalDescription("");
 		cmdList.add(cmd);
 				
-		// Make sure ther are no undocumented cmds
+		// Make sure there are no undocumented cmds
 		List<String> documented= new ArrayList<String>();
 		for(CommandHelp x : cmdList){
 			if(documented.contains(x.getName())){

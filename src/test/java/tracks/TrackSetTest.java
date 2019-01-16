@@ -217,30 +217,49 @@ public class TrackSetTest {
 	}
 	
 	@Test
-	public void canAddBookmarkTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException, InvalidConfigException{
-
-		new Config(null);
-		
-		List<String>cmdInput= new ArrayList<String>();
+	public void canAddBookmarkAtPosition() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidColourException{
+		ArrayList<String> cmdInput = new ArrayList<String>();
 		cmdInput.add("bookmark");
-		cmdInput.add("bookmark_1");
-		GenomicCoords gc= new GenomicCoords("chr1:1-100", 80, null, null);
-		TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
-		
+		cmdInput.add("999");
+		GenomicCoords gc= new GenomicCoords("chr1:1-10000", 80, null, null);
+		TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
 		ts.bookmark(gc, cmdInput);
-		assertTrue(ts.getTrackList().size() == 1);
-		
-		ts.getTrackList().get(0).setNoFormat(true);
-
-		GenomicCoords gc2 = new GenomicCoords("chr1:1-1000", 80, null, null);
-		ts.bookmark(gc2, cmdInput);
-		
 		TrackBookmark bm = (TrackBookmark) ts.getTrackList().get(0);
-		assertEquals(2, bm.getIntervalFeatureList().size());
+		assertEquals("chr1", bm.getIntervalFeatureList().get(0).getChrom());
+		assertEquals(999, bm.getIntervalFeatureList().get(0).getFrom());
+		assertEquals(999, bm.getIntervalFeatureList().get(0).getTo());
 
-		bm.setPrintMode(PrintRawLine.CLIP);
-		System.out.println(bm.printLines()); // NB: it prints twice the same gc becouse the position is nt changed
+		cmdInput = new ArrayList<String>();
+		cmdInput.add("bookmark");
+		cmdInput.add("999-1111");
+		ts = new TrackSet(new ArrayList<String>(), gc);
+		ts.bookmark(gc, cmdInput);
+		bm = (TrackBookmark) ts.getTrackList().get(0);
+		assertEquals("chr1", bm.getIntervalFeatureList().get(0).getChrom());
+		assertEquals(999, bm.getIntervalFeatureList().get(0).getFrom());
+		assertEquals(1111, bm.getIntervalFeatureList().get(0).getTo());
 		
+		cmdInput = new ArrayList<String>();
+		cmdInput.add("bookmark");
+		cmdInput.add("chr1:999");
+		ts = new TrackSet(new ArrayList<String>(), gc);
+		ts.bookmark(gc, cmdInput);
+		bm = (TrackBookmark) ts.getTrackList().get(0);
+		assertEquals("chr1", bm.getIntervalFeatureList().get(0).getChrom());
+		assertEquals(999, bm.getIntervalFeatureList().get(0).getFrom());
+		assertEquals(999, bm.getIntervalFeatureList().get(0).getTo());
+		
+		cmdInput = new ArrayList<String>();
+		cmdInput.add("bookmark");
+		cmdInput.add("chr1");
+		ts = new TrackSet(new ArrayList<String>(), gc);
+		boolean pass= false;
+		try{
+			ts.bookmark(gc, cmdInput);
+		} catch(Exception e) {
+			pass= true;
+		}
+		assertTrue(pass);
 	}
 	
 	@Test
