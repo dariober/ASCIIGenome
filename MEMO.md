@@ -117,6 +117,24 @@ git push -u origin v1.13.0 # Add branch to remote
 
 ### Set up Eclipse project
 
+Before importing to eclipse make sure you are in the git branch you wnat to
+develop. In the ASCIIGenome repository use `git branch -a` to view available
+branches and `git checkout <branch name>` to switch to the requested branch.
+
+* In `build.gradle` (temporarily) comment out the chunk of code preparing test
+  data. This is because the importer will complain that the requested file(s)
+  cannot be found.
+
+* File `->` Import `->` Gradle `->` Existing Gradle Project `->` Next
+
+* Project root directory `~/git_repos/ASCIIGenome` (or where the git repository
+  has been cloned). Go `Next` in the following steps until `Finish`. There
+  should be nothing to change.
+
+* Reset `build.gradle` to bring back the code commented out above
+
+# Deprecated
+
 * In Eclipse: *File* `->` *New* `->` *Java project*
 
 * *Project name*: something meaningful, it doesn't really matter. Use the branch name maybe.

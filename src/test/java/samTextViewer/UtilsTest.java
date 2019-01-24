@@ -62,65 +62,6 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
-
-	/**Read inputFile and convert it to a stdin stream. Similar to doing:
-	 * 		myProg < inputFile
-	 * */
-//	private void simulateStdin(String inputFile) throws IOException{
-//		String stdin = FileUtils.readFileToString(new File(inputFile), "UTF-8");
-//		ByteArrayInputStream in = new ByteArrayInputStream(stdin.getBytes());
-//		System.setIn(in);
-//	}
-//	
-//	@Test
-//	public void canReadFromStdin() throws IOException{
-//		
-//		simulateStdin("test_data/ds051.noindex.sam");
-//		File fout= Utils.prepareStdinFile();
-//		assertTrue(fout.getName().endsWith(".sam"));
-//		assertTrue(fout.exists());
-//		assertTrue(fout.length() > 100);
-//		
-//		simulateStdin("test_data/CHD.exon.2010_03.sites.vcf");
-//		fout= Utils.prepareStdinFile();
-//		assertTrue(fout.getName().endsWith(".vcf"));
-//		assertTrue(fout.exists());
-//		assertTrue(fout.length() > 100);
-//		
-//		// NB: No header so we save it as *.gtf
-//		simulateStdin("test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3");
-//		fout= Utils.prepareStdinFile();
-//		assertTrue(fout.getName().endsWith(".gtf"));
-//		assertTrue(fout.exists());
-//		assertTrue(fout.length() > 100);
-//		
-//		simulateStdin("test_data/hg19_genes_head.gtf");
-//		fout= Utils.prepareStdinFile();
-//		assertTrue(fout.getName().endsWith(".gtf"));
-//		assertTrue(fout.exists());
-//		assertTrue(fout.length() > 100);
-//		
-//		simulateStdin("test_data/dataCol.bedGraph");
-//		fout= Utils.prepareStdinFile();
-//		assertTrue(fout.getName().endsWith(".bedGraph"));
-//		assertTrue(fout.exists());
-//		assertTrue(fout.length() > 100);
-//		
-//		simulateStdin("test_data/refSeq.bed");
-//		fout= Utils.prepareStdinFile();
-//		assertTrue(fout.getName().endsWith(".bed"));
-//		assertTrue(fout.exists());
-//		assertTrue(fout.length() > 50);
-//		
-//		boolean pass= false;
-//		try{
-//			simulateStdin("test_data/seq_cg.fa");
-//			fout= Utils.prepareStdinFile();
-//		} catch(IOException e){
-//			pass= true;
-//		}
-//		assertTrue(pass);
-//	}
 	
 	@Test
 	public void canTestForOverlappingSegments(){
@@ -1377,8 +1318,15 @@ public class UtilsTest {
 		List<String> newFileNames= new ArrayList<String>();
 		newFileNames.add("test_data/ds051.actb.bam");
 		newFileNames.add("nonsense");
-		Utils.addSourceName(inputFileList, newFileNames, 0);
-		assertEquals(3, inputFileList.size());
+		
+		boolean pass= false;
+		try {
+			Utils.addSourceName(inputFileList, newFileNames, 0);
+		} catch (InvalidCommandLineException e) {
+			pass= true;
+		}
+		assertTrue(pass);
+		assertEquals(2, inputFileList.size());
 	}
 
 //	@Test

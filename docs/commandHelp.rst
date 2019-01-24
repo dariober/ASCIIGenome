@@ -262,7 +262,7 @@ bookmark
 
 Creates a track to save positions of interest. Without arguments, add the current position to the bookmark track. Options:
 
-* :code:`chrom:from-to` Bookmark this region. Can be chrom:from-to or chrom:from or chrom only.
+* :code:`chrom:from-to` Bookmark this region. If chrom is omitted, use the current chromosome.
 
 * :code:`-d` Remove the bookmark at coordinates [chrom:from-to].
 
@@ -274,8 +274,10 @@ Creates a track to save positions of interest. Without arguments, add the curren
 
 Examples::
 
-    bookmark              -> Add the current position to bookmarks.
-    bookmark chr1:100     -> Bookamrk position chr1:100
+    bookmark              -> Add the current window to bookmarks.
+    bookmark 100          -> Bookmark position 100 on current chrom
+    bookmark 100-110      -> Bookmark position 100-110 on current chrom
+    bookmark chr1:100     -> Bookmark position chr1:100
     bookmark -d chr1:100  -> Delete bookmark at chr1:100
     bookmark > books.txt  -> Save to file books.txt
     bookmark -print       -> Show table of bookmarks
@@ -929,9 +931,15 @@ Quit
 h
 +
 
-:code:`h -h`
+:code:`h`
 
-h and -h show this help.
-For help on commands: `command -h`, e.g. :code:`ylim -h` 
+:code:`help`, :code:`h`, :code:`-h`, and :code:`?` show this help.
+For help on individual commands use one of::
+
+    command -h
+    ?command
+    help command
+
+e.g. `ylim -h` 
 
 

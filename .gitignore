@@ -5,3 +5,7 @@ docs/_static
 /target/
 /.gradle/
 build/
+caches/
+daemon/
+native/
+wrapper/

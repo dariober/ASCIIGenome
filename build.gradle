@@ -28,7 +28,7 @@ ext.gunzip = { filename ->
 }
 
 /* Prepare test data
- */
+*/
 File targetFile= new File('test_data/chr7.fa')
 String targetMD5= "30c3693ead968844a769a90a801a900f"
 
