@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -15,7 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-// import com.google.common.io.Files;
+import org.sqlite.SQLiteException;
 
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
@@ -50,7 +49,6 @@ public class MakeTabixIndex {
 		
 		File tmp = Utils.createTempFile(".asciigenome", "makeTabixIndex.tmp.gz");
 		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
-		tmp.deleteOnExit();
 		tmpTbi.deleteOnExit();
 		
 		try{
@@ -202,7 +200,15 @@ public class MakeTabixIndex {
 			throw new InvalidRecordException();
 		}
 		
-		Connection conn= this.createSQLiteDb("data");
+		Connection conn= null;
+		try{
+			this.sqliteFile= Utils.createTempFile(".asciigenome.", ".tmp.sqlite");
+			conn= this.createSQLiteDb(this.sqliteFile, "data");
+		} catch(SQLiteException e){
+			this.sqliteFile= File.createTempFile(".asciigenome.", ".tmp.sqlite");
+			this.sqliteFile.deleteOnExit();
+			conn= this.createSQLiteDb(this.sqliteFile, "data");
+		}
 		PreparedStatement stmtInsert= conn.prepareStatement("INSERT INTO data (contig, pos, posEnd, line) VALUES (?, ?, ?, ?)");
 	
 		BufferedReader br= Utils.reader(unsorted);
@@ -246,39 +252,33 @@ public class MakeTabixIndex {
 	}
 
 	/** Create a tmp sqlite db and return the connection to it. 
+	 * @throws SQLException 
 	 */
-	private Connection createSQLiteDb(String tablename) throws IOException {
-		this.sqliteFile= Utils.createTempFile(".asciigenome.", ".tmp.sqlite");
-		this.sqliteFile.deleteOnExit();
+	private Connection createSQLiteDb(File sqliteFile, String tablename) throws SQLException {
+		// this.sqliteFile= Utils.createTempFile(".asciigenome.", ".tmp.sqlite");
 	    
 	    try {
 			Class.forName("org.sqlite.JDBC");
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-	    try {
-			Connection conn = DriverManager.getConnection("jdbc:sqlite:" + this.sqliteFile);
-	        Statement stmt = conn.createStatement();
-	        String sql = "CREATE TABLE " + tablename +  
-	        		   " (" +
-	                   "contig text, " +
-	        		   "pos int," +
-	        		   "posEnd int," +
-	                   "line text" + // This is the row line as read from input file
-	                   ")"; 
-	        stmt.executeUpdate(sql);
-	        stmt= conn.createStatement();
+		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + this.sqliteFile);
+        Statement stmt = conn.createStatement();
+        String sql = "CREATE TABLE " + tablename +  
+        		   " (" +
+                   "contig text, " +
+        		   "pos int," +
+        		   "posEnd int," +
+                   "line text" + // This is the row line as read from input file
+                   ")"; 
+        stmt.executeUpdate(sql);
+        stmt= conn.createStatement();
 
-	        // http://stackoverflow.com/questions/1711631/improve-insert-per-second-performance-of-sqlite
-	        stmt.execute("PRAGMA journal_mode = OFF"); // This is not to leave tmp journal file o disk
-			conn.setAutoCommit(false); // This is important: By default each insert is committed 
-						     		   // as it is executed, which is slow. Let's commit in bulk at the end instead.
-			stmt.close();
-	        return conn;
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	    return null;
+        // http://stackoverflow.com/questions/1711631/improve-insert-per-second-performance-of-sqlite
+        stmt.execute("PRAGMA journal_mode = OFF"); // This is not to leave tmp journal file o disk
+		conn.setAutoCommit(false); // This is important: By default each insert is committed 
+					     		   // as it is executed, which is slow. Let's commit in bulk at the end instead.
+		stmt.close();
+        return conn;
 	}
-	
 }

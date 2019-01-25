@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This is convenience a wrapper to execute ASCIIGenome.jar on *nix systems.  
 # Put this script and ASCIIGenome.jar in a directory on you PATH e.g. in 

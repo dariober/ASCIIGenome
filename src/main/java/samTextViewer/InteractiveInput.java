@@ -88,15 +88,31 @@ public class InteractiveInput {
 			try {
 				
 				// * These commands only print info or do stuff without editing the GenomicCoordinates or the Tracks:
-				if(cmdTokens.get(0).equals("h") || cmdTokens.get(0).equals("-h")){  		
+				if(cmdTokens.size() == 1 && 
+						(cmdTokens.get(0).equals("h") || 
+						cmdTokens.get(0).equals("-h") || 
+						cmdTokens.get(0).equals("help") || 
+						cmdTokens.get(0).equals("?"))){  		
 					System.err.println(Utils.padEndMultiLine(CommandList.briefHelp(), proc.getWindowSize()));
 					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
 					
-				} else if(cmdTokens.size() >= 2 && cmdTokens.get(1).equals("-h")){ // Help on this command
-					String help= Utils.padEndMultiLine("\n" + CommandList.getHelpForCommand(cmdTokens.get(0)), proc.getWindowSize());
+				} else if( (cmdTokens.size() >= 2 && cmdTokens.get(1).equals("-h")) || 
+							(cmdTokens.size() >= 2 && cmdTokens.get(0).equals("help")) ||
+							cmdTokens.get(0).startsWith("?") ){ 
+					// Help on this command
+					String cmd;
+					if(cmdTokens.size() >= 2 && cmdTokens.get(0).equals("-h")){
+						cmd= cmdTokens.get(0);
+					} else if( cmdTokens.size() >= 2 && cmdTokens.get(0).equals("help") ){
+						cmd= cmdTokens.get(1);
+					} else {
+						cmd= cmdTokens.get(0).replaceAll("^\\?", "");	
+					}
+					
+					String help= Utils.padEndMultiLine("\n" + CommandList.getHelpForCommand(cmd), proc.getWindowSize());
 					System.err.println(help);
 					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
-				
+					
 				} else if(cmdTokens.get(0).equals("posHistory")){
 					this.posHistory(cmdTokens, proc.getGenomicCoordsHistory().getCurrentSessionHistory(), proc.getWindowSize());
 					this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;

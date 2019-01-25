@@ -399,8 +399,9 @@ public class IntervalFeatureTest {
 		VCFCodec vcfCodec= new VCFCodec();
 		vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
 		
-		String vcfLine= "1 10 . C G 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
+		String vcfLine= "1 10 . C G 23 PASS AA=.,foo;AC=.;AN=.DP=.".replaceAll(" ", "\t");
 		IntervalFeature ift= new IntervalFeature(vcfLine, TrackFormat.VCF, vcfCodec);
+		
 		ift.mapToScreen(rulerMap);
 		assertEquals(1, ift.getIdeogram(true, true).size());
 		assertEquals('G', ift.getIdeogram(true, true).get(0).getText());

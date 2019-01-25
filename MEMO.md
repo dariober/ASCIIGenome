@@ -25,8 +25,6 @@ you want to release it as a new version.
 We need to create a zip file containing the jar and the helper bash script. This 
 is what users will download and use.
 
-* From eclipse, write out the definitive jar file. 
-
 * Prepare zip
 
 ```
@@ -75,12 +73,13 @@ git commit -m 'Update brew'
 git push
 ```
 
-* (Untested) Merge branch to master: 
+* Merge branch to master: 
 
 ```
 git merge master              # Resolve conflict
 git checkout master           # Switch to master  
 git merge --no-ff <my-branch> # Merge branch into master
+git commit -m 'Merge to master'
 git push
 ```
 
@@ -117,6 +116,24 @@ git push -u origin v1.13.0 # Add branch to remote
 ```
 
 ### Set up Eclipse project
+
+Before importing to eclipse make sure you are in the git branch you wnat to
+develop. In the ASCIIGenome repository use `git branch -a` to view available
+branches and `git checkout <branch name>` to switch to the requested branch.
+
+* In `build.gradle` (temporarily) comment out the chunk of code preparing test
+  data. This is because the importer will complain that the requested file(s)
+  cannot be found.
+
+* File `->` Import `->` Gradle `->` Existing Gradle Project `->` Next
+
+* Project root directory `~/git_repos/ASCIIGenome` (or where the git repository
+  has been cloned). Go `Next` in the following steps until `Finish`. There
+  should be nothing to change.
+
+* Reset `build.gradle` to bring back the code commented out above
+
+# Deprecated
 
 * In Eclipse: *File* `->` *New* `->` *Java project*
 

@@ -97,8 +97,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		
 		// Prepare tmp file
 		// ================
-		File tmpfile= Utils.createTempFile(".asciigenome.regexMatchTrack", ".tmp.bed");
-	    String tmpname= tmpfile.getAbsolutePath(); 
+		String tmpname= Utils.createTempFile(".asciigenome.regexMatchTrack", ".tmp.bed").getAbsolutePath(); 
 	    // This is a hack: Copy the newly created tmp file to another file. This overcomes some 
 	    // permission (?) problems later with the tabix indexing.
 		String regexMatchFile= tmpname.replaceAll("\\.tmp\\.bed$", ".bed");

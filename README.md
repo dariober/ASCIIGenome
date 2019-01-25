@@ -2,6 +2,7 @@
 [![Build Status](https://travis-ci.org/dariober/ASCIIGenome.svg?branch=master)](https://travis-ci.org/dariober/ASCIIGenome)
 [![Language](http://img.shields.io/badge/language-java-brightgreen.svg)](https://www.java.com/)
 [![License](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/dariober/ASCIIGenome)
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/asciigenome/README.html)
 
 Text Only Genome Viewer!
 ========================

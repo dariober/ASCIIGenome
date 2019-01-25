@@ -1,7 +1,6 @@
 chr7.fa
 refGene.hg19.chr7.txt.gz
-wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb
-Homo_sapiens.GRCh38.86.chromosome.7.gff3*
+Homo_sapiens.GRCh38.86.chromosome.7.gff3
 ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf
 CEU.exon.2010_06.genotypes.vcf
 ear045.oxBS.actb.pileup

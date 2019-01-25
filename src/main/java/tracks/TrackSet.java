@@ -3,8 +3,6 @@ package tracks;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,11 +102,7 @@ public class TrackSet {
 				System.err.println(e.getMessage());
 				e.printStackTrace();
 				System.err.println("Cannot add " + sourceName + "; skipping");
-				try {
-					TimeUnit.SECONDS.sleep(3);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
+				System.exit(1);
 			}
 		}	
 		this.tracksForYLimits.addAll(this.getTrackList());
@@ -454,9 +448,16 @@ public class TrackSet {
         	printMode= PrintRawLine.CLIP;
         }
         
+		String vep= Utils.getArgForParam(args, "-vep", null);
+        if(vep != null){
+        	printMode= PrintRawLine.FULL;
+        }
+        
         Pattern highlightPattern= Pattern.compile("");
         if(args.contains("-hl")){
-        	printMode= PrintRawLine.CLIP;
+        	if(printMode == null){
+        		printMode= PrintRawLine.CLIP;
+        	}
     		String p= Utils.getArgForParam(args, "-hl", "");
 	        highlightPattern= Pattern.compile(p);
         }
@@ -556,6 +557,7 @@ public class TrackSet {
 		// Process as required
 		for(Track tr : tracksToReset){
 			tr.setExplainSamFlag(esf);
+			tr.setPrintFormattedVep(vep);
         	tr.setHighlightPattern(highlightPattern);
 			tr.setPrintRawLineCount(count);
 			tr.setSystemCommandForPrint(sys);
@@ -1680,7 +1682,13 @@ public class TrackSet {
 
 		GenomicCoords bookmarkRegion= null;
 		if(args.size() > 0){
-			List<String> strRegion= Utils.parseStringCoordsToList(args.get(0));
+			String region= args.get(0);
+			if( ! region.contains(":")){
+				// Region presumably looks like: "123" or "123-1234". Prepend chromosome from the genomicCoords object
+				Long.parseLong(region.replace("-", ""));
+				region= gc.getChrom() + ":" + region;
+			}
+			List<String> strRegion= Utils.parseStringCoordsToList(region);
 			if(strRegion.get(1) == null){
 				strRegion.set(1, "1");
 			}
