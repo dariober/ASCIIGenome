@@ -17,6 +17,13 @@ For example, in the commands below replace version number with the latest from `
     cp ASCIIGenome.jar /usr/local/bin/ # Or else in your PATH e.g. ~/bin/
     cp ASCIIGenome /usr/local/bin/     # Or else in your PATH e.g. ~/bin/
 
+With conda
+----------
+
+ASCIIGenome is available as a `bioconda package <https://bioconda.github.io/recipes/asciigenome/README.html>`_
+and it can be installed with the conda package manager::
+
+    conda install -c bioconda asciigenome
 
 With Homebrew
 ------------------------------
