@@ -35,6 +35,10 @@ ASCIIGenome="$1 --debug 2 -ni"
 #pprint 'Can highlight pattern'
 #$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -r 1:1-400000 -x 'print -hl 200000'
 
+pprint 'Can show version'
+$ASCIIGenome -v
+assertEquals 0 $?
+
 pprint 'Can set config from file'
 $ASCIIGenome -c ../../main/resources/config/white_on_black.conf | grep -F '[48;5;0m'
 printf "\033c"
