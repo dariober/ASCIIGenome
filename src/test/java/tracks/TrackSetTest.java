@@ -56,9 +56,10 @@ public class TrackSetTest {
 		trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
 		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
 		trackSet.addTrackFromSource("ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.18.gff3.gz", gc, null);
-
+		
+		assertTrue(new File(trackSet.getOpenedFiles().iterator().next()).isAbsolute());
 		assertEquals(3, trackSet.getOpenedFiles().size());
-		assertTrue(trackSet.getOpenedFiles().iterator().next().length() > 30); // Check we are getting full path
+		assertTrue(new File(trackSet.getOpenedFiles().iterator().next()).isAbsolute());
 	}
 	
 	@Test 

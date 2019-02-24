@@ -1,3 +1,11 @@
+New in 1.16.0
+=============
+
+* Add navigation commands [\[ and \]](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#open_bracket) to move window by screen column.
+
+* File path in track title is shown as relative to current working directory
+  and simplified.
+
 New in 1.15.0
 =============
 
@@ -54,7 +62,7 @@ experimenting with files and you want to quickly see them updated in *ASCIIGenom
 * [print](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#print) has option `-esf` to explain SAM flags.
 
 * Fix minor bug: `%r` in `save` command is expanded to `chr_from_to`, consistent with save in `print`. Before `%r` expanded to `chr_from-to`. 
-
+gg
 * Enable comments in command line with `//`. E.g `goto chr1 // A comment`
 
 Refactor

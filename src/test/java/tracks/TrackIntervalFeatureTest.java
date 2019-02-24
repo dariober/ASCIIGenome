@@ -342,7 +342,6 @@ public class TrackIntervalFeatureTest {
 	@Test
 	public void canConstructTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		String intervalFileName= "test_data/refSeq.bed";
-		//IntervalFeatureSet ifs= new IntervalFeatureSet(new File(intervalFileName)); 
 		GenomicCoords gc= new GenomicCoords("chr1:1-70", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);           		 		

@@ -181,6 +181,12 @@ public class InteractiveInput {
 						String newRegion= Utils.parseConsoleInput(cmdTokens, proc.getGenomicCoordsHistory().current()).trim();
 						proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
 				
+				} else if(cmdTokens.get(0).matches("(\\[+|\\]+)\\d*")) {
+						
+						int times= this.countBrackets(cmdTokens);
+						String newRegion= this.moveWindowByColumns(proc.getGenomicCoordsHistory().current(), times);
+						proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
+						
 				} else if(cmdTokens.get(0).matches("^\\d+.*") || cmdTokens.get(0).matches("^\\.\\d+.*")){
 					String newRegion;
 					try{
@@ -502,6 +508,49 @@ public class InteractiveInput {
 		}
 		messages= "";
 		return proc;
+	}
+
+	private int countBrackets(List<String> cmdTokens) throws InvalidCommandLineException {
+		
+		String xtimes= cmdTokens.get(0).replaceAll("\\[|\\]", "");
+		if(! xtimes.isEmpty() && cmdTokens.size() > 1) {
+			throw new InvalidCommandLineException();
+		}
+		int times= 1;
+		if( ! xtimes.isEmpty()) {
+			times= Integer.valueOf(xtimes);
+		}
+		else if(cmdTokens.size() > 1) {
+			try {
+				times= Integer.valueOf(cmdTokens.get(1));
+			} catch(NumberFormatException e) {
+				System.err.append(cmdTokens.get(1) + " cannot be converted to integer");
+				throw new InvalidCommandLineException();
+			}
+		}
+		String brackets= cmdTokens.get(0).replaceAll("\\d", "");
+		times = times * brackets.length(); 
+
+		if(cmdTokens.get(0).startsWith("[")) {
+			times *= -1;
+		}
+		return times;
+	}
+
+	/** Return a string where the current genomic coordinates are moved forward or 
+	 * backwards "times" screen columns. Move backwards if times is negative.
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidCommandLineException 
+	 * */
+	private String moveWindowByColumns(GenomicCoords gc, int times) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+		String x = String.valueOf(Math.round(gc.getBpPerScreenColumn() * times));
+		if(Integer.valueOf(x) >= 0) {
+			x= "+" + x;
+		}
+		List<String> tokens= new ArrayList<String>();
+		tokens.add(String.valueOf(x));
+		return Utils.parseConsoleInput(tokens, gc);
 	}
 
 	private ExitCode explainSamFlag(List<String> cmdTokens, TrackProcessor proc) throws InvalidCommandLineException, IOException {

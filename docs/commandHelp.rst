@@ -136,6 +136,27 @@ bb
 
 Move backward by 1/2 of a window. A shortcut for `b 0.5` 
 
+]
++
+
+:code:`] INT=1`
+
+Move forward by INT screen columns Same as **[** but moves forward. See **[** for details
+
+[
++
+
+:code:`[ INT=1`
+
+Move backwards by INT screen columns. The **[** character can be repeated and each **[** will move by one column. Examples::
+
+    [   -> Move one screen column
+    [[[ -> Move three columns
+	   [ 3 -> Same as above
+	   [3  -> Same as above (space is optional)
+
+
+
 zi
 ++
 

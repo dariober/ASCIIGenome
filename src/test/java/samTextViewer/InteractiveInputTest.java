@@ -7,16 +7,94 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
 
+import coloring.Config;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import jline.console.ConsoleReader;
+import tracks.TrackSet;
 
 public class InteractiveInputTest {
+	
+	private TrackProcessor gimmeTrackProcessor(String region, int terminalWidth) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
+		GenomicCoords gc= new GenomicCoords(region, terminalWidth, null, "test_data/chr7.fa");
+		GenomicCoordsHistory gch= new GenomicCoordsHistory();
+		gch.add(gc);
+		TrackSet trackSet= new TrackSet(new ArrayList<String>(), gc);
+		TrackProcessor proc= new TrackProcessor(trackSet, gch); 
+		return proc;
+	}
+	
+	@Test 
+	public void canMovePositionByColumn() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, InvalidConfigException {
 
+		new Config(null);
+		TrackProcessor proc;
+		
+		InteractiveInput ip= new InteractiveInput(new ConsoleReader());
+
+		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
+		GenomicCoords gc2= ip.processInput("]", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(1011, (int)gc2.getFrom());
+		assertEquals(1810, (int)gc2.getTo());
+		
+		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
+		gc2= ip.processInput("[", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(1001-10, (int)gc2.getFrom());
+		assertEquals(1800-10, (int)gc2.getTo());
+
+		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
+		gc2= ip.processInput("] 20", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(1001 + (20*10), (int)gc2.getFrom());
+		assertEquals(1800 + (20*10), (int)gc2.getTo());
+
+		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
+		gc2= ip.processInput("]20", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(1001 + (20*10), (int)gc2.getFrom());
+		assertEquals(1800 + (20*10), (int)gc2.getTo());
+		
+		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
+		gc2= ip.processInput("[[ 3", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(1001 - (6 * 10), (int)gc2.getFrom());
+		assertEquals(1800 - (6 * 10), (int)gc2.getTo());
+	
+		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
+		gc2= ip.processInput("[ 0", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(1001, (int)gc2.getFrom());
+		assertEquals(1800, (int)gc2.getTo());
+		
+		// Test left bound
+		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
+		gc2= ip.processInput("[[ 30000", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(1, (int)gc2.getFrom());
+		assertEquals(800, (int)gc2.getTo());
+
+		// Test right bound
+		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
+		gc2= ip.processInput("] 30000000", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(159138663, (int)gc2.getTo());
+		assertEquals(159138663-800+1, (int)gc2.getFrom());
+		
+		// Invalid input
+		ip.processInput("[]", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
+
+		// Ensure this is fine
+		ip.processInput("[", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(ExitCode.CLEAN, ip.getInteractiveInputExitCode());
+		
+		// Another invalid input
+		ip.processInput("[ foo", proc, 1).getGenomicCoordsHistory().current();
+		assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
+	}
+	
+	
 	@Test
 	public void canPrintHelp() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException {
 		

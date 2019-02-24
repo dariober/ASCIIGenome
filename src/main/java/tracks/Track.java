@@ -152,13 +152,16 @@ public abstract class Track {
 	public int getyMaxLines() {
 		return yMaxLines;
 	}
+	
 	public void setyMaxLines(int yMaxLines) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		this.yMaxLines = yMaxLines;
 		this.update();
 	}
+	
 	public String getFilename() {
 		return filename;
 	}
+	
 	public void setFilename(String filename) {
 		UrlValidator urlValidator = new UrlValidator();
 		if(urlValidator.isValid(filename)){
@@ -168,8 +171,8 @@ public abstract class Track {
 		}
 	}
 	
-	public String getTrackTag() { 
-		return trackTag; 
+	public String getTrackTag() {
+		return Utils.reformatFileName(trackTag, false);
 	}
 	
 	public void setTrackTag(String trackTag) { 

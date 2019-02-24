@@ -9,6 +9,8 @@ public enum Command {
 	h("h"),
 	f("f"),
 	b("b"),
+	open_bracket("["),
+	close_bracket("]"),
 	ff("ff"),
 	bb("bb"),
 	zi("zi"),

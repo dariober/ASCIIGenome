@@ -14,7 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -185,6 +184,7 @@ public class TrackSet {
 	}
 
 	private void addToOpenedFiles(String sourceName){
+		sourceName= Utils.reformatFileName(sourceName, true);
 		if(this.getOpenedFiles().contains(sourceName)){ // Remove and add as last opened
 			this.openedFiles.remove(sourceName);
 		} 
@@ -1693,7 +1693,7 @@ public class TrackSet {
 				strRegion.set(1, "1");
 			}
 			if(strRegion.get(2) == null){
-				strRegion.set(2, new Integer(Integer.MAX_VALUE).toString());
+				strRegion.set(2, Integer.valueOf(Integer.MAX_VALUE).toString());
 			}
 			bookmarkRegion= new GenomicCoords(strRegion.get(0) + ":" + strRegion.get(1) + "-" + strRegion.get(2), 
 					gc.getUserWindowSize(), gc.getSamSeqDict(), gc.getFastaFile());

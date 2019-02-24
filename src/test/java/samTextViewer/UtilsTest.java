@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +63,34 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void canReformatFileName(){
+		String x= "License.md";
+		assertEquals("License.md", Utils.reformatFileName(x, false));
+		assertTrue(Utils.reformatFileName(x, true).length() > x.length());
+		
+		x= Paths.get(System.getProperty("user.dir"), "/test_data/ds051.actb.bam").toString();
+		assertEquals("test_data/ds051.actb.bam", Utils.reformatFileName(x, false));
+		assertEquals(x, Utils.reformatFileName(x, true));
+		
+		x= "test_data/../test_data/ds051.actb.bam";
+		assertEquals("test_data/ds051.actb.bam", Utils.reformatFileName(x, false));
+		
+		x= "test_data/../test_data/foobar"; // Non existent file 
+		assertEquals("test_data/foobar", Utils.reformatFileName(x, false));
+		
+		// URLs
+		x= "http://hgdownload.soe.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgTfbsUniform/wgEncodeAwgTfbsBroadDnd41CtcfUniPk.narrowPeak.gz";
+		assertEquals(x, Utils.reformatFileName(x, false));
+		
+		x= "ftp://hgdownload.soe.ucsc.edu/goldenPath/hg38/chromosomes/chr18.fa.gz";
+		assertEquals(x, Utils.reformatFileName(x, false));
+		assertEquals(x, Utils.reformatFileName(x, true));
+		
+		x= x + "foobar";
+		assertEquals(x, Utils.reformatFileName(x, true));
+	}
 	
 	@Test
 	public void canTestForOverlappingSegments(){
@@ -1233,26 +1262,43 @@ public class UtilsTest {
 	}
 	
 	@Test
-	public void canParseInputAndUpdateGenomicCoords() throws InvalidGenomicCoordsException, IOException{
+	public void canParseInputAndUpdateGenomicCoords() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 		GenomicCoords gc= new GenomicCoords("chr7:100-200", 80, samSeqDict, fastaFile);
-
-		//String region= Utils.parseConsoleInput("-r chr8:1-1000", gc);
-		//assertEquals("chr8:1-1000", region);
-		
-		//String region= Utils.parseConsoleInput("-r chr8:1", gc);
-		//assertEquals("chr8:1", region);
-
-		//region= Utils.parseConsoleInput("-r chr8", gc);
-		//assertEquals("chr8", region);
 		List<String> tokens= new ArrayList<String>();
 		tokens.add("+10");
 		String region= Utils.parseConsoleInput(tokens, gc);
 		assertEquals("chr7:110-210", region);
 
-		tokens.set(0, "-1000");
+		tokens.set(0, "-100000");
 		region= Utils.parseConsoleInput(tokens, gc);
-		// assertEquals("chr7:110-210", region);
+		assertTrue(region.startsWith("chr7:1-"));
+
+		tokens.set(0, "f");
+		tokens.add(1, "1");
+		String fregion= Utils.parseConsoleInput(tokens, gc);
+		assertTrue( ! region.equals(fregion));
 		
+		boolean pass= false;
+		try {
+			tokens.clear();
+			tokens.add("f");
+			tokens.add("foobar");
+			Utils.parseConsoleInput(tokens, gc);
+		} catch(InvalidCommandLineException e) {
+			pass= true;
+		}
+		assertTrue(pass);
+		
+		pass= false;
+		try {
+			tokens.clear();
+			tokens.add("b");
+			tokens.add("foobar");
+			Utils.parseConsoleInput(tokens, gc);
+		} catch(InvalidCommandLineException e) {
+			pass= true;
+		}
+		assertTrue(pass);
 	}
 		
 	@Test

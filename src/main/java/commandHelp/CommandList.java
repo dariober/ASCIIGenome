@@ -265,6 +265,25 @@ public class CommandList {
 		cmdList.add(cmd);
 						
 		cmd= new CommandHelp();
+		cmd.setName("]"); cmd.setArgs("INT=1"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Move forward by INT screen columns"); 
+		cmd.setAdditionalDescription("Same as **[** but moves forward. See **[** for details");
+		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
+		cmd.setName("["); cmd.setArgs("INT=1"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Move backwards by INT screen columns."); 
+		cmd.setAdditionalDescription("The **[** character can be repeated "
+				+ "and each **[** will move by one column. Examples::\n"
+				+ "\n"
+				+ "    [~~~-> Move one screen column\n"
+				+ "    [[[~-> Move three columns\n"
+				+ "	   [ 3~-> Same as above\n"
+				+ "	   [3~~-> Same as above (space is optional)\n"
+				+ "\n");
+		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
 		cmd.setName("zi"); cmd.setArgs("[INT = 1]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Zoom in INT times. Each zoom halves the window size. "); 
 		cmd.setAdditionalDescription("To zoom quickly use INT=~5 or 10 e.g. `zi~10`");
@@ -1336,6 +1355,8 @@ public class CommandList {
 		paramList.add("b");
 		paramList.add("ff");
 		paramList.add("bb");
+		paramList.add("]");
+		paramList.add("[");
 		paramList.add("zi");
 		paramList.add("zo");
 		paramList.add("extend");

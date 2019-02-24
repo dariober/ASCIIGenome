@@ -877,10 +877,11 @@ public class Utils {
 	 * @return
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidCommandLineException 
 	 */
-	public static String parseConsoleInput(List<String> tokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
+	public static String parseConsoleInput(List<String> tokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 		
-		String region= "";
+//		String region= "";
 		String chrom= gc.getChrom();
 		Integer from= gc.getFrom();
 		Integer to= gc.getTo();
@@ -913,7 +914,7 @@ public class Utils {
 					step= (int)Math.rint(windowSize * Double.parseDouble(tokens.get(1)));
 				} catch(NumberFormatException e){
 					System.err.println("Cannot parse " + tokens.get(1) + " to numeric.");
-					step= 0;
+					throw new InvalidCommandLineException();
 				} 
 			}			
 			from += step; 
@@ -934,7 +935,7 @@ public class Utils {
 					step= (int)Math.rint(windowSize * Double.parseDouble(tokens.get(1)));
 				} catch(NumberFormatException e){
 					System.err.println("Cannot parse " + tokens.get(1) + " to numeric.");
-					step= 0;
+					throw new InvalidCommandLineException();
 				} 
 			}						
 			from -= step;
@@ -956,12 +957,14 @@ public class Utils {
 				to += offset;
 			}
 			return chrom + ":" + from + "-" + to;
-		}else if (tokens.equals("q")) {
-			System.exit(0);	
-		} else {
+		} 
+//		else if (tokens.get(0).equals("q")) {
+//			System.exit(0);	
+//		} 
+		else {
 			throw new RuntimeException("Invalid input for " + tokens);
 		}
-		return region;
+//		return region;
 	}
 	
 	/**Parse the rawInput string in the form ':123-456' to return either
@@ -2471,5 +2474,19 @@ public class Utils {
 			return false;
 		}
 		return true;
+	}
+
+	public static String reformatFileName(String filename, boolean absolute) {
+		UrlValidator urlValidator= new UrlValidator();
+		if(urlValidator.isValid(filename)){
+			return filename;
+		}
+		Path absfilename= Paths.get(filename).toAbsolutePath();
+		if(absolute) {
+			return absfilename.toString();
+		}
+		Path cwd= Paths.get(System.getProperty("user.dir"));
+		Path relative= cwd.relativize(absfilename);
+		return relative.toString();
 	}
 }

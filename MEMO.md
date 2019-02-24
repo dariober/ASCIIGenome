@@ -133,19 +133,3 @@ branches and `git checkout <branch name>` to switch to the requested branch.
 
 * Reset `build.gradle` to bring back the code commented out above
 
-# Deprecated
-
-* In Eclipse: *File* `->` *New* `->` *Java project*
-
-* *Project name*: something meaningful, it doesn't really matter. Use the branch name maybe.
-
-* Uncheck *Use default location* and browse instead to the new branch directory, for 
-example it may be `/Users/berald01/git_repos/ASCIIGenome/branches/argparse`.
-
-* If not selected, choose execution environment Java 1.7. Other options should be fine as default.
-
-* You may need to edit the classpath if your directory structure changed since last time. 
-Use *Build Path* `->` *Configure Build Path* to set up the appropriate packages.
-If Eclipse doesn't complain about missing imports, than the classpath is fine. 
-
-That's it, start developing in Eclipse.
