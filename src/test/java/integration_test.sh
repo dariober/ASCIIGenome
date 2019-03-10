@@ -102,8 +102,8 @@ pprint 'Test awk with getSamTag()'
 $ASCIIGenome ../../../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && awk 'getSamTag(\"NM\") > 0'" > /dev/null
 
 pprint 'Test awk with VCF functions'
-$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf -x "goto 1:200000-1000000 && awk 'getInfoTag(\"AC\") > 0'" > /dev/null
-$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf -x "goto 1:200000-1000000 && awk 'getFmtTag(\"GT\") == \"0|1\"'" > /dev/null
+$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x "goto 1:200000-1000000 && awk 'getInfoTag(\"AC\") > 0'" > /dev/null
+$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x "goto 1:200000-1000000 && awk 'getFmtTag(\"GT\") == \"0|1\"'" > /dev/null
 
 pprint 'Test awk with GTF/GFF'
 $ASCIIGenome ../../../test_data/hg19_genes_head.gtf -x "awk 'getGtfTag(\"gene_name\") ~ \"DD\"'" > /dev/null
