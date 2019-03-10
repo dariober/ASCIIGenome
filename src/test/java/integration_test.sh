@@ -30,6 +30,8 @@ fi
 
 source bashTestFunctions.sh
 
+gzip -c -d ../../../test_data/chr7.fa.gz > ../../../test_data/chr7.fa
+
 ASCIIGenome="$1 --debug 2 -ni"
 
 #pprint 'Can highlight pattern'
