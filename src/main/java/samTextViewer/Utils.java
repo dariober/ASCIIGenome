@@ -101,7 +101,6 @@ import htsjdk.variant.vcf.VCFHeaderVersion;
 import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
-import ucsc.UcscGenePred;
 
 /**
  * @author berald01
@@ -621,21 +620,6 @@ public class Utils {
 		return region;
 	}
 	
-//	private static String initRegionFromUcscGenePredSource(String x) throws ClassNotFoundException, IOException, InvalidCommandLineException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-//		
-//		String xfile= new UcscGenePred(x, 1).getTabixFile();
-//		GZIPInputStream gzipStream;
-//		InputStream fileStream = new FileInputStream(xfile);
-//		gzipStream = new GZIPInputStream(fileStream);
-//		Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
-//		BufferedReader br = new BufferedReader(decoder);
-//		String line= br.readLine();
-//		br.close();
-//		List<String> xlist= Lists.newArrayList(Splitter.on("\t").split(line));
-//		String region= xlist.get(0) + ":" + xlist.get(3) + "-" + xlist.get(4);
-//		return region;
-//	}
-
 	public static boolean bamHasIndex(String bam) throws IOException{
 
 		/*  ------------------------------------------------------ */
@@ -1335,7 +1319,7 @@ public class Utils {
 		List<String> addMe= new ArrayList<String>();
 		for(int i= 0; i < newFileNames.size(); i++){
 			String x= newFileNames.get(i).trim();
-			if(!new File(x).isFile() && !Utils.urlFileExists(x) && !Utils.isUcscGenePredSource(x)){
+			if(!new File(x).isFile() && !Utils.urlFileExists(x)){
 				dropMe.add(x);
 				System.err.println("Unable to add " + x);
 				throw new InvalidCommandLineException();
@@ -1754,17 +1738,6 @@ public class Utils {
 		return chrom + ":" + xfrom + xto;
 	} 
 	
-	/** True if filename is a UCSC genePred file or a valid connection to database. 
-	 * */
-	public static boolean isUcscGenePredSource(String filename) {
-		try{
-			new UcscGenePred(filename, 1000);
-			return true;
-		} catch(Exception e) {
-			return false;
-		}
-	}
-
 	/** Return list of files matching the list of glob expressions. This method should behave
 	 * similarly to GNU `ls` command. 
 	 * 

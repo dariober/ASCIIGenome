@@ -5,6 +5,11 @@ New in 1.16.0
 
 * File path in track title is shown as relative to current working directory
   and simplified.
+  
+* `gffNameAttr` can rename also bed features. It has been renamed to the more 
+  comprehensive `nameForFeatures`. The name to display for bed feature can be assigned by passing to 
+  `nameForFeatures` the column index to use. This is particularly useful to show metrics of interest in
+  *e.g.* narrowPeak peak files. 
 
 New in 1.15.0
 =============

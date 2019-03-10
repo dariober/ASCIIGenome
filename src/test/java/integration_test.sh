@@ -134,7 +134,7 @@ pprint 'Use of PCT screen coords'
 $ASCIIGenome ../../../test_data/ds051.actb.bam  -x 'goto chrM:1 && 0 .2 && 16555 && .1' > /dev/null
 
 pprint 'Set gtf attribute for feature name'
-$ASCIIGenome ../../../test_data/hg19_genes.gtf.gz -x 'gffNameAttr gene_name' > /dev/null
+$ASCIIGenome ../../../test_data/hg19_genes.gtf.gz -x 'nameForFeatures gene_name' > /dev/null
 
 set +x
 echo -e "\033[32mDONE\033[0m"

@@ -47,7 +47,9 @@ public class TrackIntervalFeature extends Track {
 	
 	private List<Argument> colorForRegex= null;
 	private VCFCodec vcfCodec;
-		
+	private String gtfAttributeForName= null;
+	private int bedFieldForName= 3; // 0-based!
+	
 	/* C o n s t r u c t o r */
 
 	public TrackIntervalFeature(final String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
@@ -101,7 +103,6 @@ public class TrackIntervalFeature extends Track {
 			this.tabixReader.close();
 		}
 		if(this.bigBedReader != null){
-			System.err.println("TERE");
 			this.bigBedReader.close();
 		}
 	}
@@ -477,7 +478,12 @@ public class TrackIntervalFeature extends Track {
 	public String printToScreen() throws InvalidGenomicCoordsException {
 	
 		for(IntervalFeature x : this.getIntervalFeatureList()){
-			x.setGtfAttributeForName( this.getGtfAttributeForName() );
+			if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)) {
+				x.setGtfAttributeForName( this.gtfAttributeForName);
+			} 
+			else if(this.getTrackFormat().equals(TrackFormat.BED) || this.getTrackFormat().equals(TrackFormat.BIGBED)) {
+				x.setBedFieldName(Integer.valueOf(this.bedFieldForName));
+			}			
 		}
 		
 		List<String> printable= new ArrayList<String>();		
@@ -1086,6 +1092,26 @@ public class TrackIntervalFeature extends Track {
 		}
 		this.tabixReader= this.getTabixReader(this.getWorkFilename());
 		this.update();
+	}
+
+	@Override
+	public void setFeatureName(String nameFieldOrAttribute) {
+		if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)) {
+			this.gtfAttributeForName= nameFieldOrAttribute;
+		} 
+		else if(this.getTrackFormat().equals(TrackFormat.BED) || this.getTrackFormat().equals(TrackFormat.BIGBED)) { 
+			if(nameFieldOrAttribute.equals("-na")) {
+				this.bedFieldForName= -1;
+			}
+			else {
+				try {
+					this.bedFieldForName= Integer.valueOf(nameFieldOrAttribute) - 1; // User's input is 1-based, convert ot 0-based
+				} catch(NumberFormatException e) {
+					System.err.println("Cannot convert " + nameFieldOrAttribute + " to integer");
+					throw e;
+				}
+			}
+		}
 	}
 
 }

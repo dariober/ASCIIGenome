@@ -755,10 +755,14 @@ public class CommandList {
 
 		
 		cmd= new CommandHelp();
-		cmd.setName("gffNameAttr"); cmd.setArgs("[attribute_name = NULL | -na] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("GTF/GFF attribute to set the feature name or `-na` to suppress name. ");
-		cmd.setAdditionalDescription("Use attribute NULL to reset to default choice of attribute. To suppress "
-				+ "printing of the name use `-na`. Bed features get their name from the 4th column. "
+		cmd.setName("nameForFeatures"); cmd.setArgs("[attribute_name = NULL | -na] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Select column index or GFF attribute to name features. ");
+		cmd.setAdditionalDescription("If the track is of type BED :code:`attribute_name` is "
+				+ "expected to be a column index (first column has index 1). "
+				+ "If track is of type GTF/GFF, :code:`attribute_name` is the key from "
+				+ "the attributes column (9th column). Use attribute NULL to "
+				+ "reset to default choice of attribute. To suppress "
+				+ "printing of the name use `-na`."
 				+ "Applies to annotation tracks captured by the list `track_regex`.\n"
 				+ "\n"
 				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
@@ -770,13 +774,13 @@ public class CommandList {
 				+ "\n"
 				+ "Use gene_name as feature name or transcript_id::\n"
 				+ "\n"
-				+ "    gffNameAttr gene_name genes.gtf .*gff\n"
+				+ "    nameForFeatures gene_name genes.gtf .*gff\n"
 				+ "    PTGFRN_CCCCCCCCC\n"
 				+ "    \n"
-				+ "    gffNameAttr transcript_id genes.gtf .*gff\n"
+				+ "    nameForFeatures transcript_id genes.gtf .*gff\n"
 				+ "    NM_020440_CCCCCC\n"
 				+ "    \n"
-				+ "    gffNameAttr -na\n"
+				+ "    nameForFeatures -na\n"
 				+ "    CCCCCCCCCCCCCCCC <- Do not show name"
 				+ "    \n"
 				+ "\n");
@@ -1376,7 +1380,7 @@ public class CommandList {
 		paramList.add("grep");
 		paramList.add("awk");
 		paramList.add("filterVariantReads");
-		paramList.add("gffNameAttr");
+		paramList.add("nameForFeatures");
 		paramList.add("gap");
 		paramList.add("trackHeight");
 		paramList.add("colorTrack");

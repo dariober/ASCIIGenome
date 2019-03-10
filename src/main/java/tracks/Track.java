@@ -88,7 +88,6 @@ public abstract class Track {
 	protected String titleColour= null;
 	protected boolean bisulf= false;
 
-	private String gtfAttributeForName= null;
 	/** Should features on with same coords be squashed into a single one? */
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	/** Number of decimal places to show when printing raw lines */
@@ -277,13 +276,9 @@ public abstract class Track {
 		this.titleColour = colour;
 	}
 	
-	public String getGtfAttributeForName() {
-		return this.gtfAttributeForName;
-	}
+//	public abstract String getFeatureName();
 
-	public void setGtfAttributeForName(String gtfAttributeForName) {
-		this.gtfAttributeForName = gtfAttributeForName;
-	}
+	public abstract void setFeatureName(String gtfAttributeForName);
 
 	public PrintRawLine getPrintMode() {
 		return printMode;

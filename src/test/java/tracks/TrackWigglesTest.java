@@ -9,6 +9,7 @@ import java.sql.SQLException;
 
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BigWigIterator;
+import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
@@ -19,6 +20,11 @@ import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
 
 public class TrackWigglesTest {
+
+	@Before
+	public void prepareConfig() throws IOException, InvalidConfigException{
+		new Config(null);
+	}
 
 	@Test
 	public void canCloseReaders() throws ClassNotFoundException, IOException, InvalidRecordException, InvalidGenomicCoordsException, SQLException{
@@ -95,15 +101,18 @@ public class TrackWigglesTest {
 	@Test
 	public void testYLimits() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidRecordException, ClassNotFoundException, SQLException{
 
+		// String url= "tmp.bedGraph";
+		// GenomicCoords gc= new GenomicCoords("chr1:4389687-26338119", 80, null, null);
 		String url= "test_data/test.bedGraph.gz";
 		GenomicCoords gc= new GenomicCoords("chr1:1-30", 80, null, null);
+				
 		TrackWiggles tw= new TrackWiggles(url, gc, 4);
 		tw.setYLimitMax((float)10.0);
 		tw.setYLimitMin((float)-10.0);
 		tw.setyMaxLines(10);
 		String prof= tw.printToScreen();
-		System.out.println(prof);
-		
+		assertTrue(prof.contains(","));
+		assertTrue(prof.contains(":"));
 	}
 	
 	@Test

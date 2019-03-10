@@ -193,10 +193,10 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		
 		tif.setNoFormat(true);
-		tif.setGtfAttributeForName("ID");
+		tif.setFeatureName("ID");
 		assertTrue(tif.printToScreen().contains("transcript:ENS"));
 		
-		tif.setGtfAttributeForName("Name");
+		tif.setFeatureName("Name");
 		assertTrue(tif.printToScreen().contains("ACTB-001"));
 
 	}
@@ -210,7 +210,7 @@ public class TrackIntervalFeatureTest {
 		tif.setNoFormat(true);
 		assertTrue(tif.printToScreen().contains("chromosome:7"));
 		
-		tif.setGtfAttributeForName("Alias");
+		tif.setFeatureName("Alias");
 		System.err.println(tif.printToScreen());
 		assertTrue(tif.printToScreen().contains("CM000669"));
 	}
@@ -227,6 +227,33 @@ public class TrackIntervalFeatureTest {
 				
 	}
 	
+	@Test 
+	public void canSetColumnForBedFeature() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
+		String intervalFileName= "test_data/refSeq.hg19.short.sort.bed";
+
+		GenomicCoords gc= new GenomicCoords("chr1:8404074-8404223", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		assertTrue(tif.printToScreen().contains("NM_001080397_utr3_8_0_chr1_8404074_f"));
+		tif.setFeatureName("5"); // 1-based!
+		assertTrue(tif.printToScreen().contains("_0_"));
+	
+		// Bigbed
+		intervalFileName= "test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb";
+
+		gc= new GenomicCoords("chr1:1200328-1200477", 80, null, null);
+		tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		assertTrue(tif.printToScreen().replaceAll("\\|", "").trim().isEmpty());
+
+		tif.setFeatureName("5");
+		assertTrue(tif.printToScreen().contains("_1000_"));
+		
+		// Name not to be shown
+		tif.setFeatureName("-na");
+		assertTrue(tif.printToScreen().replaceAll("\\|", "").trim().isEmpty());
+	}
+	
 	@Test
 	public void canReadBigBed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
@@ -237,7 +264,6 @@ public class TrackIntervalFeatureTest {
 		tif.setNoFormat(true);
 		assertEquals(12, tif.getIntervalFeatureList().size());
 		assertEquals(564665+1, tif.getIntervalFeatureList().get(0).getFrom());
-		
 	}
 	
 	@Test
@@ -362,7 +388,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:11874-12227", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
-		tif.setGtfAttributeForName("-na");
+		tif.setFeatureName("-na");
 		assertTrue(tif.printToScreen().startsWith("EEEEE"));
 	}
 

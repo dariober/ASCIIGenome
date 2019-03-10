@@ -24,12 +24,13 @@ public class NotPrimaryAlignmentFilter implements SamRecordFilter {
      */
     public boolean filterOut(final SAMRecord record) {
         if (include) {
-            if (record.getNotPrimaryAlignmentFlag()) {
+
+            if (record.isSecondaryAlignment()) {
                 return false;
             }
         } else {
             // exclude
-            if (!record.getNotPrimaryAlignmentFlag()) {
+            if (!record.isSecondaryAlignment()) {
                 return false;
             }
         }

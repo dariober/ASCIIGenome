@@ -29,7 +29,7 @@ public enum Command {
 	seqRegex("seqRegex"),
 	bookmark("bookmark"),
 	grep("grep"),
-	gffNameAttr("gffNameAttr"),
+	nameForFeatures("nameForFeatures"),
 	gap("gap"),
 	readsAsPairs("readsAsPairs"),
 	trackHeight("trackHeight"),

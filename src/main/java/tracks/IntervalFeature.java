@@ -42,7 +42,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	private String name= ".";
 	/** Use this attribute to as key to assign the name field */
 	private String gtfAttributeForName= null;
-	
+	private int bedFieldName= 3;
 	/** Start position of feature in screen coordinates. -1 if the feature is not part of the screenshot. 
 	 * screenFrom/To are both 0-based. So a feature that occupies one character only (e.g. a SNP) 
 	 * at the first screen column as screenFrom= 0 and screenTo= 0. 
@@ -64,7 +64,9 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 */
 	public IntervalFeature(String line, TrackFormat format, VCFCodec vcfCodec) throws InvalidGenomicCoordsException{
 
-		if(format.equals(TrackFormat.BED) || format.equals(TrackFormat.BEDGRAPH) || format.equals(TrackFormat.BIGBED)){
+		if(format.equals(TrackFormat.BED) || 
+				format.equals(TrackFormat.BEDGRAPH) || 
+				format.equals(TrackFormat.BIGBED)){
 			this.intervalFeatureFromBedLine(line);
 			this.trackFormat= TrackFormat.BED;
 		
@@ -90,16 +92,6 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	private int setFromForVCF() {
 		int from= this.variantContext.getStart();
 		this.setToForVCF();
-//		int to= this.setToForVCF();
-//		if(from == to){
-//			return from; // SNV
-//		}
-//		else if(this.variantContext.getReference().getBases().length > 0 &&
-//				this.variantContext.getAlleles().size() > 1 &&
-//				this.variantContext.getAlleles().get(1).getBases().length > 0 &&
-//				this.variantContext.getReference().getBases()[0] == this.variantContext.getAlleles().get(0).getBases()[0]){
-//			return from + 1;
-//		}
 		return from;
 	}
 
@@ -157,7 +149,6 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	
 	/* M e t h o d s */
 	
-	@SuppressWarnings("deprecation")
 	private IntervalFeature intervalFeatureFromBedLine (String bedLine) throws InvalidGenomicCoordsException{
 		this.setRaw(bedLine);
 
@@ -169,12 +160,14 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		this.from= Integer.parseInt(bedList.get(1)) + 1; // Make it 1-based
 		this.to= Integer.parseInt(bedList.get(2));
 
-		// Process optional fields
-		if(bedList.size() > 3){
-			this.name= bedList.get(3);
+		if(this.bedFieldName < 0) {
+			this.name= ".";
+		}
+		else if(bedList.size() > this.bedFieldName){
+			this.name= bedList.get(this.bedFieldName);
 		}
 		if(bedList.size() > 4){
-			if(NumberUtils.isNumber(bedList.get(4))){ // NB: Returns false if leading or trailing spaces are present.
+			if(NumberUtils.isCreatable(bedList.get(4))){ // NB: Returns false if leading or trailing spaces are present.
 				this.score= Float.valueOf(bedList.get(4));
 			}
 		}
@@ -727,4 +720,8 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		}
 	}
 
+	protected void setBedFieldName(int i) throws InvalidGenomicCoordsException {
+		this.bedFieldName= i;
+		this.intervalFeatureFromBedLine(this.getRaw());
+	}
 }

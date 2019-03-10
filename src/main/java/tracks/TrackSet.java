@@ -829,20 +829,20 @@ public class TrackSet {
 		}
 	}
 	
-	public void setAttributeForGFFName(List<String> tokens) throws InvalidCommandLineException{
+	public void setNameAttribute(List<String> tokens) throws InvalidCommandLineException{
 
 		// MEMO of subcommand syntax:
-		// 0 gffNameAttr
+		// 0 nameForFeatures
 		// 1 attrName
 		// 2 Regex
 
         boolean invertSelection= Utils.argListContainsFlag(tokens, "-v");
 		
-		String gtfAttributeForName= null; // Null will follow default 
+		String attributeForName= null; // Null will follow default 
 		if(tokens.size() >= 2){
-			gtfAttributeForName= tokens.get(1);
-			if(gtfAttributeForName.equals("NULL")){
-				gtfAttributeForName= null;
+			attributeForName= tokens.get(1);
+			if(attributeForName.equals("NULL")){
+				attributeForName= null;
 			}
 		}
 		
@@ -856,7 +856,7 @@ public class TrackSet {
         // And set as required:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
-        	tr.setGtfAttributeForName(gtfAttributeForName);
+        	tr.setFeatureName(attributeForName);
         }		
 	}
 	
@@ -1521,10 +1521,6 @@ public class TrackSet {
 	
 	public void setDataColForRegex(List<String> tokens) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidRecordException, InvalidGenomicCoordsException, SQLException {
 
-		// MEMO of subcommand syntax:
-		// 0 gffNameAttr
-		// 1 attrName
-		// 2 Regex
         boolean invertSelection= Utils.argListContainsFlag(tokens, "-v");
 
 		int dataCol = 0; // Null will follow default 

@@ -297,8 +297,8 @@ public class InteractiveInput {
 				} else if (cmdTokens.get(0).equals("readsAsPairs")){
 					proc.getTrackSet().setReadsAsPairsForRegex(cmdTokens);
 					
-				} else if(cmdTokens.get(0).equals("gffNameAttr")) {
-					proc.getTrackSet().setAttributeForGFFName(cmdTokens);
+				} else if(cmdTokens.get(0).equals("nameForFeatures")) {
+					proc.getTrackSet().setNameAttribute(cmdTokens);
 					
 				} else if(cmdTokens.get(0).equals("open") || cmdTokens.get(0).equals("addTracks")){
 					cmdTokens.remove(0);

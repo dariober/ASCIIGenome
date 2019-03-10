@@ -42,9 +42,8 @@ public class TrackWiggles extends Track {
 
 	// private double scorePerDot;
 	private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList;
-	private int bdgDataColIdx= 4; 
+	protected int bdgDataColIdx= 4; 
 	private BBFileReader bigWigReader;
-	
 	
 	/* C o n s t r u c t o r s */
 
@@ -95,8 +94,9 @@ public class TrackWiggles extends Track {
 	public void update() throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException {
 
 		if(this.bdgDataColIdx < 4){
-			System.err.println("Invalid index for bedgraph column of data value. Resetting to 4. Expected >=4. Got " + this.bdgDataColIdx);
+			System.err.println("Invalid index for bedgraph column of data value. Expected >=4. Got " + this.bdgDataColIdx);
 			this.bdgDataColIdx= 4;
+			throw new InvalidRecordException();
 		}
 
 		if(this.getTrackFormat().equals(TrackFormat.BIGWIG)){
@@ -116,7 +116,7 @@ public class TrackWiggles extends Track {
 		}
 	}
 
-	private String tabixBedgraphToTmpFile(String inBdg) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	protected String tabixBedgraphToTmpFile(String inBdg) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		File tmp = Utils.createTempFile(".asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz");
 		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
@@ -221,7 +221,7 @@ public class TrackWiggles extends Track {
 	
 	@Override
 	public String printToScreen() throws InvalidColourException{
-	
+
 		if(this.getyMaxLines() == 0){return "";}
 		
 		TextProfile textProfile= new TextProfile(this.getScreenScores(), this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
@@ -318,8 +318,8 @@ public class TrackWiggles extends Track {
 	 * @throws InvalidRecordException 
 	 * @throws InvalidGenomicCoordsException 
 	 * */
-	private void bedGraphToScores(String fileName) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
-		
+	protected void bedGraphToScores(String fileName) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
+
 		List<ScreenWiggleLocusInfo> screenWigLocInfoList= new ArrayList<ScreenWiggleLocusInfo>();
 		for(int i= 0; i < getGc().getUserWindowSize(); i++){
 			screenWigLocInfoList.add(new ScreenWiggleLocusInfo());
@@ -459,5 +459,7 @@ public class TrackWiggles extends Track {
 		this.update();
 	}
 
-
+	@Override
+	public void setFeatureName(String gtfAttributeForName) {
+	}
 }
