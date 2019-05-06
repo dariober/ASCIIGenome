@@ -73,7 +73,7 @@ public class TrackIntervalFeature extends Track {
 			if( ! suffix.endsWith(".gz")){
 				suffix += ".gz";
 			}
-			String tmpWorkFile= Utils.createTempFile(".asciigenome.", "." + suffix).getAbsolutePath();
+			String tmpWorkFile= Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
 			new File(tmpWorkFile + TabixUtils.STANDARD_INDEX_EXTENSION).deleteOnExit();
 			this.setWorkFilename(tmpWorkFile);
 
@@ -222,22 +222,13 @@ public class TrackIntervalFeature extends Track {
 		
 		// Awk
 		try {
-			isVisible= Utils.passAwkFilter(x, this.getAwk());
+			isVisible= Utils.passAwkFilter(new String[] {x}, this.getAwk())[0];
 		} catch (Exception e) {
 			System.err.print(Utils.padEndMultiLine("Invalid awk script.", this.getGc().getUserWindowSize()));
 			try {
 				this.setAwk("");
 			} catch (ClassNotFoundException | InvalidRecordException | SQLException e1) {
 				e1.printStackTrace();
-			}
-			throw new InvalidGenomicCoordsException();
-		}
-		if(isVisible == null){
-			System.err.print(Utils.padEndMultiLine("Awk output must be either empty or equal to input.", this.getGc().getUserWindowSize()));
-			try {
-				this.setAwk(""); // Remove the faulty awk script.
-			} catch (ClassNotFoundException | IOException | InvalidRecordException | SQLException e) {
-				//
 			}
 			throw new InvalidGenomicCoordsException();
 		}
@@ -1058,7 +1049,7 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
-	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException {
+	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException, IOException {
 		if(list == null){
 			return;
 		}
@@ -1066,18 +1057,36 @@ public class TrackIntervalFeature extends Track {
 		for(Argument arg : list){
 			String regex= arg.getKey();
 			String color= arg.getArg();
-			for(IntervalFeature x : this.getIntervalFeatureList()){
-				boolean matched= Pattern.compile(regex).matcher(x.getRaw()).find();
+			String[] rawrecs= new String[this.getIntervalFeatureList().size()];
+			for(int i= 0; i < this.getIntervalFeatureList().size(); i++){
+				rawrecs[i]= this.getIntervalFeatureList().get(i).getRaw();
+			}
+			boolean[] matched= Utils.matchByAwkOrRegex(rawrecs, regex);
+			for(int i= 0; i < matched.length; i++) {
+				boolean m= matched[i];
 				if(arg.isInvert()){
-					matched= ! matched;
+					m= ! m;
 				}
-				if(matched){
-					for(FeatureChar f : x.getIdeogram(false, false)){
+				if(m){
+					for(FeatureChar f : this.getIntervalFeatureList().get(i).getIdeogram(false, false)){
 						f.setBgColor(color);
 						f.setFgColor(Xterm256.getContrastColor(color));
 					}
 				}
 			}
+			
+//			for(IntervalFeature x : this.getIntervalFeatureList()){
+//				boolean matched= Pattern.compile(regex).matcher(x.getRaw()).find();
+//				if(arg.isInvert()){
+//					matched= ! matched;
+//				}
+//				if(matched){
+//					for(FeatureChar f : x.getIdeogram(false, false)){
+//						f.setBgColor(color);
+//						f.setFgColor(Xterm256.getContrastColor(color));
+//					}
+//				}
+//			}
 		}
 	}
 	

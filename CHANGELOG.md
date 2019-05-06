@@ -1,16 +1,36 @@
 New in 1.16.0
 =============
 
-* Add navigation commands [\[ and \]](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#open_bracket) to move window by screen column.
+* `featureColorForRegex`, renamed to `featureColor`, now accepts as expression
+  a regex (as before) or an awk script. Awk is useful to color features
+  according to some numeric values. *E.g.*, in a narrowPeak file you can
+  highlight features with qvalue > *x*: `featureColor -r '$9 > 3' blue -r '$9 >
+  6' red`
+
+* Quoting: in addition to **single quotes**, command arguments can be delimited
+  by **double quotes** `"`, **tripe single quotes** `'''` or **triple double
+  quotes** `"""` (similar to python). For example, grep records containg single
+  quotes: `grep -i "'" or grep -i """'"""`
+
+* Add navigation commands [\[ and
+  \]](http://asciigenome.readthedocs.io/en/latest/commandHelp.html#open_bracket)
+  to move window by screen column.
 
 * File path in track title is shown as relative to current working directory
   and simplified.
   
-* `gffNameAttr` can rename also bed features. It has been renamed to the more 
-  comprehensive `nameForFeatures`. The name to display for bed feature can be assigned by passing to 
-  `nameForFeatures` the column index to use. This is particularly useful to show metrics of interest in
-  *e.g.* narrowPeak peak files. 
+* `gffNameAttr` can rename also bed features. It has been renamed to the more
+  comprehensive `nameForFeatures`. The name to display for bed feature can be
+  assigned by passing to `nameForFeatures` the column index to use. This is
+  particularly useful to show metrics of interest in *e.g.* narrowPeak peak
+  files. 
 
+* Document the special flag 4096 in `samtools` command which selects for TOP
+  STRAND reads.  Useful for stranded RNA-Seq and BS-Seq libraries.
+
+* `orderTracks` can put selected tracks last. First select all tracks with e.g.
+  `.`, then list those you want last: `orderTracks . #1 #2`
+  
 New in 1.15.0
 =============
 

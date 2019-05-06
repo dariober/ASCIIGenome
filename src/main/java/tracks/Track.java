@@ -48,6 +48,7 @@ import htsjdk.variant.vcf.VCFInfoHeaderLine;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
+import utils.Tokenizer;
 
 public abstract class Track {
 
@@ -229,9 +230,9 @@ public abstract class Track {
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		
+
 		if( ! awk.trim().isEmpty()){
-			List<String> arglst= Utils.tokenize(awk, " ");
+			List<String> arglst= new Tokenizer(awk).tokenize(); // Utils.tokenize(awk, " ");
 			
 			// Do we need to set tab as field sep?
 			if(arglst.size() == 1 || ! arglst.contains("-F")){ // It would be more stringent to check for the script.
@@ -257,7 +258,7 @@ public abstract class Track {
 		this.getFeatureFilter().setShowHideRegex(showRegex, hideRegex);
 		this.update();
 	}
-
+ 
 	public Pattern getHideRegex() { 
 		return this.getFeatureFilter().getHideRegex();
 	}
@@ -750,7 +751,7 @@ public abstract class Track {
 			vcf.addAll(recordsAsStrings);
 			recordsAsStrings= vcf;
 		}
-		File tmp= Utils.createTempFile(".asciigenome.", ".print.tmp");
+		File tmp= Utils.createTempFile(".asciigenome.", ".print.tmp", true);
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp.getAbsolutePath())));
         for(String line : recordsAsStrings){
         	writer.append(line.replaceAll("\n$", ""));
@@ -1065,8 +1066,9 @@ public abstract class Track {
 	/** Iterate through the features in this track and set background colour.
 	 * colorForRegex: Key= Regex to capture features; Value= Colour to use for the captures features.
 	 * @throws InvalidColourException 
+	 * @throws IOException 
 	 * */
-	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException {
+	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException, IOException {
 		
 	}
 

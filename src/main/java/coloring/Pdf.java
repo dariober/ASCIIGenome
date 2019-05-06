@@ -52,7 +52,7 @@ public class Pdf {
 	public void convert(File pdfOut, float fontSize, boolean append) throws IOException, DocumentException, InvalidColourException {
 
 		// First we write to tmp file then we copy to given destination, possibly appending
-		File tmpPdf= Utils.createTempFile(pdfOut.getName(), ".pdf");
+		File tmpPdf= Utils.createTempFile(pdfOut.getName(), ".pdf", true);
 		
 		List<Paragraph> pdfLines= this.ansiFileToPdfParagraphs(fontSize);
         
@@ -90,7 +90,7 @@ public class Pdf {
 			return;
 		}
 		
-		File template= Utils.createTempFile(".template.", ".pdf");
+		File template= Utils.createTempFile(".template.", ".pdf", true);
 		
 		Files.copy(Paths.get(dest.getAbsolutePath()), Paths.get(template.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
 

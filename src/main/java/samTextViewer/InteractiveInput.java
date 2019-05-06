@@ -32,6 +32,7 @@ import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import tracks.Track;
+import utils.Tokenizer;
 
 /** Class to process input from console
  * */
@@ -82,7 +83,8 @@ public class InteractiveInput {
 		String messages= ""; // Messages that may be sent from the various methods.
 		for(String cmdString : cmdInputChainList){
 			
-			List<String> cmdTokens= Utils.tokenize(cmdString, " ");
+			//List<String> cmdTokens= Utils.tokenize(cmdString, " ");
+			List<String> cmdTokens= new Tokenizer(cmdString).tokenize();
 			
 			this.interactiveInputExitCode= ExitCode.CLEAN; // If something goes wrong this will change
 			try {
@@ -273,7 +275,7 @@ public class InteractiveInput {
 				} else if((cmdTokens.get(0).equals("colorTrack") || cmdTokens.get(0).equals("colourTrack"))){
 					proc.getTrackSet().setTrackColourForRegex(cmdTokens); 
 
-				} else if((cmdTokens.get(0).equals("featureColorForRegex"))){
+				} else if((cmdTokens.get(0).equals("featureColor"))){
 					proc.getTrackSet().setFeatureColorForRegex(cmdTokens); 
 					
 				} else if(cmdTokens.get(0).equals("hideTitle")){

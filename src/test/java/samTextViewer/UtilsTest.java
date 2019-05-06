@@ -1,6 +1,7 @@
 package samTextViewer;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -55,6 +56,7 @@ import jline.console.history.History;
 import jline.console.history.MemoryHistory;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
+import utils.Tokenizer;
 
 public class UtilsTest {
 
@@ -63,6 +65,23 @@ public class UtilsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	
 	public static String fastaFile= "test_data/chr7.fa";
+	
+	@Test
+	public void canInterpretStringAsRegexOrAwkAndFilter() throws IOException {
+		String[] rawrecs= {"foo\t20", "bar\t30", "baz\t40"};
+		
+		boolean[] matched= Utils.matchByAwkOrRegex(rawrecs, "ba");
+		assertArrayEquals(new boolean[] {false, true, true}, matched);
+		
+		matched= Utils.matchByAwkOrRegex(rawrecs, "'$2 > 25'");
+		assertArrayEquals(new boolean[] {false, true, true}, matched);
+		
+		matched= Utils.matchByAwkOrRegex(rawrecs, "'$2 > 25 && $1 == \"bar\"'");
+		assertArrayEquals(new boolean[] {false, true, false}, matched);
+	
+		matched= Utils.matchByAwkOrRegex(rawrecs, "foo|40$");
+		assertArrayEquals(new boolean[] {true, false, true}, matched);
+	}
 	
 	@Test
 	public void canReformatFileName(){
@@ -558,129 +577,156 @@ public class UtilsTest {
 		System.err.println(results[1]);
 		System.err.println(results[2]);
 		
-		
 		// Note single quotes around the awk script
-		assertTrue(Utils.passAwkFilter("chr1\t10\t100", "-v VAR=5 '$2 > VAR && $1'"));
+		assertTrue(Utils.passAwkFilter(new String[]{"chr1\t10\t100"}, "-v VAR=5 '$2 > VAR && $1'")[0]);		
+		assertTrue( ! Utils.passAwkFilter(new String[]{"'chr1\t10\t100"}, "-v VAR=50 '$2 > VAR'")[0]);
+		assertTrue( Utils.passAwkFilter(new String[]{"'chr1\t10\t100"}, "'($3 - $2) > 50'")[0]);
+		assertTrue( ! Utils.passAwkFilter(new String[]{"'chr1\t10\t100"}, "'($3 - $2) > 500'")[0]);
 		
-		// Using single quotes inside awk is tricky. Use the code \x027 to represent it.
+		assertTrue(Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "")[0]); // Empty script equals to no filter.
+		assertTrue(Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "  ")[0]);
+		
+		// Valid awk script but output is not empty and not equal to input.
+		assertTrue(! Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'{print $1}'")[0]);
+	}
+
+	@Test
+	public void canHandleQuotesInAwkScript() throws IOException {
+		// NB: A single \ needs to be \\ in Java strings 
+		
+		// We use triple quotes to wrap the script to avoid an escaping hell
+		assertTrue(Utils.passAwkFilter(new String[]{"chr'1"}, "'''$1 == \"chr'1\";'''")[0]);
+
+		// Double quote. Note three '\': Two to represent a single \ and one to escape 
+		// the double quote in Java string
+		assertTrue(Utils.passAwkFilter(new String[]{"chr\"1"}, "'''$1 == \"chr\\\"1\";'''")[0]);
+		
+		// In v < 1.16 the awk script was passed as command line string instead of using -f <file>
+		// and the mess below was required to match single quote. 
 		// See https://www.gnu.org/software/gawk/manual/html_node/Quoting.html 
 		// and see http://stackoverflow.com/questions/9899001/how-to-escape-single-quote-in-awk-inside-printf
-		// for using '\'' as a single quote
-		assertTrue(Utils.passAwkFilter("chr'1", "'$1 ~ \"chr\"\\x027\"1\"'"));
-		
-		assertTrue( ! Utils.passAwkFilter("'chr1\t10\t100", "-v VAR=50 '$2 > VAR'"));
-		
-		assertTrue( Utils.passAwkFilter("'chr1\t10\t100", "'($3 - $2) > 50'"));
-		assertTrue( ! Utils.passAwkFilter("'chr1\t10\t100", "'($3 - $2) > 500'"));
-		
-		assertTrue(Utils.passAwkFilter("'chr1\t10\t100'", "")); // Empty script equals to no filter.
-		assertTrue(Utils.passAwkFilter("'chr1\t10\t100'", "  "));
-		
-		// Valid awk script but output is not empty and not equal to input. Return NULL
-		assertEquals(null, Utils.passAwkFilter("'chr1\t10\t100'", "'{print $1}'"));
-		
+		assertTrue(Utils.passAwkFilter(new String[]{"chr'1"}, "'$1 ~ \"chr\"\\x027\"1\";'")[0]);
+	}
+	
+	@Test
+	public void canQuoteString() {
+		assertEquals(2, new Tokenizer("foo bar").tokenize().size()); // Just ensure tokenozer works!
+		assertEquals(1, new Tokenizer(Utils.quote("foo bar")).tokenize().size());
+		assertEquals(1, new Tokenizer(Utils.quote("'foo bar'")).tokenize().size());
+		assertEquals(1, new Tokenizer(Utils.quote("\"foo bar\"")).tokenize().size());
+		assertEquals(1, new Tokenizer(Utils.quote("foo'bar")).tokenize().size());
+	}
+	
+	@Test
+	public void canHandleEscapeInAwkScript() throws IOException {
+		// NB: A single \ needs to be \\ in Java strings 
+		assertTrue(Utils.passAwkFilter(new String[]{"chr\\1"}, "'$1 == \"chr\\\\1\"'")[0]);
+	}
+	
+	@Test
+	public void canDetectBrokenAwkScript() {
 		// Broken awk script:
 		boolean pass= false;
 		try{
-			assertEquals(null, Utils.passAwkFilter("'chr1\t10\t100'", "'print {'"));
+			assertTrue(! Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'print {'")[0]);
 		} catch(IOException e){
 			pass= true;
 		}
 		assertTrue(pass);
 	}
-
+	
 	@Test
 	public void canFilterGtfAwkFunc() throws IOException{
 		// NB: You need to set the field separator to \\t. 
 		
-		String gtf= "GL873520\tchr1\tstop_codon\t8064\t8066\t0.000000\t-\t.\tgene_id 100; trax_id \"ACTB\";";
-		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"gene_id\") == 100'"));
-		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"trax_id\") == \"ACTB\"'"));
+		String[] gtf= {"GL873520\tchr1\tstop_codon\t8064\t8066\t0.000000\t-\t.\tgene_id 100; trax_id \"ACTB\";"};
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"gene_id\") == 100'")[0]);
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"trax_id\") == \"ACTB\"'")[0]);
 		
 		// Empty string if key not found
-		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"SPAM\") == \"\"'")); 
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"SPAM\") == \"\"'")[0]); 
 		
 		// No attributes at all: Empty string returned
-		gtf= "GL873520\tchr1\tstop_codon\t8064\t8066\t0.000000\t-\t.\t.";
-		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"gene_id\") == \"\"'"));
+		gtf= new String[] {"GL873520\tchr1\tstop_codon\t8064\t8066\t0.000000\t-\t.\t."};
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"gene_id\") == \"\"'")[0]);
 		
 		// No attribute column at all (this would be an invalid GTF, by the way)
-		gtf= "GL873520\tchr1\tstop_codon\t8064\t8066\t0.000000\t-\t.";
-		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"gene_id\") == \"\"'"));
+		gtf= new String[] {"GL873520\tchr1\tstop_codon\t8064\t8066\t0.000000\t-\t."};
+		assertTrue(Utils.passAwkFilter(gtf, "-F '\\t' 'getGtfTag(\"gene_id\") == \"\"'")[0]);
 	}
 	
 	@Test
 	public void canFilterGffAwkFunc() throws IOException{
 		// NB: You need to set the field separator to \\t. 
 		
-		String x= ".|.|.|.|.|.|.|.|Tag=100; ID = foo : bar ; Alias=spam,bar;".replaceAll("\\|", "\t");
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == 100'"));
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"ID\") == \"foo : bar\"'"));
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"spam,bar\"'"));
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\", 1) == \"spam\"'"));
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\", 2) == \"bar\"'"));
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\", 99) == \"\"'"));
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"SPAM\") == \"\"'"));
+		String[] x= {".|.|.|.|.|.|.|.|Tag=100; ID = foo : bar ; Alias=spam,bar;".replaceAll("\\|", "\t")};
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == 100'")[0]);
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"ID\") == \"foo : bar\"'")[0]);
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"spam,bar\"'")[0]);
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\", 1) == \"spam\"'")[0]);
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\", 2) == \"bar\"'")[0]);
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\", 99) == \"\"'")[0]);
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"SPAM\") == \"\"'")[0]);
 		
 		// NB: Missing tag i.e., empty string, evaluates to 0!!
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"SPAM\") == 0'"));
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"SPAM\") == 0'")[0]);
 		
-		x= ".|.|.|.|.|.|.|.|.".replaceAll("\\|", "\t");
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"\"'"));
+		x= new String[] {".|.|.|.|.|.|.|.|.".replaceAll("\\|", "\t")};
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"\"'")[0]);
 		
-		x= ".|.|.|.|.|.|.|.".replaceAll("\\|", "\t");
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"\"'"));
+		x= new String[] {".|.|.|.|.|.|.|.".replaceAll("\\|", "\t")};
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"\"'")[0]);
 		
-		x= ".|.|.|.|.|.|.|.|Tag=\"X\"".replaceAll("\\|", "\t"); // Double quotes are not stripped
-		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == \"\"X\"\"'"));
+		x= new String[] {".|.|.|.|.|.|.|.|Tag=\"X\"".replaceAll("\\|", "\t")}; // Double quotes are not stripped
+		assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == \"\"X\"\"'")[0]);
 		
 	}
 	
 	@Test
 	public void canFilterInfoVcfWithAwkFunc() throws IOException{
-		String vcf= "chr1 75888 . A T . . IMPRECISE;SVTYPE=DEL;DP=20,30;SVLEN=-32945;FOLD_CHANGE=0.723657;FOLD_CHANGE_LOG=-0.466623;PROBES=21".replaceAll(" ", "\t");
-		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"IMPRECISE\") == 1'"));
-		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"ABSENT_TAG\") == 0'"));
-		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"FOLD_CHANGE\") <= 0.723657'"));
-		assertTrue( ! Utils.passAwkFilter(vcf, "'getInfoTag(\"FOLD_CHANGE\") > 0.723657'"));
+		String[] vcf= {"chr1 75888 . A T . . IMPRECISE;SVTYPE=DEL;DP=20,30;SVLEN=-32945;FOLD_CHANGE=0.723657;FOLD_CHANGE_LOG=-0.466623;PROBES=21".replaceAll(" ", "\t")};
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"IMPRECISE\") == 1'")[0]);
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"ABSENT_TAG\") == 0'")[0]);
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"FOLD_CHANGE\") <= 0.723657'")[0]);
+		assertTrue( ! Utils.passAwkFilter(vcf, "'getInfoTag(\"FOLD_CHANGE\") > 0.723657'")[0]);
 		
 		// Split list of values
-		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\") == \"20,30\"'"));
-		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\", 1) == 20'"));
-		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\", 2) == 30'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\") == \"20,30\"'")[0]);
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\", 1) == 20'")[0]);
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\", 2) == 30'")[0]);
 		// Out of range
-		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\", 3) == \"\"'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"DP\", 3) == \"\"'")[0]);
 		
 		// Missing INFO 
-		vcf= "chr1 75888 . A T . . .".replaceAll(" ", "\t");
-		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"FOO\") == 0'"));
+		vcf= new String[] {"chr1 75888 . A T . . .".replaceAll(" ", "\t")};
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"FOO\") == 0'")[0]);
 		
 		// INFO column not there at all
-		vcf= "chr1 75888 . A T . .".replaceAll(" ", "\t");
-		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"FOO\") == 0'"));
+		vcf= new String[] {"chr1 75888 . A T . .".replaceAll(" ", "\t")};
+		assertTrue(Utils.passAwkFilter(vcf, "'getInfoTag(\"FOO\") == 0'")[0]);
 	}
 
 	@Test
 	public void canFilterFormatVcfWithAwkFunc() throws IOException{
-		String vcf= "chr1 75888 . A T . . . GT:GQ 11:21,10 22:99,100".replaceAll(" ", "\t");
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\") == 11'")); // Default sample_idx= 1
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 1) == 11'"));
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 2) == 22'"));
-		assertTrue( ! Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 2) < 22'"));
+		String[] vcf= {"chr1 75888 . A T . . . GT:GQ 11:21,10 22:99,100".replaceAll(" ", "\t")};
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\") == 11'")[0]); // Default sample_idx= 1
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 1) == 11'")[0]);
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 2) == 22'")[0]);
+		assertTrue( ! Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 2) < 22'")[0]);
 		
 		// Get value from list
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2) == \"99,100\"'"));
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2, 1) == \"99\"'")); 
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2, 2) == \"100\"'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2) == \"99,100\"'")[0]);
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2, 1) == \"99\"'")[0]); 
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2, 2) == \"100\"'")[0]);
 		// Out range
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2, 3) == \"\"'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GQ\", 2, 3) == \"\"'")[0]);
 		
 		// Tag not found
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"ABSENT\", 1) == \"\"'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"ABSENT\", 1) == \"\"'")[0]);
 		
 		// Invalid indexes
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 99) == \"\"'"));
-		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", \"foobar\") == \"\"'"));
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", 99) == \"\"'")[0]);
+		assertTrue(Utils.passAwkFilter(vcf, "'getFmtTag(\"GT\", \"foobar\") == \"\"'")[0]);
 		
 	}
 	
@@ -703,22 +749,22 @@ public class UtilsTest {
 	
 	@Test
 	public void canFilterSamTagWithAwk() throws IOException{
-		String rec= "read\t0\tchr7\t5566778\t50\t5M\t*\t0\t0\tCTCAT\tIIIII\tMD:Z:75\tRG:Z:1\tXG:i:0\tNH:i:1\tNM:i:0\tXM:i:0\tXN:i:0\tXO:i:0\tAS:i:0\tYT:Z:UU";
+		String[] rec= {"read\t0\tchr7\t5566778\t50\t5M\t*\t0\t0\tCTCAT\tIIIII\tMD:Z:75\tRG:Z:1\tXG:i:0\tNH:i:1\tNM:i:0\tXM:i:0\tXN:i:0\tXO:i:0\tAS:i:0\tYT:Z:UU"};
 		
 		//Filter for NH tag value
-		assertTrue(Utils.passAwkFilter(rec, "'getSamTag(\"NH\") > 0'"));
-		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"NH\") > 10'"));
+		assertTrue(Utils.passAwkFilter(rec, "'getSamTag(\"NH\") > 0'")[0]);
+		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"NH\") > 10'")[0]);
 		
 		// Missing tag
-		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"ZZ\") > 0'"));
+		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"ZZ\") > 0'")[0]);
 		
 		// Missing tag searched but not used
-		assertTrue(Utils.passAwkFilter(rec, "'{getSamTag(\"ZZ\"); print $0'}"));
-		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"NM\") > 0'"));
+		assertTrue(Utils.passAwkFilter(rec, "'{getSamTag(\"ZZ\"); print $0}'")[0]);
+		assertFalse(Utils.passAwkFilter(rec, "'getSamTag(\"NM\") > 0'")[0]);
 		
 		// Tags missing altogether returns empty string
-		rec= "read\t0\tchr7\t5566778\t50\t5M\t*\t0\t0\tCTCAT\tIIIII";
-		assertTrue(Utils.passAwkFilter(rec, "'getSamTag(\"NM\") == \"\"'"));
+		rec= new String[] {"read\t0\tchr7\t5566778\t50\t5M\t*\t0\t0\tCTCAT\tIIIII"};
+		assertTrue(Utils.passAwkFilter(rec, "'getSamTag(\"NM\") == \"\"'")[0]);
 		
 		long t0= System.currentTimeMillis();
 		int i= 0;
@@ -727,7 +773,30 @@ public class UtilsTest {
 			i++;
 		}
 		long t1= System.currentTimeMillis();
-		assertTrue((t1-t0) < 3000); // It can filter reasonably fast (?) 
+		assertTrue((t1-t0) < 10000); // It can filter reasonably fast (?) 
+	}
+	
+	@Test
+	public void canFilterSamBitflagWithAwk() throws IOException{
+
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t16"}, "'bitset(16) == 1'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t17"}, "'bitset(16) == 1'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t1"}, "'bitset(16) == 0'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t3585"}, "'bitset(1025) == 1'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t3584"}, "'bitset(1025) == 0'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t3840"}, "'bitset(3840) == 1'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t3840"}, "'bitset(3841) == 0'")[0]);
+		
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t3840"}, "'bitset(0) == 1'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t0"}, "'bitset(0) == 1'")[0]);
+		
+		// Invalid input: Always return 0 (false)
+		assertTrue(Utils.passAwkFilter(new String[] {"read\tfoo"}, "'bitset(0) == 0'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t16"}, "'bitset(\"foo\") == 0'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t16"}, "'bitset(-16) == 0'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t-16"}, "'bitset(0) == 0'")[0]);
+		assertTrue(Utils.passAwkFilter(new String[] {"read\t16"}, "'bitset(17) == 0'")[0]);
+		
 	}
 	
 	@Test

@@ -41,6 +41,16 @@ pprint 'Can show version'
 $ASCIIGenome -v
 assertEquals 0 $?
 
+pprint 'Set color for features'
+$ASCIIGenome ../../../test_data/hg19_genes_head.gtf -x "goto chr1:6267-17659 && featureColor -r DDX11L1 red -r WASH7P blue" > tmp.txt
+grep ';9;' tmp.txt # 9 is int for red
+rm tmp.txt
+
+pprint 'Set color for features with awk script'
+$ASCIIGenome ../../../test_data/hg19_genes_head.gtf -x "goto chr1:6267-17659 && featureColor -r '\$4 > 13000' red" > tmp.txt
+grep ';9;' tmp.txt # 9 is int for red
+rm tmp.txt
+
 pprint 'Can set config from file'
 $ASCIIGenome -c ../../main/resources/config/white_on_black.conf | grep -F '[48;5;0m'
 printf "\033c"
@@ -96,9 +106,6 @@ $ASCIIGenome https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_
 pprint 'Genotype matrix'
 $ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'goto 1:1117997-1204429 && genotype -f {HOM} && genotype -n 1' > /dev/null
 $ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'goto 1:1117997-1204429 && genotype -s HG00096' > /dev/null
-
-pprint 'Set color for features'
-$ASCIIGenome ../../../test_data/hg19_genes_head.gtf -x "goto chr1:6267-17659 && featureColorForRegex -r DDX11L1 red -r WASH7P blue" > /dev/null
 
 pprint 'Test awk with getSamTag()'
 $ASCIIGenome ../../../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && awk 'getSamTag(\"NM\") > 0'" > /dev/null

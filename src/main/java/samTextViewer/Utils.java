@@ -1,12 +1,14 @@
 package samTextViewer;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -101,6 +103,7 @@ import htsjdk.variant.vcf.VCFHeaderVersion;
 import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
+import utils.Tokenizer;
 
 /**
  * @author berald01
@@ -118,7 +121,7 @@ public class Utils {
 	
 	/**Create temp file in the current working directory or in the system's
 	 * tmp dir if failing to create in cwd.*/
-	public static File createTempFile(String prefix, String suffix){
+	public static File createTempFile(String prefix, String suffix, boolean deleteOnExit){
 		File tmp = null;
 		try{
 			tmp= File.createTempFile(prefix, suffix, new File(System.getProperty("user.dir")));
@@ -129,7 +132,9 @@ public class Utils {
 				e1.printStackTrace();
 			}
 		}
-		tmp.deleteOnExit();
+		if(deleteOnExit) {
+			tmp.deleteOnExit();	
+		}
 		return tmp;
 	}
 	
@@ -1889,52 +1894,53 @@ public class Utils {
 	 * If output is not empty and not equal to input, return null.
 	 * See tests for behaviour. 
 	 * */
-	public static Boolean passAwkFilter(String rawLine, String awkScript) throws IOException {
-		
-		awkScript= awkScript.trim();
-
-		if(awkScript.isEmpty()){
-			return true;
-		}
-		
-		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
-		// -v var=foo '$1 == var && $2 == baz'
-		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
-		// the opening of the awk script.
-		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
-		if(scriptStartsAt == awkScript.length() + 1){
-			scriptStartsAt= 1;
-		}
-		// Now add the functions to the script right at the start of the script, after the command args
-		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
-				
-		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.US_ASCII));
-		
-		String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]); 
-		
-		PrintStream stdout = System.out;
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try{
-			PrintStream os= new PrintStream(baos);
-			new org.jawk.Main(args, is, os, System.err);
-		} catch(Exception e){
-			throw new IOException();
-		} finally{
-			System.setOut(stdout);
-			is.close();
-		}
-		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-		if(output.trim().isEmpty()){
-			return false;
-		} else if(output.trim().equals(rawLine.trim())){
-			return true;
-		} else {
-			// Awk output is not empty or equal to input line. Reset awk script and return null
-			// to signal this condition.
-			return null;
-		}
-		
-	}
+//	public static Boolean passAwkFilter(String rawLine, String awkScript) throws IOException {
+//		
+//		awkScript= awkScript.trim();
+//		
+//		if(awkScript.isEmpty()){
+//			return true;
+//		}
+//		
+//		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
+//		// -v var=foo '$1 == var && $2 == baz'
+//		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
+//		// the opening of the awk script.
+//		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
+//		if(scriptStartsAt == awkScript.length() + 1){
+//			scriptStartsAt= 1;
+//		}
+//		// Now add the functions to the script right at the start of the script, after the command args
+//		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
+//				
+//		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.US_ASCII));
+//		//String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]);
+//		String[] args= new Tokenizer(awkScript).tokenize().toArray(new String[0]);
+//		
+//		PrintStream stdout = System.out;
+//		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//		try{
+//			PrintStream os= new PrintStream(baos);
+//			new org.jawk.Main(args, is, os, System.err);
+//		} catch(Exception e){
+//			throw new IOException();
+//		} finally{
+//			System.setOut(stdout);
+//			is.close();
+//		}
+//		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+//		if(output.trim().isEmpty()){
+//			return false;
+//		} else if(output.trim().equals(rawLine.trim())){
+//			return true;
+//		} else {
+//			// Awk output is not empty or equal to input line. Reset awk script and return null
+//			// to signal this condition.
+//			System.err.println(output);
+//			return null;
+//		}
+//		
+//	}
 
 	/** Stream the raw line through awk and return true if the output of awk is the same as the input
 	 * line. If awk returns empty output then the line didn't pass the awk filter.
@@ -1953,36 +1959,38 @@ public class Utils {
 			}
 			return results;
 		}
+
+		// * Parse command string into arguments and awk script
+		List<String> args= new Tokenizer(awkScript).tokenize();
 		
-		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
-		// -v var=foo '$1 == var && $2 == baz'
-		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
-		// the opening of the awk script.
-		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
-		if(scriptStartsAt == awkScript.length() + 1){
-			scriptStartsAt= 1;
-		}
-		// Now add the functions to the script right at the start of the script, after the command args
-		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
-		
+		String script= args.remove(args.size()-1); // 'remove' returns the element removed
+		File awkFile= Utils.createTempFile(".asciigenome.", ".awk", true);
+
+		BufferedWriter wr= new BufferedWriter(new FileWriter(awkFile));
+		wr.write(Track.awkFunc);
+		wr.write(script);
+		wr.close();
+		args.add("-f");
+		args.add(awkFile.getAbsolutePath());
+
 		ByteArrayOutputStream baosIn = new ByteArrayOutputStream();
 		for (String line : rawLines) {
 			baosIn.write((line+"\n").getBytes());
 		}
 		InputStream is= new ByteArrayInputStream(baosIn.toByteArray());
-		
-		String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]); 
-		
 		PrintStream stdout = System.out;
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
 		try{
 			PrintStream os= new PrintStream(baos);
-			new org.jawk.Main(args, is, os, System.err);
+			new org.jawk.Main(args.toArray(new String[0]), is, os, System.err);
 		} catch(Exception e){
+			e.printStackTrace();
 			throw new IOException();
 		} finally{
 			System.setOut(stdout);
 			is.close();
+			awkFile.delete();
 		}
 		
 		String output[] = new String(baos.toByteArray(), StandardCharsets.US_ASCII).split("\n");
@@ -2205,7 +2213,7 @@ public class Utils {
 	    File fakeVCFFile;
 	    List<String> str= new ArrayList<String>();
 	    try {
-	    	fakeVCFFile = Utils.createTempFile(".vcfheader", ".vcf");
+	    	fakeVCFFile = Utils.createTempFile(".vcfheader", ".vcf", true);
 		    final VariantContextWriter writer = new VariantContextWriterBuilder()
 		            .setOutputFile(fakeVCFFile)
 		            .setReferenceDictionary(header.getSequenceDictionary())
@@ -2462,4 +2470,62 @@ public class Utils {
 		Path relative= cwd.relativize(absfilename);
 		return relative.toString();
 	}
+
+	/**rawrecs is an array of raw records and regex is either a regex or 
+	 * an awk script (autodetermined). Return an array of booleans for whether 
+	 * each record is matched by regex.
+	 * @throws IOException 
+	 * */
+	public static boolean[] matchByAwkOrRegex(String[] rawLines, String regex) throws IOException {
+		boolean isAwk= false;
+		if(Pattern.compile("\\$\\d|\\$[A-Z]").matcher(regex).find()) {
+			// We assume that if regex contains a '$' followed by digit or letter
+			// we have an awk script since that would be a very unlikely regex.
+			// Could we have an awk script not containing '$'? Unlikely but maybe possible
+			isAwk= true;
+		}
+
+		boolean[] matched= new boolean[rawLines.length];
+		if(isAwk) {
+			regex= quote(regex);
+//			if(! regex.trim().startsWith("'") && ! regex.trim().endsWith("'")) {
+//				regex= "'" + regex + "'";
+//			}
+			matched= Utils.passAwkFilter(rawLines, regex);
+		}
+		else {
+			for(int i= 0; i < matched.length; i++) {
+				matched[i]= Pattern.compile(regex).matcher(rawLines[i]).find();
+			}
+		}
+		return matched;
+	}
+	
+	/**Add quotes around x, if necessary, so that it gets tokenized in a single string*/
+	public static String quote(String x) {
+		if((x.startsWith("'") && x.endsWith("'")) || (x.startsWith("\"") && x.endsWith("\""))) {
+			// No need to quote
+			return x;
+		}
+		// We need to quote the awk script using a quoting string not used inside the script itself.
+		// This is a pretty bad hack. You should store the awk command as a list rather than a string
+		// split and joined multiple times!
+		String q= "";
+		if( ! x.contains("'")) {
+			q= "'";
+		}
+		else if(! x.contains("\"")) {
+			q= "\"";
+		}
+		else if(! x.contains("'''")) {
+			q= "'''";
+		}
+		else if(! x.contains("\"\"\"")) {
+			q= "\"\"\"";
+		}
+		else {
+			throw new RuntimeException();
+		}
+		return q + x + q;
+	} 
 }

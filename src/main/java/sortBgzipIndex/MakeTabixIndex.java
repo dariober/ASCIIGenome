@@ -47,7 +47,7 @@ public class MakeTabixIndex {
 	 * */
 	public MakeTabixIndex(String intab, File bgzfOut, TabixFormat fmt) throws IOException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
-		File tmp = Utils.createTempFile(".asciigenome", "makeTabixIndex.tmp.gz");
+		File tmp = Utils.createTempFile(".asciigenome", "makeTabixIndex.tmp.gz", true);
 		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
 		tmpTbi.deleteOnExit();
 		
@@ -56,7 +56,7 @@ public class MakeTabixIndex {
 			blockCompressAndIndex(intab, tmp, fmt);
 		} catch(Exception e){
 			// If intab is not sorted, sort it first.
-			File sorted= Utils.createTempFile(".asciigenome.", ".sorted.tmp");
+			File sorted= Utils.createTempFile(".asciigenome.", ".sorted.tmp", true);
 			sortByChromThenPos(intab, sorted, fmt);
 			blockCompressAndIndex(sorted.getAbsolutePath(), tmp, fmt);
 			Files.delete(Paths.get(sorted.getAbsolutePath()));
@@ -202,7 +202,7 @@ public class MakeTabixIndex {
 		
 		Connection conn= null;
 		try{
-			this.sqliteFile= Utils.createTempFile(".asciigenome.", ".tmp.sqlite");
+			this.sqliteFile= Utils.createTempFile(".asciigenome.", ".tmp.sqlite", true);
 			conn= this.createSQLiteDb(this.sqliteFile, "data");
 		} catch(SQLiteException e){
 			this.sqliteFile= File.createTempFile(".asciigenome.", ".tmp.sqlite");

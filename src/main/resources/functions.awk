@@ -14,7 +14,7 @@ function _trim(_x, _char){
     return _x
 }
 
-function getSamTag(tag, _idxkey, _key){
+function getSamTag(tag,    _idxkey, _key){
     if(NF < 12){
         return ""
     }
@@ -27,7 +27,7 @@ function getSamTag(tag, _idxkey, _key){
     }
 }
 
-function getInfoTag(tag, value_idx, _target, _retval, _eqIdx, _key, _list){
+function getInfoTag(tag, value_idx,    _target, _retval, _eqIdx, _key, _list){
 	if(NF < 8){
 		return 0
 	}
@@ -57,7 +57,7 @@ function getInfoTag(tag, value_idx, _target, _retval, _eqIdx, _key, _list){
     }
 }
 
-function getFmtTag(tag, sample_idx, value_idx, _fmt_array, _tagIdx, _sample_data, _list){
+function getFmtTag(tag, sample_idx, value_idx,    _fmt_array, _tagIdx, _sample_data, _list){
     # tag:        Tag to extract
     # sample_idx: Return the tag value of this sample index
     if(sample_idx == ""){
@@ -86,7 +86,7 @@ function getFmtTag(tag, sample_idx, value_idx, _fmt_array, _tagIdx, _sample_data
     }
 }
 
-function getGtfTag(tag, _attrs, _attr, _i, _tagval, _n, _retval){
+function getGtfTag(tag,    _attrs, _attr, _i, _tagval, _n, _retval){
 
     if(NF < 9){
         return "" # Not enough fields
@@ -107,7 +107,7 @@ function getGtfTag(tag, _attrs, _attr, _i, _tagval, _n, _retval){
     return _retval
 }
 
-function getGffTag(tag, value_idx, _attrs, _attr, _tagval, _i, _n, _vals, _retval){
+function getGffTag(tag, value_idx,    _attrs, _attr, _tagval, _i, _n, _vals, _retval){
     if(NF < 9){
         return "" # Not enough fields
     }
@@ -132,9 +132,33 @@ function getGffTag(tag, value_idx, _attrs, _attr, _tagval, _i, _n, _vals, _retva
     return _retval
 }
 
-#function isSV(){
-#    if($2 & 1 == 1 && $2 & 2 == 0){
-#    	return 1
-#    }	
-#    return 0
-#}
+function bitset(intquery,    intqry, samflag, qrybit, sambit){
+    intqry= intquery
+    samflag= $2
+    if(samflag !~ "^[0-9]+$" || intqry !~ "^[0-9]+$"){
+        return 0    
+    }
+    while(intqry > 0){
+        qrybit= intqry % 2
+        intqry -= qrybit
+        intqry = intqry / 2
+        sambit= samflag % 2
+        if(samflag > 0){
+            samflag -= sambit
+            samflag = samflag / 2
+        }
+        if(qrybit == 1 && sambit == 0){
+            return 0
+        }
+    }
+    return 1
+}
+
+function nobitset(intquery,    intqry, samflag, qrybit, sambit){
+    intqry= intquery
+    samflag= $2
+    if(samflag !~ "^[0-9]+$" || intqry !~ "^[0-9]+$"){
+        return 0    
+    }
+}
+

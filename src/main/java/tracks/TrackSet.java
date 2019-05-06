@@ -991,7 +991,7 @@ public class TrackSet {
 	 * @throws ClassNotFoundException 
 	 * */
 	public void setAwkForTrack(List<String> cmdInput) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-
+		
 		List<String> args= new ArrayList<String>();
 		for(String x : cmdInput){
 			args.add(x);
@@ -1030,7 +1030,10 @@ public class TrackSet {
 					break;
 				}
 			}
-			args.set(idxScript, "'" +  args.get(idxScript) + "'"); // Put back single quotes around the script, exclude cmd line params like -F 
+			// We need to quote the awk script using a quoting string not used inside the script itself.
+			// This is a pretty bad hack. You should store the awk command as a list rather than a string
+			// split and joined multiple times!
+			args.set(idxScript, Utils.quote(args.get(idxScript))); // Put back single quotes around the script, exclude cmd line params like -F 
 			awk= Joiner.on(" ").join(args.subList(0, idxScript+1));
 
 			// Everything after the script is track regexes
@@ -1575,9 +1578,10 @@ public class TrackSet {
 			x.add(query);
 			List<Track> trList = this.matchTracks(x, true, false);
 			for(Track xtrack : trList){
-				if(!newTrackList.contains(xtrack)){ // This will remove dups
-					newTrackList.add(xtrack);
+				if(newTrackList.contains(xtrack)) {
+					newTrackList.remove(xtrack);
 				}
+				newTrackList.add(xtrack);
 			}
 		}
 		

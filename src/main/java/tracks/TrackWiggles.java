@@ -118,7 +118,7 @@ public class TrackWiggles extends Track {
 
 	protected String tabixBedgraphToTmpFile(String inBdg) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		File tmp = Utils.createTempFile(".asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz");
+		File tmp = Utils.createTempFile(".asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz", true);
 		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
 		tmpTbi.deleteOnExit();
 

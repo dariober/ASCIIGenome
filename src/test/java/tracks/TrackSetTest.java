@@ -314,6 +314,30 @@ public class TrackSetTest {
 		assertEquals("foo.gz#1", ts.getTrackTags().get(1));
 
 	}
+
+	@Test
+	public void canOrderTracksLast() throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, ClassNotFoundException, InvalidRecordException, SQLException{
+		TrackSet ts= new TrackSet(new ArrayList<String>(), null);
+		
+		Track t1= new TrackIntervalFeature(null); t1.setFilename("foo.gz");  ts.addTrack(t1, "foo.gz");
+		Track t2= new TrackIntervalFeature(null); t2.setFilename("foo.txt"); ts.addTrack(t2, "foo.txt");
+		Track t3= new TrackIntervalFeature(null); t3.setFilename("bla.gz"); ts.addTrack(t3, "bla.gz");
+
+		ts= new TrackSet(new ArrayList<String>(), null);
+		ts.addTrack(t1, "foo.gz");
+		ts.addTrack(t2, "foo.txt");
+		ts.addTrack(t3, "bla.gz");
+		
+		List<String> newOrder= new ArrayList<String>();
+		newOrder.add(".");      // First add all tracks
+		newOrder.add("foo.gz"); // Then this one last
+		ts.orderTracks(newOrder);
+		
+		assertEquals("foo.txt#2", ts.getTrackTags().get(0));
+		assertEquals("bla.gz#3", ts.getTrackTags().get(1));
+		assertEquals("foo.gz#1", ts.getTrackTags().get(2));
+		
+	}
 	
 	@Test
 	public void canSetFilterForTrackIntervalFeature() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{

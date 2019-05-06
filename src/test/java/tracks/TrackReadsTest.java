@@ -20,9 +20,11 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import filter.FlagToFilter;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
 
 public class TrackReadsTest {
@@ -44,6 +46,37 @@ public class TrackReadsTest {
  		tr.reload();
  	}
 	
+ 	@Test
+ 	public void canFilterTopStrand() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException {
+ 		GenomicCoords gc= new GenomicCoords("chr7:1-80", 80, null, null);
+ 		TrackReads tr= new TrackReads("test_data/testTopBottomStrand.sam", gc); 		
+ 		tr.setNoFormat(true);
+ 		
+ 		// Top strand
+ 		int f= 4096;
+ 		int F= 0;
+ 		tr.set_f_flag(f);
+ 		
+    	List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
+    	filters.addAll(FlagToFilter.flagToFilterList(f, F));
+    	tr.setSamRecordFilter(filters);
+    	for(String x : tr.getRecordsAsStrings()) {
+    		assertTrue(x.startsWith("top"));
+    	}
+
+    	// Bottom strand
+ 		f= 0;
+ 		F= 4096;
+ 		tr.set_f_flag(f);
+ 		
+    	filters= new ArrayList<SamRecordFilter>();
+    	filters.addAll(FlagToFilter.flagToFilterList(f, F));
+    	tr.setSamRecordFilter(filters);
+    	for(String x : tr.getRecordsAsStrings()) {
+    		assertTrue(x.startsWith("bottom"));
+    	}
+ 	}
+ 	
 	@Test
 	public void canShadeLowBaseQuality() throws InvalidGenomicCoordsException, InvalidColourException, ClassNotFoundException, IOException, InvalidRecordException, SQLException, InvalidCommandLineException, InvalidConfigException{
 		

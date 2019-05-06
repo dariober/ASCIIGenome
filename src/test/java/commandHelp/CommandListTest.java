@@ -27,7 +27,7 @@ public class CommandListTest {
 	public void canPrintDocstringForCommand() throws InvalidCommandLineException, IOException, InvalidColourException, InvalidConfigException {
 		new Config(null);
 		System.out.println("DOCSTRING");
-		System.out.println(CommandList.getHelpForCommand("["));
+		System.out.println(CommandList.getHelpForCommand("featureColor"));
 	}
 	
 }

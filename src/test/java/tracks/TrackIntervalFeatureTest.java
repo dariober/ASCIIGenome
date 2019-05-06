@@ -65,7 +65,25 @@ public class TrackIntervalFeatureTest {
 		assertTrue( ! tif.printToScreen().contains("216"));
 		
 	}
+	
+	@Test
+	public void canColorFeaturesByAwk()  throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+
+		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		tif.printToScreen(); // This is to populate the ideograms.
 		
+		List<Argument> colorForRegex= new ArrayList<Argument>();
+		colorForRegex.add(new Argument("'$5 > 13000'", "216", false));
+		tif.setColorForRegex(colorForRegex);
+		assertTrue(tif.printToScreen().contains("216"));
+
+		colorForRegex= new ArrayList<Argument>();
+		colorForRegex.add(new Argument("$5 > 0", "100", false));
+		tif.setColorForRegex(colorForRegex);
+		assertTrue( ! tif.printToScreen().contains("216"));
+	}
+	
 	@Test
 	public void canReturnFeaturesAsRawStrings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
@@ -507,16 +525,6 @@ public class TrackIntervalFeatureTest {
 		subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(1000, subset.size());
 
-		// awk output is neither empty nor equal to input
-		// Exception expected.
-		pass= false;
-		try{
-			tif.setAwk("'{print 999}'");
-		} catch(InvalidGenomicCoordsException e){
-			pass= true;
-		}
-		assertTrue(pass);
-		
 	}
 	
 	@Test
