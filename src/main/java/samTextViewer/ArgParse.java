@@ -28,6 +28,7 @@ public class ArgParse {
 				.description("DESCRIPTION\n"
 + "Genome browser at the command line.\n"
 + "\nFull docs at " + WEB_RTD);	
+		
 		parser.addArgument("input")
 			.type(String.class)
 			.required(false)

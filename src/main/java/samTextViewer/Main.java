@@ -489,7 +489,7 @@ public class Main {
 		    }
 		}));
 		
-		ConsoleReader console= new ConsoleReader(); 
+		ConsoleReader console= new ConsoleReader();
 
 		try {
 			// Autcomplete commands with length > x 

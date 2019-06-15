@@ -52,6 +52,9 @@ import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.biojava.nbio.genome.parsers.gff.FeatureI;
+import org.biojava.nbio.genome.parsers.gff.FeatureList;
+import org.biojava.nbio.genome.parsers.gff.GFF3Reader;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BedFeature;
 import org.broad.igv.bbfile.BigBedIterator;
@@ -87,6 +90,7 @@ import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.LineIterator;
@@ -2527,5 +2531,55 @@ public class Utils {
 			throw new RuntimeException();
 		}
 		return q + x + q;
+	}
+
+	public static TrackFormat guessTrackType(String file) {
+		
+		try {
+			SamReaderFactory srf=SamReaderFactory.make();
+			srf.validationStringency(ValidationStringency.SILENT);
+			SamReader samReader = srf.open(new File(file));
+			SAMRecordIterator iter = samReader.iterator();
+			int n= 0;
+			while(iter.hasNext() && n < 1000) {
+				iter.next();
+				n++;
+			}
+			return TrackFormat.BAM;
+		} catch(Exception e) {
+			// e.printStackTrace();
+		}
+		
+		try {
+			FeatureList gff = GFF3Reader.read(file);
+			Iterator<FeatureI> iter = gff.iterator();
+			int n= 0;
+			while(iter.hasNext() && n < 1000) {
+				iter.next();
+				n++;
+			}
+			return TrackFormat.GFF;
+		} catch(Exception e) {
+			// e.printStackTrace();
+		}
+		
+		try {
+			VCFFileReader reader = new VCFFileReader(new File(file), false);
+			CloseableIterator<VariantContext> iter = reader.iterator();
+			int n= 0;
+			while(iter.hasNext() && n < 1000) {
+				try {
+					iter.next();
+				} catch(IllegalArgumentException e) {
+					// Forgive "-" as an allele
+				}
+				n++;
+			}
+			reader.close();
+			return TrackFormat.VCF;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	} 
 }

@@ -67,6 +67,42 @@ public class UtilsTest {
 	public static String fastaFile= "test_data/chr7.fa";
 	
 	@Test
+	public void canGuessFileType() throws Exception {
+		
+		// MEMO: 
+		// * Check URL
+		// * Check empty 
+		
+		List<TrackFormat> fmt= new ArrayList<TrackFormat>();
+		for(TrackFormat x : TrackFormat.values()) {
+			fmt.add(x);
+		}
+		
+		assertEquals(TrackFormat.BEDGRAPH, Utils.guessTrackType("test_data/malformed.vcf.gz"));
+		
+		assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/malformed.vcf.gz"));
+		assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/invalid.vcf"));
+		assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf"));
+		assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf.gz"));
+				
+		assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.actb.bam"));
+		assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.noindex.sam"));
+		fmt.remove(TrackFormat.BAM);
+		
+		assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3"));
+		assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/ovl.gff"));
+		fmt.remove(TrackFormat.GFF);
+		
+		// assertEquals(TrackFormat.GTF, Utils.guessTrackType("test_data/hg19_genes_head.gtf"));
+		
+		// assertEquals(TrackFormat.BED, Utils.guessTrackType("test_data/refSeq.hg19.short.bed"));
+		
+		if( ! fmt.isEmpty() ) {
+			// throw new Exception("These file types have not been tested: " + fmt);
+		}; 
+	}
+	
+	@Test
 	public void canInterpretStringAsRegexOrAwkAndFilter() throws IOException {
 		String[] rawrecs= {"foo\t20", "bar\t30", "baz\t40"};
 		
