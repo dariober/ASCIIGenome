@@ -156,19 +156,20 @@ public class CommandList {
 		CommandHelp cmd= new CommandHelp();		
 
 		cmd= new CommandHelp();
-		cmd.setName("goto"); cmd.setArgs("chrom:[from]-[to]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("goto"); cmd.setArgs("chrom[:from[-to]] | chrom [from [to]]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Go to region `chrom:from-to` or to `chrom:from` or to the start of `chrom`. "); 
-		cmd.setAdditionalDescription("The character ':' is a shortcut for `goto`. Examples::\n"
+		cmd.setAdditionalDescription("The region may be separated by `:` and `-` or by spaces. "
+				+ "The character ':' is a shortcut for `goto`. Examples::\n"
 				+ "\n"
-				+ "    goto chr8:1-1000~~## Go to interval 1-1000 on chr8\n"
-				+ "    goto chr8:10~~~~~~## Go to position 10 on chr8\n"
-				+ "    goto chr8~~~~~~~~~## Go to start of chr8\n"
-				+ "\n"
-				+ "Or the same with::\n"
-				+ "\n"
-				+ "    :chr8:1-1000 \n"
-				+ "    :chr8:10 \n"
-				+ "    :chr8"
+				+ "    goto chr8:1-1000~~~# Go to region 1-1000 on chr8\n"
+				+ "    goto chr8 1 1000~~~# Use spaces instead\n"
+				+ "    goto chr8 1-1000~~~# Same as above\n"
+				+ "    goto chr8 1 - 1000~# Same as above\n"
+				+ "    goto chr8 1 1,000~~# Comma in numbers is ok\n"
+				+ "    goto chr8:10~~~~~~~# Go to position 10 on chr8\n"
+				+ "    goto chr8~~~~~~~~~~# Go to start of chr8\n"
+				+ "    goto chr8 10 30 50~# Go to chr8:10-50\n"
+				+ "    :chr8~~~~~~~~~~~~~~# Colon ':' shortcut\n"
 				+ "\n");
 		cmdList.add(cmd);
 

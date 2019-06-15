@@ -17,6 +17,8 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.common.base.Splitter;
+
 import coloring.Config;
 import coloring.ConfigKey;
 import exceptions.InvalidColourException;
@@ -65,7 +67,7 @@ public class GenomicCoords implements Cloneable {
 		this.setTerminalWidth(terminalWidth);
 		
 		GenomicCoords xgc= parseStringToGenomicCoords(region);
-		
+
 		this.chrom= xgc.getChrom();
 		this.from= xgc.getFrom();
 		this.to= xgc.getTo();
@@ -152,9 +154,6 @@ public class GenomicCoords implements Cloneable {
 				} else {
 					throw new FileNotFoundException();
 				}
-//				IndexedFastaSequenceFile fa= new IndexedFastaSequenceFile(new File(x));
-//				this.setFastaFile(x);
-//				fa.close();
 			} catch(FileNotFoundException e){
 				try {
 					new Faidx(new File(x));
@@ -226,27 +225,91 @@ public class GenomicCoords implements Cloneable {
 		}
 		
 		x= x.trim();
-		int nsep= StringUtils.countMatches(x, ":");
-		if(nsep == 0){ // Only chrom present. It will not handle well chrom names containing ':'
-			xgc.chrom= x.trim();
+		
+		String[] region= new String[3];
+		if(x.contains(" ")) {
+			// Format chrom[ from [to]]
+			region= this.parseStringSpaceSep(x);
+		} else {
+			// Format chrom[:from[-to]]
+			region= this.parseStringColonSep(x);
+		} 
+		xgc.chrom= region[0];
+		
+		if(region[1] == null && region[2] == null) {
+			// Only chrom present. It will not handle well chrom names containing ':'
 			xgc.from= from;
 			xgc.to= to;
 			if(xgc.samSeqDict != null && xgc.to > samSeqDict.getSequence(xgc.chrom).getSequenceLength()){
 				xgc.to= samSeqDict.getSequence(xgc.chrom).getSequenceLength(); 
 			}
-		} else {
+		} 
+		else if(region[2] == null) {
+			// Only chrom and start given
+			xgc.from= Integer.parseInt(region[1]);
+			xgc.to= xgc.from + this.getTerminalWidth() - 1;
+		} 
+		else {
+			// chrom, start and end given
+			xgc.from= Integer.parseInt(region[1]);
+			xgc.to= Integer.parseInt(region[2]);
+		}
+		return xgc;
 
-			xgc.chrom= StringUtils.substringBeforeLast(x, ":").trim();
+	}
+	
+	private String[] parseStringSpaceSep(String x) throws InvalidGenomicCoordsException {
+		String[] region= new String[3];
+		List<String> reg = new ArrayList<String>();
+		List<String> xreg= Splitter.on(" ").omitEmptyStrings().trimResults().splitToList(x);
+		reg.add(xreg.get(0));
+		for(int i= 1; i < xreg.size(); i++) {
+			if(xreg.get(i).equals("-")) {
+				continue;
+			}
+			List<String> pos= Splitter.on("-").omitEmptyStrings().trimResults().splitToList(xreg.get(i));
+			for(String p : pos) {
+				reg.add(p.replaceAll(",", ""));
+			}
+		}
+
+		region[0]= reg.get(0);
+		if(reg.size() == 1) {
+			return region;
+		}
+		if(reg.size() == 2) {
+			region[1]= reg.get(1);
+		} 
+		else if(reg.size() > 2) {
+			region[1]= reg.get(1);
+			region[2]= reg.get(reg.size()-1);
+		} else {
+			InvalidGenomicCoordsException e = new InvalidGenomicCoordsException();
+			System.err.println("\nUnexpected format for region " + x + "\n");
+			e.printStackTrace();
+			throw e;
+		}
+		return region;
+	}
+
+	private String[] parseStringColonSep(String x) throws InvalidGenomicCoordsException {
+
+		String[] region= new String[3];
+		
+		int nsep= StringUtils.countMatches(x, ":");
+		if(nsep == 0){
+			region[0]= x;
+		} else {
+			region[0]= StringUtils.substringBeforeLast(x, ":").trim();
 			
 			// Strip chromosome name, remove commas from integers.
 			String fromTo= StringUtils.substringAfterLast(x, ":").replaceAll(",", "").trim();
 			nsep= StringUtils.countMatches(fromTo, "-");
 			if(nsep == 0){ // Only start position given
-				xgc.from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
-				xgc.to= xgc.from + this.getTerminalWidth() - 1;
+				region[1]= StringUtils.substringBefore(fromTo, "-").trim();
 			} else if(nsep == 1){ // From and To positions given.
-				xgc.from= Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
-				xgc.to= Integer.parseInt(StringUtils.substringAfter(fromTo, "-").trim());
+				region[1]= StringUtils.substringBefore(fromTo, "-").trim();
+				region[2]= StringUtils.substringAfter(fromTo, "-").trim();
 			} else {
 				InvalidGenomicCoordsException e = new InvalidGenomicCoordsException();
 				System.err.println("\nUnexpected format for region " + x + "\n");
@@ -254,9 +317,9 @@ public class GenomicCoords implements Cloneable {
 				throw e;
 			}
 		}
-		return xgc;
-	} 
-
+		return region;
+	}
+	
 	public void correctCoordsAgainstSeqDict(SAMSequenceDictionary samSeqDict) throws InvalidGenomicCoordsException, IOException{
 
 		if(samSeqDict == null || samSeqDict.size() == 0){
