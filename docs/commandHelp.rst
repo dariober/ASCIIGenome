@@ -23,19 +23,20 @@ Navigation
 goto
 ++++
 
-:code:`goto chrom:[from]-[to]`
+:code:`goto chrom[:from[-to]] | chrom [from [to]]`
 
-Go to region `chrom:from-to` or to `chrom:from` or to the start of `chrom`.  The character ':' is a shortcut for `goto`. Examples::
+Go to region `chrom:from-to` or to `chrom:from` or to the start of `chrom`.  The region may be separated by `:` and `-` or by spaces. The character ':' is a shortcut for `goto`. Examples::
 
-    goto chr8:1-1000  ## Go to interval 1-1000 on chr8
-    goto chr8:10      ## Go to position 10 on chr8
-    goto chr8         ## Go to start of chr8
+    goto chr8:1-1000   # Go to region 1-1000 on chr8
+    goto chr8 1 1000   # Use spaces instead
+    goto chr8 1-1000   # Same as above
+    goto chr8 1 - 1000 # Same as above
+    goto chr8 1 1,000  # Comma in numbers is ok
+    goto chr8:10       # Go to position 10 on chr8
+    goto chr8          # Go to start of chr8
+    goto chr8 10 30 50 # Go to chr8:10-50
+    :chr8              # Colon ':' shortcut
 
-Or the same with::
-
-    :chr8:1-1000 
-    :chr8:10 
-    :chr8
 
 
 INT
@@ -215,7 +216,7 @@ Go to the next visited position.  Similar to the back and forward arrows of an I
 next
 ++++
 
-:code:`next [-back] [-start] [-zo INT=5] [track]`
+:code:`next [-back] [-start] [-c] [-zo INT=5] [track]`
 
 Move to the next feature not overlapping the current coordinates.  By default `next` centers the window on the next feature and zooms out.
 
@@ -716,7 +717,8 @@ samtools
 
 :code:`samtools [-f INT=0] [-F INT=4] [-q INT=0] [-v] [track_re = .*] ...`
 
-Apply samtools filters to alignment tracks captured by the list of track regexes. Of interest to stranded RNA-Seq and BS-Seq, the bit flag 4096 is internally specified to selects reads mapping to TOP STRAND.
+Apply samtools filters to alignment tracks captured by the list of track regexes. Useful for stranded RNA-Seq and BS-Seq: bit flag 4096 is selects reads mapping to TOP STRAND.
+
 * :code:`-F` Filter out flags with these bits set. NB: 4 is always set.
 
 * :code:`-f` Require alignment to have these bits sets.
@@ -730,6 +732,7 @@ Examples::
     samtools -q 10           -> Set mapq for all tracks. -f and -F reset to default
     samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar
     samtools -f 4096         -> Select TOP STRAND reads
+    samtools -F 4096         -> Select BOTTOM STRAND reads
     samtools                 -> Reset all to default.
 
 

@@ -1384,13 +1384,13 @@ public class TrackSet {
 	 * */
 	public GenomicCoords goToNextFeatureOnFile(String trackId, GenomicCoords currentGc, double slop, boolean getPrevious) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
-		Track tr= this.matchIntervalFeatureTrack(trackId.trim());
+		List<TrackIntervalFeature> tr= this.matchIntervalFeatureTrack(trackId.trim());
 
-		if(tr == null){
+		if(tr.size() == 0){
 			return currentGc;
-		}
+		} 
 		
-		TrackIntervalFeature tif= (TrackIntervalFeature) tr;
+		TrackIntervalFeature tif= tr.get(0);
 		if(slop < 0){
 			return tif.coordsOfNextFeature(currentGc, getPrevious);
 		} else {
@@ -1409,40 +1409,51 @@ public class TrackSet {
 	 * return the first one with warning.
 	 * @throws InvalidCommandLineException 
 	 * */
-	private Track matchIntervalFeatureTrack(String trackTag) throws InvalidCommandLineException{
+	private List<TrackIntervalFeature> matchIntervalFeatureTrack(String trackTag) throws InvalidCommandLineException{
 
-		List<TrackIntervalFeature> ifTracks = this.getIntervalFeatureTracks();	
-		
-		Track tr= null;
-		
-		if(ifTracks.size() == 0){
-			System.err.println("\nWarning interval feature track is empty.");
-			return tr;
+		if(trackTag.isEmpty()) {
+			trackTag= ".*";
 		}
 		
-		if(trackTag.isEmpty() && ifTracks.size() == 1){
-			tr= ifTracks.get(0);
-		} else if (trackTag.isEmpty() && ifTracks.size() > 1) {
-			tr= ifTracks.get(0);
-			System.err.println("\nWarning: trackId not given default to first track found: " + tr.getTrackTag());
-		} else {
-			List<String> x= new ArrayList<String>();
-			x.add(trackTag);
-			List<Track> matched= matchTracks(x, true, false);
-			if(matched.size() == 0){
-				System.err.println("\nWarning '" + trackTag + "' not found in track set:");
-				System.err.println(ifTracks + "\n");
-				return tr;
-			} else {
-				tr= matched.get(0);
-				if(matched.size() > 1){
-					System.err.println("\nWarning '" + trackTag + "' matches: " + matched + ". First track is returned.");
-				}
+		List<TrackIntervalFeature> ifTracks = this.getIntervalFeatureTracks();
+		List<Track> matched= matchTracks(Arrays.asList(new String[] {trackTag}), true, false);
+		List<TrackIntervalFeature> tr= new ArrayList<TrackIntervalFeature>();
+		
+		for(Track xtr : matched) {
+			if(ifTracks.contains(xtr)) {
+				tr.add((TrackIntervalFeature) xtr);
 			}
 		}
 		return tr;
 	}
 
+//	if(ifTracks.size() == 0){
+//	return tr;
+//}
+//
+//if(trackTag.isEmpty() && ifTracks.size() == 1){
+//	tr= ifTracks.get(0);
+//} else if (trackTag.isEmpty() && ifTracks.size() > 1) {
+//	tr= ifTracks.get(0);
+//	System.err.println("\nWarning: trackId not given default to first track found: " + tr.getTrackTag());
+//} else {
+//	List<String> x= new ArrayList<String>();
+//	x.add(trackTag);
+//	List<Track> matched= matchTracks(x, true, false);
+//	if(matched.size() == 0){
+//		System.err.println("\nWarning '" + trackTag + "' not found in track set:");
+//		System.err.println(ifTracks + "\n");
+//		return tr;
+//	} else {
+//		tr= matched.get(0);
+//		if(matched.size() > 1){
+//			System.err.println("\nWarning '" + trackTag + "' matches: " + matched + ". First track is returned.");
+//		}
+//	}
+//}
+//return tr;
+
+	
 	private List<Track> matchTracks(List<String> patterns, boolean asRegex, boolean invertSelection) throws InvalidCommandLineException{
 
 		// Validate regexes
@@ -1493,20 +1504,25 @@ public class TrackSet {
 		
 	}
 
-	public GenomicCoords findNextMatchOnTrack(Pattern pattern, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
+	public GenomicCoords findNextMatchOnTrack(Pattern pattern, String trackregex, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
-		TrackIntervalFeature tif= (TrackIntervalFeature) matchIntervalFeatureTrack(trackId.trim());
-		if(tif == null){
+		List<TrackIntervalFeature> tif= matchIntervalFeatureTrack(trackregex.trim());
+		if(tif.size() == 0) {
 			return currentGc;
 		}
-
-		System.err.println("Matching on " + tif.getTrackTag());
-		
-		if(all){
-			return tif.genomicCoordsAllChromMatchInGenome(pattern, currentGc);
-		} else {
-			return tif.findNextMatch(currentGc, pattern);
+		for(TrackIntervalFeature tr : tif) {
+			System.err.println("Matching on " + tr.getTrackTag());
+			GenomicCoords gc;
+			if(all){
+				gc = tr.genomicCoordsAllChromMatchInGenome(pattern, currentGc);
+			} else {
+				gc= tr.findNextMatch(currentGc, pattern);
+			}
+			if( ! gc.equalCoords(currentGc)) {
+				return gc;
+			}
 		}
+		return currentGc;
 	}
 
 	private List<TrackIntervalFeature> getIntervalFeatureTracks(){

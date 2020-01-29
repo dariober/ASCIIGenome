@@ -1,0 +1,1 @@
+[48;5;236;38;5;117mUndefined_contig:1-150; [7m150 bp;[27m 1.0 bp/char[0m

@@ -533,7 +533,7 @@ public class InteractiveInput {
 		String brackets= cmdTokens.get(0).replaceAll("\\d", "");
 		times = times * brackets.length(); 
 
-		if(cmdTokens.get(0).startsWith("[")) {
+		if(cmdTokens.get(0).startsWith("]")) {
 			times *= -1;
 		}
 		return times;

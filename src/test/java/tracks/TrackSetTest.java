@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +33,94 @@ public class TrackSetTest {
 	public void config() throws IOException, InvalidConfigException{
 		new Config(null);
 		new Xterm256();
+	}
+	
+	@Test
+	public void canFindNextMatchOnOneTrack() throws ClassNotFoundException, IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidCommandLineException {
+
+		Pattern pattern = Pattern.compile("NM_032291_");
+		
+		// Current position is BEFORE the match - same chrom
+		GenomicCoords gc= new GenomicCoords("chr1:100-1000", 80, null, null);
+		TrackSet trackSet= new TrackSet(new ArrayList<String>(), gc);
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+		
+		GenomicCoords newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
+		assertEquals("chr1", newgc.getChrom());
+		assertEquals(67208779, (int)newgc.getFrom());
+				
+		// Current position is AFTER the match - same chrom
+		gc= new GenomicCoords("chr1:70000000-70001000", 80, null, null);
+		trackSet= new TrackSet(new ArrayList<String>(), gc);
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+		
+		newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
+		assertEquals("chr1", newgc.getChrom());
+		assertEquals(67208779, (int)newgc.getFrom());
+
+		// Current contains the match
+		gc= new GenomicCoords("chr1:60000000-70000000", 80, null, null);
+		trackSet= new TrackSet(new ArrayList<String>(), gc);
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+		
+		newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
+		assertEquals("chr1", newgc.getChrom());
+		assertEquals(67208779, (int)newgc.getFrom());
+		assertEquals(67208779 + 10000000, (int)newgc.getTo());
+		
+		// Current position is BEFORE the match - different chrom
+		gc= new GenomicCoords("chr2:1000-2000", 80, null, null);
+		trackSet= new TrackSet(new ArrayList<String>(), gc);
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+		
+		newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
+		assertEquals("chr1", newgc.getChrom());
+		assertEquals(67208779, (int)newgc.getFrom());
+		assertEquals(67208779 + 1000, (int)newgc.getTo());
+		
+		// Current position is AFTER the match - different chrom
+		gc= new GenomicCoords("chr2:70000000-70001000", 80, null, null);
+		trackSet= new TrackSet(new ArrayList<String>(), gc);
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+		
+		System.err.println("START");
+		newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
+		assertEquals("chr1", newgc.getChrom());
+		assertEquals(67208779, (int)newgc.getFrom());
+		assertEquals(67208779 + 1000, (int)newgc.getTo());
+		
+		// No match
+	}
+	
+	@Test
+	public void canFindNextMatchOnTrack() throws ClassNotFoundException, IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidCommandLineException {
+		
+		GenomicCoords gc= new GenomicCoords("chr7:5565052-5571960", 80, null, null);
+		TrackSet trackSet= new TrackSet(new ArrayList<String>(), gc);
+		
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
+		trackSet.addTrackFromSource("test_data/hg19_genes_head.gtf.gz", gc, null);
+		trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+		
+//		// Not found in any track
+//		GenomicCoords newgc = trackSet.findNextMatchOnTrack(Pattern.compile("foobar"), "", gc, false);
+//		assertTrue(gc.equalCoords(newgc));
+//
+//		// Present in #1...
+//		newgc = trackSet.findNextMatchOnTrack(Pattern.compile("NM_020223_utr3"), "#1", gc, false);
+//		assertEquals(299947, (int)newgc.getFrom());
+//		
+//		// ...but not in #3
+//		newgc = trackSet.findNextMatchOnTrack(Pattern.compile("NM_020223_utr3"), "#3", gc, false);
+//		assertTrue(gc.equalCoords(newgc));
+		
+		GenomicCoords newgc = trackSet.findNextMatchOnTrack(Pattern.compile("DDX"), "gtf", gc, false);
+		assertEquals(11874, (int)newgc.getFrom());
+		
+		// Present in BAM but bam is not searched:
+//		newgc = trackSet.findNextMatchOnTrack(Pattern.compile("HWI"), ".*", gc, false);
+//		assertTrue(gc.equalCoords(newgc));
 	}
 	
 	@Test

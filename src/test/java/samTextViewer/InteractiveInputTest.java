@@ -40,44 +40,44 @@ public class InteractiveInputTest {
 		InteractiveInput ip= new InteractiveInput(new ConsoleReader());
 
 		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
-		GenomicCoords gc2= ip.processInput("]", proc, 1).getGenomicCoordsHistory().current();
+		GenomicCoords gc2= ip.processInput("[", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(1011, (int)gc2.getFrom());
 		assertEquals(1810, (int)gc2.getTo());
 		
 		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
-		gc2= ip.processInput("[", proc, 1).getGenomicCoordsHistory().current();
+		gc2= ip.processInput("]", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(1001-10, (int)gc2.getFrom());
 		assertEquals(1800-10, (int)gc2.getTo());
 
 		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
-		gc2= ip.processInput("] 20", proc, 1).getGenomicCoordsHistory().current();
+		gc2= ip.processInput("[ 20", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(1001 + (20*10), (int)gc2.getFrom());
 		assertEquals(1800 + (20*10), (int)gc2.getTo());
 
 		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
-		gc2= ip.processInput("]20", proc, 1).getGenomicCoordsHistory().current();
+		gc2= ip.processInput("[20", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(1001 + (20*10), (int)gc2.getFrom());
 		assertEquals(1800 + (20*10), (int)gc2.getTo());
 		
 		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
-		gc2= ip.processInput("[[ 3", proc, 1).getGenomicCoordsHistory().current();
+		gc2= ip.processInput("]] 3", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(1001 - (6 * 10), (int)gc2.getFrom());
 		assertEquals(1800 - (6 * 10), (int)gc2.getTo());
 	
 		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
-		gc2= ip.processInput("[ 0", proc, 1).getGenomicCoordsHistory().current();
+		gc2= ip.processInput("] 0", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(1001, (int)gc2.getFrom());
 		assertEquals(1800, (int)gc2.getTo());
 		
 		// Test left bound
 		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
-		gc2= ip.processInput("[[ 30000", proc, 1).getGenomicCoordsHistory().current();
+		gc2= ip.processInput("]] 30000", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(1, (int)gc2.getFrom());
 		assertEquals(800, (int)gc2.getTo());
 
 		// Test right bound
 		proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
-		gc2= ip.processInput("] 30000000", proc, 1).getGenomicCoordsHistory().current();
+		gc2= ip.processInput("[ 30000000", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(159138663, (int)gc2.getTo());
 		assertEquals(159138663-800+1, (int)gc2.getFrom());
 		
@@ -86,11 +86,11 @@ public class InteractiveInputTest {
 		assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
 
 		// Ensure this is fine
-		ip.processInput("[", proc, 1).getGenomicCoordsHistory().current();
+		ip.processInput("]", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(ExitCode.CLEAN, ip.getInteractiveInputExitCode());
 		
 		// Another invalid input
-		ip.processInput("[ foo", proc, 1).getGenomicCoordsHistory().current();
+		ip.processInput("] foo", proc, 1).getGenomicCoordsHistory().current();
 		assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
 	}
 	

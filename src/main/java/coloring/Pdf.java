@@ -131,14 +131,21 @@ public class Pdf {
 		int nChars= 0;
 		int currentMax= 0;
 		for(String xv : ansiList){
-//			if(xv.equals("[48;5;231m")){
-//				continue;
-//			}
 			
-			BaseColor fgBaseCol= new BaseColor(this.xterm256ToColor(xv, false).getRGB());
-			BaseColor bgBaseCol= new BaseColor(this.xterm256ToColor(xv, true).getRGB());
+			BaseColor bgBaseCol;
+			BaseColor fgBaseCol;
+			List<Integer> extractAnsi = this.extractAnsiCodes(xv);
 
-			if(this.extractAnsiCodes(xv).size() != 0){
+			if(extractAnsi.contains(7)) {
+				// Invert colour if ansi formatting says so
+				bgBaseCol= new BaseColor(this.xterm256ToColor(xv, false).getRGB());
+				fgBaseCol= new BaseColor(this.xterm256ToColor(xv, true).getRGB());
+			} else {
+				fgBaseCol= new BaseColor(this.xterm256ToColor(xv, false).getRGB());
+				bgBaseCol= new BaseColor(this.xterm256ToColor(xv, true).getRGB());
+			}
+			
+			if(extractAnsi.size() != 0){
 				// This string begins with ansi sequence and the color has been extracted.
 				// So remove the ansi sequence at the beginnig and the end, we don't need them anymore
 				xv= xv.replaceAll("^.+?m", "");
@@ -175,7 +182,7 @@ public class Pdf {
 	}
 
 	/** Parse the string x to get the colour for foreground or background. 
-	 * If the inout string doesn't contain the escape sequence for fore or back ground,
+	 * If the input string doesn't contain the escape sequence for fore or back ground,
 	 * use the colour from Config. 
 	 * This method should be private. It is protected only for unit test.
 	 * */
@@ -185,7 +192,6 @@ public class Pdf {
 		
 		Color configBg= Xterm256.xterm256ToColor(Config.get256Color(ConfigKey.background));
 		Color configFg= Xterm256.xterm256ToColor(Config.get256Color(ConfigKey.foreground));
-		// BaseColor bgBaseCol= new BaseColor(configBg.getRed(), configBg.getGreen(), configBg.getBlue());
 		
 		Color col= null;
 		int xtag= -1;

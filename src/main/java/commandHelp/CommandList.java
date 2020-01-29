@@ -121,7 +121,7 @@ public class CommandList {
 	}
 	
 	public static String briefHelp() throws InvalidCommandLineException, InvalidColourException{
-		String help= "This a list of available commands with their brief description.\n"
+		String help= "Available commands with brief description.\n"
 				+ CMD_HELP 
 				+ "\n"
 				+ "\n"
@@ -334,7 +334,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("next"); cmd.setArgs("[-back] [-start] [-zo INT=5] [track]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("next"); cmd.setArgs("[-back] [-start] [-c] [-zo INT=5] [track]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Move to the next feature not overlapping the current coordinates. "); 
 		cmd.setAdditionalDescription(""
 				+ "By default `next` centers the window on the next feature and zooms out.\n"
@@ -1230,8 +1230,8 @@ public class CommandList {
 		cmd= new CommandHelp();
 		cmd.setName("samtools"); cmd.setArgs("[-f INT=0] [-F INT=4] [-q INT=0] [-v] [track_re = .*] ..."); cmd.inSection= Section.ALIGNMENTS; 
 		cmd.setBriefDescription("Apply samtools filters to alignment tracks captured by the list of track regexes.");
-		cmd.setAdditionalDescription("Of interest to stranded RNA-Seq and BS-Seq, the bit flag 4096 is internally specified "
-				+ "to selects reads mapping to TOP STRAND."
+		cmd.setAdditionalDescription("Useful for stranded RNA-Seq and BS-Seq: bit flag 4096 "
+				+ "is selects reads mapping to TOP STRAND.\n"
 				+ "\n"
 				+ "* :code:`-F` Filter out flags with these bits set. NB: 4 is always set.\n"
 				+ "\n"
@@ -1246,6 +1246,7 @@ public class CommandList {
 				+ "    samtools -q 10~~~~~~~~~~~-> Set mapq for all tracks. -f and -F reset to default\n"
 				+ "    samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar\n"
 				+ "    samtools -f 4096 ~~~~~~~~-> Select TOP STRAND reads\n"
+				+ "    samtools -F 4096 ~~~~~~~~-> Select BOTTOM STRAND reads\n"
 				+ "    samtools~~~~~~~~~~~~~~~~~-> Reset all to default.\n"
 				+ "");
 		cmdList.add(cmd);

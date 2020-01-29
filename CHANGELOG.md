@@ -30,7 +30,11 @@ New in 1.16.0
 
 * `orderTracks` can put selected tracks last. First select all tracks with e.g.
   `.`, then list those you want last: `orderTracks . #1 #2`
-  
+
+* [goto](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#goto)
+  understands target region separated by spaces (issue #93). Useful to copy and
+  paste regions from tables text files. *E.g.*, `goto chr7 10 200`.
+
 New in 1.15.0
 =============
 

@@ -84,7 +84,7 @@ dependencies {
 	compile group: 'net.sourceforge.argparse4j', name: 'argparse4j', version: '0.8.1'
 	compile group: 'jline', name: 'jline', version: '2.14.5'
     compile 'com.github.dariober:Jawk:e5c8f26'
-    compile 'com.github.dariober:htsjdk:37d8bd9'
+    compile 'com.github.dariober:htsjdk:80e355c'
 	compile 'com.github.igvteam:igv:v2.4.10'
 
 	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
