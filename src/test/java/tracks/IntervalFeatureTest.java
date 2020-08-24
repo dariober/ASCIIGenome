@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,8 +14,6 @@ import java.util.List;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.sun.jndi.toolkit.url.Uri;
 
 import coloring.Config;
 import exceptions.InvalidColourException;
@@ -50,10 +47,11 @@ public class IntervalFeatureTest {
 		assertTrue(NumberUtils.isCreatable("001"));
 		assertTrue(NumberUtils.isCreatable("0x0004")); // Also valid
 		assertTrue(NumberUtils.isCreatable("-1.1e9"));
+		assertTrue(NumberUtils.isCreatable("001.1"));
+		
 		// Invalid numbers
 		assertFalse(NumberUtils.isCreatable("1.1 ")); // Note trailing space
 		assertFalse(NumberUtils.isCreatable(""));
-		assertFalse(NumberUtils.isCreatable("001.1"));
 	}
 
 	@Test 
@@ -408,12 +406,6 @@ public class IntervalFeatureTest {
 		assertEquals(4, f.getScreenFrom());
 		assertEquals(4, f.getScreenTo());
 	}
-	
-	@Test
-	public void canReadFileWithSpecialCharacters() throws IOException, URISyntaxException {
-		VCFFileReader vcf = new VCFFileReader(new File("test_data/odd[filename].vcf.gz"));		
-		vcf.close();
-	} 
 	
 	@Test
 	public void handleSpaceInVCFInfoAndInvalidKey(){

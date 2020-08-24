@@ -1511,7 +1511,6 @@ public class TrackSet {
 			return currentGc;
 		}
 		for(TrackIntervalFeature tr : tif) {
-			System.err.println("Matching on " + tr.getTrackTag());
 			GenomicCoords gc;
 			if(all){
 				gc = tr.genomicCoordsAllChromMatchInGenome(pattern, currentGc);

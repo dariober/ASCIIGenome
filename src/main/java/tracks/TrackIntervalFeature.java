@@ -25,10 +25,10 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.readers.TabixReader;
-import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
@@ -74,7 +74,7 @@ public class TrackIntervalFeature extends Track {
 				suffix += ".gz";
 			}
 			String tmpWorkFile= Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
-			new File(tmpWorkFile + TabixUtils.STANDARD_INDEX_EXTENSION).deleteOnExit();
+			new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
 			this.setWorkFilename(tmpWorkFile);
 
 			this.setTrackFormat(Utils.getFileTypeFromName(new File(filename).getName()));
@@ -708,7 +708,6 @@ public class TrackIntervalFeature extends Track {
 		List<String> chromSearchOrder = this.getChromListStartingAt(chrom);
 		chromSearchOrder.add(chrom);
 		for(String curChrom : chromSearchOrder){
-			
 			TabixBigBedIterator iter= this.getReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
 			while(true){
 				String line= iter.next();
@@ -722,7 +721,8 @@ public class TrackIntervalFeature extends Track {
 				} 
 			}
 			startingPoint= 0;
-		} return null; // Not found anywhere
+		} 
+		return null; // Not found anywhere
 	}
 
 	private VCFCodec getVCFCodec() {
@@ -737,7 +737,7 @@ public class TrackIntervalFeature extends Track {
 		return this.vcfCodec;
 	}
 
-	/** Return the set chroms sorted but with and first chrom set to startChrom.
+	/** Return the list of known chroms with startChrom in first position.
 	 * 	chroms:         chr1 chr2 chr3 chr4 chr5 chr6 chr7
 	 *	startChrom:     chr3
 	 *  return:         chr3 chr4 chr5 chr6 chr7 chr1 chr2
@@ -746,20 +746,27 @@ public class TrackIntervalFeature extends Track {
 		
 		List<String> chroms= this.getChromosomeNames();
 		
-		int idx= chroms.indexOf(startChrom);
-		if(idx == -1){ // If startChrom is not present at all in the bed/gtf file.
-			return chroms;
-		}
 		List<String> chromsStartingAt= new ArrayList<String>();
-		chromsStartingAt.addAll(chroms.subList(idx, chroms.size()));
-		chromsStartingAt.addAll(chroms.subList(0, idx));
-		
-		// Sanity check
-		if(chroms.size() != chromsStartingAt.size()){ 
-			throw new RuntimeException("Error reordering chroms. Expected " + chroms.size() + " chroms got " + chromsStartingAt.size());
+
+		int idx= chroms.indexOf(startChrom);
+		if(idx == -1){
+			// If startChrom is not present at all in the bed/gtf file.
+			chromsStartingAt.addAll(chroms);
+			chromsStartingAt.add(0, startChrom);
+		} else {
+			chromsStartingAt.addAll(chroms.subList(idx, chroms.size()));
+			chromsStartingAt.addAll(chroms.subList(0, idx));
+			
+			// Sanity check
+			if(chroms.size() != chromsStartingAt.size()){ 
+				throw new RuntimeException("Error reordering chroms. Expected " + chroms.size() + " chroms got " + chromsStartingAt.size());
+			}
+			if(! (chromsStartingAt.containsAll(chroms) && chroms.containsAll(chromsStartingAt))){
+				throw new RuntimeException("Error re-ordering chromosomes");
+			}
 		}
-		if(! (chromsStartingAt.containsAll(chroms) && chroms.containsAll(chromsStartingAt))){
-			throw new RuntimeException("Error re-ordering chromosomes");
+		if(! (chromsStartingAt.containsAll(chroms))){
+			throw new RuntimeException("Not all known chroms have been included");
 		}
 		return chromsStartingAt;
 	}
@@ -1096,8 +1103,8 @@ public class TrackIntervalFeature extends Track {
 			TrackIntervalFeature tr= new TrackIntervalFeature(this.getFilename(), this.getGc());
 			String fname= this.getWorkFilename();
 			Files.move(Paths.get(tr.getWorkFilename()), Paths.get(fname), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-			Files.move(Paths.get(tr.getWorkFilename() + TabixUtils.STANDARD_INDEX_EXTENSION), 
-					Paths.get(fname + TabixUtils.STANDARD_INDEX_EXTENSION), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			Files.move(Paths.get(tr.getWorkFilename() + FileExtensions.TABIX_INDEX), 
+					Paths.get(fname + FileExtensions.TABIX_INDEX), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		}
 		this.tabixReader= this.getTabixReader(this.getWorkFilename());
 		this.update();

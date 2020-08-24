@@ -19,12 +19,12 @@ import org.sqlite.SQLiteException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.samtools.util.CloserUtil;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.TribbleException.MalformedFeatureFile;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndexCreator;
 import htsjdk.tribble.readers.LineIterator;
-import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
@@ -48,7 +48,7 @@ public class MakeTabixIndex {
 	public MakeTabixIndex(String intab, File bgzfOut, TabixFormat fmt) throws IOException, InvalidRecordException, ClassNotFoundException, SQLException{
 		
 		File tmp = Utils.createTempFile(".asciigenome", "makeTabixIndex.tmp.gz", true);
-		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+		File tmpTbi= new File(tmp.getAbsolutePath() + FileExtensions.TABIX_INDEX);
 		tmpTbi.deleteOnExit();
 		
 		try{
@@ -69,7 +69,7 @@ public class MakeTabixIndex {
 		}
 		Files.move(Paths.get(tmp.getAbsolutePath()), Paths.get(bgzfOut.getAbsolutePath()));
 
-		File bgzfOutTbi= new File(bgzfOut.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+		File bgzfOutTbi= new File(bgzfOut.getAbsolutePath() + FileExtensions.TABIX_INDEX);
 		if(bgzfOutTbi.exists()){
 			Files.delete(Paths.get(bgzfOutTbi.getAbsolutePath()));
 		}

@@ -78,18 +78,23 @@ public class TrackSetTest {
 		assertEquals(67208779, (int)newgc.getFrom());
 		assertEquals(67208779 + 1000, (int)newgc.getTo());
 		
+	}
+	
+	@Test
+	public void canFindNextMatchOnOneTrack2() throws ClassNotFoundException, IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidCommandLineException {
+		// Check we correctly find a feature if we are on an empty chromsomome 
+		Pattern pattern = Pattern.compile("NM_032291_");
+
 		// Current position is AFTER the match - different chrom
-		gc= new GenomicCoords("chr2:70000000-70001000", 80, null, null);
-		trackSet= new TrackSet(new ArrayList<String>(), gc);
+		GenomicCoords gc= new GenomicCoords("chrFOO:70000000-70001000", 80, null, null);
+		TrackSet trackSet= new TrackSet(new ArrayList<String>(), gc);
 		trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
 		
-		System.err.println("START");
-		newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
+		GenomicCoords newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
 		assertEquals("chr1", newgc.getChrom());
 		assertEquals(67208779, (int)newgc.getFrom());
 		assertEquals(67208779 + 1000, (int)newgc.getTo());
 		
-		// No match
 	}
 	
 	@Test

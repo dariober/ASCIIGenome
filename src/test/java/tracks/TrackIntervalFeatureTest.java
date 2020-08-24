@@ -32,6 +32,14 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
+	public void canReadOddFilename() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
+		GenomicCoords gc= new GenomicCoords("1:1-100000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/odd[filename].vcf.gz", gc);
+		assertEquals("1", (tif.getGc().getChrom()));
+		tif.close();
+	}
+	
+	@Test
 	public void canCloseFiles() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);

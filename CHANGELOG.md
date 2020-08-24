@@ -1,6 +1,8 @@
 New in 1.16.0
 =============
 
+* Java version required 1.9+ (effectively 1.10)
+
 * `featureColorForRegex`, renamed to `featureColor`, now accepts as expression
   a regex (as before) or an awk script. Awk is useful to color features
   according to some numeric values. *E.g.*, in a narrowPeak file you can

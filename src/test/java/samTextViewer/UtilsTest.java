@@ -78,8 +78,6 @@ public class UtilsTest {
 			fmt.add(x);
 		}
 		
-		assertEquals(TrackFormat.BEDGRAPH, Utils.guessTrackType("test_data/malformed.vcf.gz"));
-		
 		assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/malformed.vcf.gz"));
 		assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/invalid.vcf"));
 		assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf"));
@@ -1276,11 +1274,11 @@ public class UtilsTest {
 		assertEquals("chr7:5566778", Utils.initRegionFromFile("test_data/ds051.short.bam"));
 		assertEquals("chr7:5566778", Utils.initRegionFromFile("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.short.bam"));
 		assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
-		assertEquals("chr1:17744", Utils.initRegionFromFile("test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
+		assertEquals("chr9:15077", Utils.initRegionFromFile("test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
 		assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
 		assertEquals("chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
 		assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
-		assertEquals("chr1:564666", Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
+		assertEquals("chr9:41066", Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
 		assertEquals("1:113054374", Utils.initRegionFromFile("test_data/CEU.exon.2010_06.genotypes.vcf"));
 
 		
