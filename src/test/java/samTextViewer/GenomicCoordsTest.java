@@ -17,6 +17,7 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 
@@ -241,14 +242,48 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
-	public void canConstructGenomicCoords() throws InvalidGenomicCoordsException, IOException{
-		
-		GenomicCoords gc= new GenomicCoords("chr7:1-100", 80, samSeqDict, fastaFile);
+	public void canConstructGenomicCoordsFromSpaceSepString() throws InvalidGenomicCoordsException, IOException {
+		// Simple cases
+		GenomicCoords gc= new GenomicCoords("chr7 1 100", 80, samSeqDict, fastaFile);
 		assertEquals("chr7", gc.getChrom());
 		assertEquals(1, (int)gc.getFrom());
 		assertEquals(100, (int)gc.getTo());
-
-		gc= new GenomicCoords("chr7:1-100", 80, samSeqDict, fastaFile);
+		
+		gc= new GenomicCoords("chr7 1,000 2,000", 80, samSeqDict, fastaFile);
+		assertEquals("chr7", gc.getChrom());
+		assertEquals(1000, (int)gc.getFrom());
+		assertEquals(2000, (int)gc.getTo());
+		
+		gc= new GenomicCoords("chr7 11", 80, samSeqDict, fastaFile);		
+		assertEquals(11, (int)gc.getFrom());
+		assertEquals(11 + 79, (int)gc.getTo());
+		
+		gc= new GenomicCoords("chr7 11", 80, samSeqDict, fastaFile);		
+		assertEquals(11, (int)gc.getFrom());
+		assertEquals(11 + 79, (int)gc.getTo());
+		
+		gc= new GenomicCoords("chr7 11 1000 15000 2000", 80, samSeqDict, fastaFile);		
+		assertEquals(11, (int)gc.getFrom());
+		assertEquals(2000, (int)gc.getTo());
+		
+		// Some mixing of space and - separator
+		gc= new GenomicCoords("chr7 11-20", 80, samSeqDict, fastaFile);		
+		assertEquals(11, (int)gc.getFrom());
+		assertEquals(20, (int)gc.getTo());
+		
+		gc= new GenomicCoords("chr7 11 -   20", 80, samSeqDict, fastaFile);		
+		assertEquals(11, (int)gc.getFrom());
+		assertEquals(20, (int)gc.getTo());
+		
+		gc= new GenomicCoords("chr7 11- 20", 80, samSeqDict, fastaFile);		
+		assertEquals(11, (int)gc.getFrom());
+		assertEquals(20, (int)gc.getTo());
+	}
+	
+	@Test
+	public void canConstructGenomicCoords() throws InvalidGenomicCoordsException, IOException{
+		
+		GenomicCoords gc= new GenomicCoords("chr7:1-100", 80, samSeqDict, fastaFile);
 		assertEquals("chr7", gc.getChrom());
 		assertEquals(1, (int)gc.getFrom());
 		assertEquals(100, (int)gc.getTo());
@@ -266,6 +301,10 @@ public class GenomicCoordsTest {
 		gc= new GenomicCoords("chr7:100", 80, samSeqDict, fastaFile);
 		assertEquals(100, (int)gc.getFrom());
 		assertEquals(100 + 79, (int)gc.getTo());
+		
+		gc= new GenomicCoords("chr7:1,000-2,000", 80, samSeqDict, fastaFile);
+		assertEquals(1000, (int)gc.getFrom());
+		assertEquals(2000, (int)gc.getTo());
 
 		gc= new GenomicCoords("chr7:1,000,000,000", 80, samSeqDict, null);
 		assertEquals(159138663-79, (int)gc.getFrom()); // Reset to chrom size
@@ -274,6 +313,16 @@ public class GenomicCoordsTest {
 		gc= new GenomicCoords("chr7:1,000,000,000", 80, null, null);
 		assertEquals(1000000000, (int)gc.getFrom()); // Fine, no dict to check against.
 		assertEquals(1000000000 + 79, (int)gc.getTo());
+
+		gc= new GenomicCoords("chr99:1:1000-2000", 80, null, null);
+		assertEquals("chr99:1", gc.getChrom());
+		assertEquals(1000, (int)gc.getFrom());
+		assertEquals(2000, (int)gc.getTo());
+		
+		gc= new GenomicCoords("chr99:1:1000", 80, null, null);
+		assertEquals("chr99:1", gc.getChrom());
+		assertEquals(1000, (int)gc.getFrom());
+		assertEquals(1000 + 79, (int)gc.getTo());
 
 	}
 	

@@ -50,7 +50,7 @@ import tracks.TrackSet;
 public class Main {
 	
 	public static void main(String[] args) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, ClassNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
-
+		
 		/* Start parsing arguments * 
 		 * *** If you change something here change also in console input ***/
 		Namespace opts= ArgParse.argParse(args);
@@ -489,7 +489,7 @@ public class Main {
 		    }
 		}));
 		
-		ConsoleReader console= new ConsoleReader(); 
+		ConsoleReader console= new ConsoleReader();
 
 		try {
 			// Autcomplete commands with length > x 

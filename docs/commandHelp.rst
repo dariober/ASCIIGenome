@@ -23,19 +23,20 @@ Navigation
 goto
 ++++
 
-:code:`goto chrom:[from]-[to]`
+:code:`goto chrom[:from[-to]] | chrom [from [to]]`
 
-Go to region `chrom:from-to` or to `chrom:from` or to the start of `chrom`.  The character ':' is a shortcut for `goto`. Examples::
+Go to region `chrom:from-to` or to `chrom:from` or to the start of `chrom`.  The region may be separated by `:` and `-` or by spaces. The character ':' is a shortcut for `goto`. Examples::
 
-    goto chr8:1-1000  ## Go to interval 1-1000 on chr8
-    goto chr8:10      ## Go to position 10 on chr8
-    goto chr8         ## Go to start of chr8
+    goto chr8:1-1000   # Go to region 1-1000 on chr8
+    goto chr8 1 1000   # Use spaces instead
+    goto chr8 1-1000   # Same as above
+    goto chr8 1 - 1000 # Same as above
+    goto chr8 1 1,000  # Comma in numbers is ok
+    goto chr8:10       # Go to position 10 on chr8
+    goto chr8          # Go to start of chr8
+    goto chr8 10 30 50 # Go to chr8:10-50
+    :chr8              # Colon ':' shortcut
 
-Or the same with::
-
-    :chr8:1-1000 
-    :chr8:10 
-    :chr8
 
 
 INT
@@ -136,6 +137,27 @@ bb
 
 Move backward by 1/2 of a window. A shortcut for `b 0.5` 
 
+]
++
+
+:code:`] INT=1`
+
+Move forward by INT screen columns Same as **[** but moves forward. See **[** for details
+
+[
++
+
+:code:`[ INT=1`
+
+Move backwards by INT screen columns. The **[** character can be repeated and each **[** will move by one column. Examples::
+
+    [   -> Move one screen column
+    [[[ -> Move three columns
+	   [ 3 -> Same as above
+	   [3  -> Same as above (space is optional)
+
+
+
 zi
 ++
 
@@ -194,7 +216,7 @@ Go to the next visited position.  Similar to the back and forward arrows of an I
 next
 ++++
 
-:code:`next [-back] [-start] [-zo INT=5] [track]`
+:code:`next [-back] [-start] [-c] [-zo INT=5] [track]`
 
 Move to the next feature not overlapping the current coordinates.  By default `next` centers the window on the next feature and zooms out.
 
@@ -439,18 +461,18 @@ With no args, turn off awk for all tracks.
 
 * An invalid script throws an ugly stack trace to stderr. To be fixed.
 
-featureColorForRegex
-++++++++++++++++++++
+featureColor
+++++++++++++
 
-:code:`featureColorForRegex [-r/-R regex color] [-v] [track_regex = .*]...`
+:code:`featureColor [-r/-R expression color] [-v] [track_regex = .*]...`
 
-Set colour for features captured by regex.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by a regex. It is useful to highlight features containg a string of interest, such as 'CDS' in gff files.
+Set colour for features captured by expression.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by the expression. Expression is a regex or an awk script (autodetermined). It is useful to highlight features containg a string of interest, such as 'CDS' in gff files, or features where a numeric field satisfy a filter.
 
 Options:
 
-:code:`-r <regex> <color>` Features matching :code:`regex` will have color :code:`color`. The regex is applied to the raw lines as read from file. This option takes exactly two arguments and can be given zero or more times. If this option is not present colors are reset to default.
+:code:`-r <expression> <color>` Features matching :code:`expression` will have color :code:`color`. The expression is interpreted as regex or as an awk script and it is applied to the raw lines as read from file. This option takes exactly two arguments and can be given zero or more times.
 
-:code:`-R <regex> <color>` Same as :code:`-r` but sets color for features NOT matched by regex.
+:code:`-R <expression> <color>` Same as :code:`-r` but sets color for features NOT matched by regex.
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
@@ -458,9 +480,12 @@ Options:
 
 Example::
 
-    featureColorForRegex -r CDS plum2 -r exon grey
-    featureColorForRegex bed         -> Reset to default the track matching 'bed'
-	   featureColorForRegex -R CDS grey -> Grey all features except those matching CDS
+    featureColor -r CDS plum2 -r exon grey
+    featureColor bed         -> Reset to default the track matching 'bed'
+	   featureColor -R CDS grey -> Grey all features except those matching CDS
+    
+    Color blue where 9th field is > 3; color red where 9th is > 6
+    featureColor -r '$9 > 3' blue -r '$9 > 6' red
 
 Colors can be specified by name, name prefix, or integer in range 0-255. Available colours:`here <http://jonasjacek.github.io/colors/>`_             
 
@@ -692,7 +717,7 @@ samtools
 
 :code:`samtools [-f INT=0] [-F INT=4] [-q INT=0] [-v] [track_re = .*] ...`
 
-Apply samtools filters to alignment tracks captured by the list of track regexes. As *samtools view*, this command filters alignment records on the basis of the given flags:
+Apply samtools filters to alignment tracks captured by the list of track regexes. Useful for stranded RNA-Seq and BS-Seq: bit flag 4096 is selects reads mapping to TOP STRAND.
 
 * :code:`-F` Filter out flags with these bits set. NB: 4 is always set.
 
@@ -706,6 +731,8 @@ Examples::
 
     samtools -q 10           -> Set mapq for all tracks. -f and -F reset to default
     samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar
+    samtools -f 4096         -> Select TOP STRAND reads
+    samtools -F 4096         -> Select BOTTOM STRAND reads
     samtools                 -> Reset all to default.
 
 
@@ -871,6 +898,7 @@ For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#
 
     orderTracks #2 #1   -> [hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]
     orderTracks bam bed -> [hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]
+    orderTracks . bam  -> 'bam' tracks go last
     orderTracks         -> name sort [hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]
 
 

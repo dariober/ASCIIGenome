@@ -1,12 +1,14 @@
 package samTextViewer;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -50,6 +52,9 @@ import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.biojava.nbio.genome.parsers.gff.FeatureI;
+import org.biojava.nbio.genome.parsers.gff.FeatureList;
+import org.biojava.nbio.genome.parsers.gff.GFF3Reader;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BedFeature;
 import org.broad.igv.bbfile.BigBedIterator;
@@ -85,6 +90,7 @@ import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.LineIterator;
@@ -101,7 +107,7 @@ import htsjdk.variant.vcf.VCFHeaderVersion;
 import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
-import ucsc.UcscGenePred;
+import utils.Tokenizer;
 
 /**
  * @author berald01
@@ -119,7 +125,7 @@ public class Utils {
 	
 	/**Create temp file in the current working directory or in the system's
 	 * tmp dir if failing to create in cwd.*/
-	public static File createTempFile(String prefix, String suffix){
+	public static File createTempFile(String prefix, String suffix, boolean deleteOnExit){
 		File tmp = null;
 		try{
 			tmp= File.createTempFile(prefix, suffix, new File(System.getProperty("user.dir")));
@@ -130,7 +136,9 @@ public class Utils {
 				e1.printStackTrace();
 			}
 		}
-		tmp.deleteOnExit();
+		if(deleteOnExit) {
+			tmp.deleteOnExit();	
+		}
 		return tmp;
 	}
 	
@@ -621,21 +629,6 @@ public class Utils {
 		return region;
 	}
 	
-//	private static String initRegionFromUcscGenePredSource(String x) throws ClassNotFoundException, IOException, InvalidCommandLineException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-//		
-//		String xfile= new UcscGenePred(x, 1).getTabixFile();
-//		GZIPInputStream gzipStream;
-//		InputStream fileStream = new FileInputStream(xfile);
-//		gzipStream = new GZIPInputStream(fileStream);
-//		Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
-//		BufferedReader br = new BufferedReader(decoder);
-//		String line= br.readLine();
-//		br.close();
-//		List<String> xlist= Lists.newArrayList(Splitter.on("\t").split(line));
-//		String region= xlist.get(0) + ":" + xlist.get(3) + "-" + xlist.get(4);
-//		return region;
-//	}
-
 	public static boolean bamHasIndex(String bam) throws IOException{
 
 		/*  ------------------------------------------------------ */
@@ -877,10 +870,11 @@ public class Utils {
 	 * @return
 	 * @throws IOException 
 	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidCommandLineException 
 	 */
-	public static String parseConsoleInput(List<String> tokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException{
+	public static String parseConsoleInput(List<String> tokens, GenomicCoords gc) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 		
-		String region= "";
+//		String region= "";
 		String chrom= gc.getChrom();
 		Integer from= gc.getFrom();
 		Integer to= gc.getTo();
@@ -913,7 +907,7 @@ public class Utils {
 					step= (int)Math.rint(windowSize * Double.parseDouble(tokens.get(1)));
 				} catch(NumberFormatException e){
 					System.err.println("Cannot parse " + tokens.get(1) + " to numeric.");
-					step= 0;
+					throw new InvalidCommandLineException();
 				} 
 			}			
 			from += step; 
@@ -934,7 +928,7 @@ public class Utils {
 					step= (int)Math.rint(windowSize * Double.parseDouble(tokens.get(1)));
 				} catch(NumberFormatException e){
 					System.err.println("Cannot parse " + tokens.get(1) + " to numeric.");
-					step= 0;
+					throw new InvalidCommandLineException();
 				} 
 			}						
 			from -= step;
@@ -956,12 +950,14 @@ public class Utils {
 				to += offset;
 			}
 			return chrom + ":" + from + "-" + to;
-		}else if (tokens.equals("q")) {
-			System.exit(0);	
-		} else {
+		} 
+//		else if (tokens.get(0).equals("q")) {
+//			System.exit(0);	
+//		} 
+		else {
 			throw new RuntimeException("Invalid input for " + tokens);
 		}
-		return region;
+//		return region;
 	}
 	
 	/**Parse the rawInput string in the form ':123-456' to return either
@@ -1332,7 +1328,7 @@ public class Utils {
 		List<String> addMe= new ArrayList<String>();
 		for(int i= 0; i < newFileNames.size(); i++){
 			String x= newFileNames.get(i).trim();
-			if(!new File(x).isFile() && !Utils.urlFileExists(x) && !Utils.isUcscGenePredSource(x)){
+			if(!new File(x).isFile() && !Utils.urlFileExists(x)){
 				dropMe.add(x);
 				System.err.println("Unable to add " + x);
 				throw new InvalidCommandLineException();
@@ -1751,17 +1747,6 @@ public class Utils {
 		return chrom + ":" + xfrom + xto;
 	} 
 	
-	/** True if filename is a UCSC genePred file or a valid connection to database. 
-	 * */
-	public static boolean isUcscGenePredSource(String filename) {
-		try{
-			new UcscGenePred(filename, 1000);
-			return true;
-		} catch(Exception e) {
-			return false;
-		}
-	}
-
 	/** Return list of files matching the list of glob expressions. This method should behave
 	 * similarly to GNU `ls` command. 
 	 * 
@@ -1913,52 +1898,53 @@ public class Utils {
 	 * If output is not empty and not equal to input, return null.
 	 * See tests for behaviour. 
 	 * */
-	public static Boolean passAwkFilter(String rawLine, String awkScript) throws IOException {
-		
-		awkScript= awkScript.trim();
-
-		if(awkScript.isEmpty()){
-			return true;
-		}
-		
-		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
-		// -v var=foo '$1 == var && $2 == baz'
-		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
-		// the opening of the awk script.
-		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
-		if(scriptStartsAt == awkScript.length() + 1){
-			scriptStartsAt= 1;
-		}
-		// Now add the functions to the script right at the start of the script, after the command args
-		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
-				
-		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.US_ASCII));
-		
-		String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]); 
-		
-		PrintStream stdout = System.out;
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try{
-			PrintStream os= new PrintStream(baos);
-			new org.jawk.Main(args, is, os, System.err);
-		} catch(Exception e){
-			throw new IOException();
-		} finally{
-			System.setOut(stdout);
-			is.close();
-		}
-		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-		if(output.trim().isEmpty()){
-			return false;
-		} else if(output.trim().equals(rawLine.trim())){
-			return true;
-		} else {
-			// Awk output is not empty or equal to input line. Reset awk script and return null
-			// to signal this condition.
-			return null;
-		}
-		
-	}
+//	public static Boolean passAwkFilter(String rawLine, String awkScript) throws IOException {
+//		
+//		awkScript= awkScript.trim();
+//		
+//		if(awkScript.isEmpty()){
+//			return true;
+//		}
+//		
+//		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
+//		// -v var=foo '$1 == var && $2 == baz'
+//		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
+//		// the opening of the awk script.
+//		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
+//		if(scriptStartsAt == awkScript.length() + 1){
+//			scriptStartsAt= 1;
+//		}
+//		// Now add the functions to the script right at the start of the script, after the command args
+//		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
+//				
+//		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.US_ASCII));
+//		//String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]);
+//		String[] args= new Tokenizer(awkScript).tokenize().toArray(new String[0]);
+//		
+//		PrintStream stdout = System.out;
+//		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//		try{
+//			PrintStream os= new PrintStream(baos);
+//			new org.jawk.Main(args, is, os, System.err);
+//		} catch(Exception e){
+//			throw new IOException();
+//		} finally{
+//			System.setOut(stdout);
+//			is.close();
+//		}
+//		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+//		if(output.trim().isEmpty()){
+//			return false;
+//		} else if(output.trim().equals(rawLine.trim())){
+//			return true;
+//		} else {
+//			// Awk output is not empty or equal to input line. Reset awk script and return null
+//			// to signal this condition.
+//			System.err.println(output);
+//			return null;
+//		}
+//		
+//	}
 
 	/** Stream the raw line through awk and return true if the output of awk is the same as the input
 	 * line. If awk returns empty output then the line didn't pass the awk filter.
@@ -1977,36 +1963,38 @@ public class Utils {
 			}
 			return results;
 		}
+
+		// * Parse command string into arguments and awk script
+		List<String> args= new Tokenizer(awkScript).tokenize();
 		
-		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
-		// -v var=foo '$1 == var && $2 == baz'
-		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
-		// the opening of the awk script.
-		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
-		if(scriptStartsAt == awkScript.length() + 1){
-			scriptStartsAt= 1;
-		}
-		// Now add the functions to the script right at the start of the script, after the command args
-		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
-		
+		String script= args.remove(args.size()-1); // 'remove' returns the element removed
+		File awkFile= Utils.createTempFile(".asciigenome.", ".awk", true);
+
+		BufferedWriter wr= new BufferedWriter(new FileWriter(awkFile));
+		wr.write(Track.awkFunc);
+		wr.write(script);
+		wr.close();
+		args.add("-f");
+		args.add(awkFile.getAbsolutePath());
+
 		ByteArrayOutputStream baosIn = new ByteArrayOutputStream();
 		for (String line : rawLines) {
 			baosIn.write((line+"\n").getBytes());
 		}
 		InputStream is= new ByteArrayInputStream(baosIn.toByteArray());
-		
-		String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]); 
-		
 		PrintStream stdout = System.out;
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
 		try{
 			PrintStream os= new PrintStream(baos);
-			new org.jawk.Main(args, is, os, System.err);
+			new org.jawk.Main(args.toArray(new String[0]), is, os, System.err);
 		} catch(Exception e){
+			e.printStackTrace();
 			throw new IOException();
 		} finally{
 			System.setOut(stdout);
 			is.close();
+			awkFile.delete();
 		}
 		
 		String output[] = new String(baos.toByteArray(), StandardCharsets.US_ASCII).split("\n");
@@ -2229,7 +2217,7 @@ public class Utils {
 	    File fakeVCFFile;
 	    List<String> str= new ArrayList<String>();
 	    try {
-	    	fakeVCFFile = Utils.createTempFile(".vcfheader", ".vcf");
+	    	fakeVCFFile = Utils.createTempFile(".vcfheader", ".vcf", true);
 		    final VariantContextWriter writer = new VariantContextWriterBuilder()
 		            .setOutputFile(fakeVCFFile)
 		            .setReferenceDictionary(header.getSequenceDictionary())
@@ -2472,4 +2460,126 @@ public class Utils {
 		}
 		return true;
 	}
+
+	public static String reformatFileName(String filename, boolean absolute) {
+		UrlValidator urlValidator= new UrlValidator();
+		if(urlValidator.isValid(filename)){
+			return filename;
+		}
+		Path absfilename= Paths.get(filename).toAbsolutePath();
+		if(absolute) {
+			return absfilename.toString();
+		}
+		Path cwd= Paths.get(System.getProperty("user.dir"));
+		Path relative= cwd.relativize(absfilename);
+		return relative.toString();
+	}
+
+	/**rawrecs is an array of raw records and regex is either a regex or 
+	 * an awk script (autodetermined). Return an array of booleans for whether 
+	 * each record is matched by regex.
+	 * @throws IOException 
+	 * */
+	public static boolean[] matchByAwkOrRegex(String[] rawLines, String regex) throws IOException {
+		boolean isAwk= false;
+		if(Pattern.compile("\\$\\d|\\$[A-Z]").matcher(regex).find()) {
+			// We assume that if regex contains a '$' followed by digit or letter
+			// we have an awk script since that would be a very unlikely regex.
+			// Could we have an awk script not containing '$'? Unlikely but maybe possible
+			isAwk= true;
+		}
+
+		boolean[] matched= new boolean[rawLines.length];
+		if(isAwk) {
+			regex= quote(regex);
+//			if(! regex.trim().startsWith("'") && ! regex.trim().endsWith("'")) {
+//				regex= "'" + regex + "'";
+//			}
+			matched= Utils.passAwkFilter(rawLines, regex);
+		}
+		else {
+			for(int i= 0; i < matched.length; i++) {
+				matched[i]= Pattern.compile(regex).matcher(rawLines[i]).find();
+			}
+		}
+		return matched;
+	}
+	
+	/**Add quotes around x, if necessary, so that it gets tokenized in a single string*/
+	public static String quote(String x) {
+		if((x.startsWith("'") && x.endsWith("'")) || (x.startsWith("\"") && x.endsWith("\""))) {
+			// No need to quote
+			return x;
+		}
+		// We need to quote the awk script using a quoting string not used inside the script itself.
+		// This is a pretty bad hack. You should store the awk command as a list rather than a string
+		// split and joined multiple times!
+		String q= "";
+		if( ! x.contains("'")) {
+			q= "'";
+		}
+		else if(! x.contains("\"")) {
+			q= "\"";
+		}
+		else if(! x.contains("'''")) {
+			q= "'''";
+		}
+		else if(! x.contains("\"\"\"")) {
+			q= "\"\"\"";
+		}
+		else {
+			throw new RuntimeException();
+		}
+		return q + x + q;
+	}
+
+	public static TrackFormat guessTrackType(String file) {
+		
+		try {
+			SamReaderFactory srf=SamReaderFactory.make();
+			srf.validationStringency(ValidationStringency.SILENT);
+			SamReader samReader = srf.open(new File(file));
+			SAMRecordIterator iter = samReader.iterator();
+			int n= 0;
+			while(iter.hasNext() && n < 1000) {
+				iter.next();
+				n++;
+			}
+			return TrackFormat.BAM;
+		} catch(Exception e) {
+			// e.printStackTrace();
+		}
+		
+		try {
+			FeatureList gff = GFF3Reader.read(file);
+			Iterator<FeatureI> iter = gff.iterator();
+			int n= 0;
+			while(iter.hasNext() && n < 1000) {
+				iter.next();
+				n++;
+			}
+			return TrackFormat.GFF;
+		} catch(Exception e) {
+			// e.printStackTrace();
+		}
+		
+		try {
+			VCFFileReader reader = new VCFFileReader(new File(file), false);
+			CloseableIterator<VariantContext> iter = reader.iterator();
+			int n= 0;
+			while(iter.hasNext() && n < 1000) {
+				try {
+					iter.next();
+				} catch(IllegalArgumentException e) {
+					// Forgive "-" as an allele
+				}
+				n++;
+			}
+			reader.close();
+			return TrackFormat.VCF;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	} 
 }

@@ -120,7 +120,23 @@ public class TrackTest {
 		tif.setSystemCommandForPrint("foo");
 		assertEquals("", tif.printLines());
 	}
+	
+	@Test
+	public void canHighlightLinesByIndex() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+		GenomicCoords gc= new GenomicCoords("1:1-400000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+		tif.setPrintMode(PrintRawLine.FULL);
+		tif.setHighlightPattern(Pattern.compile("$2, $4"));
+		String out= tif.printLines();
+		assertTrue(out.contains("\033[7m200000\033[27m"));
+		assertTrue(out.contains("\033[7mA\033[27m"));
+		assertTrue(out.contains(" ALU_umary_ALU_2 ")); // Not highlighted
 
+		tif.setHighlightPattern(Pattern.compile("$0, $100, 3"));
+		out= tif.printLines();
+		assertTrue(! out.contains("\033[7m"));
+	}
+	
 	@Test
 	public void canHighlightPrintableLines() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
 

@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.Buffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -50,12 +51,12 @@ public class Faidx {
 		while(noOfBytesRead != -1){
 			ByteBuffer buffer = ByteBuffer.allocate(100000);
 			noOfBytesRead = fileChannel.read(buffer);
-			buffer.flip();
+			((Buffer) buffer).flip(); // Cast to Buffer because of https://jira.mongodb.org/browse/JAVA-2559
 			
 			while ( buffer.hasRemaining() ) {
 				char x= (char)buffer.get();
 				
-				if( ! CharMatcher.ASCII.matches(x) ){
+				if( ! CharMatcher.ascii().matches(x) ){
 					throw new UnindexableFastaFileException();			
 				}
 				

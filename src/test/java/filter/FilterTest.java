@@ -155,11 +155,12 @@ public class FilterTest {
 		samLocIter.setSamFilters(filters);
 		while(samLocIter.hasNext()){
 			LocusInfo locus= samLocIter.next();
-			if(locus.getRecordAndPositions().size() > 0){
+			if(locus.getRecordAndOffsets().size() > 0){
 				//System.out.println(locus.getPosition() + " " + locus.getRecordAndPositions().size() + " " +
 				//		locus.getRecordAndPositions().get(0).getRecord().getFlags());
 			}
 		}
+		samLocIter.close();
 	}
 	
 	//@Test
@@ -187,11 +188,8 @@ public class FilterTest {
 		samLocIter.setSamFilters(filters);
 		while(samLocIter.hasNext()){
 			LocusInfo locus= samLocIter.next();
-			int M= 0;
-			int U= 0;
-			int mism= 0;
-			for(RecordAndOffset recOff : locus.getRecordAndPositions()){
-				int pos= locus.getPosition();
+			for(RecordAndOffset recOff : locus.getRecordAndOffsets()){
+				locus.getPosition();
 				// Code to get ref sequence at pos
 				
 				// If ref sequence is C, count read bases if:
@@ -204,22 +202,16 @@ public class FilterTest {
 
 					if( isTopStrand	){ // -ve 2nd pair
 						if(rb == 'C'){
-							M++;
 						} else if(rb == 'T'){
-							U++;
 						} else {
-							mism++;
 						}
 					}  					
 				} else if (refbase == 'G'){
 
 					if(	!isTopStrand ){
 						if(rb == 'G'){
-							M++;
 						} else if(rb == 'A'){
-							U++;
 						} else {
-							mism++;
 						}
 							// System.out.println(locus.getPosition() + " ");					
 						}  
@@ -228,12 +220,8 @@ public class FilterTest {
 				}
 
 			}
-			
-//			if(locus.getRecordAndPositions().size() > 0){
-//				System.out.println(locus.getPosition() + " " + locus.getRecordAndPositions().size() + " " +
-//						locus.getRecordAndPositions().get(0).getRecord().getFlags());
-//			}
 		}
+		samLocIter.close();
 	}
 }
 

@@ -9,6 +9,7 @@ import java.sql.SQLException;
 
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BigWigIterator;
+import org.junit.Before;
 import org.junit.Test;
 
 import coloring.Config;
@@ -20,6 +21,11 @@ import samTextViewer.GenomicCoords;
 
 public class TrackWigglesTest {
 
+	@Before
+	public void prepareConfig() throws IOException, InvalidConfigException{
+		new Config(null);
+	}
+
 	@Test
 	public void canCloseReaders() throws ClassNotFoundException, IOException, InvalidRecordException, InvalidGenomicCoordsException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr7:5540000-5570000", 80, null, null);
@@ -29,8 +35,8 @@ public class TrackWigglesTest {
 		tw= new TrackWiggles("test_data/test.bedGraph", gc, 4);
 		tw.close();
 		
-		tw= new TrackWiggles("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig", gc, 4);
-		tw.close();
+		//tw= new TrackWiggles("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig", gc, 4);
+		//tw.close();
 	}
 	
 	@Test
@@ -43,27 +49,27 @@ public class TrackWigglesTest {
 		tw= new TrackWiggles("test_data/test.bedGraph", gc, 4);
 		assertTrue(tw.getChromosomeNames().size() > 0);
 		
-		tw= new TrackWiggles("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig", gc, 4);
-		assertTrue(tw.getChromosomeNames().size() > 10);
+		//tw= new TrackWiggles("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig", gc, 4);
+		//assertTrue(tw.getChromosomeNames().size() > 10);
 	}
 	
-	@Test
-	public void canReadBigWigFromRemote() throws IOException{
-		// String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02RawRep1.bigWig";
-		String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig";
-		BBFileReader reader=new BBFileReader(urlStr);
-		System.out.println(reader.getChromosomeNames());
-		BigWigIterator iter = reader.getBigWigIterator("chr1", 1000000, "chr1", 2000000, true);
-		while(iter.hasNext()){
-			System.out.println(iter.next().getStartBase());
-		}
-		System.out.println("NEW");
-		iter = reader.getBigWigIterator("chr10", 1000000, "chr10", 2000000, true);
-			while(iter.hasNext()){
-				System.out.println(iter.next().getStartBase());
-			}
-		reader.close();
-	}
+	// @Test
+	// public void canReadBigWigFromRemote() throws IOException{
+	// 	// String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02RawRep1.bigWig";
+	// 	String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig";
+	// 	BBFileReader reader=new BBFileReader(urlStr);
+	// 	System.out.println(reader.getChromosomeNames());
+	// 	BigWigIterator iter = reader.getBigWigIterator("chr1", 1000000, "chr1", 2000000, true);
+	// 	while(iter.hasNext()){
+	// 		System.out.println(iter.next().getStartBase());
+	// 	}
+	// 	System.out.println("NEW");
+	// 	iter = reader.getBigWigIterator("chr10", 1000000, "chr10", 2000000, true);
+	// 		while(iter.hasNext()){
+	// 			System.out.println(iter.next().getStartBase());
+	// 		}
+	// 	reader.close();
+	// }
 	
 	@Test
 	public void canGetDataColumnIndexForBedGraph() throws IOException, NoSuchAlgorithmException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{
@@ -95,15 +101,18 @@ public class TrackWigglesTest {
 	@Test
 	public void testYLimits() throws InvalidGenomicCoordsException, IOException, InvalidColourException, InvalidRecordException, ClassNotFoundException, SQLException{
 
+		// String url= "tmp.bedGraph";
+		// GenomicCoords gc= new GenomicCoords("chr1:4389687-26338119", 80, null, null);
 		String url= "test_data/test.bedGraph.gz";
 		GenomicCoords gc= new GenomicCoords("chr1:1-30", 80, null, null);
+				
 		TrackWiggles tw= new TrackWiggles(url, gc, 4);
 		tw.setYLimitMax((float)10.0);
 		tw.setYLimitMin((float)-10.0);
 		tw.setyMaxLines(10);
 		String prof= tw.printToScreen();
-		System.out.println(prof);
-		
+		assertTrue(prof.contains(","));
+		assertTrue(prof.contains(":"));
 	}
 	
 	@Test

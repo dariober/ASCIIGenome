@@ -30,10 +30,26 @@ fi
 
 source bashTestFunctions.sh
 
+gzip -c -d ../../../test_data/chr7.fa.gz > ../../../test_data/chr7.fa
+
 ASCIIGenome="$1 --debug 2 -ni"
 
 #pprint 'Can highlight pattern'
 #$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -r 1:1-400000 -x 'print -hl 200000'
+
+pprint 'Can show version'
+$ASCIIGenome -v
+assertEquals 0 $?
+
+pprint 'Set color for features'
+$ASCIIGenome ../../../test_data/hg19_genes_head.gtf -x "goto chr1:6267-17659 && featureColor -r DDX11L1 red -r WASH7P blue" > tmp.txt
+grep ';9;' tmp.txt # 9 is int for red
+rm tmp.txt
+
+pprint 'Set color for features with awk script'
+$ASCIIGenome ../../../test_data/hg19_genes_head.gtf -x "goto chr1:6267-17659 && featureColor -r '\$4 > 13000' red" > tmp.txt
+grep ';9;' tmp.txt # 9 is int for red
+rm tmp.txt
 
 pprint 'Can set config from file'
 $ASCIIGenome -c ../../main/resources/config/white_on_black.conf | grep -F '[48;5;0m'
@@ -91,15 +107,12 @@ pprint 'Genotype matrix'
 $ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'goto 1:1117997-1204429 && genotype -f {HOM} && genotype -n 1' > /dev/null
 $ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'goto 1:1117997-1204429 && genotype -s HG00096' > /dev/null
 
-pprint 'Set color for features'
-$ASCIIGenome ../../../test_data/hg19_genes_head.gtf -x "goto chr1:6267-17659 && featureColorForRegex -r DDX11L1 red -r WASH7P blue" > /dev/null
-
 pprint 'Test awk with getSamTag()'
 $ASCIIGenome ../../../test_data/ds051.actb.bam -x "goto chr7:5570087-5570291 && awk 'getSamTag(\"NM\") > 0'" > /dev/null
 
 pprint 'Test awk with VCF functions'
-$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf -x "goto 1:200000-1000000 && awk 'getInfoTag(\"AC\") > 0'" > /dev/null
-$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf -x "goto 1:200000-1000000 && awk 'getFmtTag(\"GT\") == \"0|1\"'" > /dev/null
+$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x "goto 1:200000-1000000 && awk 'getInfoTag(\"AC\") > 0'" > /dev/null
+$ASCIIGenome ../../../test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x "goto 1:200000-1000000 && awk 'getFmtTag(\"GT\") == \"0|1\"'" > /dev/null
 
 pprint 'Test awk with GTF/GFF'
 $ASCIIGenome ../../../test_data/hg19_genes_head.gtf -x "awk 'getGtfTag(\"gene_name\") ~ \"DD\"'" > /dev/null
@@ -130,7 +143,7 @@ pprint 'Use of PCT screen coords'
 $ASCIIGenome ../../../test_data/ds051.actb.bam  -x 'goto chrM:1 && 0 .2 && 16555 && .1' > /dev/null
 
 pprint 'Set gtf attribute for feature name'
-$ASCIIGenome ../../../test_data/hg19_genes.gtf.gz -x 'gffNameAttr gene_name' > /dev/null
+$ASCIIGenome ../../../test_data/hg19_genes.gtf.gz -x 'nameForFeatures gene_name' > /dev/null
 
 set +x
 echo -e "\033[32mDONE\033[0m"

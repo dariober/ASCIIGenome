@@ -52,7 +52,7 @@ public class GtfSqlite {
 	private void createSQLiteGtfDb() throws IOException {
 		
 	    // Get a tmp file name: Delete tmp file, keep the name.
-	    File tmpfile= Utils.createTempFile(".gtf.", ".tmp.db");
+	    File tmpfile= Utils.createTempFile(".gtf.", ".tmp.db", true);
 	    String sqlitedbName= tmpfile.getName();
 	    tmpfile.delete();
 	    

@@ -14,7 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -185,6 +184,7 @@ public class TrackSet {
 	}
 
 	private void addToOpenedFiles(String sourceName){
+		sourceName= Utils.reformatFileName(sourceName, true);
 		if(this.getOpenedFiles().contains(sourceName)){ // Remove and add as last opened
 			this.openedFiles.remove(sourceName);
 		} 
@@ -829,20 +829,20 @@ public class TrackSet {
 		}
 	}
 	
-	public void setAttributeForGFFName(List<String> tokens) throws InvalidCommandLineException{
+	public void setNameAttribute(List<String> tokens) throws InvalidCommandLineException{
 
 		// MEMO of subcommand syntax:
-		// 0 gffNameAttr
+		// 0 nameForFeatures
 		// 1 attrName
 		// 2 Regex
 
         boolean invertSelection= Utils.argListContainsFlag(tokens, "-v");
 		
-		String gtfAttributeForName= null; // Null will follow default 
+		String attributeForName= null; // Null will follow default 
 		if(tokens.size() >= 2){
-			gtfAttributeForName= tokens.get(1);
-			if(gtfAttributeForName.equals("NULL")){
-				gtfAttributeForName= null;
+			attributeForName= tokens.get(1);
+			if(attributeForName.equals("NULL")){
+				attributeForName= null;
 			}
 		}
 		
@@ -856,7 +856,7 @@ public class TrackSet {
         // And set as required:
         List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
         for(Track tr : tracksToReset){
-        	tr.setGtfAttributeForName(gtfAttributeForName);
+        	tr.setFeatureName(attributeForName);
         }		
 	}
 	
@@ -991,7 +991,7 @@ public class TrackSet {
 	 * @throws ClassNotFoundException 
 	 * */
 	public void setAwkForTrack(List<String> cmdInput) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-
+		
 		List<String> args= new ArrayList<String>();
 		for(String x : cmdInput){
 			args.add(x);
@@ -1030,7 +1030,10 @@ public class TrackSet {
 					break;
 				}
 			}
-			args.set(idxScript, "'" +  args.get(idxScript) + "'"); // Put back single quotes around the script, exclude cmd line params like -F 
+			// We need to quote the awk script using a quoting string not used inside the script itself.
+			// This is a pretty bad hack. You should store the awk command as a list rather than a string
+			// split and joined multiple times!
+			args.set(idxScript, Utils.quote(args.get(idxScript))); // Put back single quotes around the script, exclude cmd line params like -F 
 			awk= Joiner.on(" ").join(args.subList(0, idxScript+1));
 
 			// Everything after the script is track regexes
@@ -1381,13 +1384,13 @@ public class TrackSet {
 	 * */
 	public GenomicCoords goToNextFeatureOnFile(String trackId, GenomicCoords currentGc, double slop, boolean getPrevious) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
-		Track tr= this.matchIntervalFeatureTrack(trackId.trim());
+		List<TrackIntervalFeature> tr= this.matchIntervalFeatureTrack(trackId.trim());
 
-		if(tr == null){
+		if(tr.size() == 0){
 			return currentGc;
-		}
+		} 
 		
-		TrackIntervalFeature tif= (TrackIntervalFeature) tr;
+		TrackIntervalFeature tif= tr.get(0);
 		if(slop < 0){
 			return tif.coordsOfNextFeature(currentGc, getPrevious);
 		} else {
@@ -1406,40 +1409,51 @@ public class TrackSet {
 	 * return the first one with warning.
 	 * @throws InvalidCommandLineException 
 	 * */
-	private Track matchIntervalFeatureTrack(String trackTag) throws InvalidCommandLineException{
+	private List<TrackIntervalFeature> matchIntervalFeatureTrack(String trackTag) throws InvalidCommandLineException{
 
-		List<TrackIntervalFeature> ifTracks = this.getIntervalFeatureTracks();	
-		
-		Track tr= null;
-		
-		if(ifTracks.size() == 0){
-			System.err.println("\nWarning interval feature track is empty.");
-			return tr;
+		if(trackTag.isEmpty()) {
+			trackTag= ".*";
 		}
 		
-		if(trackTag.isEmpty() && ifTracks.size() == 1){
-			tr= ifTracks.get(0);
-		} else if (trackTag.isEmpty() && ifTracks.size() > 1) {
-			tr= ifTracks.get(0);
-			System.err.println("\nWarning: trackId not given default to first track found: " + tr.getTrackTag());
-		} else {
-			List<String> x= new ArrayList<String>();
-			x.add(trackTag);
-			List<Track> matched= matchTracks(x, true, false);
-			if(matched.size() == 0){
-				System.err.println("\nWarning '" + trackTag + "' not found in track set:");
-				System.err.println(ifTracks + "\n");
-				return tr;
-			} else {
-				tr= matched.get(0);
-				if(matched.size() > 1){
-					System.err.println("\nWarning '" + trackTag + "' matches: " + matched + ". First track is returned.");
-				}
+		List<TrackIntervalFeature> ifTracks = this.getIntervalFeatureTracks();
+		List<Track> matched= matchTracks(Arrays.asList(new String[] {trackTag}), true, false);
+		List<TrackIntervalFeature> tr= new ArrayList<TrackIntervalFeature>();
+		
+		for(Track xtr : matched) {
+			if(ifTracks.contains(xtr)) {
+				tr.add((TrackIntervalFeature) xtr);
 			}
 		}
 		return tr;
 	}
 
+//	if(ifTracks.size() == 0){
+//	return tr;
+//}
+//
+//if(trackTag.isEmpty() && ifTracks.size() == 1){
+//	tr= ifTracks.get(0);
+//} else if (trackTag.isEmpty() && ifTracks.size() > 1) {
+//	tr= ifTracks.get(0);
+//	System.err.println("\nWarning: trackId not given default to first track found: " + tr.getTrackTag());
+//} else {
+//	List<String> x= new ArrayList<String>();
+//	x.add(trackTag);
+//	List<Track> matched= matchTracks(x, true, false);
+//	if(matched.size() == 0){
+//		System.err.println("\nWarning '" + trackTag + "' not found in track set:");
+//		System.err.println(ifTracks + "\n");
+//		return tr;
+//	} else {
+//		tr= matched.get(0);
+//		if(matched.size() > 1){
+//			System.err.println("\nWarning '" + trackTag + "' matches: " + matched + ". First track is returned.");
+//		}
+//	}
+//}
+//return tr;
+
+	
 	private List<Track> matchTracks(List<String> patterns, boolean asRegex, boolean invertSelection) throws InvalidCommandLineException{
 
 		// Validate regexes
@@ -1490,20 +1504,24 @@ public class TrackSet {
 		
 	}
 
-	public GenomicCoords findNextMatchOnTrack(Pattern pattern, String trackId, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
+	public GenomicCoords findNextMatchOnTrack(Pattern pattern, String trackregex, GenomicCoords currentGc, boolean all) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException{
 
-		TrackIntervalFeature tif= (TrackIntervalFeature) matchIntervalFeatureTrack(trackId.trim());
-		if(tif == null){
+		List<TrackIntervalFeature> tif= matchIntervalFeatureTrack(trackregex.trim());
+		if(tif.size() == 0) {
 			return currentGc;
 		}
-
-		System.err.println("Matching on " + tif.getTrackTag());
-		
-		if(all){
-			return tif.genomicCoordsAllChromMatchInGenome(pattern, currentGc);
-		} else {
-			return tif.findNextMatch(currentGc, pattern);
+		for(TrackIntervalFeature tr : tif) {
+			GenomicCoords gc;
+			if(all){
+				gc = tr.genomicCoordsAllChromMatchInGenome(pattern, currentGc);
+			} else {
+				gc= tr.findNextMatch(currentGc, pattern);
+			}
+			if( ! gc.equalCoords(currentGc)) {
+				return gc;
+			}
 		}
+		return currentGc;
 	}
 
 	private List<TrackIntervalFeature> getIntervalFeatureTracks(){
@@ -1521,10 +1539,6 @@ public class TrackSet {
 	
 	public void setDataColForRegex(List<String> tokens) throws InvalidCommandLineException, ClassNotFoundException, IOException, InvalidRecordException, InvalidGenomicCoordsException, SQLException {
 
-		// MEMO of subcommand syntax:
-		// 0 gffNameAttr
-		// 1 attrName
-		// 2 Regex
         boolean invertSelection= Utils.argListContainsFlag(tokens, "-v");
 
 		int dataCol = 0; // Null will follow default 
@@ -1579,9 +1593,10 @@ public class TrackSet {
 			x.add(query);
 			List<Track> trList = this.matchTracks(x, true, false);
 			for(Track xtrack : trList){
-				if(!newTrackList.contains(xtrack)){ // This will remove dups
-					newTrackList.add(xtrack);
+				if(newTrackList.contains(xtrack)) {
+					newTrackList.remove(xtrack);
 				}
+				newTrackList.add(xtrack);
 			}
 		}
 		
@@ -1693,7 +1708,7 @@ public class TrackSet {
 				strRegion.set(1, "1");
 			}
 			if(strRegion.get(2) == null){
-				strRegion.set(2, new Integer(Integer.MAX_VALUE).toString());
+				strRegion.set(2, Integer.valueOf(Integer.MAX_VALUE).toString());
 			}
 			bookmarkRegion= new GenomicCoords(strRegion.get(0) + ":" + strRegion.get(1) + "-" + strRegion.get(2), 
 					gc.getUserWindowSize(), gc.getSamSeqDict(), gc.getFastaFile());

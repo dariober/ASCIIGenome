@@ -26,12 +26,12 @@ import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.index.IndexFactory;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndex;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
-import htsjdk.tribble.util.TabixUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -42,9 +42,8 @@ public class TrackWiggles extends Track {
 
 	// private double scorePerDot;
 	private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList;
-	private int bdgDataColIdx= 4; 
+	protected int bdgDataColIdx= 4; 
 	private BBFileReader bigWigReader;
-	
 	
 	/* C o n s t r u c t o r s */
 
@@ -95,8 +94,9 @@ public class TrackWiggles extends Track {
 	public void update() throws IOException, InvalidRecordException, InvalidGenomicCoordsException, ClassNotFoundException, SQLException {
 
 		if(this.bdgDataColIdx < 4){
-			System.err.println("Invalid index for bedgraph column of data value. Resetting to 4. Expected >=4. Got " + this.bdgDataColIdx);
+			System.err.println("Invalid index for bedgraph column of data value. Expected >=4. Got " + this.bdgDataColIdx);
 			this.bdgDataColIdx= 4;
+			throw new InvalidRecordException();
 		}
 
 		if(this.getTrackFormat().equals(TrackFormat.BIGWIG)){
@@ -116,10 +116,10 @@ public class TrackWiggles extends Track {
 		}
 	}
 
-	private String tabixBedgraphToTmpFile(String inBdg) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	protected String tabixBedgraphToTmpFile(String inBdg) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
-		File tmp = Utils.createTempFile(".asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz");
-		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+		File tmp = Utils.createTempFile(".asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz", true);
+		File tmpTbi= new File(tmp.getAbsolutePath() + FileExtensions.TABIX_INDEX);
 		tmpTbi.deleteOnExit();
 
 		new MakeTabixIndex(inBdg, tmp, TabixFormat.BED);
@@ -221,7 +221,7 @@ public class TrackWiggles extends Track {
 	
 	@Override
 	public String printToScreen() throws InvalidColourException{
-	
+
 		if(this.getyMaxLines() == 0){return "";}
 		
 		TextProfile textProfile= new TextProfile(this.getScreenScores(), this.getyMaxLines(), this.getYLimitMin(), this.getYLimitMax());
@@ -318,8 +318,8 @@ public class TrackWiggles extends Track {
 	 * @throws InvalidRecordException 
 	 * @throws InvalidGenomicCoordsException 
 	 * */
-	private void bedGraphToScores(String fileName) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
-		
+	protected void bedGraphToScores(String fileName) throws IOException, InvalidRecordException, InvalidGenomicCoordsException{
+
 		List<ScreenWiggleLocusInfo> screenWigLocInfoList= new ArrayList<ScreenWiggleLocusInfo>();
 		for(int i= 0; i < getGc().getUserWindowSize(); i++){
 			screenWigLocInfoList.add(new ScreenWiggleLocusInfo());
@@ -405,7 +405,7 @@ public class TrackWiggles extends Track {
 			// chroms.addAll();
 		}
 		if(this.getTrackFormat().equals(TrackFormat.BEDGRAPH)){
-			TabixIndex tbi= (TabixIndex) IndexFactory.loadIndex(this.getWorkFilename() + TabixUtils.STANDARD_INDEX_EXTENSION);
+			TabixIndex tbi= (TabixIndex) IndexFactory.loadIndex(this.getWorkFilename() + FileExtensions.TABIX_INDEX);
 			return tbi.getSequenceNames();
 		}
 		if(this.getTrackFormat().equals(TrackFormat.BIGWIG)){
@@ -454,10 +454,12 @@ public class TrackWiggles extends Track {
 			TrackWiggles tr= new TrackWiggles(this.getFilename(), this.getGc(), this.getBdgDataColIdx());
 			String fname= this.getWorkFilename();
 			Files.move(Paths.get(tr.getWorkFilename()), Paths.get(fname), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-			Files.move(Paths.get(tr.getWorkFilename() + TabixUtils.STANDARD_INDEX_EXTENSION), Paths.get(fname + TabixUtils.STANDARD_INDEX_EXTENSION), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			Files.move(Paths.get(tr.getWorkFilename() + FileExtensions.TABIX_INDEX), Paths.get(fname + FileExtensions.TABIX_INDEX), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		}
 		this.update();
 	}
 
-
+	@Override
+	public void setFeatureName(String gtfAttributeForName) {
+	}
 }

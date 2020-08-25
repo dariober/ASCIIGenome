@@ -2,13 +2,15 @@ package commandHelp;
 
 // With some patience you should replace the hardcoded command names with these. 
 public enum Command {
-	featureColorForRegex("featureColorForRegex"), 
+	featureColor("featureColor"), 
 	featureDisplayMode("featureDisplayMode"), 
 	print("print"),
 	q("q"),
 	h("h"),
 	f("f"),
 	b("b"),
+	open_bracket("["),
+	close_bracket("]"),
 	ff("ff"),
 	bb("bb"),
 	zi("zi"),
@@ -27,7 +29,7 @@ public enum Command {
 	seqRegex("seqRegex"),
 	bookmark("bookmark"),
 	grep("grep"),
-	gffNameAttr("gffNameAttr"),
+	nameForFeatures("nameForFeatures"),
 	gap("gap"),
 	readsAsPairs("readsAsPairs"),
 	trackHeight("trackHeight"),

@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "1.15.0";
+	public static String VERSION= "1.16.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	public static String WEB_RTD= "http://asciigenome.readthedocs.io/";
 	
@@ -28,6 +28,7 @@ public class ArgParse {
 				.description("DESCRIPTION\n"
 + "Genome browser at the command line.\n"
 + "\nFull docs at " + WEB_RTD);	
+		
 		parser.addArgument("input")
 			.type(String.class)
 			.required(false)

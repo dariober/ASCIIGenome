@@ -32,6 +32,7 @@ import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import tracks.Track;
+import utils.Tokenizer;
 
 /** Class to process input from console
  * */
@@ -82,7 +83,8 @@ public class InteractiveInput {
 		String messages= ""; // Messages that may be sent from the various methods.
 		for(String cmdString : cmdInputChainList){
 			
-			List<String> cmdTokens= Utils.tokenize(cmdString, " ");
+			//List<String> cmdTokens= Utils.tokenize(cmdString, " ");
+			List<String> cmdTokens= new Tokenizer(cmdString).tokenize();
 			
 			this.interactiveInputExitCode= ExitCode.CLEAN; // If something goes wrong this will change
 			try {
@@ -181,6 +183,12 @@ public class InteractiveInput {
 						String newRegion= Utils.parseConsoleInput(cmdTokens, proc.getGenomicCoordsHistory().current()).trim();
 						proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
 				
+				} else if(cmdTokens.get(0).matches("(\\[+|\\]+)\\d*")) {
+						
+						int times= this.countBrackets(cmdTokens);
+						String newRegion= this.moveWindowByColumns(proc.getGenomicCoordsHistory().current(), times);
+						proc.getGenomicCoordsHistory().add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
+						
 				} else if(cmdTokens.get(0).matches("^\\d+.*") || cmdTokens.get(0).matches("^\\.\\d+.*")){
 					String newRegion;
 					try{
@@ -267,7 +275,7 @@ public class InteractiveInput {
 				} else if((cmdTokens.get(0).equals("colorTrack") || cmdTokens.get(0).equals("colourTrack"))){
 					proc.getTrackSet().setTrackColourForRegex(cmdTokens); 
 
-				} else if((cmdTokens.get(0).equals("featureColorForRegex"))){
+				} else if((cmdTokens.get(0).equals("featureColor"))){
 					proc.getTrackSet().setFeatureColorForRegex(cmdTokens); 
 					
 				} else if(cmdTokens.get(0).equals("hideTitle")){
@@ -291,8 +299,8 @@ public class InteractiveInput {
 				} else if (cmdTokens.get(0).equals("readsAsPairs")){
 					proc.getTrackSet().setReadsAsPairsForRegex(cmdTokens);
 					
-				} else if(cmdTokens.get(0).equals("gffNameAttr")) {
-					proc.getTrackSet().setAttributeForGFFName(cmdTokens);
+				} else if(cmdTokens.get(0).equals("nameForFeatures")) {
+					proc.getTrackSet().setNameAttribute(cmdTokens);
 					
 				} else if(cmdTokens.get(0).equals("open") || cmdTokens.get(0).equals("addTracks")){
 					cmdTokens.remove(0);
@@ -502,6 +510,49 @@ public class InteractiveInput {
 		}
 		messages= "";
 		return proc;
+	}
+
+	private int countBrackets(List<String> cmdTokens) throws InvalidCommandLineException {
+		
+		String xtimes= cmdTokens.get(0).replaceAll("\\[|\\]", "");
+		if(! xtimes.isEmpty() && cmdTokens.size() > 1) {
+			throw new InvalidCommandLineException();
+		}
+		int times= 1;
+		if( ! xtimes.isEmpty()) {
+			times= Integer.valueOf(xtimes);
+		}
+		else if(cmdTokens.size() > 1) {
+			try {
+				times= Integer.valueOf(cmdTokens.get(1));
+			} catch(NumberFormatException e) {
+				System.err.append(cmdTokens.get(1) + " cannot be converted to integer");
+				throw new InvalidCommandLineException();
+			}
+		}
+		String brackets= cmdTokens.get(0).replaceAll("\\d", "");
+		times = times * brackets.length(); 
+
+		if(cmdTokens.get(0).startsWith("]")) {
+			times *= -1;
+		}
+		return times;
+	}
+
+	/** Return a string where the current genomic coordinates are moved forward or 
+	 * backwards "times" screen columns. Move backwards if times is negative.
+	 * @throws IOException 
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws InvalidCommandLineException 
+	 * */
+	private String moveWindowByColumns(GenomicCoords gc, int times) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+		String x = String.valueOf(Math.round(gc.getBpPerScreenColumn() * times));
+		if(Integer.valueOf(x) >= 0) {
+			x= "+" + x;
+		}
+		List<String> tokens= new ArrayList<String>();
+		tokens.add(String.valueOf(x));
+		return Utils.parseConsoleInput(tokens, gc);
 	}
 
 	private ExitCode explainSamFlag(List<String> cmdTokens, TrackProcessor proc) throws InvalidCommandLineException, IOException {

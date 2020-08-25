@@ -58,7 +58,7 @@ public class TrackReads extends Track{
 		this.setTrackFormat(TrackFormat.BAM);
 		
 		if(!Utils.bamHasIndex(bam)){
-			File temp= Utils.createTempFile(".asciigenome.", ".bam");
+			File temp= Utils.createTempFile(".asciigenome.", ".bam", true);
 			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
 			this.setWorkFilename(temp.getAbsolutePath());
 		} else {
@@ -396,7 +396,7 @@ public class TrackReads extends Track{
 				for(TextRead tr : reads){
 					for(Argument arg : args){
 						String regex= arg.getKey();
-						String color= arg.getArg();
+						//String color= arg.getArg();
 						boolean matched= Pattern.compile(regex).matcher(tr.getSamRecord().getSAMString()).find();
 						if(arg.isInvert()){
 							matched= ! matched;
@@ -426,9 +426,9 @@ public class TrackReads extends Track{
 		}
 	}
 
-	private List<Argument> getColorForRegex() {
-		return this.colorForRegex;
-	}
+//	private List<Argument> getColorForRegex() {
+//		return this.colorForRegex;
+//	}
 
 	@Override
 	public void reload() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
@@ -439,6 +439,10 @@ public class TrackReads extends Track{
 			Files.move(Paths.get(tr.getWorkFilename().replaceAll("\\.bam$", ".bai")), Paths.get(fname.replaceAll("\\.bam$", ".bai")), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		}
 		this.update();
+	}
+
+	@Override
+	public void setFeatureName(String gtfAttributeForName) {
 	}
 	
 }

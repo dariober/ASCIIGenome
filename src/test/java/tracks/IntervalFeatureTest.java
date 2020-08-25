@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,10 +47,11 @@ public class IntervalFeatureTest {
 		assertTrue(NumberUtils.isCreatable("001"));
 		assertTrue(NumberUtils.isCreatable("0x0004")); // Also valid
 		assertTrue(NumberUtils.isCreatable("-1.1e9"));
+		
 		// Invalid numbers
+		assertFalse(NumberUtils.isCreatable("001.1"));
 		assertFalse(NumberUtils.isCreatable("1.1 ")); // Note trailing space
 		assertFalse(NumberUtils.isCreatable(""));
-		assertFalse(NumberUtils.isCreatable("001.1"));
 	}
 
 	@Test 
@@ -158,6 +160,63 @@ public class IntervalFeatureTest {
 		f.setIdeogram(null, false);
 		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
 		assertTrue(ideogram.contains("|_foo_|"));
+	
+	}
+	
+	@Test
+	public void canSetFeatureNameFromBedField() throws InvalidGenomicCoordsException, InvalidColourException{
+
+		String line= "chr1 0 10 foo bar baz".replaceAll(" ", "\t");
+		IntervalFeature f= new IntervalFeature(line, TrackFormat.BED, null);
+		f.setScreenFrom(0);
+		f.setScreenTo(9);
+		
+		// Default: 4th field for name
+		String ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.contains("foo"));
+		
+		f.setBedFieldName(4);
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.contains("bar"));
+		
+		f.setBedFieldName(5);
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.contains("baz"));
+		
+		// Invalid index: No change
+		f.setBedFieldName(99);
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.contains("baz"));
+		
+		// Column index not available
+		line= "chr1 0 10".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED, null);
+		f.setScreenFrom(0);
+		f.setScreenTo(9);
+		f.setBedFieldName(4);
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.replaceAll("\\|", "").isEmpty());
+		
+		// Name missing
+		line= "chr1 0 10 .".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED, null);
+		f.setScreenFrom(0);
+		f.setScreenTo(9);
+		f.setBedFieldName(3);
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.replaceAll("\\|", "").isEmpty());
+		
+		// Name not wanted
+		line= "chr1 0 10 foo".replaceAll(" ", "\t");
+		f= new IntervalFeature(line, TrackFormat.BED, null);
+		f.setScreenFrom(0);
+		f.setScreenTo(9);
+		f.setBedFieldName(3);
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue(ideogram.contains("foo"));
+		f.setBedFieldName(-1);
+		ideogram= this.ideogramToString(f.getIdeogram(true, true), true);
+		assertTrue( ! ideogram.contains("foo"));
 	}
 	
 	@Test
@@ -183,7 +242,6 @@ public class IntervalFeatureTest {
 		f= new IntervalFeature(line, TrackFormat.BED, null);
 		f.setGtfAttributeForName("ID");
 		assertEquals("myname", f.getName());
-
 		
 		//Custom name from GTF
 		line= "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");

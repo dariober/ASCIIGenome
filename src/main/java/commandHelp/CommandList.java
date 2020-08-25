@@ -121,7 +121,7 @@ public class CommandList {
 	}
 	
 	public static String briefHelp() throws InvalidCommandLineException, InvalidColourException{
-		String help= "This a list of available commands with their brief description.\n"
+		String help= "Available commands with brief description.\n"
 				+ CMD_HELP 
 				+ "\n"
 				+ "\n"
@@ -156,19 +156,20 @@ public class CommandList {
 		CommandHelp cmd= new CommandHelp();		
 
 		cmd= new CommandHelp();
-		cmd.setName("goto"); cmd.setArgs("chrom:[from]-[to]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("goto"); cmd.setArgs("chrom[:from[-to]] | chrom [from [to]]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Go to region `chrom:from-to` or to `chrom:from` or to the start of `chrom`. "); 
-		cmd.setAdditionalDescription("The character ':' is a shortcut for `goto`. Examples::\n"
+		cmd.setAdditionalDescription("The region may be separated by `:` and `-` or by spaces. "
+				+ "The character ':' is a shortcut for `goto`. Examples::\n"
 				+ "\n"
-				+ "    goto chr8:1-1000~~## Go to interval 1-1000 on chr8\n"
-				+ "    goto chr8:10~~~~~~## Go to position 10 on chr8\n"
-				+ "    goto chr8~~~~~~~~~## Go to start of chr8\n"
-				+ "\n"
-				+ "Or the same with::\n"
-				+ "\n"
-				+ "    :chr8:1-1000 \n"
-				+ "    :chr8:10 \n"
-				+ "    :chr8"
+				+ "    goto chr8:1-1000~~~# Go to region 1-1000 on chr8\n"
+				+ "    goto chr8 1 1000~~~# Use spaces instead\n"
+				+ "    goto chr8 1-1000~~~# Same as above\n"
+				+ "    goto chr8 1 - 1000~# Same as above\n"
+				+ "    goto chr8 1 1,000~~# Comma in numbers is ok\n"
+				+ "    goto chr8:10~~~~~~~# Go to position 10 on chr8\n"
+				+ "    goto chr8~~~~~~~~~~# Go to start of chr8\n"
+				+ "    goto chr8 10 30 50~# Go to chr8:10-50\n"
+				+ "    :chr8~~~~~~~~~~~~~~# Colon ':' shortcut\n"
 				+ "\n");
 		cmdList.add(cmd);
 
@@ -265,6 +266,25 @@ public class CommandList {
 		cmdList.add(cmd);
 						
 		cmd= new CommandHelp();
+		cmd.setName("]"); cmd.setArgs("INT=1"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Move forward by INT screen columns"); 
+		cmd.setAdditionalDescription("Same as **[** but moves forward. See **[** for details");
+		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
+		cmd.setName("["); cmd.setArgs("INT=1"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setBriefDescription("Move backwards by INT screen columns."); 
+		cmd.setAdditionalDescription("The **[** character can be repeated "
+				+ "and each **[** will move by one column. Examples::\n"
+				+ "\n"
+				+ "    [~~~-> Move one screen column\n"
+				+ "    [[[~-> Move three columns\n"
+				+ "	   [ 3~-> Same as above\n"
+				+ "	   [3~~-> Same as above (space is optional)\n"
+				+ "\n");
+		cmdList.add(cmd);
+
+		cmd= new CommandHelp();
 		cmd.setName("zi"); cmd.setArgs("[INT = 1]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Zoom in INT times. Each zoom halves the window size. "); 
 		cmd.setAdditionalDescription("To zoom quickly use INT=~5 or 10 e.g. `zi~10`");
@@ -314,7 +334,7 @@ public class CommandList {
 		cmdList.add(cmd);
 
 		cmd= new CommandHelp();
-		cmd.setName("next"); cmd.setArgs("[-back] [-start] [-zo INT=5] [track]"); cmd.inSection= Section.NAVIGATION; 
+		cmd.setName("next"); cmd.setArgs("[-back] [-start] [-c] [-zo INT=5] [track]"); cmd.inSection= Section.NAVIGATION; 
 		cmd.setBriefDescription("Move to the next feature not overlapping the current coordinates. "); 
 		cmd.setAdditionalDescription(""
 				+ "By default `next` centers the window on the next feature and zooms out.\n"
@@ -603,22 +623,26 @@ public class CommandList {
 		cmdList.add(cmd);
 		
 		cmd= new CommandHelp();
-		cmd.setName("featureColorForRegex"); cmd.setArgs("[-r/-R regex color] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("Set colour for features captured by regex. ");
+		cmd.setName("featureColor"); cmd.setArgs("[-r/-R expression color] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Set colour for features captured by expression. ");
 		cmd.setAdditionalDescription(""
-				+ "This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color "
+				+ "This command affects interval feature tracks (bed, gff, vcf, etc) "
+				+ "and overrides the default color "
 				+ "for the lines captured by "
-				+ "a regex. It is useful to highlight features containg a string of interest, "
-				+ "such as 'CDS' in gff files.\n"
+				+ "the expression. Expression is a regex or an awk script (autodetermined). "
+				+ "It is useful to highlight features containg a "
+				+ "string of interest, "
+				+ "such as 'CDS' in gff files, or features where a numeric field satisfy a filter.\n"
 				+ "\n"
 				+ "Options:\n"
 				+ "\n"
-				+ ":code:`-r <regex> <color>` Features matching :code:`regex` will have color :code:`color`. "
-				+ "The regex is applied to the raw lines as read from file. "
-				+ "This option takes exactly two arguments and can be given zero or more times. "
-				+ "If this option is not present colors are reset to default.\n"
+				+ ":code:`-r <expression> <color>` Features matching :code:`expression` will "
+				+ "have color :code:`color`. "
+				+ "The expression is interpreted as regex or as an awk script and it "
+				+ "is applied to the raw lines as read from file. "
+				+ "This option takes exactly two arguments and can be given zero or more times.\n"
 				+ "\n"
-				+ ":code:`-R <regex> <color>` Same as :code:`-r` but sets color for features NOT "
+				+ ":code:`-R <expression> <color>` Same as :code:`-r` but sets color for features NOT "
 				+ "matched by regex.\n"
 				+ "\n"
 				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
@@ -627,11 +651,15 @@ public class CommandList {
 				+ "\n"
 				+ "Example::\n"
 				+ "\n"
-				+ "    featureColorForRegex -r CDS plum2 -r exon grey\n"
-				+ "    featureColorForRegex bed~~~~~~~~~-> Reset to default the track matching 'bed'\n"
-				+ "	   featureColorForRegex -R CDS grey -> Grey all features except those matching CDS\n"
+				+ "    featureColor -r CDS plum2 -r exon grey\n"
+				+ "    featureColor bed~~~~~~~~~-> Reset to default the track matching 'bed'\n"
+				+ "	   featureColor -R CDS grey -> Grey all features except those matching CDS\n"
+				+ "    \n"
+				+ "    Color blue where 9th field is > 3; color red where 9th is > 6\n"
+				+ "    featureColor -r '$9 > 3' blue -r '$9 > 6' red\n"
 				+ "\n"
-				+ "Colors can be specified by name, name prefix, or integer in range 0-255. Available colours:\n"
+				+ "Colors can be specified by name, name prefix, or integer in range 0-255. "
+				+ "Available colours:\n"
 				+ "\n"
 				+ Xterm256.colorShowForTerminal().replaceAll(" ", "~") 
 				+ "\n");
@@ -736,10 +764,14 @@ public class CommandList {
 
 		
 		cmd= new CommandHelp();
-		cmd.setName("gffNameAttr"); cmd.setArgs("[attribute_name = NULL | -na] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
-		cmd.setBriefDescription("GTF/GFF attribute to set the feature name or `-na` to suppress name. ");
-		cmd.setAdditionalDescription("Use attribute NULL to reset to default choice of attribute. To suppress "
-				+ "printing of the name use `-na`. Bed features get their name from the 4th column. "
+		cmd.setName("nameForFeatures"); cmd.setArgs("[attribute_name = NULL | -na] [-v] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
+		cmd.setBriefDescription("Select column index or GFF attribute to name features. ");
+		cmd.setAdditionalDescription("If the track is of type BED :code:`attribute_name` is "
+				+ "expected to be a column index (first column has index 1). "
+				+ "If track is of type GTF/GFF, :code:`attribute_name` is the key from "
+				+ "the attributes column (9th column). Use attribute NULL to "
+				+ "reset to default choice of attribute. To suppress "
+				+ "printing of the name use `-na`."
 				+ "Applies to annotation tracks captured by the list `track_regex`.\n"
 				+ "\n"
 				+ ":code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
@@ -751,13 +783,13 @@ public class CommandList {
 				+ "\n"
 				+ "Use gene_name as feature name or transcript_id::\n"
 				+ "\n"
-				+ "    gffNameAttr gene_name genes.gtf .*gff\n"
+				+ "    nameForFeatures gene_name genes.gtf .*gff\n"
 				+ "    PTGFRN_CCCCCCCCC\n"
 				+ "    \n"
-				+ "    gffNameAttr transcript_id genes.gtf .*gff\n"
+				+ "    nameForFeatures transcript_id genes.gtf .*gff\n"
 				+ "    NM_020440_CCCCCC\n"
 				+ "    \n"
-				+ "    gffNameAttr -na\n"
+				+ "    nameForFeatures -na\n"
 				+ "    CCCCCCCCCCCCCCCC <- Do not show name"
 				+ "    \n"
 				+ "\n");
@@ -968,7 +1000,9 @@ public class CommandList {
 				+ "What constitutes a number is inferred from context. Default 3, do not round if < 0.\n"
 				+ "\n"
 				+ "* :code:`-hl regex` Highlight substrings matching regex. If regex matches a FORMAT tag in a VCF record, "
-				+ "highlight the tag itself and also the sample values corresponding to that tag.\n"
+				+ "highlight the tag itself and also the sample values corresponding to that tag. "
+				+ "Alternatively, regex may be a comma separated list of column indexes to highlight. "
+				+ "Indexes are recognized by the $ prefix. E.g. :code:`-hl '$1, $3, $10'` will highlight columns 1, 3, 10.\n"
 				+ "\n"
 				+ "* :code:`-esf` Explain SAM Flag. Add to SAM flag an abbreviated description.\n"
 				+ "\n"
@@ -1153,11 +1187,13 @@ public class CommandList {
 		cmd.setName("orderTracks"); cmd.setArgs("[track_regex]..."); cmd.inSection= Section.GENERAL; 
 		cmd.setBriefDescription("Reorder tracks according to the list of regexes or sort by name.");
 		cmd.setAdditionalDescription("Not all the tracks need to be listed, the missing ones "
-				+ "follow the listed ones in unchanged order. Without arguments sort track by tag name.\n"
+				+ "follow the listed ones in unchanged order. Without arguments sort "
+				+ "track by tag name.\n"
 				+ "For example, given the track list: `[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]`::\n"
 				+ "\n"
 				+ "    orderTracks #2 #1~~~->~[hela.bed#2, hela.bam#1, hek.bam#3, hek.bed#4]\n"
 				+ "    orderTracks bam bed~->~[hela.bam#1, hek.bam#3, hela.bed#2, hek.bed#4]\n"
+				+ "    orderTracks . bam ~->~'bam' tracks go last\n"
 				+ "    orderTracks~~~~~~~~~->~name sort~[hela.bam#1, hela.bed#2, hek.bam#3, hek.bed#4]\n"
 				+ "");
 		cmdList.add(cmd);
@@ -1196,8 +1232,8 @@ public class CommandList {
 		cmd= new CommandHelp();
 		cmd.setName("samtools"); cmd.setArgs("[-f INT=0] [-F INT=4] [-q INT=0] [-v] [track_re = .*] ..."); cmd.inSection= Section.ALIGNMENTS; 
 		cmd.setBriefDescription("Apply samtools filters to alignment tracks captured by the list of track regexes.");
-		cmd.setAdditionalDescription("As *samtools view*, this command filters alignment records on the basis "
-				+ "of the given flags:\n"
+		cmd.setAdditionalDescription("Useful for stranded RNA-Seq and BS-Seq: bit flag 4096 "
+				+ "is selects reads mapping to TOP STRAND.\n"
 				+ "\n"
 				+ "* :code:`-F` Filter out flags with these bits set. NB: 4 is always set.\n"
 				+ "\n"
@@ -1211,6 +1247,8 @@ public class CommandList {
 				+ "\n"
 				+ "    samtools -q 10~~~~~~~~~~~-> Set mapq for all tracks. -f and -F reset to default\n"
 				+ "    samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar\n"
+				+ "    samtools -f 4096 ~~~~~~~~-> Select TOP STRAND reads\n"
+				+ "    samtools -F 4096 ~~~~~~~~-> Select BOTTOM STRAND reads\n"
 				+ "    samtools~~~~~~~~~~~~~~~~~-> Reset all to default.\n"
 				+ "");
 		cmdList.add(cmd);
@@ -1336,6 +1374,8 @@ public class CommandList {
 		paramList.add("b");
 		paramList.add("ff");
 		paramList.add("bb");
+		paramList.add("]");
+		paramList.add("[");
 		paramList.add("zi");
 		paramList.add("zo");
 		paramList.add("extend");
@@ -1355,11 +1395,11 @@ public class CommandList {
 		paramList.add("grep");
 		paramList.add("awk");
 		paramList.add("filterVariantReads");
-		paramList.add("gffNameAttr");
+		paramList.add("nameForFeatures");
 		paramList.add("gap");
 		paramList.add("trackHeight");
 		paramList.add("colorTrack");
-		paramList.add("featureColorForRegex");
+		paramList.add("featureColor");
 		paramList.add(Command.featureDisplayMode.getCmdDescr());
 		paramList.add("readsAsPairs");
 		paramList.add("hideTitle");

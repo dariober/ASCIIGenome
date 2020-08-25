@@ -32,6 +32,14 @@ public class TrackIntervalFeatureTest {
 	}
 	
 	@Test
+	public void canReadOddFilename() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
+		GenomicCoords gc= new GenomicCoords("1:1-100000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/odd[filename].vcf.gz", gc);
+		assertEquals("1", (tif.getGc().getChrom()));
+		tif.close();
+	}
+	
+	@Test
 	public void canCloseFiles() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
@@ -65,7 +73,25 @@ public class TrackIntervalFeatureTest {
 		assertTrue( ! tif.printToScreen().contains("216"));
 		
 	}
+	
+	@Test
+	public void canColorFeaturesByAwk()  throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
+
+		GenomicCoords gc= new GenomicCoords("chr1:1-100000", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+		tif.printToScreen(); // This is to populate the ideograms.
 		
+		List<Argument> colorForRegex= new ArrayList<Argument>();
+		colorForRegex.add(new Argument("'$5 > 13000'", "216", false));
+		tif.setColorForRegex(colorForRegex);
+		assertTrue(tif.printToScreen().contains("216"));
+
+		colorForRegex= new ArrayList<Argument>();
+		colorForRegex.add(new Argument("$5 > 0", "100", false));
+		tif.setColorForRegex(colorForRegex);
+		assertTrue( ! tif.printToScreen().contains("216"));
+	}
+	
 	@Test
 	public void canReturnFeaturesAsRawStrings() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 
@@ -193,10 +219,10 @@ public class TrackIntervalFeatureTest {
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		
 		tif.setNoFormat(true);
-		tif.setGtfAttributeForName("ID");
+		tif.setFeatureName("ID");
 		assertTrue(tif.printToScreen().contains("transcript:ENS"));
 		
-		tif.setGtfAttributeForName("Name");
+		tif.setFeatureName("Name");
 		assertTrue(tif.printToScreen().contains("ACTB-001"));
 
 	}
@@ -210,7 +236,7 @@ public class TrackIntervalFeatureTest {
 		tif.setNoFormat(true);
 		assertTrue(tif.printToScreen().contains("chromosome:7"));
 		
-		tif.setGtfAttributeForName("Alias");
+		tif.setFeatureName("Alias");
 		System.err.println(tif.printToScreen());
 		assertTrue(tif.printToScreen().contains("CM000669"));
 	}
@@ -227,6 +253,33 @@ public class TrackIntervalFeatureTest {
 				
 	}
 	
+	@Test 
+	public void canSetColumnForBedFeature() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
+		String intervalFileName= "test_data/refSeq.hg19.short.sort.bed";
+
+		GenomicCoords gc= new GenomicCoords("chr1:8404074-8404223", 80, null, null);
+		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		assertTrue(tif.printToScreen().contains("NM_001080397_utr3_8_0_chr1_8404074_f"));
+		tif.setFeatureName("5"); // 1-based!
+		assertTrue(tif.printToScreen().contains("_0_"));
+	
+		// Bigbed
+		intervalFileName= "test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb";
+
+		gc= new GenomicCoords("chr1:1200328-1200477", 80, null, null);
+		tif= new TrackIntervalFeature(intervalFileName, gc);
+		tif.setNoFormat(true);
+		assertTrue(tif.printToScreen().replaceAll("\\|", "").trim().isEmpty());
+
+		tif.setFeatureName("5");
+		assertTrue(tif.printToScreen().contains("_1000_"));
+		
+		// Name not to be shown
+		tif.setFeatureName("-na");
+		assertTrue(tif.printToScreen().replaceAll("\\|", "").trim().isEmpty());
+	}
+	
 	@Test
 	public void canReadBigBed() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
@@ -237,7 +290,6 @@ public class TrackIntervalFeatureTest {
 		tif.setNoFormat(true);
 		assertEquals(12, tif.getIntervalFeatureList().size());
 		assertEquals(564665+1, tif.getIntervalFeatureList().get(0).getFrom());
-		
 	}
 	
 	@Test
@@ -342,7 +394,6 @@ public class TrackIntervalFeatureTest {
 	@Test
 	public void canConstructTrack() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
 		String intervalFileName= "test_data/refSeq.bed";
-		//IntervalFeatureSet ifs= new IntervalFeatureSet(new File(intervalFileName)); 
 		GenomicCoords gc= new GenomicCoords("chr1:1-70", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);           		 		
@@ -363,7 +414,7 @@ public class TrackIntervalFeatureTest {
 		GenomicCoords gc= new GenomicCoords("chr1:11874-12227", 80, null, null);
 		TrackIntervalFeature tif= new TrackIntervalFeature(intervalFileName, gc);
 		tif.setNoFormat(true);
-		tif.setGtfAttributeForName("-na");
+		tif.setFeatureName("-na");
 		assertTrue(tif.printToScreen().startsWith("EEEEE"));
 	}
 
@@ -482,16 +533,6 @@ public class TrackIntervalFeatureTest {
 		subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
 		assertEquals(1000, subset.size());
 
-		// awk output is neither empty nor equal to input
-		// Exception expected.
-		pass= false;
-		try{
-			tif.setAwk("'{print 999}'");
-		} catch(InvalidGenomicCoordsException e){
-			pass= true;
-		}
-		assertTrue(pass);
-		
 	}
 	
 	@Test
@@ -870,19 +911,19 @@ public class TrackIntervalFeatureTest {
 		
 	}
 
-	@Test
-	public void canReadFromURL() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+	// @Test
+	// public void canReadFromURL() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		System.err.println("canReadFromURL: This can take  a while...");
-		String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02PkRep1.broadPeak.gz";
+	// 	System.err.println("canReadFromURL: This can take  a while...");
+	// 	String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02PkRep1.broadPeak.gz";
 
-		GenomicCoords gc= new GenomicCoords("chr18:1-10000", 80, null, null);
-		TrackIntervalFeature tif= new TrackIntervalFeature(urlStr, gc);		
-		
-		List<IntervalFeature> xset = tif.getFeaturesInInterval("chr1", 1, 1000000);
-		assertEquals(2, xset.size());
-		assertEquals(878407+1, xset.get(0).getFrom());
-		
-	}
+	// 	GenomicCoords gc= new GenomicCoords("chr18:1-10000", 80, null, null);
+	// 	TrackIntervalFeature tif= new TrackIntervalFeature(urlStr, gc);		
+	// 	
+	// 	List<IntervalFeature> xset = tif.getFeaturesInInterval("chr1", 1, 1000000);
+	// 	assertEquals(2, xset.size());
+	// 	assertEquals(878407+1, xset.get(0).getFrom());
+	// 	
+	// }
 	
 }

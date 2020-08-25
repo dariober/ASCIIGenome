@@ -15,9 +15,11 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,6 +50,7 @@ import htsjdk.variant.vcf.VCFInfoHeaderLine;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
+import utils.Tokenizer;
 
 public abstract class Track {
 
@@ -88,7 +91,6 @@ public abstract class Track {
 	protected String titleColour= null;
 	protected boolean bisulf= false;
 
-	private String gtfAttributeForName= null;
 	/** Should features on with same coords be squashed into a single one? */
 	private PrintRawLine printMode= PrintRawLine.OFF;
 	/** Number of decimal places to show when printing raw lines */
@@ -115,6 +117,7 @@ public abstract class Track {
 	private FeatureFilter featureFilter= new FeatureFilter(); 
 	private VCFHeader vcfHeader;
 	private Pattern highlightPattern;
+	
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
 	 * @throws InvalidColourException 
@@ -152,13 +155,16 @@ public abstract class Track {
 	public int getyMaxLines() {
 		return yMaxLines;
 	}
+	
 	public void setyMaxLines(int yMaxLines) throws MalformedURLException, ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
 		this.yMaxLines = yMaxLines;
 		this.update();
 	}
+	
 	public String getFilename() {
 		return filename;
 	}
+	
 	public void setFilename(String filename) {
 		UrlValidator urlValidator = new UrlValidator();
 		if(urlValidator.isValid(filename)){
@@ -168,8 +174,8 @@ public abstract class Track {
 		}
 	}
 	
-	public String getTrackTag() { 
-		return trackTag; 
+	public String getTrackTag() {
+		return Utils.reformatFileName(trackTag, false);
 	}
 	
 	public void setTrackTag(String trackTag) { 
@@ -227,9 +233,9 @@ public abstract class Track {
 	public void setBisulf(boolean bisulf) { this.bisulf= bisulf; }
 
 	public void setAwk(String awk) throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
-		
+
 		if( ! awk.trim().isEmpty()){
-			List<String> arglst= Utils.tokenize(awk, " ");
+			List<String> arglst= new Tokenizer(awk).tokenize(); // Utils.tokenize(awk, " ");
 			
 			// Do we need to set tab as field sep?
 			if(arglst.size() == 1 || ! arglst.contains("-F")){ // It would be more stringent to check for the script.
@@ -255,7 +261,7 @@ public abstract class Track {
 		this.getFeatureFilter().setShowHideRegex(showRegex, hideRegex);
 		this.update();
 	}
-
+ 
 	public Pattern getHideRegex() { 
 		return this.getFeatureFilter().getHideRegex();
 	}
@@ -274,13 +280,9 @@ public abstract class Track {
 		this.titleColour = colour;
 	}
 	
-	public String getGtfAttributeForName() {
-		return this.gtfAttributeForName;
-	}
+//	public abstract String getFeatureName();
 
-	public void setGtfAttributeForName(String gtfAttributeForName) {
-		this.gtfAttributeForName = gtfAttributeForName;
-	}
+	public abstract void setFeatureName(String gtfAttributeForName);
 
 	public PrintRawLine getPrintMode() {
 		return printMode;
@@ -708,6 +710,12 @@ public abstract class Track {
 	/**Put some ANSI highlighting to string x where there is a match to pattern
 	 * */
 	private String highlightPattern(String x, Pattern p){
+		
+		if(p.toString().trim().startsWith("$")) {
+			String out = highlightLogicalPattern(x, p.toString());
+			return out;
+		}
+		
 		Matcher m= p.matcher(x);
 		StringBuilder sb= new StringBuilder();
 		int idx= 0;
@@ -722,6 +730,30 @@ public abstract class Track {
 		String prefix= x.substring(idx, x.length());
 		sb.append(prefix);
 		return sb.toString();
+	}
+	
+	/*Interpret string x and add formatting to string p accordingly*/
+	private String highlightLogicalPattern(String x, String p) {
+		List<String> match = Splitter.on(",").omitEmptyStrings().trimResults().splitToList(p);
+		Set<Integer> idx = new HashSet<Integer>();
+		for(String z : match) {
+			if(z.startsWith("$")) {
+				z = z.replaceAll("\\$", "");
+				int i = Integer.parseInt(z);
+				idx.add(i - 1);
+			}
+		}
+		List<String> line = Splitter.on("\t").splitToList(x);
+		List<String> outline = new ArrayList<String>();
+		
+		for(int i = 0; i < line.size(); i++) {
+			String el = line.get(i);
+			if(idx.contains(i)) {
+				el = "\033[7m" + el + "\033[27m";
+			}
+			outline.add(el);
+		}
+		return Joiner.on("\t").join(outline);
 	}
 	
 	private Pattern getHighlightPattern(){
@@ -752,7 +784,7 @@ public abstract class Track {
 			vcf.addAll(recordsAsStrings);
 			recordsAsStrings= vcf;
 		}
-		File tmp= Utils.createTempFile(".asciigenome.", ".print.tmp");
+		File tmp= Utils.createTempFile(".asciigenome.", ".print.tmp", true);
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp.getAbsolutePath())));
         for(String line : recordsAsStrings){
         	writer.append(line.replaceAll("\n$", ""));
@@ -1067,8 +1099,9 @@ public abstract class Track {
 	/** Iterate through the features in this track and set background colour.
 	 * colorForRegex: Key= Regex to capture features; Value= Colour to use for the captures features.
 	 * @throws InvalidColourException 
+	 * @throws IOException 
 	 * */
-	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException {
+	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException, IOException {
 		
 	}
 

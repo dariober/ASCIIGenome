@@ -2,8 +2,6 @@ package tracks;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.common.base.Joiner;
-
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
 

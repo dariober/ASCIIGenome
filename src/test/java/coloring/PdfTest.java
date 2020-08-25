@@ -41,9 +41,8 @@ public class PdfTest {
 	public void getColorFromAnsi() throws IOException, InvalidColourException, InvalidConfigException{
 
 		// Dummy pdf object. It doesn't matter how you create it.
-		String ansiInput= FileUtils.readFileToString(new File("test_data/ansicolor.txt"));
+		String ansiInput= FileUtils.readFileToString(new File("test_data/ansicolor.txt"), "UTF-8");
 		Pdf pdf= new Pdf(ansiInput);
-
 
 		// Expected: xterm 244 = grey with rgb= 128
 		String x= "[38;5;244;48;5;15m FOO";
@@ -60,9 +59,26 @@ public class PdfTest {
 	}
 	
 	@Test
+	/**Check (maually) that insertions to the reference show with inverted formatting */
+	public void canInvertColours() throws DocumentException, IOException, InvalidColourException{
+		
+		String ansiInput= FileUtils.readFileToString(new File("test_data/insertions_ansi.txt"), "UTF-8");
+		
+		File tmp= new File("test_data/deleteme.pdf");
+		tmp.deleteOnExit();
+		Pdf pdf= new Pdf(ansiInput);
+		pdf.convert(tmp, 10, false);
+		assertTrue(tmp.length() > 1000); // Check file size is about right.
+	
+		PdfReader p = new PdfReader(tmp.getAbsolutePath());
+		assertEquals(1, p.getNumberOfPages());
+		
+	}
+	
+	@Test
 	public void canPrintPdfFromAnsiFile() throws DocumentException, IOException, InvalidColourException{
 		
-		String ansiInput= FileUtils.readFileToString(new File("test_data/ansicolor.txt"));
+		String ansiInput= FileUtils.readFileToString(new File("test_data/ansicolor.txt"), "UTF-8");
 		
 		File tmp= new File("test_data/deleteme.pdf");
 		tmp.deleteOnExit();
@@ -81,7 +97,7 @@ public class PdfTest {
 		File tmp= new File("append.pdf");
 		tmp.delete();
 		tmp.deleteOnExit();
-		String ansiInput= FileUtils.readFileToString(new File("test_data/ansicolor.txt"));
+		String ansiInput= FileUtils.readFileToString(new File("test_data/ansicolor.txt"), "UTF-8");
 		Pdf pdf= new Pdf(ansiInput);
 
 		// Append to file not yet created:

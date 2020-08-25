@@ -25,10 +25,10 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.readers.TabixReader;
-import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
@@ -47,7 +47,9 @@ public class TrackIntervalFeature extends Track {
 	
 	private List<Argument> colorForRegex= null;
 	private VCFCodec vcfCodec;
-		
+	private String gtfAttributeForName= null;
+	private int bedFieldForName= 3; // 0-based!
+	
 	/* C o n s t r u c t o r */
 
 	public TrackIntervalFeature(final String filename, GenomicCoords gc) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
@@ -71,8 +73,8 @@ public class TrackIntervalFeature extends Track {
 			if( ! suffix.endsWith(".gz")){
 				suffix += ".gz";
 			}
-			String tmpWorkFile= Utils.createTempFile(".asciigenome.", "." + suffix).getAbsolutePath();
-			new File(tmpWorkFile + TabixUtils.STANDARD_INDEX_EXTENSION).deleteOnExit();
+			String tmpWorkFile= Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
+			new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
 			this.setWorkFilename(tmpWorkFile);
 
 			this.setTrackFormat(Utils.getFileTypeFromName(new File(filename).getName()));
@@ -101,7 +103,6 @@ public class TrackIntervalFeature extends Track {
 			this.tabixReader.close();
 		}
 		if(this.bigBedReader != null){
-			System.err.println("TERE");
 			this.bigBedReader.close();
 		}
 	}
@@ -152,9 +153,6 @@ public class TrackIntervalFeature extends Track {
 					break;
 				}
 				IntervalFeature intervalFeature= new IntervalFeature(q, this.getTrackFormat(), null);
-//				if(intervalFeature.getRaw().contains("\t__ignore_me__")){ // Hack to circumvent issue #38
-//					continue;
-//				}
 				xFeatures.add(intervalFeature);
 			} 
 		}
@@ -192,9 +190,6 @@ public class TrackIntervalFeature extends Track {
 				break;
 			}
 			IntervalFeature intervalFeature= new IntervalFeature(q, TrackFormat.VCF, this.getVCFCodec());
-//			if(q.contains("\t__ignore_me__")){ // Hack to circumvent issue #38
-//				continue;
-//			}
 			xFeatures.add(intervalFeature);
 		} 
 		return xFeatures;
@@ -207,13 +202,9 @@ public class TrackIntervalFeature extends Track {
 	 * */
 	protected Boolean featureIsVisible(String x) throws InvalidGenomicCoordsException, IOException{
 		
-//		if(x.contains("__ignore_me__")){
-//			return false;
-//		}
-		
 		boolean showIt= true;
 		if(this.getShowRegex() != null && 
-		   ! this.getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue())){
+		   ! this.getShowRegex().equals(Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue()))){
 			showIt= this.getShowRegex().matcher(x).find();
 		}
 
@@ -231,22 +222,13 @@ public class TrackIntervalFeature extends Track {
 		
 		// Awk
 		try {
-			isVisible= Utils.passAwkFilter(x, this.getAwk());
+			isVisible= Utils.passAwkFilter(new String[] {x}, this.getAwk())[0];
 		} catch (Exception e) {
 			System.err.print(Utils.padEndMultiLine("Invalid awk script.", this.getGc().getUserWindowSize()));
 			try {
 				this.setAwk("");
 			} catch (ClassNotFoundException | InvalidRecordException | SQLException e1) {
 				e1.printStackTrace();
-			}
-			throw new InvalidGenomicCoordsException();
-		}
-		if(isVisible == null){
-			System.err.print(Utils.padEndMultiLine("Awk output must be either empty or equal to input.", this.getGc().getUserWindowSize()));
-			try {
-				this.setAwk(""); // Remove the faulty awk script.
-			} catch (ClassNotFoundException | IOException | InvalidRecordException | SQLException e) {
-				//
 			}
 			throw new InvalidGenomicCoordsException();
 		}
@@ -487,7 +469,12 @@ public class TrackIntervalFeature extends Track {
 	public String printToScreen() throws InvalidGenomicCoordsException {
 	
 		for(IntervalFeature x : this.getIntervalFeatureList()){
-			x.setGtfAttributeForName( this.getGtfAttributeForName() );
+			if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)) {
+				x.setGtfAttributeForName( this.gtfAttributeForName);
+			} 
+			else if(this.getTrackFormat().equals(TrackFormat.BED) || this.getTrackFormat().equals(TrackFormat.BIGBED)) {
+				x.setBedFieldName(Integer.valueOf(this.bedFieldForName));
+			}			
 		}
 		
 		List<String> printable= new ArrayList<String>();		
@@ -721,7 +708,6 @@ public class TrackIntervalFeature extends Track {
 		List<String> chromSearchOrder = this.getChromListStartingAt(chrom);
 		chromSearchOrder.add(chrom);
 		for(String curChrom : chromSearchOrder){
-			
 			TabixBigBedIterator iter= this.getReader().query(curChrom , startingPoint, Integer.MAX_VALUE);
 			while(true){
 				String line= iter.next();
@@ -735,7 +721,8 @@ public class TrackIntervalFeature extends Track {
 				} 
 			}
 			startingPoint= 0;
-		} return null; // Not found anywhere
+		} 
+		return null; // Not found anywhere
 	}
 
 	private VCFCodec getVCFCodec() {
@@ -750,7 +737,7 @@ public class TrackIntervalFeature extends Track {
 		return this.vcfCodec;
 	}
 
-	/** Return the set chroms sorted but with and first chrom set to startChrom.
+	/** Return the list of known chroms with startChrom in first position.
 	 * 	chroms:         chr1 chr2 chr3 chr4 chr5 chr6 chr7
 	 *	startChrom:     chr3
 	 *  return:         chr3 chr4 chr5 chr6 chr7 chr1 chr2
@@ -759,20 +746,27 @@ public class TrackIntervalFeature extends Track {
 		
 		List<String> chroms= this.getChromosomeNames();
 		
-		int idx= chroms.indexOf(startChrom);
-		if(idx == -1){ // If startChrom is not present at all in the bed/gtf file.
-			return chroms;
-		}
 		List<String> chromsStartingAt= new ArrayList<String>();
-		chromsStartingAt.addAll(chroms.subList(idx, chroms.size()));
-		chromsStartingAt.addAll(chroms.subList(0, idx));
-		
-		// Sanity check
-		if(chroms.size() != chromsStartingAt.size()){ 
-			throw new RuntimeException("Error reordering chroms. Expected " + chroms.size() + " chroms got " + chromsStartingAt.size());
+
+		int idx= chroms.indexOf(startChrom);
+		if(idx == -1){
+			// If startChrom is not present at all in the bed/gtf file.
+			chromsStartingAt.addAll(chroms);
+			chromsStartingAt.add(0, startChrom);
+		} else {
+			chromsStartingAt.addAll(chroms.subList(idx, chroms.size()));
+			chromsStartingAt.addAll(chroms.subList(0, idx));
+			
+			// Sanity check
+			if(chroms.size() != chromsStartingAt.size()){ 
+				throw new RuntimeException("Error reordering chroms. Expected " + chroms.size() + " chroms got " + chromsStartingAt.size());
+			}
+			if(! (chromsStartingAt.containsAll(chroms) && chroms.containsAll(chromsStartingAt))){
+				throw new RuntimeException("Error re-ordering chromosomes");
+			}
 		}
-		if(! (chromsStartingAt.containsAll(chroms) && chroms.containsAll(chromsStartingAt))){
-			throw new RuntimeException("Error re-ordering chromosomes");
+		if(! (chromsStartingAt.containsAll(chroms))){
+			throw new RuntimeException("Not all known chroms have been included");
 		}
 		return chromsStartingAt;
 	}
@@ -1062,7 +1056,7 @@ public class TrackIntervalFeature extends Track {
 	}
 
 	@Override
-	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException {
+	protected void changeFeatureColor(List<Argument> list) throws InvalidColourException, IOException {
 		if(list == null){
 			return;
 		}
@@ -1070,18 +1064,36 @@ public class TrackIntervalFeature extends Track {
 		for(Argument arg : list){
 			String regex= arg.getKey();
 			String color= arg.getArg();
-			for(IntervalFeature x : this.getIntervalFeatureList()){
-				boolean matched= Pattern.compile(regex).matcher(x.getRaw()).find();
+			String[] rawrecs= new String[this.getIntervalFeatureList().size()];
+			for(int i= 0; i < this.getIntervalFeatureList().size(); i++){
+				rawrecs[i]= this.getIntervalFeatureList().get(i).getRaw();
+			}
+			boolean[] matched= Utils.matchByAwkOrRegex(rawrecs, regex);
+			for(int i= 0; i < matched.length; i++) {
+				boolean m= matched[i];
 				if(arg.isInvert()){
-					matched= ! matched;
+					m= ! m;
 				}
-				if(matched){
-					for(FeatureChar f : x.getIdeogram(false, false)){
+				if(m){
+					for(FeatureChar f : this.getIntervalFeatureList().get(i).getIdeogram(false, false)){
 						f.setBgColor(color);
 						f.setFgColor(Xterm256.getContrastColor(color));
 					}
 				}
 			}
+			
+//			for(IntervalFeature x : this.getIntervalFeatureList()){
+//				boolean matched= Pattern.compile(regex).matcher(x.getRaw()).find();
+//				if(arg.isInvert()){
+//					matched= ! matched;
+//				}
+//				if(matched){
+//					for(FeatureChar f : x.getIdeogram(false, false)){
+//						f.setBgColor(color);
+//						f.setFgColor(Xterm256.getContrastColor(color));
+//					}
+//				}
+//			}
 		}
 	}
 	
@@ -1091,11 +1103,31 @@ public class TrackIntervalFeature extends Track {
 			TrackIntervalFeature tr= new TrackIntervalFeature(this.getFilename(), this.getGc());
 			String fname= this.getWorkFilename();
 			Files.move(Paths.get(tr.getWorkFilename()), Paths.get(fname), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-			Files.move(Paths.get(tr.getWorkFilename() + TabixUtils.STANDARD_INDEX_EXTENSION), 
-					Paths.get(fname + TabixUtils.STANDARD_INDEX_EXTENSION), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			Files.move(Paths.get(tr.getWorkFilename() + FileExtensions.TABIX_INDEX), 
+					Paths.get(fname + FileExtensions.TABIX_INDEX), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		}
 		this.tabixReader= this.getTabixReader(this.getWorkFilename());
 		this.update();
+	}
+
+	@Override
+	public void setFeatureName(String nameFieldOrAttribute) {
+		if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)) {
+			this.gtfAttributeForName= nameFieldOrAttribute;
+		} 
+		else if(this.getTrackFormat().equals(TrackFormat.BED) || this.getTrackFormat().equals(TrackFormat.BIGBED)) { 
+			if(nameFieldOrAttribute.equals("-na")) {
+				this.bedFieldForName= -1;
+			}
+			else {
+				try {
+					this.bedFieldForName= Integer.valueOf(nameFieldOrAttribute) - 1; // User's input is 1-based, convert ot 0-based
+				} catch(NumberFormatException e) {
+					System.err.println("Cannot convert " + nameFieldOrAttribute + " to integer");
+					throw e;
+				}
+			}
+		}
 	}
 
 }

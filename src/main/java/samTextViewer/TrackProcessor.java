@@ -39,8 +39,8 @@ public class TrackProcessor {
 	private boolean showGruler= true;
 	private boolean showCruler= true;
 	Stopwatch stopWatch= Stopwatch.createUnstarted();
-	private Boolean showMem;
-	private Boolean showTime;
+	private Boolean showMem= false;
+	private Boolean showTime= false;
 	
 	/* C O N S T R U C T O R S */
 	
