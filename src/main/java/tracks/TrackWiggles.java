@@ -26,12 +26,12 @@ import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.index.IndexFactory;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndex;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
-import htsjdk.tribble.util.TabixUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -119,7 +119,7 @@ public class TrackWiggles extends Track {
 	protected String tabixBedgraphToTmpFile(String inBdg) throws IOException, ClassNotFoundException, InvalidRecordException, SQLException{
 		
 		File tmp = Utils.createTempFile(".asciigenome." + new File(inBdg).getName() + ".", ".bedGraph.gz", true);
-		File tmpTbi= new File(tmp.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+		File tmpTbi= new File(tmp.getAbsolutePath() + FileExtensions.TABIX_INDEX);
 		tmpTbi.deleteOnExit();
 
 		new MakeTabixIndex(inBdg, tmp, TabixFormat.BED);
@@ -405,7 +405,7 @@ public class TrackWiggles extends Track {
 			// chroms.addAll();
 		}
 		if(this.getTrackFormat().equals(TrackFormat.BEDGRAPH)){
-			TabixIndex tbi= (TabixIndex) IndexFactory.loadIndex(this.getWorkFilename() + TabixUtils.STANDARD_INDEX_EXTENSION);
+			TabixIndex tbi= (TabixIndex) IndexFactory.loadIndex(this.getWorkFilename() + FileExtensions.TABIX_INDEX);
 			return tbi.getSequenceNames();
 		}
 		if(this.getTrackFormat().equals(TrackFormat.BIGWIG)){
@@ -454,7 +454,7 @@ public class TrackWiggles extends Track {
 			TrackWiggles tr= new TrackWiggles(this.getFilename(), this.getGc(), this.getBdgDataColIdx());
 			String fname= this.getWorkFilename();
 			Files.move(Paths.get(tr.getWorkFilename()), Paths.get(fname), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-			Files.move(Paths.get(tr.getWorkFilename() + TabixUtils.STANDARD_INDEX_EXTENSION), Paths.get(fname + TabixUtils.STANDARD_INDEX_EXTENSION), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			Files.move(Paths.get(tr.getWorkFilename() + FileExtensions.TABIX_INDEX), Paths.get(fname + FileExtensions.TABIX_INDEX), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		}
 		this.update();
 	}

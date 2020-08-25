@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-def jversion= JavaVersion.VERSION_1_9
+def jversion= JavaVersion.VERSION_1_8
 
 sourceCompatibility= jversion 
 targetCompatibility= jversion
@@ -28,7 +28,6 @@ ext.gunzip = { filename ->
 }
 
 /* Prepare test data */
-/*
 File targetFile= new File('test_data/chr7.fa')
 String targetMD5= "30c3693ead968844a769a90a801a900f"
 
@@ -53,7 +52,6 @@ if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
 
 ext.gunzip("test_data/CEU.exon.2010_06.genotypes.vcf.gz")
 ext.gunzip("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz")
-*/
 /* ------ */
 
 test {
@@ -84,8 +82,9 @@ dependencies {
 	compile group: 'net.sourceforge.argparse4j', name: 'argparse4j', version: '0.8.1'
 	compile group: 'jline', name: 'jline', version: '2.14.5'
     compile 'com.github.dariober:Jawk:e5c8f26'
-    compile 'com.github.dariober:htsjdk:0dee9c483' // v2.14.3
-    compile 'com.github.dariober:igv:3dcc149b9' // v2.4.10
+    compile group: 'com.github.igvteam', name: 'igv', version: 'v2.6.3'
+    compile group: 'log4j', name: 'log4j', version: '1.2.17'
+    compile group: 'com.github.dariober', name: 'htsjdk', version: 'b8f559b9f'
 	
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
 	compile group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'

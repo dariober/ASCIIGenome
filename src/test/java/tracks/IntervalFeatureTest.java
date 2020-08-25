@@ -47,9 +47,9 @@ public class IntervalFeatureTest {
 		assertTrue(NumberUtils.isCreatable("001"));
 		assertTrue(NumberUtils.isCreatable("0x0004")); // Also valid
 		assertTrue(NumberUtils.isCreatable("-1.1e9"));
-		assertTrue(NumberUtils.isCreatable("001.1"));
 		
 		// Invalid numbers
+		assertFalse(NumberUtils.isCreatable("001.1"));
 		assertFalse(NumberUtils.isCreatable("1.1 ")); // Note trailing space
 		assertFalse(NumberUtils.isCreatable(""));
 	}

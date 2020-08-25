@@ -35,8 +35,8 @@ public class TrackWigglesTest {
 		tw= new TrackWiggles("test_data/test.bedGraph", gc, 4);
 		tw.close();
 		
-		tw= new TrackWiggles("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig", gc, 4);
-		tw.close();
+		//tw= new TrackWiggles("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig", gc, 4);
+		//tw.close();
 	}
 	
 	@Test
@@ -49,27 +49,27 @@ public class TrackWigglesTest {
 		tw= new TrackWiggles("test_data/test.bedGraph", gc, 4);
 		assertTrue(tw.getChromosomeNames().size() > 0);
 		
-		tw= new TrackWiggles("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig", gc, 4);
-		assertTrue(tw.getChromosomeNames().size() > 10);
+		//tw= new TrackWiggles("http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig", gc, 4);
+		//assertTrue(tw.getChromosomeNames().size() > 10);
 	}
 	
-	@Test
-	public void canReadBigWigFromRemote() throws IOException{
-		// String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02RawRep1.bigWig";
-		String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig";
-		BBFileReader reader=new BBFileReader(urlStr);
-		System.out.println(reader.getChromosomeNames());
-		BigWigIterator iter = reader.getBigWigIterator("chr1", 1000000, "chr1", 2000000, true);
-		while(iter.hasNext()){
-			System.out.println(iter.next().getStartBase());
-		}
-		System.out.println("NEW");
-		iter = reader.getBigWigIterator("chr10", 1000000, "chr10", 2000000, true);
-			while(iter.hasNext()){
-				System.out.println(iter.next().getStartBase());
-			}
-		reader.close();
-	}
+	// @Test
+	// public void canReadBigWigFromRemote() throws IOException{
+	// 	// String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02RawRep1.bigWig";
+	// 	String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Cebpbsc150V0422111RawRep1.bigWig";
+	// 	BBFileReader reader=new BBFileReader(urlStr);
+	// 	System.out.println(reader.getChromosomeNames());
+	// 	BigWigIterator iter = reader.getBigWigIterator("chr1", 1000000, "chr1", 2000000, true);
+	// 	while(iter.hasNext()){
+	// 		System.out.println(iter.next().getStartBase());
+	// 	}
+	// 	System.out.println("NEW");
+	// 	iter = reader.getBigWigIterator("chr10", 1000000, "chr10", 2000000, true);
+	// 		while(iter.hasNext()){
+	// 			System.out.println(iter.next().getStartBase());
+	// 		}
+	// 	reader.close();
+	// }
 	
 	@Test
 	public void canGetDataColumnIndexForBedGraph() throws IOException, NoSuchAlgorithmException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException, SQLException{

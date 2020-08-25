@@ -911,19 +911,19 @@ public class TrackIntervalFeatureTest {
 		
 	}
 
-	@Test
-	public void canReadFromURL() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
+	// @Test
+	// public void canReadFromURL() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
-		System.err.println("canReadFromURL: This can take  a while...");
-		String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02PkRep1.broadPeak.gz";
+	// 	System.err.println("canReadFromURL: This can take  a while...");
+	// 	String urlStr= "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsA549Atf3V0422111Etoh02PkRep1.broadPeak.gz";
 
-		GenomicCoords gc= new GenomicCoords("chr18:1-10000", 80, null, null);
-		TrackIntervalFeature tif= new TrackIntervalFeature(urlStr, gc);		
-		
-		List<IntervalFeature> xset = tif.getFeaturesInInterval("chr1", 1, 1000000);
-		assertEquals(2, xset.size());
-		assertEquals(878407+1, xset.get(0).getFrom());
-		
-	}
+	// 	GenomicCoords gc= new GenomicCoords("chr18:1-10000", 80, null, null);
+	// 	TrackIntervalFeature tif= new TrackIntervalFeature(urlStr, gc);		
+	// 	
+	// 	List<IntervalFeature> xset = tif.getFeaturesInInterval("chr1", 1, 1000000);
+	// 	assertEquals(2, xset.size());
+	// 	assertEquals(878407+1, xset.get(0).getFrom());
+	// 	
+	// }
 	
 }

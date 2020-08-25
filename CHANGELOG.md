@@ -1,7 +1,11 @@
 New in 1.16.0
 =============
 
-* Java version required 1.9+ (effectively 1.10)
+* Reading TDF, bigWig, and bigBed from remote URL is no longer possible; local
+  files are ok. This is because the new API of htsjdk is incompatible with IGV
+  v2.6. Upgrading IGV is causing problems between theirs and our custom htsjdk.
+
+* Can use CSI index 
 
 * `featureColorForRegex`, renamed to `featureColor`, now accepts as expression
   a regex (as before) or an awk script. Awk is useful to color features
