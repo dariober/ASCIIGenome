@@ -1,11 +1,14 @@
 New in 1.16.0
 =============
 
-* Reading TDF, bigWig, and bigBed from remote URL is no longer possible; local
+* **Important** Reading TDF, bigWig, and bigBed from remote URL is no longer possible; local
   files are ok. This is because the new API of htsjdk is incompatible with IGV
   v2.6. Upgrading IGV is causing problems between theirs and our custom htsjdk.
 
-* Can use CSI index 
+* `print -hl` command can highllight by column position, *e.g.* `print -hl '$3,
+  $10'`
+
+* Can use CSI index for BAM files.
 
 * `featureColorForRegex`, renamed to `featureColor`, now accepts as expression
   a regex (as before) or an awk script. Awk is useful to color features

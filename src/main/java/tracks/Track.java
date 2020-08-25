@@ -15,9 +15,11 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -115,6 +117,7 @@ public abstract class Track {
 	private FeatureFilter featureFilter= new FeatureFilter(); 
 	private VCFHeader vcfHeader;
 	private Pattern highlightPattern;
+	
 	/** Format the title string to add colour or return title as it is if
 	 * no format is set.
 	 * @throws InvalidColourException 
@@ -707,6 +710,12 @@ public abstract class Track {
 	/**Put some ANSI highlighting to string x where there is a match to pattern
 	 * */
 	private String highlightPattern(String x, Pattern p){
+		
+		if(p.toString().trim().startsWith("$")) {
+			String out = highlightLogicalPattern(x, p.toString());
+			return out;
+		}
+		
 		Matcher m= p.matcher(x);
 		StringBuilder sb= new StringBuilder();
 		int idx= 0;
@@ -721,6 +730,30 @@ public abstract class Track {
 		String prefix= x.substring(idx, x.length());
 		sb.append(prefix);
 		return sb.toString();
+	}
+	
+	/*Interpret string x and add formatting to string p accordingly*/
+	private String highlightLogicalPattern(String x, String p) {
+		List<String> match = Splitter.on(",").omitEmptyStrings().trimResults().splitToList(p);
+		Set<Integer> idx = new HashSet<Integer>();
+		for(String z : match) {
+			if(z.startsWith("$")) {
+				z = z.replaceAll("\\$", "");
+				int i = Integer.parseInt(z);
+				idx.add(i - 1);
+			}
+		}
+		List<String> line = Splitter.on("\t").splitToList(x);
+		List<String> outline = new ArrayList<String>();
+		
+		for(int i = 0; i < line.size(); i++) {
+			String el = line.get(i);
+			if(idx.contains(i)) {
+				el = "\033[7m" + el + "\033[27m";
+			}
+			outline.add(el);
+		}
+		return Joiner.on("\t").join(outline);
 	}
 	
 	private Pattern getHighlightPattern(){
