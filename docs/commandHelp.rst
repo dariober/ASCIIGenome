@@ -622,7 +622,7 @@ Print lines for the tracks matched by `track_regex`.  Useful to show exactly wha
 
 * :code:`-round INT` Round numbers to this many decimal places. What constitutes a number is inferred from context. Default 3, do not round if < 0.
 
-* :code:`-hl regex` Highlight substrings matching regex. If regex matches a FORMAT tag in a VCF record, highlight the tag itself and also the sample values corresponding to that tag.
+* :code:`-hl regex` Highlight substrings matching regex. If regex matches a FORMAT tag in a VCF record, highlight the tag itself and also the sample values corresponding to that tag. Alternatively, regex may be a comma separated list of column indexes to highlight. Indexes are recognized by the $ prefix. E.g. :code:`-hl '$1, $3, $10'` will highlight columns 1, 3, 10.
 
 * :code:`-esf` Explain SAM Flag. Add to SAM flag an abbreviated description.
 
