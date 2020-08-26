@@ -4,12 +4,8 @@ jdk:
   - openjdk8
 
 script:
-    - WDIR=$PWD
+    - ./gradlew test jacocoTestReport || true
+    - bash <(curl -s https://codecov.io/bash) || true
     - cp ASCIIGenome build/libs/
     - cd src/test/java
     - bash integration_test.sh ../../../build/libs/ASCIIGenome
-
-after_success:
-    - cd $WDIR
-    - ./gradlew test jacocoTestReport;
-    - bash <(curl -s https://codecov.io/bash)
