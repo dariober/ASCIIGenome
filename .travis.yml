@@ -11,5 +11,5 @@ script:
 
 after_success:
     - cd $WDIR
-    - if [ -e ./gradlew ]; then ./gradlew jacocoTestReport;else gradle jacocoTestReport;fi
+    - ./gradlew test jacocoTestReport;
     - bash <(curl -s https://codecov.io/bash)
