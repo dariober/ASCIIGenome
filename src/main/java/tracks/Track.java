@@ -145,7 +145,7 @@ public abstract class Track {
 	 * */
 	public String toString(){
 		return  "file name: " + this.getFilename() + 
-				"; file type: " + Utils.getFileTypeFromName(this.getFilename()) +
+				"; track format: " + this.getTrackFormat() +
 				"; track tag: " + this.getTrackTag() +
 				"; track class: " + this.getClass().getSimpleName();
 	}
@@ -208,6 +208,10 @@ public abstract class Track {
 		this.noFormat = noFormat; 
 	}
 
+	public boolean getNoFormat() { 
+	    return this.noFormat; 
+	}
+	
 	public Float getYLimitMin() { 
 		return yLimitMin;
 	}
@@ -265,6 +269,7 @@ public abstract class Track {
 	public Pattern getHideRegex() { 
 		return this.getFeatureFilter().getHideRegex();
 	}
+	
 	public Pattern getShowRegex() {
 		return this.getFeatureFilter().getShowRegex();
 	}
@@ -447,6 +452,7 @@ public abstract class Track {
 		int count= this.getPrintRawLineCount();
 		
 		List<String> featureList= new ArrayList<String>();
+		
 		String omitString= "";
 		for(String line : rawList){
 			
@@ -484,7 +490,11 @@ public abstract class Track {
 				break;
 			}
 		}
-		List<String> tabList= Utils.tabulateList(featureList, this.getGc().getUserWindowSize());
+		String columnSep = " \033[32m|\033[39m ";
+		if(this.isNoFormat()) {
+			columnSep = Utils.stripAnsiCodes(columnSep);
+		}
+		List<String> tabList= Utils.tabulateList(featureList, this.getGc().getUserWindowSize(), columnSep);
 		StringBuilder sb= new StringBuilder();
 		if( ! omitString.isEmpty()){
 			sb.append(omitString + "\n");
@@ -1091,7 +1101,7 @@ public abstract class Track {
 	protected void setColorForRegex(List<Argument> xcolorForRegex) {
 		
 	}
-
+	
 	public GenotypeMatrix getGenotypeMatrix() {
 		return genotypeMatrix;
 	}
@@ -1269,6 +1279,5 @@ public abstract class Track {
 	public void setPrintFormattedVep(String printFormattedVep) {
 		this.printFormattedVep = printFormattedVep;
 	}
-	
 }
 

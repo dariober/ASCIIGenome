@@ -5,8 +5,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +51,21 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 		for(IntervalFeature ift : this.getIntervalFeatureList()){
 			ift.mapToScreen(this.getGc().getMapping());
 		}
+	}
+	
+	private void writeRegionsToFile(BufferedWriter wr, Set<String> regionListPos, String strand) throws InvalidGenomicCoordsException, IOException {
+
+	    List<IntervalFeature> iftList = new ArrayList<IntervalFeature>();
+	    
+	    for(String reg : regionListPos){
+            reg = reg + "\t.\t" + strand;
+            IntervalFeature x = new IntervalFeature(reg, this.getTrackFormat(), null, this.getScoreColIdx());
+            iftList.add(x);
+        }
+	    this.removeInvisibleFeatures(iftList);
+	    for(int i = 0; i < iftList.size(); i++) {
+	        wr.write(iftList.get(i).getRaw() + "\n");
+	    }
 	}
 	
 	/**
@@ -108,26 +125,30 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 
 		// Write sets of matches to file	
 		// =============================
-					
-		for(String reg : regionListPos){
-			reg += "\t.\t+\n";
-			if(this.featureIsVisible(reg)){
-				wr.write(reg);
-			}
-		}
-		for(String reg : regionListNeg){
-			reg += "\t.\t-\n";
-			if(this.featureIsVisible(reg)){
-				wr.write(reg);
-			}
-		}
-		for(String reg : regionListPalind){
-			reg += "\t.\t.\n";
-			if(this.featureIsVisible(reg)){
-				wr.write(reg);
-			}
-		}
-		wr.close();
+		
+		this.writeRegionsToFile(wr, regionListPos, "+");
+		this.writeRegionsToFile(wr, regionListNeg, "-");
+		this.writeRegionsToFile(wr, regionListPalind, ".");
+        wr.close();
+		
+//		for(String reg : regionListPos){
+//			reg += "\t.\t+\n";
+//			if(this.featureIsVisible(reg)){
+//				wr.write(reg);
+//			}
+//		}
+//		for(String reg : regionListNeg){
+//			reg += "\t.\t-\n";
+//			if(this.featureIsVisible(reg)){
+//				wr.write(reg);
+//			}
+//		}
+//		for(String reg : regionListPalind){
+//			reg += "\t.\t.\n";
+//			if(this.featureIsVisible(reg)){
+//				wr.write(reg);
+//			}
+//		}
 		
 		// Compress, index, read back as list of IntervalFeatures
 		// ======================================================

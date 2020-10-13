@@ -61,7 +61,7 @@ public class TrackSeqRegexTest {
 	}
 	
 	@Test
-	public void canReturnTrackFromMatchingRegex() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void canReturnTrackFromMatchingRegex() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 
 		GenomicCoords gc= new GenomicCoords("seq:1-100", 80, null, "test_data/seq_cg.fa");
 		TrackSeqRegex trackSeqRegex= new TrackSeqRegex(gc);
@@ -98,7 +98,7 @@ public class TrackSeqRegexTest {
 	}
 
 	@Test
-	public void canIntrepretIupac() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException{
+	public void canIntrepretIupac() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException{
 
 		GenomicCoords gc= new GenomicCoords("seq:1-100", 80, null, "test_data/seq_cg.fa");
 		TrackSeqRegex trackSeqRegex= new TrackSeqRegex(gc);

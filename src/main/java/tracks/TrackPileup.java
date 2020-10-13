@@ -36,7 +36,7 @@ import samTextViewer.Utils;
 
 /** Collect depth and coverage info over a region of a chromosome
  * */
-public class TrackPileup extends TrackWiggles {
+public class TrackPileup extends TrackBedgraph {
 
 	/** Key: Position of the locus. Value: information at this position. 
 	 * NB: This is a hashmap so positions are not returned in order. The method(s)

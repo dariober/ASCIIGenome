@@ -1,3 +1,16 @@
+New in 1.17.0
+=============
+
+* `print` shows column separated by green `|` (more readable)
+
+* BEDGRAPH format is an extension of BED. This means lines in bedgraph lines can be printed with `print` and filtered with `grep` & `awk`
+
+* Add command `bedToBedgraph` to switch from BED to BEDGRAPH and viceversa
+
+* Speed improvements to filtering with `awk`
+
+* Command line argument `--showMemTime` replaces `--showMem` and `--showTime`
+
 New in 1.16.0
 =============
 

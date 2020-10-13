@@ -52,7 +52,8 @@ if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
 
 ext.gunzip("test_data/CEU.exon.2010_06.genotypes.vcf.gz")
 ext.gunzip("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz")
-/* ------ */
+
+// ---------------------------
 
 test {
     testLogging {

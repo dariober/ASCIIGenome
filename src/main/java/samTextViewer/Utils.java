@@ -375,7 +375,7 @@ public class Utils {
 			} 
 			else {
 				// No overlap add merged interval to list and reset new merged interval
-				IntervalFeature x= new IntervalFeature(mergedChrom + "\t" + (mergedFrom-1) + "\t" + mergedTo, TrackFormat.BED, null);
+				IntervalFeature x= new IntervalFeature(mergedChrom + "\t" + (mergedFrom-1) + "\t" + mergedTo, TrackFormat.BED, null, -1);
 				x.setScreenFrom(mergedScreenFrom);
 				x.setScreenTo(mergedScreenTo);
 				if(strand.size() == 1){
@@ -561,7 +561,7 @@ public class Utils {
 				if(fmt.equals(TrackFormat.VCF)){
 					region= line.split("\t")[0] + ":" + line.split("\t")[1]; 
 				} else {
-					IntervalFeature feature= new IntervalFeature(line, fmt, null);
+					IntervalFeature feature= new IntervalFeature(line, fmt, null, -1);
 					region= feature.getChrom() + ":" + feature.getFrom();
 				}
 				br.close();
@@ -731,7 +731,6 @@ public class Utils {
 				|| fileName.endsWith(".vcf.bgz")){
 			return TrackFormat.VCF;
 		} else {
-			// System.err.println("Unsopported file: " + fileName);
 			return TrackFormat.BED;
 		}
 	}
@@ -1141,7 +1140,7 @@ public class Utils {
 	 * being nicely tabulated. If the amount of white space in a cell is too much relative to 
 	 * terminalWidth, then flush left. With special value: -1 never flush left, with 0 always flush.
 	 */
-	public static List<String> tabulateList(List<String> rawList, int terminalWidth) {
+	public static List<String> tabulateList(List<String> rawList, int terminalWidth, String columnSep) {
 		// This method could be streamlined to be more efficient. There are quite a few
 		// Lists moved around that could be avoided. However, the size of the table is
 		// typically small enough that we prefer a clearer layout over efficiency.
@@ -1225,7 +1224,7 @@ public class Utils {
 		// Finally, join row into a list of single, printable strings:		
 		List<String> outputTable= new ArrayList<String>();
 		for(List<String> lstRow : tTable){
-			String row= Joiner.on(" ").join(lstRow); // Here you decide what separates columns.
+			String row= Joiner.on(columnSep).join(lstRow); // Here you decide what separates columns.
 			outputTable.add(row.toString()); // Do not use .trim() here otherwise you could strip ANSI formatting
 		}
 		return outputTable;
@@ -1504,7 +1503,7 @@ public class Utils {
 			String row= tabList.get(i) + "\t" + bar;
 			tabList.set(i, row);
 		}
-		List<String> table= Utils.tabulateList(tabList, -1);
+		List<String> table= Utils.tabulateList(tabList, -1, " ");
 		StringBuilder out= new StringBuilder();
 		for(String x : table){
 			out.append(x).append("\n");
@@ -1969,7 +1968,7 @@ public class Utils {
 		
 		String script= args.remove(args.size()-1); // 'remove' returns the element removed
 		File awkFile= Utils.createTempFile(".asciigenome.", ".awk", true);
-
+		
 		BufferedWriter wr= new BufferedWriter(new FileWriter(awkFile));
 		wr.write(Track.awkFunc);
 		wr.write(script);
@@ -1989,7 +1988,7 @@ public class Utils {
 			PrintStream os= new PrintStream(baos);
 			new org.jawk.Main(args.toArray(new String[0]), is, os, System.err);
 		} catch(Exception e){
-			e.printStackTrace();
+			// e.printStackTrace();
 			throw new IOException();
 		} finally{
 			System.setOut(stdout);
@@ -2018,7 +2017,7 @@ public class Utils {
 
 	
 	/** Right-pad each line in string x with whitespaces. Each line is 
-	 * defined by the newline. Each line is padded to become at leas of length size.   
+	 * defined by the newline. Each line is padded to become at least of length size.   
 	 * */
 	public static String padEndMultiLine(String x, int size) {
 

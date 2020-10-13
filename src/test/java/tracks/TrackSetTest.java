@@ -97,6 +97,49 @@ public class TrackSetTest {
 		
 	}
 	
+    @Test
+    public void canChangeTrackFormatToBed() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, BamIndexNotFoundException, InvalidColourException{
+                
+        GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
+        TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
+        
+        ts.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+        ts.addTrackFromSource("test_data/dataCol.bedGraph", gc, null);
+        ts.addTrackFromSource("test_data/hg19_genes_head.gtf.gz", gc, null);
+        ts.addTrackFromSource("test_data/ds051.short.bam", gc, null);
+        
+        ts.getTrackList().get(1).setNoFormat(true);
+        
+        // Check it looks like bedgraph
+        assertTrue(ts.getTrackList().get(1).printToScreen().contains(":"));
+        
+        String cmdInput= "bedToBedgraph";
+        
+        ts.setTrackFormatForRegex(Utils.tokenize(cmdInput, " "));
+
+        assertEquals(TrackFormat.BEDGRAPH, ts.getTrackList().get(0).getTrackFormat());
+        assertEquals(TrackFormat.BED, ts.getTrackList().get(1).getTrackFormat());
+        assertEquals(TrackFormat.GTF, ts.getTrackList().get(2).getTrackFormat());
+        assertEquals(TrackFormat.BAM, ts.getTrackList().get(3).getTrackFormat());
+        
+        assertTrue(!ts.getTrackList().get(1).printToScreen().contains(":"));
+        assertTrue(ts.getTrackList().get(1).printToScreen().contains("|"));
+        
+        ts.setTrackFormatForRegex(Utils.tokenize(cmdInput, " "));
+        assertEquals(TrackFormat.BED, ts.getTrackList().get(0).getTrackFormat());
+        assertEquals(TrackFormat.BEDGRAPH, ts.getTrackList().get(1).getTrackFormat());
+        assertEquals(TrackFormat.GTF, ts.getTrackList().get(2).getTrackFormat());
+        assertEquals(TrackFormat.BAM, ts.getTrackList().get(3).getTrackFormat());
+        
+        cmdInput= "bedToBedgraph refSeq";
+        assertEquals(TrackFormat.BED, ts.getTrackList().get(0).getTrackFormat());
+        assertEquals(TrackFormat.BEDGRAPH, ts.getTrackList().get(1).getTrackFormat());
+        ts.setTrackFormatForRegex(Utils.tokenize(cmdInput, " "));
+        assertEquals(TrackFormat.BEDGRAPH, ts.getTrackList().get(0).getTrackFormat());
+        assertEquals(TrackFormat.BEDGRAPH, ts.getTrackList().get(1).getTrackFormat());
+        
+    }
+    
 	@Test
 	public void canFindNextMatchOnTrack() throws ClassNotFoundException, IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidCommandLineException {
 		
@@ -524,7 +567,7 @@ public class TrackSetTest {
 		}
 		assertTrue(pass);
 		
-		Track t4= new TrackWiggles("test_data/ear045.oxBS.actb.tdf", gc, 4); ts.addTrack(t4, "x");
+		Track t4= new TrackWiggles("test_data/ear045.oxBS.actb.tdf", gc); ts.addTrack(t4, "x");
 		cmdInput= "awk '1<2'";
 		ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
 		
@@ -567,8 +610,18 @@ public class TrackSetTest {
 		}
 		assertTrue(pass);
 		
-		// Nothing to replace
+		// Nothing to replace (invalid script)
 		String awk= "awk 'foo_get() get (bar)' vcf";
+		pass = false;
+		try {
+		    ts.setAwkForTrack(Utils.tokenize(awk, " "));
+		} catch(IOException e) {
+		    pass = true;
+		}
+		assertTrue(pass);
+		
+		// Nothing to replace (script OK)
+		awk= "awk '$0 == \"foo_get() get (bar)\"' vcf";
 		ts.setAwkForTrack(Utils.tokenize(awk, " "));
 		assertTrue(ts.getTrack(t1).getAwk().contains("foo_get() get (bar)"));
 	}
@@ -979,9 +1032,9 @@ public class TrackSetTest {
 		TrackSet ts= new TrackSet(new ArrayList<String>(), null);
 		assertEquals("", ts.showTrackInfo());
 
-		Track t1= new TrackIntervalFeature(null); t1.setFilename("/path/to/foo.gz"); ts.addTrack(t1, "foo.gz");
-		Track t2= new TrackIntervalFeature(null); t2.setFilename("/path/to/foo.vcf"); ts.addTrack(t2, "foo.vcf");
-		Track t3= new TrackIntervalFeature(null); t3.setFilename("/path/to/bla.gz"); ts.addTrack(t3, "bla.gz");
+		Track t1= new TrackIntervalFeature(null); t1.setFilename("/path/to/foo.gz"); t1.setTrackFormat(TrackFormat.BED); ts.addTrack(t1, "foo.gz");
+		Track t2= new TrackIntervalFeature(null); t2.setFilename("/path/to/foo.vcf"); t1.setTrackFormat(TrackFormat.BED); ts.addTrack(t2, "foo.vcf");
+		Track t3= new TrackIntervalFeature(null); t3.setFilename("/path/to/bla.gz"); t1.setTrackFormat(TrackFormat.BED); ts.addTrack(t3, "bla.gz");
 
 		assertTrue(ts.showTrackInfo().contains("foo.gz"));
 		assertTrue(ts.showTrackInfo().contains("/path/to/foo.gz"));

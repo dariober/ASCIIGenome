@@ -58,7 +58,6 @@ public class TrackBookmarkTest {
 		
 		// Can set name
 		assertEquals("book2", bm.getIntervalFeatureList().get(1).getName());
-		System.out.println(bm.printToScreen());
 	}
 	
 	@Test

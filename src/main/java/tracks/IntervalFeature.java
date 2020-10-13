@@ -31,6 +31,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	private int from;           // Required. NB 1 based also for bed files.
 	private int to;             // Required 
 
+	private int scoreColIdx = -1; // Column index for score value **1-based**. Typically 5 for BED and 4 for BEDGRAPH
 	private float score= Float.NaN;
 	private char strand= '.'; 
 	private String source= "."; // Gtf specific
@@ -42,7 +43,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	private String name= ".";
 	/** Use this attribute to as key to assign the name field */
 	private String gtfAttributeForName= null;
-	private int bedFieldName= 3;
+	private int bedFieldName= 3; // Column index for feature name **0-based**
 	/** Start position of feature in screen coordinates. -1 if the feature is not part of the screenshot. 
 	 * screenFrom/To are both 0-based. So a feature that occupies one character only (e.g. a SNP) 
 	 * at the first screen column as screenFrom= 0 and screenTo= 0. 
@@ -62,12 +63,22 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	 * Create an IntervalFeature from a String. Typically this is a line read from file.
 	 * vcfHeader can be null if trackformat is not VCF.
 	 */
-	public IntervalFeature(String line, TrackFormat format, VCFCodec vcfCodec) throws InvalidGenomicCoordsException{
+	public IntervalFeature(String line, TrackFormat format, VCFCodec vcfCodec, int scoreColIdx) throws InvalidGenomicCoordsException{
 
+	    if(scoreColIdx < 0) {
+	        if(format.equals(TrackFormat.BED) || format.equals(TrackFormat.BIGBED)) {
+	            scoreColIdx = 5;
+	        } 
+	        else if(format.equals(TrackFormat.BEDGRAPH)) {
+	            scoreColIdx = 4;
+	        }
+	    }
+	    this.scoreColIdx = scoreColIdx;
+	    
 		if(format.equals(TrackFormat.BED) || 
 				format.equals(TrackFormat.BEDGRAPH) || 
 				format.equals(TrackFormat.BIGBED)){
-			this.intervalFeatureFromBedLine(line);
+			this.intervalFeatureFromBedLine(line, this.scoreColIdx);
 			this.trackFormat= TrackFormat.BED;
 		
 		} else if(format.equals(TrackFormat.GFF) || format.equals(TrackFormat.GTF)){
@@ -149,7 +160,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 	
 	/* M e t h o d s */
 	
-	private IntervalFeature intervalFeatureFromBedLine (String bedLine) throws InvalidGenomicCoordsException{
+	private IntervalFeature intervalFeatureFromBedLine (String bedLine, int scoreColIdx) throws InvalidGenomicCoordsException{
 		this.setRaw(bedLine);
 
 		List<String> bedList = Lists.newArrayList(Splitter.on("\t").split(bedLine));
@@ -166,9 +177,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 		else if(bedList.size() > this.bedFieldName){
 			this.name= bedList.get(this.bedFieldName);
 		}
-		if(bedList.size() > 4){
-			if(NumberUtils.isCreatable(bedList.get(4))){ // NB: Returns false if leading or trailing spaces are present.
-				this.score= Float.valueOf(bedList.get(4));
+		scoreColIdx -= 1; // Make 0-based
+		if(bedList.size() > scoreColIdx){
+			if(NumberUtils.isCreatable(bedList.get(scoreColIdx))){ // NB: Returns false if leading or trailing spaces are present.
+				this.score= Float.valueOf(bedList.get(scoreColIdx));
 			}
 		}
 		if(bedList.size() > 5){
@@ -722,6 +734,6 @@ public class IntervalFeature implements Comparable<IntervalFeature>{
 
 	protected void setBedFieldName(int i) throws InvalidGenomicCoordsException {
 		this.bedFieldName= i;
-		this.intervalFeatureFromBedLine(this.getRaw());
+		this.intervalFeatureFromBedLine(this.getRaw(), this.scoreColIdx);
 	}
 }
