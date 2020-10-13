@@ -60,6 +60,9 @@ test {
         events "passed", "skipped", "failed"
         exceptionFormat "full"
     }
+    if (project.hasProperty('excludeTests')) {
+        exclude project.property('excludeTests')
+    }
 }
 
 repositories {
