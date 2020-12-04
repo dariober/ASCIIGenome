@@ -36,6 +36,61 @@ public class TrackSetTest {
     }
     
     @Test
+    public void canGoToNextFeatureOnFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException {
+
+        int ws= 100;
+        GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
+        gc.setTerminalWidth(ws);
+        TrackSet trackSet= new TrackSet(new ArrayList<String>(), gc);
+        trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+        GenomicCoords nextGc= trackSet.goToNextFeatureOnFile("1", gc, -1, false);
+        int x = nextGc.getFrom();
+        assertEquals(8404074, x); // This is the start of the found feature
+        assertEquals(8405073, x + 1000 - 1); // window size unchanged
+        
+        trackSet= new TrackSet(new ArrayList<String>(), gc);
+        trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+        nextGc= trackSet.goToNextFeatureOnFile("1", gc, 0, false);
+        x = nextGc.getFrom();
+        assertEquals(8404074 - ws/2, x); // Start of the feature is in the middle of the window
+        int xend = nextGc.getTo();
+        assertEquals(xend - x + 1, ws); // Genomic window size = Terminal window size
+        
+        trackSet= new TrackSet(new ArrayList<String>(), gc);
+        trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+        nextGc= trackSet.goToNextFeatureOnFile("1", gc, 2, false);
+        x = nextGc.getFrom();
+        xend = nextGc.getTo();
+        assertEquals(8403843, x);
+        assertEquals(8404459, xend);
+        
+        trackSet= new TrackSet(new ArrayList<String>(), gc);
+        trackSet.addTrackFromSource("test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig", gc, null);
+        // trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
+        nextGc= trackSet.goToNextFeatureOnFile("1", gc, -1, false);
+        System.err.println(nextGc);
+    }
+    
+    @Test
+    public void canGoToNextFeatureOnNonIntervalFile() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, BamIndexNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException {
+
+        GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
+        TrackSet trackSet= new TrackSet(new ArrayList<String>(), gc);
+        trackSet= new TrackSet(new ArrayList<String>(), gc);
+        trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);        
+        trackSet.addTrackFromSource("test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig", gc, null);
+        
+        GenomicCoords nextGc= trackSet.goToNextFeatureOnFile("1", gc, -1, false);
+        assertEquals(gc, nextGc);
+        
+        nextGc= trackSet.goToNextFeatureOnFile("2", gc, -1, false);
+        assertEquals(gc, nextGc);
+        
+        nextGc= trackSet.goToNextFeatureOnFile("3", gc, -1, false);
+        assertEquals(gc, nextGc);
+    }    
+    
+    @Test
     public void canFindNextMatchOnOneTrack() throws ClassNotFoundException, IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidCommandLineException {
 
         Pattern pattern = Pattern.compile("NM_032291_");

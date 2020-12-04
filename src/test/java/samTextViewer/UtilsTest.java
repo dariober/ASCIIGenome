@@ -32,6 +32,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 
 import exceptions.InvalidColourException;
@@ -123,7 +124,7 @@ public class UtilsTest {
         assertTrue(Utils.isOverlapping(1, 10, 2, 5));
         assertTrue(Utils.isOverlapping(1, 10, -2, 5));
         
-        // One bp overlap
+        // One) bp overlap
         assertTrue(Utils.isOverlapping(1, 10, 10, 15));
         assertTrue(Utils.isOverlapping(1, 10, -10, 1));
 

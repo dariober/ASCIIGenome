@@ -1585,7 +1585,7 @@ public class TrackSet {
         List<TrackIntervalFeature> ifSet= new ArrayList<TrackIntervalFeature>();
         
         for(Track tr : this.getTrackList()){
-            if(tr instanceof TrackIntervalFeature){
+            if((tr instanceof TrackIntervalFeature) && ! (tr instanceof TrackPileup)) {
                 ifSet.add((TrackIntervalFeature) tr);
             }
         }

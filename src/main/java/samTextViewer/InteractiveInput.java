@@ -866,7 +866,6 @@ public class InteractiveInput {
         }
         
         GenomicCoords gc= (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
-        String trackId= "";
         boolean start= false;
         if(args.contains("-start")){
             start= true;
@@ -882,6 +881,7 @@ public class InteractiveInput {
             getPrevious= true;
             args.remove("-back");
         }
+        String trackId= "";
         if(args.size() > 0){
             trackId= args.get(0);
         }
