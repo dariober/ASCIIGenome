@@ -20,6 +20,7 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
 
 public class TrackTest {
 
@@ -181,7 +182,8 @@ public class TrackTest {
 		assertTrue(out.contains("\033[7m0|0\033[27m"));
 		
 		// Turn the string-table to back to a list and ensure that all fields are there
-		List<String> xlist= Splitter.on("\t").omitEmptyStrings().splitToList(out.replaceAll(" +|\n", "\t"));
+		out = Utils.stripAnsiCodes(out);
+		List<String> xlist= Splitter.on("\t").omitEmptyStrings().splitToList(out.replaceAll(" \\| |\n", "\t"));
 		assertEquals(24, xlist.size());
 	}
 	
@@ -207,7 +209,8 @@ public class TrackTest {
 //		// TODO: assertTrue(out.contains("\033[7m1|2\033[27m:100:0,0"));
 		
 		// Turn the string-table to back to a list and ensure that all fields are there
-		List<String> xlist= Splitter.on("\t").omitEmptyStrings().splitToList(out.replaceAll(" +|\n", "\t"));
+		out = Utils.stripAnsiCodes(out);
+		List<String> xlist= Splitter.on("\t").omitEmptyStrings().splitToList(out.replaceAll(" \\| |\n", "\t"));
 		assertEquals(33, xlist.size());
 	}
 	

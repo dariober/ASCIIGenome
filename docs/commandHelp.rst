@@ -153,8 +153,8 @@ Move backwards by INT screen columns. The **[** character can be repeated and ea
 
     [   -> Move one screen column
     [[[ -> Move three columns
-	   [ 3 -> Same as above
-	   [3  -> Same as above (space is optional)
+       [ 3 -> Same as above
+       [3  -> Same as above (space is optional)
 
 
 
@@ -482,7 +482,7 @@ Example::
 
     featureColor -r CDS plum2 -r exon grey
     featureColor bed         -> Reset to default the track matching 'bed'
-	   featureColor -R CDS grey -> Grey all features except those matching CDS
+       featureColor -R CDS grey -> Grey all features except those matching CDS
     
     Color blue where 9th field is > 3; color red where 9th is > 6
     featureColor -r '$9 > 3' blue -r '$9 > 6' red
@@ -779,7 +779,7 @@ Examples::
 
     setConfig metal
     setConfig /path/to/mytheme.conf
-	   setConfig max_reads_in_stack 20000 <- Reset this param only
+       setConfig max_reads_in_stack 20000 <- Reset this param only
 
 Parameters and current settings::
 

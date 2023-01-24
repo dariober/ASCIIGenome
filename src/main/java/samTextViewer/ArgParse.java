@@ -11,7 +11,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 	
 	public static String PROG_NAME= "ASCIIGenome";
-	public static String VERSION= "1.16.0";
+	public static String VERSION= "1.17.0";
 	public static String WEB_ADDRESS= "https://github.com/dariober/ASCIIGenome";
 	public static String WEB_RTD= "http://asciigenome.readthedocs.io/";
 	
@@ -47,10 +47,6 @@ public class ArgParse {
 			.help("Go to region. Format 1-based as 'chrom:start-end' or 'chrom:start' or 'chrom'.\n"
 					+ "E.g. chr1:1-1000");
 
-//		parser.addArgument("--genome", "-g")
-//			.type(String.class)
-//			.help("A genome file or a tag identifying a genome build (e.g. hg19), or bam file with suitable header");
-		
 		parser.addArgument("--fasta", "-fa")
 			.type(String.class)
 			.help("Optional reference fasta file. If given, must be indexed, e.g. with\n"
@@ -79,13 +75,10 @@ public class ArgParse {
 				   + "file is missing use a built-in setting. For examples of configuration files\n" 
 				   + "see https://github.com/dariober/ASCIIGenome/tree/master/src/main/resources/config");
 					
-		parser.addArgument("--showMem", "-sm")
+		parser.addArgument("--showMemTime", "-smt")
 			.action(Arguments.storeTrue())
-			.help("Show memory usage. Typically used for debugging only");
-
-		parser.addArgument("--showTime", "-st")
-			.action(Arguments.storeTrue())
-			.help("Show time elapsed to process tracks. Typically used for debugging only");
+			.help("Show memory usage and time spent to process input. Typically used for\n"
+			        + "debugging only");
 		
 		parser.addArgument("--debug")
 			.type(Integer.class)

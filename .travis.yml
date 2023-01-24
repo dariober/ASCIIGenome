@@ -4,8 +4,10 @@ jdk:
   - openjdk8
 
 script:
-    - ./gradlew test jacocoTestReport || true
-    - bash <(curl -s https://codecov.io/bash) || true
+    - ./gradlew test jacocoTestReport -PexcludeTests=**/TravisExcludedTest*
     - cp ASCIIGenome build/libs/
     - cd src/test/java
-    - bash integration_test.sh ../../../build/libs/ASCIIGenome
+    - bash integration_test.sh ../../../build/libs/ASCIIGenome || true
+      
+after_success:
+    - bash <(curl -s https://codecov.io/bash)

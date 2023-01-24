@@ -1,8 +1,8 @@
 # comment line
-# chrom	start	end
-chr1	0	10
-chr1	20	30
-chr10	0	5
-chr10	10	100
+# chrom	start	end score
+chr1	0	10	1
+chr1	20	30	2
+chr10	0	5	3
+chr10	10	100	4
 
 
