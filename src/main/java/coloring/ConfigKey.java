@@ -22,7 +22,8 @@ public enum ConfigKey {
 	seq_g("Colour for nucleotide G"),
 	seq_t("Colour for nucleotide T"),
 	seq_other("Colour for any other nucleotide"),
-	shade_low_mapq("Colour for shading reads wit low MAPQ"),
+	shade_low_mapq("Colour for shading reads with low MAPQ"),
+	low_mapq("Shade reads below this MAPQ"),
 	methylated_foreground("Foreground colour for methylated C"),
 	unmethylated_foreground("Foreground colour for unmethylated C"),
 	methylated_background("Background colour for methylated C"),
@@ -89,6 +90,7 @@ public enum ConfigKey {
 		Set<ConfigKey> integerKeys= new HashSet<ConfigKey>();
 		integerKeys.add(ConfigKey.max_reads_in_stack);
 		integerKeys.add(ConfigKey.shade_baseq);
+		integerKeys.add(ConfigKey.low_mapq);
 		return integerKeys;
 	}
 	

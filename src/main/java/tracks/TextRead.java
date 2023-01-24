@@ -41,7 +41,7 @@ class TextRead extends IntervalFeature{
 	private final static char charu= 'u';
 	private final static char charFwd= '>';
 	private final static char charRev= '<';
-	private final static int  SHADE_MAPQ= 5;
+	// private final static int  SHADE_MAPQ= 5;
 	// private final static int  SHADE_BASEQ= 13;
 	private static final char SOFT_CLIP = 'S';
 	
@@ -95,9 +95,16 @@ class TextRead extends IntervalFeature{
 		this.setTextStart();
 		this.setTextEnd();
 		this.setTextPositionsOfSkippedBases();
+		this.getShadeMapq();
+        
 	}
 	
-	/*       M e t h o d s       */
+	private int getShadeMapq() {
+        int SHADE_MAPQ= Integer.parseInt(Config.get(ConfigKey.low_mapq));
+        return SHADE_MAPQ;
+    }
+
+    /*       M e t h o d s       */
 
 	/**
 	 * Return read ready to be printed on track. 
@@ -267,7 +274,7 @@ class TextRead extends IntervalFeature{
 				sq.setText(xc);
 			}
 			// Set formatting
-			if(this.samRecord.getMappingQuality() < SHADE_MAPQ){
+			if(this.samRecord.getMappingQuality() < this.getShadeMapq()){
 				sq.setBgColor(Config.get(ConfigKey.shade_low_mapq));
 			}
 			else if(this.isStructuralVariantRead()){
@@ -368,7 +375,7 @@ class TextRead extends IntervalFeature{
 						}
 						
 						// Add formatting as appropriate
-						if(this.samRecord.getMappingQuality() < SHADE_MAPQ){
+						if(this.samRecord.getMappingQuality() < this.getShadeMapq()){
 							xc.setBgColor(Config.get(ConfigKey.shade_low_mapq));
 							xc.setFgColor(Config.get(ConfigKey.foreground));
 						}

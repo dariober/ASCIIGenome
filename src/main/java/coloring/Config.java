@@ -49,6 +49,12 @@ public class Config {
 				}
 			}
 		}
+		if(!config.containsKey(ConfigKey.low_mapq)) {
+		    // For backward compatibility: low_mapq introduced in v1.18 so previous 
+		    // config fails will fail. This effectively is a default value if low_mapq is missing 
+		    config.put(ConfigKey.low_mapq, "5");
+		}
+		
 		// Check all fields have been populated
 		for(ConfigKey key : ConfigKey.values()){
 			if( ! config.containsKey(key)){
