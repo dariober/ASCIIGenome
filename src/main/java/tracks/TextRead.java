@@ -277,7 +277,8 @@ class TextRead extends IntervalFeature{
 			if(this.samRecord.getMappingQuality() < this.getShadeMapq()){
 				sq.setBgColor(Config.get(ConfigKey.shade_low_mapq));
 			}
-			else if(this.isStructuralVariantRead()){
+			else if(this.isStructuralVariantRead() &&
+                    !Config.get(ConfigKey.shade_structural_variant).equals(Config.get(ConfigKey.background))){
 				sq.setBgColor(Config.get(ConfigKey.shade_structural_variant));
 			}
 			else if(!this.samRecord.getReadNegativeStrandFlag()){
@@ -303,7 +304,7 @@ class TextRead extends IntervalFeature{
 		return false;
 	}
 	
-	private boolean isStructuralVariantRead(){
+	protected boolean isStructuralVariantRead(){
 		if(this.samRecord.getReadPairedFlag() && ! this.samRecord.getProperPairFlag()){
 			return true;
 		}
@@ -387,9 +388,10 @@ class TextRead extends IntervalFeature{
 							xc.setBgColor(Config.get(ConfigKey.unmethylated_background));
 							xc.setFgColor(Config.get(ConfigKey.unmethylated_foreground));
 						}
-						else if(this.isStructuralVariantRead()){
-							xc.setBgColor(Config.get(ConfigKey.shade_structural_variant));
-							xc.setFgColor(Config.get(ConfigKey.foreground));
+						else if(this.isStructuralVariantRead() && 
+						        !Config.get(ConfigKey.shade_structural_variant).equals(Config.get(ConfigKey.background))){
+						    xc.setBgColor(Config.get(ConfigKey.shade_structural_variant));
+						    xc.setFgColor(Config.get(ConfigKey.foreground));
 						}
 						else if(Character.toUpperCase(xc.getText()) == 'A'){
 							xc.setFgColor(Config.get(ConfigKey.seq_a));

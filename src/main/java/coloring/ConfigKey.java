@@ -37,7 +37,7 @@ public enum ConfigKey {
 	ruler("Colour for ruler"),
 	max_reads_in_stack("Max number of reads to accumulate when showing read tracks"), 
 	shade_baseq("Shade read base when quality is below this threshold"),
-	shade_structural_variant("Background colour for reads suggesting structural variation"), 
+	shade_structural_variant("Background colour for reads suggesting structural variation or 'false' for no shading"), 
 	highlight_mid_char("Highlight mid-character in read tracks?"), 
 	nucs_as_letters("Show read nucleotides as letters at single base resolution?"),
 	show_soft_clip("NOT IN USE YET - Show soft clipped bases in read tracks?");

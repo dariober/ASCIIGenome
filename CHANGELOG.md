@@ -4,6 +4,9 @@ New in 1.18.0
 * Add configuration parameter `low_mapq` to set what you consider as low
   mapping quality. Default is 5 which is the setting hardcoded until now.
 
+* Use *false* in config `shade_structural_variant` to omit shading of
+  structural variants 
+
 New in 1.17.0
 =============
 

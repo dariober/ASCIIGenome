@@ -153,6 +153,10 @@ public class Config {
 			config.put(key, value);
 		}
 		else {
+		    if(key.equals(ConfigKey.shade_structural_variant) && value.equals("false")) {
+		        // This is very much a hack: If colour is false we reset to background
+		        value = config.get(ConfigKey.background);
+		    }
 			config.put(key, value);
 			colorNameToInt();
 		}
