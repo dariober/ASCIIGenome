@@ -49,6 +49,12 @@ public class Config {
 				}
 			}
 		}
+		if(!config.containsKey(ConfigKey.low_mapq)) {
+		    // For backward compatibility: low_mapq introduced in v1.18 so previous 
+		    // config fails will fail. This effectively is a default value if low_mapq is missing 
+		    config.put(ConfigKey.low_mapq, "5");
+		}
+		
 		// Check all fields have been populated
 		for(ConfigKey key : ConfigKey.values()){
 			if( ! config.containsKey(key)){
@@ -147,6 +153,10 @@ public class Config {
 			config.put(key, value);
 		}
 		else {
+		    if(key.equals(ConfigKey.shade_structural_variant) && value.equals("false")) {
+		        // This is very much a hack: If colour is false we reset to background
+		        value = config.get(ConfigKey.background);
+		    }
 			config.put(key, value);
 			colorNameToInt();
 		}
