@@ -39,6 +39,36 @@ public class TextReadTest {
 	public void setConfig() throws IOException, InvalidConfigException{
 		new Config(null);
 	}
+
+    @Test
+    public void canResetColorForStructuralVariant() throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+        GenomicCoords gc= new GenomicCoords("chr7:1-80", 80, null, null);
+        SAMRecord rec= new SAMRecord(null);
+        rec.setAlignmentStart(1);
+        rec.setCigarString("1M");
+        rec.setMappingQuality(30);
+        rec.setReadBases("A".getBytes());
+        rec.setAttribute("SA", "foo");
+        TextRead tr= new TextRead(rec, gc, false);
+        String txt = tr.getPrintableTextRead(false, false, false);
+        
+        // Default shading
+        String shade = Config.get(ConfigKey.shade_structural_variant);
+        String bg = Config.get(ConfigKey.background);
+        assertTrue(txt.contains(";" + shade + ";"));
+        
+        // Omit shading
+        Config.set(ConfigKey.shade_structural_variant, "false");
+        txt = tr.getPrintableTextRead(false, false, false);
+        assertTrue(!txt.contains(";" + shade + ";"));
+        assertTrue(txt.contains(";" + bg + ";"));
+        
+        // Another shading
+        Config.set(ConfigKey.shade_structural_variant, "123");
+        txt = tr.getPrintableTextRead(false, false, false);
+        assertTrue(txt.contains(";" + "123" + ";"));
+        System.err.println(txt);
+    }
 	
 	@Test
 	public void getNumAlignedBasesFromCigar() {
