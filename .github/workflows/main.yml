@@ -1,6 +1,5 @@
 name: CI
-on:
-  - push
+on: [push]
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -11,7 +10,7 @@ jobs:
           distribution: 'temurin'
           java-version: '8'
       - name: Build and Test
-      - run: |
+        run: |
           ./gradlew test jacocoTestReport -PexcludeTests=**/TravisExcludedTest*
           cp ASCIIGenome build/libs/
           cd src/test/java
