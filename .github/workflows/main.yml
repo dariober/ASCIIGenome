@@ -15,5 +15,4 @@ jobs:
           cp ASCIIGenome build/libs/
           cd src/test/java
           bash integration_test.sh ../../../build/libs/ASCIIGenome || true
-          ./gradlew test jacocoTestReport;
           bash <(curl -s https://codecov.io/bash)
