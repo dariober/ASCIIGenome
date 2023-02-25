@@ -1,5 +1,5 @@
 [![Coverage Status](https://codecov.io/gh/dariober/asciigenome/branch/master/graph/badge.svg)](https://codecov.io/gh/dariober/asciigenome/branch/master)
-[![Build Status](https://travis-ci.org/dariober/ASCIIGenome.svg?branch=master)](https://travis-ci.org/dariober/ASCIIGenome)
+[![test status](https://github.com/dariober/ASCIIGenome/actions/workflows/main.yml/badge.svg)](https://github.com/dariober/ASCIIGenome/actions?query=branch%3Amaster+workflow%3Amain)
 [![Language](http://img.shields.io/badge/language-java-brightgreen.svg)](https://www.java.com/)
 [![License](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/dariober/ASCIIGenome)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/asciigenome/README.html)

@@ -783,31 +783,32 @@ Examples::
 
 Parameters and current settings::
 
-    background                         231   # Background colour                                          
-    foreground                         0     # Foreground colour                                          
-    seq_a                              12    # Colour for nucleotide A                                    
-    seq_c                              9     # Colour for nucleotide C                                    
-    seq_g                              2     # Colour for nucleotide G                                    
-    seq_t                              11    # Colour for nucleotide T                                    
-    seq_other                          0     # Colour for any other nucleotide                            
-    shade_low_mapq                     249   # Colour for shading reads wit low MAPQ                      
-    methylated_foreground              231   # Foreground colour for methylated C                         
-    unmethylated_foreground            231   # Foreground colour for unmethylated C                       
-    methylated_background              9     # Background colour for methylated C                         
-    unmethylated_background            12    # Background colour for unmethylated C                       
-    title_colour                       0     # Default Colour for titles                                  
-    feature_background_positive_strand 147   # Colour for features on forward strand                      
-    feature_background_negative_strand 224   # Colour for features on reverse strand                      
-    feature_background_no_strand       249   # Colour for features without strand information             
-    footer                             12    # Colour for footer line                                     
-    chrom_ideogram                     0     # Colour for chromosome ideogram                             
-    ruler                              0     # Colour for ruler                                           
-    max_reads_in_stack                 2000  # Max number of reads to accumulate when showing read tracks 
-    shade_baseq                        13    # Shade read base when quality is below this threshold       
-    shade_structural_variant           33    # Background colour for reads suggesting structural variation
-    highlight_mid_char                 true  # Highlight mid-character in read tracks?                    
-    nucs_as_letters                    true  # Show read nucleotides as letters at single base resolution?
-    show_soft_clip                     false # NOT IN USE YET - Show soft clipped bases in read tracks?   
+    background                         231   # Background colour                                                                    
+    foreground                         0     # Foreground colour                                                                    
+    seq_a                              12    # Colour for nucleotide A                                                              
+    seq_c                              9     # Colour for nucleotide C                                                              
+    seq_g                              2     # Colour for nucleotide G                                                              
+    seq_t                              11    # Colour for nucleotide T                                                              
+    seq_other                          0     # Colour for any other nucleotide                                                      
+    shade_low_mapq                     249   # Colour for shading reads with low MAPQ                                               
+    low_mapq                           5     # Shade reads below this MAPQ                                                          
+    methylated_foreground              231   # Foreground colour for methylated C                                                   
+    unmethylated_foreground            231   # Foreground colour for unmethylated C                                                 
+    methylated_background              9     # Background colour for methylated C                                                   
+    unmethylated_background            12    # Background colour for unmethylated C                                                 
+    title_colour                       0     # Default Colour for titles                                                            
+    feature_background_positive_strand 147   # Colour for features on forward strand                                                
+    feature_background_negative_strand 224   # Colour for features on reverse strand                                                
+    feature_background_no_strand       249   # Colour for features without strand information                                       
+    footer                             12    # Colour for footer line                                                               
+    chrom_ideogram                     0     # Colour for chromosome ideogram                                                       
+    ruler                              0     # Colour for ruler                                                                     
+    max_reads_in_stack                 2000  # Max number of reads to accumulate when showing read tracks                           
+    shade_baseq                        13    # Shade read base when quality is below this threshold                                 
+    shade_structural_variant           33    # Background colour for reads suggesting structural variation or 'false' for no shading
+    highlight_mid_char                 true  # Highlight mid-character in read tracks?                                              
+    nucs_as_letters                    true  # Show read nucleotides as letters at single base resolution?                          
+    show_soft_clip                     false # NOT IN USE YET - Show soft clipped bases in read tracks?                             
 
 explainSamFlag
 ++++++++++++++
