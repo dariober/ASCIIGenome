@@ -1,4 +1,4 @@
-[![Coverage Status](https://codecov.io/gh/dariober/asciigenome/branch/master/graph/badge.svg)](https://codecov.io/gh/dariober/asciigenome/branch/master)
+[![codecov](https://codecov.io/gh/dariober/asciigenome/branch/master/graph/badge.svg?token=7iYcSapQIA)](https://codecov.io/gh/dariober/asciigenome)
 [![Build Status](https://travis-ci.org/dariober/ASCIIGenome.svg?branch=master)](https://travis-ci.org/dariober/ASCIIGenome)
 [![Language](http://img.shields.io/badge/language-java-brightgreen.svg)](https://www.java.com/)
 [![License](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/dariober/ASCIIGenome)
