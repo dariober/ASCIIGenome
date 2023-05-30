@@ -7,11 +7,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -1892,65 +1895,138 @@ public class Utils {
 	    return Integer.signum(vals1.length - vals2.length);
 	}
 
-	/** Stream the raw line through awk and return true if the output of awk is the same as the input
-	 * line. If awk returns empty output then the line didn't pass the awk filter.
-	 * If output is not empty and not equal to input, return null.
-	 * See tests for behaviour. 
-	 * */
-//	public static Boolean passAwkFilter(String rawLine, String awkScript) throws IOException {
-//		
-//		awkScript= awkScript.trim();
-//		
-//		if(awkScript.isEmpty()){
-//			return true;
-//		}
-//		
-//		// We need to separate the awk script from the arguments. The arguments could contain single quotes:
-//		// -v var=foo '$1 == var && $2 == baz'
-//		// For this, reverse the string and look for the first occurrence of "' " which corresponds to 
-//		// the opening of the awk script.
-//		int scriptStartsAt= awkScript.length() - new StringBuilder(awkScript).reverse().toString().indexOf("' ");
-//		if(scriptStartsAt == awkScript.length() + 1){
-//			scriptStartsAt= 1;
-//		}
-//		// Now add the functions to the script right at the start of the script, after the command args
-//		awkScript= awkScript.substring(0, scriptStartsAt) + Track.awkFunc + awkScript.substring(scriptStartsAt);
-//				
-//		InputStream is= new ByteArrayInputStream(rawLine.getBytes(StandardCharsets.US_ASCII));
-//		//String[] args= Utils.tokenize(awkScript, " ").toArray(new String[0]);
-//		String[] args= new Tokenizer(awkScript).tokenize().toArray(new String[0]);
-//		
-//		PrintStream stdout = System.out;
-//		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//		try{
-//			PrintStream os= new PrintStream(baos);
-//			new org.jawk.Main(args, is, os, System.err);
-//		} catch(Exception e){
-//			throw new IOException();
-//		} finally{
-//			System.setOut(stdout);
-//			is.close();
-//		}
-//		String output = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-//		if(output.trim().isEmpty()){
-//			return false;
-//		} else if(output.trim().equals(rawLine.trim())){
-//			return true;
-//		} else {
-//			// Awk output is not empty or equal to input line. Reset awk script and return null
-//			// to signal this condition.
-//			System.err.println(output);
-//			return null;
-//		}
-//		
-//	}
+    public static ArrayList<String> execSystemCommand(String[] inputList, List<String> cmd) throws IOException, InterruptedException {
 
+        ProcessBuilder pb = new ProcessBuilder().command(cmd);
+        Process p = pb.start();
+
+        ArrayList<String> results= new ArrayList<String>();
+        
+        Thread readerThread = new Thread(() -> {
+            try {
+                try (BufferedReader reader = new BufferedReader(new 
+                        InputStreamReader(p.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        results.add(line);
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Unhandled", e);
+            }
+        });
+        readerThread.start();
+        
+        OutputStream stdin = p.getOutputStream();
+
+        for(String line : inputList){
+            stdin.write(line.getBytes(StandardCharsets.UTF_8));
+            stdin.write('\n');
+            try {
+                stdin.flush();
+            } catch (IOException e) {
+                throwCmdException(p);
+            }
+        }
+
+        stdin.close();
+        readerThread.join();
+        p.waitFor();
+        
+        if(p.exitValue() != 0) {
+            throwCmdException(p);
+        }
+        return results;
+    }
+    
+    private static void throwCmdException(Process p) throws IOException, InterruptedException {
+        p.waitFor();
+        System.err.println("Command returned with non-zero exit value " + p.exitValue());
+        BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+        String errline = "";
+        while ((errline = err.readLine())!= null) {
+            System.err.println(errline);
+        }
+        err.close();
+        throw new IOException();  
+    }
+
+    /**
+     * Convert the awk script to a list suitable for processBuilder
+     * @param awkScript e.g.: -v=VAR5 '$2 == 0'
+     * @return
+     */
+    private static ArrayList<String> prepareAwkScript(String awkScript){
+        awkScript= awkScript.trim();
+        // * Parse command string into arguments and awk script
+        ArrayList<String> args= (ArrayList<String>) new Tokenizer(awkScript).tokenize();
+
+        args.add(0, "awk");
+        String script= args.remove(args.size()-1); // 'remove' returns the element removed
+        script = Track.awkFunc + "\n" + script;
+        args.add(script);
+        
+        return args;
+    }
+    
 	/** Stream the raw line through awk and return true if the output of awk is the same as the input
 	 * line. If awk returns empty output then the line didn't pass the awk filter.
 	 * If output is not empty and not equal to input, return null.
 	 * See tests for behaviour. 
+     * This function uses the operating system's awk
+	 * @throws InterruptedException 
 	 * */
-	public static boolean[] passAwkFilter(String[] rawLines, String awkScript) throws IOException {
+    public static boolean[] passAwkFilter(String[] rawLines, String awkScript) throws IOException {
+
+        boolean[] results= new boolean[rawLines.length];
+        
+        awkScript= awkScript.trim();
+
+        if(awkScript.isEmpty()){
+            for(int i= 0; i < rawLines.length; i++){
+                results[i]= true;
+            }
+            return results;
+        }
+
+        ArrayList<String> args = prepareAwkScript(awkScript);
+        
+        ArrayList<String> output = new ArrayList<String>();
+        try {
+            output = execSystemCommand(rawLines, args);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        
+        // Check input and output. If an input line is found in output at the
+        // same line number where it should be, add True else False.
+        int j= 0;
+        for(int i=0; i < rawLines.length; i++){
+            String inLine= rawLines[i];
+            if(output.size() > j){
+                String outLine= output.get(j);              
+                if(inLine.equals(outLine)){
+                    results[i]= true;
+                    j++;
+                } else {
+                    results[i]= false;
+                }
+            } else {
+                results[i]= false;
+            }
+        }
+        
+        return results;
+    }
+    
+	/** Stream the raw line through awk and return true if the output of awk is the same as the input
+	 * line. If awk returns empty output then the line didn't pass the awk filter.
+	 * If output is not empty and not equal to input, return null.
+	 * See tests for behaviour. 
+     * This function uses built in Java Jawk
+	 * */
+    /*
+    public static boolean[] passAwkFilter(String[] rawLines, String awkScript) throws IOException {
 		
 		boolean[] results= new boolean[rawLines.length];
 
@@ -2014,8 +2090,8 @@ public class Utils {
 		}
 		return results;
 	}
+	*/
 
-	
 	/** Right-pad each line in string x with whitespaces. Each line is 
 	 * defined by the newline. Each line is padded to become at least of length size.   
 	 * */
@@ -2581,4 +2657,5 @@ public class Utils {
 		}
 		return null;
 	} 
+	
 }

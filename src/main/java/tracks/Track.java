@@ -988,9 +988,7 @@ public abstract class Track {
 			results.add(passed);
 			if(passed && this.getAwk() != null && ! this.getAwk().isEmpty()){
 				// We pass to awk only records that have been kept so far.
-				if(raw == null){
-					raw= rec.getSAMString().trim();
-				}
+				raw= prepareSAMRecordForAwk(rec);
 				awkDataInput.add(raw);
 			}
 		} // End loop through reads
@@ -1016,6 +1014,22 @@ public abstract class Track {
 		return results;
 	}
 
+	/**
+	 * Prepare a SAMRecord by adding useful information before passing it to awk.
+	 * IMPORTANT: Effectively we are adding columns to the raw record. Make sure that
+	 * awk functions account for the extra fields.
+	 */
+	private String prepareSAMRecordForAwk(SAMRecord rec) {
+	    int alnEnd = rec.getAlignmentEnd();
+	    
+	    List<String> recList = new ArrayList<String>();
+	    recList.add(rec.getSAMString().trim());
+	    // We add a tag for aln end. Name in such way that it cannot collide with valid existing tags
+	    recList.add("$alnEnd:i:" + Integer.toString(alnEnd));
+
+	    return Joiner.on('\t').join(recList);
+	}
+	
 	/**Return true if samrecord contains a mismatch or insertion/deletion in the target region.
 	 * */
 	private boolean isSNVRead(SAMRecord rec, boolean variantOnly) {

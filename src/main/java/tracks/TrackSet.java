@@ -1133,6 +1133,14 @@ public class TrackSet {
                 System.err.println("\nFunction getSamTag() can be applied to BAM tracks only. Got:\n" + tr.getTrackTag());
                 throw new InvalidCommandLineException();
             }
+            if(awk.contains("getAlnEnd(") && ! tr.getTrackFormat().equals(TrackFormat.BAM)){
+                System.err.println("\nFunction getAlnEnd() can be applied to BAM tracks only. Got:\n" + tr.getTrackTag());
+                throw new InvalidCommandLineException();
+            }
+            if(awk.contains("getAlnLen(") && ! tr.getTrackFormat().equals(TrackFormat.BAM)){
+                System.err.println("\nFunction getAlnLen() can be applied to BAM tracks only. Got:\n" + tr.getTrackTag());
+                throw new InvalidCommandLineException();
+            }
             if((awk.contains("getInfoTag(") || awk.contains("getFmtTag(")) && ! tr.getTrackFormat().equals(TrackFormat.VCF)){
                 System.err.println("\nFunction getInfoTag(), getFmtTag() can be applied to VCF tracks only. Got:\n" + tr.getTrackTag());
                 throw new InvalidCommandLineException();
@@ -1146,7 +1154,7 @@ public class TrackSet {
                 throw new InvalidCommandLineException();
             }
             String script= this.replaceAwkHeaders(awk, tr.getTrackFormat());
-            script= this.replaceAwkFuncs(script, tr);
+            script= this.replaceAwkGetFuncs(script, tr);
             tr.setAwk(script);
         }
     }
@@ -1154,7 +1162,7 @@ public class TrackSet {
     /**Replace in awk script the overloaded function name(s) with the actual names and args 
      * @throws InvalidCommandLineException 
      * */
-    private String replaceAwkFuncs(String awkScript, Track track) throws InvalidCommandLineException{
+    private String replaceAwkGetFuncs(String awkScript, Track track) throws InvalidCommandLineException{
 
         final String FUNC= "get"; // Function name to be replaced 
         

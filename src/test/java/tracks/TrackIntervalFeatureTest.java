@@ -524,7 +524,7 @@ public class TrackIntervalFeatureTest {
         // Invalid script: Ugly stackTrace printed. All records returned
         boolean pass= false;
         try{
-            tif.setAwk("$foo");
+            tif.setAwk("foo_bar()");
         } catch(IOException e){
             pass= true;
         }

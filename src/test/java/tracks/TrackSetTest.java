@@ -602,6 +602,25 @@ public class TrackSetTest {
     }
 
     @Test
+    public void canReplaceOverloadedFunctionInAwk2() throws Exception {
+        
+        GenomicCoords gc= new GenomicCoords("1:200000-200317", 80, null, null);
+        TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
+        Track t1= new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc); ts.addTrack(t1, "vcf");
+   
+        // Nothing to replace (invalid script)
+        String awk= "awk 'foo_get() get (bar)'";
+        boolean pass = false;
+        try {
+            ts.setAwkForTrack(Utils.tokenize(awk, " "));
+        } catch(IOException e) {
+            pass = true;
+        }
+        assertTrue(pass);
+     
+    }
+    
+    @Test
     public void canReplaceOverloadedFunctionInAwk() throws Exception {
         
         GenomicCoords gc= new GenomicCoords("chr1:1-100", 80, null, null);
@@ -638,18 +657,8 @@ public class TrackSetTest {
         }
         assertTrue(pass);
         
-        // Nothing to replace (invalid script)
-        String awk= "awk 'foo_get() get (bar)' vcf";
-        pass = false;
-        try {
-            ts.setAwkForTrack(Utils.tokenize(awk, " "));
-        } catch(IOException e) {
-            pass = true;
-        }
-        assertTrue(pass);
-        
         // Nothing to replace (script OK)
-        awk= "awk '$0 == \"foo_get() get (bar)\"' vcf";
+        String awk= "awk '$0 == \"foo_get() get (bar)\"' vcf";
         ts.setAwkForTrack(Utils.tokenize(awk, " "));
         assertTrue(ts.getTrack(t1).getAwk().contains("foo_get() get (bar)"));
     }

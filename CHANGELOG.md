@@ -1,6 +1,18 @@
 New in 1.18.0
 =============
 
+* New `awk` functions `getAlnEnd()` and `getAlnLen()` to get the **end** and
+  **length** of a SAM aligmment, respectively. Useful to filter for alignments
+  above/below a cutoff, especially with Nanopore reads. *E.g.*
+
+```
+awk 'getAlnLen() > 2000 && getAlnEnd() < 12345'
+```
+
+* Use the operating system's `awk` instead of the built-in Java Jawk. OS's
+  `awk` appears to be 5-10x faster than Jawk, but now it is assumed users have
+  `awk` on their PATH.
+
 * Add configuration parameter `low_mapq` to set what you consider as low
   mapping quality. Default is 5 which is the setting hardcoded until now.
 

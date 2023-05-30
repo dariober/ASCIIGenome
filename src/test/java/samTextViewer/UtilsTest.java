@@ -29,14 +29,17 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 
+import coloring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import faidx.UnindexableFastaFileException;
@@ -56,16 +59,45 @@ import jline.console.history.History;
 import jline.console.history.MemoryHistory;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
+import tracks.TrackReads;
 import utils.Tokenizer;
 
 public class UtilsTest {
 
+    @BeforeClass
+    public static void init() throws IOException, InvalidConfigException {
+        new Config(null);
+    }
+    
     static SamReaderFactory srf=SamReaderFactory.make();
     static SamReader samReader= srf.open(new File("test_data/ds051.short.bam"));
     public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
     
     public static String fastaFile= "test_data/chr7.fa";
     
+    @Test
+    public void test() throws IOException, InterruptedException {
+        // Input list is [foo0, foo1, ..., foo99999]
+        List<String> inputList = new ArrayList<String>();
+        for(int i = 0; i < 10; i++) {
+            inputList.add("foo" + i);
+        }
+        for(int i = 0; i < 10; i++) {
+            inputList.add("bar" + i);
+        }
+        
+        List<String> cmd = new ArrayList<String>();
+        cmd.add("grep");
+        cmd.add("foo");
+
+        for(int i = 0; i < 100; i++) {
+            ArrayList<String> results = Utils.execSystemCommand(inputList.toArray(new String[inputList.size()]), cmd);
+            assertEquals(10, results.size());
+            // System.out.println("First element:" + results.get(0));
+            // System.out.println("Last element:" + results.get(results.size() - 1));
+        }
+    }
+
     @Test
     public void canGuessFileType() throws Exception {
         
@@ -611,7 +643,7 @@ public class UtilsTest {
         // and the mess below was required to match single quote. 
         // See https://www.gnu.org/software/gawk/manual/html_node/Quoting.html 
         // and see http://stackoverflow.com/questions/9899001/how-to-escape-single-quote-in-awk-inside-printf
-        assertTrue(Utils.passAwkFilter(new String[]{"chr'1"}, "'$1 ~ \"chr\"\\x027\"1\";'")[0]);
+        assertTrue(Utils.passAwkFilter(new String[]{"chr'1"}, "'''$1 ~ \"chr\\x27\"'''")[0]);
     }
     
     @Test
@@ -630,15 +662,19 @@ public class UtilsTest {
     }
     
     @Test
-    public void canDetectBrokenAwkScript() {
-        // Broken awk script:
-        boolean pass= false;
-        try{
-            assertTrue(! Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'print {'")[0]);
-        } catch(IOException e){
-            pass= true;
+    public void canDetectBrokenAwkScript() throws IOException, InterruptedException {
+        
+        for(int i = 0; i < 20; i++) {
+            // Broken awk script:
+            boolean pass= false;
+            try{
+                assertTrue(! Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'print {'")[0]);
+            } catch(IOException e){
+                pass= true;
+            }
+            assertTrue(pass);
+            Thread.sleep(3000);
         }
-        assertTrue(pass);
     }
     
     @Test
@@ -683,8 +719,9 @@ public class UtilsTest {
         x= new String[] {".|.|.|.|.|.|.|.".replaceAll("\\|", "\t")};
         assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"\"'")[0]);
         
+        // The value of the gff tag includes double-quotes. So it is "X" not X
         x= new String[] {".|.|.|.|.|.|.|.|Tag=\"X\"".replaceAll("\\|", "\t")}; // Double quotes are not stripped
-        assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == \"\"X\"\"'")[0]);
+        assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == \"\\\"X\\\"\"'")[0]);
         
     }
     
@@ -781,6 +818,98 @@ public class UtilsTest {
         long t1= System.currentTimeMillis();
         assertTrue((t1-t0) < 10000); // It can filter reasonably fast (?) 
     }
+
+    /*
+    @Test
+    public void canFilterSamAlnEnd() throws IOException{
+        String[] rec;
+        
+        // Missing CIGAR string
+        rec = new String[] {"read 0 chr7 1 255 *".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == -1'")[0]);
+        
+        rec= new String[] {"read 0 chr7 1 255 5M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 5'")[0]);
+        
+        rec= new String[] {"read 0 chr7 10 255 5M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 14'")[0]);
+        
+        rec= new String[] {"read 0 chr7 1 255 50M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 50'")[0]);
+        
+        rec= new String[] {"read 0 chr7 1 255 9H50M10I5X3S".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 55'")[0]);
+        
+        rec= new String[] {"read 0 chr7 1 255 1S2H3M4I5D6N7P8=9X99S33H".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 31'")[0]);
+    } */
+
+    @Test
+    public void canAwkFilterSamAln() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+        
+        GenomicCoords gc= new GenomicCoords("chr7:1-100", 100, null, null);
+        TrackReads tr= new TrackReads("test_data/pairs.sam", gc);
+        tr.setNoFormat(true);
+        tr.setAwk("'getAlnEnd() == 5'");
+        assertEquals("NANAN\nTTTTT", tr.printToScreen().replaceAll(" ", ""));
+        
+        tr.setAwk("'getAlnEnd() == 24'");
+        assertEquals("ntntn", tr.printToScreen().replaceAll(" ", ""));
+
+        tr.setAwk("'getAlnLen() == 3'");
+        assertEquals("NNN", tr.printToScreen().replaceAll(" ", ""));
+        
+        /*
+        String[] rec;
+        
+        String cigar = "read 0 chr7 1 255 ";
+        for(int i=0; i < 1000; i++) {
+            cigar = cigar.concat("1M");            
+        }
+        
+        rec= new String[] {cigar.replaceAll(" ", "\t")};
+        long t0;
+        long t1;
+        
+        t0 = System.currentTimeMillis();
+        for(int i = 0; i < 100; i++) {
+            Utils.passAwkFilter(rec, "'getAlnEnd() > 0'");
+        }
+        t1 = System.currentTimeMillis();
+        System.out.println("getAlnLen: " + (t1 - t0));
+
+        
+        t0 = System.currentTimeMillis();
+        for(int i = 0; i < 100; i++) {
+            Utils.passAwkFilter(rec, "'$1 != $2'");
+        }
+        t1 = System.currentTimeMillis();
+        System.out.println("SIMPLE: " + (t1 - t0));
+        */
+    }
+    
+    /*
+    @Test
+    public void canFilterSamAlnLen() throws IOException{
+        String[] rec;
+        
+        // Missing CIGAR string
+        rec = new String[] {"read 0 chr7 1 255 *".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == -1'")[0]);
+        
+        rec = new String[] {"read 0 chr7 1 255 1M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == 1'")[0]);
+        
+        rec = new String[] {"read 0 chr7 1 255 10M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == 10'")[0]);
+        
+        rec = new String[] {"read 0 chr7 5 255 10M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == 10'")[0]);
+        
+        rec = new String[] {"read 0 chr7 5 255 10M10S".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == 10'")[0]);
+    }
+    */
     
     @Test
     public void canFilterSamBitflagWithAwk() throws IOException{
