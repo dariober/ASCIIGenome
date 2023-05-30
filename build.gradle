@@ -28,7 +28,7 @@ ext.gunzip = { filename ->
       }
 }
 
-/* Prepare test data
+/* Prepare test data */
 File targetFile= new File('test_data/chr7.fa')
 String targetMD5= "30c3693ead968844a769a90a801a900f"
 
@@ -53,7 +53,7 @@ if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
 
 ext.gunzip("test_data/CEU.exon.2010_06.genotypes.vcf.gz")
 ext.gunzip("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz")
-*/
+
 // ---------------------------
 
 test {
