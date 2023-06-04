@@ -39,6 +39,14 @@ public class TrackReadsTest {
 	public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
 	public static String fastaFile= "test_data/chr7.fa";
 
+	@Test
+	public void canReturnChromosomeNames() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException {
+        GenomicCoords gc= new GenomicCoords("chr7", 80, samSeqDict, null);
+        TrackReads tr= new TrackReads("test_data/ds051.actb.bam", gc);
+        assertTrue(tr.getChromosomeNames().contains("chr1"));
+        assertTrue(tr.getChromosomeNames().contains("chr7"));
+	}
+	
  	@Test
  	public void canReloadTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
  		GenomicCoords gc= new GenomicCoords("chr7:1-200", 80, null, null);

@@ -859,10 +859,8 @@ public abstract class Track {
 		this.trackFormat = trackFormat;
 	}
 
-	public List<String> getChromosomeNames() {
-		throw new RuntimeException("TO BE IMPLEMENTED");	
-	}
-
+	public abstract ArrayList<String> getChromosomeNames();
+	
 	protected void setPrintRawLineCount(int count) {
 		if(count < 0){
 			count= Integer.MAX_VALUE;

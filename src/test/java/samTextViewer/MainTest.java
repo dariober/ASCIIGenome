@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.google.common.base.Joiner;
 import com.itextpdf.text.DocumentException;
 
 import exceptions.BamIndexNotFoundException;
@@ -23,6 +24,38 @@ import faidx.UnindexableFastaFileException;
 
 public class MainTest {
 
+    @Test
+    /*You should really test this in InteractiveInputTest.java but setting it up is a bit of a mess */
+    public void canGoToNextChromosome() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
+        String[] args= new String[] {"-ni", "-nf", "--exec", "nextChrom", "test_data/ds051.actb.bam"};
+        String out = Joiner.on("\n").join(this.runMain(args));
+        assertTrue(out.contains("chr8:1-"));
+
+        args= new String[] {"-ni", "-nf", "--exec", "goto chrM && nextChrom", "test_data/ds051.actb.bam"};
+        out = Joiner.on("\n").join(this.runMain(args));
+        assertTrue(out.contains("chr1:1-"));
+        
+        // Wrap around
+        args= new String[] {"-ni", "-nf", "--exec", "goto chrY && nextChrom", "test_data/ds051.actb.bam"};
+        out = Joiner.on("\n").join(this.runMain(args));
+        assertTrue(out.contains("chrM:1-"));
+        
+        // One chrom - stay there.
+        args= new String[] {"-ni", "-nf", "--exec", "nextChrom", "test_data/refSeq.hg19.short.bed"};
+        out = Joiner.on("\n").join(this.runMain(args));
+        assertTrue(out.contains("chr1:67208779"));
+        
+        // No tracks, no genome
+        args= new String[] {"-ni", "-nf", "--exec", "nextChrom"};
+        out = Joiner.on("\n").join(this.runMain(args));
+        assertTrue(out.contains("Undefined_contig:1-"));
+        
+        // Only genome
+        args= new String[] {"-ni", "-nf", "-fa", "test_data/seq_cg.fa", "--exec", "nextChrom"};
+        out = Joiner.on("\n").join(this.runMain(args));
+        assertTrue(out.contains("seq:1-"));
+    }
+    
 	@Test
 	public void canSuggestCommand() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
 		String[] args= new String[] {"-ni", "-nf", "--exec", "prnt"};

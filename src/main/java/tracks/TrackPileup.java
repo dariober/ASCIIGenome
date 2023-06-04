@@ -27,6 +27,7 @@ import htsjdk.samtools.AlignmentBlock;
 import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.CigarOperator;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
@@ -216,6 +217,17 @@ public class TrackPileup extends TrackBedgraph {
 		}
 		return screenScores;
 	}
+
+	@Override
+    public ArrayList<String> getChromosomeNames(){
+        ArrayList<String> chromosomeNames = new ArrayList<String>();
+        List<SAMSequenceRecord> samSeqRecs = this.getGc().getSamSeqDict().getSequences();
+        for(SAMSequenceRecord x : samSeqRecs) {
+            chromosomeNames.add(x.getContig());
+        }
+        return chromosomeNames;
+    }
+    
 
 	@Override
 	protected List<Float> getScreenScores(){

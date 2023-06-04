@@ -22,6 +22,7 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -444,5 +445,15 @@ public class TrackReads extends Track{
 	@Override
 	public void setFeatureName(String gtfAttributeForName) {
 	}
+
+    @Override
+    public ArrayList<String> getChromosomeNames() {
+        List<SAMSequenceRecord> samSeqRecs = this.getGc().getSamSeqDict().getSequences();
+        ArrayList<String> chromosomeNames = new ArrayList<String>();
+        for(SAMSequenceRecord x : samSeqRecs) {
+            chromosomeNames.add(x.getContig());
+        }
+        return chromosomeNames;
+    }
 	
 }

@@ -19,6 +19,9 @@ awk 'getAlnLen() > 2000 && getAlnEnd() < 12345'
 * Use *false* in config `shade_structural_variant` to omit shading of
   structural variants 
 
+* New command `nextChrom` moves to the next chromosome without the need of typing its
+  name. Useful to quickly flip through several chromosomes.
+
 New in 1.17.0
 =============
 

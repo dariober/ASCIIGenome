@@ -353,10 +353,14 @@ public class CommandList {
                 + "* :code:`track` Track to search for next feature. Default to the first annotation track found.\n"
                 + "\n"
                 + "`next` starts searching immediately after the current window and loops thourgh each chromosome until a feature is found.");
- 
-
         cmdList.add(cmd);
 
+        cmd= new CommandHelp();
+        cmd.setName("nextChrom"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
+        cmd.setBriefDescription("Go to the start of the next chromsome or contig. ");
+        cmd.setAdditionalDescription("");
+        cmdList.add(cmd);
+        
         cmd= new CommandHelp();
         cmd.setName("find"); cmd.setArgs("[-all] [-c] [-F] regex [track]"); cmd.inSection= Section.FIND; 
         cmd.setBriefDescription("Find the first record in `track` containing `regex`."); 
@@ -1410,6 +1414,7 @@ public class CommandList {
         paramList.add("p");
         paramList.add("n");
         paramList.add("next");
+        paramList.add("nextChrom");
         paramList.add("find");
         paramList.add("seqRegex");
         paramList.add("bookmark");

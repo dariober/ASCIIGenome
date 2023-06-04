@@ -1054,7 +1054,7 @@ public class TrackIntervalFeature extends Track {
     }
     
     @Override
-    public List<String> getChromosomeNames(){
+    public ArrayList<String> getChromosomeNames(){
         ArrayList<String> x = new ArrayList<String>(this.getReader().getChromosomes());
         Collections.sort(x);
         return x;

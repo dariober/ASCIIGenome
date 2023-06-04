@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,6 +27,9 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SamReader;
+import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import samTextViewer.GenomicCoords;
@@ -37,6 +41,10 @@ public class TrackPileupTest {
         new Config(null);
     }
 	
+    static SamReaderFactory srf=SamReaderFactory.make();
+    static SamReader samReader= srf.open(new File("test_data/ds051.actb.bam"));
+    public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
+    
 	private List<String> gzipFileToList(String gzipFileName) {
 		GZIPInputStream gzip;
 		try {
@@ -55,6 +63,13 @@ public class TrackPileupTest {
 		return null;
 	}
     
+	@Test
+	public void canGetChromsomeNames() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+	    GenomicCoords gc= new GenomicCoords("chr7", 80, samSeqDict, null);
+        TrackPileup tr= new TrackPileup("test_data/ds051.actb.bam", gc);
+        assertTrue(tr.getChromosomeNames().contains("chr1"));
+	}   
+	
 	@Test
 	public void canReloadTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr7:1-200", 80, null, null);

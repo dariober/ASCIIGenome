@@ -232,6 +232,13 @@ Move to the next feature not overlapping the current coordinates.  By default `n
 
 `next` starts searching immediately after the current window and loops thourgh each chromosome until a feature is found.
 
+nextChrom
++++++++++
+
+:code:`nextChrom`
+
+Go to the next known chromsome or contig.  
+
 Find
 ----
 

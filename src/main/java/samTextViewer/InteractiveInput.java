@@ -28,6 +28,7 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -202,6 +203,9 @@ public class InteractiveInput {
                 } else if(cmdTokens.get(0).equals("goto") || cmdTokens.get(0).startsWith(":")){
                     String reg= Joiner.on(" ").join(cmdTokens).replaceFirst("goto|:", "").trim();
                     proc.getGenomicCoordsHistory().add(new GenomicCoords(reg, terminalWidth, samSeqDict, fasta));
+
+                } else if(cmdTokens.get(0).equals("nextChrom")){
+                    this.interactiveInputExitCode = this.nextChrom(proc, samSeqDict, terminalWidth, fasta);
                     
                 } else if (cmdTokens.get(0).equals("p")) {
                     proc.getGenomicCoordsHistory().previous(); 
@@ -613,6 +617,42 @@ public class InteractiveInput {
         return ExitCode.CLEAN_NO_FLUSH;
     }
 
+    private ExitCode nextChrom(TrackProcessor proc, SAMSequenceDictionary samSeqDict, int terminalWidth, String fasta) throws InvalidGenomicCoordsException, IOException {
+        
+        LinkedHashSet<String> chromSet= new LinkedHashSet<String>();
+        for(Track tr : proc.getTrackSet().getTrackList()){
+            chromSet.addAll(tr.getChromosomeNames());
+        }
+        if(samSeqDict != null) {
+            for(SAMSequenceRecord x : samSeqDict.getSequences()){
+                chromSet.add(x.getSequenceName());
+            }
+        }
+            
+        List<String> chroms = new ArrayList<>(chromSet);
+        if(chroms.size() == 0) {
+            System.err.println("There no known contigs");
+            return ExitCode.CLEAN_NO_FLUSH;
+        } 
+        else if (chroms.size() == 1) {
+            System.err.println("This is the only known contig");
+            return ExitCode.CLEAN_NO_FLUSH;
+        } else {
+            String currentChrom = proc.getGenomicCoordsHistory().current().getChrom();
+            String nextChrom;
+            if(currentChrom.equals(chroms.get(chroms.size() - 1))) {
+                // The current is the last chrom in the dictionary so 
+                // wrap around and return the first one
+                nextChrom = chroms.get(0);
+            } else {
+                int i = chroms.indexOf(currentChrom);
+                nextChrom = chroms.get(i + 1);
+            }
+            proc.getGenomicCoordsHistory().add(new GenomicCoords(nextChrom, terminalWidth, samSeqDict, fasta));
+            return ExitCode.CLEAN;
+        }
+    }
+    
     /**Get the items (files) corresponding to the indexes. Errors are silently ignored.
      * */
     private List<String> openFilesFromIndexes(LinkedHashSet<String> openedFiles, List<String> indexes) {
@@ -894,7 +934,7 @@ public class InteractiveInput {
         }
         
     }
-
+    
     /**Edit visualization setting in TrackProcessor as appropriate.
      * @return 
      * @throws InvalidCommandLineException 
