@@ -1052,7 +1052,7 @@ public class CommandList {
                 + "    print~~~~~~~~~~~~~~~~~~~~~~~~-> Print all tracks, same as `print .*`\n"
                 + "    print -off~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
                 + "    print genes.bed >> genes.txt~-> Append features in track(s) 'genes.bed' to file\n"
-                + "    print -sys 'cut 1-5 | sort'~~-> Select columns with `cut` and then sort\n"
+                + "    print -sys 'cut -f 1-5 | sort'~~-> Select columns with `cut` and then sort\n"
                 + "    print -sys null~~~~~~~~~~~~~~-> Turn off the execution of sysy commands\n"
                 );
         cmdList.add(cmd);
