@@ -341,6 +341,7 @@ public class InteractiveInput {
                                     x.printStackTrace();
                                     msg= Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
                                     System.err.println(msg);
+                                    this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
                                 }
                             }
 

@@ -60,7 +60,11 @@ public class TrackReads extends Track{
 		
 		if(!Utils.bamHasIndex(bam)){
 			File temp= Utils.createTempFile(".asciigenome.", ".bam", true);
-			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
+			String fasta = null;
+			if(gc != null) {
+			    fasta = gc.getFastaFile();
+			}
+			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true, fasta);
 			this.setWorkFilename(temp.getAbsolutePath());
 		} else {
 			this.setWorkFilename(bam);
@@ -87,7 +91,7 @@ public class TrackReads extends Track{
 		this.readStack= new ArrayList<List<SamSequenceFragment>>();
 		if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
 
-			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
+			SamReader samReader= Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
 			List<Boolean> passFilter= this.filterReads(samReader, this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
 			samReader.close();
 			
@@ -97,7 +101,7 @@ public class TrackReads extends Track{
 					this.nRecsInWindow++;
 				}
 			}
-			samReader= Utils.getSamReader(this.getWorkFilename());
+			samReader= Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
 			Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 
 			float max_reads= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack));

@@ -245,6 +245,11 @@ public class TrackSet {
     
     private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
+        if(gc.getFastaFile() == null && Utils.isCRAM(sourceName)) {
+            System.err.println("A fasta file is required to load CRAM files");
+            throw new InvalidGenomicCoordsException();
+        }
+        
         /* BAM Coverage track */
         int idForTrack= this.getNextTrackId();
         // String coverageTrackId= new File(sourceName).getName() + "#" + idForTrack;

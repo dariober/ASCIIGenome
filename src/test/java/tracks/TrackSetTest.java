@@ -151,6 +151,25 @@ public class TrackSetTest {
         assertEquals(67208779 + 1000, (int)newgc.getTo());
         
     }
+
+    @Test
+    public void canAddTrackFromCram() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, BamIndexNotFoundException, InvalidColourException{
+        GenomicCoords gc= new GenomicCoords("chr7:5566778-5566946", 80, null, "test_data/chr7.fa");
+        TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
+        ts.addTrackFromSource("test_data/ds051.actb.cram", gc, null);
+        assertTrue(ts.getTrackList().get(0).printToScreen().contains("::::::"));
+        
+        /*Useful error*/
+        gc= new GenomicCoords("chr7:5566778-5566946", 80, null, null);
+        ts= new TrackSet(new ArrayList<String>(), gc);
+        boolean pass = false;
+        try {
+            ts.addTrackFromSource("test_data/ds051.actb.cram", gc, null);
+        } catch(InvalidGenomicCoordsException e) {
+            pass = true;
+        }
+        assertTrue(pass);
+    }
     
     @Test
     public void canChangeTrackFormatToBed() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, BamIndexNotFoundException, InvalidColourException{

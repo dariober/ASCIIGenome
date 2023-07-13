@@ -63,6 +63,17 @@ public class TrackPileupTest {
 		return null;
 	}
     
+   @Test
+    public void canReadCram() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException{
+       GenomicCoords gc= new GenomicCoords("chr7:5566779-5566799", 80, null, "test_data/chr7.fa");
+       TrackPileup tc= new TrackPileup("test_data/ds051.actb.cram", gc);
+       tc.setNoFormat(true);
+       assertTrue(tc.printToScreen().contains("_____........::::::::"));
+
+       tc.setGc(new GenomicCoords("chr7:5567419-5567599", 80, null, "test_data/chr7.fa"));
+       assertTrue(tc.printToScreen().contains("::::::::::::::::::::::::::::::::::::::::::::::     _____________________________"));
+   }
+	
 	@Test
 	public void canGetChromsomeNames() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 	    GenomicCoords gc= new GenomicCoords("chr7", 80, samSeqDict, null);
@@ -371,5 +382,11 @@ public class TrackPileupTest {
 	public void canConstructFromUnsortedInput() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
 		GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, null);
 		new TrackPileup("test_data/ds051.noindex.sam", gc);
-	}	
+	}
+	
+    @Test
+    public void canConstructFromUnsortedCram() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+        GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, "test_data/chr7.fa");
+        new TrackPileup("test_data/ds051.noindex.cram", gc);
+    }
 }

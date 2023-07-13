@@ -69,7 +69,11 @@ public class TrackPileup extends TrackBedgraph {
 		
 		if(!Utils.bamHasIndex(bam)){
 			File temp= Utils.createTempFile(".asciigenome.", ".bam", true);
-			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true);
+			String fasta = null;
+			if(gc != null) {
+			    fasta = gc.getFastaFile();
+			}
+			Utils.sortAndIndexSamOrBam(bam, temp.getAbsolutePath(), true, fasta);
 			this.setWorkFilename(temp.getAbsolutePath());
 		} else {
 			this.setWorkFilename(bam);
@@ -151,11 +155,11 @@ public class TrackPileup extends TrackBedgraph {
 			int qryFrom= gap.get(0);
 			int qryTo= gap.get(1);
 			
-			SamReader samReader= Utils.getSamReader(this.getWorkFilename());
+			SamReader samReader= Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
 			List<Boolean> passFilter= this.filterReads(samReader, chrom, qryFrom, qryTo);
 			samReader.close();
 			
-			samReader= Utils.getSamReader(this.getWorkFilename());
+			samReader= Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
 			
 			Iterator<SAMRecord> sam= samReader.query(chrom, qryFrom, qryTo, false);
 	

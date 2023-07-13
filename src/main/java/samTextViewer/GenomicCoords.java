@@ -108,7 +108,7 @@ public class GenomicCoords implements Cloneable {
 	}
 	
 	public GenomicCoords(String region, int terminalWidth, SAMSequenceDictionary samSeqDict, String fastaFile) throws InvalidGenomicCoordsException, IOException{
-		this(region, terminalWidth, samSeqDict, fastaFile, true);
+	    this(region, terminalWidth, samSeqDict, fastaFile, true);
 	}
 	
 	GenomicCoords(int terminalWidth) throws InvalidGenomicCoordsException, IOException{ 

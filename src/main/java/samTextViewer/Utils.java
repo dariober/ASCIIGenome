@@ -1,21 +1,14 @@
 package samTextViewer;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -480,18 +473,28 @@ public class Utils {
 	 * @throws InvalidCommandLineException 
 	 * @throws ClassNotFoundException */
 	@SuppressWarnings("unused")
-	public static String initRegionFromFile(String x) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
+	public static String initRegionFromFile(String x, String referenceSequence) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
 		UrlValidator urlValidator = new UrlValidator();
 		String region= "";
 		TrackFormat fmt= Utils.getFileTypeFromName(x); 
 		
-		if(fmt.equals(TrackFormat.BAM)){
-			
+		if(Utils.isCRAM(x) && referenceSequence == null){
+		    throw new RuntimeException("Failed to read file " + x + ": CRAM files require a reference genome file");
+		}
+		
+		if(fmt.equals(TrackFormat.BAM)) {
 			SamReader samReader;
 			if(urlValidator.isValid(x)){
-				samReader = SamReaderFactory.makeDefault().open(SamInputResource.of(new URL(x)));
+				SamReaderFactory srf = SamReaderFactory.makeDefault();
+				if(referenceSequence != null) {
+				    srf.referenceSequence(new File(referenceSequence));
+				}
+				samReader = srf.open(SamInputResource.of(new URL(x)));
 			} else {
 				SamReaderFactory srf=SamReaderFactory.make();
+				if(referenceSequence != null) {
+				    srf.referenceSequence(new File(referenceSequence));
+				}
 				srf.validationStringency(ValidationStringency.SILENT);
 				samReader = srf.open(new File(x));
 			}
@@ -586,6 +589,10 @@ public class Utils {
 		} 
 		System.err.println("Cannot initialize from " + x);
 		throw new RuntimeException();
+	}
+
+	public static String initRegionFromFile(String x) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{	
+	    return initRegionFromFile(x, null);
 	}
 	
 	private static String initRegionFromBigBed(String bigBedFile) throws IOException{
@@ -718,7 +725,10 @@ public class Utils {
 				|| fileName.endsWith(".gff3.bgz.tbi")){
 			return TrackFormat.GFF;
 			
-		} else if(fileName.endsWith(".bam") || fileName.endsWith(".sam") || fileName.endsWith(".sam.gz") || fileName.endsWith(".cram")){
+		} else if(fileName.endsWith(".bam") || 
+		          fileName.endsWith(".sam") || 
+		          fileName.endsWith(".sam.gz") || 
+		          Utils.isCRAM(fileName)){
 			return TrackFormat.BAM;
 			
 		} else if(fileName.endsWith(".bigwig") || fileName.endsWith(".bw")) {
@@ -2161,9 +2171,12 @@ public class Utils {
 	}
 
 	/** Prepare SamReader from local bam or URL bam */
-	public static SamReader getSamReader(String workFilename) throws MalformedURLException {
+	public static SamReader getSamReader(String workFilename, String referenceSequence) throws MalformedURLException {
 		UrlValidator urlValidator = new UrlValidator();
 		SamReaderFactory srf=SamReaderFactory.make();
+		if(referenceSequence != null) {
+		    srf.referenceSequence(new File(referenceSequence));
+		}
 		srf.validationStringency(ValidationStringency.SILENT);
 		SamReader samReader;
 		if(urlValidator.isValid(workFilename)){
@@ -2232,15 +2245,22 @@ public class Utils {
 		return null;
 	}
 
-	/** Sort and index input sam or bam.
+	/** Sort and index input sam or bam or cram
 	 * @throws IOException 
 	 * */
-	public static void sortAndIndexSamOrBam(String inSamOrBam, String sortedBam, boolean deleteOnExit) throws IOException {
+	public static void sortAndIndexSamOrBam(String inSamOrBam, String sortedBam, boolean deleteOnExit, String referenceSequence) throws IOException {
 
+	    if(Utils.isCRAM(sortedBam)) {
+	        throw new IOException("CRAM output is not supported");
+	    }
+	    
 		/*  ------------------------------------------------------ */
 		/* This chunk prepares SamReader from local bam or URL bam */
 		UrlValidator urlValidator = new UrlValidator();
 		SamReaderFactory srf=SamReaderFactory.make();
+		if(Utils.isCRAM(inSamOrBam)) {
+		    srf.referenceSequence(new File(referenceSequence));
+		}
 		srf.validationStringency(ValidationStringency.SILENT);
 		SamReader samReader;
 		if(urlValidator.isValid(inSamOrBam)){
@@ -2608,15 +2628,17 @@ public class Utils {
 		return q + x + q;
 	}
 
-	public static TrackFormat guessTrackType(String file) {
+	// public static TrackFormat guessTrackType(String file) {
+	//    return guessTrackType(file, null);
+	// }
+	
+	public static TrackFormat guessTrackType(String file, String referenceSequence) {
 		
 		try {
-			SamReaderFactory srf=SamReaderFactory.make();
-			srf.validationStringency(ValidationStringency.SILENT);
-			SamReader samReader = srf.open(new File(file));
+		    SamReader samReader = Utils.getSamReader(file, referenceSequence);
 			SAMRecordIterator iter = samReader.iterator();
 			int n= 0;
-			while(iter.hasNext() && n < 1000) {
+			while(iter.hasNext() && n < 10) {
 				iter.next();
 				n++;
 			}
@@ -2656,6 +2678,10 @@ public class Utils {
 			e.printStackTrace();
 		}
 		return null;
-	} 
+	}
+
+    public static boolean isCRAM(String sourceName) {
+        return sourceName.toLowerCase().endsWith(".cram");
+    } 
 	
 }

@@ -17,7 +17,6 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMSequenceDictionary;
-import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 
@@ -33,7 +32,7 @@ public class GenomicCoordsTest {
 	public void initConfig() throws IOException, InvalidConfigException{
 		new Config(null);
 	}
-
+	
 	@Test
 	public void canPrintPerecentRuler() throws InvalidGenomicCoordsException, IOException, InvalidConfigException, InvalidColourException{
 		

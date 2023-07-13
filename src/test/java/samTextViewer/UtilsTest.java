@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -33,7 +34,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 
 import coloring.Config;
@@ -46,6 +46,7 @@ import faidx.UnindexableFastaFileException;
 import filter.FirstOfPairFilter;
 import filter.FlagToFilter;
 import filter.ReadNegativeStrandFilter;
+import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -99,7 +100,21 @@ public class UtilsTest {
     }
 
     @Test
-    public void canGuessFileType() throws Exception {
+    public void canGetSamReaderFromBam() throws MalformedURLException {
+        SamReader sr = Utils.getSamReader("test_data/ds051.actb.bam", null);
+        SAMRecordIterator iter = sr.query("chr7", 1, 5566791, false);
+        assertTrue(iter.hasNext());
+    }
+    
+    @Test
+    public void canGetSamReaderFromCram() throws MalformedURLException {
+        SamReader sr = Utils.getSamReader("test_data/ds051.actb.cram", "test_data/chr7.fa");
+        SAMRecordIterator iter = sr.query("chr7", 1, 5566791, false);
+        assertTrue(iter.hasNext());
+    }
+    
+    @Test
+    public void canGuessTrackType() throws Exception {
         
         // MEMO: 
         // * Check URL
@@ -110,17 +125,20 @@ public class UtilsTest {
             fmt.add(x);
         }
         
-        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/malformed.vcf.gz"));
-        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/invalid.vcf"));
-        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf"));
-        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf.gz"));
+        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/malformed.vcf.gz", null));
+        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/invalid.vcf", null));
+        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf", null));
+        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf.gz", null));
                 
-        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.actb.bam"));
-        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.noindex.sam"));
+        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.actb.bam", null));
+        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.noindex.sam", null));
         fmt.remove(TrackFormat.BAM);
         
-        assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3"));
-        assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/ovl.gff"));
+        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.actb.cram", "test_data/chr7.fa"));
+        fmt.remove(TrackFormat.BAM);
+        
+        assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3", null));
+        assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/ovl.gff", null));
         fmt.remove(TrackFormat.GFF);
         
         // assertEquals(TrackFormat.GTF, Utils.guessTrackType("test_data/hg19_genes_head.gtf"));
@@ -307,14 +325,30 @@ public class UtilsTest {
     }
     
     @Test
+    public void canSortAndIndexCram() throws IOException{
+        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.cram", "sorted.bam", true, "test_data/chr7.fa");
+        assertTrue(new File("sorted.bai").length() > 1000);
+        assertTrue(new File("sorted.bam").length() > 1000);
+        
+        boolean pass = false;
+        try {
+            Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.cram", "sorted.cram", true, "test_data/chr7.fa");
+        } catch(IOException e) {
+            assertTrue(e.getMessage().contains("CRAM output"));
+            pass = true;
+        }
+        assertTrue(pass);
+    }
+    
+    @Test
     public void canSortAndIndexSamOrBam() throws IOException{
     
-        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.bam", "sorted.bam", true);
+        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.bam", "sorted.bam", true, null);
         assertTrue(new File("sorted.bai").length() > 1000);
         assertTrue(new File("sorted.bam").length() > 1000);
 
         // With SAM input
-        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.sam", "sorted1.bam", true);
+        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.sam", "sorted1.bam", true, null);
         assertTrue(new File("sorted1.bai").length() > 1000);
         assertTrue(new File("sorted1.bam").length() > 1000);
         
@@ -322,7 +356,7 @@ public class UtilsTest {
         File sorted2= new File("sorted2.bam"); 
         
         Utils.sortAndIndexSamOrBam("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.noindex.bam", 
-                sorted2.getAbsolutePath(), true);
+                sorted2.getAbsolutePath(), true, null);
         assertTrue(new File("sorted2.bai").length() > 1000);
         assertTrue(new File("sorted2.bam").length() > 1000);
 
@@ -1354,11 +1388,26 @@ public class UtilsTest {
     public void canGetFileTypeFromName(){
         
         assertEquals(TrackFormat.VCF,
-        Utils.getFileTypeFromName("test/gz.vcf.bgz"));
+                Utils.getFileTypeFromName("test/gz.vcf.bgz"));
         
-        assertEquals(TrackFormat.BIGWIG, Utils.getFileTypeFromName("http://foo/bar/wgEncode.bigWig"));
+        assertEquals(TrackFormat.BIGWIG, 
+                Utils.getFileTypeFromName("http://foo/bar/wgEncode.bigWig"));
+        
+        assertEquals(TrackFormat.BAM,
+                Utils.getFileTypeFromName("test/foo.bam"));
+        
+        assertEquals(TrackFormat.BAM,
+                Utils.getFileTypeFromName("test/foo.SAM.GZ"));
+   
+        assertEquals(TrackFormat.BAM,
+                Utils.getFileTypeFromName("test/foo.CRAM"));
     } 
 
+    @Test
+    public void canInitRegionFromCram() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
+        assertEquals("chr7:5566778", Utils.initRegionFromFile("test_data/ds051.actb.cram", "test_data/chr7.fa"));
+    }
+    
     @Test
     public void canInitRegion() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
         

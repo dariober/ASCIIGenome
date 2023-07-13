@@ -25,6 +25,15 @@ import faidx.UnindexableFastaFileException;
 public class MainTest {
 
     @Test
+    public void canStartFromCram() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
+        String[] args= new String[] {"-ni", "-nf", "--debug", "2",
+                "-fa", "test_data/chr7.fa",
+                "--exec", "goto chr7:5567419-5567599", "test_data/ds051.actb.cram"};
+        String out = Joiner.on("\n").join(this.runMain(args));
+        assertTrue(out.contains("chr7:5567419-5567599") && out.contains("<<<<<"));
+    }
+    
+    @Test
     /*You should really test this in InteractiveInputTest.java but setting it up is a bit of a mess */
     public void canGoToNextChromosome() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
         String[] args= new String[] {"-ni", "-nf", "--exec", "nextChrom", "test_data/ds051.actb.bam"};

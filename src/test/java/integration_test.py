@@ -58,6 +58,14 @@ class TestCLI(unittest.TestCase):
         p = shell(cmd)
         self.assertEqual(p.returncode, 0)
 
+    def testUsefulMessageIfCramWithoutGenome(self):
+        cmd = f"""{ASCIIGenome} ../../../test_data/ds051.actb.cram
+                  """
+        print(cmd)
+        p = shell(cmd)
+        self.assertTrue(p.returncode != 0)
+        self.assertTrue("CRAM input requires a genome file" in p.stderr)
+
     def testCanExplainSamFlags(self):
         cmd = f"""{ASCIIGenome} -nf -x 'explainSamFlag 2690'
                   """

@@ -437,4 +437,9 @@ public class TrackReadsTest {
 		assertEquals("", tr.printToScreen());
 	}
 	
+    @Test
+    public void canConstructFromUnsortedCram() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+        GenomicCoords gc= new GenomicCoords("chr1:1-1000", 80, null, "test_data/chr7.fa");
+        new TrackReads("test_data/ds051.noindex.cram", gc);
+    }
 }

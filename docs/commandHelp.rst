@@ -237,7 +237,7 @@ nextChrom
 
 :code:`nextChrom`
 
-Go to the next known chromsome or contig.  
+Go to the start of the next chromsome or contig.  
 
 Find
 ----
@@ -549,7 +549,7 @@ Examples::
     print                        -> Print all tracks, same as `print .*`
     print -off                   -> Turn off printing for all tracks
     print genes.bed >> genes.txt -> Append features in track(s) 'genes.bed' to file
-    print -sys 'cut 1-5 | sort'  -> Select columns with `cut` and then sort
+    print -sys 'cut -f 1-5 | sort'  -> Select columns with `cut` and then sort
     print -sys null              -> Turn off the execution of sysy commands
 
 

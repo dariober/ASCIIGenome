@@ -1,7 +1,7 @@
 New in 1.18.0
 =============
 
-* New `awk` functions `getAlnEnd()` and `getAlnLen()` to get the **end** and
+* New `awk` functions **`getAlnEnd()`** and **`getAlnLen()`** to get the **end** and
   **length** of a SAM aligmment, respectively. Useful to filter for alignments
   above/below a cutoff, especially with Nanopore reads. *E.g.*
 
@@ -13,14 +13,16 @@ awk 'getAlnLen() > 2000 && getAlnEnd() < 12345'
   `awk` appears to be 5-10x faster than Jawk, but now it is assumed users have
   `awk` on their PATH.
 
-* Add configuration parameter `low_mapq` to set what you consider as low
+* Add configuration parameter **`low_mapq`** to set what you consider as low
   mapping quality. Default is 5 which is the setting hardcoded until now.
 
 * Use *false* in config `shade_structural_variant` to omit shading of
   structural variants 
 
-* New command `nextChrom` moves to the next chromosome without the need of typing its
+* New command **`nextChrom`** moves to the next chromosome without the need of typing its
   name. Useful to quickly flip through several chromosomes.
+
+* Can read **CRAM** files (finally!)
 
 New in 1.17.0
 =============
