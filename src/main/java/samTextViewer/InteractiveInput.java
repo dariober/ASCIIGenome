@@ -9,8 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -28,11 +26,9 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
-import htsjdk.samtools.SAMSequenceRecord;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import tracks.Track;
 import utils.Tokenizer;
 
 /** Class to process input from console
@@ -205,7 +201,7 @@ public class InteractiveInput {
                     proc.getGenomicCoordsHistory().add(new GenomicCoords(reg, terminalWidth, samSeqDict, fasta));
 
                 } else if(cmdTokens.get(0).equals("nextChrom")){
-                    this.interactiveInputExitCode = this.nextChrom(proc, samSeqDict, terminalWidth, fasta);
+                    this.interactiveInputExitCode= this.nextChrom(cmdTokens, proc);
                     
                 } else if (cmdTokens.get(0).equals("p")) {
                     proc.getGenomicCoordsHistory().previous(); 
@@ -520,6 +516,35 @@ public class InteractiveInput {
         return proc;
     }
 
+    private ExitCode nextChrom(List<String> cmdTokens, TrackProcessor proc) throws IOException, NumberFormatException, InvalidCommandLineException {
+        
+        int minSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-m", "-1"));
+        int maxSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-M", "-1"));
+        String regex = Utils.getArgForParam(cmdTokens, "-r", ".*");
+        String so = Utils.getArgForParam(cmdTokens, "-s", "u");
+        ContigOrder sortOrder;
+        if(so.equals("u")) {
+            sortOrder = ContigOrder.UNSORTED;
+        } else if(so.equals("s")) {
+            sortOrder = ContigOrder.SIZE_ASC;
+        } else if(so.equals("S")) {
+            sortOrder = ContigOrder.SIZE_DESC;
+        } else {
+            System.err.println("Invalid option for sort order: " + so);
+            return ExitCode.CLEAN_NO_FLUSH;
+        }
+        
+        try {
+            GenomicCoords gc= (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+            gc.nextChrom(proc.getTrackSet().getKnownContigs(), minSize, maxSize, regex, sortOrder);
+            proc.getGenomicCoordsHistory().add(gc);
+            return ExitCode.CLEAN;
+        } catch(InvalidGenomicCoordsException e) {
+            System.err.println(e.getMessage());
+            return ExitCode.CLEAN_NO_FLUSH;
+        }
+    }
+
     private int countBrackets(List<String> cmdTokens) throws InvalidCommandLineException {
         
         String xtimes= cmdTokens.get(0).replaceAll("\\[|\\]", "");
@@ -618,42 +643,6 @@ public class InteractiveInput {
         return ExitCode.CLEAN_NO_FLUSH;
     }
 
-    private ExitCode nextChrom(TrackProcessor proc, SAMSequenceDictionary samSeqDict, int terminalWidth, String fasta) throws InvalidGenomicCoordsException, IOException {
-        
-        LinkedHashSet<String> chromSet= new LinkedHashSet<String>();
-        for(Track tr : proc.getTrackSet().getTrackList()){
-            chromSet.addAll(tr.getChromosomeNames());
-        }
-        if(samSeqDict != null) {
-            for(SAMSequenceRecord x : samSeqDict.getSequences()){
-                chromSet.add(x.getSequenceName());
-            }
-        }
-            
-        List<String> chroms = new ArrayList<>(chromSet);
-        if(chroms.size() == 0) {
-            System.err.println("There no known contigs");
-            return ExitCode.CLEAN_NO_FLUSH;
-        } 
-        else if (chroms.size() == 1) {
-            System.err.println("This is the only known contig");
-            return ExitCode.CLEAN_NO_FLUSH;
-        } else {
-            String currentChrom = proc.getGenomicCoordsHistory().current().getChrom();
-            String nextChrom;
-            if(currentChrom.equals(chroms.get(chroms.size() - 1))) {
-                // The current is the last chrom in the dictionary so 
-                // wrap around and return the first one
-                nextChrom = chroms.get(0);
-            } else {
-                int i = chroms.indexOf(currentChrom);
-                nextChrom = chroms.get(i + 1);
-            }
-            proc.getGenomicCoordsHistory().add(new GenomicCoords(nextChrom, terminalWidth, samSeqDict, fasta));
-            return ExitCode.CLEAN;
-        }
-    }
-    
     /**Get the items (files) corresponding to the indexes. Errors are silently ignored.
      * */
     private List<String> openFilesFromIndexes(LinkedHashSet<String> openedFiles, List<String> indexes) {
@@ -677,7 +666,7 @@ public class InteractiveInput {
             }
         }
         return files;
-    }
+        }
 
     /** Parse the given list of options and move to new coordinates.
      * Visibility set to protected only for testing.
@@ -981,10 +970,8 @@ public class InteractiveInput {
             System.err.println(Utils.padEndMultiLine(genome, proc.getWindowSize()));
             return;
         }
-        Set<String> chroms= new TreeSet<String>();
-        for(Track tr : proc.getTrackSet().getTrackList()){
-            chroms.addAll(tr.getChromosomeNames());
-        }
+        
+        List<String> chroms= proc.getTrackSet().getKnownContigs();
         System.err.println(Utils.padEndMultiLine("Known contigs:", proc.getWindowSize()));
         for(String x : chroms){
             System.err.println(Utils.padEndMultiLine(x, proc.getWindowSize()));

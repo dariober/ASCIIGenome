@@ -356,9 +356,22 @@ public class CommandList {
         cmdList.add(cmd);
 
         cmd= new CommandHelp();
-        cmd.setName("nextChrom"); cmd.setArgs(""); cmd.inSection= Section.NAVIGATION; 
-        cmd.setBriefDescription("Go to the start of the next chromsome or contig. ");
-        cmd.setAdditionalDescription("");
+        cmd.setName("nextChrom"); cmd.setArgs("[-m] [-M] [-r]"); cmd.inSection= Section.NAVIGATION; 
+        cmd.setBriefDescription("Go to the start of the next chromsome or contig.");
+        cmd.setAdditionalDescription(""
+                + "\n\n"
+                + "* :code:`-m`: Go to next chrom having this minimum size.\n"
+                + "\n"
+                + "* :code:`-M`: Go to next chrom having this maximum size.\n"
+                + "\n"
+                + "* :code:`-r`: Go to next chrom matching this regex.\n"
+                + "\n"
+                + "* :code:`-s`: Sort order to decide what next is:\n"
+                + "~~~~:code:`u`: unsorted, i.e. next in dictionary (default)\n"
+                + "~~~~:code:`s`: size ascending\n"
+                + "~~~~:code:`S`: size descending\n"
+                + "\n"
+                + "Parameters using contig size are silently ignored.");
         cmdList.add(cmd);
         
         cmd= new CommandHelp();

@@ -74,7 +74,7 @@ public class TrackProcessor {
 			
 			track.setNoFormat(this.noFormat);
 			if(track.getyMaxLines() > 0 && !track.isHideTrack()){
-				outputString.append(track.concatTitleAndTrack() + "\n");
+			    outputString.append(track.concatTitleAndTrack() + "\n");
 				// outputString.append(track.getPrintableConsensusSequence());
 				outputString.append(track.printLines());
 			}
@@ -106,7 +106,7 @@ public class TrackProcessor {
 		} else {
 			outputString.append(footer);
 		}
-
+		
 		String printable= this.fillUpLines(outputString.toString());
 		
 		// Print to screen

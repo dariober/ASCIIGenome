@@ -2350,4 +2350,14 @@ public class TrackSet {
             }
         }
     }
+
+    public ArrayList<String> getKnownContigs() {
+        LinkedHashSet<String> chromSet= new LinkedHashSet<String>();
+        for(Track tr : this.getTrackList()){
+            chromSet.addAll(tr.getChromosomeNames());
+        }
+        ArrayList<String> chroms = new ArrayList<String>();
+        chroms.addAll(chromSet);
+        return chroms;
+    }
 }

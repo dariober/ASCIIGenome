@@ -32,6 +32,80 @@ public class GenomicCoordsTest {
 	public void initConfig() throws IOException, InvalidConfigException{
 		new Config(null);
 	}
+
+	@Test
+	public void canReturnNextChromNoDict() throws InvalidGenomicCoordsException, IOException {
+
+	    ArrayList<String> knownContigs = new ArrayList<String>();
+	    knownContigs.add("chr3");
+	    knownContigs.add("chr1");
+	    knownContigs.add("chr2");
+	    
+	    GenomicCoords gc= new GenomicCoords("chr3:1000-100000", 80, null, null);
+
+	    gc.nextChrom(knownContigs, -1, -1, ".*", ContigOrder.UNSORTED);
+	    assertEquals("chr1", gc.getChrom());
+	    
+	    // No effect of size limits
+	    gc= new GenomicCoords("chr1:1000-100000", 80, null, null);
+	    gc.nextChrom(knownContigs, 10, 100, ".*", ContigOrder.UNSORTED);
+	    assertEquals("chr2", gc.getChrom());
+	}
+	
+	@Test
+	public void canReturnNextChromSize() throws InvalidGenomicCoordsException, IOException {
+	    GenomicCoords gc= new GenomicCoords("chrM:1000-2000", 80, samSeqDict, null);
+
+	    // Next by size is...:
+	    gc.nextChrom(null, -1, -1, ".*", ContigOrder.SIZE_ASC);
+	    assertEquals("chr21", gc.getChrom());
+	    
+	    // Smaller by size is...:
+	    gc.nextChrom(null, -1, -1, ".*", ContigOrder.SIZE_DESC);
+	    assertEquals("chrM", gc.getChrom());
+	    
+	    // Next in dict is:... 
+	    gc.nextChrom(null, -1, -1, ".*", ContigOrder.UNSORTED);
+        assertEquals("chr1", gc.getChrom());
+        
+        //Wrap around: if you are on the largest chrom, go to the smallest:
+        gc= new GenomicCoords("chr1:1000-2000", 80, samSeqDict, null);
+        gc.nextChrom(null, -1, -1, ".*", ContigOrder.SIZE_ASC);
+        assertEquals("chrM", gc.getChrom());
+	}
+	
+	@Test
+	public void canReturnNextChromRegex() throws InvalidGenomicCoordsException, IOException {
+
+	    GenomicCoords gc= new GenomicCoords("chr1:1000-100000", 80, samSeqDict, null);
+	    gc.nextChrom(null, -1, -1, ".*", ContigOrder.UNSORTED);
+	    assertEquals("chr2", gc.getChrom());
+	    assertEquals((Integer)1, gc.getFrom());
+        assertEquals((Integer)80, gc.getTo());
+	    
+	    gc.nextChrom(null, -1, -1, "Y$", ContigOrder.UNSORTED);
+        assertEquals("chrY", gc.getChrom());
+        
+        boolean pass = false;
+        try {
+            gc.nextChrom(null, -1, -1, "chrY", ContigOrder.UNSORTED);
+        } catch(InvalidGenomicCoordsException e) {
+            assertEquals("chrY", gc.getChrom());
+            pass = true;
+        }
+        assertTrue(pass);
+
+        // Wrap around
+        gc.nextChrom(null, -1, -1, ".", ContigOrder.UNSORTED);
+        assertEquals("chrM", gc.getChrom());
+        
+        // Min and Max
+        gc.nextChrom(null, 249000000, -1, ".", ContigOrder.UNSORTED);
+        assertEquals("chr1", gc.getChrom());
+        
+        gc.nextChrom(null, -1, 20000, ".", ContigOrder.UNSORTED);
+        assertEquals("chrM", gc.getChrom());
+    }
 	
 	@Test
 	public void canPrintPerecentRuler() throws InvalidGenomicCoordsException, IOException, InvalidConfigException, InvalidColourException{

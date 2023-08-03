@@ -10,10 +10,12 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -167,6 +169,72 @@ public class GenomicCoords implements Cloneable {
 				break;
 			}
 		}
+	}
+	
+	/**Return the next chromosome in the sequence dictionary 
+	 * whose size is >= minSize, <= maxSize, and name matches regex
+	 * @throws InvalidGenomicCoordsException 
+	 * @throws IOException 
+	 * */
+	public void nextChrom(ArrayList<String> knownContigs, int minSize, int maxSize, String regex, ContigOrder sortOrder) throws InvalidGenomicCoordsException, IOException {
+
+	    ArrayList<SAMSequenceRecord> ctg = new ArrayList<SAMSequenceRecord>();
+	    if(samSeqDict == null) {
+	        minSize = -1;
+	        maxSize = Integer.MAX_VALUE;
+            for(String x : knownContigs) {
+                SAMSequenceRecord seq = new SAMSequenceRecord(x, Integer.MAX_VALUE);
+                ctg.add(seq);
+            }
+        } else {
+            for(SAMSequenceRecord seq : samSeqDict.getSequences()){
+                ctg.add(seq);
+            }
+        }
+	    
+        if(sortOrder.equals(ContigOrder.SIZE_ASC)) {
+            // Sort by ascending size: Return next chrom bigger than current
+            Collections.sort(ctg, (o1, o2) -> o1.getLengthOnReference() - o2.getLengthOnReference());
+        } else if(sortOrder.equals(ContigOrder.SIZE_DESC)) {
+            // Sort by descending size: Return next chrom smaller than current
+            Collections.sort(ctg, (o1, o2) -> o2.getLengthOnReference() - o1.getLengthOnReference());
+        }
+	    
+	    if(maxSize <= 0) {
+	        maxSize = Integer.MAX_VALUE;
+	    }
+	    ArrayList<String> chroms = new ArrayList<String>();
+        for(SAMSequenceRecord seq : ctg){
+            if(seq.getLengthOnReference() >= minSize && 
+               seq.getLengthOnReference() <= maxSize && 
+               Pattern.compile(regex).matcher(seq.getSequenceName()).find()) {
+                chroms.add(seq.getSequenceName());
+             }
+        }
+        
+        if(chroms.size() == 0) {
+            throw new InvalidGenomicCoordsException("There is no contig passing filters");
+        }
+
+        String currentChrom = this.getChrom();
+        
+        if (chroms.size() == 1 && currentChrom.equals(chroms.get(0))) {
+            throw new InvalidGenomicCoordsException("This is the only known contig passing filters");
+        } 
+        
+        String nextChrom;
+        if(currentChrom.equals(chroms.get(chroms.size() - 1))) {
+            // The current is the last chrom in the dictionary so 
+            // wrap around and return the first one
+            nextChrom = chroms.get(0);
+        } else {
+            int i = chroms.indexOf(currentChrom);
+            nextChrom = chroms.get(i + 1);
+        }
+        this.chrom = nextChrom;
+        this.from = 1;
+        this.to = this.from + this.getTerminalWidth() - 1;
+        this.update();
 	}
 	
 	protected void setRefSeq() throws IOException, InvalidGenomicCoordsException{

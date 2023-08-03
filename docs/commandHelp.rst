@@ -235,9 +235,19 @@ Move to the next feature not overlapping the current coordinates.  By default `n
 nextChrom
 +++++++++
 
-:code:`nextChrom`
+:code:`nextChrom [-m] [-M] [-r]`
 
-Go to the start of the next chromsome or contig.  
+Go to the start of the next chromsome or contig. 
+
+* :code:`-m`: Go to next chrom having this minimum size. *
+
+* :code:`-M`: Go to next chrom having this maximum size. *
+
+* :code:`-r`: Go to next chrom matching this regex.
+
+Without arguments, go to the next chromosome in the sequence dictionary.
+
+* Ignored with unknown chromosome sizes.
 
 Find
 ----

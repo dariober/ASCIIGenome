@@ -130,21 +130,20 @@ public class TokenizerTest {
 	@Test
 	public void canEscape() {
 		String cmd= "do 'foo\\\\\\'bar'";
-		List<String> tk= new Tokenizer(cmd).tokenize();;
+		List<String> tk= new Tokenizer(cmd).tokenize();
 		assertEquals(2, tk.size());
 		assertEquals("foo\\\\\\'bar", tk.get(1));
 		
 		cmd= "do 'foo\\'bar'";
-		tk= new Tokenizer(cmd).tokenize();;
+		tk= new Tokenizer(cmd).tokenize();
 		assertEquals(2, tk.size());
 		assertEquals("foo\\'bar", tk.get(1));
 		
 		cmd= "do 'foo\\\\' bar";
-		tk= new Tokenizer(cmd).tokenize();;
+		tk= new Tokenizer(cmd).tokenize();
 		assertEquals(3, tk.size());
 		assertEquals("foo\\\\", tk.get(1));
 		assertEquals("bar", tk.get(2));
-		
 	}
 	
 }
