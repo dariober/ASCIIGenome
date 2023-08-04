@@ -11,30 +11,30 @@ import htsjdk.samtools.util.SamLocusIterator.RecordAndOffset;
  */
 class MethylLocus {
 
-	private LocusInfo locus;
-	// private boolean isCorGLocus= false;
-	private char refBase; // This going to be alwasy upper case
-	private Integer cntM= 0;
-	private Integer cntU= 0;
+    private LocusInfo locus;
+    // private boolean isCorGLocus= false;
+    private char refBase; // This going to be alwasy upper case
+    private Integer cntM= 0;
+    private Integer cntU= 0;
 
-	// Thresholds to call consensus
+    // Thresholds to call consensus
 //	private static final int MIN_BASE_QUAL= 20; // Min base quality for a read base to be counted
 //	private static final int MIN_DEPTH_ALT= 3; // Min read depth for alternative allele to be taken into account
 //	private static final double MIN_PCT_ALT= 0.01; // Min % of alternative allele to be taken into account  
 //	private static final double MIN_PCT_TOT= 0.98; // % (Reference + Alternative) must be above this otherwise set consensus to N.   
 
-	
+    
 //	private int cntN;
-	
-	             /* C o n s t r u c t o r s */
+    
+                 /* C o n s t r u c t o r s */
 
-	protected MethylLocus(LocusInfo locus, char refBase){
+    protected MethylLocus(LocusInfo locus, char refBase){
 
-		this.locus= locus;
-		this.populateMethylLocus();
-	}
+        this.locus= locus;
+        this.populateMethylLocus();
+    }
 
-	
+    
 //	public MethylLocus(LocusInfo locus, IndexedFastaSequenceFile faSeqFile){
 //		
 //		String chrom= locus.getSequenceName();
@@ -42,13 +42,13 @@ class MethylLocus {
 //		
 //		makeMethylLocus(locus, refBase);
 //	}
-	
-	/**
-	 * Constructor based on locusInfo and reference sequence as byte[].
-	 * Offset is the genomic position of the first base in subRefSeq. I.e. offset=1 if
-	 * subRefSeq starts from the start of the chrom. offset=n if byte[] is a substring
-	 * of reference chromosome starting at n.
-	 * */
+    
+    /**
+     * Constructor based on locusInfo and reference sequence as byte[].
+     * Offset is the genomic position of the first base in subRefSeq. I.e. offset=1 if
+     * subRefSeq starts from the start of the chrom. offset=n if byte[] is a substring
+     * of reference chromosome starting at n.
+     * */
 //	public MethylLocus(LocusInfo locus, byte[] subRefSeq, int offset){
 //		
 //		if(locus.getPosition() < offset || locus.getPosition() > offset + subRefSeq.length){
@@ -58,65 +58,65 @@ class MethylLocus {
 //		this.refBase= Character.toUpperCase((char)subRefSeq[posOnSubRefSeq]);
 //		makeMethylLocus(locus, this.refBase);	
 //	}
-	
-	                   /* M e t h o d s */
-	
+    
+                       /* M e t h o d s */
+    
 //	protected char getConsensus(){
 //		
 //	}
-	
-	/**
-	 * Fill up fields cntM, cntU etc
-	 */
-	private void populateMethylLocus(){
-		
-		if(this.refBase != 'C' && this.refBase != 'G'){
-			cntM= null;
-			cntU= null;
-			return;
-		} 
-		
-		for(RecordAndOffset recOff : this.locus.getRecordAndOffsets()){
+    
+    /**
+     * Fill up fields cntM, cntU etc
+     */
+    private void populateMethylLocus(){
+        
+        if(this.refBase != 'C' && this.refBase != 'G'){
+            cntM= null;
+            cntU= null;
+            return;
+        } 
+        
+        for(RecordAndOffset recOff : this.locus.getRecordAndOffsets()){
 
-			boolean readIsTopStrand= !(new ReadFromTopStrandFilter(true)).filterOut(recOff.getRecord());
-			char readBase= Character.toUpperCase((char)recOff.getReadBase());
-			
-			if(this.refBase == 'C'){
+            boolean readIsTopStrand= !(new ReadFromTopStrandFilter(true)).filterOut(recOff.getRecord());
+            char readBase= Character.toUpperCase((char)recOff.getReadBase());
+            
+            if(this.refBase == 'C'){
 
-				if( readIsTopStrand	){
-					if(readBase == 'C'){
-						cntM++;
-					} else if(readBase == 'T'){
-						cntU++;
-					} 
-				}  					
-			} else if (this.refBase == 'G'){
+                if( readIsTopStrand	){
+                    if(readBase == 'C'){
+                        cntM++;
+                    } else if(readBase == 'T'){
+                        cntU++;
+                    } 
+                }  					
+            } else if (this.refBase == 'G'){
 
-				if(	!readIsTopStrand ){
-					if(readBase == 'G'){
-						cntM++;
-					} else if(readBase == 'A'){
-						cntU++;
-					} 
-				}  
-			} else {
-				System.err.println("Unexpected strand or base!");
-				System.exit(1);
-			}
-		}		
-	}
+                if(	!readIsTopStrand ){
+                    if(readBase == 'G'){
+                        cntM++;
+                    } else if(readBase == 'A'){
+                        cntU++;
+                    } 
+                }  
+            } else {
+                System.err.println("Unexpected strand or base!");
+                System.exit(1);
+            }
+        }		
+    }
 
-	public String toString(){
-		StringBuilder sb= new StringBuilder();
-		sb.append("Locus: " + this.locus + "\n");
-		sb.append("Reference base: " + this.refBase + "\n");
-		sb.append("Count methylated (C/T): " + this.cntM + "\n");
-		sb.append("Count unmethylated (G/A): " + this.cntU + "\n");
-		return sb.toString();
-	}
-	
-	        /* S e t t e r s   and   G e t t e r s */
-	
+    public String toString(){
+        StringBuilder sb= new StringBuilder();
+        sb.append("Locus: " + this.locus + "\n");
+        sb.append("Reference base: " + this.refBase + "\n");
+        sb.append("Count methylated (C/T): " + this.cntM + "\n");
+        sb.append("Count unmethylated (G/A): " + this.cntU + "\n");
+        return sb.toString();
+    }
+    
+            /* S e t t e r s   and   G e t t e r s */
+    
 //	public LocusInfo getLocus() {
 //		return locus;
 //	}

@@ -13,36 +13,36 @@ import java.util.Map;
 import org.junit.Test;
 
 public class ASCIIGenomeHistoryTest {
-	
-	@Test
-	public void canReadHistory() throws IOException {
-		ASCIIGenomeHistory ag= new ASCIIGenomeHistory("test_data/asciigenome.yaml");
-		assertEquals(8, ag.getFiles().size());
-		assertEquals(4, ag.getPositions().size());
-		assertEquals(6, ag.getCommandHistory().size());
-		assertEquals(1, ag.getReference().size());
-		
-		ag= new ASCIIGenomeHistory("non-existing.yaml");
-		assertEquals(0, ag.getFiles().size());
+    
+    @Test
+    public void canReadHistory() throws IOException {
+        ASCIIGenomeHistory ag= new ASCIIGenomeHistory("test_data/asciigenome.yaml");
+        assertEquals(8, ag.getFiles().size());
+        assertEquals(4, ag.getPositions().size());
+        assertEquals(6, ag.getCommandHistory().size());
+        assertEquals(1, ag.getReference().size());
+        
+        ag= new ASCIIGenomeHistory("non-existing.yaml");
+        assertEquals(0, ag.getFiles().size());
 
-		ag= new ASCIIGenomeHistory();
-		assertNotNull(ag.getFileName());
-	}
+        ag= new ASCIIGenomeHistory();
+        assertNotNull(ag.getFileName());
+    }
 
-	@Test
-	public void canPrepareEmptyObject() throws IOException{
-		ASCIIGenomeHistory ag= new ASCIIGenomeHistory(null);
-		assertEquals(0, ag.getFiles().size());
-	}
-	
-	@Test
-	public void canWriteHistory() throws IOException {
-		ASCIIGenomeHistory ag= new ASCIIGenomeHistory("test_data/asciigenome.yaml");
-		
-		File out= new File("tmp.yaml");
-		out.deleteOnExit();
-		ag.write(out);
-		assertTrue(out.length() > 100);
-	}
+    @Test
+    public void canPrepareEmptyObject() throws IOException{
+        ASCIIGenomeHistory ag= new ASCIIGenomeHistory(null);
+        assertEquals(0, ag.getFiles().size());
+    }
+    
+    @Test
+    public void canWriteHistory() throws IOException {
+        ASCIIGenomeHistory ag= new ASCIIGenomeHistory("test_data/asciigenome.yaml");
+        
+        File out= new File("tmp.yaml");
+        out.deleteOnExit();
+        ag.write(out);
+        assertTrue(out.length() > 100);
+    }
 
 }
