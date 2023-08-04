@@ -75,6 +75,19 @@ public class GenomicCoordsTest {
 	}
 	
 	@Test
+	public void canReturnNextChromAlphasort() throws InvalidGenomicCoordsException, IOException {
+	       GenomicCoords gc= new GenomicCoords("chrM:1000-2000", 80, samSeqDict, null);
+
+	       // Next by in alphanumeric order is...:
+           gc.nextChrom(null, -1, -1, ".*", ContigOrder.ALPHANUMERIC_ASC);
+           assertEquals("chrX", gc.getChrom());
+            
+           // and back
+           gc.nextChrom(null, -1, -1, ".*", ContigOrder.ALPHANUMERIC_DESC);
+           assertEquals("chrM", gc.getChrom());
+	}
+	
+	@Test
 	public void canReturnNextChromRegex() throws InvalidGenomicCoordsException, IOException {
 
 	    GenomicCoords gc= new GenomicCoords("chr1:1000-100000", 80, samSeqDict, null);

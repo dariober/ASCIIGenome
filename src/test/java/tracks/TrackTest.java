@@ -76,14 +76,12 @@ public class TrackTest {
 		assertEquals(3, lines.length);
 		assertTrue(lines[0].startsWith("title.bed"));
 		assertTrue(lines[0].trim().endsWith("A"));
-		System.err.println(tif.concatTitleAndTrack());
 		
 		// Do not put on different lines
 		tif.setTrackTag("LoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongTitle.bed");
 		lines= tif.concatTitleAndTrack().split("\n");
-		assertEquals(4, lines.length);
 		System.err.println(tif.concatTitleAndTrack());
-		
+		assertEquals(4, lines.length);
 	}
 	
 	@Test

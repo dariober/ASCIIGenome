@@ -916,10 +916,10 @@ public abstract class Track {
 		String track= this.printToScreen();
 		String title= this.getTitle();
 		int titleLen= Utils.stripAnsiCodes(title).trim().length();
-		title = title.replaceAll("\n", "");
+		
 		String sProfile= Utils.stripAnsiCodes(track);
 		if(sProfile.trim().isEmpty()){ // No features in this profile
-		    return title + track; 	
+		    return title.replaceAll("\n", "") + track; 	
 		}
 		int leadingSpaces= sProfile.indexOf(sProfile.trim());
 		if(leadingSpaces > titleLen){
@@ -927,6 +927,7 @@ public abstract class Track {
 				track= track.replaceFirst(" ", "");
 				titleLen--;
 			}
+			title= title.replaceAll("\n", "");
 		}
 		return title + track;
 	}

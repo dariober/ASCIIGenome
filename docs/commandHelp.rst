@@ -239,15 +239,18 @@ nextChrom
 
 Go to the start of the next chromsome or contig. 
 
-* :code:`-m`: Go to next chrom having this minimum size. *
+* :code:`-m`: Go to next chrom having this minimum size.
 
-* :code:`-M`: Go to next chrom having this maximum size. *
+* :code:`-M`: Go to next chrom having this maximum size.
 
 * :code:`-r`: Go to next chrom matching this regex.
 
-Without arguments, go to the next chromosome in the sequence dictionary.
+* :code:`-s`: Sort order to decide what next is:
+    :code:`u`: unsorted, i.e. next in dictionary (default)
+    :code:`s`: size ascending
+    :code:`S`: size descending
 
-* Ignored with unknown chromosome sizes.
+Parameters using contig size are silently ignored.
 
 Find
 ----

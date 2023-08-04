@@ -198,8 +198,12 @@ public class GenomicCoords implements Cloneable {
         } else if(sortOrder.equals(ContigOrder.SIZE_DESC)) {
             // Sort by descending size: Return next chrom smaller than current
             Collections.sort(ctg, (o1, o2) -> o2.getLengthOnReference() - o1.getLengthOnReference());
+        } else if(sortOrder.equals(ContigOrder.ALPHANUMERIC_ASC)) {
+            Collections.sort(ctg, (o1, o2) -> o1.getSequenceName().compareTo(o2.getSequenceName()));
+        } else if(sortOrder.equals(ContigOrder.ALPHANUMERIC_DESC)) {
+            Collections.sort(ctg, (o1, o2) -> o2.getSequenceName().compareTo(o1.getSequenceName()));
         }
-	    
+        
 	    if(maxSize <= 0) {
 	        maxSize = Integer.MAX_VALUE;
 	    }
