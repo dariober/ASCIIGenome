@@ -9,6 +9,13 @@ import org.junit.Test;
 public class TokenizerTest {
 
     @Test
+    public void canTokenizeNewline() {
+        
+        List<String> tk= new Tokenizer("foo \nspam eggs").tokenize();
+        System.err.println(tk);
+    }
+    
+    @Test
     public void canTokenizeEmptyString() {
         
         List<String> tk= new Tokenizer("").tokenize();

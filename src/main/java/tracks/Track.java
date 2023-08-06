@@ -118,6 +118,8 @@ public abstract class Track {
     private VCFHeader vcfHeader;
     private Pattern highlightPattern;
     
+    private TrackHeader header = new TrackHeader(null);
+    
     /** Format the title string to add colour or return title as it is if
      * no format is set.
      * @throws InvalidColourException 
@@ -913,13 +915,14 @@ public abstract class Track {
         // * if len(leadine whitespaces) > len(title):
         // * Remove the len(title) leading whitespaces from profile
         // * Return title + profile
+        String header = this.header.format(this.getNoFormat());
         String track= this.printToScreen();
         String title= this.getTitle();
         int titleLen= Utils.stripAnsiCodes(title).trim().length();
         
         String sProfile= Utils.stripAnsiCodes(track);
         if(sProfile.trim().isEmpty()){ // No features in this profile
-            return title.replaceAll("\n", "") + track; 	
+            return header + title.replaceAll("\n", "") + track; 	
         }
         int leadingSpaces= sProfile.indexOf(sProfile.trim());
         if(leadingSpaces > titleLen){
@@ -929,7 +932,7 @@ public abstract class Track {
             }
             title= title.replaceAll("\n", "");
         }
-        return title + track;
+        return header + title + track;
     }
     
     public List<Boolean> filterReads(SamReader samReader, String chrom, int from, int to) throws IOException {
@@ -1291,6 +1294,14 @@ public abstract class Track {
 
     public void setPrintFormattedVep(String printFormattedVep) {
         this.printFormattedVep = printFormattedVep;
+    }
+    
+    public void setHeader(TrackHeader header) {
+        this.header = header;
+    }
+    
+    public TrackHeader getHeader() {
+        return this.header;
     }
 }
 

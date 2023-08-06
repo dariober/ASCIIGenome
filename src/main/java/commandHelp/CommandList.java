@@ -993,6 +993,8 @@ public class CommandList {
                 + "\n"
                 + "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
                 + "\n"
+                + "* :code:`-F` Interpret pattern as fixed strings, not regular expressions\n"
+                + "\n"
                 + "Use \'\' (empty string in single quotes) to replace pattern with nothing. "
                 + "Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::\n"
                 + "\n"
@@ -1004,7 +1006,34 @@ public class CommandList {
                 + "");
         cmdList.add(cmd);
 
-        
+        cmd= new CommandHelp();
+        cmd.setName("addHeader"); cmd.setArgs("[-c] [-a] [-b] [-off] [-v] <header> [track_re=.*]..."); cmd.inSection= Section.DISPLAY; 
+        cmd.setBriefDescription("Add header to track(s).");
+        cmd.setAdditionalDescription("Example use case: You have several tracks sorted in a meanignful way (say WT and CTRL tracks). "
+                + "Add a header to the first track of each group for ease of reading. "
+                + "Useful also to add one or more blank lines for more separation between tracks.\n"
+                + "\n"
+                + "* :code:`-c` Color for the header - see :code: `colorTrack -h` for options\n"
+                + "\n"
+                + "* :code:`-a` Header alignment. Either a number between 0 (left-align) and 1 (right-align) or a keyword left, center, right. Default is 0.5 (center-align)\n"
+                + "\n"
+                + "* :code:`-b` Do not make header in boldface\n"
+                + "\n"
+                + "* :code:`-off` Remove header\n"
+                + "\n"
+                + "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+                + "\n"
+                + "Use :code: `-` for <header> if you want to change the format but leave the text as is.\n"
+                + "Examples::\n"
+                + "\n"
+                + "    addHeader WT ~~~> Header 'WT' to all tracks\n"
+                + "    addHeader '' ~~~> Add a blank line before each track\n"
+                + "    addHeader -c red 'WILD TYPE' #1 ~~~> Header in red before track #1\n"
+                + "    addHeader 'WILD\\nTYPE' ~~~> Span multiple lines\n"
+                + "    addHeader -c cyan -a left ~~~> Only change colour and alignment\n"
+                + "    addHeader -c cyan -a left - #1 ~~~> Only change colour and alignment in #1 (note '-' before #1)\n"
+                + "");
+        cmdList.add(cmd);
         
         cmd= new CommandHelp();
         cmd.setName("dataCol"); cmd.setArgs("[-v] [index = 4] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
@@ -1445,6 +1474,7 @@ public class CommandList {
         paramList.add("hideTitle");
         paramList.add("genotype");
         paramList.add("editNames");
+        paramList.add("addHeader");
         paramList.add("ylim");
         paramList.add("dataCol");
         paramList.add(Command.print.getCmdDescr());

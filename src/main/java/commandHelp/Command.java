@@ -36,6 +36,7 @@ public enum Command {
     colorTrack("colorTrack"),
     hideTitle("hideTitle"),
     editNames("editNames"),
+    addHeader("addHeader"),
     ylim("ylim"),
     dataCol("dataCol"),
     setGenome("setGenome"),

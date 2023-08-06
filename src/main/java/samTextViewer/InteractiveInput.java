@@ -80,7 +80,6 @@ public class InteractiveInput {
         String messages= ""; // Messages that may be sent from the various methods.
         for(String cmdString : cmdInputChainList){
             
-            //List<String> cmdTokens= Utils.tokenize(cmdString, " ");
             List<String> cmdTokens= new Tokenizer(cmdString).tokenize();
             
             this.interactiveInputExitCode= ExitCode.CLEAN; // If something goes wrong this will change
@@ -283,7 +282,10 @@ public class InteractiveInput {
                     
                 } else if(cmdTokens.get(0).equals("hideTitle")){
                     proc.getTrackSet().setHideTitleForRegex(cmdTokens); 
-                    
+                
+                } else if(cmdTokens.get(0).equals("addHeader")){
+                    this.interactiveInputExitCode= proc.getTrackSet().addHeader(cmdTokens, terminalWidth);
+                
                 } else if(cmdTokens.get(0).equals(Command.BSseq.getCmdDescr())) {
                     if( proc.getGenomicCoordsHistory().current().getFastaFile() == null ){
                         String msg= Utils.padEndMultiLine("Cannot set BSseq mode without reference sequence", proc.getWindowSize());

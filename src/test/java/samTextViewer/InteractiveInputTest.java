@@ -30,27 +30,6 @@ public class InteractiveInputTest {
         return proc;
     }
 
-    /*
-    @Test
-    public void canGoToNextChromosome() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidConfigException, InvalidCommandLineException {
-        new Config(null);
-        
-        GenomicCoords gc= new GenomicCoords("chr1", 80, null, null);
-        gc.setGenome(Arrays.asList("test_data/ds051.actb.bam"), false);
-
-        GenomicCoordsHistory gch= new GenomicCoordsHistory();
-        gch.add(gc);
-        TrackSet trackSet= new TrackSet(new ArrayList<String>(), gc);
-        trackSet.addTrack(new TrackReads("test_data/ds051.actb.bam", gc), "tr1");
-        TrackProcessor proc= new TrackProcessor(trackSet, gch); 
-        
-        InteractiveInput ip= new InteractiveInput(new ConsoleReader());
-        GenomicCoords gc2= ip.processInput("nextChrom", proc, 1).getGenomicCoordsHistory().current();
-        assertEquals(ExitCode.CLEAN, ip.getInteractiveInputExitCode());
-        assertEquals("chr2", gc2.getChrom());
-        assertEquals((int)gc2.getFrom(), 1);
-    } */
-    
     @Test 
     public void canMovePositionByColumn() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, InvalidConfigException {
 

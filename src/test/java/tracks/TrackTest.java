@@ -66,6 +66,31 @@ public class TrackTest {
 //	}
     
     @Test
+    public void canConcatHeader() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidConfigException, InvalidColourException{
+        new Config(null);
+        GenomicCoords gc= new GenomicCoords("1:735171-2045891", 80, null, null);
+        TrackIntervalFeature tif= new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf", gc);
+        tif.setNoFormat(true);
+        tif.setTrackTag("title.bed");
+        
+        TrackHeader header = new TrackHeader("SOME HEADER");
+        tif.setHeader(header);
+        assertTrue(tif.concatTitleAndTrack().startsWith("SOME HEADER\ntitle.bed"));
+
+        header.setHeaderText(" ");
+        tif.setHeader(header);
+        assertTrue(tif.concatTitleAndTrack().startsWith(" \ntitle.bed"));
+        
+        header.setHeaderText("");
+        tif.setHeader(header);
+        assertTrue(tif.concatTitleAndTrack().startsWith("\ntitle.bed"));
+        
+        header.setHeaderText(null);
+        tif.setHeader(header);
+        assertTrue(tif.concatTitleAndTrack().startsWith("title.bed"));
+    }
+    
+    @Test
     public void canConcatTitleAndTrack() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidConfigException, InvalidColourException{
         new Config(null);
         GenomicCoords gc= new GenomicCoords("1:735171-2045891", 80, null, null);

@@ -18,6 +18,8 @@ FIXME
 Features
 --------
 
+* Allow the first line in bed/bedgraph/gtf to fail under assumption it is the header
+
 * Use `samtools depth` to compute coverage in `TrackPileup` over large regions. Use of `samtools depth` is avoided when filters except those in `samtools` command 
 are enabled.
 
@@ -78,8 +80,6 @@ with data taken from the raw. Reference sequence if available will be in fasta f
 
 Refactor
 --------
-
-* Test runner `test/run_tests.sh` is effectively not used and clunky. Replace with a *e.g.* snakemake script to run tests properly.
 
 * Populate the enum class `Command` and use `Command.cmdName` in place of the hardcoded command names.
 

@@ -1544,7 +1544,6 @@ public class Utils {
      * Use *single* quotes for avoiding splitting. 
      */
     public static ArrayList<String> tokenize(String x, String delimiterString){
-        
         if(x == null){
             return null;
         }
@@ -1565,7 +1564,6 @@ public class Utils {
             tokens.set(i, tok);
         }
         return tokens;
-    
     }
     
     public static String stripAnsiCodes(String x){
