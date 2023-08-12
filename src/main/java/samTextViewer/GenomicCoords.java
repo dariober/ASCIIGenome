@@ -177,49 +177,28 @@ public class GenomicCoords implements Cloneable {
      * @throws IOException 
      * */
     public void nextChrom(ArrayList<String> knownContigs, int minSize, int maxSize, String regex, ContigOrder sortOrder) throws InvalidGenomicCoordsException, IOException {
-
+        
+        // Prepare sequence dictionary. It may be the dictionary stored in the object or a list of known contigs
         ArrayList<SAMSequenceRecord> ctg = new ArrayList<SAMSequenceRecord>();
-        if(samSeqDict == null) {
-            minSize = -1;
-            maxSize = Integer.MAX_VALUE;
-            for(String x : knownContigs) {
-                SAMSequenceRecord seq = new SAMSequenceRecord(x, Integer.MAX_VALUE);
-                ctg.add(seq);
-            }
+        if(this.samSeqDict == null) {
+            ctg = this.makeSequenceDictionaryFromContigs(knownContigs);
         } else {
             for(SAMSequenceRecord seq : samSeqDict.getSequences()){
                 ctg.add(seq);
             }
         }
-        
-        if(sortOrder.equals(ContigOrder.SIZE_ASC)) {
-            // Sort by ascending size: Return next chrom bigger than current
-            Collections.sort(ctg, (o1, o2) -> o1.getLengthOnReference() - o2.getLengthOnReference());
-        } else if(sortOrder.equals(ContigOrder.SIZE_DESC)) {
-            // Sort by descending size: Return next chrom smaller than current
-            Collections.sort(ctg, (o1, o2) -> o2.getLengthOnReference() - o1.getLengthOnReference());
-        } else if(sortOrder.equals(ContigOrder.ALPHANUMERIC_ASC)) {
-            Collections.sort(ctg, (o1, o2) -> o1.getSequenceName().compareTo(o2.getSequenceName()));
-        } else if(sortOrder.equals(ContigOrder.ALPHANUMERIC_DESC)) {
-            Collections.sort(ctg, (o1, o2) -> o2.getSequenceName().compareTo(o1.getSequenceName()));
-        }
-        
-        if(maxSize <= 0) {
-            maxSize = Integer.MAX_VALUE;
-        }
-        ArrayList<String> chroms = new ArrayList<String>();
-        for(SAMSequenceRecord seq : ctg){
-            if(seq.getLengthOnReference() >= minSize && 
-               seq.getLengthOnReference() <= maxSize && 
-               Pattern.compile(regex).matcher(seq.getSequenceName()).find()) {
-                chroms.add(seq.getSequenceName());
-             }
-        }
-        
-        if(chroms.size() == 0) {
+                
+        ArrayList<SAMSequenceRecord> selected = this.sortAndFilterSequenceDictionary(ctg, minSize, maxSize, regex, sortOrder);
+        if(selected.size() == 0) {
             throw new InvalidGenomicCoordsException("There is no contig passing filters");
         }
 
+        ArrayList<String> chroms = new ArrayList<String>();
+        for(SAMSequenceRecord x : selected) {
+            chroms.add(x.getSequenceName());
+            
+        }
+        
         String currentChrom = this.getChrom();
         
         if (chroms.size() == 1 && currentChrom.equals(chroms.get(0))) {
@@ -239,6 +218,141 @@ public class GenomicCoords implements Cloneable {
         this.from = 1;
         this.to = this.from + this.getTerminalWidth() - 1;
         this.update();
+    }
+    
+    public String printSequenceDictionary(ArrayList<String> knownContigs, int minSize, 
+            int maxSize, String regex, ContigOrder sortOrder, int graphSize, int maxLines,
+            boolean noFormat) throws InvalidGenomicCoordsException, IOException {
+        
+        // Prepare sequence dictionary. It may be the dictionary stored in the object or a list of known contigs
+        ArrayList<SAMSequenceRecord> ctg = new ArrayList<SAMSequenceRecord>();
+        if(samSeqDict == null) {
+            ctg = this.makeSequenceDictionaryFromContigs(knownContigs);
+        } else {
+            for(SAMSequenceRecord seq : samSeqDict.getSequences()){
+                ctg.add(seq);
+            }
+        }
+        if(ctg.size() == 0) {
+            throw new InvalidGenomicCoordsException("There are no known contigs");
+        }
+        
+        /* Use these to make a left-over row for contigs exlcuded by the filters */
+        long genomeSize = 0;
+        int nContigs = ctg.size();
+        for(SAMSequenceRecord seq : ctg) {
+            if(seq.getSequenceLength() > 0) {
+                genomeSize += seq.getSequenceLength();
+            }
+        }
+        
+        ArrayList<SAMSequenceRecord> chroms = this.sortAndFilterSequenceDictionary(ctg, minSize, maxSize, regex, sortOrder);
+        if(chroms.size() == 0) {
+            throw new InvalidGenomicCoordsException("There are no contigs passing filters");
+        }
+
+        // Prepare a list of strings. Each string is a row tab separated
+        List<String> tabList= new ArrayList<String>();
+        int maxChromLen= -1;
+        for(SAMSequenceRecord x : chroms){
+            String name = x.getSequenceName();
+            if(x.getSequenceLength() > -1) {
+                name += "\t" + x.getSequenceLength();
+            }
+            tabList.add(name);
+            if(x.getSequenceLength() > maxChromLen){
+                maxChromLen= x.getSequenceLength(); 
+            }
+        }
+            
+        double bpPerChar= (double)maxChromLen / (double)graphSize;
+        long cumSum = 0;
+        for(int i= 0; i < chroms.size(); i++){
+            SAMSequenceRecord seq = chroms.get(i);
+            String row = tabList.get(i);
+            if(seq.getSequenceLength() > -1) {
+                // If sequence length is known, add bar 
+                int n= (int)Math.rint(seq.getSequenceLength()/bpPerChar);
+                String bar= StringUtils.join(Collections.nCopies(n, "|"), "");
+                float pct = 100 * ((float)seq.getSequenceLength() / genomeSize); 
+                cumSum += seq.getSequenceLength();
+                float cumPctSum = 100 * ((float)cumSum / genomeSize);
+                String pad = StringUtils.join(Collections.nCopies(graphSize - n, " "), "");
+                row += "\t" + bar + pad + String.format(" %.1f%%; %.1f%%", pct, cumPctSum);
+            }
+            if(seq.getSequenceName().equals(this.getChrom())) {
+                row = row + " <==";
+                if(!noFormat) {
+                    row = "\033[1m" + row + "\033[22m";
+                }
+            }
+            tabList.set(i, row);
+        }
+        
+        List<String> table= Utils.tabulateList(tabList, -1, " ");
+        StringBuilder out= new StringBuilder();
+        out.append(this.summarizeSequenceDictionary(ctg) + "\n");
+        int i = 0;
+        for(String x : table){
+            if(i < maxLines || maxLines < 0) {
+                out.append(x).append("\n");
+            }
+            i++;
+        }
+        return out.toString().trim();
+    }
+    
+    private String summarizeSequenceDictionary(List<SAMSequenceRecord> samSequenceDictionary) {
+        long genomeSize = 0;
+        for(SAMSequenceRecord x : samSequenceDictionary) {
+            if(x.getSequenceLength() > 0) {
+                genomeSize += x.getSequenceLength();
+            }
+        }
+        String gs = String.valueOf(genomeSize);
+        if(gs.equals("0")) {
+            gs = "n/a";
+        }
+        return "Genome size: " + gs + "; Number of contigs: " + String.valueOf(samSequenceDictionary.size());
+    }
+    
+    private ArrayList<SAMSequenceRecord> makeSequenceDictionaryFromContigs(List<String> knownContigs) {
+        ArrayList<SAMSequenceRecord> ctg = new ArrayList<SAMSequenceRecord>();
+        for(String x : knownContigs) {
+            SAMSequenceRecord seq = new SAMSequenceRecord(x, -1);
+            ctg.add(seq);
+        }
+        return ctg;
+    }
+    
+    private ArrayList<SAMSequenceRecord> sortAndFilterSequenceDictionary(List<SAMSequenceRecord> ctg, int minSize, int maxSize, String regex, ContigOrder sortOrder) throws InvalidGenomicCoordsException, IOException {
+
+        if(sortOrder.equals(ContigOrder.SIZE_ASC)) {
+            // Sort by ascending size: Return next chrom bigger than current
+            Collections.sort(ctg, (o1, o2) -> o1.getLengthOnReference() - o2.getLengthOnReference());
+        } else if(sortOrder.equals(ContigOrder.SIZE_DESC)) {
+            // Sort by descending size: Return next chrom smaller than current
+            Collections.sort(ctg, (o1, o2) -> o2.getLengthOnReference() - o1.getLengthOnReference());
+        } else if(sortOrder.equals(ContigOrder.ALPHANUMERIC_ASC)) {
+            Collections.sort(ctg, (o1, o2) -> o1.getSequenceName().compareTo(o2.getSequenceName()));
+        } else if(sortOrder.equals(ContigOrder.ALPHANUMERIC_DESC)) {
+            Collections.sort(ctg, (o1, o2) -> o2.getSequenceName().compareTo(o1.getSequenceName()));
+        }
+        
+        if(maxSize <= 0) {
+            maxSize = Integer.MAX_VALUE;
+        }
+        ArrayList<SAMSequenceRecord> chroms = new ArrayList<SAMSequenceRecord>();
+        for(SAMSequenceRecord seq : ctg){
+            if(Pattern.compile(regex).matcher(seq.getSequenceName()).find()) {
+                // If filter by regex passed, check size:
+                if(seq.getLengthOnReference() == -1 || 
+                        (seq.getLengthOnReference() >= minSize && seq.getLengthOnReference() <= maxSize)) {
+                    chroms.add(seq);
+                }
+            }
+        }
+        return chroms;
     }
     
     protected void setRefSeq() throws IOException, InvalidGenomicCoordsException{

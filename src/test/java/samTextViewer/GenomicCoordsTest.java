@@ -7,9 +7,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.base.Splitter;
 
 import coloring.Config;
 import exceptions.InvalidColourException;
@@ -33,6 +36,64 @@ public class GenomicCoordsTest {
         new Config(null);
     }
 
+    @Test
+    public void canPrintSequenceDictionaryOnlyContigs() throws InvalidGenomicCoordsException, IOException {
+        ArrayList<String> knownContigs = new ArrayList<String>();
+        knownContigs.add("chr3");
+        knownContigs.add("chr1");
+        knownContigs.add("chr2");
+        
+        GenomicCoords gc= new GenomicCoords("chr3:1000-100000", 80, null, null);
+
+        String out = gc.printSequenceDictionary(knownContigs, -1, -1, ".", ContigOrder.ALPHANUMERIC_ASC, 30, -1, true);
+        List<String> outList = Splitter.on("\n").splitToList(out);
+        assertTrue(outList.get(0).equals("Genome size: n/a; Number of contigs: 3"));
+        assertTrue(outList.get(1).startsWith("chr1"));
+    }
+        
+    @Test
+    public void canPrintSequenceDictionaryBoldCurrentChrom() throws InvalidGenomicCoordsException, IOException {
+        ArrayList<String> knownContigs = new ArrayList<String>();
+        knownContigs.add("chr3");
+        knownContigs.add("chr1");
+        knownContigs.add("chr2");
+        
+        GenomicCoords gc= new GenomicCoords("chr3:1000-100000", 80, null, null);
+
+        String out = gc.printSequenceDictionary(knownContigs, -1, -1, ".", ContigOrder.ALPHANUMERIC_ASC, 30, -1, false);
+        assertTrue(out.contains("\033[1m" + "chr3"));
+        
+        out = gc.printSequenceDictionary(knownContigs, -1, -1, ".", ContigOrder.ALPHANUMERIC_ASC, 30, -1, true);
+        List<String> outList = Splitter.on("\n").splitToList(out);
+        assertTrue(Pattern.compile(".*chr3 <==.*").matcher(out).find());
+        
+    }
+    
+    @Test
+    public void canPrintSequenceDictionary() throws InvalidGenomicCoordsException, IOException {
+        GenomicCoords gc= new GenomicCoords("chrM:1000-2000", 80, samSeqDict, null);
+        
+        String out = gc.printSequenceDictionary(null, -1, -1, ".", ContigOrder.SIZE_DESC, 30, -1, true);
+        List<String> outList = Splitter.on("\n").splitToList(out);
+
+        assertTrue(outList.get(0).startsWith("Genome size: 3095693983; Number of contigs: 25"));
+        assertTrue(outList.get(1).startsWith("chr1"));
+        
+        out = gc.printSequenceDictionary(null, -1, -1, ".", ContigOrder.ALPHANUMERIC_DESC, 30, -1, true);
+        outList = Splitter.on("\n").splitToList(out);
+        assertTrue(outList.get(1).startsWith("chrY"));
+    
+        out = gc.printSequenceDictionary(null, -1, -1, ".", ContigOrder.SIZE_DESC, 30, 3, false);
+        outList = Splitter.on("\n").splitToList(out);
+        assertTrue(outList.get(0).startsWith("Genome size: 3095693983; Number of contigs: 25"));
+        assertEquals(outList.size(), 4);
+        
+        out = gc.printSequenceDictionary(null, -1, -1, ".", ContigOrder.ALPHANUMERIC_ASC, 30, -1, true);
+        outList = Splitter.on("\n").splitToList(out);
+        assertTrue(outList.get(0).startsWith("Genome size: 3095693983; Number of contigs: 25"));
+        assertEquals(outList.size(), 26);
+    }
+    
     @Test
     public void canReturnNextChromNoDict() throws InvalidGenomicCoordsException, IOException {
 

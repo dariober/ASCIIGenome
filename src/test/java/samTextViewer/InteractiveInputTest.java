@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
@@ -22,7 +24,10 @@ import tracks.TrackSet;
 public class InteractiveInputTest {
     
     private TrackProcessor gimmeTrackProcessor(String region, int terminalWidth) throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException {
-        GenomicCoords gc= new GenomicCoords(region, terminalWidth, null, "test_data/chr7.fa");
+        GenomicCoords gc= new GenomicCoords(region, terminalWidth, null, null);
+        List<String> gf = new ArrayList<String>();
+        gf.add("test_data/ds051.actb.bam");
+        gc.setGenome(gf, false);
         GenomicCoordsHistory gch= new GenomicCoordsHistory();
         gch.add(gc);
         TrackSet trackSet= new TrackSet(new ArrayList<String>(), gc);
@@ -30,6 +35,16 @@ public class InteractiveInputTest {
         return proc;
     }
 
+    @Test
+    public void canPrintGenome() throws IOException, InvalidConfigException, ClassNotFoundException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidCommandLineException {
+        new Config(null);
+        TrackProcessor proc;
+        InteractiveInput ip= new InteractiveInput(new ConsoleReader());
+        proc= this.gimmeTrackProcessor("chr7:1001-1800", 80);
+        ip.processInput("show ge -n -1", proc, 1);
+        ip.processInput("show ge -n 10", proc, 1);
+    }
+    
     @Test 
     public void canMovePositionByColumn() throws InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException, SQLException, InvalidCommandLineException, InvalidConfigException {
 

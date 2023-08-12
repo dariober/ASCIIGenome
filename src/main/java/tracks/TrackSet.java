@@ -2461,10 +2461,12 @@ public class TrackSet {
             if(turnOff) {
                 tr.getHeader().setHeaderText(null);
             } else {
-                if(!headerText.equals("-")) {
+                if(headerText.equals("-")) {
                     // Do not change text if user's input is "-"
+                } else {
                     tr.getHeader().setHeaderText(headerText);
                 }
+                
                 if(color != null) {
                     tr.getHeader().setColor(color);
                 }

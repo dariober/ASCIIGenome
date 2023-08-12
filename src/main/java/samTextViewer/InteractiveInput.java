@@ -523,7 +523,7 @@ public class InteractiveInput {
         int minSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-m", "-1"));
         int maxSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-M", "-1"));
         String regex = Utils.getArgForParam(cmdTokens, "-r", ".*");
-        String so = Utils.getArgForParam(cmdTokens, "-s", "u");
+        String so = Utils.getArgForParam(cmdTokens, "-s", "s");
         ContigOrder sortOrder;
         if(so.equals("u")) {
             sortOrder = ContigOrder.UNSORTED;
@@ -943,8 +943,14 @@ public class InteractiveInput {
         // With .startsWith() we allow partial matching of input to argument. I.e. "ge" will be enough to 
         // recognize "genome".
         if("genome".startsWith(args.get(0))){
-            this.showGenome(proc);
-            return ExitCode.CLEAN_NO_FLUSH;
+            ExitCode exitCode;
+            try {
+                exitCode = this.showGenome(cmdTokens, proc);
+            } catch(InvalidGenomicCoordsException e) {
+                System.err.println(e.getMessage());
+                exitCode = ExitCode.ERROR;
+            }
+            return exitCode;
         
         } else if("trackInfo".startsWith(args.get(0))){
             String info = Utils.padEndMultiLine(proc.getTrackSet().showTrackInfo(), proc.getWindowSize());
@@ -965,20 +971,28 @@ public class InteractiveInput {
         }
     }
     
-    /**Print to screen the genome file*/
-    private void showGenome(TrackProcessor proc) throws InvalidGenomicCoordsException, IOException {
-        String genome= Utils.printSamSeqDict(proc.getGenomicCoordsHistory().current().getSamSeqDict(), 30);
-        if(genome != null && ! genome.isEmpty()){
-            System.err.println(Utils.padEndMultiLine(genome, proc.getWindowSize()));
-            return;
+    /**Print to screen the genome file
+     * @throws InvalidCommandLineException */
+    private ExitCode showGenome(List<String> cmdTokens, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+        
+        int maxLines;
+        try {
+            String n = Utils.getArgForParam(cmdTokens, "-n", "-1");
+            maxLines = Integer.valueOf(n);
+        } catch (NumberFormatException e) {
+            System.err.println("Argument to -n must be an integer");
+            return ExitCode.CLEAN_NO_FLUSH;
         }
         
-        List<String> chroms= proc.getTrackSet().getKnownContigs();
-        System.err.println(Utils.padEndMultiLine("Known contigs:", proc.getWindowSize()));
-        for(String x : chroms){
-            System.err.println(Utils.padEndMultiLine(x, proc.getWindowSize()));
+        String genome = proc.getGenomicCoordsHistory().
+                current().
+                printSequenceDictionary(proc.getTrackSet().getKnownContigs(), -1, -1, 
+                        ".*", ContigOrder.SIZE_DESC, 30, maxLines, proc.isNoFormat());
+        
+        if(genome != null && ! genome.isEmpty()){
+            System.err.println(Utils.padEndMultiLine(genome, proc.getWindowSize()));
         }
-        return;
+        return ExitCode.CLEAN_NO_FLUSH;
     }
 
     private String cmdHistoryToString(List<String> cmdInput) throws InvalidCommandLineException {

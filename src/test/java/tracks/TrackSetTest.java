@@ -876,7 +876,6 @@ public class TrackSetTest {
         
         x = ts.addHeader(Utils.tokenize("addHeader -a +1 -c HEADER #1", " "), 80);
         assertEquals(x, ExitCode.CLEAN_NO_FLUSH);
-        
     }
     
     @Test

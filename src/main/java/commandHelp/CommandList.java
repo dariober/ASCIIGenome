@@ -367,9 +367,9 @@ public class CommandList {
                 + "* :code:`-r`: Go to next chrom matching this regex.\n"
                 + "\n"
                 + "* :code:`-s`: Sort order to decide what next is:\n"
-                + "~~~~:code:`u`: unsorted, i.e. next in dictionary (default)\n"
-                + "~~~~:code:`s`: size ascending\n"
+                + "~~~~:code:`s`: size ascending (default)\n"
                 + "~~~~:code:`S`: size descending\n"
+                + "~~~~:code:`u`: unsorted, i.e. next in dictionary\n"
                 + "\n"
                 + "Parameters using contig size are silently ignored.");
         cmdList.add(cmd);
@@ -1023,6 +1023,9 @@ public class CommandList {
                 + "\n"
                 + "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
                 + "\n"
+                + "* :code:`<header>` Header text. To change the text format and leave the text as is, use :code:`-`. "
+                + "Use :code:`{-}` as placeholder of current header; e.g. add stars around existing header: :code:`** {-} **` \n"
+                + "\n"
                 + "Use :code: `-` for <header> if you want to change the format but leave the text as is.\n"
                 + "Examples::\n"
                 + "\n"
@@ -1032,6 +1035,7 @@ public class CommandList {
                 + "    addHeader 'WILD\\nTYPE' ~~~> Span multiple lines\n"
                 + "    addHeader -c cyan -a left ~~~> Only change colour and alignment\n"
                 + "    addHeader -c cyan -a left - #1 ~~~> Only change colour and alignment in #1 (note '-' before #1)\n"
+                + "    addHeader '** {-} **' ~~~~> Add decorative stars around existing header\n"
                 + "");
         cmdList.add(cmd);
         
@@ -1152,7 +1156,9 @@ public class CommandList {
         cmd.setBriefDescription("Show or set features to display. ");
         cmd.setAdditionalDescription("The argument :code:`arg` takes the following choices:\n"
                 + "\n"
-                + "* :code:`genome`: Show chromosomes and their sizes as barplot provided a genome file is available.\n"
+                + "* :code:`genome`: Show chromosomes sorted by size\n"
+                + "\n"
+                + "~~~~* :code:`-n int`: Show up to *int* number of chromosomes or -1 for no limit (default 50)\n"
                 + "\n"
                 + "* :code:`trackInfo`: Show information on tracks.\n"
                 + "\n"

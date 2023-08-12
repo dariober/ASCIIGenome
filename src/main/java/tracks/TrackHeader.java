@@ -73,7 +73,15 @@ class TrackHeader {
     }
 
     protected void setHeaderText(String header) {
-        this.headerText = header;
+        if(header == null) {
+            this.headerText = header;
+        } else {
+        String current = this.headerText;
+            if(current != null) {
+                header = header.replace("{-}", current);
+            }
+            this.headerText = header;
+        }
     }
     
     protected void setColor(String color) {

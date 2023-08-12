@@ -1491,39 +1491,6 @@ public class Utils {
         }
     }
     
-    public static String printSamSeqDict(SAMSequenceDictionary samSeqDict, int graphSize){
-        
-        if(samSeqDict == null || samSeqDict.isEmpty()){
-            System.err.println("Sequence dictionary not available.");
-            return "";
-        }
-        
-        // Prepare a list of strings. Each string is a row tab separated
-        List<String> tabList= new ArrayList<String>();
-        int maxChromLen= -1;
-        for(SAMSequenceRecord x : samSeqDict.getSequences()){
-            String row= x.getSequenceName() + "\t" + x.getSequenceLength();			
-            tabList.add(row);
-            if(x.getSequenceLength() > maxChromLen){
-                maxChromLen= x.getSequenceLength(); 
-            }
-        }
-        double bpPerChar= (double)maxChromLen / (double)graphSize;
-        for(int i= 0; i < samSeqDict.getSequences().size(); i++){
-            SAMSequenceRecord x= samSeqDict.getSequences().get(i);
-            int n= (int)Math.rint(x.getSequenceLength()/bpPerChar);
-            String bar= StringUtils.join(Collections.nCopies(n, "|"), ""); // String.join("", Collections.nCopies(n, "|"));
-            String row= tabList.get(i) + "\t" + bar;
-            tabList.set(i, row);
-        }
-        List<String> table= Utils.tabulateList(tabList, -1, " ");
-        StringBuilder out= new StringBuilder();
-        for(String x : table){
-            out.append(x).append("\n");
-        }
-        return out.toString().trim();
-    }
-    
     /** Parse cmdInput to extract the integer after the arg. (see tests)
      * @param defaultInt Default value if parsing returns nonsense
      * @throws InvalidCommandLineException 

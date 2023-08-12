@@ -21,6 +21,14 @@ public class TrackHeaderTest {
     }
     
     @Test
+    public void canInterpolateText() throws InvalidColourException {
+        TrackHeader th = new TrackHeader("HEADER");
+        assertTrue(th.format(true).contains("HEADER"));
+        th.setHeaderText("foo {-} bar {-}");
+        assertTrue(th.format(true).contains("foo HEADER bar HEADER"));
+    }
+    
+    @Test
     public void canFormat() throws InvalidColourException {
         TrackHeader th = new TrackHeader("HEADER");
         th.setColor("yellow");

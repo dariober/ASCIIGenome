@@ -1625,17 +1625,6 @@ public class UtilsTest {
 //        assertTrue(inputFileList.get(0).endsWith(".gtf"));
 //    }
     
-    @Test
-    public void canPrintSequenceDict(){
-        assertTrue(Utils.printSamSeqDict(samSeqDict, 30).startsWith("chrM  16571"));
-        assertTrue(Utils.printSamSeqDict(samSeqDict, 30).endsWith("chrY  59373566  |||||||"));
-        SAMSequenceDictionary emptyDict= new SAMSequenceDictionary();
-        
-        // Empty dict -> Empty string
-        assertEquals("", Utils.printSamSeqDict(emptyDict, 30));
-        assertEquals("", Utils.printSamSeqDict(null, 30));
-    }
-    
 //    @Test
 //    public void canSplitCommandLineInTokens(){
 //        
