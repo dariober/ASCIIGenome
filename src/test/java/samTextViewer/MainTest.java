@@ -36,21 +36,22 @@ public class MainTest {
     @Test
     /*You should really test this in InteractiveInputTest.java but setting it up is a bit of a mess */
     public void canGoToNextChromosome() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
-        String[] args= new String[] {"-ni", "-nf", "--exec", "nextChrom", "test_data/ds051.actb.bam"};
+        String[] args= new String[] {"-ni", "-nf", "--exec", "nextChrom -s u", "test_data/ds051.actb.bam"};
         String out = Joiner.on("\n").join(this.runMain(args));
+        System.err.println(out);
         assertTrue(out.contains("chr8:1-"));
 
-        args= new String[] {"-ni", "-nf", "--exec", "goto chrM && nextChrom", "test_data/ds051.actb.bam"};
+        args= new String[] {"-ni", "-nf", "--exec", "goto chrM && nextChrom -s u", "test_data/ds051.actb.bam"};
         out = Joiner.on("\n").join(this.runMain(args));
         assertTrue(out.contains("chr1:1-"));
         
         // Wrap around
-        args= new String[] {"-ni", "-nf", "--exec", "goto chrY && nextChrom", "test_data/ds051.actb.bam"};
+        args= new String[] {"-ni", "-nf", "--exec", "goto chrY && nextChrom -s u", "test_data/ds051.actb.bam"};
         out = Joiner.on("\n").join(this.runMain(args));
         assertTrue(out.contains("chrM:1-"));
         
         // One chrom - stay there.
-        args= new String[] {"-ni", "-nf", "--exec", "nextChrom", "test_data/refSeq.hg19.short.bed"};
+        args= new String[] {"-ni", "-nf", "--exec", "nextChrom -s u", "test_data/refSeq.hg19.short.bed"};
         out = Joiner.on("\n").join(this.runMain(args));
         assertTrue(out.contains("chr1:67208779"));
         

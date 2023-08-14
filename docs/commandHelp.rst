@@ -246,9 +246,9 @@ Go to the start of the next chromsome or contig.
 * :code:`-r`: Go to next chrom matching this regex.
 
 * :code:`-s`: Sort order to decide what next is:
-    :code:`u`: unsorted, i.e. next in dictionary (default)
-    :code:`s`: size ascending
+    :code:`s`: size ascending (default)
     :code:`S`: size descending
+    :code:`u`: unsorted, i.e. next in dictionary
 
 Parameters using contig size are silently ignored.
 
@@ -502,6 +502,8 @@ Edit track names by substituting regex pattern with replacement. Pattern and rep
 
 * :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
+* :code:`-F` Interpret pattern as fixed strings, not regular expressions
+
 Use '' (empty string in single quotes) to replace pattern with nothing. Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::
 
     editNames fk123_ ''       -> hela.bam#1, hela.bed#2
@@ -509,6 +511,37 @@ Use '' (empty string in single quotes) to replace pattern with nothing. Examples
     editNames _ ' '           -> fk123 hela.bam#1,  fk123 hela.bed#2
     editNames ^.*# cells      -> cells#1, cells#2
     editNames ^ xx_           -> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)
+
+
+addHeader
++++++++++
+
+:code:`addHeader [-c] [-a] [-b] [-off] [-v] <header> [track_re=.*]...`
+
+Add header to track(s). Example use case: You have several tracks sorted in a meanignful way (say WT and CTRL tracks). Add a header to the first track of each group for ease of reading. Useful also to add one or more blank lines for more separation between tracks.
+
+* :code:`-c` Color for the header - see :code: `colorTrack -h` for options
+
+* :code:`-a` Header alignment. Either a number between 0 (left-align) and 1 (right-align) or a keyword left, center, right. Default is 0.5 (center-align)
+
+* :code:`-b` Do not make header in boldface
+
+* :code:`-off` Remove header
+
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
+* :code:`<header>` Header text. To change the text format and leave the text as is, use :code:`-`. Use :code:`{-}` as placeholder of current header; e.g. add stars around existing header: :code:`** {-} **` 
+
+Use :code: `-` for <header> if you want to change the format but leave the text as is.
+Examples::
+
+    addHeader WT    > Header 'WT' to all tracks
+    addHeader ''    > Add a blank line before each track
+    addHeader -c red 'WILD TYPE' #1    > Header in red before track #1
+    addHeader 'WILD\nTYPE'    > Span multiple lines
+    addHeader -c cyan -a left    > Only change colour and alignment
+    addHeader -c cyan -a left - #1    > Only change colour and alignment in #1 (note '-' before #1)
+    addHeader '** {-} **'     > Add decorative stars around existing header
 
 
 dataCol
@@ -745,7 +778,9 @@ show
 
 Show or set features to display.  The argument :code:`arg` takes the following choices:
 
-* :code:`genome`: Show chromosomes and their sizes as barplot provided a genome file is available.
+* :code:`genome`: Show chromosomes sorted by size
+
+    * :code:`-n int`: Show up to *int* number of chromosomes or -1 for no limit (default 50)
 
 * :code:`trackInfo`: Show information on tracks.
 

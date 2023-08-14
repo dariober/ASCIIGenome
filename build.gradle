@@ -103,6 +103,8 @@ dependencies {
     compile group: 'org.biojava', name: 'biojava-genome', version: '5.4.0'
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.21.0.1'
 
+	// implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
+
     testCompile 'junit:junit:4.12'
 }
 

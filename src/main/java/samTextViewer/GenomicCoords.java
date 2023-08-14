@@ -239,7 +239,7 @@ public class GenomicCoords implements Cloneable {
         
         /* Use these to make a left-over row for contigs exlcuded by the filters */
         long genomeSize = 0;
-        int nContigs = ctg.size();
+        // int nContigs = ctg.size();
         for(SAMSequenceRecord seq : ctg) {
             if(seq.getSequenceLength() > 0) {
                 genomeSize += seq.getSequenceLength();

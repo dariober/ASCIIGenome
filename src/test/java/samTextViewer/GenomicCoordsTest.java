@@ -64,7 +64,6 @@ public class GenomicCoordsTest {
         assertTrue(out.contains("\033[1m" + "chr3"));
         
         out = gc.printSequenceDictionary(knownContigs, -1, -1, ".", ContigOrder.ALPHANUMERIC_ASC, 30, -1, true);
-        List<String> outList = Splitter.on("\n").splitToList(out);
         assertTrue(Pattern.compile(".*chr3 <==.*").matcher(out).find());
         
     }
