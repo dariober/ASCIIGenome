@@ -476,7 +476,7 @@ public abstract class Track {
                 for(int i = 0; i < lst.size(); i++) {
                     String field = lst.get(i);
                     if(i == 8) {
-                        field = java.net.URLDecoder.decode(field, StandardCharsets.UTF_8);
+                        field = java.net.URLDecoder.decode(field, StandardCharsets.UTF_8.name());
                     }
                     decoded.add(field);
                 }

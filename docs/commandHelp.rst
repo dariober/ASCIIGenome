@@ -235,20 +235,20 @@ Move to the next feature not overlapping the current coordinates.  By default `n
 nextChrom
 +++++++++
 
-:code:`nextChrom [-m] [-M] [-r]`
+:code:`nextChrom [-m] [-M] [regex]`
 
-Go to the start of the next chromsome or contig. 
+Go to the start of the next chromosome or contig. 
 
-* :code:`-m`: Go to next chrom having this minimum size.
+* :code:`-min`: Go to next chrom having this minimum size.
 
-* :code:`-M`: Go to next chrom having this maximum size.
-
-* :code:`-r`: Go to next chrom matching this regex.
+* :code:`-max`: Go to next chrom having this maximum size.
 
 * :code:`-s`: Sort order to decide what next is:
-    :code:`s`: size ascending (default)
-    :code:`S`: size descending
+    :code:`s`: size ascending: go to next chrom larger than current (default)
+    :code:`S`: size descending: go to next chrom smaller then current
     :code:`u`: unsorted, i.e. next in dictionary
+
+* :code:`regex`: Go to next chrom matching regex [.*].
 
 Parameters using contig size are silently ignored.
 

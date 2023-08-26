@@ -29,6 +29,8 @@ awk 'getAlnLen() > 2000 && getAlnEnd() < 12345'
 
 * Accept bed/bedgraph with space as column separator (see old issue #12)
 
+* `print` decodes URL character to readable character (*e.g.* it prints `,` instead of `%2C`)
+
 * Improved command **`show genome`**: Add option **`-n`** to limit the number of
   contigs; sort by size; add percentage and cumulative percentage of genome
   covered by each contig; add indicator of current contig. *E.g.*:
