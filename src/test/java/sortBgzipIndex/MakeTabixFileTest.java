@@ -3,6 +3,7 @@ package sortBgzipIndex;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -20,6 +21,7 @@ import htsjdk.tribble.readers.TabixReader.Iterator;
 import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
+import samTextViewer.Utils;
 
 public class MakeTabixFileTest {
 
@@ -33,6 +35,65 @@ public class MakeTabixFileTest {
         t.close();
         r.close();
     } 
+
+    @Test
+    public void canReadSpaceSeparatedBed() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+        String infile= "test_data/space_sep.bedgraph";
+        File outfile= new File("test_data/tmp.bedgraph.gz");
+        outfile.deleteOnExit();
+        
+        File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
+        expectedTbi.deleteOnExit();
+
+        new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+        BufferedReader br = Utils.reader(outfile.getAbsolutePath());
+        assertTrue(br.readLine().startsWith("# comment line"));
+        assertTrue(br.readLine().startsWith("chr1\t0\t10"));
+    }
+    
+    @Test
+    public void canReadSpaceSeparatedSorted() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+        String infile= "test_data/space_sorted.bedgraph";
+        File outfile= new File("test_data/tmp.bedgraph.gz");
+        outfile.deleteOnExit();
+        
+        File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
+        expectedTbi.deleteOnExit();
+
+        new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+        BufferedReader br = Utils.reader(outfile.getAbsolutePath());
+        assertTrue(br.readLine().startsWith("chr1\t0\t10"));
+    }
+    
+    @Test
+    public void canReadSpaceSeparatedOnelineInput() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+        String infile= "test_data/space_oneline.bedgraph";
+        File outfile= new File("test_data/tmp.bedgraph.gz");
+        outfile.deleteOnExit();
+        
+        File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
+        expectedTbi.deleteOnExit();
+
+        new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+        BufferedReader br = Utils.reader(outfile.getAbsolutePath());
+        assertTrue(br.readLine().startsWith("chr1\t0\t10"));
+    }
+
+    @Test
+    public void canReadGffWithFasta() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+        String infile= "test_data/features_fasta.gff";
+        File outfile= new File("test_data/tmp.gff.gz");
+        outfile.deleteOnExit();
+        
+        File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
+        expectedTbi.deleteOnExit();
+
+        new MakeTabixIndex(infile, outfile, TabixFormat.GFF);
+        BufferedReader br = Utils.reader(outfile.getAbsolutePath());
+        assertEquals("##FASTA", br.readLine());
+        assertEquals("# bla bla", br.readLine());
+        assertTrue(br.readLine().startsWith("1\tASCIIGenome\tbookmark\t1\t"));
+    }
     
     @Test
     public void canHandleBgzExtension() throws Exception{
@@ -149,17 +210,16 @@ public class MakeTabixFileTest {
     public void handlingInvalidLines() throws ClassNotFoundException, IOException, InvalidRecordException, SQLException{
         String infile= "test_data/invalid.vcf";
         File outfile= new File("test_data/tmp.vcf.gz");
-        outfile.deleteOnExit();
+        // outfile.deleteOnExit();
         
         File expectedTbi= new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION); 
-        expectedTbi.deleteOnExit();
+        // expectedTbi.deleteOnExit();
         
         new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
     }
     
     @Test
     public void canCompressAndIndexSortedFile() throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
-        
         String infile= "test_data/overlapped.bed";
         File outfile= new File("test_data/tmp.bed.gz");
         outfile.deleteOnExit();
@@ -177,7 +237,6 @@ public class MakeTabixFileTest {
         TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
         Iterator x = tbx.query("chr1", 1, 1000000);
         assertTrue(x.next().startsWith("chr1"));
-        
     }
 
     @Test

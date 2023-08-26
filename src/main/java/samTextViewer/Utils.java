@@ -567,6 +567,11 @@ public class Utils {
                 if(fmt.equals(TrackFormat.VCF)){
                     region= line.split("\t")[0] + ":" + line.split("\t")[1]; 
                 } else {
+                    // If this is space separated bed file
+                    String sep = Utils.getColumnSeparator(x);
+                    if(!sep.equals("\t")) {
+                        line = line.replace(sep, "\t");
+                    }
                     IntervalFeature feature= new IntervalFeature(line, fmt, null, -1);
                     region= feature.getChrom() + ":" + feature.getFrom();
                 }
@@ -2647,6 +2652,40 @@ public class Utils {
 
     public static boolean isCRAM(String sourceName) {
         return sourceName.toLowerCase().endsWith(".cram");
-    } 
+    }
+
+    public static String getColumnSeparator (String infile) throws MalformedURLException, IOException {
+        BufferedReader br= Utils.reader(infile);
+        String line;
+        String[] seps = {"\t", " "};
+        String sep = "\t";
+        for(int i = 0; i < seps.length; i++) {
+            sep = seps[i];
+            int n = 0;
+            while((line = br.readLine()) != null){
+                if(line.trim().startsWith("#") || line.trim().isEmpty()) {
+                    continue;
+                }
+                List<String> fields = Splitter.on(sep).splitToList(line);
+                if(fields.size() < 3) {
+                    break;
+                }
+                try {
+                    Integer.parseInt(fields.get(1));
+                    Integer.parseInt(fields.get(2));
+                } catch(NumberFormatException e) {
+                    break;
+                }
+                if(n > 0) {
+                    br.close();
+                    return sep;
+                }
+                n++;
+            }
+        }
+        br.close();
+        return sep;
+    }
+    
     
 }

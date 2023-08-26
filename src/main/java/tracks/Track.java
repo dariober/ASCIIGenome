@@ -12,6 +12,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -139,10 +140,12 @@ public abstract class Track {
     }
         
     /* Printers */
-    public String printToScreen() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
-        return null;
-    }
+    //public String printToScreen() throws InvalidGenomicCoordsException, IOException, InvalidColourException{
+    //    return null;
+    //}
 
+    public abstract String printToScreen() throws InvalidGenomicCoordsException, IOException, InvalidColourException;
+    
     /** Print track info - for debugging and development only.
      * */
     public String toString(){
@@ -467,11 +470,23 @@ public abstract class Track {
                 line= this.printFormattedVep(line, vepTag);
             }
             
-            if(this.getPrintMode().equals(PrintRawLine.CLIP) && (this.getSystemCommandForPrint() == null || this.getSystemCommandForPrint().isEmpty())){
-                
-                line= this.shortenPrintLine(line);
-                
+            if(this.getTrackFormat().equals(TrackFormat.GFF) || this.getTrackFormat().equals(TrackFormat.GTF)){
+                List<String> lst = Splitter.on("\t").splitToList(line);
+                List<String> decoded = new ArrayList<String>();
+                for(int i = 0; i < lst.size(); i++) {
+                    String field = lst.get(i);
+                    if(i == 8) {
+                        field = java.net.URLDecoder.decode(field, StandardCharsets.UTF_8);
+                    }
+                    decoded.add(field);
+                }
+                line = Joiner.on("\t").join(decoded);
             }
+            
+            if(this.getPrintMode().equals(PrintRawLine.CLIP) && (this.getSystemCommandForPrint() == null || this.getSystemCommandForPrint().isEmpty())){
+                line= this.shortenPrintLine(line);
+            }
+            
             line= Utils.roundNumbers(line, this.getPrintNumDecimals(), this.getTrackFormat());
             
             if( this.getHighlightPattern() != null && ! this.getHighlightPattern().pattern().isEmpty()){

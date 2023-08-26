@@ -67,6 +67,23 @@ public class MainTest {
     }
     
     @Test
+    /*You should really test this in InteractiveInputTest.java but setting it up is a bit of a mess */
+    public void canGoToNextChromosomeRegex() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
+        String[] args= new String[] {"-ni", "-nf", "--exec", "nextChrom M", "test_data/ds051.actb.bam"};
+        String out = Joiner.on("\n").join(this.runMain(args));
+        assertTrue(out.contains("chrM:1-"));
+
+        args= new String[] {"-ni", "-nf", "--exec", "nextChrom -min 249000000 chr1", "test_data/ds051.actb.bam"};
+        out = Joiner.on("\n").join(this.runMain(args));
+        assertTrue(out.contains("chr1:1-"));
+        
+        args= new String[] {"-ni", "-nf", "--exec", "nextChrom -min 135000000 chr1", "test_data/ds051.actb.bam"};
+        out = Joiner.on("\n").join(this.runMain(args));
+        System.err.println(out);
+        assertTrue(out.contains("chr11:1-"));
+    }
+    
+    @Test
     public void canSuggestCommand() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidCommandLineException, InvalidRecordException, BamIndexNotFoundException, SQLException, DocumentException, UnindexableFastaFileException, InvalidColourException, InvalidConfigException {
         String[] args= new String[] {"-ni", "-nf", "--exec", "prnt"};
         List<String> out = this.runMain(args);

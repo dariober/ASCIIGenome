@@ -27,6 +27,8 @@ awk 'getAlnLen() > 2000 && getAlnEnd() < 12345'
 * New command **`addHeader`** inserts one or more lines of text before a track.
   Useful to add a header or legend-like text to groups of tracks. 
 
+* Accept bed/bedgraph with space as column separator (see old issue #12)
+
 * Improved command **`show genome`**: Add option **`-n`** to limit the number of
   contigs; sort by size; add percentage and cumulative percentage of genome
   covered by each contig; add indicator of current contig. *E.g.*:

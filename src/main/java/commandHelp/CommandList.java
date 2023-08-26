@@ -356,20 +356,20 @@ public class CommandList {
         cmdList.add(cmd);
 
         cmd= new CommandHelp();
-        cmd.setName("nextChrom"); cmd.setArgs("[-m] [-M] [-r]"); cmd.inSection= Section.NAVIGATION; 
-        cmd.setBriefDescription("Go to the start of the next chromsome or contig.");
+        cmd.setName("nextChrom"); cmd.setArgs("[-m] [-M] [regex]"); cmd.inSection= Section.NAVIGATION; 
+        cmd.setBriefDescription("Go to the start of the next chromosome or contig.");
         cmd.setAdditionalDescription(""
                 + "\n\n"
-                + "* :code:`-m`: Go to next chrom having this minimum size.\n"
+                + "* :code:`-min`: Go to next chrom having this minimum size.\n"
                 + "\n"
-                + "* :code:`-M`: Go to next chrom having this maximum size.\n"
-                + "\n"
-                + "* :code:`-r`: Go to next chrom matching this regex.\n"
+                + "* :code:`-max`: Go to next chrom having this maximum size.\n"
                 + "\n"
                 + "* :code:`-s`: Sort order to decide what next is:\n"
-                + "~~~~:code:`s`: size ascending (default)\n"
-                + "~~~~:code:`S`: size descending\n"
+                + "~~~~:code:`s`: size ascending: go to next chrom larger than current (default)\n"
+                + "~~~~:code:`S`: size descending: go to next chrom smaller then current\n"
                 + "~~~~:code:`u`: unsorted, i.e. next in dictionary\n"
+                + "\n"
+                + "* :code:`regex`: Go to next chrom matching regex [.*].\n"
                 + "\n"
                 + "Parameters using contig size are silently ignored.");
         cmdList.add(cmd);

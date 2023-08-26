@@ -200,6 +200,7 @@ public class InteractiveInput {
                     proc.getGenomicCoordsHistory().add(new GenomicCoords(reg, terminalWidth, samSeqDict, fasta));
 
                 } else if(cmdTokens.get(0).equals("nextChrom")){
+                    cmdTokens.remove(0);
                     this.interactiveInputExitCode= this.nextChrom(cmdTokens, proc);
                     
                 } else if (cmdTokens.get(0).equals("p")) {
@@ -519,10 +520,8 @@ public class InteractiveInput {
     }
 
     private ExitCode nextChrom(List<String> cmdTokens, TrackProcessor proc) throws IOException, NumberFormatException, InvalidCommandLineException {
-        
-        int minSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-m", "-1"));
-        int maxSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-M", "-1"));
-        String regex = Utils.getArgForParam(cmdTokens, "-r", ".*");
+        int minSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-min", "-1"));
+        int maxSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-max", "-1"));
         String so = Utils.getArgForParam(cmdTokens, "-s", "s");
         ContigOrder sortOrder;
         if(so.equals("u")) {
@@ -534,6 +533,14 @@ public class InteractiveInput {
         } else {
             System.err.println("Invalid option for sort order: " + so);
             return ExitCode.CLEAN_NO_FLUSH;
+        }
+        
+        String regex = ".*";
+        if(cmdTokens.size() == 1) {
+            regex = cmdTokens.get(0);
+        } else if(cmdTokens.size() > 1) {
+            System.err.println("At most only one positional arguments is allowed. Got: " + cmdTokens);
+            return ExitCode.CLEAN_NO_FLUSH;            
         }
         
         try {
