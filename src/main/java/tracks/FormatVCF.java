@@ -7,31 +7,31 @@ import htsjdk.variant.variantcontext.VariantContext;
 
 public class FormatVCF {
 
-	public FormatVCF(VariantContext ctx){
+    public FormatVCF(VariantContext ctx){
 
-	}
+    }
 
-	/** Format alternative allele for text printing 
-	 * */
-	public static String textForVariant(VariantContext ctx){
-		// Keep it simple, get the first alternate allele if more than one exist.
-		if(ctx.isSNP()){
+    /** Format alternative allele for text printing 
+     * */
+    public static String textForVariant(VariantContext ctx){
+        // Keep it simple, get the first alternate allele if more than one exist.
+        if(ctx.isSNP()){
 //			// SNV: Return the ALT base
-			Allele alt = ctx.getAlleles().get(1);
-			return alt.getDisplayString(); // ? or: alt.getBaseString();
-		} 
-		else if(ctx.isSimpleDeletion()) {
-			Allele alt = ctx.getAlleles().get(0);
-			return StringUtils.repeat("D", alt.length());
-		} 
-		else if(ctx.isSimpleInsertion()) {
-			Allele alt = ctx.getAlleles().get(1);
-			return StringUtils.repeat("I", alt.length());
-		} 
-		else {
-			Allele alt = ctx.getAlleles().get(0);
-			return StringUtils.repeat("|", alt.length());
-		} 
+            Allele alt = ctx.getAlleles().get(1);
+            return alt.getDisplayString(); // ? or: alt.getBaseString();
+        } 
+        else if(ctx.isSimpleDeletion()) {
+            Allele alt = ctx.getAlleles().get(0);
+            return StringUtils.repeat("D", alt.length());
+        } 
+        else if(ctx.isSimpleInsertion()) {
+            Allele alt = ctx.getAlleles().get(1);
+            return StringUtils.repeat("I", alt.length());
+        } 
+        else {
+            Allele alt = ctx.getAlleles().get(0);
+            return StringUtils.repeat("|", alt.length());
+        } 
 //		// * DEL: Return the string corresponding to the deleted bases
 //		
 //		String altAllele= Joiner.on(",").join(ctx.getAlternateAlleles());
@@ -49,11 +49,11 @@ public class FormatVCF {
 //			throw new RuntimeException();
 //		}
 //		return text; 
-	}
+    }
 
-	
-	/** Format alternative allele for text printing 
-	 * @throws InvalidColourException */
+    
+    /** Format alternative allele for text printing 
+     * @throws InvalidColourException */
 //	@Deprecated
 //	public static String format(char textForVariant) throws InvalidColourException{
 //
@@ -87,5 +87,5 @@ public class FormatVCF {
 //		formattedText.append("m");
 //		return formattedText.toString();
 //	}
-	
+    
 }

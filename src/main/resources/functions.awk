@@ -14,10 +14,14 @@ function _trim(_x, _char){
     return _x
 }
 
+## Functions for SAM records
+## =========================
+
 function getSamTag(tag,    _idxkey, _key){
-    if(NF < 12){
-        return ""
-    }
+	# If there are no tags the sam record has 11 fields. However, we edited the raw sam record 
+	# so instead of testing for 12 fields we account for the extra ones. 
+	# See Track.prepareSAMRecordForAwk
+    # Tags start at 12th column
     for(i=12; i <= NF; i++){
         _idxkey= index($i, ":")
         _key=substr($i, 1, _idxkey-1)
@@ -25,7 +29,76 @@ function getSamTag(tag,    _idxkey, _key){
             return substr($i, length(_key) + 4)
         }
     }
+    return ""
 }
+
+function bitset(intquery,    intqry, samflag, qrybit, sambit){
+    intqry= intquery
+    samflag= $2
+    if(samflag !~ "^[0-9]+$" || intqry !~ "^[0-9]+$"){
+        return 0    
+    }
+    while(intqry > 0){
+        qrybit= intqry % 2
+        intqry -= qrybit
+        intqry = intqry / 2
+        sambit= samflag % 2
+        if(samflag > 0){
+            samflag -= sambit
+            samflag = samflag / 2
+        }
+        if(qrybit == 1 && sambit == 0){
+            return 0
+        }
+    }
+    return 1
+}
+
+function nobitset(intquery,    intqry, samflag, qrybit, sambit){
+    intqry= intquery
+    samflag= $2
+    if(samflag !~ "^[0-9]+$" || intqry !~ "^[0-9]+$"){
+        return 0    
+    }
+}
+
+function getAlnEnd(_alnEnd) {
+	_alnEnd = getSamTag("$alnEnd") # Tag must must match Track.prepareSAMRecordForAwk
+	return _alnEnd
+}
+
+# Pure awk implementation is ~ 3x slower on Jawk
+#function getAlnEnd(_alnEnd, _value, _cigar) {
+#    if($6 == "*") {
+#        return -1
+#    }
+#    _alnEnd = $4 - 1
+#    _value = ""
+#    split($6, _cigar, "")
+#    for (i=1; i <= length($6); i++) {
+#        if(_cigar[i] ~ /^[0-9]$/){
+#            _value = _value _cigar[i]
+#        } else {
+#            if("MDN=X" ~ _cigar[i]) {
+#                _alnEnd += _value
+#            }
+#            _value=""
+#        }
+#    }
+#    return _alnEnd
+#}
+
+function getAlnLen(_alnLen) {
+    if($6 == "*") {
+        return -1
+    }
+    _alnLen = (getAlnEnd() - $4) + 1
+    return _alnLen
+}
+
+
+## Functions for VCF
+## =================
 
 function getInfoTag(tag, value_idx,    _target, _retval, _eqIdx, _key, _list){
 	if(NF < 8){
@@ -86,6 +159,8 @@ function getFmtTag(tag, sample_idx, value_idx,    _fmt_array, _tagIdx, _sample_d
     }
 }
 
+## Functions for GFF/GTF/BED
+
 function getGtfTag(tag,    _attrs, _attr, _i, _tagval, _n, _retval){
 
     if(NF < 9){
@@ -131,34 +206,3 @@ function getGffTag(tag, value_idx,    _attrs, _attr, _tagval, _i, _n, _vals, _re
     }
     return _retval
 }
-
-function bitset(intquery,    intqry, samflag, qrybit, sambit){
-    intqry= intquery
-    samflag= $2
-    if(samflag !~ "^[0-9]+$" || intqry !~ "^[0-9]+$"){
-        return 0    
-    }
-    while(intqry > 0){
-        qrybit= intqry % 2
-        intqry -= qrybit
-        intqry = intqry / 2
-        sambit= samflag % 2
-        if(samflag > 0){
-            samflag -= sambit
-            samflag = samflag / 2
-        }
-        if(qrybit == 1 && sambit == 0){
-            return 0
-        }
-    }
-    return 1
-}
-
-function nobitset(intquery,    intqry, samflag, qrybit, sambit){
-    intqry= intquery
-    samflag= $2
-    if(samflag !~ "^[0-9]+$" || intqry !~ "^[0-9]+$"){
-        return 0    
-    }
-}
-

@@ -198,10 +198,31 @@ The syntax ``$6`` selects the 6th column, the one containing the cigar string, t
 returns true if the cigar string contains the string ``D``. As usual, the last positional argument
 applies the command to the tracks matching the given regex.
 
-The internal function ``getSamTag()`` extracts the value of a given SAM tag and this value can be used to as filter. For example,
-to select only reads containing mismatches, *i.e.* where the NM tag is greater than zero, use::
+The internal function ``get()`` returns the value of the additional tags in SAM, GFF/GTF, or VCF files. 
+For example, to select only alignment containing mismatches, *i.e.* where the NM tag is greater than zero, use::
 
-    awk 'getSamTag("NM") > 0'
+    awk 'get("NM") > 0'
+
+Filter VCF records where tag ``CalledBy`` contains "WCMC". Note the ``~``
+operator to perform refular expression matching::
+
+    awk 'get("CalledBy") ~ "WCMC"'
+
+or where ``CalledBy`` does not contain ``WC``::
+
+    awk 'get("CalledBy") !~ "WCMC"'
+
+If ``CalledBy`` contains a list of values you can access them with the second
+parament of ``get(tag, index)`` indicating the index of the value to be returned, 1-based.
+*E.g.*, return records where the second element of ``CalledBy`` equals
+``BCM``::
+
+    awk 'get("CalledBy", 2) == "BCM"'
+
+When working with long reads, it is often useful to filter for aligmments longer than a cutoff::
+
+    awk 'getAlnLen() > 2000'
+
 
 Batch and non-interactive mode
 ------------------------------

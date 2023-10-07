@@ -1,11 +1,69 @@
 New in 1.18.0
 =============
 
-* Add configuration parameter `low_mapq` to set what you consider as low
-  mapping quality. Default is 5 which is the setting hardcoded until now.
+* New `awk` functions **`getAlnEnd()`** and **`getAlnLen()`** to get the **end** and
+  **length** of a SAM aligmment, respectively. Useful to filter for alignments
+  above/below a cutoff, especially handy with Nanopore reads. *E.g.*
+
+```
+awk 'getAlnLen() > 2000 && getAlnEnd() < 12345'
+```
+
+* Use the operating system's `awk` instead of the built-in Java Jawk. OS's
+  `awk` appears to be 5-10x faster than Jawk. The flip side is that we assume
+  users have `awk` on their PATH.
+
+* Add configuration parameter **`low_mapq`** to set what you consider as low
+  mapping quality. Default is 5 which was the setting hardcoded until now.
 
 * Use *false* in config `shade_structural_variant` to omit shading of
   structural variants 
+
+* New command **`nextChrom`** moves to the next chromosome without the need of
+  typing its name. Useful to quickly flip through several chromosomes. 
+
+* Can read **CRAM** files (finally!)
+
+* New command **`addHeader`** inserts one or more lines of text before a track.
+  Useful to add a header or legend-like text to groups of tracks. 
+
+* Accept bed/bedgraph with space as column separator (see old issue #12)
+
+* `print` decodes URL character to readable character (*e.g.* it prints `,` instead of `%2C`)
+
+* Improved command **`show genome`**: Add option **`-n`** to limit the number of
+  contigs; sort by size; add percentage and cumulative percentage of genome
+  covered by each contig; add indicator of current contig. *E.g.*:
+
+```
+show genome
+Genome size: 3095693983; Number of contigs: 25                                                                                                                           
+chr1  249250621 |||||||||||||||||||||||||||||| 8.1%; 8.1%                                                                                                                
+chr2  243199373 |||||||||||||||||||||||||||||  7.9%; 15.9%                                                                                                               
+chr3  198022430 ||||||||||||||||||||||||       6.4%; 22.3%                                                                                                               
+chr4  191154276 |||||||||||||||||||||||        6.2%; 28.5%                                                                                                               
+chr5  180915260 ||||||||||||||||||||||         5.8%; 34.3%                                                                                                               
+chr6  171115067 |||||||||||||||||||||          5.5%; 39.9%                                                                                                               
+chr7  159138663 |||||||||||||||||||            5.1%; 45.0% <==                                                                                                  
+chrX  155270560 |||||||||||||||||||            5.0%; 50.0%                                                                                                               
+chr8  146364022 ||||||||||||||||||             4.7%; 54.7%                                                                                                               
+chr9  141213431 |||||||||||||||||              4.6%; 59.3%                                                                                                               
+chr10 135534747 ||||||||||||||||               4.4%; 63.7%                                                                                                               
+chr11 135006516 ||||||||||||||||               4.4%; 68.0%                                                                                                               
+chr12 133851895 ||||||||||||||||               4.3%; 72.4%                                                                                                               
+chr13 115169878 ||||||||||||||                 3.7%; 76.1%                                                                                                               
+chr14 107349540 |||||||||||||                  3.5%; 79.5%                                                                                                               
+chr15 102531392 ||||||||||||                   3.3%; 82.9%                                                                                                               
+chr16 90354753  |||||||||||                    2.9%; 85.8%                                                                                                               
+chr17 81195210  ||||||||||                     2.6%; 88.4%                                                                                                               
+chr18 78077248  |||||||||                      2.5%; 90.9%                                                                                                               
+chr20 63025520  ||||||||                       2.0%; 93.0%                                                                                                               
+chrY  59373566  |||||||                        1.9%; 94.9%                                                                                                               
+chr19 59128983  |||||||                        1.9%; 96.8%                                                                                                               
+chr22 51304566  ||||||                         1.7%; 98.4%                                                                                                               
+chr21 48129895  ||||||                         1.6%; 100.0%                                                                                                              
+chrM  16571                                    0.0%; 100.0%            
+```
 
 New in 1.17.0
 =============

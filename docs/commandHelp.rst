@@ -232,6 +232,26 @@ Move to the next feature not overlapping the current coordinates.  By default `n
 
 `next` starts searching immediately after the current window and loops thourgh each chromosome until a feature is found.
 
+nextChrom
++++++++++
+
+:code:`nextChrom [-m] [-M] [regex]`
+
+Go to the start of the next chromosome or contig. 
+
+* :code:`-min`: Go to next chrom having this minimum size.
+
+* :code:`-max`: Go to next chrom having this maximum size.
+
+* :code:`-s`: Sort order to decide what next is:
+    :code:`s`: size ascending: go to next chrom larger than current (default)
+    :code:`S`: size descending: go to next chrom smaller then current
+    :code:`u`: unsorted, i.e. next in dictionary
+
+* :code:`regex`: Go to next chrom matching regex [.*].
+
+Parameters using contig size are silently ignored.
+
 Find
 ----
 
@@ -386,108 +406,9 @@ Return the value of the given **INFO** tag. If the tag contains multiple values,
 
 Return the value of the **FORMAT** tag for sample index *sample_idx* (default to 1, first sample). If the tag contains multiple values, optionally return the value at index *value_idx*. If necessary, prepend 'FMT/' to tag to disambiguate it from INFO tags or if the header does not contain this tag.  If the tag is of type 'Flag', return 1 if present, 0 otherwise.
 
-* Column headers
+* :code:`getAlnEnd()` on **SAM**
 
-The following variables are replaced by the appropriate column indexes, so they can be used to easily select columns. Make sure the track types are selected to be compatible with the headers.
-
-- bam tracks::
-
-    $QNAME, $FLAG, $RNAME, $POS, $MAPQ, $CIGAR, $RNEXT, $PNEXT, $TLEN, $SEQ, $QUAL
-
-- vcf tracks::
-
-    $CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT
-
-- gtf and gff tracks::
-
-    $SEQNAME, $SOURCE, $FEATURE, $START, $END, $SCORE, $STRAND, $FRAME, $ATTRIBUTE
-
-- bed tracks::
-
-    $CHROM, $START, $END, $NAME, $SCORE, $STRAND, $THICKSTART, $THICKEND, $RGB, $BLOCKCOUNT, $BLOCKSIZES, $BLOCKSTARTS
-
-*EXAMPLES*
-
-Note the use of single quotes to wrap the actual script and the use of double quotes inside the script.
-
-* Filter for lines where the 4th column is between 10 and 100. Apply only to tracks matching '.gtf' or '.gff'::
-
-    awk '$4 > 10 && $4 <= 100' .gtf .gff
-
-* Filter for either perfect a match or by matching a regex on 3rd column. Apply to all tracks. The second example matches regex on the entire line (similar to grep), The third example also requires features to be on + strand::
-
-    awk '$3 == "exon" || $3 \  ".*_codon"'
-    
-    awk '$0 \  ".*_codon"'
-    
-    awk '($3 == "exon" || $3 \  ".*_codon") && $7 == "+"'
-
-* Filter for features size (assuming bed format) and for values after log10 transformation. For log10 we need to change base using ln(x)/ln(10)::
-
-    awk '($3 - $2) > 1000 && (log($4)/log(10)) < 3.5'
-
-* Remove awk filter for tracks captured by .gff and .gtf::
-
-    awk -off .gtf .gff
-
-* Return bam records where NM tag (edit distance) is > 0. Double quotes around NM are optional::
-
-    awk 'get(NM) > 0' .bam
-
-* Filter vcf records by FORMAT tag. Suppose tag AD in the *second* sample is :code:`63,7`::
-
-    awk 'get(AD, 2) ...' my.vcf      # get() returns string '63,7'
-    awk 'get(AD, 2, 1) ...' my.vcf   # get() returns 63
-    awk 'get(AD, 2, 2) ...' my.vcf   # get() returns 7
-    awk 'get(FMT/AD, 2) ...' my.vcf  # If AD is also in INFO or missing in header
-
-* Using header variables::
-
-    awk '$FEATURE \  "CDS" && $START > 1234' my.gff
-
-With no args, turn off awk for all tracks.
-
-*NOTES & LIMITATIONS*
-
-* This is a java implementation of awk and it is independent on whether awk is on the local system. It should behave very similar to UNIX awk and therefore it has lots of functionalities. In fact, awk is a programming language in itself, search Google for more. The original code is from https://github.com/hoijui/Jawk
-
-* Use awk only to filter features, do not use it to edit them. If features are changed by the awk script than nothing will be retained. This is because the awk command first collects the output from awk, then it matches the features in the current window with those collected from awk.
-
-* Each line is processed independently of the others as a separate awk execution. This means that you cannot filter one line on the bases of previous or following lines.
-
-* This awk is slow, about x5-10 times slower than UNIX awk. For few thousand records the slowdown should be acceptable. Other things being equal, use `grep` instead.
-
-* The default delimiter is TAB not any white space as in UNIX awk.
-
-* An invalid script throws an ugly stack trace to stderr. To be fixed.
-
-featureColor
-++++++++++++
-
-:code:`featureColor [-r/-R expression color] [-v] [track_regex = .*]...`
-
-Set colour for features captured by expression.  This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the default color for the lines captured by the expression. Expression is a regex or an awk script (autodetermined). It is useful to highlight features containg a string of interest, such as 'CDS' in gff files, or features where a numeric field satisfy a filter.
-
-Options:
-
-:code:`-r <expression> <color>` Features matching :code:`expression` will have color :code:`color`. The expression is interpreted as regex or as an awk script and it is applied to the raw lines as read from file. This option takes exactly two arguments and can be given zero or more times.
-
-:code:`-R <expression> <color>` Same as :code:`-r` but sets color for features NOT matched by regex.
-
-:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-:code:`[track_regex]` Apply to tracks captured by this list of regexes.
-
-Example::
-
-    featureColor -r CDS plum2 -r exon grey
-    featureColor bed         -> Reset to default the track matching 'bed'
-       featureColor -R CDS grey -> Grey all features except those matching CDS
-    
-    Color blue where 9th field is > 3; color red where 9th is > 6
-    featureColor -r '$9 > 3' blue -r '$9 > 6' red
-
-Colors can be specified by name, name prefix, or integer in range 0-255. Available colours:`here <http://jonasjacek.github.io/colors/>`_             
+Returns the position of the alignment end. For example, select reads ending after position 1000`here <http://jonasjacek.github.io/colors/>`_             
 
 Example::
 
@@ -581,6 +502,8 @@ Edit track names by substituting regex pattern with replacement. Pattern and rep
 
 * :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
+* :code:`-F` Interpret pattern as fixed strings, not regular expressions
+
 Use '' (empty string in single quotes) to replace pattern with nothing. Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::
 
     editNames fk123_ ''       -> hela.bam#1, hela.bed#2
@@ -588,6 +511,37 @@ Use '' (empty string in single quotes) to replace pattern with nothing. Examples
     editNames _ ' '           -> fk123 hela.bam#1,  fk123 hela.bed#2
     editNames ^.*# cells      -> cells#1, cells#2
     editNames ^ xx_           -> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)
+
+
+addHeader
++++++++++
+
+:code:`addHeader [-c] [-a] [-b] [-off] [-v] <header> [track_re=.*]...`
+
+Add header to track(s). Example use case: You have several tracks sorted in a meanignful way (say WT and CTRL tracks). Add a header to the first track of each group for ease of reading. Useful also to add one or more blank lines for more separation between tracks.
+
+* :code:`-c` Color for the header - see :code: `colorTrack -h` for options
+
+* :code:`-a` Header alignment. Either a number between 0 (left-align) and 1 (right-align) or a keyword left, center, right. Default is 0.5 (center-align)
+
+* :code:`-b` Do not make header in boldface
+
+* :code:`-off` Remove header
+
+* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
+
+* :code:`<header>` Header text. To change the text format and leave the text as is, use :code:`-`. Use :code:`{-}` as placeholder of current header; e.g. add stars around existing header: :code:`** {-} **` 
+
+Use :code: `-` for <header> if you want to change the format but leave the text as is.
+Examples::
+
+    addHeader WT    > Header 'WT' to all tracks
+    addHeader ''    > Add a blank line before each track
+    addHeader -c red 'WILD TYPE' #1    > Header in red before track #1
+    addHeader 'WILD\nTYPE'    > Span multiple lines
+    addHeader -c cyan -a left    > Only change colour and alignment
+    addHeader -c cyan -a left - #1    > Only change colour and alignment in #1 (note '-' before #1)
+    addHeader '** {-} **'     > Add decorative stars around existing header
 
 
 dataCol
@@ -641,7 +595,7 @@ Examples::
     print                        -> Print all tracks, same as `print .*`
     print -off                   -> Turn off printing for all tracks
     print genes.bed >> genes.txt -> Append features in track(s) 'genes.bed' to file
-    print -sys 'cut 1-5 | sort'  -> Select columns with `cut` and then sort
+    print -sys 'cut -f 1-5 | sort'  -> Select columns with `cut` and then sort
     print -sys null              -> Turn off the execution of sysy commands
 
 
@@ -824,7 +778,9 @@ show
 
 Show or set features to display.  The argument :code:`arg` takes the following choices:
 
-* :code:`genome`: Show chromosomes and their sizes as barplot provided a genome file is available.
+* :code:`genome`: Show chromosomes sorted by size
+
+    * :code:`-n int`: Show up to *int* number of chromosomes or -1 for no limit (default 50)
 
 * :code:`trackInfo`: Show information on tracks.
 

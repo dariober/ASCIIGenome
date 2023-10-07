@@ -272,13 +272,13 @@ public class TrackWiggles extends Track {
     }
     
     @Override
-    public List<String> getChromosomeNames(){
+    public ArrayList<String> getChromosomeNames(){
         
         if(this.getTrackFormat().equals(TrackFormat.TDF)){
 
             ResourceLocator resourceLocator= new ResourceLocator(this.getWorkFilename());
             TDFReader reader= new TDFReader(resourceLocator);
-            List<String> chroms= new ArrayList<String>(reader.getChromosomeNames());
+            ArrayList<String> chroms= new ArrayList<String>(reader.getChromosomeNames());
             if(chroms.get(0).equals("All")){
                 chroms.remove(0);
             }

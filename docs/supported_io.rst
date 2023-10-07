@@ -28,14 +28,12 @@ possible but ASCIIGenome will first download them locally.
    "`tdf <https://www.broadinstitute.org/igv/TDF>`_", ":code:`.tdf`", "Useful for quantitative data on very large intervals."
    "", "*Other*", ""
    "`vcf <https://en.wikipedia.org/wiki/Variant_Call_Format>`_", ":code:`.vcf`", "Can be gzipped (:code:`.gz`)"
-   "`bam and sam <https://samtools.github.io/hts-specs/SAMv1.pdf>`_", ":code:`.bam`", "BAMs without index and SAM files 
-   are first sorted and indexed.
+   "`bam and sam <https://samtools.github.io/hts-specs/SAMv1.pdf>`_", ":code:`.bam .sam .sam.gz`", "Files without index are first sorted and then indexed.
    Remote URLs are painfully slow (*same for IGV*)." 
+   "`cram <https://en.wikipedia.org/wiki/CRAM_(file_format)>`_", ":code:`.cram`", "Same as :code:`bam`, requires a reference genome in fasta format"
 
 Note that the recognition of the extension is *case insensitive*, so *.bigBed* is the 
 same as *.bigbed*.
-
-A notable format currently **not** supported is CRAM.
 
 .. tip:: For input format specs see also `UCSC format <https://genome.ucsc.edu/FAQ/FAQformat.html>`_ and `Ensembl <http://www.ensembl.org>`_.  
          For guidelines on the choice of format see the `IGV recommendations <https://www.broadinstitute.org/igv/RecommendedFileFormats>`_.

@@ -18,6 +18,34 @@ FIXME
 Features
 --------
 
+* 17-08-2023: Allow whitespace (in addition to tab) to be a column separator in
+  bed/bedgraph. Do it in `MakeTabixIndex.sortByChromThenPos` (if a file is
+  sorted and tabix-indexed it is also tab-separated since tabix only allows
+  tab)
+
+* 01-08-2023: Add a `moveTracks` command to reorder tracks. You probably need a
+  `TrackSet.moveTracks(cmdTokens)` method similar to `TrackSet.orderTracks(...)`. 
+  CLI:
+
+```
+moveTracks FOO BAR --after SPAM
+moveTracks FOO BAR --before SPAM
+moveTracks --before SPAM # Error: Provide tracks to move
+
+moveTracks FOO BAR # Swap order of FOO and BAR or throw error `provide --before/--after track`
+
+moveTracks FOO --after NONEXISTS # Error: No track matching NONEXISTS
+moveTracks FOO BAR --after FOO # Error: Cannot move a track before or after itself
+moveTracks FOO FOO --after BAR # Make sure FOO is not duplicated
+
+# Should the order of tracks to move matter? 
+# Should these command return the same order?
+moveTracks FOO SPAM --after BAR
+moveTracks SPAM FOO --after BAR
+``
+
+* 01-07-2023: Allow the first line in bed/bedgraph/gtf to fail under assumption it is the header
+
 * Use `samtools depth` to compute coverage in `TrackPileup` over large regions. Use of `samtools depth` is avoided when filters except those in `samtools` command 
 are enabled.
 
@@ -78,8 +106,6 @@ with data taken from the raw. Reference sequence if available will be in fasta f
 
 Refactor
 --------
-
-* Test runner `test/run_tests.sh` is effectively not used and clunky. Replace with a *e.g.* snakemake script to run tests properly.
 
 * Populate the enum class `Command` and use `Command.cmdName` in place of the hardcoded command names.
 

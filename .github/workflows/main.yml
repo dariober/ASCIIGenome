@@ -14,5 +14,6 @@ jobs:
           ./gradlew build test jacocoTestReport -PexcludeTests=**/TravisExcludedTest*
           cp ASCIIGenome build/libs/
           cd src/test/java
-          bash integration_test.sh ../../../build/libs/ASCIIGenome || true
+          chmod a+x integration_test.py
+          ./integration_test.py
           bash <(curl -s https://codecov.io/bash)

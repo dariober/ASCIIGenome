@@ -2,9 +2,16 @@ package exceptions;
 
 public class InvalidGenomicCoordsException extends Exception {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    public InvalidGenomicCoordsException() {
+    }
+    
+    public InvalidGenomicCoordsException(String msg) {
+        super(msg);
+    }
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 
 }
