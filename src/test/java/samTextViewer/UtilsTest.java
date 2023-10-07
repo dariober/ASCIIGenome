@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -29,20 +30,23 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 
+import coloring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import faidx.UnindexableFastaFileException;
 import filter.FirstOfPairFilter;
 import filter.FlagToFilter;
 import filter.ReadNegativeStrandFilter;
+import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -56,10 +60,16 @@ import jline.console.history.History;
 import jline.console.history.MemoryHistory;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
+import tracks.TrackReads;
 import utils.Tokenizer;
 
 public class UtilsTest {
 
+    @BeforeClass
+    public static void init() throws IOException, InvalidConfigException {
+        new Config(null);
+    }
+    
     static SamReaderFactory srf=SamReaderFactory.make();
     static SamReader samReader= srf.open(new File("test_data/ds051.short.bam"));
     public static SAMSequenceDictionary samSeqDict= samReader.getFileHeader().getSequenceDictionary();
@@ -67,7 +77,44 @@ public class UtilsTest {
     public static String fastaFile= "test_data/chr7.fa";
     
     @Test
-    public void canGuessFileType() throws Exception {
+    public void test() throws IOException, InterruptedException {
+        // Input list is [foo0, foo1, ..., foo99999]
+        List<String> inputList = new ArrayList<String>();
+        for(int i = 0; i < 10; i++) {
+            inputList.add("foo" + i);
+        }
+        for(int i = 0; i < 10; i++) {
+            inputList.add("bar" + i);
+        }
+        
+        List<String> cmd = new ArrayList<String>();
+        cmd.add("grep");
+        cmd.add("foo");
+
+        for(int i = 0; i < 100; i++) {
+            ArrayList<String> results = Utils.execSystemCommand(inputList.toArray(new String[inputList.size()]), cmd);
+            assertEquals(10, results.size());
+            // System.out.println("First element:" + results.get(0));
+            // System.out.println("Last element:" + results.get(results.size() - 1));
+        }
+    }
+
+    @Test
+    public void canGetSamReaderFromBam() throws MalformedURLException {
+        SamReader sr = Utils.getSamReader("test_data/ds051.actb.bam", null);
+        SAMRecordIterator iter = sr.query("chr7", 1, 5566791, false);
+        assertTrue(iter.hasNext());
+    }
+    
+    @Test
+    public void canGetSamReaderFromCram() throws MalformedURLException {
+        SamReader sr = Utils.getSamReader("test_data/ds051.actb.cram", "test_data/chr7.fa");
+        SAMRecordIterator iter = sr.query("chr7", 1, 5566791, false);
+        assertTrue(iter.hasNext());
+    }
+    
+    @Test
+    public void canGuessTrackType() throws Exception {
         
         // MEMO: 
         // * Check URL
@@ -78,17 +125,20 @@ public class UtilsTest {
             fmt.add(x);
         }
         
-        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/malformed.vcf.gz"));
-        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/invalid.vcf"));
-        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf"));
-        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf.gz"));
+        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/malformed.vcf.gz", null));
+        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/invalid.vcf", null));
+        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf", null));
+        assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf.gz", null));
                 
-        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.actb.bam"));
-        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.noindex.sam"));
+        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.actb.bam", null));
+        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.noindex.sam", null));
         fmt.remove(TrackFormat.BAM);
         
-        assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3"));
-        assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/ovl.gff"));
+        assertEquals(TrackFormat.BAM, Utils.guessTrackType("test_data/ds051.actb.cram", "test_data/chr7.fa"));
+        fmt.remove(TrackFormat.BAM);
+        
+        assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3", null));
+        assertEquals(TrackFormat.GFF, Utils.guessTrackType("test_data/ovl.gff", null));
         fmt.remove(TrackFormat.GFF);
         
         // assertEquals(TrackFormat.GTF, Utils.guessTrackType("test_data/hg19_genes_head.gtf"));
@@ -275,14 +325,30 @@ public class UtilsTest {
     }
     
     @Test
+    public void canSortAndIndexCram() throws IOException{
+        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.cram", "sorted.bam", true, "test_data/chr7.fa");
+        assertTrue(new File("sorted.bai").length() > 1000);
+        assertTrue(new File("sorted.bam").length() > 1000);
+        
+        boolean pass = false;
+        try {
+            Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.cram", "sorted.cram", true, "test_data/chr7.fa");
+        } catch(IOException e) {
+            assertTrue(e.getMessage().contains("CRAM output"));
+            pass = true;
+        }
+        assertTrue(pass);
+    }
+    
+    @Test
     public void canSortAndIndexSamOrBam() throws IOException{
     
-        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.bam", "sorted.bam", true);
+        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.bam", "sorted.bam", true, null);
         assertTrue(new File("sorted.bai").length() > 1000);
         assertTrue(new File("sorted.bam").length() > 1000);
 
         // With SAM input
-        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.sam", "sorted1.bam", true);
+        Utils.sortAndIndexSamOrBam("test_data/ds051.noindex.sam", "sorted1.bam", true, null);
         assertTrue(new File("sorted1.bai").length() > 1000);
         assertTrue(new File("sorted1.bam").length() > 1000);
         
@@ -290,7 +356,7 @@ public class UtilsTest {
         File sorted2= new File("sorted2.bam"); 
         
         Utils.sortAndIndexSamOrBam("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.noindex.bam", 
-                sorted2.getAbsolutePath(), true);
+                sorted2.getAbsolutePath(), true, null);
         assertTrue(new File("sorted2.bai").length() > 1000);
         assertTrue(new File("sorted2.bam").length() > 1000);
 
@@ -611,7 +677,7 @@ public class UtilsTest {
         // and the mess below was required to match single quote. 
         // See https://www.gnu.org/software/gawk/manual/html_node/Quoting.html 
         // and see http://stackoverflow.com/questions/9899001/how-to-escape-single-quote-in-awk-inside-printf
-        assertTrue(Utils.passAwkFilter(new String[]{"chr'1"}, "'$1 ~ \"chr\"\\x027\"1\";'")[0]);
+        assertTrue(Utils.passAwkFilter(new String[]{"chr'1"}, "'''$1 ~ \"chr\\x27\"'''")[0]);
     }
     
     @Test
@@ -630,15 +696,19 @@ public class UtilsTest {
     }
     
     @Test
-    public void canDetectBrokenAwkScript() {
-        // Broken awk script:
-        boolean pass= false;
-        try{
-            assertTrue(! Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'print {'")[0]);
-        } catch(IOException e){
-            pass= true;
+    public void canDetectBrokenAwkScript() throws IOException, InterruptedException {
+        
+        for(int i = 0; i < 20; i++) {
+            // Broken awk script:
+            boolean pass= false;
+            try{
+                assertTrue(! Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'print {'")[0]);
+            } catch(IOException e){
+                pass= true;
+            }
+            assertTrue(pass);
+            Thread.sleep(3000);
         }
-        assertTrue(pass);
     }
     
     @Test
@@ -683,8 +753,9 @@ public class UtilsTest {
         x= new String[] {".|.|.|.|.|.|.|.".replaceAll("\\|", "\t")};
         assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Alias\") == \"\"'")[0]);
         
+        // The value of the gff tag includes double-quotes. So it is "X" not X
         x= new String[] {".|.|.|.|.|.|.|.|Tag=\"X\"".replaceAll("\\|", "\t")}; // Double quotes are not stripped
-        assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == \"\"X\"\"'")[0]);
+        assertTrue(Utils.passAwkFilter(x, "-F '\\t' 'getGffTag(\"Tag\") == \"\\\"X\\\"\"'")[0]);
         
     }
     
@@ -781,6 +852,98 @@ public class UtilsTest {
         long t1= System.currentTimeMillis();
         assertTrue((t1-t0) < 10000); // It can filter reasonably fast (?) 
     }
+
+    /*
+    @Test
+    public void canFilterSamAlnEnd() throws IOException{
+        String[] rec;
+        
+        // Missing CIGAR string
+        rec = new String[] {"read 0 chr7 1 255 *".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == -1'")[0]);
+        
+        rec= new String[] {"read 0 chr7 1 255 5M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 5'")[0]);
+        
+        rec= new String[] {"read 0 chr7 10 255 5M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 14'")[0]);
+        
+        rec= new String[] {"read 0 chr7 1 255 50M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 50'")[0]);
+        
+        rec= new String[] {"read 0 chr7 1 255 9H50M10I5X3S".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 55'")[0]);
+        
+        rec= new String[] {"read 0 chr7 1 255 1S2H3M4I5D6N7P8=9X99S33H".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnEnd() == 31'")[0]);
+    } */
+
+    @Test
+    public void canAwkFilterSamAln() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+        
+        GenomicCoords gc= new GenomicCoords("chr7:1-100", 100, null, null);
+        TrackReads tr= new TrackReads("test_data/pairs.sam", gc);
+        tr.setNoFormat(true);
+        tr.setAwk("'getAlnEnd() == 5'");
+        assertEquals("NANAN\nTTTTT", tr.printToScreen().replaceAll(" ", ""));
+        
+        tr.setAwk("'getAlnEnd() == 24'");
+        assertEquals("ntntn", tr.printToScreen().replaceAll(" ", ""));
+
+        tr.setAwk("'getAlnLen() == 3'");
+        assertEquals("NNN", tr.printToScreen().replaceAll(" ", ""));
+        
+        /*
+        String[] rec;
+        
+        String cigar = "read 0 chr7 1 255 ";
+        for(int i=0; i < 1000; i++) {
+            cigar = cigar.concat("1M");            
+        }
+        
+        rec= new String[] {cigar.replaceAll(" ", "\t")};
+        long t0;
+        long t1;
+        
+        t0 = System.currentTimeMillis();
+        for(int i = 0; i < 100; i++) {
+            Utils.passAwkFilter(rec, "'getAlnEnd() > 0'");
+        }
+        t1 = System.currentTimeMillis();
+        System.out.println("getAlnLen: " + (t1 - t0));
+
+        
+        t0 = System.currentTimeMillis();
+        for(int i = 0; i < 100; i++) {
+            Utils.passAwkFilter(rec, "'$1 != $2'");
+        }
+        t1 = System.currentTimeMillis();
+        System.out.println("SIMPLE: " + (t1 - t0));
+        */
+    }
+    
+    /*
+    @Test
+    public void canFilterSamAlnLen() throws IOException{
+        String[] rec;
+        
+        // Missing CIGAR string
+        rec = new String[] {"read 0 chr7 1 255 *".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == -1'")[0]);
+        
+        rec = new String[] {"read 0 chr7 1 255 1M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == 1'")[0]);
+        
+        rec = new String[] {"read 0 chr7 1 255 10M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == 10'")[0]);
+        
+        rec = new String[] {"read 0 chr7 5 255 10M".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == 10'")[0]);
+        
+        rec = new String[] {"read 0 chr7 5 255 10M10S".replaceAll(" ", "\t")};
+        assertTrue(Utils.passAwkFilter(rec, "'getAlnLen() == 10'")[0]);
+    }
+    */
     
     @Test
     public void canFilterSamBitflagWithAwk() throws IOException{
@@ -1225,11 +1388,26 @@ public class UtilsTest {
     public void canGetFileTypeFromName(){
         
         assertEquals(TrackFormat.VCF,
-        Utils.getFileTypeFromName("test/gz.vcf.bgz"));
+                Utils.getFileTypeFromName("test/gz.vcf.bgz"));
         
-        assertEquals(TrackFormat.BIGWIG, Utils.getFileTypeFromName("http://foo/bar/wgEncode.bigWig"));
+        assertEquals(TrackFormat.BIGWIG, 
+                Utils.getFileTypeFromName("http://foo/bar/wgEncode.bigWig"));
+        
+        assertEquals(TrackFormat.BAM,
+                Utils.getFileTypeFromName("test/foo.bam"));
+        
+        assertEquals(TrackFormat.BAM,
+                Utils.getFileTypeFromName("test/foo.SAM.GZ"));
+   
+        assertEquals(TrackFormat.BAM,
+                Utils.getFileTypeFromName("test/foo.CRAM"));
     } 
 
+    @Test
+    public void canInitRegionFromCram() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
+        assertEquals("chr7:5566778", Utils.initRegionFromFile("test_data/ds051.actb.cram", "test_data/chr7.fa"));
+    }
+    
     @Test
     public void canInitRegion() throws IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidCommandLineException, InvalidRecordException, SQLException{
         
@@ -1446,17 +1624,6 @@ public class UtilsTest {
 //        assertTrue(new File(inputFileList.get(0)).exists());
 //        assertTrue(inputFileList.get(0).endsWith(".gtf"));
 //    }
-    
-    @Test
-    public void canPrintSequenceDict(){
-        assertTrue(Utils.printSamSeqDict(samSeqDict, 30).startsWith("chrM  16571"));
-        assertTrue(Utils.printSamSeqDict(samSeqDict, 30).endsWith("chrY  59373566  |||||||"));
-        SAMSequenceDictionary emptyDict= new SAMSequenceDictionary();
-        
-        // Empty dict -> Empty string
-        assertEquals("", Utils.printSamSeqDict(emptyDict, 30));
-        assertEquals("", Utils.printSamSeqDict(null, 30));
-    }
     
 //    @Test
 //    public void canSplitCommandLineInTokens(){

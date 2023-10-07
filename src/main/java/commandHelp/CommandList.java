@@ -353,10 +353,27 @@ public class CommandList {
                 + "* :code:`track` Track to search for next feature. Default to the first annotation track found.\n"
                 + "\n"
                 + "`next` starts searching immediately after the current window and loops thourgh each chromosome until a feature is found.");
- 
-
         cmdList.add(cmd);
 
+        cmd= new CommandHelp();
+        cmd.setName("nextChrom"); cmd.setArgs("[-m] [-M] [regex]"); cmd.inSection= Section.NAVIGATION; 
+        cmd.setBriefDescription("Go to the start of the next chromosome or contig.");
+        cmd.setAdditionalDescription(""
+                + "\n\n"
+                + "* :code:`-min`: Go to next chrom having this minimum size.\n"
+                + "\n"
+                + "* :code:`-max`: Go to next chrom having this maximum size.\n"
+                + "\n"
+                + "* :code:`-s`: Sort order to decide what next is:\n"
+                + "~~~~:code:`s`: size ascending: go to next chrom larger than current (default)\n"
+                + "~~~~:code:`S`: size descending: go to next chrom smaller then current\n"
+                + "~~~~:code:`u`: unsorted, i.e. next in dictionary\n"
+                + "\n"
+                + "* :code:`regex`: Go to next chrom matching regex [.*].\n"
+                + "\n"
+                + "Parameters using contig size are silently ignored.");
+        cmdList.add(cmd);
+        
         cmd= new CommandHelp();
         cmd.setName("find"); cmd.setArgs("[-all] [-c] [-F] regex [track]"); cmd.inSection= Section.FIND; 
         cmd.setBriefDescription("Find the first record in `track` containing `regex`."); 
@@ -529,6 +546,14 @@ public class CommandList {
                 + "(default to 1, first sample). If the tag contains multiple values, optionally return the value "
                 + "at index *value_idx*. If necessary, prepend 'FMT/' to tag to disambiguate it from INFO tags "
                 + "or if the header does not contain this tag.  If the tag is of type 'Flag', return 1 if present, 0 otherwise.\n"
+                + "\n"
+                + "* :code:`getAlnEnd()` on **SAM**\n"
+                + "\n"
+                + "Returns the position of the alignment end. For example, select reads ending after position 10000: :code:`getAlnEnd() > 10000`\n"
+                + "\n"
+                + "* :code:`getAlnLen()` on **SAM**\n"
+                + "\n"
+                + "Returns the alignment length. For example, select reads with: :code:`getAlnLen() > 1000`\n"
                 + "\n"
                 + "* Column headers\n"
                 + "\n"
@@ -968,6 +993,8 @@ public class CommandList {
                 + "\n"
                 + "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
                 + "\n"
+                + "* :code:`-F` Interpret pattern as fixed strings, not regular expressions\n"
+                + "\n"
                 + "Use \'\' (empty string in single quotes) to replace pattern with nothing. "
                 + "Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::\n"
                 + "\n"
@@ -979,7 +1006,38 @@ public class CommandList {
                 + "");
         cmdList.add(cmd);
 
-        
+        cmd= new CommandHelp();
+        cmd.setName("addHeader"); cmd.setArgs("[-c] [-a] [-b] [-off] [-v] <header> [track_re=.*]..."); cmd.inSection= Section.DISPLAY; 
+        cmd.setBriefDescription("Add header to track(s).");
+        cmd.setAdditionalDescription("Example use case: You have several tracks sorted in a meanignful way (say WT and CTRL tracks). "
+                + "Add a header to the first track of each group for ease of reading. "
+                + "Useful also to add one or more blank lines for more separation between tracks.\n"
+                + "\n"
+                + "* :code:`-c` Color for the header - see :code: `colorTrack -h` for options\n"
+                + "\n"
+                + "* :code:`-a` Header alignment. Either a number between 0 (left-align) and 1 (right-align) or a keyword left, center, right. Default is 0.5 (center-align)\n"
+                + "\n"
+                + "* :code:`-b` Do not make header in boldface\n"
+                + "\n"
+                + "* :code:`-off` Remove header\n"
+                + "\n"
+                + "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex\n"
+                + "\n"
+                + "* :code:`<header>` Header text. To change the text format and leave the text as is, use :code:`-`. "
+                + "Use :code:`{-}` as placeholder of current header; e.g. add stars around existing header: :code:`** {-} **` \n"
+                + "\n"
+                + "Use :code: `-` for <header> if you want to change the format but leave the text as is.\n"
+                + "Examples::\n"
+                + "\n"
+                + "    addHeader WT ~~~> Header 'WT' to all tracks\n"
+                + "    addHeader '' ~~~> Add a blank line before each track\n"
+                + "    addHeader -c red 'WILD TYPE' #1 ~~~> Header in red before track #1\n"
+                + "    addHeader 'WILD\\nTYPE' ~~~> Span multiple lines\n"
+                + "    addHeader -c cyan -a left ~~~> Only change colour and alignment\n"
+                + "    addHeader -c cyan -a left - #1 ~~~> Only change colour and alignment in #1 (note '-' before #1)\n"
+                + "    addHeader '** {-} **' ~~~~> Add decorative stars around existing header\n"
+                + "");
+        cmdList.add(cmd);
         
         cmd= new CommandHelp();
         cmd.setName("dataCol"); cmd.setArgs("[-v] [index = 4] [track_regex = .*]..."); cmd.inSection= Section.DISPLAY; 
@@ -1040,7 +1098,7 @@ public class CommandList {
                 + "    print~~~~~~~~~~~~~~~~~~~~~~~~-> Print all tracks, same as `print .*`\n"
                 + "    print -off~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
                 + "    print genes.bed >> genes.txt~-> Append features in track(s) 'genes.bed' to file\n"
-                + "    print -sys 'cut 1-5 | sort'~~-> Select columns with `cut` and then sort\n"
+                + "    print -sys 'cut -f 1-5 | sort'~~-> Select columns with `cut` and then sort\n"
                 + "    print -sys null~~~~~~~~~~~~~~-> Turn off the execution of sysy commands\n"
                 );
         cmdList.add(cmd);
@@ -1098,7 +1156,9 @@ public class CommandList {
         cmd.setBriefDescription("Show or set features to display. ");
         cmd.setAdditionalDescription("The argument :code:`arg` takes the following choices:\n"
                 + "\n"
-                + "* :code:`genome`: Show chromosomes and their sizes as barplot provided a genome file is available.\n"
+                + "* :code:`genome`: Show chromosomes sorted by size\n"
+                + "\n"
+                + "~~~~* :code:`-n int`: Show up to *int* number of chromosomes or -1 for no limit (default 50)\n"
                 + "\n"
                 + "* :code:`trackInfo`: Show information on tracks.\n"
                 + "\n"
@@ -1402,6 +1462,7 @@ public class CommandList {
         paramList.add("p");
         paramList.add("n");
         paramList.add("next");
+        paramList.add("nextChrom");
         paramList.add("find");
         paramList.add("seqRegex");
         paramList.add("bookmark");
@@ -1419,6 +1480,7 @@ public class CommandList {
         paramList.add("hideTitle");
         paramList.add("genotype");
         paramList.add("editNames");
+        paramList.add("addHeader");
         paramList.add("ylim");
         paramList.add("dataCol");
         paramList.add(Command.print.getCmdDescr());

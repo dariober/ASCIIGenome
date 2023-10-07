@@ -3,32 +3,32 @@ package coloring;
 import java.awt.Color;
 
 public class ColoredChar {
-	
-	private char xchar;
-	private Color foregroundColor= Color.BLACK; // The default color
-	private Color backgroundColor= Color.WHITE; // The default color
-	private int x= 0; // X and Y coordinates of this character. In screen coordinates.
-	private int y= 0;
-	
-	public ColoredChar(char xchar, Color foregroundColor, Color backgroundColor, int x, int y){
-		this.xchar= xchar;
-		this.foregroundColor= foregroundColor;
-		this.backgroundColor= backgroundColor;
-		this.x= x;
-		this.y= y;
-		
-	}
-	
-	protected Color getForegroundColor() {
-		return this.foregroundColor;
-		//return ansiColourToGraphicsColor(this.ansiFgColorCode);
-	}
-	protected Color getBackgroundColor() {
-		return this.backgroundColor;
-	}
-	/** Input to ColorChar is the ansi color code. Here you translate this code 
-	 * to the corresponding Color obj. 
-	 * */
+    
+    private char xchar;
+    private Color foregroundColor= Color.BLACK; // The default color
+    private Color backgroundColor= Color.WHITE; // The default color
+    private int x= 0; // X and Y coordinates of this character. In screen coordinates.
+    private int y= 0;
+    
+    public ColoredChar(char xchar, Color foregroundColor, Color backgroundColor, int x, int y){
+        this.xchar= xchar;
+        this.foregroundColor= foregroundColor;
+        this.backgroundColor= backgroundColor;
+        this.x= x;
+        this.y= y;
+        
+    }
+    
+    protected Color getForegroundColor() {
+        return this.foregroundColor;
+        //return ansiColourToGraphicsColor(this.ansiFgColorCode);
+    }
+    protected Color getBackgroundColor() {
+        return this.backgroundColor;
+    }
+    /** Input to ColorChar is the ansi color code. Here you translate this code 
+     * to the corresponding Color obj. 
+     * */
 //	protected static Color ansiForegroundColourToGraphicsColor(int ansiColor){
 //		
 //		/* Useful resources:
@@ -76,19 +76,19 @@ public class ColoredChar {
 //
 //		return null;
 //	}
-		
-	protected char getChar() {
-		return this.xchar;
-	}
-	protected int getX() {
-		return this.x;
-	}
-	protected int getY() {
-		return this.y;
-	}
+        
+    protected char getChar() {
+        return this.xchar;
+    }
+    protected int getX() {
+        return this.x;
+    }
+    protected int getY() {
+        return this.y;
+    }
 
-	@Override
-	public String toString(){
-		return "char: " + this.xchar + " x: " + this.x + " y: " + this.y + " color: " + this.foregroundColor;
-	}
+    @Override
+    public String toString(){
+        return "char: " + this.xchar + " x: " + this.x + " y: " + this.y + " color: " + this.foregroundColor;
+    }
 }

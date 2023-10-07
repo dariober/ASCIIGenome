@@ -7,16 +7,16 @@ sourceCompatibility= jversion
 targetCompatibility= jversion
 
 if(JavaVersion.current() < jversion) {
-	throw new GradleException("Java >= " + jversion + " is required but you are running " + JavaVersion.current())
+    throw new GradleException("Java >= " + jversion + " is required but you are running " + JavaVersion.current())
 }
 
 /** Return the MD5 sum of the give File object */
 ext.generateMD5 = { file ->
-	def digest = java.security.MessageDigest.getInstance("MD5")
-	file.eachByte( 4096 ) { buffer, length ->
-		digest.update( buffer, 0, length )
-	}
-	new BigInteger(1, digest.digest()).toString(16).padLeft(32, '0')
+    def digest = java.security.MessageDigest.getInstance("MD5")
+    file.eachByte( 4096 ) { buffer, length ->
+        digest.update( buffer, 0, length )
+    }
+    new BigInteger(1, digest.digest()).toString(16).padLeft(32, '0')
 }
 
 /** Gunzip the given file. Same as `gunzip -c dir/myfile.txt.gz > dir/myfile.txt`. 
@@ -24,8 +24,8 @@ String filename must have extension .gz */
 ext.gunzip = { filename ->
     File outfile = new File(filename.replaceFirst('\\.gz$', ''))
     outfile.withOutputStream { os ->
-  	  os << resources.gzip(filename).read()
-  	}
+        os << resources.gzip(filename).read()
+      }
 }
 
 /* Prepare test data */
@@ -33,7 +33,7 @@ File targetFile= new File('test_data/chr7.fa')
 String targetMD5= "30c3693ead968844a769a90a801a900f"
 
 if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
-	File fgz= new File("test_data", targetFile.name + ".gz")
+    File fgz= new File("test_data", targetFile.name + ".gz")
     ext.gunzip(fgz.absolutePath)
     if(ext.generateMD5(targetFile) != targetMD5){
         throw new GradleException("Corrupted file " + targetFile)
@@ -83,26 +83,28 @@ jar {
 
 
 dependencies {
-	
-	compile group: 'net.sourceforge.argparse4j', name: 'argparse4j', version: '0.8.1'
-	compile group: 'jline', name: 'jline', version: '2.14.5'
+
+    compile group: 'net.sourceforge.argparse4j', name: 'argparse4j', version: '0.8.1'
+    compile group: 'jline', name: 'jline', version: '2.14.5'
     compile 'com.github.dariober:Jawk:e5c8f26'
     compile group: 'com.github.igvteam', name: 'igv', version: 'v2.6.3'
     compile group: 'log4j', name: 'log4j', version: '1.2.17'
     compile group: 'com.github.dariober', name: 'htsjdk', version: 'b8f559b9f'
-	
+
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
-	compile group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
-	compile group: 'commons-validator', name: 'commons-validator', version: '1.6'
-	compile group: 'commons-io', name: 'commons-io', version: '2.6'
-	
-	compile group: 'com.esotericsoftware.yamlbeans', name: 'yamlbeans', version: '1.13'
-	compile group: 'com.itextpdf', name: 'itextpdf', version: '5.5.13'
-	compile group: 'com.google.guava', name: 'guava', version: '24.0-android'
-	compile group: 'com.google.code.gson', name: 'gson', version: '2.8.2'
-	compile group: 'org.biojava', name: 'biojava-genome', version: '5.4.0'
-	compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.21.0.1'
-	
+    compile group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
+    compile group: 'commons-validator', name: 'commons-validator', version: '1.6'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    
+    compile group: 'com.esotericsoftware.yamlbeans', name: 'yamlbeans', version: '1.13'
+    compile group: 'com.itextpdf', name: 'itextpdf', version: '5.5.13'
+    compile group: 'com.google.guava', name: 'guava', version: '24.0-android'
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.2'
+    compile group: 'org.biojava', name: 'biojava-genome', version: '5.4.0'
+    compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.21.0.1'
+
+	// implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
+
     testCompile 'junit:junit:4.12'
 }
 

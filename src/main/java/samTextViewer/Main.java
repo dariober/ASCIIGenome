@@ -95,6 +95,14 @@ public class Main {
         List<String> inputFileList= new ArrayList<String>();
         Utils.addSourceName(inputFileList, initFileList, debug);
         
+        /* If we load a cram, check we also have a genome */
+        for(String x : inputFileList) {
+            if(Utils.isCRAM(x) && fasta == null) {
+                System.err.println("\nUnable to add file '" + x + "': CRAM input requires a genome file.\nSee option --fasta/-fa");
+                System.exit(1);
+            }
+        }
+        
         /* Initialize trackSet */
         /* ------------------- */
         // This part only prepares a dummy GenomicCoords object to initialize the start position:
@@ -251,7 +259,7 @@ public class Main {
                 continue;
             }
             try {
-                String region= Utils.initRegionFromFile(x);
+                String region= Utils.initRegionFromFile(x, fasta);
                 System.err.println("Done from: " + x);
                 return region;
             } catch(Exception e){
@@ -279,7 +287,7 @@ public class Main {
         // Failing that, look for any file that gives at least chrom
         for(String x : skipped){
             try {
-                String region= Utils.initRegionFromFile(x);
+                String region= Utils.initRegionFromFile(x, fasta);
                 System.err.println("Done from: " + x);
                 return region;
             } catch(Exception e){

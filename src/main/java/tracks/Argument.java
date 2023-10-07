@@ -6,34 +6,34 @@ package tracks;
  * arg: colour to use
  * invert: invert matching? */
 class Argument {
-	private String key;
-	private String arg;
-	private boolean invert= false;
-	
-	Argument(String key, String arg, boolean invert){
-		this.setKey(key);
-		this.setArg(arg);
-		this.setInvert(invert);
-	}
-	
-	protected String getArg() {
-		return arg;
-	}
-	protected void setArg(String arg) {
-		this.arg = arg;
-	}
-	
-	protected boolean isInvert() {
-		return invert;
-	}
-	protected void setInvert(boolean invert) {
-		this.invert = invert;
-	}
+    private String key;
+    private String arg;
+    private boolean invert= false;
+    
+    Argument(String key, String arg, boolean invert){
+        this.setKey(key);
+        this.setArg(arg);
+        this.setInvert(invert);
+    }
+    
+    protected String getArg() {
+        return arg;
+    }
+    protected void setArg(String arg) {
+        this.arg = arg;
+    }
+    
+    protected boolean isInvert() {
+        return invert;
+    }
+    protected void setInvert(boolean invert) {
+        this.invert = invert;
+    }
 
-	protected String getKey() {
-		return key;
-	}
-	protected void setKey(String key) {
-		this.key = key;
-	}
+    protected String getKey() {
+        return key;
+    }
+    protected void setKey(String key) {
+        this.key = key;
+    }
 }

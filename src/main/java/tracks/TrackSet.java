@@ -18,6 +18,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import org.apache.commons.lang3.StringEscapeUtils;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -33,6 +35,7 @@ import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import samTextViewer.ExitCode;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -245,6 +248,11 @@ public class TrackSet {
     
     private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag) throws IOException, BamIndexNotFoundException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{
 
+        if(gc.getFastaFile() == null && Utils.isCRAM(sourceName)) {
+            System.err.println("A fasta file is required to load CRAM files");
+            throw new InvalidGenomicCoordsException();
+        }
+        
         /* BAM Coverage track */
         int idForTrack= this.getNextTrackId();
         // String coverageTrackId= new File(sourceName).getName() + "#" + idForTrack;
@@ -1133,6 +1141,14 @@ public class TrackSet {
                 System.err.println("\nFunction getSamTag() can be applied to BAM tracks only. Got:\n" + tr.getTrackTag());
                 throw new InvalidCommandLineException();
             }
+            if(awk.contains("getAlnEnd(") && ! tr.getTrackFormat().equals(TrackFormat.BAM)){
+                System.err.println("\nFunction getAlnEnd() can be applied to BAM tracks only. Got:\n" + tr.getTrackTag());
+                throw new InvalidCommandLineException();
+            }
+            if(awk.contains("getAlnLen(") && ! tr.getTrackFormat().equals(TrackFormat.BAM)){
+                System.err.println("\nFunction getAlnLen() can be applied to BAM tracks only. Got:\n" + tr.getTrackTag());
+                throw new InvalidCommandLineException();
+            }
             if((awk.contains("getInfoTag(") || awk.contains("getFmtTag(")) && ! tr.getTrackFormat().equals(TrackFormat.VCF)){
                 System.err.println("\nFunction getInfoTag(), getFmtTag() can be applied to VCF tracks only. Got:\n" + tr.getTrackTag());
                 throw new InvalidCommandLineException();
@@ -1146,7 +1162,7 @@ public class TrackSet {
                 throw new InvalidCommandLineException();
             }
             String script= this.replaceAwkHeaders(awk, tr.getTrackFormat());
-            script= this.replaceAwkFuncs(script, tr);
+            script= this.replaceAwkGetFuncs(script, tr);
             tr.setAwk(script);
         }
     }
@@ -1154,7 +1170,7 @@ public class TrackSet {
     /**Replace in awk script the overloaded function name(s) with the actual names and args 
      * @throws InvalidCommandLineException 
      * */
-    private String replaceAwkFuncs(String awkScript, Track track) throws InvalidCommandLineException{
+    private String replaceAwkGetFuncs(String awkScript, Track track) throws InvalidCommandLineException{
 
         final String FUNC= "get"; // Function name to be replaced 
         
@@ -1922,6 +1938,7 @@ public class TrackSet {
         args.remove(0); // Remove name of command
 
         boolean invertSelection= Utils.argListContainsFlag(args, "-v");
+        boolean isFixed= Utils.argListContainsFlag(args, "-F");
 
         boolean test= false;
         if(args.contains("-t")){
@@ -1935,6 +1952,9 @@ public class TrackSet {
         }
         
         String pattern= args.get(0); args.remove(0);
+        if(isFixed) {
+            pattern = Pattern.quote(pattern);
+        }
         String replacement= args.get(0); args.remove(0);
         if(replacement.equals("\"\"")){
             replacement= "";
@@ -1974,7 +1994,11 @@ public class TrackSet {
         }
         for(Track tr : tracksToReset){
             String newTag= tr.getTrackTag().replaceAll(pattern, replacement);
-            messages += "Renaming " + tr.getTrackTag() + " to " + newTag + "\n";
+            if(tr.getTrackTag().equals(newTag)) {
+                messages += "No change made to '" + tr.getTrackTag() + "'\n";
+            } else {
+                messages += "Renaming '" + tr.getTrackTag() + "' to '" + newTag + "'\n";
+            }
             if( ! test ){
                 tr.setTrackTag(newTag);
             }
@@ -2336,5 +2360,123 @@ public class TrackSet {
                 this.trackList.remove(tr);
             }
         }
+    }
+
+    public ArrayList<String> getKnownContigs() {
+        LinkedHashSet<String> chromSet= new LinkedHashSet<String>();
+        for(Track tr : this.getTrackList()){
+            chromSet.addAll(tr.getChromosomeNames());
+        }
+        ArrayList<String> chroms = new ArrayList<String>();
+        chroms.addAll(chromSet);
+        return chroms;
+    }
+
+    public ExitCode addHeader(List<String> cmdTokens, int terminalWidth) throws InvalidCommandLineException {
+        List<String> args= new ArrayList<String>();
+        for(String x : cmdTokens){
+            args.add(x);
+        }
+        
+        args.remove(0); // Remove command name
+        
+        boolean invertSelection= Utils.argListContainsFlag(args, "-v");
+
+        Float headerAlignmentPct = null;
+        String aln = Utils.getArgForParam(args, "-a", "");
+        
+        try {
+            headerAlignmentPct = Float.valueOf(aln);
+            if(headerAlignmentPct < 0 || headerAlignmentPct > 1) {
+                System.err.println("Argument to `-a` must be between 0 (left-align) and 1 (right-align) or a keyword (left, center, right). Got: " + aln);
+                return ExitCode.CLEAN_NO_FLUSH;
+            }
+        } catch(NumberFormatException e) {       
+            if("center".startsWith(aln.toLowerCase())) {
+                headerAlignmentPct = (float) 0.5;
+            } else if("left".startsWith(aln.toLowerCase())) {
+                headerAlignmentPct = (float) 0;
+            } else if("right".startsWith(aln.toLowerCase())) {
+                headerAlignmentPct = (float) 1;
+            } else {
+                System.err.println("Argument to `-a` must be between 0 (left-align) and 1 (right-align) or a keyword (left, center, right). Got: " + aln);
+                return ExitCode.CLEAN_NO_FLUSH;
+            }
+        }
+        
+        String color = null;
+        try {
+            color = Utils.getArgForParam(args, "-c", color);
+        } catch (InvalidCommandLineException e) {
+            System.err.println("Error processing -c argument. Expected a color name");
+            return ExitCode.CLEAN_NO_FLUSH;
+        }
+                
+        if(color != null) {
+            try {
+                Xterm256.colorNameToXterm256(color);
+            } catch (InvalidColourException e) {
+                System.err.println("Invalid color: " + color + "\nFor available colors see `colorTrack -h`");
+                return ExitCode.CLEAN_NO_FLUSH;
+            }        
+        }
+        
+        List<String> trackNameRegex= new ArrayList<String>();
+ 
+        //if(args.size() == 0 && color == null && ){
+        //    System.err.println("Nothing to do: Specify a header or use `-off` to remove existing header(s)");
+        //    return ExitCode.CLEAN_NO_FLUSH;
+        //} 
+        
+        boolean isBold = !Utils.argListContainsFlag(args, "-b");
+        boolean turnOff = Utils.argListContainsFlag(args, "-off");
+        
+        // We have parsed all the command args. Now we are left with positional args only
+        String headerText = "-";
+        if(turnOff) {
+            if(args.size() == 0) {
+                // No track given, apply off to all of them
+                trackNameRegex.add(".*");
+            } else {
+                // All positional args are track regexes
+                trackNameRegex.addAll(args);
+            }
+        } else {
+            if(args.size() > 0) {
+                // Size 0 happens if the only argument is `-c somecolor`. 
+                // Which means reset color to all headers 
+                headerText = StringEscapeUtils.unescapeJava(args.remove(0));
+            }
+            if(args.size() == 0) {
+                // No track given, apply off to all of them
+                trackNameRegex.add(".*");
+            } else {
+                trackNameRegex.addAll(args);
+            }
+        }
+        
+        List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+        
+        for(Track tr : tracksToReset){
+            if(turnOff) {
+                tr.getHeader().setHeaderText(null);
+            } else {
+                if(headerText.equals("-")) {
+                    // Do not change text if user's input is "-"
+                } else {
+                    tr.getHeader().setHeaderText(headerText);
+                }
+                
+                if(color != null) {
+                    tr.getHeader().setColor(color);
+                }
+                tr.getHeader().setBold(isBold);
+                tr.getHeader().setTerminalWidth(terminalWidth);
+                if(headerAlignmentPct != null) {
+                    tr.getHeader().setHeaderAlignmentPct(headerAlignmentPct);
+                }
+            }
+        }
+        return ExitCode.CLEAN;
     }
 }

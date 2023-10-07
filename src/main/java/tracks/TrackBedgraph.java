@@ -15,6 +15,7 @@ import coloring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMSequenceRecord;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 

@@ -9,8 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -31,7 +29,6 @@ import htsjdk.samtools.SAMSequenceDictionary;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import tracks.Track;
 import utils.Tokenizer;
 
 /** Class to process input from console
@@ -83,7 +80,6 @@ public class InteractiveInput {
         String messages= ""; // Messages that may be sent from the various methods.
         for(String cmdString : cmdInputChainList){
             
-            //List<String> cmdTokens= Utils.tokenize(cmdString, " ");
             List<String> cmdTokens= new Tokenizer(cmdString).tokenize();
             
             this.interactiveInputExitCode= ExitCode.CLEAN; // If something goes wrong this will change
@@ -202,6 +198,10 @@ public class InteractiveInput {
                 } else if(cmdTokens.get(0).equals("goto") || cmdTokens.get(0).startsWith(":")){
                     String reg= Joiner.on(" ").join(cmdTokens).replaceFirst("goto|:", "").trim();
                     proc.getGenomicCoordsHistory().add(new GenomicCoords(reg, terminalWidth, samSeqDict, fasta));
+
+                } else if(cmdTokens.get(0).equals("nextChrom")){
+                    cmdTokens.remove(0);
+                    this.interactiveInputExitCode= this.nextChrom(cmdTokens, proc);
                     
                 } else if (cmdTokens.get(0).equals("p")) {
                     proc.getGenomicCoordsHistory().previous(); 
@@ -283,7 +283,10 @@ public class InteractiveInput {
                     
                 } else if(cmdTokens.get(0).equals("hideTitle")){
                     proc.getTrackSet().setHideTitleForRegex(cmdTokens); 
-                    
+                
+                } else if(cmdTokens.get(0).equals("addHeader")){
+                    this.interactiveInputExitCode= proc.getTrackSet().addHeader(cmdTokens, terminalWidth);
+                
                 } else if(cmdTokens.get(0).equals(Command.BSseq.getCmdDescr())) {
                     if( proc.getGenomicCoordsHistory().current().getFastaFile() == null ){
                         String msg= Utils.padEndMultiLine("Cannot set BSseq mode without reference sequence", proc.getWindowSize());
@@ -337,6 +340,7 @@ public class InteractiveInput {
                                     x.printStackTrace();
                                     msg= Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
                                     System.err.println(msg);
+                                    this.interactiveInputExitCode= ExitCode.CLEAN_NO_FLUSH;
                                 }
                             }
 
@@ -515,6 +519,41 @@ public class InteractiveInput {
         return proc;
     }
 
+    private ExitCode nextChrom(List<String> cmdTokens, TrackProcessor proc) throws IOException, NumberFormatException, InvalidCommandLineException {
+        int minSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-min", "-1"));
+        int maxSize = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-max", "-1"));
+        String so = Utils.getArgForParam(cmdTokens, "-s", "s");
+        ContigOrder sortOrder;
+        if(so.equals("u")) {
+            sortOrder = ContigOrder.UNSORTED;
+        } else if(so.equals("s")) {
+            sortOrder = ContigOrder.SIZE_ASC;
+        } else if(so.equals("S")) {
+            sortOrder = ContigOrder.SIZE_DESC;
+        } else {
+            System.err.println("Invalid option for sort order: " + so);
+            return ExitCode.CLEAN_NO_FLUSH;
+        }
+        
+        String regex = ".*";
+        if(cmdTokens.size() == 1) {
+            regex = cmdTokens.get(0);
+        } else if(cmdTokens.size() > 1) {
+            System.err.println("At most only one positional arguments is allowed. Got: " + cmdTokens);
+            return ExitCode.CLEAN_NO_FLUSH;            
+        }
+        
+        try {
+            GenomicCoords gc= (GenomicCoords)proc.getGenomicCoordsHistory().current().clone();
+            gc.nextChrom(proc.getTrackSet().getKnownContigs(), minSize, maxSize, regex, sortOrder);
+            proc.getGenomicCoordsHistory().add(gc);
+            return ExitCode.CLEAN;
+        } catch(InvalidGenomicCoordsException e) {
+            System.err.println(e.getMessage());
+            return ExitCode.CLEAN_NO_FLUSH;
+        }
+    }
+
     private int countBrackets(List<String> cmdTokens) throws InvalidCommandLineException {
         
         String xtimes= cmdTokens.get(0).replaceAll("\\[|\\]", "");
@@ -636,7 +675,7 @@ public class InteractiveInput {
             }
         }
         return files;
-    }
+        }
 
     /** Parse the given list of options and move to new coordinates.
      * Visibility set to protected only for testing.
@@ -894,7 +933,7 @@ public class InteractiveInput {
         }
         
     }
-
+    
     /**Edit visualization setting in TrackProcessor as appropriate.
      * @return 
      * @throws InvalidCommandLineException 
@@ -911,8 +950,14 @@ public class InteractiveInput {
         // With .startsWith() we allow partial matching of input to argument. I.e. "ge" will be enough to 
         // recognize "genome".
         if("genome".startsWith(args.get(0))){
-            this.showGenome(proc);
-            return ExitCode.CLEAN_NO_FLUSH;
+            ExitCode exitCode;
+            try {
+                exitCode = this.showGenome(cmdTokens, proc);
+            } catch(InvalidGenomicCoordsException e) {
+                System.err.println(e.getMessage());
+                exitCode = ExitCode.ERROR;
+            }
+            return exitCode;
         
         } else if("trackInfo".startsWith(args.get(0))){
             String info = Utils.padEndMultiLine(proc.getTrackSet().showTrackInfo(), proc.getWindowSize());
@@ -933,22 +978,28 @@ public class InteractiveInput {
         }
     }
     
-    /**Print to screen the genome file*/
-    private void showGenome(TrackProcessor proc) throws InvalidGenomicCoordsException, IOException {
-        String genome= Utils.printSamSeqDict(proc.getGenomicCoordsHistory().current().getSamSeqDict(), 30);
+    /**Print to screen the genome file
+     * @throws InvalidCommandLineException */
+    private ExitCode showGenome(List<String> cmdTokens, TrackProcessor proc) throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+        
+        int maxLines;
+        try {
+            String n = Utils.getArgForParam(cmdTokens, "-n", "-1");
+            maxLines = Integer.valueOf(n);
+        } catch (NumberFormatException e) {
+            System.err.println("Argument to -n must be an integer");
+            return ExitCode.CLEAN_NO_FLUSH;
+        }
+        
+        String genome = proc.getGenomicCoordsHistory().
+                current().
+                printSequenceDictionary(proc.getTrackSet().getKnownContigs(), -1, -1, 
+                        ".*", ContigOrder.SIZE_DESC, 30, maxLines, proc.isNoFormat());
+        
         if(genome != null && ! genome.isEmpty()){
             System.err.println(Utils.padEndMultiLine(genome, proc.getWindowSize()));
-            return;
         }
-        Set<String> chroms= new TreeSet<String>();
-        for(Track tr : proc.getTrackSet().getTrackList()){
-            chroms.addAll(tr.getChromosomeNames());
-        }
-        System.err.println(Utils.padEndMultiLine("Known contigs:", proc.getWindowSize()));
-        for(String x : chroms){
-            System.err.println(Utils.padEndMultiLine(x, proc.getWindowSize()));
-        }
-        return;
+        return ExitCode.CLEAN_NO_FLUSH;
     }
 
     private String cmdHistoryToString(List<String> cmdInput) throws InvalidCommandLineException {

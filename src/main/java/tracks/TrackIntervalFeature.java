@@ -249,46 +249,6 @@ public class TrackIntervalFeature extends Track {
             iftList.removeIf(Objects::isNull);
         }
     } 
-    
-    /** Return true if string is visible, i.e. it
-     * passes the regex filters. Note that regex filters are applied to the raw string.
-     * @throws InvalidGenomicCoordsException 
-     * @throws IOException 
-     * */
-//    protected Boolean featureIsVisible(String x) throws InvalidGenomicCoordsException, IOException{
-//        
-//        boolean showIt= true;
-//        if(this.getShowRegex() != null && 
-//           ! this.getShowRegex().equals(Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue()))){
-//            showIt= this.getShowRegex().matcher(x).find();
-//        }
-//
-//        boolean hideIt= false;
-//        if(!this.getHideRegex().pattern().isEmpty()){
-//            hideIt= this.getHideRegex().matcher(x).find();    
-//        }
-//
-//        Boolean isVisible= false;
-//        if(showIt && !hideIt){
-//            isVisible= true;
-//        } else {
-//            return false; // If feature is not visible, no need to go on as there is no way to bring it back.
-//        }
-//        
-//        // Awk
-//        try {
-//            isVisible= Utils.passAwkFilter(new String[] {x}, this.getAwk())[0];
-//        } catch (Exception e) {
-//            System.err.print(Utils.padEndMultiLine("Invalid awk script.", this.getGc().getUserWindowSize()));
-//            try {
-//                this.setAwk("");
-//            } catch (ClassNotFoundException | InvalidRecordException | SQLException e1) {
-//                e1.printStackTrace();
-//            }
-//            throw new InvalidGenomicCoordsException();
-//        }
-//        return isVisible;
-//    }
 
     /**Return the coordinates of the next feature so that the start coincide with the start of the feature and
      * the end is the start + windowSize.  
@@ -1094,7 +1054,7 @@ public class TrackIntervalFeature extends Track {
     }
     
     @Override
-    public List<String> getChromosomeNames(){
+    public ArrayList<String> getChromosomeNames(){
         ArrayList<String> x = new ArrayList<String>(this.getReader().getChromosomes());
         Collections.sort(x);
         return x;

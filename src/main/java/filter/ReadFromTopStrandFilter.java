@@ -11,9 +11,9 @@ import htsjdk.samtools.filter.SamRecordFilter;
  */
 public class ReadFromTopStrandFilter implements SamRecordFilter {
     
-	private boolean include= false;
-	
-	/**
+    private boolean include= false;
+    
+    /**
      * @param record the SAMRecord to evaluate
      * @return true if the SAMRecord matches the filter, otherwise false
      */
@@ -30,18 +30,18 @@ public class ReadFromTopStrandFilter implements SamRecordFilter {
      */
     public boolean filterOut(final SAMRecord record) {
         
-    	boolean isTopStrand= (
-    			(!record.getReadNegativeStrandFlag() && !record.getReadPairedFlag()) ||  // +ve unpaired
-		        (!record.getReadNegativeStrandFlag() && record.getReadPairedFlag() && record.getFirstOfPairFlag()) ||  // +ve 1st in pair
-		        (record.getReadNegativeStrandFlag() && record.getReadPairedFlag() && record.getSecondOfPairFlag()));   // -ve 2nd in pair
+        boolean isTopStrand= (
+                (!record.getReadNegativeStrandFlag() && !record.getReadPairedFlag()) ||  // +ve unpaired
+                (!record.getReadNegativeStrandFlag() && record.getReadPairedFlag() && record.getFirstOfPairFlag()) ||  // +ve 1st in pair
+                (record.getReadNegativeStrandFlag() && record.getReadPairedFlag() && record.getSecondOfPairFlag()));   // -ve 2nd in pair
 
 //    	boolean isBottomStrand= (
 //   			(record.getReadNegativeStrandFlag() && !record.getReadPairedFlag()) || 
 //			    (record.getReadNegativeStrandFlag() && record.getFirstOfPairFlag()) || 
 //					!record.getReadNegativeStrandFlag() && record.getSecondOfPairFlag()
 //   			);
-    	
-    	if (include) {
+        
+        if (include) {
             if ( isTopStrand ) {     
                 return false;
             }

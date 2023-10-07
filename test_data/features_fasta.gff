@@ -1,0 +1,12 @@
+##FASTA
+# bla bla
+1	ASCIIGenome	bookmark	110	140	.	.	.	ID="."
+1	ASCIIGenome	bookmark	1	100	.	.	.	ID="."
+1	ASCIIGenome	bookmark	50	100	.	.	.	ID="."
+1	ASCIIGenome	bookmark	110	150	.	.	.	ID="."
+##FASTA
+>1
+ACTACTACTACATATCTACTA
+ACTACTACTACATATCTACTA
+ACTACTACTACATATCTACTA
+ACTACTACTACATATCTACTA

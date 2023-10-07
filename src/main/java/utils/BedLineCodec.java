@@ -34,33 +34,33 @@ import htsjdk.tribble.readers.LineIterator;
 import java.util.regex.Pattern;
 
 public class BedLineCodec
-	extends AsciiFeatureCodec<BedLine>
-	{
-	private Pattern tab=Pattern.compile("[\t]");
-	public BedLineCodec() {
-		super(BedLine.class);
-		}
-	
-	@Override
-	public BedLine decode(String line) {
-		
-		if (line.trim().isEmpty()) {
+    extends AsciiFeatureCodec<BedLine>
+    {
+    private Pattern tab=Pattern.compile("[\t]");
+    public BedLineCodec() {
+        super(BedLine.class);
+        }
+    
+    @Override
+    public BedLine decode(String line) {
+        
+        if (line.trim().isEmpty()) {
             return null;
-        	}
-		if(BedLine.isBedHeader(line)) return null;
-		
+            }
+        if(BedLine.isBedHeader(line)) return null;
+        
 
         String[] tokens = tab.split(line);
         if(tokens.length<2) return null;
        
         return new BedLine(tokens);
         }
-	
-	@Override
-	public Object readActualHeader(LineIterator reader) {
-		return null;
-		}
-	
+    
+    @Override
+    public Object readActualHeader(LineIterator reader) {
+        return null;
+        }
+    
     @Override
     public boolean canDecode(final String path) {
         return path.toLowerCase().endsWith(".bed");

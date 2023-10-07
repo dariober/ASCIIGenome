@@ -9,17 +9,17 @@ import exceptions.InvalidCommandLineException;
 
 public class MakeFastaIndex {
 
-	public MakeFastaIndex(String fastaFile) {
-	}
+    public MakeFastaIndex(String fastaFile) {
+    }
     
-	public List<fastaIndexRecord> makeIndex() throws InvalidCommandLineException, FileNotFoundException {
-		
-		List<fastaIndexRecord> faidx= new ArrayList<fastaIndexRecord>();
-		
-		return faidx;
-	}
+    public List<fastaIndexRecord> makeIndex() throws InvalidCommandLineException, FileNotFoundException {
+        
+        List<fastaIndexRecord> faidx= new ArrayList<fastaIndexRecord>();
+        
+        return faidx;
+    }
 
-	private class fastaIndexRecord {
-	}
-	
+    private class fastaIndexRecord {
+    }
+    
 }

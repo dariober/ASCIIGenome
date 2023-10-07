@@ -16,27 +16,27 @@ Columns are:
 5. Line length (including line terminators) 
 */
 class FaidxRecord {
-	private String seqName= null;
-	protected int seqLength= 0; 
-	protected long byteOffset= 0; // Byte position where the sequence starts.
-	protected int lineLength= 0; // Only nucleotides
-	protected int lineFullLength= 0; // Including line terminators.
-	
-	protected void makeSeqNameFromRawLine(String line) throws UnindexableFastaFileException{
-		if( ! line.startsWith(">") ){
-			System.err.println("Invalid name: Does not start with '>'");
-			throw new UnindexableFastaFileException();
-		}
-		String name= line.substring(1).trim().replaceAll("\\s.*", "");
-		this.seqName= name;
-	}
+    private String seqName= null;
+    protected int seqLength= 0; 
+    protected long byteOffset= 0; // Byte position where the sequence starts.
+    protected int lineLength= 0; // Only nucleotides
+    protected int lineFullLength= 0; // Including line terminators.
+    
+    protected void makeSeqNameFromRawLine(String line) throws UnindexableFastaFileException{
+        if( ! line.startsWith(">") ){
+            System.err.println("Invalid name: Does not start with '>'");
+            throw new UnindexableFastaFileException();
+        }
+        String name= line.substring(1).trim().replaceAll("\\s.*", "");
+        this.seqName= name;
+    }
 
-	protected String getSeqName(){
-		return seqName;
-	}
-	
-	@Override
-	public String toString(){
-		return seqName + "\t" + seqLength + "\t" + byteOffset + "\t" + lineLength + "\t" + lineFullLength;
-	}
+    protected String getSeqName(){
+        return seqName;
+    }
+    
+    @Override
+    public String toString(){
+        return seqName + "\t" + seqLength + "\t" + byteOffset + "\t" + lineLength + "\t" + lineFullLength;
+    }
 }

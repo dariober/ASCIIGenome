@@ -24,8 +24,10 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import samTextViewer.ExitCode;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import utils.Tokenizer;
 
 public class TrackSetTest {
 
@@ -150,6 +152,25 @@ public class TrackSetTest {
         assertEquals(67208779, (int)newgc.getFrom());
         assertEquals(67208779 + 1000, (int)newgc.getTo());
         
+    }
+
+    @Test
+    public void canAddTrackFromCram() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException, BamIndexNotFoundException, InvalidColourException{
+        GenomicCoords gc= new GenomicCoords("chr7:5566778-5566946", 80, null, "test_data/chr7.fa");
+        TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
+        ts.addTrackFromSource("test_data/ds051.actb.cram", gc, null);
+        assertTrue(ts.getTrackList().get(0).printToScreen().contains("::::::"));
+        
+        /*Useful error*/
+        gc= new GenomicCoords("chr7:5566778-5566946", 80, null, null);
+        ts= new TrackSet(new ArrayList<String>(), gc);
+        boolean pass = false;
+        try {
+            ts.addTrackFromSource("test_data/ds051.actb.cram", gc, null);
+        } catch(InvalidGenomicCoordsException e) {
+            pass = true;
+        }
+        assertTrue(pass);
     }
     
     @Test
@@ -602,6 +623,25 @@ public class TrackSetTest {
     }
 
     @Test
+    public void canReplaceOverloadedFunctionInAwk2() throws Exception {
+        
+        GenomicCoords gc= new GenomicCoords("1:200000-200317", 80, null, null);
+        TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
+        Track t1= new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc); ts.addTrack(t1, "vcf");
+   
+        // Nothing to replace (invalid script)
+        String awk= "awk 'foo_get() get (bar)'";
+        boolean pass = false;
+        try {
+            ts.setAwkForTrack(Utils.tokenize(awk, " "));
+        } catch(IOException e) {
+            pass = true;
+        }
+        assertTrue(pass);
+     
+    }
+    
+    @Test
     public void canReplaceOverloadedFunctionInAwk() throws Exception {
         
         GenomicCoords gc= new GenomicCoords("chr1:1-100", 80, null, null);
@@ -638,18 +678,8 @@ public class TrackSetTest {
         }
         assertTrue(pass);
         
-        // Nothing to replace (invalid script)
-        String awk= "awk 'foo_get() get (bar)' vcf";
-        pass = false;
-        try {
-            ts.setAwkForTrack(Utils.tokenize(awk, " "));
-        } catch(IOException e) {
-            pass = true;
-        }
-        assertTrue(pass);
-        
         // Nothing to replace (script OK)
-        awk= "awk '$0 == \"foo_get() get (bar)\"' vcf";
+        String awk= "awk '$0 == \"foo_get() get (bar)\"' vcf";
         ts.setAwkForTrack(Utils.tokenize(awk, " "));
         assertTrue(ts.getTrack(t1).getAwk().contains("foo_get() get (bar)"));
     }
@@ -729,6 +759,137 @@ public class TrackSetTest {
         // Replace with nothing: ""
         ts.editNamesForRegex(Utils.tokenize("editNames .bed \"\"", " "));
         assertTrue(ts.getTrackList().get(1).getTrackTag().startsWith("FOO#"));
+    }
+    
+    @Test
+    public void canAddHeaderDefault() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, SQLException, InvalidRecordException, ClassNotFoundException, InvalidColourException{
+        GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", 80, null, null);
+        
+        TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
+        Track t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.addTrack(t1, "x");
+        Track t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.addTrack(t2, "y");
+        Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.addTrack(t3, "z");
+        for(Track tr : ts.getTrackList()) {
+            tr.setNoFormat(false);
+        }
+        // Only change color, leave text as is
+        // First check header is set
+        ts.addHeader(Utils.tokenize("addHeader HEADER", " "), 80);
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains("HEADER"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().contains("HEADER"));
+        
+        ts.addHeader(Utils.tokenize("addHeader -c lightcoral", " "), 80);
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains(";210"));
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains("HEADER"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().contains(";210"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().contains("HEADER"));
+        
+        // Test special value "-"
+        ts.addHeader(Utils.tokenize("addHeader -c violet -", " "), 80);
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains(";177"));
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains("HEADER"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().contains(";177"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().contains("HEADER"));
+        
+        // Test select tracks
+        ts.addHeader(Utils.tokenize("addHeader -c orchid - #1", " "), 80);
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains(";170"));
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains("HEADER"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().contains(";177")); // Same as before
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().contains("HEADER"));
+    }
+    
+    @Test
+    public void canAddHeader() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, SQLException, InvalidRecordException, ClassNotFoundException, InvalidColourException{
+        
+        GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", 80, null, null);
+        
+        TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
+        Track t1= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.addTrack(t1, "x");
+        Track t2= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.addTrack(t2, "y");
+        Track t3= new TrackIntervalFeature("test_data/refSeq.bed", gc); ts.addTrack(t3, "z");
+        for(Track tr : ts.getTrackList()) {
+            tr.setNoFormat(true);
+        }
+        
+        ts.addHeader(Utils.tokenize("addHeader -a left HEADER #1", " "), 80); // Add header to track #1
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().startsWith("HEADER\n"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().startsWith("y#"));
+        
+        ts.addHeader(Utils.tokenize("addHeader -a L Header #1 #2", " "), 80); // Add header to track #1 and #2
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().startsWith("Header\n"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().startsWith("Header\n"));
+        assertTrue(ts.getTrack(t3).concatTitleAndTrack().startsWith("z#"));
+        
+        ts.addHeader(new Tokenizer("addHeader -a left '\n\nHEADER\nFOO\n' #1").tokenize(), 80);
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().startsWith("\n\nHEADER\nFOO\n"));
+        
+        // Remove header
+        ts.addHeader(Utils.tokenize("addHeader -off #1", " "), 80); // Remove from #1
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().startsWith("x#"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().startsWith("Header\n"));
+        
+        ts.addHeader(Utils.tokenize("addHeader -a left 'Some Header'", " "), 80); // Add header to all
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().startsWith("Some Header\n"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().startsWith("Some Header\n"));
+        assertTrue(ts.getTrack(t3).concatTitleAndTrack().startsWith("Some Header\n"));
+        
+        ts.addHeader(Utils.tokenize("addHeader -off", " "), 80); // Remove from all
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().startsWith("x#"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().startsWith("y#"));
+        assertTrue(ts.getTrack(t3).concatTitleAndTrack().startsWith("z#"));
+        
+        ts.addHeader(Utils.tokenize("addHeader -a left ''", " "), 80); // Add blank line between all tracks 
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().startsWith("\n"));
+        assertTrue(ts.getTrack(t2).concatTitleAndTrack().startsWith("\n"));
+        
+        ts.addHeader(Utils.tokenize("addHeader -a 0.5 FOOBAR", " "), 10); // Add blank line between all tracks 
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().startsWith("  FOOBAR\n"));
+        
+        /* Formatting */
+        for(Track tr : ts.getTrackList()) {
+            tr.setNoFormat(false);
+        }
+        ts.addHeader(Utils.tokenize("addHeader -c hotpink HEADER #1", " "), 80);
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains(";206"));
+        assertTrue(!ts.getTrack(t2).concatTitleAndTrack().contains(";206"));
+        
+        // By default we are bold
+        ts.addHeader(Utils.tokenize("addHeader HEADER #1", " "), 80);
+        assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains("\033[1;"));
+        // Remove bold
+        ts.addHeader(Utils.tokenize("addHeader -b HEADER #1", " "), 80);
+        assertTrue(!ts.getTrack(t1).concatTitleAndTrack().contains("[1;"));
+        
+        /* Invalid commands */
+        ExitCode x = ts.addHeader(Utils.tokenize("addHeader -c", " "), 80);
+        assertEquals(x, ExitCode.CLEAN_NO_FLUSH);
+        
+        x = ts.addHeader(Utils.tokenize("addHeader -c HEADER #1", " "), 80);
+        assertEquals(x, ExitCode.CLEAN_NO_FLUSH);
+        
+        x = ts.addHeader(Utils.tokenize("addHeader -a FOO -c HEADER #1", " "), 80);
+        assertEquals(x, ExitCode.CLEAN_NO_FLUSH);
+        
+        x = ts.addHeader(Utils.tokenize("addHeader -a -1 -c HEADER #1", " "), 80);
+        assertEquals(x, ExitCode.CLEAN_NO_FLUSH);
+        
+        x = ts.addHeader(Utils.tokenize("addHeader -a +1 -c HEADER #1", " "), 80);
+        assertEquals(x, ExitCode.CLEAN_NO_FLUSH);
+    }
+    
+    @Test
+    public void canEditTrackNamesFixed() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, SQLException, InvalidRecordException, ClassNotFoundException{
+                
+        TrackSet ts= new TrackSet(new ArrayList<String>(), null);
+        Track t1= new TrackIntervalFeature(null); ts.addTrack(t1, "foo|bar.gff");
+        
+        String msg = ts.editNamesForRegex(Utils.tokenize("editNames -F o|b O|B", " "));
+        assertTrue(ts.getTrackList().get(0).getTrackTag().startsWith("foO|Bar.gff#"));
+        assertTrue(msg.contains("Renaming"));
+        
+        msg = ts.editNamesForRegex(Utils.tokenize("editNames -F o|b O|B", " "));
+        assertTrue(msg.contains("No change made to"));
     }
     
     @Test

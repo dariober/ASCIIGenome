@@ -5,9 +5,9 @@ import htsjdk.samtools.filter.SamRecordFilter;
 
 public class DuplicateReadFilter implements SamRecordFilter {
     
-	private boolean include= false;
-	
-	/**
+    private boolean include= false;
+    
+    /**
      * @param record the SAMRecord to evaluate
      * @return true if the SAMRecord matches the filter, otherwise false
      */
