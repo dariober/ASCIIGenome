@@ -376,6 +376,9 @@ public class GenomicCoords implements Cloneable {
         try {
             faSeqFile = new IndexedFastaSequenceFile(new File(this.fastaFile));
             try{
+                if(this.to > faSeqFile.getSequence(this.chrom).length()) {
+                    this.to = faSeqFile.getSequence(this.chrom).length();
+                }
                 byte[] seq= faSeqFile.getSubsequenceAt(this.chrom, this.from, this.to).getBases();
                 faSeqFile.close();
                 return seq;

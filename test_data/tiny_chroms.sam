@@ -1,0 +1,6 @@
+@SQ	SN:chr1	LN:50
+@SQ	SN:chr2	LN:100
+r1/1	99	chr1	1	30	2S5M3S	=	20	0	GGNANANGGG	*
+r1/2	147	chr1	20	30	3S5M2S	=	1	0	gggntntngg	*
+r0/1	99	chr1	10	30	2S5M3S	=	30	0	GGNANANGGG	*
+r0/2	147	chr1	30	30	3S5M2S	=	10	0	gggntntngg	*

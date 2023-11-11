@@ -1,3 +1,9 @@
+New in 1.18.1
+=============
+
+* Fix bug in `nextChrom` where flipping between chromosomes smaller than the
+  window size resulted in invalid coordinates to fetch
+
 New in 1.18.0
 =============
 

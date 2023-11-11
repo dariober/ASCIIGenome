@@ -928,8 +928,21 @@ public class TrackSetTest {
         assertEquals(0, ts.getTrack(t1).getMapq());
         assertEquals(0, ts.getTrack(t2).getMapq());
         assertEquals(0, ts.getTrack(t3).getMapq());
-        
     }
+
+    /*
+    @Test
+    public void canSetRepeatedSamtoolsFlags() {
+        GenomicCoords gc= new GenomicCoords("chr7:5516000-5618000", 80, null, null);
+        TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
+        Track t1= new TrackReads("test_data/ear045.oxBS.actb.bam", gc); ts.addTrack(t1, "x");
+
+        // String cmdInput= "-F 1024 #1 #3";
+        // Reset all three filters
+        String cmdInput= "samtools -q 10 -F 1024 -f 16 #1 #3";
+        ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
+        assertEquals(1024+4, ts.getTrack(t1).get_F_flag());        
+    } */
     
     @Test
     public void canSetFeatureDisplayModeForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{

@@ -21,14 +21,15 @@ ext.generateMD5 = { file ->
 
 /** Gunzip the given file. Same as `gunzip -c dir/myfile.txt.gz > dir/myfile.txt`. 
 String filename must have extension .gz */
+/*
 ext.gunzip = { filename ->
     File outfile = new File(filename.replaceFirst('\\.gz$', ''))
     outfile.withOutputStream { os ->
         os << resources.gzip(filename).read()
       }
 }
-
-/* Prepare test data */
+*/
+/* Prepare test data 
 File targetFile= new File('test_data/chr7.fa')
 String targetMD5= "30c3693ead968844a769a90a801a900f"
 
@@ -53,7 +54,7 @@ if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
 
 ext.gunzip("test_data/CEU.exon.2010_06.genotypes.vcf.gz")
 ext.gunzip("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz")
-
+*/
 // ---------------------------
 
 test {

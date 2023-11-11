@@ -20,6 +20,7 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 
@@ -110,6 +111,24 @@ public class GenomicCoordsTest {
         gc= new GenomicCoords("chr1:1000-100000", 80, null, null);
         gc.nextChrom(knownContigs, 10, 100, ".*", ContigOrder.UNSORTED);
         assertEquals("chr2", gc.getChrom());
+    }
+    
+    @Test
+    public void canReturnNextChromOfSizeSmallerThanWindow() throws InvalidGenomicCoordsException, IOException {
+
+        GenomicCoords gc= new GenomicCoords("chr1", 300, null, null);
+        
+        ArrayList<String> input = new ArrayList<String>();
+        input.add("test_data/tiny_chroms.fa");
+        gc.setGenome(input, true);
+        
+        gc.nextChrom(null, -1, -1, ".*", ContigOrder.UNSORTED);
+        assertEquals("chr2", gc.getChrom());
+        assertEquals((int)100, (int)gc.getTo());
+        
+        gc.nextChrom(null, -1, -1, ".*", ContigOrder.UNSORTED);
+        assertEquals("chr1", gc.getChrom());
+        assertEquals((int)50, (int)gc.getTo());
     }
     
     @Test

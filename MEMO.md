@@ -110,14 +110,14 @@ the steps to [release a new version](#release-new-version), in an iterative way.
 
 ```
 cd ~/git_repos/ASCIIGenome # Or wherever you the repo
-git checkout -b v1.18.0    # Create new branch
-git checkout v1.18.0       # Switch to new branch 
-git push -u origin v1.18.0 # Add branch to remote     
+git checkout -b v1.18.1    # Create new branch
+git checkout v1.18.1       # Switch to new branch 
+git push -u origin v1.18.1 # Add branch to remote     
 ```
 
 ### Set up Eclipse project
 
-Before importing to eclipse make sure you are in the git branch you wnat to
+Before importing to eclipse make sure you are in the git branch you want to
 develop. In the ASCIIGenome repository use `git branch -a` to view available
 branches and `git checkout <branch name>` to switch to the requested branch.
 
