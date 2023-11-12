@@ -930,19 +930,33 @@ public class TrackSetTest {
         assertEquals(0, ts.getTrack(t3).getMapq());
     }
 
-    /*
     @Test
-    public void canSetRepeatedSamtoolsFlags() {
+    public void canSetRepeatedSamtoolsFlags() throws InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, SQLException, InvalidCommandLineException {
         GenomicCoords gc= new GenomicCoords("chr7:5516000-5618000", 80, null, null);
         TrackSet ts= new TrackSet(new ArrayList<String>(), gc);
         Track t1= new TrackReads("test_data/ear045.oxBS.actb.bam", gc); ts.addTrack(t1, "x");
-
-        // String cmdInput= "-F 1024 #1 #3";
-        // Reset all three filters
-        String cmdInput= "samtools -q 10 -F 1024 -f 16 #1 #3";
+        
+        String cmdInput= "samtools -f 16 -f 2";
         ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
-        assertEquals(1024+4, ts.getTrack(t1).get_F_flag());        
-    } */
+        assertEquals(16 + 2, ts.getTrack(t1).get_f_flag());
+        
+        cmdInput= "samtools -F 16 -F 2";
+        ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
+        assertEquals(4 + 16 + 2, ts.getTrack(t1).get_F_flag());
+        
+        cmdInput= "samtools -F 16";
+        ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
+        assertEquals(4 + 16, ts.getTrack(t1).get_F_flag());
+        
+        cmdInput= "samtools -F 16 -F 16";
+        ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
+        assertEquals(4 + 16, ts.getTrack(t1).get_F_flag());
+        
+        cmdInput= "samtools -f 1024 -F 16 -f 1024 -F 16 -f 2";
+        ts.setSamFilterForRegex(Utils.tokenize(cmdInput, " "));
+        assertEquals(4 + 16, ts.getTrack(t1).get_F_flag());
+        assertEquals(1024 + 2, ts.getTrack(t1).get_f_flag());
+    }
     
     @Test
     public void canSetFeatureDisplayModeForRegex() throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException, SQLException{

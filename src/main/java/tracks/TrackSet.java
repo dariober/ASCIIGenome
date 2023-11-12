@@ -1876,27 +1876,21 @@ public class TrackSet {
         args.remove(0); // Remove name of command
         
         // Defaults:
-        int f= Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue());
-        int F= Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue());
+        HashMap<String, Integer> flags = new HashMap<>();
+        flags.put("-f", Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue()));
+        flags.put("-F", Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue()));
         int q= Integer.valueOf(Filter.DEFAULT_MAPQ.getValue());
         
         // Get args:
         boolean invertSelection= Utils.argListContainsFlag(args, "-v");
-        if(args.contains("-f")){
-            int idx= args.indexOf("-f") + 1; 
-            f= Integer.parseInt(args.get(idx));
-            args.remove(idx);
-            args.remove("-f");
+        
+        for(String flag : flags.keySet()) {
+            while(args.contains(flag)){
+                int x = Integer.parseInt(Utils.getArgForParam(args, flag, null));
+                flags.put(flag, flags.get(flag) | x);
+            }            
         }
-        if(args.contains("-F")){
-            int idx= args.indexOf("-F") + 1; 
-            F= Integer.parseInt(args.get(idx));
-            if((4 & F) == 0){
-                F += 4;
-            }
-            args.remove(idx);
-            args.remove("-F");
-        }
+
         if(args.contains("-q")){
             int idx= args.indexOf("-q") + 1; 
             q= Integer.parseInt(args.get(idx));
@@ -1920,12 +1914,12 @@ public class TrackSet {
         
         for(Track tr : tracksToReset){
 
-            tr.set_f_flag(f);
-            tr.set_F_flag(F);
+            tr.set_f_flag(flags.get("-f"));
+            tr.set_F_flag(flags.get("-F"));
             tr.setMapq(q);
             
             List<SamRecordFilter> filters= new ArrayList<SamRecordFilter>();
-            filters.addAll(FlagToFilter.flagToFilterList(f, F));
+            filters.addAll(FlagToFilter.flagToFilterList(flags.get("-f"), flags.get("-F")));
             filters.add(new MappingQualityFilter(q));
             tr.setSamRecordFilter(filters);
         }        

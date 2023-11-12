@@ -1308,9 +1308,11 @@ public class CommandList {
         cmd.setAdditionalDescription("Useful for stranded RNA-Seq and BS-Seq: bit flag 4096 "
                 + "is selects reads mapping to TOP STRAND.\n"
                 + "\n"
-                + "* :code:`-F` Filter out flags with these bits set. NB: 4 is always set.\n"
+                + "* :code:`-F` Filter out flags with these bits set. NB: 4 is always set."
+                + " -F can be repeated and the bits will cumulate\n"
                 + "\n"
-                + "* :code:`-f` Require alignment to have these bits sets.\n"
+                + "* :code:`-f` Require alignment to have these bits sets."
+                + " -f can be repeated and the bits will cumulate\n"
                 + "\n"
                 + "* :code:`-q` Require alignments to have MAPQ >= than this.\n"
                 + "\n"
@@ -1322,6 +1324,7 @@ public class CommandList {
                 + "    samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar\n"
                 + "    samtools -f 4096 ~~~~~~~~-> Select TOP STRAND reads\n"
                 + "    samtools -F 4096 ~~~~~~~~-> Select BOTTOM STRAND reads\n"
+                + "    samtools -f 16 -f 2~~~~~~-> Same as `-f 18`\n"
                 + "    samtools~~~~~~~~~~~~~~~~~-> Reset all to default.\n"
                 + "");
         cmdList.add(cmd);
@@ -1396,7 +1399,7 @@ public class CommandList {
         
         cmd= new CommandHelp();
         cmd.setName("q"); cmd.setArgs(""); cmd.inSection= Section.GENERAL; 
-        cmd.setBriefDescription("Quit");
+        cmd.setBriefDescription("Quit. Aliases: :code:`quit` and :code:`exit`");
         cmd.setAdditionalDescription("");
         cmdList.add(cmd);
 

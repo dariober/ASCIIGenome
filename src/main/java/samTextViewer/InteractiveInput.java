@@ -81,6 +81,10 @@ public class InteractiveInput {
         for(String cmdString : cmdInputChainList){
             
             List<String> cmdTokens= new Tokenizer(cmdString).tokenize();
+            if(cmdTokens.size() >= 1 && (cmdTokens.get(0).equals("exit") 
+                    || cmdTokens.get(0).equals("quit"))) {
+                cmdTokens.set(0, "q");
+            }
             
             this.interactiveInputExitCode= ExitCode.CLEAN; // If something goes wrong this will change
             try {
@@ -163,12 +167,13 @@ public class InteractiveInput {
                     }  
                     proc.setSnapshotFile( Utils.parseCmdinputToGetSnapshotFile(Joiner.on(" ").join(args), proc.getGenomicCoordsHistory().current()) );
                     
-                } else if(cmdTokens.get(0).equals("q")){
+                } else if(cmdTokens.get(0).equals("q") 
+                        || cmdTokens.get(0).equals("quit") 
+                        || cmdTokens.get(0).equals("exit")) {
                     System.out.print("\033[0m");
                     console.clearScreen();
                     console.flush();
                     System.exit(0);
-                
                 // * These commands change the GenomicCoordinates (navigate) but do not touch the tracks.
                 } else if(cmdTokens.get(0).equals("f")
                         || cmdTokens.get(0).equals("b")

@@ -4,6 +4,10 @@ New in 1.18.1
 * Fix bug in `nextChrom` where flipping between chromosomes smaller than the
   window size resulted in invalid coordinates to fetch
 
+* `samtools` accepts `-F` and `-f` multiple times
+
+* Commands `exit` and `quit` as aliases for `q`
+
 New in 1.18.0
 =============
 
