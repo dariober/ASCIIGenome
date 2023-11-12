@@ -1378,7 +1378,7 @@ public class UtilsTest {
         // HTTP is ok.
         // If this file does not exist, put any valid tabix file and its index on Dropbox/Public and use
         // the dropbox link here.
-        assertTrue(Utils.hasTabixIndex("http://genome.ucsc.edu/goldenPath/help/examples/vcfExample.vcf.gz"));
+        assertTrue(Utils.hasTabixIndex("https://genome.ucsc.edu/goldenPath/help/examples/vcfExample.vcf.gz"));
 
         // NB: Uncompressed files give a OutOfMemoryError: Java heap space
         assertTrue(! Utils.hasTabixIndex("ftp://ftp.solgenomics.net/tomato_genome/annotation/ITAG3.0_release/ITAG3.0_RepeatModeler_repeats_light.gff"));
