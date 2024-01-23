@@ -1,4 +1,4 @@
-New in 1.18.1
+New in 1.19.0
 =============
 
 * Fix bug in `nextChrom` where flipping between chromosomes smaller than the
