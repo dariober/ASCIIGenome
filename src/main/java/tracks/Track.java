@@ -502,7 +502,7 @@ public abstract class Track {
             if(count == 0){
                 int omitted= rawList.size() - this.getPrintRawLineCount();
                 if(omitted > 0){
-                    omitString= "[" + omitted + "/"  + rawList.size() + " features omitted]";
+                    omitString= "[" + omitted + " features omitted out of "  + rawList.size() + "]";
                 }
                 break;
             }

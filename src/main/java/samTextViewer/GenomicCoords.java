@@ -493,12 +493,17 @@ public class GenomicCoords implements Cloneable {
             
             // Strip chromosome name, remove commas from integers.
             String fromTo= StringUtils.substringAfterLast(x, ":").replaceAll(",", "").trim();
-            nsep= StringUtils.countMatches(fromTo, "-");
+
+            String sep = "-";
+            if(fromTo.contains("..")) {
+                sep = "..";
+            }
+            nsep= StringUtils.countMatches(fromTo, sep);
             if(nsep == 0){ // Only start position given
-                region[1]= StringUtils.substringBefore(fromTo, "-").trim();
+                region[1]= StringUtils.substringBefore(fromTo, sep).trim();
             } else if(nsep == 1){ // From and To positions given.
-                region[1]= StringUtils.substringBefore(fromTo, "-").trim();
-                region[2]= StringUtils.substringAfter(fromTo, "-").trim();
+                region[1]= StringUtils.substringBefore(fromTo, sep).trim();
+                region[2]= StringUtils.substringAfter(fromTo, sep).trim();
             } else {
                 InvalidGenomicCoordsException e = new InvalidGenomicCoordsException();
                 System.err.println("\nUnexpected format for region " + x + "\n");

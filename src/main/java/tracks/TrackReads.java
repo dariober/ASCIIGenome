@@ -35,11 +35,13 @@ import samTextViewer.Utils;
 public class TrackReads extends Track{
 
     private List<List<SamSequenceFragment>> readStack;
-    // private boolean withReadName= false;
+    // private List<String> recordsAsStrings = new ArrayList<String>();
+    private List<Boolean> passFilter;
     private long nRecsInWindow= -1;
     private int userWindowSize;
     private List<Argument> colorForRegex= null;
     private long alnRecCnt= -1;
+    private List<SAMRecord> samRecords = new ArrayList<SAMRecord>();
     
     /* C o n s t r u c t o r s */
     /**
@@ -89,19 +91,18 @@ public class TrackReads extends Track{
         this.userWindowSize= this.getGc().getUserWindowSize();
         
         this.readStack= new ArrayList<List<SamSequenceFragment>>();
+        this.samRecords.clear();
         if(this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE){
 
-            SamReader samReader= Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
-            List<Boolean> passFilter= this.filterReads(samReader, this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
-            samReader.close();
+            setPassFilter();
             
             this.nRecsInWindow= 0;
-            for(boolean x : passFilter){ // The count of reads in window is the count of reads passing filters
+            for(boolean x : this.getPassFilter()){ // The count of reads in window is the count of reads passing filters
                 if(x){
                     this.nRecsInWindow++;
                 }
             }
-            samReader= Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
+            SamReader samReader = Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
             Iterator<SAMRecord> sam= samReader.query(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
 
             float max_reads= Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack));
@@ -112,10 +113,13 @@ public class TrackReads extends Track{
             String rndOffset= Integer.toString(new Random().nextInt());
 
             List<TextRead> textReads= new ArrayList<TextRead>();
-            ListIterator<Boolean> pass = passFilter.listIterator();
+            ListIterator<Boolean> pass = this.getPassFilter().listIterator();
             while(sam.hasNext() && textReads.size() < max_reads){
                 SAMRecord rec= sam.next();
                 if( pass.next() ){
+                    // NB: This will put in memory all reads passing filters. 
+                    this.samRecords.add(rec);
+                    // this.recordsAsStrings.add(rec.getSAMString().trim());
                     String templ_name= Utils.templateNameFromSamReadName(rec.getReadName());
                     long v= (templ_name + rndOffset).hashCode(); // Hashing.md5().hashBytes((templ_name + rndOffset).getBytes()).asLong();
                     Random rand = new Random(v);
@@ -130,6 +134,16 @@ public class TrackReads extends Track{
         } else {
             this.nRecsInWindow= -1;
         }
+    }
+    
+    private void setPassFilter() throws IOException {
+        SamReader samReader= Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
+        this.passFilter= this.filterReads(samReader, this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+        samReader.close();
+    }
+    
+    private List<Boolean> getPassFilter() {
+        return this.passFilter;
     }
     
     /** 
@@ -362,19 +376,13 @@ public class TrackReads extends Track{
     
     @Override
     protected List<String> getRecordsAsStrings() {
-        List<String> featureList= new ArrayList<String>();
-        
-        for(List<SamSequenceFragment> x : this.readStack){
-            for(SamSequenceFragment frag : x){
-                featureList.add(frag.getLeftRead().getSamRecord().getSAMString());
-                if(frag.getRightRead() != null){
-                    featureList.add(frag.getRightRead().getSamRecord().getSAMString());	
-                }
-            }
+        List<String> recordsAsStrings = new ArrayList<String>();
+        for(SAMRecord rec : this.samRecords) {
+            recordsAsStrings.add(rec.getSAMString().trim());
         }
-        return featureList;
+        return recordsAsStrings;
     }
-
+    
     /* S e t t e r s   and   G e t t e r s */
     
     @Override

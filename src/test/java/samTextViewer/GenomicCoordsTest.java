@@ -265,6 +265,11 @@ public class GenomicCoordsTest {
         
         gc= new GenomicCoords("chr7", 80, null, null);
         assertTrue(gc.toStringRegion().matches("^chr7:1-\\d+$")); // chr7:1-79
+        
+        gc= new GenomicCoords("chr7:123..456,000", 80, null, null);
+        assertEquals("chr7", gc.getChrom());
+        assertEquals(123, gc.getFrom().intValue());
+        assertEquals(456000, gc.getTo().intValue());
     }
     
     @Test

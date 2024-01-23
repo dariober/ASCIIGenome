@@ -673,9 +673,9 @@ samtools
 
 Apply samtools filters to alignment tracks captured by the list of track regexes. Useful for stranded RNA-Seq and BS-Seq: bit flag 4096 is selects reads mapping to TOP STRAND.
 
-* :code:`-F` Filter out flags with these bits set. NB: 4 is always set.
+* :code:`-F` Filter out flags with these bits set. NB: 4 is always set. -F can be repeated and the bits will cumulate
 
-* :code:`-f` Require alignment to have these bits sets.
+* :code:`-f` Require alignment to have these bits sets. -f can be repeated and the bits will cumulate
 
 * :code:`-q` Require alignments to have MAPQ >= than this.
 
@@ -687,6 +687,7 @@ Examples::
     samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar
     samtools -f 4096         -> Select TOP STRAND reads
     samtools -F 4096         -> Select BOTTOM STRAND reads
+    samtools -f 16 -f 2      -> Same as `-f 18`
     samtools                 -> Reset all to default.
 
 
@@ -911,7 +912,7 @@ q
 
 :code:`q`
 
-Quit 
+Quit. Aliases: :code:`quit` and :code:`exit` 
 
 h
 +

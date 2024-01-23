@@ -8,6 +8,12 @@ New in 1.18.1
 
 * Commands `exit` and `quit` as aliases for `q`
 
+* `print` command applies to *all* reads passing filter in the current windos,
+  not just to the reads in the stack. NB: Reads are stored in memory.
+
+* `goto` (alias `:`) supports `..` as separator for start and end coordinates.
+  E.g, `chr1:10..200` is the same as `chr1:10-200`.
+
 New in 1.18.0
 =============
 

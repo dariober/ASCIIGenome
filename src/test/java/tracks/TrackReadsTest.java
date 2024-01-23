@@ -182,10 +182,9 @@ public class TrackReadsTest {
     }
     
     @Test
-    public void canReturnReadsAsRawStrings() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException{
+    public void canReturnReadsAsRawStrings() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
         GenomicCoords gc= new GenomicCoords("chr7:5566000-5567000", 80, null, null);
         TrackReads tr= new TrackReads("test_data/ds051.short.bam", gc);
-        
         assertEquals(22, tr.getRecordsAsStrings().size());
 
         // No read in interval
@@ -193,6 +192,13 @@ public class TrackReadsTest {
         tr= new TrackReads("test_data/ds051.short.bam", gc);
         assertEquals(0, tr.getRecordsAsStrings().size());
         
+        Config.set(ConfigKey.max_reads_in_stack, "10");
+        gc= new GenomicCoords("chr7:5517700-5609200", 80, null, null);
+        tr= new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
+        // This is to make sure the number of lines printed is not limited by the stack
+        tr.setNoFormat(true);
+        assertTrue(tr.printToScreen().replaceAll(" ", "").length() < 1000);
+        assertEquals(81526, tr.getRecordsAsStrings().size());
     }
     
     @Test
