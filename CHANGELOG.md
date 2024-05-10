@@ -1,3 +1,9 @@
+New in 1.18.1
+=============
+
+* `print` command does not decode the URL escapes for line feed and carriage
+  return. Decoding `\n` and `\r` would split a gff line when printed.
+
 New in 1.18.0
 =============
 

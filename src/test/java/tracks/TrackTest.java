@@ -254,7 +254,6 @@ public class TrackTest {
     
     @Test
     public void canParsePrintableLinesWithNoFeatures() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
-
         // Test region with no features
         GenomicCoords gc = new GenomicCoords("chr10:1-100000", 80, null, null);
         TrackIntervalFeature tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
@@ -262,6 +261,15 @@ public class TrackTest {
         tif.setPrintMode(PrintRawLine.FULL);
         tif.setSystemCommandForPrint("head");
         assertEquals("", tif.printLines());
+    }
+
+    @Test
+    public void canPrintLinesWithLineFeedInAttribute() throws ClassNotFoundException, IOException, InvalidGenomicCoordsException, InvalidRecordException, SQLException, InvalidColourException, InvalidCommandLineException{
+        GenomicCoords gc = new GenomicCoords("SM_V7_3:36857637-36858016", 80, null, null);
+        TrackIntervalFeature tif = new TrackIntervalFeature("test_data/newlines.gff", gc);
+        tif.setNoFormat(true);
+        tif.setPrintMode(PrintRawLine.FULL);
+        assertTrue(tif.printLines().contains("InterPro %0Daccession:IPR000980 %0Adescription:SH2 \\ndomain %0Amethod:InterPro"));
     }
 
     @Test
