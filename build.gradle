@@ -1,3 +1,6 @@
+import java.security.MessageDigest
+import java.nio.file.Paths
+
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
@@ -12,9 +15,9 @@ if(JavaVersion.current() < jversion) {
 
 /** Return the MD5 sum of the give File object */
 ext.generateMD5 = { file ->
-    def digest = java.security.MessageDigest.getInstance("MD5")
+    def digest = MessageDigest.getInstance("MD5")
     file.eachByte( 4096 ) { buffer, length ->
-        digest.update( buffer, 0, length )
+        digest.update(buffer, 0 as byte, length)
     }
     new BigInteger(1, digest.digest()).toString(16).padLeft(32, '0')
 }
@@ -28,31 +31,33 @@ ext.gunzip = { filename ->
       }
 }
 
+String testDir = Paths.get(System.getProperty("user.dir"), 'test_data')
+
 /* Prepare test data */
-File targetFile= new File('test_data/chr7.fa')
+File targetFile= new File(testDir, 'chr7.fa')
 String targetMD5= "30c3693ead968844a769a90a801a900f"
 
 if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
-    File fgz= new File("test_data", targetFile.name + ".gz")
+    File fgz= new File(testDir, targetFile.name + ".gz")
     ext.gunzip(fgz.absolutePath)
     if(ext.generateMD5(targetFile) != targetMD5){
         throw new GradleException("Corrupted file " + targetFile)
     }
 }
 
-targetFile= new File('test_data/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf')
+targetFile= new File(testDir, 'ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf')
 targetMD5= "6783ca5e6df2ce1075e1e0c924ad7d37"
 
 if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
-    File fgz= new File("test_data", targetFile.name + ".gz")
+    File fgz= new File(testDir, targetFile.name + ".gz")
     ext.gunzip(fgz.absolutePath)
     if(ext.generateMD5(targetFile) != targetMD5){
         throw new GradleException("Corrupted file " + targetFile)
     }
 }
 
-ext.gunzip("test_data/CEU.exon.2010_06.genotypes.vcf.gz")
-ext.gunzip("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz")
+ext.gunzip(Paths.get(testDir, "CEU.exon.2010_06.genotypes.vcf.gz").toString())
+ext.gunzip(Paths.get(testDir, "ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toString())
 
 // ---------------------------
 
