@@ -112,11 +112,8 @@ public class Main {
         }        
         int terminalWidth= Utils.getTerminalWidth();
         GenomicCoords initGc= new GenomicCoords(region, terminalWidth, null, null);
-        
-        List<String>initGenomeList= new ArrayList<String>();
-        for(String x : inputFileList){
-            initGenomeList.add(x);
-        }
+
+        List<String> initGenomeList = new ArrayList<String>(inputFileList);
         initGenomeList.add(fasta);
         initGc.setGenome(initGenomeList, false);
         // ----------------------------
