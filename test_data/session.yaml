@@ -1,0 +1,38 @@
+[
+  {
+    name: mysession,
+    lastRead: "2024-01-01T20:40:00",
+    genome: {
+      file: "test_data/chr7.fa",
+      region: "chr7:1-1000",
+    },
+    tracks: [
+      {
+        name: "ds051#1",
+        source: "test_data/ds051.actb.bam",
+        type: "TrackPileup",
+      }
+    ]
+  },
+    {
+        name: mysession2,
+        lastRead: "2024-01-02T20:40:00",
+        genome: {
+            file: "test_data/chr7.fa",
+            region: "chr7:1-10000",
+        },
+        tracks: [
+          {
+                name: "ds051#1",
+                source: "test_data/ds051.actb.bam",
+                type: "TrackPileup",
+          },
+          {
+            name: "ds051#2",
+            source: "test_data/ds051.actb.bam",
+            type: "TrackReads",
+          }
+
+        ]
+    }
+]

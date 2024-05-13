@@ -63,7 +63,7 @@ public class TrackPileup extends TrackBedgraph {
    * @throws InvalidGenomicCoordsException
    * @throws ClassNotFoundException
    */
-  protected TrackPileup(String bam, GenomicCoords gc)
+  public TrackPileup(String bam, GenomicCoords gc)
       throws IOException,
           ClassNotFoundException,
           InvalidGenomicCoordsException,
