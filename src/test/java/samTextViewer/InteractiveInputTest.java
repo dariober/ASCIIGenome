@@ -48,10 +48,10 @@ public class InteractiveInputTest {
           InvalidCommandLineException {
     new Config(null);
     TrackProcessor proc;
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader());
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    ip.processInput("show ge -n -1", proc, 1);
-    ip.processInput("show ge -n 10", proc, 1);
+    ip.processInput("show ge -n -1", proc);
+    ip.processInput("show ge -n 10", proc);
   }
 
   @Test
@@ -67,60 +67,59 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc;
 
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader());
-
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    GenomicCoords gc2 = ip.processInput("[", proc, 1).getGenomicCoordsHistory().current();
+    GenomicCoords gc2 = ip.processInput("[", proc).getGenomicCoordsHistory().current();
     assertEquals(1011, (int) gc2.getFrom());
     assertEquals(1810, (int) gc2.getTo());
 
     proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    gc2 = ip.processInput("]", proc, 1).getGenomicCoordsHistory().current();
+    gc2 = ip.processInput("]", proc).getGenomicCoordsHistory().current();
     assertEquals(1001 - 10, (int) gc2.getFrom());
     assertEquals(1800 - 10, (int) gc2.getTo());
 
     proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    gc2 = ip.processInput("[ 20", proc, 1).getGenomicCoordsHistory().current();
+    gc2 = ip.processInput("[ 20", proc).getGenomicCoordsHistory().current();
     assertEquals(1001 + (20 * 10), (int) gc2.getFrom());
     assertEquals(1800 + (20 * 10), (int) gc2.getTo());
 
     proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    gc2 = ip.processInput("[20", proc, 1).getGenomicCoordsHistory().current();
+    gc2 = ip.processInput("[20", proc).getGenomicCoordsHistory().current();
     assertEquals(1001 + (20 * 10), (int) gc2.getFrom());
     assertEquals(1800 + (20 * 10), (int) gc2.getTo());
 
     proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    gc2 = ip.processInput("]] 3", proc, 1).getGenomicCoordsHistory().current();
+    gc2 = ip.processInput("]] 3", proc).getGenomicCoordsHistory().current();
     assertEquals(1001 - (6 * 10), (int) gc2.getFrom());
     assertEquals(1800 - (6 * 10), (int) gc2.getTo());
 
     proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    gc2 = ip.processInput("] 0", proc, 1).getGenomicCoordsHistory().current();
+    gc2 = ip.processInput("] 0", proc).getGenomicCoordsHistory().current();
     assertEquals(1001, (int) gc2.getFrom());
     assertEquals(1800, (int) gc2.getTo());
 
     // Test left bound
     proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    gc2 = ip.processInput("]] 30000", proc, 1).getGenomicCoordsHistory().current();
+    gc2 = ip.processInput("]] 30000", proc).getGenomicCoordsHistory().current();
     assertEquals(1, (int) gc2.getFrom());
     assertEquals(800, (int) gc2.getTo());
 
     // Test right bound
     proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    gc2 = ip.processInput("[ 30000000", proc, 1).getGenomicCoordsHistory().current();
+    gc2 = ip.processInput("[ 30000000", proc).getGenomicCoordsHistory().current();
     assertEquals(159138663, (int) gc2.getTo());
     assertEquals(159138663 - 800 + 1, (int) gc2.getFrom());
 
     // Invalid input
-    ip.processInput("[]", proc, 1).getGenomicCoordsHistory().current();
+    ip.processInput("[]", proc).getGenomicCoordsHistory().current();
     assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
 
     // Ensure this is fine
-    ip.processInput("]", proc, 1).getGenomicCoordsHistory().current();
+    ip.processInput("]", proc).getGenomicCoordsHistory().current();
     assertEquals(ExitCode.CLEAN, ip.getInteractiveInputExitCode());
 
     // Another invalid input
-    ip.processInput("] foo", proc, 1).getGenomicCoordsHistory().current();
+    ip.processInput("] foo", proc).getGenomicCoordsHistory().current();
     assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
   }
 
@@ -133,7 +132,7 @@ public class InteractiveInputTest {
           SQLException,
           InvalidCommandLineException {
 
-    InteractiveInput ip = new InteractiveInput(null);
+    InteractiveInput ip = new InteractiveInput(null, 1);
 
     GenomicCoords gc = new GenomicCoords("chr7:1-100", 80, null, null);
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
@@ -145,22 +144,22 @@ public class InteractiveInputTest {
     System.setErr(new PrintStream(baos));
 
     // Various ways of getting general help
-    ip.processInput("-h", proc, 1);
+    ip.processInput("-h", proc);
     String H1 = baos.toString();
     baos.reset();
     assertTrue(H1.contains("show this help"));
 
     System.out.println(H1);
 
-    ip.processInput("h", proc, 1);
+    ip.processInput("h", proc);
     String H2 = baos.toString();
     baos.reset();
 
-    ip.processInput("help", proc, 1);
+    ip.processInput("help", proc);
     String H3 = baos.toString();
     baos.reset();
 
-    ip.processInput("  ?", proc, 1);
+    ip.processInput("  ?", proc);
     String H4 = baos.toString();
     baos.reset();
 
@@ -169,16 +168,16 @@ public class InteractiveInputTest {
     assertEquals(H1, H4);
 
     // Various way of getting command help
-    ip.processInput("next -h", proc, 1);
+    ip.processInput("next -h", proc);
     String h1 = baos.toString();
     baos.reset();
     assertTrue(h1.contains("Move to the next"));
 
-    ip.processInput("?next", proc, 1);
+    ip.processInput("?next", proc);
     String h2 = baos.toString();
     baos.reset();
 
-    ip.processInput("  help  next ", proc, 1);
+    ip.processInput("  help  next ", proc);
     String h3 = baos.toString();
     baos.reset();
 
@@ -189,7 +188,7 @@ public class InteractiveInputTest {
   @Test
   public void canGoToRegion() throws InvalidGenomicCoordsException, IOException {
 
-    InteractiveInput ip = new InteractiveInput(null);
+    InteractiveInput ip = new InteractiveInput(null, 1);
 
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     String region = ip.gotoOnCurrentChrom(Splitter.on(" ").splitToList("1 100"), gc);
@@ -205,7 +204,7 @@ public class InteractiveInputTest {
   @Test
   public void canGoToRegionAndCenter() throws InvalidGenomicCoordsException, IOException {
 
-    InteractiveInput ip = new InteractiveInput(null);
+    InteractiveInput ip = new InteractiveInput(null, 0);
 
     GenomicCoords gc = new GenomicCoords("chr1:1-20", 20, null, null);
 

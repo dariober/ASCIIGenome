@@ -71,7 +71,7 @@ public class Main {
     String exec = opts.getString("exec");
     String config = opts.getString("config");
     exec = parseExec(exec);
-    int debug = opts.getInt("debug");
+    final int debug = opts.getInt("debug");
 
     // Get configuration. Note that we don't need to assign this to a variable.
     if (config.equals("null")) {
@@ -167,8 +167,8 @@ public class Main {
         IntervalFeature target = new IntervalFeature(line, TrackFormat.BED, null, -1);
         String reg = target.getChrom() + ":" + target.getFrom() + "-" + target.getTo();
         String gotoAndExec = ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
-        InteractiveInput itr = new InteractiveInput(console);
-        itr.processInput(gotoAndExec, proc, debug);
+        InteractiveInput itr = new InteractiveInput(console, debug);
+        itr.processInput(gotoAndExec, proc);
         if (itr.getInteractiveInputExitCode().equals(ExitCode.ERROR)) {
           System.err.println("Error processing '" + gotoAndExec + "' at line '" + line + "'");
           System.exit(1);
@@ -184,8 +184,8 @@ public class Main {
     proc.iterateTracks();
     if (!exec.isEmpty() || opts.getBoolean("nonInteractive")) {
 
-      InteractiveInput itr = new InteractiveInput(console);
-      itr.processInput(exec, proc, debug);
+      InteractiveInput itr = new InteractiveInput(console, debug);
+      itr.processInput(exec, proc);
       if (opts.getBoolean("nonInteractive")) {
         System.out.print("\033[0m");
         return;
@@ -202,7 +202,7 @@ public class Main {
       // keep going until quit or if no interactive input set
       // *** START processing interactive input
       String cmdConcatInput = ""; // String like "zi && -F 16 && mapq 10"
-      InteractiveInput interactiveInput = new InteractiveInput(console);
+      InteractiveInput interactiveInput = new InteractiveInput(console, debug);
       ExitCode currentExitCode = ExitCode.NULL;
       interactiveInput.setInteractiveInputExitCode(currentExitCode);
 
@@ -233,7 +233,7 @@ public class Main {
         }
         stopWatch.start();
 
-        interactiveInput.processInput(cmdConcatInput, proc, debug);
+        interactiveInput.processInput(cmdConcatInput, proc);
         currentCmdConcatInput = cmdConcatInput;
 
         memTime = "";

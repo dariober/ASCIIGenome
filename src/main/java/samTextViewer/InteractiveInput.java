@@ -2,6 +2,7 @@ package samTextViewer;
 
 import coloring.Config;
 import coloring.ConfigKey;
+import com.esotericsoftware.yamlbeans.YamlException;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -14,6 +15,7 @@ import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
@@ -27,6 +29,7 @@ import java.util.regex.PatternSyntaxException;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import session.Session;
 import utils.Tokenizer;
 
 /** Class to process input from console */
@@ -34,23 +37,20 @@ public class InteractiveInput {
 
   private boolean nonInteractive;
   private ExitCode interactiveInputExitCode = ExitCode.CLEAN;
-  private ConsoleReader console;
+  private final ConsoleReader console;
+  private static int debug;
+  private SAMSequenceDictionary samSeqDict;
+  private String fasta;
 
-  public InteractiveInput(ConsoleReader console) {
+  public InteractiveInput(ConsoleReader console, int debug) {
+    InteractiveInput.debug = debug;
     this.console = console;
   }
 
   /**
    * Parse the input list of commands to print information or modify the input TrackProcessor.
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidCommandLineException
-   * @throws SQLException
-   * @throws InvalidRecordException
-   * @throws ClassNotFoundException
    */
-  protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc, int debug)
+  protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc)
       throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
@@ -86,8 +86,8 @@ public class InteractiveInput {
       cmdInputChainList.add("+0"); // This is to refresh the screen and actually set the new color
     }
 
-    String fasta = proc.getGenomicCoordsHistory().current().getFastaFile();
-    SAMSequenceDictionary samSeqDict = proc.getGenomicCoordsHistory().current().getSamSeqDict();
+    this.fasta = proc.getGenomicCoordsHistory().current().getFastaFile();
+    this.samSeqDict = proc.getGenomicCoordsHistory().current().getSamSeqDict();
 
     String messages = ""; // Messages that may be sent from the various methods.
     for (String cmdString : cmdInputChainList) {
@@ -203,7 +203,7 @@ public class InteractiveInput {
           String newRegion =
               Utils.parseConsoleInput(cmdTokens, proc.getGenomicCoordsHistory().current()).trim();
           proc.getGenomicCoordsHistory()
-              .add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
+              .add(new GenomicCoords(newRegion, terminalWidth, this.samSeqDict, this.fasta));
 
         } else if (cmdTokens.get(0).matches("(\\[+|\\]+)\\d*")) {
 
@@ -211,7 +211,7 @@ public class InteractiveInput {
           String newRegion =
               this.moveWindowByColumns(proc.getGenomicCoordsHistory().current(), times);
           proc.getGenomicCoordsHistory()
-              .add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
+              .add(new GenomicCoords(newRegion, terminalWidth, this.samSeqDict, this.fasta));
 
         } else if (cmdTokens.get(0).matches("^\\d+.*") || cmdTokens.get(0).matches("^\\.\\d+.*")) {
           String newRegion;
@@ -223,12 +223,12 @@ public class InteractiveInput {
             throw new InvalidCommandLineException();
           }
           proc.getGenomicCoordsHistory()
-              .add(new GenomicCoords(newRegion, terminalWidth, samSeqDict, fasta));
+              .add(new GenomicCoords(newRegion, terminalWidth, this.samSeqDict, this.fasta));
 
         } else if (cmdTokens.get(0).equals("goto") || cmdTokens.get(0).startsWith(":")) {
           String reg = Joiner.on(" ").join(cmdTokens).replaceFirst("goto|:", "").trim();
           proc.getGenomicCoordsHistory()
-              .add(new GenomicCoords(reg, terminalWidth, samSeqDict, fasta));
+              .add(new GenomicCoords(reg, terminalWidth, this.samSeqDict, this.fasta));
 
         } else if (cmdTokens.get(0).equals("nextChrom")) {
           cmdTokens.remove(0);
@@ -283,6 +283,9 @@ public class InteractiveInput {
           gc.setTerminalWidth(terminalWidth);
           gc.right();
           proc.getGenomicCoordsHistory().add(gc);
+
+        } else if (cmdTokens.get(0).equals("session")) {
+          this.openSession(cmdTokens.get(1), cmdTokens.get(2), proc);
 
         } else if (cmdTokens.get(0).equals("setGenome")) {
           this.setGenome(cmdTokens, proc);
@@ -345,67 +348,11 @@ public class InteractiveInput {
 
         } else if (cmdTokens.get(0).equals("readsAsPairs")) {
           proc.getTrackSet().setReadsAsPairsForRegex(cmdTokens);
-
         } else if (cmdTokens.get(0).equals("nameForFeatures")) {
           proc.getTrackSet().setNameAttribute(cmdTokens);
-
         } else if (cmdTokens.get(0).equals("open") || cmdTokens.get(0).equals("addTracks")) {
           cmdTokens.remove(0);
-
-          List<String> globbed = Utils.globFiles(cmdTokens);
-          if (globbed.size() == 0) {
-            globbed = this.openFilesFromIndexes(proc.getTrackSet().getOpenedFiles(), cmdTokens);
-          }
-
-          if (globbed.size() == 0) {
-            String msg =
-                Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
-            System.err.println(msg);
-            this.interactiveInputExitCode = ExitCode.ERROR;
-
-          } else {
-
-            for (String sourceName : globbed) {
-              String msg = Utils.padEndMultiLine("Adding: " + sourceName, proc.getWindowSize());
-              System.err.println(msg);
-              try {
-                proc.getTrackSet()
-                    .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
-              } catch (Exception e) {
-                try {
-                  // It may be that you are in position that doesn't exist in the sequence
-                  // dictionary that
-                  // came with this new file. To recover, find an existing position, move there and
-                  // try to reload the
-                  // file. This fixes issue#23
-                  String region = Main.initRegion(globbed, null, null, debug);
-                  proc.getGenomicCoordsHistory()
-                      .add(new GenomicCoords(region, terminalWidth, samSeqDict, fasta));
-                  proc.getTrackSet()
-                      .addTrackFromSource(
-                          sourceName, proc.getGenomicCoordsHistory().current(), null);
-                } catch (Exception x) {
-                  x.printStackTrace();
-                  msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
-                  System.err.println(msg);
-                  this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
-                }
-              }
-
-              if (proc.getGenomicCoordsHistory().current().getSamSeqDict() == null
-                  || proc.getGenomicCoordsHistory().current().getSamSeqDict().size() == 0) {
-                GenomicCoords testSeqDict =
-                    new GenomicCoords("default", Utils.getTerminalWidth(), null, null);
-                List<String> candidateSourceGenome = new ArrayList<String>();
-                candidateSourceGenome.add(sourceName);
-                testSeqDict.setGenome(candidateSourceGenome, false);
-                if (testSeqDict.getSamSeqDict() != null) {
-                  candidateSourceGenome.add(0, "cmd");
-                  proc.getGenomicCoordsHistory().setGenome(candidateSourceGenome);
-                }
-              }
-            }
-          }
+          this.addTracks(cmdTokens, proc);
         } else if (cmdTokens.get(0).equals("reload")) {
           proc.getTrackSet().reload(cmdTokens);
         } else if (cmdTokens.get(0).equals("dropTracks")) {
@@ -561,7 +508,7 @@ public class InteractiveInput {
         } catch (InvalidGenomicCoordsException e) {
           String region = Main.initRegion(proc.getTrackSet().getFilenameList(), null, null, debug);
           proc.getGenomicCoordsHistory()
-              .add(new GenomicCoords(region, terminalWidth, samSeqDict, fasta));
+              .add(new GenomicCoords(region, terminalWidth, this.samSeqDict, this.fasta));
           System.err.println(
               Utils.padEndMultiLine(
                   "Invalid genomic coordinates found. Resetting to " + region,
@@ -865,13 +812,24 @@ public class InteractiveInput {
     }
   }
 
+  private void openSession(String sessionYamlFile, String session, TrackProcessor proc) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException {
+    Session ss = new Session(sessionYamlFile, session, Utils.getTerminalWidth());
+    GenomicCoords testSeqDict = new GenomicCoords(ss.getRegion(), Utils.getTerminalWidth(), null, null);
+    List<String> genomeFile = new ArrayList<String>();
+    genomeFile.add(ss.getGenomeFile());
+    testSeqDict.setGenome(genomeFile, true);
+    proc.getGenomicCoordsHistory().setGenome(genomeFile);
+    proc.getGenomicCoordsHistory()
+            .add(testSeqDict);
+  }
+
   private void setGenome(List<String> cmdTokens, TrackProcessor proc)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
     List<String> tokens = new ArrayList<String>(cmdTokens);
     tokens.remove(0);
 
-    if (tokens.size() == 0) {
+    if (tokens.isEmpty()) {
       // Try to read fasta from history file
       ASCIIGenomeHistory ag = new ASCIIGenomeHistory();
       try {
@@ -1148,6 +1106,63 @@ public class InteractiveInput {
       tab += (x + "\n");
     }
     return tab.trim();
+  }
+
+  private void addTracks(List<String> cmdTokens, TrackProcessor proc) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException {
+    List<String> globbed = Utils.globFiles(cmdTokens);
+    if (globbed.isEmpty()) {
+      globbed = this.openFilesFromIndexes(proc.getTrackSet().getOpenedFiles(), cmdTokens);
+    }
+
+    if (globbed.isEmpty()) {
+      String msg =
+              Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
+      System.err.println(msg);
+      this.interactiveInputExitCode = ExitCode.ERROR;
+
+    } else {
+
+      for (String sourceName : globbed) {
+        String msg = Utils.padEndMultiLine("Adding: " + sourceName, proc.getWindowSize());
+        System.err.println(msg);
+        try {
+          proc.getTrackSet()
+                  .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
+        } catch (Exception e) {
+          try {
+            // It may be that you are in position that doesn't exist in the sequence
+            // dictionary that
+            // came with this new file. To recover, find an existing position, move there and
+            // try to reload the
+            // file. This fixes issue#23
+            String region = Main.initRegion(globbed, null, null, debug);
+            proc.getGenomicCoordsHistory()
+                    .add(new GenomicCoords(region, Utils.getTerminalWidth(), this.samSeqDict, this.fasta));
+            proc.getTrackSet()
+                    .addTrackFromSource(
+                            sourceName, proc.getGenomicCoordsHistory().current(), null);
+          } catch (Exception x) {
+            x.printStackTrace();
+            msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
+            System.err.println(msg);
+            this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
+          }
+        }
+
+        if (proc.getGenomicCoordsHistory().current().getSamSeqDict() == null
+                || proc.getGenomicCoordsHistory().current().getSamSeqDict().isEmpty()) {
+          GenomicCoords testSeqDict =
+                  new GenomicCoords("default", Utils.getTerminalWidth(), null, null);
+          List<String> candidateSourceGenome = new ArrayList<String>();
+          candidateSourceGenome.add(sourceName);
+          testSeqDict.setGenome(candidateSourceGenome, false);
+          if (testSeqDict.getSamSeqDict() != null) {
+            candidateSourceGenome.add(0, "cmd");
+            proc.getGenomicCoordsHistory().setGenome(candidateSourceGenome);
+          }
+        }
+      }
+    }
   }
 
   public ExitCode getInteractiveInputExitCode() {

@@ -31,7 +31,7 @@ public class ASCIIGenomeHistory {
   // C O N S T R U C T O R S
 
   @SuppressWarnings("unchecked")
-  public ASCIIGenomeHistory(String yaml) throws IOException {
+  protected ASCIIGenomeHistory(String yaml) throws IOException {
     if (yaml == null) {
       this.fileName = DEFAULT_FILENAME;
     } else {
@@ -85,7 +85,7 @@ public class ASCIIGenomeHistory {
     }
   }
 
-  public ASCIIGenomeHistory() throws IOException {
+  protected ASCIIGenomeHistory() throws IOException {
     this(DEFAULT_FILENAME);
   }
 
@@ -127,7 +127,7 @@ public class ASCIIGenomeHistory {
     this.commands = commands;
   }
 
-  public void write(File outYaml) throws IOException {
+  private void write(File outYaml) throws IOException {
     Map<String, Object> asciigenome_history = new HashMap<String, Object>();
 
     // List of commands
@@ -163,7 +163,7 @@ public class ASCIIGenomeHistory {
     writer.close();
   }
 
-  public void write() throws IOException {
+  protected void write() throws IOException {
     File file = new File(DEFAULT_FILENAME);
     file.getParentFile().mkdirs();
     this.write(file);
