@@ -127,7 +127,7 @@ public class ASCIIGenomeHistory {
     this.commands = commands;
   }
 
-  private void write(File outYaml) throws IOException {
+  protected void write(File outYaml) throws IOException {
     Map<String, Object> asciigenome_history = new HashMap<String, Object>();
 
     // List of commands

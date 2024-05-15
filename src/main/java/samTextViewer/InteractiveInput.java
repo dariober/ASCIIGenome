@@ -8,22 +8,14 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import commandHelp.Command;
 import commandHelp.CommandList;
-import exceptions.InvalidColourException;
-import exceptions.InvalidCommandLineException;
-import exceptions.InvalidConfigException;
-import exceptions.InvalidGenomicCoordsException;
-import exceptions.InvalidRecordException;
+import exceptions.*;
 import htsjdk.samtools.SAMSequenceDictionary;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import jline.console.ConsoleReader;
@@ -41,6 +33,7 @@ public class InteractiveInput {
   private static int debug;
   private SAMSequenceDictionary samSeqDict;
   private String fasta;
+  private String messages = ""; // Messages that may be sent from the various methods.
 
   public InteractiveInput(ConsoleReader console, int debug) {
     InteractiveInput.debug = debug;
@@ -89,7 +82,6 @@ public class InteractiveInput {
     this.fasta = proc.getGenomicCoordsHistory().current().getFastaFile();
     this.samSeqDict = proc.getGenomicCoordsHistory().current().getSamSeqDict();
 
-    String messages = ""; // Messages that may be sent from the various methods.
     for (String cmdString : cmdInputChainList) {
 
       List<String> cmdTokens = new Tokenizer(cmdString).tokenize();
@@ -812,15 +804,22 @@ public class InteractiveInput {
     }
   }
 
-  private void openSession(String sessionYamlFile, String session, TrackProcessor proc) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException {
-    Session ss = new Session(sessionYamlFile, session, Utils.getTerminalWidth());
-    GenomicCoords testSeqDict = new GenomicCoords(ss.getRegion(), Utils.getTerminalWidth(), null, null);
-    List<String> genomeFile = new ArrayList<String>();
-    genomeFile.add(ss.getGenomeFile());
-    testSeqDict.setGenome(genomeFile, true);
-    proc.getGenomicCoordsHistory().setGenome(genomeFile);
-    proc.getGenomicCoordsHistory()
-            .add(testSeqDict);
+  private void openSession(String sessionYamlFile, String session, TrackProcessor proc) throws IOException {
+      Session ss = null;
+      try {
+          ss = new Session(sessionYamlFile, session);
+      } catch (SessionException e) {
+          this.messages += e.getMessage();
+          this.interactiveInputExitCode = ExitCode.ERROR;
+          return;
+      }
+      try {
+        GenomicCoords gc = ss.getGenome();
+        proc.getGenomicCoordsHistory().setGenome(Collections.singletonList(gc.getFastaFile()));
+        proc.getGenomicCoordsHistory().add(gc);
+      } catch (Exception e) {
+        this.messages += "Unable to set genome for session " + session;
+    }
   }
 
   private void setGenome(List<String> cmdTokens, TrackProcessor proc)
