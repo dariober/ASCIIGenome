@@ -17,7 +17,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -295,7 +294,7 @@ public class InteractiveInput {
             this.saveSession(args, proc);
           } else if (args.get(0).equals("list")) {
             args.remove(0);
-            throw new NotImplementedException("TODO");
+            throw new RuntimeException("TODO");
             // this.listSessions(args, proc);
             // this.messages += Joiner.on("\n").join(this.session.getMessages());
           } else {

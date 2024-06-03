@@ -10,3 +10,4 @@ daemon/
 native/
 wrapper/
 *.swp
+/google-java-format-*.jar
