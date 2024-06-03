@@ -2,13 +2,13 @@ package tracks;
 
 abstract class AbstractIntervalFeature {
 
-  private String bgColor = null;
+  private String bgColour = null;
 
-  protected String getBgColor() {
-    return bgColor;
+  protected String getBgColour() {
+    return bgColour;
   }
 
-  protected void setBgColor(String bgColor) {
-    this.bgColor = bgColor;
+  protected void setBgColour(String bgColour) {
+    this.bgColour = bgColour;
   }
 }

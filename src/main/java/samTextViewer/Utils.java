@@ -421,9 +421,9 @@ public class Utils {
     return mergedList;
   }
 
-  //	public static LinkedHashMap<String, Integer> xterm256ColorCodes(){
-  //		// See http://misc.flogisoft.com/bash/tip_colors_and_formatting
-  //		// From http://jonasjacek.github.io/colors/
+  //	public static LinkedHashMap<String, Integer> xterm256ColourCodes(){
+  //		// See http://misc.flogisoft.com/bash/tip_colours_and_formatting
+  //		// From http://jonasjacek.github.io/colours/
   //		LinkedHashMap<String, Integer> colourCodes= new LinkedHashMap<String, Integer>();
   //		colourCodes.put("default", 39);
   //		colourCodes.put("black", 30);
@@ -446,22 +446,22 @@ public class Utils {
   //		return colourCodes;
   //	}
 
-  //	public static Color ansiColourToGraphicsColor(int ansiColor) throws InvalidColourException{
+  //	public static Colour ansiColourToGraphicsColour(int ansiColour) throws InvalidColourException{
   //
-  //		if(!xterm256ColorCodes().entrySet().contains(ansiColor)){
+  //		if(!xterm256ColourCodes().entrySet().contains(ansiColour)){
   //			throw new InvalidColourException();
   //		}
-  //		if(ansiColor == 30){ return Color.BLACK; }
-  //		if(ansiColor == 31 || ansiColor == 91){ return Color.RED; }
-  //		if(ansiColor == 32 || ansiColor == 92){ return Color.GREEN; }
-  //		if(ansiColor == 33 || ansiColor == 93){ return Color.YELLOW; }
-  //		if(ansiColor == 34 || ansiColor == 94){ return Color.BLUE; }
-  //		if(ansiColor == 35 || ansiColor == 95){ return Color.MAGENTA; }
-  //		if(ansiColor == 36 || ansiColor == 96){ return Color.CYAN; }
-  //		if(ansiColor == 37){ return Color.LIGHT_GRAY; }
-  //		if(ansiColor == 90){ return Color.DARK_GRAY; }
-  //		if(ansiColor == 97){ return Color.WHITE; }
-  //		return Color.BLACK;
+  //		if(ansiColour == 30){ return Colour.BLACK; }
+  //		if(ansiColour == 31 || ansiColour == 91){ return Colour.RED; }
+  //		if(ansiColour == 32 || ansiColour == 92){ return Colour.GREEN; }
+  //		if(ansiColour == 33 || ansiColour == 93){ return Colour.YELLOW; }
+  //		if(ansiColour == 34 || ansiColour == 94){ return Colour.BLUE; }
+  //		if(ansiColour == 35 || ansiColour == 95){ return Colour.MAGENTA; }
+  //		if(ansiColour == 36 || ansiColour == 96){ return Colour.CYAN; }
+  //		if(ansiColour == 37){ return Colour.LIGHT_GRAY; }
+  //		if(ansiColour == 90){ return Colour.DARK_GRAY; }
+  //		if(ansiColour == 97){ return Colour.WHITE; }
+  //		return Colour.BLACK;
   //	}
 
   /**
@@ -2213,9 +2213,8 @@ public class Utils {
     List<String> coords = new ArrayList<String>(3);
     coords.add(null);
     coords.add("1");
-    coords.add(
-        "536870912"); // Max size of binning index for tabix is 2^29. See also
-                      // https://github.com/samtools/htslib/issues/435
+    coords.add("536870912"); // Max size of binning index for tabix is 2^29. See also
+    // https://github.com/samtools/htslib/issues/435
 
     String chrom = StringUtils.substringBeforeLast(region, ":").trim();
     coords.set(0, chrom);

@@ -3,9 +3,9 @@ package tracks;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.ConfigKey;
+import colouring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
@@ -113,7 +113,7 @@ public class TrackReadsTest {
           InvalidConfigException {
 
     String shade = Config.get(ConfigKey.shade_low_mapq);
-    String xshade = Integer.toString(Xterm256.colorNameToXterm256(shade));
+    String xshade = Integer.toString(Xterm256.colourNameToXterm256(shade));
 
     GenomicCoords gc = new GenomicCoords("chr7:999-1041", 80, null, null);
     TrackReads tr = new TrackReads("test_data/missingReadSeq.bam", gc);
@@ -144,7 +144,7 @@ public class TrackReadsTest {
     List<Argument> list = new ArrayList<Argument>();
     Argument re = new Argument("NCNNNCCC", "red1", false);
     list.add(re);
-    tr.changeFeatureColor(list);
+    tr.changeFeatureColour(list);
     assertTrue(tr.printToScreen().contains("196;"));
   }
 

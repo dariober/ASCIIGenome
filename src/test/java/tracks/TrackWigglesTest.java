@@ -2,7 +2,7 @@ package tracks;
 
 import static org.junit.Assert.assertTrue;
 
-import coloring.Config;
+import colouring.Config;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;

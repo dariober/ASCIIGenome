@@ -1,59 +1,33 @@
-[
-  {
-    name: mysession,
-    lastRead: "2024-01-01T20:40:00",
-    genome: {
-      fasta: "test_data/chr7.fa",
-      region: "chr7:1-1000",
-    },
-    tracks: [
-      {
-        name: "ds051#1",
-        source: "test_data/ds051.actb.bam",
-        type: "TrackPileup",
-      }
-    ]
-  },
-  {
-    name: S2,
-    lastRead: "2024-01-02T20:40:00",
-    genome: {
-        fasta: "test_data/chr7.fa",
-        region: "chr7:1-10000",
-    },
-    tracks: [
-      {
-            name: "ds051#1",
-            source: "test_data/ds051.actb.bam",
-            type: "TrackPileup",
-      },
-      {
-        name: "ds051#2",
-        source: "test_data/ds051.actb.bam",
-        type: "TrackReads",
-      }
-
-    ]
-  },
-  {
-    name: genome-not-found,
-    lastRead: "2024-01-03T20:40:00",
-    genome: {
-      fasta: "notfound.fasta",
-      region: "chr7:1-10000",
-    },
-    tracks: [
-      {
-        name: "ds051#1",
-        source: "test_data/ds051.actb.bam",
-        type: "TrackPileup",
-      },
-      {
-        name: "ds051#2",
-        source: "test_data/ds051.actb.bam",
-        type: "TrackReads",
-      }
-
-    ]
-  }
-]
+- sessionName: newSession
+  genome:
+    chrom: chr7
+    fastaFile: /home/dario/git_repos/ASCIIGenome/test_data/chr7.fa
+    from: 5566800
+    to: 5567000
+    samSeqDictSource: test_data/chr7.fa
+  lastRead: '2023-05-29T22:26:33.764802'
+  tracks:
+    ds#1:
+      colour: red
+      filename: /home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam
+      type: tracks.TrackPileup
+    ds#2:
+      colour: '0'
+      filename: /home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam
+      type: tracks.TrackReads
+- sessionName: no-fastafile
+  genome:
+    chrom: chr7
+    from: 80
+    to: 1001
+    samSeqDictSource: test_data/ds051.actb.bam
+  lastRead: '2024-05-29T22:26:33.850521'
+  tracks:
+    ds#1:
+      colour: blue
+      filename: /home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam
+      type: tracks.TrackPileup
+    ds#2:
+      colour: '0'
+      filename: /home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam
+      type: tracks.TrackReads

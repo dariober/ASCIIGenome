@@ -3,7 +3,7 @@ package tracks;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import coloring.Config;
+import colouring.Config;
 import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 import exceptions.InvalidColourException;
@@ -273,7 +273,7 @@ public class TrackPileupTest {
         tr.getTitle()
             .contains(
                 "1000000")); // The range should contain 1,000,000 because this is the entire size
-                             // of the file
+    // of the file
     // rpm= 22/22*1,000,000
   }
 

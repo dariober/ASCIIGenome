@@ -1,6 +1,6 @@
 package tracks;
 
-import coloring.Xterm256;
+import colouring.Xterm256;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -44,7 +44,7 @@ public class TrackIntervalFeature extends Track {
 
   private BBFileReader bigBedReader;
   protected int scoreColIdx = -1;
-  private List<Argument> colorForRegex = null;
+  private List<Argument> colourForRegex = null;
   private VCFCodec vcfCodec;
   private String gtfAttributeForName = null;
   private int bedFieldForName = 3; // 0-based!
@@ -65,7 +65,7 @@ public class TrackIntervalFeature extends Track {
         || this.getTrackFormat().equals(TrackFormat.BED)) {
       this.scoreColIdx =
           5; // Don't use setScoreColIdx because it call update and the GenomicCoordinates object is
-             // null
+      // null
     } else if (this.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
       this.scoreColIdx = 4;
     }
@@ -106,7 +106,7 @@ public class TrackIntervalFeature extends Track {
 
   protected TrackIntervalFeature(GenomicCoords gc) {}
 
-  protected TrackIntervalFeature() {}
+  public TrackIntervalFeature() {}
 
   /* M e t h o d s */
 
@@ -754,7 +754,7 @@ public class TrackIntervalFeature extends Track {
     for (IntervalFeature x : this.getIntervalFeatureList()) {
       x.getIdeogram(true, false);
     }
-    this.changeFeatureColor(this.getColorForRegex());
+    this.changeFeatureColour(this.getColourForRegex());
 
     List<IntervalFeature> flatList = new ArrayList<IntervalFeature>();
 
@@ -1236,26 +1236,26 @@ public class TrackIntervalFeature extends Track {
   }
 
   @Override
-  protected void setColorForRegex(List<Argument> xcolorForRegex) {
-    if (xcolorForRegex == null) {
-      this.colorForRegex = null;
+  protected void setColourForRegex(List<Argument> xcolourForRegex) {
+    if (xcolourForRegex == null) {
+      this.colourForRegex = null;
       return;
     } else {
-      if (this.colorForRegex == null) {
-        this.colorForRegex = new ArrayList<Argument>();
+      if (this.colourForRegex == null) {
+        this.colourForRegex = new ArrayList<Argument>();
       }
-      for (Argument p : xcolorForRegex) {
-        this.colorForRegex.add(p);
+      for (Argument p : xcolourForRegex) {
+        this.colourForRegex.add(p);
       }
     }
   }
 
-  private List<Argument> getColorForRegex() {
-    return this.colorForRegex;
+  private List<Argument> getColourForRegex() {
+    return this.colourForRegex;
   }
 
   @Override
-  protected void changeFeatureColor(List<Argument> list)
+  protected void changeFeatureColour(List<Argument> list)
       throws InvalidColourException, IOException {
     if (list == null) {
       return;
@@ -1263,7 +1263,7 @@ public class TrackIntervalFeature extends Track {
 
     for (Argument arg : list) {
       String regex = arg.getKey();
-      String color = arg.getArg();
+      String colour = arg.getArg();
       String[] rawrecs = new String[this.getIntervalFeatureList().size()];
       for (int i = 0; i < this.getIntervalFeatureList().size(); i++) {
         rawrecs[i] = this.getIntervalFeatureList().get(i).getRaw();
@@ -1276,8 +1276,8 @@ public class TrackIntervalFeature extends Track {
         }
         if (m) {
           for (FeatureChar f : this.getIntervalFeatureList().get(i).getIdeogram(false, false)) {
-            f.setBgColor(color);
-            f.setFgColor(Xterm256.getContrastColor(color));
+            f.setBgColour(colour);
+            f.setFgColour(Xterm256.getContrastColour(colour));
           }
         }
       }

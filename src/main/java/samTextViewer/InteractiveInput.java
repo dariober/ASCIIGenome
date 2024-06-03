@@ -1,8 +1,7 @@
 package samTextViewer;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import com.esotericsoftware.yamlbeans.YamlException;
+import colouring.Config;
+import colouring.ConfigKey;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -11,17 +10,19 @@ import commandHelp.CommandList;
 import exceptions.*;
 import htsjdk.samtools.SAMSequenceDictionary;
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import session.Session;
+import session.SessionHandler;
 import utils.Tokenizer;
 
 /** Class to process input from console */
@@ -34,15 +35,14 @@ public class InteractiveInput {
   private SAMSequenceDictionary samSeqDict;
   private String fasta;
   private String messages = ""; // Messages that may be sent from the various methods.
+  private SessionHandler sessionHandler;
 
   public InteractiveInput(ConsoleReader console, int debug) {
     InteractiveInput.debug = debug;
     this.console = console;
   }
 
-  /**
-   * Parse the input list of commands to print information or modify the input TrackProcessor.
-   */
+  /** Parse the input list of commands to print information or modify the input TrackProcessor. */
   protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc)
       throws InvalidGenomicCoordsException,
           IOException,
@@ -76,7 +76,7 @@ public class InteractiveInput {
       cmdInputChainList.add(cmd);
     }
     if (cmdInputChainList.size() >= 2 && cmdInputChainList.get(0).startsWith("setConfig ")) {
-      cmdInputChainList.add("+0"); // This is to refresh the screen and actually set the new color
+      cmdInputChainList.add("+0"); // This is to refresh the screen and actually set the new colour
     }
 
     this.fasta = proc.getGenomicCoordsHistory().current().getFastaFile();
@@ -85,6 +85,10 @@ public class InteractiveInput {
     for (String cmdString : cmdInputChainList) {
 
       List<String> cmdTokens = new Tokenizer(cmdString).tokenize();
+      if (!cmdTokens.isEmpty()) {
+        cmdTokens.set(0, cmdTokens.get(0).replaceAll("color", "colour"));
+        cmdTokens.set(0, cmdTokens.get(0).replaceAll("Color", "Colour"));
+      }
 
       this.interactiveInputExitCode = ExitCode.CLEAN; // If something goes wrong this will change
       try {
@@ -164,7 +168,7 @@ public class InteractiveInput {
         } else if (cmdTokens.get(0).equals("save")) {
           List<String> args = new ArrayList<String>(cmdTokens);
 
-          proc.setStripAnsi(!Utils.argListContainsFlag(args, "-color"));
+          proc.setStripAnsi(!Utils.argListContainsFlag(args, "-colour"));
 
           proc.setAppendToSnapshotFile(false); // Default: do not append
 
@@ -277,8 +281,27 @@ public class InteractiveInput {
           proc.getGenomicCoordsHistory().add(gc);
 
         } else if (cmdTokens.get(0).equals("session")) {
-          this.openSession(cmdTokens.get(1), cmdTokens.get(2), proc);
-
+          List<String> args = new ArrayList<>(cmdTokens);
+          args.remove(0);
+          if (args.isEmpty()) {
+            this.messages +=
+                "Provide a sub-command to handle a session. See `session -h` for details.";
+            this.setInteractiveInputExitCode(ExitCode.ERROR);
+          } else if (args.get(0).equals("open")) {
+            args.remove(0);
+            this.openSession(args, proc);
+          } else if (args.get(0).equals("save")) {
+            args.remove(0);
+            this.saveSession(args, proc);
+          } else if (args.get(0).equals("list")) {
+            args.remove(0);
+            throw new NotImplementedException("TODO");
+            // this.listSessions(args, proc);
+            // this.messages += Joiner.on("\n").join(this.session.getMessages());
+          } else {
+            this.messages += "Invalid sub-command. See `session -h` for details.";
+            this.setInteractiveInputExitCode(ExitCode.ERROR);
+          }
         } else if (cmdTokens.get(0).equals("setGenome")) {
           this.setGenome(cmdTokens, proc);
 
@@ -304,15 +327,14 @@ public class InteractiveInput {
         } else if (cmdTokens.get(0).equals("trackHeight")) {
           proc.getTrackSet().setTrackHeightForRegex(cmdTokens);
 
-        } else if ((cmdTokens.get(0).equals("colorTrack")
-            || cmdTokens.get(0).equals("colourTrack"))) {
+        } else if (cmdTokens.get(0).equals("colourTrack")) {
           proc.getTrackSet().setTrackColourForRegex(cmdTokens);
 
         } else if (cmdTokens.get(0).equals("bedToBedgraph")) {
           proc.getTrackSet().setTrackFormatForRegex(cmdTokens);
 
-        } else if ((cmdTokens.get(0).equals("featureColor"))) {
-          proc.getTrackSet().setFeatureColorForRegex(cmdTokens);
+        } else if (cmdTokens.get(0).equals("featureColour")) {
+          proc.getTrackSet().setFeatureColourForRegex(cmdTokens);
 
         } else if (cmdTokens.get(0).equals("hideTitle")) {
           proc.getTrackSet().setHideTitleForRegex(cmdTokens);
@@ -804,21 +826,50 @@ public class InteractiveInput {
     }
   }
 
-  private void openSession(String sessionYamlFile, String session, TrackProcessor proc) throws IOException {
-      Session ss = null;
-      try {
-          ss = new Session(sessionYamlFile, session);
-      } catch (SessionException e) {
-          this.messages += e.getMessage();
-          this.interactiveInputExitCode = ExitCode.ERROR;
-          return;
-      }
-      try {
-        GenomicCoords gc = ss.getGenome();
-        proc.getGenomicCoordsHistory().setGenome(Collections.singletonList(gc.getFastaFile()));
-        proc.getGenomicCoordsHistory().add(gc);
-      } catch (Exception e) {
-        this.messages += "Unable to set genome for session " + session;
+  private void saveSession(List<String> args, TrackProcessor proc)
+      throws InvalidCommandLineException, IOException, SessionException {
+    String sessionYamlFile =
+        Utils.getArgForParam(args, "-f", SessionHandler.DEFAULT_SESSION_FILE.getAbsolutePath());
+    // if (args.isEmpty() && ) {}
+    SessionHandler.saveAs(new File(sessionYamlFile), proc.toSession(), "stuff");
+  }
+
+  private void openSession(List<String> args, TrackProcessor proc)
+      throws IOException,
+          InvalidCommandLineException,
+          InvalidGenomicCoordsException,
+          InvalidTrackTypeException {
+    String sessionYamlFile = Utils.getArgForParam(args, "-f", "");
+    String sessionNameOrIndex;
+    if (args.isEmpty()) {
+      this.messages +=
+          "Please provide the name or number of the session to open. See `session -h` for details";
+      this.interactiveInputExitCode = ExitCode.ERROR;
+      return;
+    } else if (args.size() == 1) {
+      sessionNameOrIndex = args.get(0);
+    } else {
+      this.messages += "Too many arguments. See `session -h` for details";
+      this.interactiveInputExitCode = ExitCode.ERROR;
+      return;
+    }
+    Session session;
+    try {
+      this.sessionHandler = new SessionHandler(new File(sessionYamlFile));
+      session = this.sessionHandler.get(sessionNameOrIndex);
+    } catch (SessionException e) {
+      this.messages += e.getMessage();
+      this.interactiveInputExitCode = ExitCode.ERROR;
+      return;
+    }
+    try {
+      GenomicCoords gc = session.getGenome().toGenomicCoords();
+      proc.getGenomicCoordsHistory().setGenome(Collections.singletonList(gc.getFastaFile()));
+      proc.getGenomicCoordsHistory().add(gc);
+      proc.setTrackSet(session.toTrackSet());
+    } catch (Exception e) {
+      this.messages +=
+          "Unable to set genome for session " + sessionNameOrIndex + ". Session is:\n" + session;
     }
   }
 
@@ -1107,15 +1158,15 @@ public class InteractiveInput {
     return tab.trim();
   }
 
-  private void addTracks(List<String> cmdTokens, TrackProcessor proc) throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException {
+  private void addTracks(List<String> cmdTokens, TrackProcessor proc)
+      throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException {
     List<String> globbed = Utils.globFiles(cmdTokens);
     if (globbed.isEmpty()) {
       globbed = this.openFilesFromIndexes(proc.getTrackSet().getOpenedFiles(), cmdTokens);
     }
 
     if (globbed.isEmpty()) {
-      String msg =
-              Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
+      String msg = Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
       System.err.println(msg);
       this.interactiveInputExitCode = ExitCode.ERROR;
 
@@ -1126,7 +1177,7 @@ public class InteractiveInput {
         System.err.println(msg);
         try {
           proc.getTrackSet()
-                  .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
+              .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
         } catch (Exception e) {
           try {
             // It may be that you are in position that doesn't exist in the sequence
@@ -1136,10 +1187,11 @@ public class InteractiveInput {
             // file. This fixes issue#23
             String region = Main.initRegion(globbed, null, null, debug);
             proc.getGenomicCoordsHistory()
-                    .add(new GenomicCoords(region, Utils.getTerminalWidth(), this.samSeqDict, this.fasta));
+                .add(
+                    new GenomicCoords(
+                        region, Utils.getTerminalWidth(), this.samSeqDict, this.fasta));
             proc.getTrackSet()
-                    .addTrackFromSource(
-                            sourceName, proc.getGenomicCoordsHistory().current(), null);
+                .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
           } catch (Exception x) {
             x.printStackTrace();
             msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
@@ -1149,9 +1201,9 @@ public class InteractiveInput {
         }
 
         if (proc.getGenomicCoordsHistory().current().getSamSeqDict() == null
-                || proc.getGenomicCoordsHistory().current().getSamSeqDict().isEmpty()) {
+            || proc.getGenomicCoordsHistory().current().getSamSeqDict().isEmpty()) {
           GenomicCoords testSeqDict =
-                  new GenomicCoords("default", Utils.getTerminalWidth(), null, null);
+              new GenomicCoords("default", Utils.getTerminalWidth(), null, null);
           List<String> candidateSourceGenome = new ArrayList<String>();
           candidateSourceGenome.add(sourceName);
           testSeqDict.setGenome(candidateSourceGenome, false);

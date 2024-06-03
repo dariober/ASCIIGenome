@@ -1,8 +1,8 @@
 package tracks;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.ConfigKey;
+import colouring.Xterm256;
 import com.google.common.base.Joiner;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
@@ -30,6 +30,8 @@ public class TrackWiggles extends Track {
   private BBFileReader bigWigReader;
 
   /* C o n s t r u c t o r s */
+  public TrackWiggles() {}
+
   protected TrackWiggles(String filename, GenomicCoords gc, TrackFormat trackFormat)
       throws IOException,
           InvalidRecordException,
@@ -221,9 +223,9 @@ public class TrackWiggles extends Track {
       new Xterm256();
       printable =
           "\033[48;5;"
-              + Config.get256Color(ConfigKey.background)
+              + Config.get256Colour(ConfigKey.background)
               + ";38;5;"
-              + Xterm256.colorNameToXterm256(this.getTitleColour())
+              + Xterm256.colourNameToXterm256(this.getTitleColour())
               + "m"
               + printable;
     }

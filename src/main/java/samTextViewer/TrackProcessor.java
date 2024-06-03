@@ -1,8 +1,8 @@
 package samTextViewer;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import coloring.Pdf;
+import colouring.Config;
+import colouring.ConfigKey;
+import colouring.Pdf;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.itextpdf.text.DocumentException;
@@ -17,8 +17,13 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import session.Session;
+import session.SessionGenome;
+import session.SessionTrack;
 import tracks.Track;
 import tracks.TrackSet;
 
@@ -102,13 +107,13 @@ public class TrackProcessor {
     String footer = this.getFooter(currentGC);
     if (!noFormat) {
       outputString.append("\033[48;5;");
-      outputString.append(Config.get256Color(ConfigKey.background));
+      outputString.append(Config.get256Colour(ConfigKey.background));
       outputString.append(";38;5;");
-      outputString.append(Config.get256Color(ConfigKey.footer));
+      outputString.append(Config.get256Colour(ConfigKey.footer));
       outputString.append("m");
       outputString.append(footer);
       outputString.append("\033[38;5;");
-      outputString.append(Config.get256Color(ConfigKey.foreground));
+      outputString.append(Config.get256Colour(ConfigKey.foreground));
       outputString.append("m");
     } else {
       outputString.append(footer);
@@ -186,7 +191,7 @@ public class TrackProcessor {
     return footer;
   }
 
-  protected TrackSet getTrackSet() {
+  public TrackSet getTrackSet() {
     return trackSet;
   }
 
@@ -202,7 +207,7 @@ public class TrackProcessor {
     this.noFormat = noFormat;
   }
 
-  protected GenomicCoordsHistory getGenomicCoordsHistory() {
+  public GenomicCoordsHistory getGenomicCoordsHistory() {
     return genomicCoordsHistory;
   }
 
@@ -252,5 +257,18 @@ public class TrackProcessor {
 
   protected void setShowCruler(boolean showCruler) {
     this.showCruler = showCruler;
+  }
+
+  public Session toSession() {
+    Map<String, SessionTrack> tracks = new LinkedHashMap<>();
+    for (Track tr : this.getTrackSet().getTrackList()) {
+      File fn = new File(tr.getFilename());
+      if (fn.getName().startsWith(".asciigenome.")) {
+        continue;
+      }
+      tracks.put(tr.getTrackTag(), new SessionTrack(tr));
+    }
+    SessionGenome sg = new SessionGenome(this.getGenomicCoordsHistory().current());
+    return new Session(sg, tracks);
   }
 }

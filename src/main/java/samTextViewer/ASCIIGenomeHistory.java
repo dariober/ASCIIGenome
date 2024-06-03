@@ -14,11 +14,7 @@ import org.apache.commons.io.FileUtils;
 public class ASCIIGenomeHistory {
 
   private static final String DEFAULT_FILENAME =
-      System.getProperty("user.home")
-          + File.separator
-          + ".asciigenome"
-          + File.separator
-          + "history.yaml";
+      Main.DEFAULT_ASCIIGENOME_DIR.getAbsolutePath() + File.separator + "history.yaml";
   private final int MAX_FILES = 200;
   private final int MAX_CMDS = 2000;
   private final String fileName;

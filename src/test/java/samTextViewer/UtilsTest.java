@@ -8,7 +8,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import coloring.Config;
+import colouring.Config;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import exceptions.InvalidColourException;
@@ -1557,7 +1557,7 @@ public class UtilsTest {
         Utils.getIndexOfclosestValue(
             35,
             seq)); // Value is right in the middle of the interval (but take care you are working
-                   // with floating points)
+    // with floating points)
     assertEquals(2, Utils.getIndexOfclosestValue(29, seq));
     assertEquals(2, Utils.getIndexOfclosestValue(31, seq));
     assertEquals(4, Utils.getIndexOfclosestValue(50, seq));

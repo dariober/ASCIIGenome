@@ -1,7 +1,7 @@
 package tracks;
 
-import coloring.Config;
-import coloring.ConfigKey;
+import colouring.Config;
+import colouring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -51,6 +51,8 @@ public class TrackPileup extends TrackBedgraph {
   private long alnRecCnt = -1;
 
   /*        C O N S T R U C T O R         */
+
+  public TrackPileup() {}
 
   /**
    * Initialize pileup with a list of empty loci at the region given by chrom:from-to At the start,
@@ -442,7 +444,7 @@ public class TrackPileup extends TrackBedgraph {
 
   public String getPrintableConsensusSequence()
       throws IOException, InvalidGenomicCoordsException, InvalidColourException {
-    if (!this.getGc().isSingleBaseResolution || this.isBisulf()) {
+    if (!this.getGc().isSingleBaseResolution() || this.isBisulf()) {
       return "";
     }
 
@@ -455,23 +457,23 @@ public class TrackPileup extends TrackBedgraph {
       if (this.isNoFormat()) {
         faSeqStr += base;
       } else {
-        faSeqStr += "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;";
+        faSeqStr += "\033[48;5;" + Config.get256Colour(ConfigKey.background) + ";38;5;";
         if (base == 'A') {
-          faSeqStr += Config.get256Color(ConfigKey.seq_a);
+          faSeqStr += Config.get256Colour(ConfigKey.seq_a);
         } else if (base == 'C') {
-          faSeqStr += Config.get256Color(ConfigKey.seq_c);
+          faSeqStr += Config.get256Colour(ConfigKey.seq_c);
         } else if (base == 'G') {
-          faSeqStr += Config.get256Color(ConfigKey.seq_g);
+          faSeqStr += Config.get256Colour(ConfigKey.seq_g);
         } else if (base == 'T') {
-          faSeqStr += Config.get256Color(ConfigKey.seq_t);
+          faSeqStr += Config.get256Colour(ConfigKey.seq_t);
         } else {
-          faSeqStr += Config.get256Color(ConfigKey.seq_other);
+          faSeqStr += Config.get256Colour(ConfigKey.seq_other);
         }
         faSeqStr +=
             "m"
                 + base
                 + "\033[0m\033[38;5;0;48;5;"
-                + Config.get256Color(ConfigKey.background)
+                + Config.get256Colour(ConfigKey.background)
                 + "m"; // Clear formatting and fg to black and bg to white;
       }
     }

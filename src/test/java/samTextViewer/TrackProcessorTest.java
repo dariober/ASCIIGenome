@@ -1,6 +1,6 @@
 package samTextViewer;
 
-import coloring.Config;
+import colouring.Config;
 import com.itextpdf.text.DocumentException;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;

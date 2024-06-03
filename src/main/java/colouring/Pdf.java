@@ -1,4 +1,4 @@
-package coloring;
+package colouring;
 
 import com.google.common.base.Splitter;
 import com.itextpdf.text.BaseColor;
@@ -59,11 +59,11 @@ public class Pdf {
     Rectangle pageSize =
         new Rectangle((float) (this.getMaxWidth() * 1.01), (float) (this.getMaxHeight()));
 
-    int background256 = Config.get256Color(ConfigKey.background);
-    Color pageColor = Xterm256.xterm256ToColor(background256);
+    int background256 = Config.get256Colour(ConfigKey.background);
+    Color pageColour = Xterm256.xterm256ToColour(background256);
 
     pageSize.setBackgroundColor(
-        new BaseColor(pageColor.getRed(), pageColor.getGreen(), pageColor.getBlue()));
+        new BaseColor(pageColour.getRed(), pageColour.getGreen(), pageColour.getBlue()));
     Document document = new Document(pageSize, 5f, 0f, 0f, 0f);
     // Document document = new Document(new Rectangle((float) (this.getMaxWidth() * 1.01), (float)
     // (this.getMaxHeight())), 5f, 0f, 0f, 0f);
@@ -154,15 +154,15 @@ public class Pdf {
 
       if (extractAnsi.contains(7)) {
         // Invert colour if ansi formatting says so
-        bgBaseCol = new BaseColor(this.xterm256ToColor(xv, false).getRGB());
-        fgBaseCol = new BaseColor(this.xterm256ToColor(xv, true).getRGB());
+        bgBaseCol = new BaseColor(this.xterm256ToColour(xv, false).getRGB());
+        fgBaseCol = new BaseColor(this.xterm256ToColour(xv, true).getRGB());
       } else {
-        fgBaseCol = new BaseColor(this.xterm256ToColor(xv, false).getRGB());
-        bgBaseCol = new BaseColor(this.xterm256ToColor(xv, true).getRGB());
+        fgBaseCol = new BaseColor(this.xterm256ToColour(xv, false).getRGB());
+        bgBaseCol = new BaseColor(this.xterm256ToColour(xv, true).getRGB());
       }
 
       if (extractAnsi.size() != 0) {
-        // This string begins with ansi sequence and the color has been extracted.
+        // This string begins with ansi sequence and the colour has been extracted.
         // So remove the ansi sequence at the beginnig and the end, we don't need them anymore
         xv = xv.replaceAll("^.+?m", "");
       }
@@ -203,25 +203,25 @@ public class Pdf {
    * contain the escape sequence for fore or back ground, use the colour from Config. This method
    * should be private. It is protected only for unit test.
    */
-  protected Color xterm256ToColor(String x, boolean isBackground) throws InvalidColourException {
+  protected Color xterm256ToColour(String x, boolean isBackground) throws InvalidColourException {
 
     List<Integer> ansiCodes = this.extractAnsiCodes(x);
 
-    Color configBg = Xterm256.xterm256ToColor(Config.get256Color(ConfigKey.background));
-    Color configFg = Xterm256.xterm256ToColor(Config.get256Color(ConfigKey.foreground));
+    Color configBg = Xterm256.xterm256ToColour(Config.get256Colour(ConfigKey.background));
+    Color configFg = Xterm256.xterm256ToColour(Config.get256Colour(ConfigKey.foreground));
 
     Color col = null;
     int xtag = -1;
     if (isBackground) {
-      col = configBg; // Color.WHITE; // Default background
+      col = configBg; // Colour.WHITE; // Default background
       xtag = Collections.indexOfSubList(ansiCodes, Arrays.asList(new Integer[] {48, 5}));
     } else {
-      col = configFg; // Color.BLACK; // Default foreground
+      col = configFg; // Colour.BLACK; // Default foreground
       xtag = Collections.indexOfSubList(ansiCodes, Arrays.asList(new Integer[] {38, 5}));
     }
 
     if (xtag != -1 && ansiCodes.size() > 2) {
-      col = Xterm256.xterm256ToColor(ansiCodes.get(xtag + 2));
+      col = Xterm256.xterm256ToColour(ansiCodes.get(xtag + 2));
     }
 
     return col;

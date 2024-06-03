@@ -3,7 +3,7 @@ package tracks;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import coloring.Config;
+import colouring.Config;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;

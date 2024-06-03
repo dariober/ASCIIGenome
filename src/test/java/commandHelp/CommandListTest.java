@@ -1,6 +1,6 @@
 package commandHelp;
 
-import coloring.Config;
+import colouring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
@@ -30,6 +30,6 @@ public class CommandListTest {
           InvalidConfigException {
     new Config(null);
     System.out.println("DOCSTRING");
-    System.out.println(CommandList.getHelpForCommand("featureColor"));
+    System.out.println(CommandList.getHelpForCommand("featureColour"));
   }
 }

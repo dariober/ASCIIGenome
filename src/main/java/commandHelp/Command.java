@@ -2,7 +2,7 @@ package commandHelp;
 
 // With some patience you should replace the hardcoded command names with these.
 public enum Command {
-  featureColor("featureColor"),
+  featureColour("featureColour"),
   featureDisplayMode("featureDisplayMode"),
   print("print"),
   q("q"),
@@ -33,7 +33,7 @@ public enum Command {
   gap("gap"),
   readsAsPairs("readsAsPairs"),
   trackHeight("trackHeight"),
-  colorTrack("colorTrack"),
+  colourTrack("colourTrack"),
   hideTitle("hideTitle"),
   editNames("editNames"),
   addHeader("addHeader"),
@@ -43,6 +43,7 @@ public enum Command {
   showGenome("showGenome"),
   infoTracks("infoTracks"),
   open("open"),
+  session("session"),
   reload("reload"),
   recentlyOpened("recentlyOpened"),
   dropTracks("dropTracks"),

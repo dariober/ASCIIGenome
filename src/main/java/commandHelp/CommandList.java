@@ -1,7 +1,7 @@
 package commandHelp;
 
-import coloring.Config;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import java.io.BufferedWriter;
@@ -91,7 +91,7 @@ public class CommandList {
     doc =
         doc.replaceAll(
             "\n*0: [\\s|\\S]+grey93\033\\[38;5;0;48;5;231m",
-            "`here <http://jonasjacek.github.io/colors/>`_ ");
+            "`here <http://jonasjacek.github.io/colours/>`_ ");
 
     wr.write(doc + "\n");
     wr.close();
@@ -750,25 +750,25 @@ public class CommandList {
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
-    cmd.setName("featureColor");
-    cmd.setArgs("[-r/-R expression color] [-v] [track_regex = .*]...");
+    cmd.setName("featureColour");
+    cmd.setArgs("[-r/-R expression colour] [-v] [track_regex = .*]...");
     cmd.inSection = Section.DISPLAY;
     cmd.setBriefDescription("Set colour for features captured by expression. ");
     cmd.setAdditionalDescription(
         "This command affects interval feature tracks (bed, gff, vcf, etc) and overrides the"
-            + " default color for the lines captured by the expression. Expression is a regex or an"
-            + " awk script (autodetermined). It is useful to highlight features containg a string"
-            + " of interest, such as 'CDS' in gff files, or features where a numeric field satisfy"
-            + " a filter.\n"
+            + " default colour for the lines captured by the expression. Expression is a regex or"
+            + " an awk script (autodetermined). It is useful to highlight features containg a"
+            + " string of interest, such as 'CDS' in gff files, or features where a numeric field"
+            + " satisfy a filter.\n"
             + "\n"
             + "Options:\n"
             + "\n"
-            + ":code:`-r <expression> <color>` Features matching :code:`expression` will have color"
-            + " :code:`color`. The expression is interpreted as regex or as an awk script and it is"
-            + " applied to the raw lines as read from file. This option takes exactly two arguments"
-            + " and can be given zero or more times.\n"
+            + ":code:`-r <expression> <colour>` Features matching :code:`expression` will have"
+            + " colour :code:`colour`. The expression is interpreted as regex or as an awk script"
+            + " and it is applied to the raw lines as read from file. This option takes exactly two"
+            + " arguments and can be given zero or more times.\n"
             + "\n"
-            + ":code:`-R <expression> <color>` Same as :code:`-r` but sets color for features NOT"
+            + ":code:`-R <expression> <colour>` Same as :code:`-r` but sets colour for features NOT"
             + " matched by regex.\n"
             + "\n"
             + ":code:`-v` Invert selection: apply changes to the tracks not selected by list of"
@@ -778,17 +778,17 @@ public class CommandList {
             + "\n"
             + "Example::\n"
             + "\n"
-            + "    featureColor -r CDS plum2 -r exon grey\n"
-            + "    featureColor bed~~~~~~~~~-> Reset to default the track matching 'bed'\n"
-            + "       featureColor -R CDS grey -> Grey all features except those matching CDS\n"
+            + "    featureColour -r CDS plum2 -r exon grey\n"
+            + "    featureColour bed~~~~~~~~~-> Reset to default the track matching 'bed'\n"
+            + "       featureColour -R CDS grey -> Grey all features except those matching CDS\n"
             + "    \n"
-            + "    Color blue where 9th field is > 3; color red where 9th is > 6\n"
-            + "    featureColor -r '$9 > 3' blue -r '$9 > 6' red\n"
+            + "    Colour blue where 9th field is > 3; colour red where 9th is > 6\n"
+            + "    featureColour -r '$9 > 3' blue -r '$9 > 6' red\n"
             + "\n"
-            + "Colors can be specified by name, name prefix, or integer in range 0-255. Available"
+            + "Colours can be specified by name, name prefix, or integer in range 0-255. Available"
             + " colours:\n"
             + "\n"
-            + Xterm256.colorShowForTerminal().replaceAll(" ", "~")
+            + Xterm256.colourShowForTerminal().replaceAll(" ", "~")
             + "\n");
     cmdList.add(cmd);
 
@@ -1004,30 +1004,30 @@ public class CommandList {
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
-    cmd.setName("colorTrack");
-    cmd.setArgs("[-v] color [track_regex = .*]...");
+    cmd.setName("colourTrack");
+    cmd.setArgs("[-v] colour [track_regex = .*]...");
     cmd.inSection = Section.DISPLAY;
     cmd.setBriefDescription("Set colour for tracks matched by regex. ");
     cmd.setAdditionalDescription(
-        "Colors can be specified by name or by a value between 0 and 255. If only the prefix of a"
-            + " color name is given, the first name found starting with the prefix is returned,"
+        "Colours can be specified by name or by a value between 0 and 255. If only the prefix of a"
+            + " colour name is given, the first name found starting with the prefix is returned,"
             + " e.g. 'darkv' is interpreted as 'darkviolet'. Names are case insensitive.\n"
             + "\n"
-            + "See also :code:`featureColor` for BED and GTF/GFF files\n"
+            + "See also :code:`featureColour` for BED and GTF/GFF files\n"
             + "\n"
             + ":code:`-v` Invert selection: apply changes to the tracks not selected by list of"
             + " track_regex\n"
             + "\n"
             + "Available colours are from the Xterm256 palette: \n"
             + "\n"
-            + Xterm256.colorShowForTerminal().replaceAll(" ", "~")
+            + Xterm256.colourShowForTerminal().replaceAll(" ", "~")
             + "\n"
             + "\n"
             + "Example::\n"
             + "\n"
-            + "    colorTrack cyan1 ts.*gtf ts.*bam \n"
-            + "    colorTrack 40 ~~~~~~~~~~~~~~~~~~<- By INT\n"
-            + "    colorTrack darkv ~~~~~~~~~~~~~~~<- Same as darkviolet\n"
+            + "    colourTrack cyan1 ts.*gtf ts.*bam \n"
+            + "    colourTrack 40 ~~~~~~~~~~~~~~~~~~<- By INT\n"
+            + "    colourTrack darkv ~~~~~~~~~~~~~~~<- Same as darkviolet\n"
             + "\n");
     cmdList.add(cmd);
 
@@ -1165,7 +1165,7 @@ public class CommandList {
             + " tracks). Add a header to the first track of each group for ease of reading. Useful"
             + " also to add one or more blank lines for more separation between tracks.\n"
             + "\n"
-            + "* :code:`-c` Color for the header - see :code: `colorTrack -h` for options\n"
+            + "* :code:`-c` Colour for the header - see :code: `colourTrack -h` for options\n"
             + "\n"
             + "* :code:`-a` Header alignment. Either a number between 0 (left-align) and 1"
             + " (right-align) or a keyword left, center, right. Default is 0.5 (center-align)\n"
@@ -1412,8 +1412,28 @@ public class CommandList {
             + "\n"
             + "    open peaks.bed genes.*.gtf~~~~~~~~<- Note use of wildecard\n"
             + "    open http://remote/host/peaks.bed <- From URL\n"
-            + "    open 1 2 3 ~~~~~~~~~~~~~~~~~~~~~~~<- The three most recent files\n"
-            + "");
+            + "    open 1 2 3 ~~~~~~~~~~~~~~~~~~~~~~~<- The three most recent files\n");
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
+    cmd.setName("session");
+    cmd.setArgs("<open|save|list> [-f session.yaml] <sessionName|index>");
+    cmd.inSection = Section.GENERAL;
+    cmd.setBriefDescription("Commands to :code:`open`, :code:`save`, or :code:`list` sessions.");
+    cmd.setAdditionalDescription(
+        "A session stores (most of) the settings about genome and tracks.\n"
+            + "\n"
+            + "* :code:`-f` File to read or save session to. Default"
+            + " \\~/.asciigenome/session.yaml.\n"
+            + "\n"
+            + "* :code:`sessioName|index` Session name to open or save. Use 'last' to refer to the"
+            + " last opened session. Alternatively, use a numeric index to refer a session in"
+            + " reverse chronological order (1: last opened, 2: second last, etc).\n"
+            + "\n"
+            + "Examples::\n"
+            + "\n"
+            + "    session open last~// Open last read session from default file\n"
+            + "    open save -f my-sessions.yaml myTracks // Save to file current session \n");
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
@@ -1587,24 +1607,6 @@ public class CommandList {
             + "\n");
     cmdList.add(cmd);
 
-    //        cmd= new CommandHelp();
-    //        cmd.setName("sessionSave"); cmd.setArgs("filename"); cmd.inSection= Section.GENERAL;
-    //        cmd.setBriefDescription("Experimental: Save the current settings to file suitable to
-    // be reloaded by ASCIIGenome.");
-    //        cmd.setAdditionalDescription("`sessionSave` writes to file a set of commands to
-    // reproduce the current "
-    //                + "settings: tracks, colors, heights etc. It's not meant to be a perfect
-    // replica, rather it's a "
-    //                + "shortcut to avoid re-typing commands. Example::\n"
-    //                + "\n"
-    //                + "    sessionSave session.txt\n"
-    //                + "\n"
-    //                + "Quit session and reload with::\n"
-    //                + "\n"
-    //                + "    ASCIIGenome -x session.txt\n"
-    //                + "");
-    //        cmdList.add(cmd);
-
     cmd = new CommandHelp();
     cmd.setName("sys");
     cmd.setArgs("[-L] command");
@@ -1705,8 +1707,8 @@ public class CommandList {
     paramList.add("gap");
     paramList.add("trackHeight");
     paramList.add("bedToBedgraph");
-    paramList.add("colorTrack");
-    paramList.add("featureColor");
+    paramList.add("colourTrack");
+    paramList.add("featureColour");
     paramList.add(Command.featureDisplayMode.getCmdDescr());
     paramList.add("readsAsPairs");
     paramList.add("hideTitle");
@@ -1720,6 +1722,7 @@ public class CommandList {
     paramList.add("explainSamFlag");
     paramList.add("show");
     paramList.add("open");
+    paramList.add("session");
     paramList.add("reload");
     paramList.add("recentlyOpened");
     paramList.add("dropTracks");

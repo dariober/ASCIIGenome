@@ -87,13 +87,13 @@ public class FormatGTF {
   //	protected FeatureChar formatChar(char text, char strand) {
   //		FeatureChar fchar= new FeatureChar();
   //		fchar.setText(text);
-  //		fchar.setFgColor(Config.get(ConfigKey.foreground));
+  //		fchar.setFgColour(Config.get(ConfigKey.foreground));
   //		if(strand == '+') {
-  //			fchar.setBgColor(Config.get(ConfigKey.feature_background_positive_strand));
+  //			fchar.setBgColour(Config.get(ConfigKey.feature_background_positive_strand));
   //		} else if(strand == '-') {
-  //			fchar.setBgColor(Config.get(ConfigKey.feature_background_negative_strand));
+  //			fchar.setBgColour(Config.get(ConfigKey.feature_background_negative_strand));
   //		} else {
-  //			fchar.setBgColor(Config.get(ConfigKey.feature_background_no_strand));
+  //			fchar.setBgColour(Config.get(ConfigKey.feature_background_no_strand));
   //		}
   //		return fchar;
   //	}
@@ -108,22 +108,22 @@ public class FormatGTF {
   //		StringBuilder sb= new StringBuilder();
   //		sb.append("\033[48;5;");
   //		if(strand == '+') {
-  //			sb.append(Config.get256Color(ConfigKey.feature_background_positive_strand));
+  //			sb.append(Config.get256Colour(ConfigKey.feature_background_positive_strand));
   //			sb.append(";38;5;");
-  //			sb.append(Config.get256Color(ConfigKey.foreground));
+  //			sb.append(Config.get256Colour(ConfigKey.foreground));
   //		} else if(strand == '-') {
-  //			sb.append(Config.get256Color(ConfigKey.feature_background_negative_strand));
+  //			sb.append(Config.get256Colour(ConfigKey.feature_background_negative_strand));
   //			sb.append(";38;5;");
-  //			sb.append(Config.get256Color(ConfigKey.foreground));
+  //			sb.append(Config.get256Colour(ConfigKey.foreground));
   //		} else {
-  //			sb.append(Config.get256Color(ConfigKey.feature_background_no_strand));
+  //			sb.append(Config.get256Colour(ConfigKey.feature_background_no_strand));
   //			sb.append(";38;5;");
-  //			sb.append(Config.get256Color(ConfigKey.foreground));
+  //			sb.append(Config.get256Colour(ConfigKey.foreground));
   //		}
   //		sb.append("m");
   //		sb.append(text);
   //		sb.append("\033[48;5;");
-  //		sb.append(Config.get256Color(ConfigKey.background));
+  //		sb.append(Config.get256Colour(ConfigKey.background));
   //		sb.append("m");
   //		return sb.toString();
   //	}

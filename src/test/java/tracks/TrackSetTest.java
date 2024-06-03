@@ -3,8 +3,8 @@ package tracks;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import coloring.Config;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.Xterm256;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -966,7 +966,7 @@ public class TrackSetTest {
     for (Track tr : ts.getTrackList()) {
       tr.setNoFormat(false);
     }
-    // Only change color, leave text as is
+    // Only change colour, leave text as is
     // First check header is set
     ts.addHeader(Utils.tokenize("addHeader HEADER", " "), 80);
     assertTrue(ts.getTrack(t1).concatTitleAndTrack().contains("HEADER"));

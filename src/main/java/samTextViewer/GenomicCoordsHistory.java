@@ -92,9 +92,8 @@ public class GenomicCoordsHistory {
 
     GenomicCoords now = this.current();
     for (GenomicCoords gc :
-        this
-            .getCurrentSessionHistory()) { // Set the genome for each position in history. Invalid
-                                           // positions are removed.
+        this.getCurrentSessionHistory()) { // Set the genome for each position in history. Invalid
+      // positions are removed.
       gc.setGenome(tokens, true);
       if (!this.isValidPosition(gc, gc.getSamSeqDict())) {
         toDelete.add(gc);
@@ -109,7 +108,7 @@ public class GenomicCoordsHistory {
         this.getCurrentSessionHistory()
             .indexOf(
                 now); // After having removed invalid positions, reset the position tracker to where
-                      // we were.
+    // we were.
 
     if (this.positionTracker
         < 0) { // The position from where the genome was set is not part of the dictionary

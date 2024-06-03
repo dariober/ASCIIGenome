@@ -1,8 +1,8 @@
 package samTextViewer;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.ConfigKey;
+import colouring.Xterm256;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.itextpdf.text.DocumentException;
@@ -47,6 +47,8 @@ import tracks.TrackSet;
 public class Main {
 
   static Stopwatch stopWatch = Stopwatch.createUnstarted();
+  public static File DEFAULT_ASCIIGENOME_DIR =
+      new File(System.getProperty("user.home") + File.separator + ".asciigenome");
 
   public static void main(String[] args)
       throws IOException,
@@ -149,7 +151,7 @@ public class Main {
     String currentCmdConcatInput = "";
 
     if (!proc.isNoFormat()) {
-      String str = String.format("\033[48;5;%sm", Config.get256Color(ConfigKey.background));
+      String str = String.format("\033[48;5;%sm", Config.get256Colour(ConfigKey.background));
       System.out.print(str);
     }
 
@@ -373,7 +375,7 @@ public class Main {
     }
 
     if (trackList.get(0).getGc().getFastaFile() != null
-        && trackList.get(0).getGc().isSingleBaseResolution) {
+        && trackList.get(0).getGc().isSingleBaseResolution()) {
       consoleHeight -= 1; // Reference sequence
     }
     if (trackList.get(0).getGc().getSamSeqDict() != null) {
@@ -384,7 +386,7 @@ public class Main {
     consoleHeight -= trackList.size(); // Track headers
 
     int consensus = 0; // Additional line for possible consensus sequence in TrackCoverage
-    if (trackList.get(0).getGc().isSingleBaseResolution) {
+    if (trackList.get(0).getGc().isSingleBaseResolution()) {
       consensus = 1;
     }
     for (Track tr : trackList) {
@@ -537,7 +539,7 @@ public class Main {
                       if (!noFormat) {
                         msg =
                             "\033[48;5;231;38;5;"
-                                + Xterm256.colorNameToXterm256("red")
+                                + Xterm256.colourNameToXterm256("red")
                                 + "m"
                                 + msg
                                 + "\033[0m\n";

@@ -1,7 +1,7 @@
 package tracks;
 
-import coloring.Config;
-import coloring.ConfigKey;
+import colouring.Config;
+import colouring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.CigarElement;
@@ -283,15 +283,15 @@ class TextRead extends IntervalFeature {
       }
       // Set formatting
       if (this.samRecord.getMappingQuality() < this.getShadeMapq()) {
-        sq.setBgColor(Config.get(ConfigKey.shade_low_mapq));
+        sq.setBgColour(Config.get(ConfigKey.shade_low_mapq));
       } else if (this.isStructuralVariantRead()
           && !Config.get(ConfigKey.shade_structural_variant)
               .equals(Config.get(ConfigKey.background))) {
-        sq.setBgColor(Config.get(ConfigKey.shade_structural_variant));
+        sq.setBgColour(Config.get(ConfigKey.shade_structural_variant));
       } else if (!this.samRecord.getReadNegativeStrandFlag()) {
-        sq.setFgColor(Config.get(ConfigKey.feature_background_positive_strand));
+        sq.setFgColour(Config.get(ConfigKey.feature_background_positive_strand));
       } else if (this.samRecord.getReadNegativeStrandFlag()) {
-        sq.setFgColor(Config.get(ConfigKey.feature_background_negative_strand));
+        sq.setFgColour(Config.get(ConfigKey.feature_background_negative_strand));
       }
       if (this.samRecord.getSecondOfPairFlag()) {
         sq.setUnderline(true);
@@ -332,7 +332,7 @@ class TextRead extends IntervalFeature {
   protected List<FeatureChar> getTextReadAsFeatureChars(boolean bs)
       throws InvalidGenomicCoordsException, IOException {
 
-    if (!this.gc.isSingleBaseResolution
+    if (!this.gc.isSingleBaseResolution()
         || !Utils.asBoolean((Config.get(ConfigKey.nucs_as_letters)))) {
       return this.getSquashedRead();
     }
@@ -384,31 +384,31 @@ class TextRead extends IntervalFeature {
 
             // Add formatting as appropriate
             if (this.samRecord.getMappingQuality() < this.getShadeMapq()) {
-              xc.setBgColor(Config.get(ConfigKey.shade_low_mapq));
-              xc.setFgColor(Config.get(ConfigKey.foreground));
+              xc.setBgColour(Config.get(ConfigKey.shade_low_mapq));
+              xc.setFgColour(Config.get(ConfigKey.foreground));
             } else if (bs && Character.toUpperCase(xc.getText()) == charM) {
-              xc.setBgColor(Config.get(ConfigKey.methylated_background));
-              xc.setFgColor(Config.get(ConfigKey.methylated_foreground));
+              xc.setBgColour(Config.get(ConfigKey.methylated_background));
+              xc.setFgColour(Config.get(ConfigKey.methylated_foreground));
             } else if (bs && Character.toUpperCase(xc.getText()) == charU) {
-              xc.setBgColor(Config.get(ConfigKey.unmethylated_background));
-              xc.setFgColor(Config.get(ConfigKey.unmethylated_foreground));
+              xc.setBgColour(Config.get(ConfigKey.unmethylated_background));
+              xc.setFgColour(Config.get(ConfigKey.unmethylated_foreground));
             } else if (this.isStructuralVariantRead()
                 && !Config.get(ConfigKey.shade_structural_variant)
                     .equals(Config.get(ConfigKey.background))) {
-              xc.setBgColor(Config.get(ConfigKey.shade_structural_variant));
-              xc.setFgColor(Config.get(ConfigKey.foreground));
+              xc.setBgColour(Config.get(ConfigKey.shade_structural_variant));
+              xc.setFgColour(Config.get(ConfigKey.foreground));
             } else if (Character.toUpperCase(xc.getText()) == 'A') {
-              xc.setFgColor(Config.get(ConfigKey.seq_a));
+              xc.setFgColour(Config.get(ConfigKey.seq_a));
             } else if (Character.toUpperCase(xc.getText()) == 'C') {
-              xc.setFgColor(Config.get(ConfigKey.seq_c));
+              xc.setFgColour(Config.get(ConfigKey.seq_c));
             } else if (Character.toUpperCase(xc.getText()) == 'G') {
-              xc.setFgColor(Config.get(ConfigKey.seq_g));
+              xc.setFgColour(Config.get(ConfigKey.seq_g));
             } else if (Character.toUpperCase(xc.getText()) == 'T') {
-              xc.setFgColor(Config.get(ConfigKey.seq_t));
+              xc.setFgColour(Config.get(ConfigKey.seq_t));
             } else if (!bs && !this.samRecord.getReadNegativeStrandFlag()) {
-              xc.setFgColor(Config.get(ConfigKey.feature_background_positive_strand));
+              xc.setFgColour(Config.get(ConfigKey.feature_background_positive_strand));
             } else if (!bs && this.samRecord.getReadNegativeStrandFlag()) {
-              xc.setFgColor(Config.get(ConfigKey.feature_background_negative_strand));
+              xc.setFgColour(Config.get(ConfigKey.feature_background_negative_strand));
             }
 
             if (baseQual.length > 0) {
@@ -423,7 +423,7 @@ class TextRead extends IntervalFeature {
                */
               int bq = (int) baseQual[curBaseReadPos];
               if (bq < SHADE_BASEQ) {
-                xc.setBgColor(Config.get(ConfigKey.shade_low_mapq));
+                xc.setBgColour(Config.get(ConfigKey.shade_low_mapq));
               }
             }
             if (this.samRecord.getSecondOfPairFlag()) {
@@ -442,7 +442,7 @@ class TextRead extends IntervalFeature {
             FeatureChar xc = new FeatureChar();
             if (el.getOperator().equals(CigarOperator.D)) {
               xc.setText(this.DEL);
-              xc.setInvertFgBgColor(true);
+              xc.setInvertFgBgColour(true);
             } else if (el.getOperator().equals(CigarOperator.N)) {
               xc.setText(this.SKIP);
             } else {
@@ -456,7 +456,7 @@ class TextRead extends IntervalFeature {
       } else if (el.getOperator().equals(CigarOperator.I)) {
         if (dnaRead.size()
             > 0) { // If the insertion is outside the terminal window, there is no base to mark
-          dnaRead.get(dnaRead.size() - 1).setInvertFgBgColor(true);
+          dnaRead.get(dnaRead.size() - 1).setInvertFgBgColour(true);
         }
         curBaseReadPos += el.getLength();
       } else if (el.getOperator().equals(CigarOperator.SOFT_CLIP)) {

@@ -4,8 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import coloring.Config;
-import coloring.ConfigKey;
+import colouring.Config;
+import colouring.ConfigKey;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
@@ -38,7 +38,7 @@ public class TextReadTest {
   }
 
   @Test
-  public void canResetColorForStructuralVariant()
+  public void canResetColourForStructuralVariant()
       throws InvalidGenomicCoordsException, IOException, InvalidColourException {
     GenomicCoords gc = new GenomicCoords("chr7:1-80", 80, null, null);
     SAMRecord rec = new SAMRecord(null);

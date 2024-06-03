@@ -2,8 +2,8 @@ package tracks;
 
 /**
  * Class to add some feature to a generic argument. Used to define whether the regex in
- * TrackSet.setFeatureColorForRegex should change colour for feature matching or not. arg: colour to
- * use invert: invert matching?
+ * TrackSet.setFeatureColourForRegex should change colour for feature matching or not. arg: colour
+ * to use invert: invert matching?
  */
 class Argument {
   private String key;

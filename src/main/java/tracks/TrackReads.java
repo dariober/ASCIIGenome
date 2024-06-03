@@ -1,7 +1,7 @@
 package tracks;
 
-import coloring.Config;
-import coloring.ConfigKey;
+import colouring.Config;
+import colouring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -36,10 +36,13 @@ public class TrackReads extends Track {
   // private boolean withReadName= false;
   private long nRecsInWindow = -1;
   private int userWindowSize;
-  private List<Argument> colorForRegex = null;
+  private List<Argument> colourForRegex = null;
   private long alnRecCnt = -1;
 
   /* C o n s t r u c t o r s */
+
+  public TrackReads() {}
+
   /**
    * Create read track
    *
@@ -75,6 +78,10 @@ public class TrackReads extends Track {
     }
     this.setFilename(bam);
     this.setGc(gc);
+  }
+
+  public TrackReads(String filename) {
+    this.setFilename(filename);
   }
 
   /* M e t h o d s */
@@ -124,10 +131,8 @@ public class TrackReads extends Track {
         SAMRecord rec = sam.next();
         if (pass.next()) {
           String templ_name = Utils.templateNameFromSamReadName(rec.getReadName());
-          long v =
-              (templ_name + rndOffset)
-                  .hashCode(); // Hashing.md5().hashBytes((templ_name +
-                               // rndOffset).getBytes()).asLong();
+          long v = (templ_name + rndOffset).hashCode(); // Hashing.md5().hashBytes((templ_name +
+          // rndOffset).getBytes()).asLong();
           Random rand = new Random(v);
           if (rand.nextFloat() < probSample) { // Downsampler
             TextRead tr =
@@ -168,7 +173,7 @@ public class TrackReads extends Track {
       keep = Utils.seqFromToLenOut(0, this.readStack.size() - 1, this.readStack.size());
     }
     StringBuilder printable = new StringBuilder();
-    // this.changeFeatureColor(null);
+    // this.changeFeatureColour(null);
     for (Double idx : keep) {
       List<SamSequenceFragment> line = this.readStack.get((int) Math.rint(idx));
       try {
@@ -206,7 +211,7 @@ public class TrackReads extends Track {
     fragments.remove(0);
     listOfLines.add(line);
     int gap =
-        (this.getGc().isSingleBaseResolution)
+        (this.getGc().isSingleBaseResolution())
             ? 1
             : 0; // If reads are very compressed, do not add space between adjacent ones.
     while (true) {
@@ -271,7 +276,7 @@ public class TrackReads extends Track {
             break;
           }
         } // After this loop either we have found a mate or not. Either way, create a fragment from
-          // a singleton or a pair.
+        // a singleton or a pair.
         if (mate == null) {
           fragments.add(new SamSequenceFragment(tr));
         } else {
@@ -430,7 +435,7 @@ public class TrackReads extends Track {
   }
 
   @Override
-  public void changeFeatureColor(List<Argument> args) {
+  public void changeFeatureColour(List<Argument> args) {
     List<List<SamSequenceFragment>> stack = this.readStack;
     for (List<SamSequenceFragment> frags : stack) {
       for (SamSequenceFragment frag : frags) {
@@ -442,7 +447,7 @@ public class TrackReads extends Track {
         for (TextRead tr : reads) {
           for (Argument arg : args) {
             String regex = arg.getKey();
-            // String color= arg.getArg();
+            // String colour= arg.getArg();
             boolean matched =
                 Pattern.compile(regex).matcher(tr.getSamRecord().getSAMString()).find();
             if (arg.isInvert()) {
@@ -450,7 +455,7 @@ public class TrackReads extends Track {
             }
             if (matched) {
               // tr.getTextReadAsFeatureChars(this.isBisulf());
-              // f.setFgColor(color);
+              // f.setFgColour(colour);
             }
           }
         }
@@ -459,22 +464,22 @@ public class TrackReads extends Track {
   }
 
   @Override
-  protected void setColorForRegex(List<Argument> xcolorForRegex) {
-    if (xcolorForRegex == null) {
-      this.colorForRegex = null;
+  protected void setColourForRegex(List<Argument> xcolourForRegex) {
+    if (xcolourForRegex == null) {
+      this.colourForRegex = null;
       return;
     } else {
-      if (this.colorForRegex == null) {
-        this.colorForRegex = new ArrayList<Argument>();
+      if (this.colourForRegex == null) {
+        this.colourForRegex = new ArrayList<Argument>();
       }
-      for (Argument p : xcolorForRegex) {
-        this.colorForRegex.add(p);
+      for (Argument p : xcolourForRegex) {
+        this.colourForRegex.add(p);
       }
     }
   }
 
-  //	private List<Argument> getColorForRegex() {
-  //		return this.colorForRegex;
+  //	private List<Argument> getColourForRegex() {
+  //		return this.colourForRegex;
   //	}
 
   @Override

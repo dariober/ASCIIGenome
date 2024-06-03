@@ -3,8 +3,8 @@ package tracks;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import coloring.Config;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.Xterm256;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -57,7 +57,7 @@ public class TrackIntervalFeatureTest {
   }
 
   @Test
-  public void canColorGTFFeaturesByRegex()
+  public void canColourGTFFeaturesByRegex()
       throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
@@ -69,25 +69,25 @@ public class TrackIntervalFeatureTest {
     TrackIntervalFeature tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
     tif.printToScreen(); // This is to populate the ideograms.
 
-    List<Argument> colorForRegex = new ArrayList<Argument>();
-    colorForRegex.add(new Argument("DDX11L1", "216", false));
-    tif.setColorForRegex(colorForRegex);
+    List<Argument> colourForRegex = new ArrayList<Argument>();
+    colourForRegex.add(new Argument("DDX11L1", "216", false));
+    tif.setColourForRegex(colourForRegex);
     assertTrue(tif.printToScreen().contains("216"));
 
-    colorForRegex.clear();
-    colorForRegex.add(new Argument("WASH7P", "233", false)); // 233:grey7 (almost black)
-    tif.setColorForRegex(colorForRegex);
+    colourForRegex.clear();
+    colourForRegex.add(new Argument("WASH7P", "233", false)); // 233:grey7 (almost black)
+    tif.setColourForRegex(colourForRegex);
     assertTrue(tif.printToScreen().contains("233"));
     assertTrue(tif.printToScreen().contains("216"));
-    assertTrue(tif.printToScreen().contains("253")); // Foreground color
+    assertTrue(tif.printToScreen().contains("253")); // Foreground colour
 
     // Reset default
-    tif.setColorForRegex(null);
+    tif.setColourForRegex(null);
     assertTrue(!tif.printToScreen().contains("216"));
   }
 
   @Test
-  public void canColorFeaturesByAwk()
+  public void canColourFeaturesByAwk()
       throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
@@ -99,14 +99,14 @@ public class TrackIntervalFeatureTest {
     TrackIntervalFeature tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
     tif.printToScreen(); // This is to populate the ideograms.
 
-    List<Argument> colorForRegex = new ArrayList<Argument>();
-    colorForRegex.add(new Argument("'$5 > 13000'", "216", false));
-    tif.setColorForRegex(colorForRegex);
+    List<Argument> colourForRegex = new ArrayList<Argument>();
+    colourForRegex.add(new Argument("'$5 > 13000'", "216", false));
+    tif.setColourForRegex(colourForRegex);
     assertTrue(tif.printToScreen().contains("216"));
 
-    colorForRegex = new ArrayList<Argument>();
-    colorForRegex.add(new Argument("$5 > 0", "100", false));
-    tif.setColorForRegex(colorForRegex);
+    colourForRegex = new ArrayList<Argument>();
+    colourForRegex.add(new Argument("$5 > 0", "100", false));
+    tif.setColourForRegex(colourForRegex);
     assertTrue(!tif.printToScreen().contains("216"));
   }
 
@@ -430,7 +430,7 @@ public class TrackIntervalFeatureTest {
             .substring(
                 0,
                 4)); // Check we are using the remote file as working file. I.e. no need to download
-                     // and index.
+    // and index.
     assertEquals(4, tif.getIntervalFeatureList().size());
   }
 
@@ -851,8 +851,7 @@ public class TrackIntervalFeatureTest {
     assertEquals(
         1,
         (int)
-            newGc
-                .getFrom()); // MEMO: Start of chrom is 0 in bed format but 1 in ASCIIGenome format
+            newGc.getFrom()); // MEMO: Start of chrom is 0 in bed format but 1 in ASCIIGenome format
 
     // Backwards
     gc = new GenomicCoords("chr1:500-1000", 80, null, null);

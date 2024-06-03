@@ -28,6 +28,8 @@ public class TrackBookmark extends TrackIntervalFeature {
 
   private final String trackName = "Bookmarks";
 
+  public TrackBookmark() {}
+
   public TrackBookmark(GenomicCoords gc, String nameForBookmark)
       throws IOException,
           ClassNotFoundException,
@@ -46,7 +48,7 @@ public class TrackBookmark extends TrackIntervalFeature {
     wr.write(
         this.positionToGffLine(gc, nameForBookmark)
             + "\n"); // gc.getChrom() + "\t" + (gc.getFrom() - 1) + "\t" + gc.getTo() + "\t" +
-                     // nameForBookmark + "\n");
+    // nameForBookmark + "\n");
     wr.close();
 
     File bookmark = new File(bookmarkPlain + ".gz");

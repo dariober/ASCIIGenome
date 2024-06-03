@@ -2,7 +2,7 @@ package samTextViewer;
 
 import static org.junit.Assert.*;
 
-import coloring.Config;
+import colouring.Config;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -567,7 +567,7 @@ public class GenomicCoordsTest {
     assertEquals(10, gc.getMapping().size());
     assertEquals(101.0, gc.getMapping().get(0), 0.01);
     assertEquals(102.0, gc.getMapping().get(1), 0.01);
-    assertTrue(gc.isSingleBaseResolution);
+    assertTrue(gc.isSingleBaseResolution());
   }
 
   @Test

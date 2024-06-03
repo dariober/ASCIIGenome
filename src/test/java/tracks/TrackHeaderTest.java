@@ -2,8 +2,8 @@ package tracks;
 
 import static org.junit.Assert.*;
 
-import coloring.Config;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import java.io.IOException;
@@ -29,7 +29,7 @@ public class TrackHeaderTest {
   @Test
   public void canFormat() throws InvalidColourException {
     TrackHeader th = new TrackHeader("HEADER");
-    th.setColor("yellow");
+    th.setColour("yellow");
     assertTrue(th.format(false).endsWith("\033[0m"));
     assertTrue(th.format(false).contains("5;11m"));
     assertTrue(th.format(false).contains("HEADER"));

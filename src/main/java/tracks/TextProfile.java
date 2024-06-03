@@ -170,7 +170,7 @@ class TextProfile {
     if (y0
         < strDepth.size()
             - 1) { // First char is 1u, unless all the values are negative and the zero is on the
-                   // top
+      // top
       strDepth.set(y0, this.strFor1stNegU);
       currentScore = 1 * this.scorePerDot;
       pos = y0 - 1;
@@ -194,9 +194,8 @@ class TextProfile {
 
   private void yColumnSanityCheck(List<String> strDepth, int y0, double yValue) {
 
-    if (yValue
-        < 0) { // -ve vlaue: Scan positive semi-axis and check there are no chars other than
-               // filling.
+    if (yValue < 0) { // -ve vlaue: Scan positive semi-axis and check there are no chars other than
+      // filling.
       for (int i = y0; i < strDepth.size() - 1; i++) {
         String x = strDepth.get(i);
         if (i == y0

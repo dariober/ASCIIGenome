@@ -728,7 +728,7 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
   protected int getScreenMid() {
     if (this.getScreenFrom() < 0) {
       return -1; // See TrackIntervalFeatureTest.canProcessIndelAtWindowBoundary() why this can
-                 // happen
+      // happen
     }
     int width = this.getScreenTo() - this.getScreenFrom() + 1;
     if (width == 1) {

@@ -1,6 +1,6 @@
 package tracks;
 
-import coloring.Xterm256;
+import colouring.Xterm256;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -39,16 +39,18 @@ import samTextViewer.Utils;
 /** Class to hold tracks to be printed. */
 public class TrackSet {
 
-  // private LinkedHashMap<String, Track> trackSet_DEPRECATED= new LinkedHashMap<String, Track>();
   private List<Track> trackList = new ArrayList<Track>();
   private List<Pattern> regexForTrackHeight = new ArrayList<Pattern>();
   private int trackHeightForRegex = -1;
   private String[] yStrLimits = new String[2];
-  // private List<String> regexForYLimits= new ArrayList<String>();
   private List<Track> tracksForYLimits = new ArrayList<Track>();
   private LinkedHashSet<String> openedFiles = new LinkedHashSet<String>();
 
   /*   C o n s t r u c t o r s   */
+
+  public TrackSet(List<Track> trackList) {
+    this.finalise(trackList);
+  }
 
   public TrackSet(List<String> inputFileList, GenomicCoords gc)
       throws IOException,
@@ -56,7 +58,7 @@ public class TrackSet {
           InvalidRecordException,
           ClassNotFoundException,
           SQLException {
-
+    List<Track> trackList = new ArrayList<>();
     for (String sourceName : inputFileList) {
       try {
         if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)) {
@@ -64,13 +66,13 @@ public class TrackSet {
           TrackPileup trackPileup = new TrackPileup(sourceName, gc);
           // trackPileup.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
           trackPileup.setTrackTag(sourceName + "#" + this.getNextTrackId());
-          this.trackList.add(trackPileup);
+          trackList.add(trackPileup);
 
           /* Read track */
           TrackReads trackReads = new TrackReads(sourceName, gc);
           // trackReads.setTrackTag(new File(sourceName).getName() + "@" + this.getNextTrackId());
           trackReads.setTrackTag(sourceName + "@" + this.getNextTrackId());
-          this.trackList.add(trackReads);
+          trackList.add(trackReads);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)
@@ -102,15 +104,7 @@ public class TrackSet {
         System.exit(1);
       }
     }
-    this.tracksForYLimits.addAll(this.getTrackList());
-    this.yStrLimits[0] = "na";
-    this.yStrLimits[1] = "na";
-    // TrackWiggles gcProfile= gc.getGCProfile();
-    for (Track tr : this.getTrackList()) {
-      this.addToOpenedFiles(tr.getFilename());
-    }
-
-    Runtime.getRuntime().addShutdownHook(new ShutDownTask(this));
+    this.finalise(trackList);
   }
 
   private class ShutDownTask extends Thread {
@@ -130,6 +124,18 @@ public class TrackSet {
   }
 
   /*   M e t h o d s   */
+
+  private void finalise(List<Track> trackList) {
+    this.trackList = trackList;
+    this.tracksForYLimits.addAll(this.getTrackList());
+    this.yStrLimits[0] = "na";
+    this.yStrLimits[1] = "na";
+    // TrackWiggles gcProfile= gc.getGCProfile();
+    for (Track tr : this.getTrackList()) {
+      this.addToOpenedFiles(tr.getFilename());
+    }
+    Runtime.getRuntime().addShutdownHook(new ShutDownTask(this));
+  }
 
   /**
    * Add this track with given baseTag. The suffix "#id" will be appended to the baseTag string. NB:
@@ -629,7 +635,7 @@ public class TrackSet {
             PrintRawLine.OFF); // This is not ideal: redirecting to file also set mode to off
         tr.setExportFile(
             null); // Reset to null so we don't keep writing to this file once we go to another
-                   // position.
+        // position.
       }
       return;
     }
@@ -833,15 +839,15 @@ public class TrackSet {
     }
   }
 
-  public void setFeatureColorForRegex(List<String> cmdTokens)
+  public void setFeatureColourForRegex(List<String> cmdTokens)
       throws InvalidCommandLineException, InvalidColourException {
 
     List<String> argList = new ArrayList<String>(cmdTokens);
     argList.remove(0); // Remove cmd name
 
-    // Collect all regex/color pairs from input. We move left to right along the command
+    // Collect all regex/colour pairs from input. We move left to right along the command
     // arguments and collect -r/-R and set the regex inversion accordingly.
-    List<Argument> colorForRegex = new ArrayList<Argument>();
+    List<Argument> colourForRegex = new ArrayList<Argument>();
     new Xterm256();
     while (argList.contains("-r") || argList.contains("-R")) {
       int r = argList.indexOf("-r") >= 0 ? argList.indexOf("-r") : Integer.MAX_VALUE;
@@ -861,12 +867,12 @@ public class TrackSet {
         System.err.println("Invalid regex: " + pattern);
         throw new InvalidCommandLineException();
       }
-      Argument xcolor = new Argument(pair.get(0), pair.get(1), invert);
-      Xterm256.colorNameToXterm256(xcolor.getArg()); // Check this is a valid colour
-      colorForRegex.add(xcolor);
+      Argument xcolour = new Argument(pair.get(0), pair.get(1), invert);
+      Xterm256.colourNameToXterm256(xcolour.getArg()); // Check this is a valid colour
+      colourForRegex.add(xcolour);
     }
-    if (colorForRegex.size() == 0) {
-      colorForRegex = null;
+    if (colourForRegex.size() == 0) {
+      colourForRegex = null;
     }
 
     boolean invertSelection = Utils.argListContainsFlag(argList, "-v");
@@ -882,7 +888,7 @@ public class TrackSet {
     // Set as appropriate
     List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
     for (Track tr : tracksToReset) {
-      tr.setColorForRegex(colorForRegex);
+      tr.setColourForRegex(colourForRegex);
     }
   }
 
@@ -901,7 +907,7 @@ public class TrackSet {
     if (tokens.size() >= 2) {
       String xcolour = tokens.get(1).toLowerCase();
 
-      Xterm256.colorNameToXterm256(xcolour); // This is only to test whether exception is thrown.
+      Xterm256.colourNameToXterm256(xcolour); // This is only to test whether exception is thrown.
 
       colour = xcolour;
     }
@@ -978,24 +984,6 @@ public class TrackSet {
             || tr.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
           Track trNewFmt = this.bedToBedgraph(tr);
           this.getTrackList().set(i, trNewFmt);
-          //                if(tr.getTrackFormat().equals(TrackFormat.BED)) {
-          //                    // Convert to bed to bedgraph
-          //                    TrackBedgraph trNewFmt = new TrackBedgraph(tr.getWorkFilename(),
-          // tr.getGc());
-          //                    trNewFmt.setFilename(tr.getFilename());
-          //                    trNewFmt.setTrackTag(tr.getTrackTag());
-          //                    trNewFmt.setNoFormat(tr.getNoFormat());
-          //                    this.getTrackList().set(i, trNewFmt);
-          //                }
-          //                else if(tr.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
-          //                    // Bedgraph to bed
-          //                    TrackIntervalFeature trNewFmt = new
-          // TrackIntervalFeature(tr.getWorkFilename(), tr.getGc());
-          //                    trNewFmt.setTrackFormat(TrackFormat.BED);
-          //                    trNewFmt.setFilename(tr.getFilename());
-          //                    trNewFmt.setTrackTag(tr.getTrackTag());
-          //                    trNewFmt.setNoFormat(tr.getNoFormat());
-          //                    this.getTrackList().set(i, trNewFmt);
         } else {
           System.err.println("Cannot switch format of track '" + tr.getTrackTag());
         }
@@ -1233,7 +1221,7 @@ public class TrackSet {
           Utils.quote(
               args.get(
                   idxScript))); // Put back single quotes around the script, exclude cmd line params
-                                // like -F
+      // like -F
       awk = Joiner.on(" ").join(args.subList(0, idxScript + 1));
 
       // Everything after the script is track regexes
@@ -2564,7 +2552,7 @@ public class TrackSet {
     LinkedHashSet<String> now = this.getOpenedFiles();
     for (String file :
         now) { // If a file is in the current track set and in the history file, put it last. I.e.
-               // last opened.
+      // last opened.
       if (union.contains(file)) {
         union.remove(file);
       }
@@ -2649,27 +2637,27 @@ public class TrackSet {
       }
     }
 
-    String color = null;
+    String colour = null;
     try {
-      color = Utils.getArgForParam(args, "-c", color);
+      colour = Utils.getArgForParam(args, "-c", colour);
     } catch (InvalidCommandLineException e) {
-      System.err.println("Error processing -c argument. Expected a color name");
+      System.err.println("Error processing -c argument. Expected a colour name");
       return ExitCode.CLEAN_NO_FLUSH;
     }
 
-    if (color != null) {
+    if (colour != null) {
       try {
-        Xterm256.colorNameToXterm256(color);
+        Xterm256.colourNameToXterm256(colour);
       } catch (InvalidColourException e) {
         System.err.println(
-            "Invalid color: " + color + "\nFor available colors see `colorTrack -h`");
+            "Invalid colour: " + colour + "\nFor available colours see `colourTrack -h`");
         return ExitCode.CLEAN_NO_FLUSH;
       }
     }
 
     List<String> trackNameRegex = new ArrayList<String>();
 
-    // if(args.size() == 0 && color == null && ){
+    // if(args.size() == 0 && colour == null && ){
     //    System.err.println("Nothing to do: Specify a header or use `-off` to remove existing
     // header(s)");
     //    return ExitCode.CLEAN_NO_FLUSH;
@@ -2690,8 +2678,8 @@ public class TrackSet {
       }
     } else {
       if (args.size() > 0) {
-        // Size 0 happens if the only argument is `-c somecolor`.
-        // Which means reset color to all headers
+        // Size 0 happens if the only argument is `-c somecolour`.
+        // Which means reset colour to all headers
         headerText = StringEscapeUtils.unescapeJava(args.remove(0));
       }
       if (args.size() == 0) {
@@ -2714,8 +2702,8 @@ public class TrackSet {
           tr.getHeader().setHeaderText(headerText);
         }
 
-        if (color != null) {
-          tr.getHeader().setColor(color);
+        if (colour != null) {
+          tr.getHeader().setColour(colour);
         }
         tr.getHeader().setBold(isBold);
         tr.getHeader().setTerminalWidth(terminalWidth);

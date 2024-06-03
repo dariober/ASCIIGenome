@@ -1,8 +1,8 @@
 package tracks;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.ConfigKey;
+import colouring.Xterm256;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -12,11 +12,16 @@ import java.util.List;
 
 class TrackHeader {
   private String headerText = null;
-  private String color = null;
+  private String colour = null;
   private boolean isBold = true;
-  // private HeaderAlignment headerAlignment = HeaderAlignment.CENTER;
+  // public HeaderAlignment headerAlignment = HeaderAlignment.CENTER;
   private double headerAlignmentPct = 0.5;
   private int terminalWidth = 0;
+
+  /*    C O N S T R U C T O R S    */
+
+  public TrackHeader() {}
+  ;
 
   public TrackHeader(String header) {
     this.setHeaderText(header);
@@ -35,10 +40,10 @@ class TrackHeader {
     if (isNoFormat) {
       return text;
     } else {
-      int colourCode = Config.get256Color(ConfigKey.foreground);
-      if (this.color != null) {
+      int colourCode = Config.get256Colour(ConfigKey.foreground);
+      if (this.colour != null) {
         new Xterm256();
-        colourCode = Xterm256.colorNameToXterm256(this.color);
+        colourCode = Xterm256.colourNameToXterm256(this.colour);
       }
       String bold = "";
       if (this.isBold) {
@@ -47,7 +52,7 @@ class TrackHeader {
       return "\033["
           + bold
           + "48;5;"
-          + Config.get256Color(ConfigKey.background)
+          + Config.get256Colour(ConfigKey.background)
           + ";38;5;"
           + colourCode
           + "m"
@@ -90,15 +95,15 @@ class TrackHeader {
     }
   }
 
-  protected void setColor(String color) {
-    this.color = color;
+  protected void setColour(String colour) {
+    this.colour = colour;
   }
 
-  protected int getTerminalWidth() {
+  public int getTerminalWidth() {
     return terminalWidth;
   }
 
-  protected void setTerminalWidth(int terminalWidth) {
+  public void setTerminalWidth(int terminalWidth) {
     this.terminalWidth = terminalWidth;
   }
 

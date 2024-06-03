@@ -1,7 +1,7 @@
 package samTextViewer;
 
-import coloring.Config;
-import coloring.ConfigKey;
+import colouring.Config;
+import colouring.ConfigKey;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -58,13 +58,15 @@ public class GenomicCoords implements Cloneable {
 
   private String samSeqDictSource =
       null; // Source of the sequence dictionary. Can be path to file of fasta, bam, genome. Or
-            // genome tag e.g. hg19.
+  // genome tag e.g. hg19.
   private byte[] refSeq = null;
-  public boolean isSingleBaseResolution = false;
+  private boolean singleBaseResolution = false;
   private int terminalWidth;
   private List<Double> mapping;
 
   /* Constructors */
+  public GenomicCoords() throws InvalidGenomicCoordsException, IOException {}
+
   public GenomicCoords(
       String region,
       int terminalWidth,
@@ -125,12 +127,11 @@ public class GenomicCoords implements Cloneable {
   GenomicCoords(int terminalWidth) throws InvalidGenomicCoordsException, IOException {
     this.terminalWidth = terminalWidth;
   }
-  ;
 
   /** Update a bunch of fields when coordinates change */
   private void update() throws InvalidGenomicCoordsException, IOException {
     // this.setTerminalWindowSize();
-    this.setSingleBaseResolution(); // True if one text character corresponds to 1 bp
+    this.resetSingleBaseResolution(); // True if one text character corresponds to 1 bp
     this.setRefSeq();
     this.mapping = this.seqFromToLenOut(this.getTerminalWidth());
   }
@@ -143,7 +144,7 @@ public class GenomicCoords implements Cloneable {
    *
    * @param includeGenomeFile: Should the input data be treated as a genome file? Set to true only
    *     if the input can be a genome file. Other files (bed, vcf, gff) look like valid genome file
-   *     and this can result in wring dictionary.
+   *     and this can result in wrong dictionary.
    */
   public void setGenome(List<String> input, boolean includeGenomeFile) throws IOException {
 
@@ -388,7 +389,7 @@ public class GenomicCoords implements Cloneable {
   }
 
   protected void setRefSeq() throws IOException, InvalidGenomicCoordsException {
-    if (this.fastaFile == null || !this.isSingleBaseResolution) {
+    if (this.fastaFile == null || !this.singleBaseResolution) {
       this.refSeq = null;
       return;
     }
@@ -883,9 +884,9 @@ public class GenomicCoords implements Cloneable {
     if (!noFormat) {
       ideogram =
           "\033[48;5;"
-              + Config.get256Color(ConfigKey.background)
+              + Config.get256Colour(ConfigKey.background)
               + ";38;5;"
-              + Config.get256Color(ConfigKey.chrom_ideogram)
+              + Config.get256Colour(ConfigKey.chrom_ideogram)
               + "m"
               + ideogram;
     }
@@ -926,9 +927,9 @@ public class GenomicCoords implements Cloneable {
     if (!noFormat) {
       numberLine =
           "\033[48;5;"
-              + Config.get256Color(ConfigKey.background)
+              + Config.get256Colour(ConfigKey.background)
               + ";38;5;"
-              + Config.get256Color(ConfigKey.ruler)
+              + Config.get256Colour(ConfigKey.ruler)
               + "m"
               + numberLine;
     }
@@ -945,9 +946,9 @@ public class GenomicCoords implements Cloneable {
     if (!noFormat) {
       numberLine =
           "\033[48;5;"
-              + Config.get256Color(ConfigKey.background)
+              + Config.get256Colour(ConfigKey.background)
               + ";38;5;"
-              + Config.get256Color(ConfigKey.ruler)
+              + Config.get256Colour(ConfigKey.ruler)
               + "m"
               + numberLine;
     }
@@ -1023,33 +1024,23 @@ public class GenomicCoords implements Cloneable {
       for (byte c : refSeq) {
         // For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
         char base = (char) c;
-        String prefix = "\033[48;5;" + Config.get256Color(ConfigKey.background) + ";38;5;";
+        String prefix = "\033[48;5;" + Config.get256Colour(ConfigKey.background) + ";38;5;";
         if (base == 'A' || base == 'a') {
-          faSeqStr += prefix + Config.get256Color(ConfigKey.seq_a) + "m" + base;
+          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_a) + "m" + base;
         } else if (base == 'C' || base == 'c') {
-          faSeqStr += prefix + Config.get256Color(ConfigKey.seq_c) + "m" + base;
+          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_c) + "m" + base;
         } else if (base == 'G' || base == 'g') {
-          faSeqStr += prefix + Config.get256Color(ConfigKey.seq_g) + "m" + base;
+          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_g) + "m" + base;
         } else if (base == 'T' || base == 't') {
-          faSeqStr += prefix + Config.get256Color(ConfigKey.seq_t) + "m" + base;
+          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_t) + "m" + base;
         } else {
-          faSeqStr += prefix + Config.get256Color(ConfigKey.seq_other) + "m" + base;
+          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_other) + "m" + base;
         }
       }
       return faSeqStr + "\n";
     }
   }
 
-  /**
-   * Get a SAMSequenceDictionary by querying the input files, if there is any bam, or from the
-   * indexed fasta file or from genome files.
-   *
-   * @param testfiles List of input files
-   * @param fasta Reference sequence
-   * @param genome
-   * @return
-   * @throws IOException
-   */
   private boolean setSamSeqDictFromAnySource(List<String> testfiles, boolean includeGenomeFile)
       throws IOException {
 
@@ -1266,7 +1257,7 @@ public class GenomicCoords implements Cloneable {
    * Reset window size according to current terminal screen. If the user reshapes the terminal
    * window size or the font size, detect the new size and add it to the history.
    */
-  private int getTerminalWidth() {
+  public int getTerminalWidth() {
     return this.terminalWidth;
   }
 
@@ -1285,15 +1276,27 @@ public class GenomicCoords implements Cloneable {
   // }
 
   public String getChrom() {
-    return chrom;
+    return this.chrom;
+  }
+
+  public void setChrom(String chrom) {
+    this.chrom = chrom;
   }
 
   public Integer getFrom() {
     return from;
   }
 
+  public void setFrom(int from) {
+    this.from = from;
+  }
+
   public Integer getTo() {
     return to;
+  }
+
+  public void setTo(int to) {
+    this.to = to;
   }
 
   /**
@@ -1339,7 +1342,7 @@ public class GenomicCoords implements Cloneable {
     return this.fastaFile;
   }
 
-  protected void setFastaFile(String fastaFile) {
+  public void setFastaFile(String fastaFile) {
     this.fastaFile = fastaFile;
   }
 
@@ -1423,15 +1426,19 @@ public class GenomicCoords implements Cloneable {
     this.update();
   }
 
-  protected void setSingleBaseResolution() throws InvalidGenomicCoordsException, IOException {
+  public boolean isSingleBaseResolution() {
+    return this.singleBaseResolution;
+  }
+
+  public void setSingleBaseResolution(boolean singleBaseResolution) {
+    this.singleBaseResolution = singleBaseResolution;
+  }
+
+  private void resetSingleBaseResolution() throws InvalidGenomicCoordsException, IOException {
     if (this.getGenomicWindowSize() == null) {
-      this.isSingleBaseResolution = false;
+      this.singleBaseResolution = false;
       return;
     }
-    if (this.getUserWindowSize() == this.getGenomicWindowSize()) {
-      this.isSingleBaseResolution = true;
-    } else {
-      this.isSingleBaseResolution = false;
-    }
+    this.singleBaseResolution = this.getUserWindowSize() == this.getGenomicWindowSize();
   }
 }

@@ -1,8 +1,8 @@
 package tracks;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.ConfigKey;
+import colouring.Xterm256;
 import com.google.common.base.Joiner;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
@@ -27,7 +27,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
     this.setTrackFormat(TrackFormat.BEDGRAPH);
   }
 
-  protected TrackBedgraph() {}
+  public TrackBedgraph() {}
 
   /* ----------- METHODS ----------- */
 
@@ -105,9 +105,9 @@ public class TrackBedgraph extends TrackIntervalFeature {
       new Xterm256();
       printable =
           "\033[48;5;"
-              + Config.get256Color(ConfigKey.background)
+              + Config.get256Colour(ConfigKey.background)
               + ";38;5;"
-              + Xterm256.colorNameToXterm256(this.getTitleColour())
+              + Xterm256.colourNameToXterm256(this.getTitleColour())
               + "m"
               + printable;
     }

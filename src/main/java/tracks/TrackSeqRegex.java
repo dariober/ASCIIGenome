@@ -29,6 +29,8 @@ public class TrackSeqRegex extends TrackIntervalFeature {
   private boolean isCaseSensitive = false;
   private boolean isIupac = false;
 
+  public TrackSeqRegex() {}
+
   public TrackSeqRegex(GenomicCoords gc)
       throws ClassNotFoundException,
           IOException,
@@ -46,7 +48,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
   }
 
   @Override
-  /** Find regex matches and update the screen map. See alos parent method. */
+  /** Find regex matches and update the screen map. See also parent method. */
   public void update()
       throws ClassNotFoundException,
           IOException,

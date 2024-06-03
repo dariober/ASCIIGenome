@@ -1,4 +1,4 @@
-package coloring;
+package colouring;
 
 import exceptions.InvalidColourException;
 import java.awt.Color;
@@ -9,14 +9,14 @@ public class Xterm256 {
 
   public static final LinkedHashMap<String, Integer> xtermNameToNumber =
       new LinkedHashMap<String, Integer>();
-  public static final LinkedHashMap<Integer, String> contrastColor =
+  public static final LinkedHashMap<Integer, String> contrastColour =
       new LinkedHashMap<Integer, String>();
 
-  // static final HashMap<Integer, String> intColorToName= new HashMap<Integer, String>();
+  // static final HashMap<Integer, String> intColourToName= new HashMap<Integer, String>();
 
   public Xterm256() {
 
-    // See http://jonasjacek.github.io/colors/
+    // See http://jonasjacek.github.io/colours/
     xtermNameToNumber.put("black", 0);
     xtermNameToNumber.put("maroon", 1);
     xtermNameToNumber.put("green", 2);
@@ -276,267 +276,267 @@ public class Xterm256 {
     xtermNameToNumber.put("grey89", 254);
     xtermNameToNumber.put("grey93", 255);
 
-    // grey85 and grey19 are the same colors used as default for the fore- and background
-    // theme metal. It's better to deal with fewer colors.
-    contrastColor.put(0, "grey85");
-    contrastColor.put(1, "grey85");
-    contrastColor.put(2, "grey85");
-    contrastColor.put(3, "grey85");
-    contrastColor.put(4, "grey85");
-    contrastColor.put(5, "grey85");
-    contrastColor.put(6, "grey85");
-    contrastColor.put(7, "grey19");
-    contrastColor.put(8, "grey85");
-    contrastColor.put(9, "grey85");
-    contrastColor.put(10, "grey19");
-    contrastColor.put(11, "grey19");
-    contrastColor.put(12, "grey85");
-    contrastColor.put(13, "grey85");
-    contrastColor.put(14, "grey19");
-    contrastColor.put(15, "grey19");
-    contrastColor.put(16, "grey85");
-    contrastColor.put(17, "grey85");
-    contrastColor.put(18, "grey85");
-    contrastColor.put(19, "grey85");
-    contrastColor.put(20, "grey85");
-    contrastColor.put(21, "grey85");
-    contrastColor.put(22, "grey85");
-    contrastColor.put(23, "grey85");
-    contrastColor.put(24, "grey85");
-    contrastColor.put(25, "grey85");
-    contrastColor.put(26, "grey85");
-    contrastColor.put(27, "grey85");
-    contrastColor.put(28, "grey85");
-    contrastColor.put(29, "grey85");
-    contrastColor.put(30, "grey85");
-    contrastColor.put(31, "grey85");
-    contrastColor.put(32, "grey85");
-    contrastColor.put(33, "grey85");
-    contrastColor.put(34, "grey85");
-    contrastColor.put(35, "grey85");
-    contrastColor.put(36, "grey85");
-    contrastColor.put(37, "grey85");
-    contrastColor.put(38, "grey85");
-    contrastColor.put(39, "grey19");
-    contrastColor.put(40, "grey19");
-    contrastColor.put(41, "grey19");
-    contrastColor.put(42, "grey19");
-    contrastColor.put(43, "grey19");
-    contrastColor.put(44, "grey19");
-    contrastColor.put(45, "grey19");
-    contrastColor.put(46, "grey19");
-    contrastColor.put(47, "grey19");
-    contrastColor.put(48, "grey19");
-    contrastColor.put(49, "grey19");
-    contrastColor.put(50, "grey19");
-    contrastColor.put(51, "grey19");
-    contrastColor.put(52, "grey85");
-    contrastColor.put(53, "grey85");
-    contrastColor.put(54, "grey85");
-    contrastColor.put(55, "grey85");
-    contrastColor.put(56, "grey85");
-    contrastColor.put(57, "grey85");
-    contrastColor.put(58, "grey85");
-    contrastColor.put(59, "grey85");
-    contrastColor.put(60, "grey85");
-    contrastColor.put(61, "grey19");
-    contrastColor.put(62, "grey19");
-    contrastColor.put(63, "grey19");
-    contrastColor.put(64, "grey85");
-    contrastColor.put(65, "grey85");
-    contrastColor.put(66, "grey85");
-    contrastColor.put(67, "grey19");
-    contrastColor.put(68, "grey19");
-    contrastColor.put(69, "grey19");
-    contrastColor.put(70, "grey85");
-    contrastColor.put(71, "grey19");
-    contrastColor.put(72, "grey19");
-    contrastColor.put(73, "grey19");
-    contrastColor.put(74, "grey19");
-    contrastColor.put(75, "grey19");
-    contrastColor.put(76, "grey19");
-    contrastColor.put(77, "grey19");
-    contrastColor.put(78, "grey19");
-    contrastColor.put(79, "grey19");
-    contrastColor.put(80, "grey19");
-    contrastColor.put(81, "grey19");
-    contrastColor.put(82, "grey19");
-    contrastColor.put(83, "grey19");
-    contrastColor.put(84, "grey19");
-    contrastColor.put(85, "grey19");
-    contrastColor.put(86, "grey19");
-    contrastColor.put(87, "grey19");
-    contrastColor.put(88, "grey85");
-    contrastColor.put(89, "grey85");
-    contrastColor.put(90, "grey85");
-    contrastColor.put(91, "grey85");
-    contrastColor.put(92, "grey85");
-    contrastColor.put(93, "grey85");
-    contrastColor.put(94, "grey85");
-    contrastColor.put(95, "grey85");
-    contrastColor.put(96, "grey85");
-    contrastColor.put(97, "grey19");
-    contrastColor.put(98, "grey19");
-    contrastColor.put(99, "grey19");
-    contrastColor.put(100, "grey85");
-    contrastColor.put(101, "grey85");
-    contrastColor.put(102, "grey19");
-    contrastColor.put(103, "grey19");
-    contrastColor.put(104, "grey19");
-    contrastColor.put(105, "grey19");
-    contrastColor.put(106, "grey85");
-    contrastColor.put(107, "grey19");
-    contrastColor.put(108, "grey19");
-    contrastColor.put(109, "grey19");
-    contrastColor.put(110, "grey19");
-    contrastColor.put(111, "grey19");
-    contrastColor.put(112, "grey19");
-    contrastColor.put(113, "grey19");
-    contrastColor.put(114, "grey19");
-    contrastColor.put(115, "grey19");
-    contrastColor.put(116, "grey19");
-    contrastColor.put(117, "grey19");
-    contrastColor.put(118, "grey19");
-    contrastColor.put(119, "grey19");
-    contrastColor.put(120, "grey19");
-    contrastColor.put(121, "grey19");
-    contrastColor.put(122, "grey19");
-    contrastColor.put(123, "grey19");
-    contrastColor.put(124, "grey85");
-    contrastColor.put(125, "grey85");
-    contrastColor.put(126, "grey85");
-    contrastColor.put(127, "grey85");
-    contrastColor.put(128, "grey85");
-    contrastColor.put(129, "grey85");
-    contrastColor.put(130, "grey85");
-    contrastColor.put(131, "grey19");
-    contrastColor.put(132, "grey19");
-    contrastColor.put(133, "grey19");
-    contrastColor.put(134, "grey19");
-    contrastColor.put(135, "grey19");
-    contrastColor.put(136, "grey85");
-    contrastColor.put(137, "grey19");
-    contrastColor.put(138, "grey19");
-    contrastColor.put(139, "grey19");
-    contrastColor.put(140, "grey19");
-    contrastColor.put(141, "grey19");
-    contrastColor.put(142, "grey85");
-    contrastColor.put(143, "grey19");
-    contrastColor.put(144, "grey19");
-    contrastColor.put(145, "grey19");
-    contrastColor.put(146, "grey19");
-    contrastColor.put(147, "grey19");
-    contrastColor.put(148, "grey19");
-    contrastColor.put(149, "grey19");
-    contrastColor.put(150, "grey19");
-    contrastColor.put(151, "grey19");
-    contrastColor.put(152, "grey19");
-    contrastColor.put(153, "grey19");
-    contrastColor.put(154, "grey19");
-    contrastColor.put(155, "grey19");
-    contrastColor.put(156, "grey19");
-    contrastColor.put(157, "grey19");
-    contrastColor.put(158, "grey19");
-    contrastColor.put(159, "grey19");
-    contrastColor.put(160, "grey85");
-    contrastColor.put(161, "grey85");
-    contrastColor.put(162, "grey85");
-    contrastColor.put(163, "grey85");
-    contrastColor.put(164, "grey85");
-    contrastColor.put(165, "grey85");
-    contrastColor.put(166, "grey85");
-    contrastColor.put(167, "grey19");
-    contrastColor.put(168, "grey19");
-    contrastColor.put(169, "grey19");
-    contrastColor.put(170, "grey19");
-    contrastColor.put(171, "grey19");
-    contrastColor.put(172, "grey85");
-    contrastColor.put(173, "grey19");
-    contrastColor.put(174, "grey19");
-    contrastColor.put(175, "grey19");
-    contrastColor.put(176, "grey19");
-    contrastColor.put(177, "grey19");
-    contrastColor.put(178, "grey19");
-    contrastColor.put(179, "grey19");
-    contrastColor.put(180, "grey19");
-    contrastColor.put(181, "grey19");
-    contrastColor.put(182, "grey19");
-    contrastColor.put(183, "grey19");
-    contrastColor.put(184, "grey19");
-    contrastColor.put(185, "grey19");
-    contrastColor.put(186, "grey19");
-    contrastColor.put(187, "grey19");
-    contrastColor.put(188, "grey19");
-    contrastColor.put(189, "grey19");
-    contrastColor.put(190, "grey19");
-    contrastColor.put(191, "grey19");
-    contrastColor.put(192, "grey19");
-    contrastColor.put(193, "grey19");
-    contrastColor.put(194, "grey19");
-    contrastColor.put(195, "grey19");
-    contrastColor.put(196, "grey85");
-    contrastColor.put(197, "grey85");
-    contrastColor.put(198, "grey85");
-    contrastColor.put(199, "grey85");
-    contrastColor.put(200, "grey85");
-    contrastColor.put(201, "grey85");
-    contrastColor.put(202, "grey85");
-    contrastColor.put(203, "grey19");
-    contrastColor.put(204, "grey19");
-    contrastColor.put(205, "grey19");
-    contrastColor.put(206, "grey19");
-    contrastColor.put(207, "grey19");
-    contrastColor.put(208, "grey85");
-    contrastColor.put(209, "grey19");
-    contrastColor.put(210, "grey19");
-    contrastColor.put(211, "grey19");
-    contrastColor.put(212, "grey19");
-    contrastColor.put(213, "grey19");
-    contrastColor.put(214, "grey85");
-    contrastColor.put(215, "grey19");
-    contrastColor.put(216, "grey19");
-    contrastColor.put(217, "grey19");
-    contrastColor.put(218, "grey19");
-    contrastColor.put(219, "grey19");
-    contrastColor.put(220, "grey19");
-    contrastColor.put(221, "grey19");
-    contrastColor.put(222, "grey19");
-    contrastColor.put(223, "grey19");
-    contrastColor.put(224, "grey19");
-    contrastColor.put(225, "grey19");
-    contrastColor.put(226, "grey19");
-    contrastColor.put(227, "grey19");
-    contrastColor.put(228, "grey19");
-    contrastColor.put(229, "grey19");
-    contrastColor.put(230, "grey19");
-    contrastColor.put(231, "grey19");
-    contrastColor.put(232, "grey85");
-    contrastColor.put(233, "grey85");
-    contrastColor.put(234, "grey85");
-    contrastColor.put(235, "grey85");
-    contrastColor.put(236, "grey85");
-    contrastColor.put(237, "grey85");
-    contrastColor.put(238, "grey85");
-    contrastColor.put(239, "grey85");
-    contrastColor.put(240, "grey85");
-    contrastColor.put(241, "grey85");
-    contrastColor.put(242, "grey85");
-    contrastColor.put(243, "grey85");
-    contrastColor.put(244, "grey19");
-    contrastColor.put(245, "grey19");
-    contrastColor.put(246, "grey19");
-    contrastColor.put(247, "grey19");
-    contrastColor.put(248, "grey19");
-    contrastColor.put(249, "grey19");
-    contrastColor.put(250, "grey19");
-    contrastColor.put(251, "grey19");
-    contrastColor.put(252, "grey19");
-    contrastColor.put(253, "grey19");
-    contrastColor.put(254, "grey19");
-    contrastColor.put(255, "grey19");
+    // grey85 and grey19 are the same colours used as default for the fore- and background
+    // theme metal. It's better to deal with fewer colours.
+    contrastColour.put(0, "grey85");
+    contrastColour.put(1, "grey85");
+    contrastColour.put(2, "grey85");
+    contrastColour.put(3, "grey85");
+    contrastColour.put(4, "grey85");
+    contrastColour.put(5, "grey85");
+    contrastColour.put(6, "grey85");
+    contrastColour.put(7, "grey19");
+    contrastColour.put(8, "grey85");
+    contrastColour.put(9, "grey85");
+    contrastColour.put(10, "grey19");
+    contrastColour.put(11, "grey19");
+    contrastColour.put(12, "grey85");
+    contrastColour.put(13, "grey85");
+    contrastColour.put(14, "grey19");
+    contrastColour.put(15, "grey19");
+    contrastColour.put(16, "grey85");
+    contrastColour.put(17, "grey85");
+    contrastColour.put(18, "grey85");
+    contrastColour.put(19, "grey85");
+    contrastColour.put(20, "grey85");
+    contrastColour.put(21, "grey85");
+    contrastColour.put(22, "grey85");
+    contrastColour.put(23, "grey85");
+    contrastColour.put(24, "grey85");
+    contrastColour.put(25, "grey85");
+    contrastColour.put(26, "grey85");
+    contrastColour.put(27, "grey85");
+    contrastColour.put(28, "grey85");
+    contrastColour.put(29, "grey85");
+    contrastColour.put(30, "grey85");
+    contrastColour.put(31, "grey85");
+    contrastColour.put(32, "grey85");
+    contrastColour.put(33, "grey85");
+    contrastColour.put(34, "grey85");
+    contrastColour.put(35, "grey85");
+    contrastColour.put(36, "grey85");
+    contrastColour.put(37, "grey85");
+    contrastColour.put(38, "grey85");
+    contrastColour.put(39, "grey19");
+    contrastColour.put(40, "grey19");
+    contrastColour.put(41, "grey19");
+    contrastColour.put(42, "grey19");
+    contrastColour.put(43, "grey19");
+    contrastColour.put(44, "grey19");
+    contrastColour.put(45, "grey19");
+    contrastColour.put(46, "grey19");
+    contrastColour.put(47, "grey19");
+    contrastColour.put(48, "grey19");
+    contrastColour.put(49, "grey19");
+    contrastColour.put(50, "grey19");
+    contrastColour.put(51, "grey19");
+    contrastColour.put(52, "grey85");
+    contrastColour.put(53, "grey85");
+    contrastColour.put(54, "grey85");
+    contrastColour.put(55, "grey85");
+    contrastColour.put(56, "grey85");
+    contrastColour.put(57, "grey85");
+    contrastColour.put(58, "grey85");
+    contrastColour.put(59, "grey85");
+    contrastColour.put(60, "grey85");
+    contrastColour.put(61, "grey19");
+    contrastColour.put(62, "grey19");
+    contrastColour.put(63, "grey19");
+    contrastColour.put(64, "grey85");
+    contrastColour.put(65, "grey85");
+    contrastColour.put(66, "grey85");
+    contrastColour.put(67, "grey19");
+    contrastColour.put(68, "grey19");
+    contrastColour.put(69, "grey19");
+    contrastColour.put(70, "grey85");
+    contrastColour.put(71, "grey19");
+    contrastColour.put(72, "grey19");
+    contrastColour.put(73, "grey19");
+    contrastColour.put(74, "grey19");
+    contrastColour.put(75, "grey19");
+    contrastColour.put(76, "grey19");
+    contrastColour.put(77, "grey19");
+    contrastColour.put(78, "grey19");
+    contrastColour.put(79, "grey19");
+    contrastColour.put(80, "grey19");
+    contrastColour.put(81, "grey19");
+    contrastColour.put(82, "grey19");
+    contrastColour.put(83, "grey19");
+    contrastColour.put(84, "grey19");
+    contrastColour.put(85, "grey19");
+    contrastColour.put(86, "grey19");
+    contrastColour.put(87, "grey19");
+    contrastColour.put(88, "grey85");
+    contrastColour.put(89, "grey85");
+    contrastColour.put(90, "grey85");
+    contrastColour.put(91, "grey85");
+    contrastColour.put(92, "grey85");
+    contrastColour.put(93, "grey85");
+    contrastColour.put(94, "grey85");
+    contrastColour.put(95, "grey85");
+    contrastColour.put(96, "grey85");
+    contrastColour.put(97, "grey19");
+    contrastColour.put(98, "grey19");
+    contrastColour.put(99, "grey19");
+    contrastColour.put(100, "grey85");
+    contrastColour.put(101, "grey85");
+    contrastColour.put(102, "grey19");
+    contrastColour.put(103, "grey19");
+    contrastColour.put(104, "grey19");
+    contrastColour.put(105, "grey19");
+    contrastColour.put(106, "grey85");
+    contrastColour.put(107, "grey19");
+    contrastColour.put(108, "grey19");
+    contrastColour.put(109, "grey19");
+    contrastColour.put(110, "grey19");
+    contrastColour.put(111, "grey19");
+    contrastColour.put(112, "grey19");
+    contrastColour.put(113, "grey19");
+    contrastColour.put(114, "grey19");
+    contrastColour.put(115, "grey19");
+    contrastColour.put(116, "grey19");
+    contrastColour.put(117, "grey19");
+    contrastColour.put(118, "grey19");
+    contrastColour.put(119, "grey19");
+    contrastColour.put(120, "grey19");
+    contrastColour.put(121, "grey19");
+    contrastColour.put(122, "grey19");
+    contrastColour.put(123, "grey19");
+    contrastColour.put(124, "grey85");
+    contrastColour.put(125, "grey85");
+    contrastColour.put(126, "grey85");
+    contrastColour.put(127, "grey85");
+    contrastColour.put(128, "grey85");
+    contrastColour.put(129, "grey85");
+    contrastColour.put(130, "grey85");
+    contrastColour.put(131, "grey19");
+    contrastColour.put(132, "grey19");
+    contrastColour.put(133, "grey19");
+    contrastColour.put(134, "grey19");
+    contrastColour.put(135, "grey19");
+    contrastColour.put(136, "grey85");
+    contrastColour.put(137, "grey19");
+    contrastColour.put(138, "grey19");
+    contrastColour.put(139, "grey19");
+    contrastColour.put(140, "grey19");
+    contrastColour.put(141, "grey19");
+    contrastColour.put(142, "grey85");
+    contrastColour.put(143, "grey19");
+    contrastColour.put(144, "grey19");
+    contrastColour.put(145, "grey19");
+    contrastColour.put(146, "grey19");
+    contrastColour.put(147, "grey19");
+    contrastColour.put(148, "grey19");
+    contrastColour.put(149, "grey19");
+    contrastColour.put(150, "grey19");
+    contrastColour.put(151, "grey19");
+    contrastColour.put(152, "grey19");
+    contrastColour.put(153, "grey19");
+    contrastColour.put(154, "grey19");
+    contrastColour.put(155, "grey19");
+    contrastColour.put(156, "grey19");
+    contrastColour.put(157, "grey19");
+    contrastColour.put(158, "grey19");
+    contrastColour.put(159, "grey19");
+    contrastColour.put(160, "grey85");
+    contrastColour.put(161, "grey85");
+    contrastColour.put(162, "grey85");
+    contrastColour.put(163, "grey85");
+    contrastColour.put(164, "grey85");
+    contrastColour.put(165, "grey85");
+    contrastColour.put(166, "grey85");
+    contrastColour.put(167, "grey19");
+    contrastColour.put(168, "grey19");
+    contrastColour.put(169, "grey19");
+    contrastColour.put(170, "grey19");
+    contrastColour.put(171, "grey19");
+    contrastColour.put(172, "grey85");
+    contrastColour.put(173, "grey19");
+    contrastColour.put(174, "grey19");
+    contrastColour.put(175, "grey19");
+    contrastColour.put(176, "grey19");
+    contrastColour.put(177, "grey19");
+    contrastColour.put(178, "grey19");
+    contrastColour.put(179, "grey19");
+    contrastColour.put(180, "grey19");
+    contrastColour.put(181, "grey19");
+    contrastColour.put(182, "grey19");
+    contrastColour.put(183, "grey19");
+    contrastColour.put(184, "grey19");
+    contrastColour.put(185, "grey19");
+    contrastColour.put(186, "grey19");
+    contrastColour.put(187, "grey19");
+    contrastColour.put(188, "grey19");
+    contrastColour.put(189, "grey19");
+    contrastColour.put(190, "grey19");
+    contrastColour.put(191, "grey19");
+    contrastColour.put(192, "grey19");
+    contrastColour.put(193, "grey19");
+    contrastColour.put(194, "grey19");
+    contrastColour.put(195, "grey19");
+    contrastColour.put(196, "grey85");
+    contrastColour.put(197, "grey85");
+    contrastColour.put(198, "grey85");
+    contrastColour.put(199, "grey85");
+    contrastColour.put(200, "grey85");
+    contrastColour.put(201, "grey85");
+    contrastColour.put(202, "grey85");
+    contrastColour.put(203, "grey19");
+    contrastColour.put(204, "grey19");
+    contrastColour.put(205, "grey19");
+    contrastColour.put(206, "grey19");
+    contrastColour.put(207, "grey19");
+    contrastColour.put(208, "grey85");
+    contrastColour.put(209, "grey19");
+    contrastColour.put(210, "grey19");
+    contrastColour.put(211, "grey19");
+    contrastColour.put(212, "grey19");
+    contrastColour.put(213, "grey19");
+    contrastColour.put(214, "grey85");
+    contrastColour.put(215, "grey19");
+    contrastColour.put(216, "grey19");
+    contrastColour.put(217, "grey19");
+    contrastColour.put(218, "grey19");
+    contrastColour.put(219, "grey19");
+    contrastColour.put(220, "grey19");
+    contrastColour.put(221, "grey19");
+    contrastColour.put(222, "grey19");
+    contrastColour.put(223, "grey19");
+    contrastColour.put(224, "grey19");
+    contrastColour.put(225, "grey19");
+    contrastColour.put(226, "grey19");
+    contrastColour.put(227, "grey19");
+    contrastColour.put(228, "grey19");
+    contrastColour.put(229, "grey19");
+    contrastColour.put(230, "grey19");
+    contrastColour.put(231, "grey19");
+    contrastColour.put(232, "grey85");
+    contrastColour.put(233, "grey85");
+    contrastColour.put(234, "grey85");
+    contrastColour.put(235, "grey85");
+    contrastColour.put(236, "grey85");
+    contrastColour.put(237, "grey85");
+    contrastColour.put(238, "grey85");
+    contrastColour.put(239, "grey85");
+    contrastColour.put(240, "grey85");
+    contrastColour.put(241, "grey85");
+    contrastColour.put(242, "grey85");
+    contrastColour.put(243, "grey85");
+    contrastColour.put(244, "grey19");
+    contrastColour.put(245, "grey19");
+    contrastColour.put(246, "grey19");
+    contrastColour.put(247, "grey19");
+    contrastColour.put(248, "grey19");
+    contrastColour.put(249, "grey19");
+    contrastColour.put(250, "grey19");
+    contrastColour.put(251, "grey19");
+    contrastColour.put(252, "grey19");
+    contrastColour.put(253, "grey19");
+    contrastColour.put(254, "grey19");
+    contrastColour.put(255, "grey19");
   }
 
-  public static final Color xterm256ToColor(int xterm256) throws InvalidColourException {
+  public static final Color xterm256ToColour(int xterm256) throws InvalidColourException {
 
     String rgb = xterm256toRGB(xterm256);
     int r = Integer.parseInt(rgb.substring(0, 2), 16);
@@ -547,21 +547,21 @@ public class Xterm256 {
     return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
   }
 
-  //	public static final LinkedHashMap<String, Integer> mapColorNameToXterm256(){
+  //	public static final LinkedHashMap<String, Integer> mapColourNameToXterm256(){
   //		return xtermNameToNumber;
   //	}
-  //	public static final LinkedHashMap<Integer, String> contrastColorMap(){
-  //		return contrastColor;
+  //	public static final LinkedHashMap<Integer, String> contrastColourMap(){
+  //		return contrastColour;
   //	}
   /**
-   * Return the color integer for the given input string. colorName can be: 1) The name itself like
-   * "red" 2) An integer string in the range 0-255, e.g. "230" 3) Prefix of a name, e.g. "lightsal".
-   * Color names are case insensitive.
+   * Return the colour integer for the given input string. colourName can be: 1) The name itself
+   * like "red" 2) An integer string in the range 0-255, e.g. "230" 3) Prefix of a name, e.g.
+   * "lightsal". Colour names are case insensitive.
    */
-  public static int colorNameToXterm256(String colorName) throws InvalidColourException {
+  public static int colourNameToXterm256(String colourName) throws InvalidColourException {
 
     try { // See if colour name is already an int between 0 and 255
-      int xterm = Integer.parseInt(colorName);
+      int xterm = Integer.parseInt(colourName);
       if (xterm >= 0 && xterm <= 255) {
         return xterm;
       }
@@ -569,23 +569,23 @@ public class Xterm256 {
       //
     }
 
-    colorName = colorName.toLowerCase();
+    colourName = colourName.toLowerCase();
 
-    if (xtermNameToNumber.containsKey(colorName)) {
-      return xtermNameToNumber.get(colorName);
+    if (xtermNameToNumber.containsKey(colourName)) {
+      return xtermNameToNumber.get(colourName);
     } else {
       // Try approximate matching
       for (String x : xtermNameToNumber.keySet()) {
-        if (x.startsWith(colorName)) {
+        if (x.startsWith(colourName)) {
           return xtermNameToNumber.get(x);
         }
       }
-      System.err.println("Unrecognized color: " + colorName);
+      System.err.println("Unrecognized colour: " + colourName);
       throw new InvalidColourException();
     }
   }
 
-  public static String colorShowForTerminal() throws InvalidColourException {
+  public static String colourShowForTerminal() throws InvalidColourException {
 
     int maxLen = 0;
     for (String x : xtermNameToNumber.keySet()) {
@@ -607,12 +607,12 @@ public class Xterm256 {
               + "m"
               + x
               + "\033[38;5;"
-              + Config.get256Color(ConfigKey.foreground)
+              + Config.get256Colour(ConfigKey.foreground)
               + ";48;5;"
-              + Config.get256Color(ConfigKey.background)
+              + Config.get256Colour(ConfigKey.background)
               + "m");
 
-      if (i == 3) { // Arrange colors in this many columns
+      if (i == 3) { // Arrange colours in this many columns
         sb.append("\n");
         i = 0;
       } else {
@@ -630,7 +630,7 @@ public class Xterm256 {
 
     // From https://gist.github.com/MicahElliott/719710
 
-    // Primary 3-bit (8 colors). Unique representation!
+    // Primary 3-bit (8 colours). Unique representation!
     if (xterm256 == 0) {
       return "000000";
     }
@@ -656,7 +656,7 @@ public class Xterm256 {
       return "c0c0c0";
     }
 
-    // Equivalent "bright" versions of original 8 colors.
+    // Equivalent "bright" versions of original 8 colours.
     if (xterm256 == 8) {
       return "808080";
     }
@@ -1412,13 +1412,13 @@ public class Xterm256 {
   // Map<Integer, String> xterm256toRGB = new HashMap<Integer, String>();
 
   /**
-   * Return the colour name contrasting with the input color. See Xterm256.colorNameToXterm256() for
-   * how input colour can be specified.
+   * Return the colour name contrasting with the input colour. See Xterm256.colourNameToXterm256()
+   * for how input colour can be specified.
    *
    * @throws InvalidColourException
    */
-  public static String getContrastColor(String color) throws InvalidColourException {
-    int icol = colorNameToXterm256(color);
-    return contrastColor.get(icol);
+  public static String getContrastColour(String colour) throws InvalidColourException {
+    int icol = colourNameToXterm256(colour);
+    return contrastColour.get(icol);
   }
 }

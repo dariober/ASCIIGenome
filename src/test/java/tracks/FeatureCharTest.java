@@ -2,7 +2,7 @@ package tracks;
 
 import static org.junit.Assert.*;
 
-import coloring.Config;
+import colouring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import java.io.IOException;
@@ -24,14 +24,14 @@ public class FeatureCharTest {
     assertEquals("A", fc.format(true));
     assertTrue(fc.format(false).startsWith("\033["));
 
-    fc.setBgColor("255");
+    fc.setBgColour("255");
     assertTrue(fc.format(false).contains("255"));
-    fc.setFgColor("254");
+    fc.setFgColour("254");
     assertTrue(fc.format(false).contains("254"));
 
     // Formatting general text
     fc = new FeatureChar();
     fc.setText('X');
-    fc.setFgColor("blue");
+    fc.setFgColour("blue");
   }
 }

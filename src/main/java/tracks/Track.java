@@ -1,8 +1,8 @@
 package tracks;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.ConfigKey;
+import colouring.Xterm256;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
@@ -123,6 +123,8 @@ public abstract class Track {
 
   private TrackHeader header = new TrackHeader(null);
 
+  public Track() {}
+
   /**
    * Format the title string to add colour or return title as it is if no format is set.
    *
@@ -133,25 +135,19 @@ public abstract class Track {
     if (this.isNoFormat()) {
       return title;
     } else {
-      int colourCode = Config.get256Color(ConfigKey.title_colour);
+      int colourCode = Config.get256Colour(ConfigKey.title_colour);
       if (this.titleColour != null) {
         new Xterm256();
-        colourCode = Xterm256.colorNameToXterm256(this.titleColour);
+        colourCode = Xterm256.colourNameToXterm256(this.titleColour);
       }
       return "\033[48;5;"
-          + Config.get256Color(ConfigKey.background)
+          + Config.get256Colour(ConfigKey.background)
           + ";38;5;"
           + colourCode
           + "m"
           + title;
     }
   }
-
-  /* Printers */
-  // public String printToScreen() throws InvalidGenomicCoordsException, IOException,
-  // InvalidColourException{
-  //    return null;
-  // }
 
   public abstract String printToScreen()
       throws InvalidGenomicCoordsException, IOException, InvalidColourException;
@@ -636,9 +632,9 @@ public abstract class Track {
     } else {
       String formatted =
           "\033[38;5;"
-              + Config.get256Color(ConfigKey.foreground)
+              + Config.get256Colour(ConfigKey.foreground)
               + ";48;5;"
-              + Config.get256Color(ConfigKey.background)
+              + Config.get256Colour(ConfigKey.background)
               + "m"
               + sb.toString();
 
@@ -1226,20 +1222,20 @@ public abstract class Track {
     return passed;
   }
 
-  protected void setColorForRegex(List<Argument> xcolorForRegex) {}
+  protected void setColourForRegex(List<Argument> xcolourForRegex) {}
 
   public GenotypeMatrix getGenotypeMatrix() {
     return genotypeMatrix;
   }
 
   /**
-   * Iterate through the features in this track and set background colour. colorForRegex: Key= Regex
-   * to capture features; Value= Colour to use for the captures features.
+   * Iterate through the features in this track and set background colour. colourForRegex: Key=
+   * Regex to capture features; Value= Colour to use for the captures features.
    *
    * @throws InvalidColourException
    * @throws IOException
    */
-  protected void changeFeatureColor(List<Argument> list)
+  protected void changeFeatureColour(List<Argument> list)
       throws InvalidColourException, IOException {}
 
   protected void setLastModified() throws IOException {
@@ -1301,89 +1297,6 @@ public abstract class Track {
     this.getFeatureFilter().setVariantReadInInterval(chrom, from, to, faSeq);
     this.update();
   }
-
-  /**
-   * @throws InvalidGenomicCoordsException Interpret the variantInterval string, like 123+-5, to
-   *     return the coordinates of the interval to filter for variants. Return an array of length 2
-   *     with [start, end], 1-based.
-   * @throws
-   */
-  //	private int[] variantIntervalToCoords(String variantInterval) throws
-  // InvalidGenomicCoordsException {
-  //
-  //		int from= -1;
-  //		int to= -1;
-  //		if(variantInterval != null){
-  //
-  //			// Find whether the region is a single pos +/- a value or
-  //			variantInterval= variantInterval.trim().replaceAll(" ", "").replaceAll(",",
-  // "").replaceAll("/", "");
-  //			try{
-  //				if(variantInterval.contains("+-") || variantInterval.contains("-+")){
-  //					String[] fromTo= variantInterval.replaceAll("\\+", "").split("-");
-  //					int offset= this.posFromGenomicOrScreen(fromTo[1]);
-  //					from= this.posFromGenomicOrScreen(fromTo[0]) - offset;
-  //					to= this.posFromGenomicOrScreen(fromTo[0]) + offset;
-  //				}
-  //				else if(variantInterval.contains("-")){
-  //					String[] fromTo= variantInterval.split("-");
-  //					from= this.posFromGenomicOrScreen(fromTo[0]) - this.posFromGenomicOrScreen(fromTo[1]);
-  //					to= this.posFromGenomicOrScreen(fromTo[0]);
-  //				}
-  //				else if(variantInterval.contains("+")){
-  //					String[] fromTo= variantInterval.split("\\+");
-  //					from= this.posFromGenomicOrScreen(fromTo[0]);
-  //					to= this.posFromGenomicOrScreen(fromTo[0]) + this.posFromGenomicOrScreen(fromTo[1]);
-  //				}
-  //				else if(variantInterval.contains(":")){
-  //					String[] fromTo= variantInterval.split(":");
-  //					from= this.posFromGenomicOrScreen(fromTo[0]);
-  //					to= this.posFromGenomicOrScreen(fromTo[1]);
-  //				}
-  //				else {
-  //					from= this.posFromGenomicOrScreen(variantInterval);
-  //					to= this.posFromGenomicOrScreen(variantInterval);
-  //				}
-  //			} catch(NumberFormatException e) {
-  //				try {
-  //					throw new NumberFormatException(Utils.padEndMultiLine("Cannot parse region into integers: "
-  // + variantInterval, Utils.getTerminalWidth()));
-  //				} catch (IOException e1) {
-  //					e1.printStackTrace();
-  //				}
-  //			}
-  //			if(from < 1) from= 1;
-  //			if(to < 1) to= 1;
-  //			if(from > to) from= to;
-  //		}
-  //		return new int[]{from, to};
-  //	}
-
-  /**
-   * Argument position is parsable to either either an integer or a decimal number. If decimal,
-   * return the genomic position corresponding to the screen percentile. E.g. 0.5 returns the
-   * genomic position at 50% of the screen.
-   *
-   * @throws InvalidCommandLineException
-   * @throws InvalidGenomicCoordsException
-   * @throws IOException
-   */
-  //	private int posFromGenomicOrScreen(String position) throws InvalidGenomicCoordsException {
-  //		int reg;
-  //		try{
-  //			reg= Integer.parseInt(position);
-  //			return reg;
-  //		} catch(NumberFormatException e){
-  //			//
-  //		}
-  //		Double pct= Double.valueOf(position);
-  //		double offset= this.getGc().getGenomicWindowSize() * pct;
-  //		if(offset != 0){
-  //			offset--;
-  //		}
-  //		reg= this.getGc().getFrom() + (int)Math.round(offset);
-  //		return reg;
-  //	}
 
   protected VCFHeader getVcfHeader() {
     return vcfHeader;

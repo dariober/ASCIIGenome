@@ -55,34 +55,34 @@ public class FormatVCF {
   //		// Format
   //		StringBuilder formattedText= new StringBuilder();
   //		formattedText.append("\033[7;48;5;"); // 7: Invert colour back/fore-ground
-  //		formattedText.append(Config.get256Color(ConfigKey.background));
+  //		formattedText.append(Config.get256Colour(ConfigKey.background));
   //		formattedText.append(";38;5;");
   //		if(textForVariant == 'A' || textForVariant == 'a'){
-  //			formattedText.append(Config.get256Color(ConfigKey.seq_a));
-  //			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("blue") + "m" +
+  //			formattedText.append(Config.get256Colour(ConfigKey.seq_a));
+  //			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colourNameToXterm256("blue") + "m" +
   // textForVariant + "\033[0m";
   //		} else if(textForVariant == 'C' || textForVariant == 'c') {
-  //			formattedText.append(Config.get256Color(ConfigKey.seq_c));
-  //			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("red") + "m" +
+  //			formattedText.append(Config.get256Colour(ConfigKey.seq_c));
+  //			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colourNameToXterm256("red") + "m" +
   // textForVariant + "\033[0m";
   //		} else if(textForVariant == 'G' || textForVariant == 'g') {
-  //			formattedText.append(Config.get256Color(ConfigKey.seq_g));
-  //			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("green") + "m" +
+  //			formattedText.append(Config.get256Colour(ConfigKey.seq_g));
+  //			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colourNameToXterm256("green") + "m" +
   // textForVariant + "\033[0m";
   //		} else if(textForVariant == 'T' || textForVariant == 't') {
-  //			formattedText.append(Config.get256Color(ConfigKey.seq_t));
-  //			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colorNameToXterm256("yellow") + "m" +
+  //			formattedText.append(Config.get256Colour(ConfigKey.seq_t));
+  //			// formattedText += "\033[38;5;231;48;5;" + Xterm256.colourNameToXterm256("yellow") + "m" +
   // textForVariant + "\033[0m";
   //		} else {
-  //			formattedText.append(Config.get256Color(ConfigKey.seq_other));
+  //			formattedText.append(Config.get256Colour(ConfigKey.seq_other));
   //			// formattedText += textForVariant;
   //		}
   //		formattedText.append("m");
   //		formattedText.append(textForVariant);
   //		formattedText.append("\033[0m\033[38;5;");
-  //		formattedText.append(Config.get256Color(ConfigKey.foreground));
+  //		formattedText.append(Config.get256Colour(ConfigKey.foreground));
   //		formattedText.append(";48;5;");
-  //		formattedText.append(Config.get256Color(ConfigKey.background));
+  //		formattedText.append(Config.get256Colour(ConfigKey.background));
   //		formattedText.append("m");
   //		return formattedText.toString();
   //	}

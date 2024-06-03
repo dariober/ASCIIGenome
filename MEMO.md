@@ -5,6 +5,16 @@ These notes are howto's and they are not part of the documentation. They are
 here just for pro memoria. A lot of references are not general but depend on the
 system. For authoritative references see github, svn, eclipse, ..., docs. 
 
+Code style
+----------
+
+Reformat code *in place*:
+
+```
+curl -O -L https://github.com/google/google-java-format/releases/download/v1.22.0/google-java-format-1.22.0-all-deps.jar
+java -jar google-java-format-1.22.0-all-deps.jar -i `find src/ -name '*.java'`
+```
+
 Release new version
 -------------------
 
@@ -14,6 +24,8 @@ you want to release it as a new version.
 * Make sure the version set in `ArgParse.VERSION` is bumped as appropriate.
 
 * Test and build jar file. All tests should PASS.
+
+* Reformat code (see above)
 
 ```
 ./gradlew clean

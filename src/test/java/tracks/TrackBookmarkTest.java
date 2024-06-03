@@ -3,7 +3,7 @@ package tracks;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import coloring.Config;
+import colouring.Config;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -23,14 +23,14 @@ public class TrackBookmarkTest {
   }
 
   @Test
-  public void canColorByRegex() throws Exception {
+  public void canColourByRegex() throws Exception {
     GenomicCoords gc = new GenomicCoords("chr1:1-100", 80, null, null);
     TrackBookmark bm = new TrackBookmark(gc, "book1");
     bm.printToScreen(); // This is to populate the ideograms.
 
-    List<Argument> colorForRegex = new ArrayList<Argument>();
-    colorForRegex.add(new Argument(".*", "216", false));
-    bm.setColorForRegex(colorForRegex);
+    List<Argument> colourForRegex = new ArrayList<Argument>();
+    colourForRegex.add(new Argument(".*", "216", false));
+    bm.setColourForRegex(colourForRegex);
     assertTrue(bm.printToScreen().contains("216"));
   }
 

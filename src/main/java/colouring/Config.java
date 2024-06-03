@@ -1,4 +1,4 @@
-package coloring;
+package colouring;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -61,7 +61,7 @@ public class Config {
       }
     }
     try {
-      colorNameToInt();
+      colourNameToInt();
     } catch (InvalidColourException e) {
       e.printStackTrace();
     }
@@ -116,24 +116,24 @@ public class Config {
   }
 
   /**
-   * We convert the color names to the corresponding int. This is because looking up by int is much
+   * We convert the colour names to the corresponding int. This is because looking up by int is much
    * faster than by name.
    *
    * @throws InvalidColourException
    */
-  private static void colorNameToInt() throws InvalidColourException {
+  private static void colourNameToInt() throws InvalidColourException {
     for (ConfigKey key : config.keySet()) {
-      if (ConfigKey.colorKeys().contains(key)) {
-        int colorInt = Xterm256.colorNameToXterm256(config.get(key));
-        config.put(key, Integer.toString(colorInt));
+      if (ConfigKey.colourKeys().contains(key)) {
+        int colourInt = Xterm256.colourNameToXterm256(config.get(key));
+        config.put(key, Integer.toString(colourInt));
       }
     }
   }
 
-  /** Get xterm256 color corresponding to this configuration key */
-  public static int get256Color(ConfigKey key) throws InvalidColourException {
+  /** Get xterm256 colour corresponding to this configuration key */
+  public static int get256Colour(ConfigKey key) throws InvalidColourException {
     new Xterm256();
-    return Xterm256.colorNameToXterm256(config.get(key));
+    return Xterm256.colourNameToXterm256(config.get(key));
   }
 
   /** Get value associated to this configuration key */
@@ -154,7 +154,7 @@ public class Config {
         value = config.get(ConfigKey.background);
       }
       config.put(key, value);
-      colorNameToInt();
+      colourNameToInt();
     }
   }
 

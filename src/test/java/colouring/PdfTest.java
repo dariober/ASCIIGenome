@@ -1,4 +1,4 @@
-package coloring;
+package colouring;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -35,25 +35,25 @@ public class PdfTest {
   }
 
   @Test
-  public void getColorFromAnsi()
+  public void getColourFromAnsi()
       throws IOException, InvalidColourException, InvalidConfigException {
 
     // Dummy pdf object. It doesn't matter how you create it.
-    String ansiInput = FileUtils.readFileToString(new File("test_data/ansicolor.txt"), "UTF-8");
+    String ansiInput = FileUtils.readFileToString(new File("test_data/ansicolour.txt"), "UTF-8");
     Pdf pdf = new Pdf(ansiInput);
 
     // Expected: xterm 244 = grey with rgb= 128
     String x = "[38;5;244;48;5;15m FOO";
-    assertEquals("java.awt.Color[r=128,g=128,b=128]", pdf.xterm256ToColor(x, false).toString());
+    assertEquals("java.awt.Colour[r=128,g=128,b=128]", pdf.xterm256ToColour(x, false).toString());
 
     x = "[48;5;15;38;5;244m FOO";
-    assertEquals("java.awt.Color[r=128,g=128,b=128]", pdf.xterm256ToColor(x, false).toString());
+    assertEquals("java.awt.Colour[r=128,g=128,b=128]", pdf.xterm256ToColour(x, false).toString());
 
     // Colour for foreground not given, default to Config:
     x = "[48;5;15m FOO";
-    assertEquals("java.awt.Color[r=0,g=0,b=0]", pdf.xterm256ToColor(x, false).toString());
+    assertEquals("java.awt.Colour[r=0,g=0,b=0]", pdf.xterm256ToColour(x, false).toString());
     // Background as in string
-    assertEquals("java.awt.Color[r=255,g=255,b=255]", pdf.xterm256ToColor(x, true).toString());
+    assertEquals("java.awt.Colour[r=255,g=255,b=255]", pdf.xterm256ToColour(x, true).toString());
   }
 
   @Test
@@ -77,7 +77,7 @@ public class PdfTest {
   public void canPrintPdfFromAnsiFile()
       throws DocumentException, IOException, InvalidColourException {
 
-    String ansiInput = FileUtils.readFileToString(new File("test_data/ansicolor.txt"), "UTF-8");
+    String ansiInput = FileUtils.readFileToString(new File("test_data/ansicolour.txt"), "UTF-8");
 
     File tmp = new File("test_data/deleteme.pdf");
     tmp.deleteOnExit();
@@ -95,7 +95,7 @@ public class PdfTest {
     File tmp = new File("append.pdf");
     tmp.delete();
     tmp.deleteOnExit();
-    String ansiInput = FileUtils.readFileToString(new File("test_data/ansicolor.txt"), "UTF-8");
+    String ansiInput = FileUtils.readFileToString(new File("test_data/ansicolour.txt"), "UTF-8");
     Pdf pdf = new Pdf(ansiInput);
 
     // Append to file not yet created:

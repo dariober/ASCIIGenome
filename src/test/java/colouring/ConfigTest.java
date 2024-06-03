@@ -1,4 +1,4 @@
-package coloring;
+package colouring;
 
 import static org.junit.Assert.assertTrue;
 
@@ -69,12 +69,12 @@ public class ConfigTest {
   }
 
   @Test
-  public void canGetColorForConfigKey()
+  public void canGetColourForConfigKey()
       throws InvalidColourException, IOException, InvalidConfigException {
     new Config(null);
     int i = 0;
     while (i < 100000) { // This loop should go reasonably fast.
-      assertTrue(Config.get256Color(ConfigKey.background) > -1);
+      assertTrue(Config.get256Colour(ConfigKey.background) > -1);
       i++;
     }
   }

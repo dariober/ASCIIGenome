@@ -1,8 +1,8 @@
 package tracks;
 
-import coloring.Config;
-import coloring.ConfigKey;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.ConfigKey;
+import colouring.Xterm256;
 import exceptions.InvalidColourException;
 import htsjdk.variant.variantcontext.Genotype;
 
@@ -12,19 +12,19 @@ class FeatureChar {
   private char text;
 
   /** The ASCII char printed on screen */
-  private String bgColor;
+  private String bgColour;
 
   /** The background colour to use */
-  private String fgColor;
+  private String fgColour;
 
-  private boolean invertFgBgColor = false;
+  private boolean invertFgBgColour = false;
   private boolean underline = false;
 
   /*  C O N S T R U C T O R  */
 
   protected FeatureChar() {
-    this.fgColor = Config.get(ConfigKey.foreground);
-    this.bgColor = Config.get(ConfigKey.background);
+    this.fgColour = Config.get(ConfigKey.foreground);
+    this.bgColour = Config.get(ConfigKey.background);
   }
 
   /*  M E T H O D S  */
@@ -40,21 +40,21 @@ class FeatureChar {
       return sb.append(this.getText()).toString();
     }
     sb.append("\033[");
-    if (this.invertFgBgColor) {
+    if (this.invertFgBgColour) {
       sb.append("7;");
     }
     if (this.isUnderline()) {
       sb.append("4;");
     }
     sb.append("48;5;");
-    sb.append(Xterm256.colorNameToXterm256(this.getBgColor()));
+    sb.append(Xterm256.colourNameToXterm256(this.getBgColour()));
     sb.append(";38;5;");
-    sb.append(Xterm256.colorNameToXterm256(this.getFgColor()));
+    sb.append(Xterm256.colourNameToXterm256(this.getFgColour()));
     sb.append("m");
     sb.append(text);
     // Reset formatting
     sb.append("\033[0;48;5;");
-    sb.append(Xterm256.colorNameToXterm256(Config.get(ConfigKey.background)));
+    sb.append(Xterm256.colourNameToXterm256(Config.get(ConfigKey.background)));
     sb.append("m");
     return sb.toString();
   }
@@ -62,31 +62,31 @@ class FeatureChar {
   /** Add format to this instance according to input and default configuration. */
   protected void addFormatGFF(char txt, char strand) {
     this.setText(txt);
-    this.setFgColor(Config.get(ConfigKey.foreground));
+    this.setFgColour(Config.get(ConfigKey.foreground));
     if (strand == '+') {
-      this.setBgColor(Config.get(ConfigKey.feature_background_positive_strand));
+      this.setBgColour(Config.get(ConfigKey.feature_background_positive_strand));
     } else if (strand == '-') {
-      this.setBgColor(Config.get(ConfigKey.feature_background_negative_strand));
+      this.setBgColour(Config.get(ConfigKey.feature_background_negative_strand));
     } else {
-      this.setBgColor(Config.get(ConfigKey.feature_background_no_strand));
+      this.setBgColour(Config.get(ConfigKey.feature_background_no_strand));
     }
   }
 
   protected void addFormatVCF(char textForVariant) {
     this.setText(textForVariant);
     if (textForVariant == 'A' || textForVariant == 'a') {
-      this.setFgColor(Config.get(ConfigKey.seq_a));
+      this.setFgColour(Config.get(ConfigKey.seq_a));
     } else if (textForVariant == 'C' || textForVariant == 'c') {
-      this.setFgColor(Config.get(ConfigKey.seq_c));
+      this.setFgColour(Config.get(ConfigKey.seq_c));
     } else if (textForVariant == 'G' || textForVariant == 'g') {
-      this.setFgColor(Config.get(ConfigKey.seq_g));
+      this.setFgColour(Config.get(ConfigKey.seq_g));
     } else if (textForVariant == 'T' || textForVariant == 't') {
-      this.setFgColor(Config.get(ConfigKey.seq_t));
+      this.setFgColour(Config.get(ConfigKey.seq_t));
     } else {
-      this.setFgColor(Config.get(ConfigKey.seq_other));
+      this.setFgColour(Config.get(ConfigKey.seq_other));
     }
-    this.setBgColor(Config.get(ConfigKey.background));
-    this.setInvertFgBgColor(true);
+    this.setBgColour(Config.get(ConfigKey.background));
+    this.setInvertFgBgColour(true);
   }
 
   public void addFormatGenotype(Genotype gt) {
@@ -94,13 +94,13 @@ class FeatureChar {
       this.setText(' ');
     } else if (gt.isHomRef()) {
       this.setText('.');
-      this.setBgColor(Config.get(ConfigKey.feature_background_no_strand));
+      this.setBgColour(Config.get(ConfigKey.feature_background_no_strand));
     } else if (gt.isHomVar()) {
       this.setText('O');
-      this.setBgColor(Config.get(ConfigKey.feature_background_negative_strand));
+      this.setBgColour(Config.get(ConfigKey.feature_background_negative_strand));
     } else if (gt.isHet()) {
       this.setText('E');
-      this.setBgColor(Config.get(ConfigKey.feature_background_positive_strand));
+      this.setBgColour(Config.get(ConfigKey.feature_background_positive_strand));
     } else {
       this.setText('?');
     }
@@ -126,26 +126,26 @@ class FeatureChar {
     this.text = text;
   }
 
-  protected String getBgColor() {
-    return this.bgColor;
+  protected String getBgColour() {
+    return this.bgColour;
   }
 
-  protected void setBgColor(String bgColor) {
-    if (bgColor == null) {
-      bgColor = Config.get(ConfigKey.background);
+  protected void setBgColour(String bgColour) {
+    if (bgColour == null) {
+      bgColour = Config.get(ConfigKey.background);
     }
-    this.bgColor = bgColor;
+    this.bgColour = bgColour;
   }
 
-  protected String getFgColor() {
-    return this.fgColor;
+  protected String getFgColour() {
+    return this.fgColour;
   }
 
-  protected void setFgColor(String fgColor) {
-    if (fgColor == null) {
-      fgColor = Config.get(ConfigKey.foreground);
+  protected void setFgColour(String fgColour) {
+    if (fgColour == null) {
+      fgColour = Config.get(ConfigKey.foreground);
     }
-    this.fgColor = fgColor;
+    this.fgColour = fgColour;
   }
 
   public boolean isUnderline() {
@@ -156,7 +156,7 @@ class FeatureChar {
     this.underline = underline;
   }
 
-  public void setInvertFgBgColor(boolean invert) {
-    this.invertFgBgColor = invert;
+  public void setInvertFgBgColour(boolean invert) {
+    this.invertFgBgColour = invert;
   }
 }

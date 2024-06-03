@@ -14,7 +14,7 @@ public class CommandHelp {
   private String briefDescription;
   private String additionalDescription = "";
   protected Section inSection = Section.GENERAL;
-  private int LINE_LEN = 70;
+  private final int LINE_LEN = 70;
 
   /* C o n s t r u c t o r */
 

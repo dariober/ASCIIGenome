@@ -140,8 +140,8 @@ class GenotypeMatrix {
             && !(genotypeRow.get(col).getText() == fmtGt.getText())) {
           // If the cell is not empty or the genotype is not the same as this one:
           fmtGt.setText('*');
-          fmtGt.setBgColor(null);
-          fmtGt.setFgColor(null);
+          fmtGt.setBgColour(null);
+          fmtGt.setFgColour(null);
         }
         genotypeRow.set(col, fmtGt);
       }
@@ -256,38 +256,34 @@ class GenotypeMatrix {
           js.replace(
               "{HOM_VAR}",
               Boolean.toString(
-                  gt
-                      .isHomVar())); // true if all observed alleles are alt; if any alleles are
-                                     // no-calls, return false.
+                  gt.isHomVar())); // true if all observed alleles are alt; if any alleles are
+      // no-calls, return false.
     }
     if (js.contains("{HET_NON_REF}")) {
       js =
           js.replace(
               "{HET_NON_REF}",
               Boolean.toString(
-                  gt
-                      .isHetNonRef())); // true if we're het (observed alleles differ) and neither
-                                        // allele is reference; if the ploidy is less than 2 or if
-                                        // any alleles are no-calls, this method will return false.
+                  gt.isHetNonRef())); // true if we're het (observed alleles differ) and neither
+      // allele is reference; if the ploidy is less than 2 or if
+      // any alleles are no-calls, this method will return false.
     }
     if (js.contains("{CALLED}")) {
       js =
           js.replace(
               "{CALLED}",
               Boolean.toString(
-                  gt
-                      .isCalled())); // true if this genotype is comprised of any alleles that are
-                                     // not no-calls (even if some are).
+                  gt.isCalled())); // true if this genotype is comprised of any alleles that are
+      // not no-calls (even if some are).
     }
     if (js.contains("{NO_CALL}")) {
       js =
           js.replace(
               "{NO_CALL}",
               Boolean.toString(
-                  gt
-                      .isNoCall())); // true if this genotype is not actually a genotype but a "no
-                                     // call" (e.g. './.' in VCF); if any alleles are not no-calls
-                                     // (even if some are), this method will return false.
+                  gt.isNoCall())); // true if this genotype is not actually a genotype but a "no
+      // call" (e.g. './.' in VCF); if any alleles are not no-calls
+      // (even if some are), this method will return false.
     }
     if (js.contains("{MIXED}")) {
       js =

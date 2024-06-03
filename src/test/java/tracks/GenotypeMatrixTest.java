@@ -2,8 +2,8 @@ package tracks;
 
 import static org.junit.Assert.*;
 
-import coloring.Config;
-import coloring.Xterm256;
+import colouring.Config;
+import colouring.Xterm256;
 import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
