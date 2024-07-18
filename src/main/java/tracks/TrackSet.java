@@ -46,7 +46,7 @@ public class TrackSet {
   private List<Track> tracksForYLimits = new ArrayList<Track>();
   private LinkedHashSet<String> openedFiles = new LinkedHashSet<String>();
 
-  /*   C o n s t r u c t o r s   */
+  /*   C o n s t r u c t o r s  */
 
   public TrackSet(List<Track> trackList) {
     this.finalise(trackList);
@@ -58,7 +58,6 @@ public class TrackSet {
           InvalidRecordException,
           ClassNotFoundException,
           SQLException {
-    List<Track> trackList = new ArrayList<>();
     for (String sourceName : inputFileList) {
       try {
         if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)) {
@@ -66,13 +65,13 @@ public class TrackSet {
           TrackPileup trackPileup = new TrackPileup(sourceName, gc);
           // trackPileup.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
           trackPileup.setTrackTag(sourceName + "#" + this.getNextTrackId());
-          trackList.add(trackPileup);
+          this.trackList.add(trackPileup);
 
           /* Read track */
           TrackReads trackReads = new TrackReads(sourceName, gc);
           // trackReads.setTrackTag(new File(sourceName).getName() + "@" + this.getNextTrackId());
           trackReads.setTrackTag(sourceName + "@" + this.getNextTrackId());
-          trackList.add(trackReads);
+          this.trackList.add(trackReads);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)
@@ -104,7 +103,7 @@ public class TrackSet {
         System.exit(1);
       }
     }
-    this.finalise(trackList);
+    this.finalise(this.trackList);
   }
 
   private class ShutDownTask extends Thread {

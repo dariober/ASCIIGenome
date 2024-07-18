@@ -1,8 +1,5 @@
 package session;
 
-import exceptions.InvalidGenomicCoordsException;
-import exceptions.InvalidTrackTypeException;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -12,7 +9,6 @@ import tracks.Track;
 import tracks.TrackSet;
 
 public class Session {
-  private final ArrayList<String> messages = new ArrayList<>();
   private String sessionName;
   private String lastRead;
   private SessionGenome genome;
@@ -20,20 +16,23 @@ public class Session {
 
   public Session() {}
 
-  public Session(SessionGenome gc, Map<String, SessionTrack> tracks) {
+  public Session(SessionGenome sessionGenome, Map<String, SessionTrack> tracks) {
     LocalDateTime date = LocalDateTime.now();
     this.setLastRead(date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-    this.genome = gc;
+    this.genome = sessionGenome;
     this.tracks = tracks;
   }
 
-  public TrackSet toTrackSet()
-      throws InvalidGenomicCoordsException, IOException, InvalidTrackTypeException {
+  public TrackSet toTrackSet() {
     List<Track> trackList = new ArrayList<>();
     for (String trackName : tracks.keySet()) {
-      SessionTrack st = tracks.get(trackName);
-      Track tr = st.toTrack(trackName, this.getGenome().toGenomicCoords());
-      trackList.add(tr);
+      try {
+        SessionTrack st = tracks.get(trackName);
+        Track tr = st.toTrack(trackName, this.getGenome().toGenomicCoords());
+        trackList.add(tr);
+      } catch (Exception e) {
+        //
+      }
     }
     return new TrackSet(trackList);
   }
@@ -68,10 +67,6 @@ public class Session {
 
   public void setTracks(Map<String, SessionTrack> track) {
     this.tracks = track;
-  }
-
-  public ArrayList<String> getMessages() {
-    return this.messages;
   }
 
   @Override

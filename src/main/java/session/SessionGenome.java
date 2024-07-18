@@ -23,7 +23,7 @@ public class SessionGenome {
   public SessionGenome(GenomicCoords gc) {
     this.chrom = gc.getChrom();
     this.from = gc.getFrom();
-    this.to = gc.getTerminalWidth();
+    this.to = gc.getTo();
     this.fastaFile =
         gc.getFastaFile() == null ? null : new File(gc.getFastaFile()).getAbsolutePath();
     this.samSeqDictSource = gc.getSamSeqDictSource();
@@ -38,8 +38,9 @@ public class SessionGenome {
     SAMSequenceDictionary samSeqDict = null;
     if (this.samSeqDictSource != null && new File(this.samSeqDictSource).exists()) {
       SamReaderFactory srf = SamReaderFactory.make();
-      SamReader samReader = srf.open(new File(this.samSeqDictSource));
-      samSeqDict = samReader.getFileHeader().getSequenceDictionary();
+      try (SamReader samReader = srf.open(new File(this.samSeqDictSource))) {
+        samSeqDict = samReader.getFileHeader().getSequenceDictionary();
+      }
     }
     return new GenomicCoords(region, Utils.getTerminalWidth(), samSeqDict, ff);
   }

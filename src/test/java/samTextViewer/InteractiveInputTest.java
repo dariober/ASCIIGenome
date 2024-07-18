@@ -11,8 +11,12 @@ import exceptions.InvalidRecordException;
 import exceptions.SessionException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +28,28 @@ import tracks.TrackPileup;
 import tracks.TrackSet;
 
 public class InteractiveInputTest {
+
+  public class ProcessInput {
+    public String stderr;
+    public String stdout;
+  }
+
+  public ProcessInput processInput(InteractiveInput ip, String cmd, TrackProcessor p)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    System.setErr(new PrintStream(err));
+    ip.processInput(cmd, p);
+    String errStr = err.toString();
+    System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
+    ProcessInput pi = new ProcessInput();
+    pi.stderr = errStr;
+    return pi;
+  }
 
   public static TrackProcessor gimmeTrackProcessor(String region, int terminalWidth)
       throws InvalidGenomicCoordsException,
@@ -43,6 +69,180 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canListSessions()
+      throws IOException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
+    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    ProcessInput pi = processInput(ip, "session list -f test_data/session.yaml -n 1", proc);
+    assertTrue(pi.stderr.contains("sessionName: no-fastafile"));
+
+    assertFalse(pi.stderr.replaceFirst("sessionName", "").contains("sessionName"));
+    assertTrue(pi.stderr.contains("test_data/session.yaml"));
+
+    pi = processInput(ip, "session list -f test_data/missing.yml", proc);
+    assertTrue(pi.stderr.contains("does not exist or is not readable"));
+    pi = processInput(ip, "session list -f test_data/broken.yml", proc);
+    assertTrue(pi.stderr.contains("Failed to process"));
+  }
+
+  @Test
+  public void canSaveCurrentSessionInPlace()
+      throws IOException,
+          InvalidConfigException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException,
+          SessionException {
+    new Config(null);
+    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    new File("tmp.yml").delete();
+    new File("tmp2.yml").delete();
+
+    ip.processInput("session save -f tmp.yml foo1", proc);
+    String yml = new String(Files.readAllBytes(Paths.get("tmp.yml")));
+    assertTrue(yml.contains("foo1"));
+
+    ip.processInput("session save -f tmp.yml foo2", proc);
+    yml = new String(Files.readAllBytes(Paths.get("tmp.yml")));
+    assertTrue(yml.contains("foo1") && yml.contains("foo2"));
+
+    ip.processInput("session save foo3", proc);
+    yml = new String(Files.readAllBytes(Paths.get("tmp.yml")));
+    assertTrue(yml.contains("foo1") && yml.contains("foo2") && yml.contains("foo3"));
+
+    ip.processInput("session save -f tmp2.yml foo4", proc);
+    yml = new String(Files.readAllBytes(Paths.get("tmp2.yml")));
+    assertTrue(yml.contains("foo4") && !yml.contains("foo3"));
+
+    proc.getGenomicCoordsHistory().current().setTo(100000);
+    ip.processInput("session save", proc);
+
+    assertEquals(
+        100000, (long) new SessionHandler(new File("tmp2.yml")).get("foo4").getGenome().to);
+
+    new File("tmp.yml").delete();
+    new File("tmp2.yml").delete();
+  }
+
+  @Test
+  public void canReplaceGenome()
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException,
+          InvalidConfigException {
+    new Config(null);
+    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    ip.processInput("session open -f test_data/session.yaml newSession", proc);
+    String fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
+    assertEquals("TTATT", fasta.substring(0, 5));
+    ip.processInput("session open -f test_data/session.yaml fastafile-not-found", proc);
+    assertEquals(null, proc.getGenomicCoordsHistory().current().getFastaFile());
+    ip.processInput("setGenome test_data/chr7.fa", proc);
+    fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
+    assertEquals("ACACG", fasta.substring(0, 5));
+  }
+
+  @Test
+  public void canOpenSessionWithFileMissing()
+      throws IOException,
+          InvalidConfigException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
+    new Config(null);
+    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    System.setErr(new PrintStream(err));
+    ip.processInput("session open -f test_data/session.yaml file-not-found", proc);
+    String errStr = err.toString();
+    assertTrue(errStr.contains("Sequence dictionary"));
+    assertTrue(errStr.contains("xs#2"));
+    System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
+
+    assertEquals(5567000, (long) proc.getGenomicCoordsHistory().current().getFrom());
+    assertEquals("xs#1", proc.getTrackSet().getTrackList().get(0).getTrackTag());
+  }
+
+  @Test
+  public void canOpenSessionWithFastaFileMissing()
+      throws IOException,
+          InvalidConfigException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
+    new Config(null);
+    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    System.setErr(new PrintStream(err));
+    ip.processInput("session open -f test_data/session.yaml fastafile-not-found", proc);
+    String errStr = err.toString();
+    assertTrue(errStr.contains("missing.fa"));
+    System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
+    assertEquals(null, proc.getGenomicCoordsHistory().current().getFastaFile());
+    assertEquals("xy#1", proc.getTrackSet().getTrackList().get(0).getTrackTag());
+  }
+
+  @Test
+  public void canHandleSessionFileNotFound()
+      throws IOException,
+          InvalidConfigException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
+    new Config(null);
+    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0);
+    ProcessInput pi = this.processInput(ip, "session open -f missing.yml foo", proc);
+    assertTrue(pi.stderr.contains("does not exist"));
+
+    pi = this.processInput(ip, "session save -f foo/bar/tmp.yaml foo", proc);
+    assertTrue(pi.stderr.contains("Directory '"));
+
+    pi = this.processInput(ip, "session save -f /tmp.yaml foo", proc);
+    assertTrue(pi.stderr.contains("Cannot write "));
+  }
+
+  @Test
+  public void canHandleSessionNameNotFound()
+      throws IOException,
+          InvalidConfigException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
+    new Config(null);
+    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0);
+    ProcessInput pi = this.processInput(ip, "session open -f test_data/session.yaml spam", proc);
+    assertTrue(pi.stderr.contains("Cannot find session with name 'spam'"));
+  }
+
+  @Test
   public void canOpenSession()
       throws IOException,
           InvalidConfigException,
@@ -55,9 +255,6 @@ public class InteractiveInputTest {
     TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     ip.processInput("session", proc);
-    assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
-
-    ip.processInput("session open", proc);
     assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
 
     ip.processInput("session open foo bar", proc);
@@ -82,13 +279,9 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
-
-    ByteArrayOutputStream err = new ByteArrayOutputStream();
-    System.setErr(new PrintStream(err));
-    ip.processInput("session open -f test_data/session.yaml 1", proc);
-    ip.processInput("show genome", proc);
-    String errStr = err.toString();
-    assertTrue(errStr.contains("159138663"));
+    this.processInput(ip, "session open -f test_data/session.yaml 1", proc);
+    ProcessInput pi = this.processInput(ip, "show genome", proc);
+    assertTrue(pi.stderr.contains("159138663"));
   }
 
   @Test

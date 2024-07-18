@@ -1,5 +1,6 @@
 package session;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.MINIMIZE_QUOTES;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -7,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.google.common.base.Joiner;
 import exceptions.SessionException;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -25,16 +27,23 @@ public class SessionHandler {
   public static final File DEFAULT_SESSION_FILE =
       new File(Main.DEFAULT_ASCIIGENOME_DIR.getAbsolutePath() + File.separator + "session.yml");
   private List<Session> sessions = new ArrayList<>();
-  private File sessionFile;
+  private File sessionFile = DEFAULT_SESSION_FILE;
 
   public SessionHandler() {}
 
   public SessionHandler(File sessionFile) throws IOException, SessionException {
+    if (!DEFAULT_SESSION_FILE.exists()) {
+      DEFAULT_SESSION_FILE.createNewFile();
+    }
     this.sessionFile = sessionFile.getAbsoluteFile();
     this.sessions = read(this.sessionFile);
   }
 
   private static List<Session> read(File sessionYamlFile) throws IOException, SessionException {
+    if (!sessionYamlFile.exists() || !sessionYamlFile.canRead()) {
+      throw new SessionException(
+          "File '" + sessionYamlFile.getAbsolutePath() + "' does not exist or is not readable.");
+    }
     InputStream yaml = Files.newInputStream(Paths.get(sessionYamlFile.getPath()));
     List<Session> sessions =
         new YAMLMapper().readValue(yaml, new TypeReference<List<Session>>() {});
@@ -85,7 +94,6 @@ public class SessionHandler {
   }
 
   public Session get(String sessionNameOrIndex) throws SessionException {
-    String sessionName;
     for (Session s : this.getSessions()) {
       if (s.getSessionName().equals(sessionNameOrIndex)) {
         return s;
@@ -121,5 +129,24 @@ public class SessionHandler {
 
   public void setSessionFile(File sessionFile) {
     this.sessionFile = sessionFile;
+  }
+
+  public String print(int upto) throws IOException {
+    List<String> out = new ArrayList<>();
+    int i = 0;
+    for (Session x : this.getSessions()) {
+      if (upto <= i) {
+        break;
+      }
+      YAMLFactory yf = new YAMLFactory();
+      yf.configure(WRITE_DOC_START_MARKER, false);
+      yf.configure(MINIMIZE_QUOTES, true);
+      ObjectMapper mapper = new ObjectMapper(yf);
+      String sw = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(x);
+      out.add(sw);
+      i += 1;
+    }
+    out.add("Session file: " + this.getSessionFile());
+    return Joiner.on("\n").join(out);
   }
 }

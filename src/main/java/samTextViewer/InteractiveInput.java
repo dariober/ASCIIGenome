@@ -22,6 +22,7 @@ import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import session.Session;
 import session.SessionHandler;
+import tracks.Track;
 import utils.Tokenizer;
 
 /** Class to process input from console */
@@ -33,8 +34,10 @@ public class InteractiveInput {
   private static int debug;
   private SAMSequenceDictionary samSeqDict;
   private String fasta;
-  private String messages = ""; // Messages that may be sent from the various methods.
+  private List<String> messages =
+      new ArrayList<>(); // Messages that may be sent from the various methods.
   private SessionHandler sessionHandler;
+  private String currentSessionName;
 
   public InteractiveInput(ConsoleReader console, int debug) {
     InteractiveInput.debug = debug;
@@ -186,6 +189,7 @@ public class InteractiveInput {
           System.out.print("\033[0m");
           console.clearScreen();
           console.flush();
+          SessionHandler.saveAs(SessionHandler.DEFAULT_SESSION_FILE, proc.toSession(), "");
           System.exit(0);
 
           // * These commands change the GenomicCoordinates (navigate) but do not touch the tracks.
@@ -283,8 +287,8 @@ public class InteractiveInput {
           List<String> args = new ArrayList<>(cmdTokens);
           args.remove(0);
           if (args.isEmpty()) {
-            this.messages +=
-                "Provide a sub-command to handle a session. See `session -h` for details.";
+            this.messages.add(
+                "Provide a sub-command to handle a session. See `session -h` for details.");
             this.setInteractiveInputExitCode(ExitCode.ERROR);
           } else if (args.get(0).equals("open")) {
             args.remove(0);
@@ -292,13 +296,12 @@ public class InteractiveInput {
           } else if (args.get(0).equals("save")) {
             args.remove(0);
             this.saveSession(args, proc);
+            this.setInteractiveInputExitCode(ExitCode.CLEAN_NO_FLUSH);
           } else if (args.get(0).equals("list")) {
             args.remove(0);
-            throw new RuntimeException("TODO");
-            // this.listSessions(args, proc);
-            // this.messages += Joiner.on("\n").join(this.session.getMessages());
+            this.setInteractiveInputExitCode(this.listSessions(args, proc));
           } else {
-            this.messages += "Invalid sub-command. See `session -h` for details.";
+            this.messages.add("Invalid sub-command. See `session -h` for details.");
             this.setInteractiveInputExitCode(ExitCode.ERROR);
           }
         } else if (cmdTokens.get(0).equals("setGenome")) {
@@ -377,14 +380,14 @@ public class InteractiveInput {
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
           }
-          messages += proc.getTrackSet().dropTracksWithRegex(cmdTokens);
+          messages.add(proc.getTrackSet().dropTracksWithRegex(cmdTokens));
 
         } else if (cmdTokens.get(0).equals("orderTracks")) {
           cmdTokens.remove(0);
           proc.getTrackSet().orderTracks(cmdTokens);
 
         } else if (cmdTokens.get(0).equals("editNames")) {
-          messages += proc.getTrackSet().editNamesForRegex(cmdTokens);
+          messages.add(proc.getTrackSet().editNamesForRegex(cmdTokens));
 
         } else if (cmdTokens.get(0).equals(Command.print.toString())) {
           proc.getTrackSet().setPrintModeAndPrintFeaturesForRegex(cmdTokens);
@@ -470,8 +473,8 @@ public class InteractiveInput {
           }
 
         } else if (cmdTokens.get(0).equals("bookmark")) {
-          messages +=
-              proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdTokens);
+          messages.add(
+              proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdTokens));
 
         } else {
           System.err.println(
@@ -550,10 +553,11 @@ public class InteractiveInput {
         break;
       }
     } // END OF LOOP THROUGH CHAIN OF INPUT COMMANDS
-    if (!messages.isEmpty()) {
-      System.err.println(Utils.padEndMultiLine(messages.trim(), proc.getWindowSize()));
+    if (!this.messages.isEmpty()) {
+      System.err.println(
+          Utils.padEndMultiLine(Joiner.on("\n").join(this.messages), proc.getWindowSize()));
     }
-    messages = "";
+    this.messages = new ArrayList<>();
     return proc;
   }
 
@@ -827,37 +831,115 @@ public class InteractiveInput {
 
   private void saveSession(List<String> args, TrackProcessor proc)
       throws InvalidCommandLineException, IOException, SessionException {
-    String sessionYamlFile =
-        Utils.getArgForParam(args, "-f", SessionHandler.DEFAULT_SESSION_FILE.getAbsolutePath());
-    // if (args.isEmpty() && ) {}
-    SessionHandler.saveAs(new File(sessionYamlFile), proc.toSession(), "stuff");
-  }
+    File sessionYamlFile;
+    String sf = Utils.getArgForParam(args, "-f", null);
+    if (sf == null && this.sessionHandler == null) {
+      sessionYamlFile = SessionHandler.DEFAULT_SESSION_FILE;
+    } else if (sf == null) {
+      sessionYamlFile = sessionHandler.getSessionFile();
+    } else {
+      sessionYamlFile = new File(sf);
+    }
 
-  private void openSession(List<String> args, TrackProcessor proc)
-      throws IOException,
-          InvalidCommandLineException,
-          InvalidGenomicCoordsException,
-          InvalidTrackTypeException {
-    String sessionYamlFile = Utils.getArgForParam(args, "-f", "");
-    String sessionNameOrIndex;
-    if (args.isEmpty()) {
-      this.messages +=
-          "Please provide the name or number of the session to open. See `session -h` for details";
+    if (!sessionYamlFile.getAbsoluteFile().getParentFile().exists()) {
+      this.messages.add("Directory '" + sessionYamlFile.getParentFile() + "' does not exist");
+      this.interactiveInputExitCode = ExitCode.ERROR;
+      return;
+    }
+    if (!sessionYamlFile.exists()) {
+      try {
+        sessionYamlFile.createNewFile();
+        sessionYamlFile.delete();
+      } catch (IOException e) {
+        this.messages.add("Cannot write to file '" + sessionYamlFile + "'");
+        this.interactiveInputExitCode = ExitCode.ERROR;
+        return;
+      }
+    } else if (!sessionYamlFile.canWrite()) {
+      this.messages.add("Cannot write to file '" + sessionYamlFile + "'");
+      this.interactiveInputExitCode = ExitCode.ERROR;
+      return;
+    }
+    String sessionName = this.getCurrentSessionName();
+    if (args.size() == 0 && sessionName == null) {
+      this.messages.add("Please provide a session name. See `session -h` for help");
+      this.interactiveInputExitCode = ExitCode.ERROR;
+      return;
+    } else if (args.size() > 1) {
+      this.messages.add("Too many arguments. See `session -h` for help");
       this.interactiveInputExitCode = ExitCode.ERROR;
       return;
     } else if (args.size() == 1) {
+      sessionName = args.get(0);
+    }
+    SessionHandler.saveAs(sessionYamlFile, proc.toSession(), sessionName);
+    this.setCurrentSessionName(sessionName);
+    this.sessionHandler = new SessionHandler(sessionYamlFile);
+    this.messages.add(
+        "Session '" + sessionName + "' saved to '" + sessionYamlFile.getAbsolutePath() + "'");
+  }
+
+  private ExitCode listSessions(List<String> args, TrackProcessor proc)
+      throws InvalidGenomicCoordsException,
+          IOException,
+          SessionException,
+          InvalidCommandLineException {
+    File sessionYamlFile =
+        new File(
+            Utils.getArgForParam(
+                args, "-f", SessionHandler.DEFAULT_SESSION_FILE.getAbsolutePath()));
+    SessionHandler sh;
+    if (this.sessionHandler == null) {
+      try {
+        sh = new SessionHandler(sessionYamlFile);
+      } catch (Exception e) {
+        this.messages.add(
+            "Failed to process session file '" + sessionYamlFile + "':\n" + e.getMessage());
+        return ExitCode.ERROR;
+      }
+    } else {
+      sh = this.sessionHandler;
+    }
+    int nsessions = Integer.parseInt(Utils.getArgForParam(args, "-n", "10"));
+    String sessionString = sh.print(nsessions);
+    System.err.println(Utils.padEndMultiLine(sessionString, proc.getWindowSize()));
+    return ExitCode.CLEAN_NO_FLUSH;
+  }
+
+  private void openSession(List<String> args, TrackProcessor proc)
+      throws IOException, InvalidCommandLineException {
+    File sessionYamlFile =
+        new File(
+            Utils.getArgForParam(
+                args, "-f", SessionHandler.DEFAULT_SESSION_FILE.getAbsolutePath()));
+    String sessionNameOrIndex;
+    if (args.isEmpty()) {
+      sessionNameOrIndex = "1";
+    } else if (args.size() == 1) {
       sessionNameOrIndex = args.get(0);
     } else {
-      this.messages += "Too many arguments. See `session -h` for details";
+      this.messages.add("Too many arguments. See `session -h` for details");
       this.interactiveInputExitCode = ExitCode.ERROR;
       return;
     }
     Session session;
     try {
-      this.sessionHandler = new SessionHandler(new File(sessionYamlFile));
+      this.sessionHandler = new SessionHandler(sessionYamlFile);
       session = this.sessionHandler.get(sessionNameOrIndex);
+      if (session.getGenome().samSeqDictSource != null
+          && !new File(session.getGenome().samSeqDictSource).exists()) {
+        this.messages.add(
+            "Warning: Sequence dictionary file '"
+                + session.getGenome().samSeqDictSource
+                + "' does not exist");
+      }
+      if (session.getGenome().fastaFile != null
+          && !new File(session.getGenome().fastaFile).exists()) {
+        this.messages.add(
+            "Warning: Fasta file '" + session.getGenome().fastaFile + "' does not exist");
+      }
     } catch (SessionException e) {
-      this.messages += e.getMessage();
+      this.messages.add(e.getMessage());
       this.interactiveInputExitCode = ExitCode.ERROR;
       return;
     }
@@ -866,9 +948,24 @@ public class InteractiveInput {
       proc.getGenomicCoordsHistory().setGenome(Collections.singletonList(gc.getFastaFile()));
       proc.getGenomicCoordsHistory().add(gc);
       proc.setTrackSet(session.toTrackSet());
+      this.setCurrentSessionName(session.getSessionName());
     } catch (Exception e) {
-      this.messages +=
-          "Unable to set genome for session " + sessionNameOrIndex + ". Session is:\n" + session;
+      this.messages.add(
+          "Unable to open session "
+              + sessionNameOrIndex
+              + ". Session is:\n"
+              + session
+              + "\n"
+              + e.getMessage());
+    }
+    List<String> passed = new ArrayList<>();
+    for (Track x : proc.getTrackSet().getTrackList()) {
+      passed.add(x.getTrackTag());
+    }
+    for (String tag : session.getTracks().keySet()) {
+      if (!passed.contains(tag)) {
+        this.messages.add("Warning: Failed to add track '" + tag + "'");
+      }
     }
   }
 
@@ -1221,5 +1318,13 @@ public class InteractiveInput {
 
   public void setInteractiveInputExitCode(ExitCode exitCode) {
     this.interactiveInputExitCode = exitCode;
+  }
+
+  public String getCurrentSessionName() {
+    return currentSessionName;
+  }
+
+  public void setCurrentSessionName(String currentSessionName) {
+    this.currentSessionName = currentSessionName;
   }
 }

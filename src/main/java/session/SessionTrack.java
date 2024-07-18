@@ -49,7 +49,7 @@ public class SessionTrack {
               + "' of type '"
               + this.type
               + "'. Got error message:\n"
-              + e.getMessage());
+              + e.toString());
     }
   }
 

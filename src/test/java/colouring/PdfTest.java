@@ -44,16 +44,16 @@ public class PdfTest {
 
     // Expected: xterm 244 = grey with rgb= 128
     String x = "[38;5;244;48;5;15m FOO";
-    assertEquals("java.awt.Colour[r=128,g=128,b=128]", pdf.xterm256ToColour(x, false).toString());
+    assertEquals("java.awt.Color[r=128,g=128,b=128]", pdf.xterm256ToColour(x, false).toString());
 
     x = "[48;5;15;38;5;244m FOO";
-    assertEquals("java.awt.Colour[r=128,g=128,b=128]", pdf.xterm256ToColour(x, false).toString());
+    assertEquals("java.awt.Color[r=128,g=128,b=128]", pdf.xterm256ToColour(x, false).toString());
 
     // Colour for foreground not given, default to Config:
     x = "[48;5;15m FOO";
-    assertEquals("java.awt.Colour[r=0,g=0,b=0]", pdf.xterm256ToColour(x, false).toString());
+    assertEquals("java.awt.Color[r=0,g=0,b=0]", pdf.xterm256ToColour(x, false).toString());
     // Background as in string
-    assertEquals("java.awt.Colour[r=255,g=255,b=255]", pdf.xterm256ToColour(x, true).toString());
+    assertEquals("java.awt.Color[r=255,g=255,b=255]", pdf.xterm256ToColour(x, true).toString());
   }
 
   @Test

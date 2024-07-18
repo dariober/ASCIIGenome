@@ -488,7 +488,6 @@ public class TrackSetTest {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-100", 80, null, null);
     TrackSet trackSet = new TrackSet(inputFileList, gc);
-
     assertEquals(4, trackSet.getTrackList().size()); // MEMO: BAM files add 2 tracks.
   }
 

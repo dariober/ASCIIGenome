@@ -1,7 +1,7 @@
 - sessionName: newSession
   genome:
     chrom: chr7
-    fastaFile: /home/dario/git_repos/ASCIIGenome/test_data/chr7.fa
+    fastaFile: test_data/chr7.fa
     from: 5566800
     to: 5567000
     samSeqDictSource: test_data/chr7.fa
@@ -9,11 +9,11 @@
   tracks:
     ds#1:
       colour: red
-      filename: /home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam
+      filename: test_data/ds051.actb.bam
       type: tracks.TrackPileup
     ds#2:
       colour: '0'
-      filename: /home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam
+      filename: test_data/ds051.actb.bam
       type: tracks.TrackReads
 - sessionName: no-fastafile
   genome:
@@ -25,9 +25,37 @@
   tracks:
     ds#1:
       colour: blue
-      filename: /home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam
+      filename: test_data/ds051.actb.bam
       type: tracks.TrackPileup
     ds#2:
       colour: '0'
-      filename: /home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam
+      filename: test_data/ds051.actb.bam
       type: tracks.TrackReads
+- sessionName: file-not-found
+  genome:
+    chrom: chr7
+    from: 5567000
+    to: 5568000
+    samSeqDictSource: notfound.bam
+  lastRead: '2023-05-29T22:26:33.850521'
+  tracks:
+    xs#1:
+      colour: blue
+      filename: test_data/ds051.actb.bam
+      type: tracks.TrackPileup
+    xs#2:
+      colour: '0'
+      filename: missing.bam
+      type: tracks.TrackReads
+- sessionName: fastafile-not-found
+  genome:
+    chrom: chr7
+    from: 5567000
+    to: 5568000
+    fastaFile: missing.fa
+  lastRead: '2022-05-29T22:26:33.850521'
+  tracks:
+    xy#1:
+      colour: blue
+      filename: test_data/ds051.actb.bam
+      type: tracks.TrackPileup

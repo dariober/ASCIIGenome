@@ -27,8 +27,11 @@ import tracks.TrackSet;
 public class SessionHandlerTest {
 
   @Test
-  public void testSessionByNameOrIndex() throws IOException, SessionException {
-
+  public void testGetSessionByNameOrIndex()
+      throws IOException,
+          SessionException,
+          InvalidGenomicCoordsException,
+          InvalidTrackTypeException {
     InputStream yaml = Files.newInputStream(Paths.get("test_data/session.yaml"));
     SessionHandler sh = new SessionHandler(new File("test_data/session.yaml"));
     assertEquals("no-fastafile", sh.get("1").getSessionName());
@@ -68,7 +71,7 @@ public class SessionHandlerTest {
   public void testCanLoadGenomicCoords()
       throws IOException, InvalidGenomicCoordsException, InvalidColourException, SessionException {
     SessionHandler sh = new SessionHandler(new File("test_data/session.yaml"));
-    assertEquals(2, sh.getSessions().size());
+    assertEquals(3, sh.getSessions().size());
 
     Session session = sh.get("newSession");
     GenomicCoords gc = session.getGenome().toGenomicCoords();
