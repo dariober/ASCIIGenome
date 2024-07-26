@@ -408,13 +408,13 @@ Return the value of the **FORMAT** tag for sample index *sample_idx* (default to
 
 * :code:`getAlnEnd()` on **SAM**
 
-Returns the position of the alignment end. For example, select reads ending after position 1000`here <http://jonasjacek.github.io/colors/>`_             
+Returns the position of the alignment end. For example, select reads ending after position 1000`here <http://jonasjacek.github.io/colours/>`_             
 
 Example::
 
-    colorTrack cyan1 ts.*gtf ts.*bam 
-    colorTrack 40                   <- By INT
-    colorTrack darkv                <- Same as darkviolet
+    colourTrack cyan1 ts.*gtf ts.*bam 
+    colourTrack 40                   <- By INT
+    colourTrack darkv                <- Same as darkviolet
 
 
 
@@ -520,7 +520,7 @@ addHeader
 
 Add header to track(s). Example use case: You have several tracks sorted in a meanignful way (say WT and CTRL tracks). Add a header to the first track of each group for ease of reading. Useful also to add one or more blank lines for more separation between tracks.
 
-* :code:`-c` Color for the header - see :code: `colorTrack -h` for options
+* :code:`-c` Colour for the header - see :code: `colourTrack -h` for options
 
 * :code:`-a` Header alignment. Either a number between 0 (left-align) and 1 (right-align) or a keyword left, center, right. Default is 0.5 (center-align)
 
@@ -815,6 +815,23 @@ Examples::
     open peaks.bed genes.*.gtf        <- Note use of wildecard
     open http://remote/host/peaks.bed <- From URL
     open 1 2 3                        <- The three most recent files
+
+
+session
++++++++
+
+:code:`session <open|save|list> [-f session.yaml] <sessionName|index>`
+
+Commands to :code:`open`, :code:`save`, or :code:`list` sessions. A session stores (most of) the settings about genome and tracks.
+
+* :code:`-f` File to read or save session to. Default \ /.asciigenome/session.yaml.
+
+* :code:`sessioName|index` Session name to open or save. Use 'last' to refer to the last opened session. Alternatively, use a numeric index to refer a session in reverse chronological order (1: last opened, 2: second last, etc).
+
+Examples::
+
+    session open last // Open last read session from default file
+    open save -f my-sessions.yaml myTracks // Save to file current session 
 
 
 reload

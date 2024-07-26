@@ -33,6 +33,7 @@ public class SessionHandler {
 
   public SessionHandler(File sessionFile) throws IOException, SessionException {
     if (!DEFAULT_SESSION_FILE.exists()) {
+      DEFAULT_SESSION_FILE.getParentFile().mkdirs();
       DEFAULT_SESSION_FILE.createNewFile();
     }
     this.sessionFile = sessionFile.getAbsoluteFile();
