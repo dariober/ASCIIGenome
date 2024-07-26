@@ -1,7 +1,5 @@
 package samTextViewer;
 
-import static org.junit.Assert.*;
-
 import colouring.Config;
 import com.google.common.base.Splitter;
 import exceptions.InvalidCommandLineException;
@@ -26,6 +24,8 @@ import session.SessionHandler;
 import tracks.Track;
 import tracks.TrackPileup;
 import tracks.TrackSet;
+
+import static org.junit.Assert.*;
 
 public class InteractiveInputTest {
 
@@ -237,13 +237,9 @@ public class InteractiveInputTest {
           InvalidCommandLineException {
     new Config(null);
     TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 2);
     ProcessInput pi = this.processInput(ip, "session open -f test_data/session.yaml spam", proc);
-    System.out.println("START");
-    System.out.println("STDOUT:\n" + pi.stdout);
-    System.out.println("STDERR:\n" + pi.stderr);
-    System.out.println("DONE");
-    assertEquals("bar", pi.stdout);
+    assertEquals("bar", pi.stderr);
     // assertTrue(pi.stderr.contains("Cannot find session with name 'spam'"));
   }
 
