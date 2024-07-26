@@ -243,7 +243,7 @@ public class InteractiveInputTest {
     System.out.println("STDOUT:\n" + pi.stdout);
     System.out.println("STDERR:\n" + pi.stderr);
     System.out.println("DONE");
-    assertEquals("foo", pi.stderr);
+    assertEquals("bar", pi.stdout);
     // assertTrue(pi.stderr.contains("Cannot find session with name 'spam'"));
   }
 
