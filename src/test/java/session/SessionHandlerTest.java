@@ -71,7 +71,7 @@ public class SessionHandlerTest {
   public void testCanLoadGenomicCoords()
       throws IOException, InvalidGenomicCoordsException, InvalidColourException, SessionException {
     SessionHandler sh = new SessionHandler(new File("test_data/session.yaml"));
-    assertEquals(3, sh.getSessions().size());
+    assertEquals(4, sh.getSessions().size());
 
     Session session = sh.get("newSession");
     GenomicCoords gc = session.getGenome().toGenomicCoords();

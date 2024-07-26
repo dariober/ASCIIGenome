@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 
 public class InteractiveInputTest {
 
-  public class ProcessInput {
+  public static class ProcessInput {
     public String stderr;
     public String stdout;
   }
@@ -76,7 +76,7 @@ public class InteractiveInputTest {
           ClassNotFoundException,
           InvalidRecordException,
           InvalidCommandLineException {
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     ProcessInput pi = processInput(ip, "session list -f test_data/session.yaml -n 1", proc);
     assertTrue(pi.stderr.contains("sessionName: no-fastafile"));
@@ -101,7 +101,7 @@ public class InteractiveInputTest {
           InvalidCommandLineException,
           SessionException {
     new Config(null);
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     new File("tmp.yml").delete();
     new File("tmp2.yml").delete();
@@ -142,7 +142,7 @@ public class InteractiveInputTest {
           InvalidCommandLineException,
           InvalidConfigException {
     new Config(null);
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     ip.processInput("session open -f test_data/session.yaml newSession", proc);
     String fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
@@ -164,7 +164,7 @@ public class InteractiveInputTest {
           InvalidRecordException,
           InvalidCommandLineException {
     new Config(null);
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
 
@@ -190,7 +190,7 @@ public class InteractiveInputTest {
           InvalidRecordException,
           InvalidCommandLineException {
     new Config(null);
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
 
@@ -200,7 +200,7 @@ public class InteractiveInputTest {
     String errStr = err.toString();
     assertTrue(errStr.contains("missing.fa"));
     System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
-    assertEquals(null, proc.getGenomicCoordsHistory().current().getFastaFile());
+    assertNull(proc.getGenomicCoordsHistory().current().getFastaFile());
     assertEquals("xy#1", proc.getTrackSet().getTrackList().get(0).getTrackTag());
   }
 
@@ -214,7 +214,7 @@ public class InteractiveInputTest {
           InvalidRecordException,
           InvalidCommandLineException {
     new Config(null);
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0);
     ProcessInput pi = this.processInput(ip, "session open -f missing.yml foo", proc);
     assertTrue(pi.stderr.contains("does not exist"));
@@ -236,7 +236,7 @@ public class InteractiveInputTest {
           InvalidRecordException,
           InvalidCommandLineException {
     new Config(null);
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     ProcessInput pi = this.processInput(ip, "session open -f test_data/session.yaml spam", proc);
     assertTrue(pi.stderr.contains("Cannot find session with name 'spam'"));
@@ -252,7 +252,7 @@ public class InteractiveInputTest {
           InvalidRecordException,
           InvalidCommandLineException {
     new Config(null);
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     ip.processInput("session", proc);
     assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
@@ -277,7 +277,7 @@ public class InteractiveInputTest {
           InvalidRecordException,
           InvalidCommandLineException {
     new Config(null);
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     this.processInput(ip, "session open -f test_data/session.yaml 1", proc);
     ProcessInput pi = this.processInput(ip, "show genome", proc);
@@ -295,7 +295,7 @@ public class InteractiveInputTest {
           InvalidCommandLineException,
           SessionException {
     new Config(null);
-    TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     GenomicCoords gc = proc.getGenomicCoordsHistory().current();
     Track tr = new TrackPileup("test_data/ds051.actb.bam", gc);
     proc.getTrackSet().addTrack(tr, "tr#1");
@@ -316,7 +316,7 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc;
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
-    proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     ip.processInput("show ge -n -1", proc);
     ip.processInput("show ge -n 10", proc);
   }
@@ -335,44 +335,44 @@ public class InteractiveInputTest {
     TrackProcessor proc;
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
-    proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     GenomicCoords gc2 = ip.processInput("[", proc).getGenomicCoordsHistory().current();
     assertEquals(1011, (int) gc2.getFrom());
     assertEquals(1810, (int) gc2.getTo());
 
-    proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     gc2 = ip.processInput("]", proc).getGenomicCoordsHistory().current();
     assertEquals(1001 - 10, (int) gc2.getFrom());
     assertEquals(1800 - 10, (int) gc2.getTo());
 
-    proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     gc2 = ip.processInput("[ 20", proc).getGenomicCoordsHistory().current();
     assertEquals(1001 + (20 * 10), (int) gc2.getFrom());
     assertEquals(1800 + (20 * 10), (int) gc2.getTo());
 
-    proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     gc2 = ip.processInput("[20", proc).getGenomicCoordsHistory().current();
     assertEquals(1001 + (20 * 10), (int) gc2.getFrom());
     assertEquals(1800 + (20 * 10), (int) gc2.getTo());
 
-    proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     gc2 = ip.processInput("]] 3", proc).getGenomicCoordsHistory().current();
     assertEquals(1001 - (6 * 10), (int) gc2.getFrom());
     assertEquals(1800 - (6 * 10), (int) gc2.getTo());
 
-    proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     gc2 = ip.processInput("] 0", proc).getGenomicCoordsHistory().current();
     assertEquals(1001, (int) gc2.getFrom());
     assertEquals(1800, (int) gc2.getTo());
 
     // Test left bound
-    proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     gc2 = ip.processInput("]] 30000", proc).getGenomicCoordsHistory().current();
     assertEquals(1, (int) gc2.getFrom());
     assertEquals(800, (int) gc2.getTo());
 
     // Test right bound
-    proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
+    proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     gc2 = ip.processInput("[ 30000000", proc).getGenomicCoordsHistory().current();
     assertEquals(159138663, (int) gc2.getTo());
     assertEquals(159138663 - 800 + 1, (int) gc2.getFrom());
