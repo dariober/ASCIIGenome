@@ -237,7 +237,7 @@ public class InteractiveInputTest {
           InvalidCommandLineException {
     new Config(null);
     TrackProcessor proc = this.gimmeTrackProcessor("chr7:1001-1800", 80);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 2);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0);
     ProcessInput pi = this.processInput(ip, "session open -f test_data/session.yaml spam", proc);
     assertEquals("bar", pi.stderr);
     // assertTrue(pi.stderr.contains("Cannot find session with name 'spam'"));
