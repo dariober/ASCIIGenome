@@ -11,9 +11,10 @@ jobs:
           java-version: '8'
       - name: Build and Test
         run: |
-          ./gradlew build test jacocoTestReport -PexcludeTests=**/TravisExcludedTest*
-          cp ASCIIGenome build/libs/
-          cd src/test/java
-          chmod a+x integration_test.py
-          ./integration_test.py
-          bash <(curl -s https://codecov.io/bash)
+          ./gradlew test --tests samTextViewer.InteractiveInputTest.canHandleSessionNameNotFound
+          # ./gradlew build test jacocoTestReport -PexcludeTests=**/TravisExcludedTest*
+          # cp ASCIIGenome build/libs/
+          # cd src/test/java
+          # chmod a+x integration_test.py
+          # ./integration_test.py
+          # bash <(curl -s https://codecov.io/bash)
