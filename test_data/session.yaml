@@ -1,19 +1,21 @@
+## MEMO: For testing use relative paths so they work locally and on github
+
 - sessionName: "no-fastafile"
   lastRead: "2024-07-27T12:17:21.176154"
   genome:
-    samSeqDictSource: "/home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam"
+    samSeqDictSource: "test_data/ds051.actb.bam"
     chrom: "chr7"
     from: 80
     to: 1001
     fastaFile: null
   tracks:
     ds#1:
-      filename: "/home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam"
+      filename: "test_data/ds051.actb.bam"
       type: "tracks.TrackPileup"
       colour: "blue"
       awk: ""
     ds#2:
-      filename: "/home/dario/git_repos/ASCIIGenome/test_data/ds051.actb.bam"
+      filename: "test_data/ds051.actb.bam"
       type: "tracks.TrackReads"
       colour: "0"
       awk: ""

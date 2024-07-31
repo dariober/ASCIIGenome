@@ -320,6 +320,7 @@ public class InteractiveInputTest {
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     ip.processInput("session save -f tmp.yml tr1", proc);
     SessionHandler sh = new SessionHandler(new File("tmp.yml"));
+    Files.deleteIfExists(new File("tmp.yml").toPath());
   }
 
   @Test
