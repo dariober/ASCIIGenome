@@ -64,7 +64,7 @@ class TestCLI(unittest.TestCase):
         print(cmd)
         p = shell(cmd)
         self.assertTrue(p.returncode != 0)
-        self.assertTrue("CRAM input requires a tmpGenome file" in p.stderr)
+        self.assertTrue("CRAM input requires a genome file" in p.stderr)
 
     def testCanExplainSamFlags(self):
         cmd = f"""{ASCIIGenome} -nf -x 'explainSamFlag 2690'
@@ -154,8 +154,8 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(p.returncode, 1)
         self.assertTrue("Cannot find chromosome 'FOO' in sequence dictionary" in p.stderr)
 
-        # `show tmpGenome` prints to stderr (is this desirable?)
-        cmd = f"""{ASCIIGenome} -nf https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'show tmpGenome'
+        # `show genome` prints to stderr (is this desirable?)
+        cmd = f"""{ASCIIGenome} -nf https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz -x 'show genome'
                   """
         print(cmd)
         p = shell(cmd)
@@ -222,7 +222,7 @@ class TestCLI(unittest.TestCase):
         self.assertTrue('Reads: 8;' in p.stdout)
 
     def testCanShowHideTrackSettings(self):
-        cmd = f"""{ASCIIGenome} -nf ../../../test_data/ds051.actb.bam -x 'goto chr7:5568803-5568975 && show tmpGenome'
+        cmd = f"""{ASCIIGenome} -nf ../../../test_data/ds051.actb.bam -x 'goto chr7:5568803-5568975 && show genome'
                   """
         print(cmd)
         p = shell(cmd)

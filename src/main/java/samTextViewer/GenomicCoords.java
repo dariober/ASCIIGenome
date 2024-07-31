@@ -147,7 +147,6 @@ public class GenomicCoords implements Cloneable {
    *     and this can result in wrong dictionary.
    */
   public void setGenome(List<String> input, boolean includeGenomeFile) throws IOException {
-
     List<String> cleanList = new ArrayList<String>();
     for (String x : input) {
       if (x != null && !x.trim().isEmpty()) {
@@ -1043,7 +1042,6 @@ public class GenomicCoords implements Cloneable {
 
   private boolean setSamSeqDictFromAnySource(List<String> testfiles, boolean includeGenomeFile)
       throws IOException {
-
     boolean isSet = false;
     for (String testfile : testfiles) { // Get sequence dict from bam, if any
       try {
@@ -1088,7 +1086,6 @@ public class GenomicCoords implements Cloneable {
   }
 
   private boolean setSamSeqDictFromVCF(String vcf) throws MalformedURLException {
-
     SAMSequenceDictionary samSeqDict = Utils.getVCFHeader(vcf).getSequenceDictionary();
     if (samSeqDict != null) {
       this.setSamSeqDictSource(new File(vcf).getAbsolutePath());
@@ -1099,9 +1096,6 @@ public class GenomicCoords implements Cloneable {
   }
 
   private boolean setSamSeqDictFromFasta(String fasta) throws IOException {
-
-    // IndexedFastaSequenceFile fa= null;
-
     try {
       if (new File(fasta + ".fai").exists() && !new File(fasta + ".fai").isDirectory()) {
         //
@@ -1140,7 +1134,6 @@ public class GenomicCoords implements Cloneable {
   }
 
   private boolean setSamSeqDictFromBam(String bamfile) {
-
     /*  ------------------------------------------------------ */
     /* This chunk prepares SamReader from local bam            */
     SamReaderFactory srf = SamReaderFactory.make();
@@ -1148,7 +1141,6 @@ public class GenomicCoords implements Cloneable {
     SamReader samReader;
     samReader = srf.open(new File(bamfile));
     /*  ------------------------------------------------------ */
-
     SAMSequenceDictionary seqDict = samReader.getFileHeader().getSequenceDictionary();
     if (seqDict != null && !seqDict.isEmpty()) {
       this.setSamSeqDictSource(new File(bamfile).getAbsolutePath());

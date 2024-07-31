@@ -47,16 +47,9 @@ public class InteractiveInput {
   /** Parse the input list of commands to print information or modify the input TrackProcessor. */
   protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc)
       throws InvalidGenomicCoordsException,
-          IOException,
-          ClassNotFoundException,
-          InvalidRecordException,
-          SQLException,
-          InvalidCommandLineException {
-
+          IOException {
     cmdConcatInput = cmdConcatInput.replaceAll("//.*", "").trim();
-
     int terminalWidth = Utils.getTerminalWidth();
-
     // cmdInputList: List of individual commands in tokens to be issued.
     // E.g.: [ ["zi"],
     //         ["-F", "16"],
@@ -290,6 +283,12 @@ public class InteractiveInput {
             this.messages.add(
                 "Provide a sub-command to handle a session. See `session -h` for details.");
             this.setInteractiveInputExitCode(ExitCode.ERROR);
+          } else if(args.contains("-h")) {
+            String help =
+                    Utils.padEndMultiLine(
+                            "\n" + CommandList.getHelpForCommand("session"), proc.getWindowSize());
+            System.err.println(help);
+            this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
           } else if (args.get(0).equals("open")) {
             args.remove(0);
             this.openSession(args, proc);
@@ -861,7 +860,7 @@ public class InteractiveInput {
       return;
     }
     String sessionName = this.getCurrentSessionName();
-    if (args.size() == 0 && sessionName == null) {
+    if (args.isEmpty() && sessionName == null) {
       this.messages.add("Please provide a session name. See `session -h` for help");
       this.interactiveInputExitCode = ExitCode.ERROR;
       return;
@@ -882,7 +881,6 @@ public class InteractiveInput {
   private ExitCode listSessions(List<String> args, TrackProcessor proc)
       throws InvalidGenomicCoordsException,
           IOException,
-          SessionException,
           InvalidCommandLineException {
     File sessionYamlFile =
         new File(
@@ -901,7 +899,7 @@ public class InteractiveInput {
       sh = this.sessionHandler;
     }
     int nsessions = Integer.parseInt(Utils.getArgForParam(args, "-n", "10"));
-    String sessionString = sh.print(nsessions);
+    String sessionString = sh.print(nsessions, true);
     System.err.println(Utils.padEndMultiLine(sessionString, proc.getWindowSize()));
     return ExitCode.CLEAN_NO_FLUSH;
   }
@@ -1152,7 +1150,7 @@ public class InteractiveInput {
     }
     // With .startsWith() we allow partial matching of input to argument. I.e. "ge" will be enough
     // to
-    // recognize "genome".
+    // recognize "genome"."genome"
     if ("genome".startsWith(args.get(0))) {
       ExitCode exitCode;
       try {
@@ -1189,7 +1187,6 @@ public class InteractiveInput {
    */
   private ExitCode showGenome(List<String> cmdTokens, TrackProcessor proc)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
-
     int maxLines;
     try {
       String n = Utils.getArgForParam(cmdTokens, "-n", "-1");
@@ -1198,7 +1195,6 @@ public class InteractiveInput {
       System.err.println("Argument to -n must be an integer");
       return ExitCode.CLEAN_NO_FLUSH;
     }
-
     String genome =
         proc.getGenomicCoordsHistory()
             .current()

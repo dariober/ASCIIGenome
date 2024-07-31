@@ -91,6 +91,21 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canPrintSessionHelp()
+          throws IOException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    ProcessInput pi = processInput(ip, "session list -h", proc);
+    assertEquals(ExitCode.CLEAN_NO_FLUSH, ip.getInteractiveInputExitCode());
+    assertTrue(pi.stderr.trim().startsWith("session <open"));
+  }
+
+  @Test
   public void canSaveCurrentSessionInPlace()
       throws IOException,
           InvalidConfigException,
@@ -279,9 +294,12 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
-    this.processInput(ip, "session open -f test_data/session.yaml 1", proc);
+    Files.deleteIfExists(new File("test_data/tmp.yml").toPath());
+    this.processInput(ip, "session save -f test_data/tmp.yml test", proc);
+    this.processInput(ip, "session open -f test_data/tmp.yml test", proc);
     ProcessInput pi = this.processInput(ip, "show genome", proc);
     assertTrue(pi.stderr.contains("159138663"));
+    Files.deleteIfExists(new File("test_data/tmp.yml").toPath());
   }
 
   @Test

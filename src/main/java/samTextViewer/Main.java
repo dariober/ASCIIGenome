@@ -128,16 +128,15 @@ public class Main {
     List<String> initGenomeList = new ArrayList<String>(inputFileList);
     initGenomeList.add(fasta);
     initGc.setGenome(initGenomeList, false);
-    // ----------------------------
+
     // Genomic positions start here:
     final GenomicCoordsHistory gch = new GenomicCoordsHistory();
     GenomicCoords start =
         new GenomicCoords(
             initGc.toStringRegion(), terminalWidth, initGc.getSamSeqDict(), initGc.getFastaFile());
-
     gch.readHistory(asciiGenomeHistory.getFileName(), start);
     gch.add(start);
-
+    gch.current().setSamSeqDictSource(initGc.getSamSeqDictSource());
     final TrackSet trackSet = new TrackSet(inputFileList, gch.current());
     trackSet.addHistoryFiles(asciiGenomeHistory.getFiles());
 
@@ -158,10 +157,8 @@ public class Main {
     // Batch processing file of regions
     final String batchFile = opts.getString("batchFile");
     if (batchFile != null && !batchFile.isEmpty()) {
-
       console.clearScreen();
       console.flush();
-
       BufferedReader br = batchFileReader(batchFile);
       String line = null;
       while ((line = br.readLine()) != null) {
@@ -185,13 +182,11 @@ public class Main {
     console.flush();
     proc.iterateTracks();
     if (!exec.isEmpty() || opts.getBoolean("nonInteractive")) {
-
       InteractiveInput itr = new InteractiveInput(console, debug);
       itr.processInput(exec, proc);
       if (opts.getBoolean("nonInteractive")) {
         System.out.print("\033[0m");
         return;
-        // System.exit(0);
       }
     }
 
@@ -215,10 +210,8 @@ public class Main {
 
       while (!interactiveInput.getInteractiveInputExitCode().equals(ExitCode.ERROR)
           || interactiveInput.getInteractiveInputExitCode().equals(ExitCode.NULL)) {
-
         console.setPrompt(
             StringUtils.repeat(' ', proc.getWindowSize()) + '\r' + memTime + "Enter h for help: ");
-
         cmdConcatInput = console.readLine().trim();
         if (cmdConcatInput.isEmpty()) {
           // Empty input: User only issued <ENTER>

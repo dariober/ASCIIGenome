@@ -16,11 +16,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
 import samTextViewer.Main;
 
 public class SessionHandler {
@@ -132,7 +129,7 @@ public class SessionHandler {
     this.sessionFile = sessionFile;
   }
 
-  public String print(int upto) throws IOException {
+  public String print(int upto, boolean mostRecentLast) throws IOException {
     List<String> out = new ArrayList<>();
     int i = 0;
     for (Session x : this.getSessions()) {
@@ -146,6 +143,9 @@ public class SessionHandler {
       String sw = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(x);
       out.add(sw);
       i += 1;
+    }
+    if (mostRecentLast) {
+      Collections.reverse(out);
     }
     out.add("Session file: " + this.getSessionFile());
     return Joiner.on("\n").join(out);
