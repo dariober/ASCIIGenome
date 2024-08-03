@@ -106,13 +106,13 @@ public class InteractiveInputTest {
 
     ProcessInput pi = processInput(ip, "sessionList", proc);
     assertTrue(
-        Pattern.compile("Session file: .*/.asciigenome/session.yml").matcher(pi.stderr).find());
+        Pattern.compile("Session file: /.*/.asciigenome/session.yml").matcher(pi.stderr).find());
     assertTrue(pi.stderr.contains("Current session: n/a"));
 
     ip.processInput("sessionOpen -f test_data/session.yaml no-fastafile", proc);
     pi = processInput(ip, "sessionList -f test_data/session.yaml no-fastafile", proc);
     assertTrue(
-        Pattern.compile("Session file: .*/test_data/session.yaml").matcher(pi.stderr).find());
+        Pattern.compile("Session file: /.*/test_data/session.yaml").matcher(pi.stderr).find());
     assertTrue(pi.stderr.contains("Current session: no-fastafile"));
   }
 

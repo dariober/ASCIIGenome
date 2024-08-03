@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -40,6 +41,11 @@ public class SessionHandler {
     if (!sessionYamlFile.exists() || !sessionYamlFile.canRead()) {
       throw new SessionException(
           "File '" + sessionYamlFile.getAbsolutePath() + "' does not exist or is not readable.");
+    }
+    String content =
+        new String(Files.readAllBytes(sessionYamlFile.toPath()), StandardCharsets.UTF_8);
+    if (content.trim().isEmpty()) {
+      return new ArrayList<Session>();
     }
     InputStream yaml = Files.newInputStream(Paths.get(sessionYamlFile.getPath()));
     List<Session> sessions =

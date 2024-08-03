@@ -4,7 +4,8 @@ New in 1.19.0
 * Support for sessions via `session*` commands. Similar to other genome
   browsers, ASCIIGenome can save a session to be re-opened later. Sessions are
   saved in a yaml file (default `~/.asciigenome/session.yml`) which is a list
-  of dictionaries (each dictionary is a session). At present, only some basic
+  of dictionaries (each dictionary is a session). If desired, these files
+  should be fairly easy to edit with a text editor. At present, only some basic
   configurations are saved and things could change in the future.
     
   Current session* commands, use `<command> -h` for more detail:
