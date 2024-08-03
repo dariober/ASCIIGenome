@@ -13,7 +13,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -46,8 +45,7 @@ public class InteractiveInput {
 
   /** Parse the input list of commands to print information or modify the input TrackProcessor. */
   protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc)
-      throws InvalidGenomicCoordsException,
-          IOException {
+      throws InvalidGenomicCoordsException, IOException {
     cmdConcatInput = cmdConcatInput.replaceAll("//.*", "").trim();
     int terminalWidth = Utils.getTerminalWidth();
     // cmdInputList: List of individual commands in tokens to be issued.
@@ -276,33 +274,22 @@ public class InteractiveInput {
           gc.right();
           proc.getGenomicCoordsHistory().add(gc);
 
-        } else if (cmdTokens.get(0).equals("session")) {
+        } else if (cmdTokens.get(0).equals("sessionOpen")) {
           List<String> args = new ArrayList<>(cmdTokens);
           args.remove(0);
-          if (args.isEmpty()) {
-            this.messages.add(
-                "Provide a sub-command to handle a session. See `session -h` for details.");
-            this.setInteractiveInputExitCode(ExitCode.ERROR);
-          } else if(args.contains("-h")) {
-            String help =
-                    Utils.padEndMultiLine(
-                            "\n" + CommandList.getHelpForCommand("session"), proc.getWindowSize());
-            System.err.println(help);
-            this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
-          } else if (args.get(0).equals("open")) {
-            args.remove(0);
-            this.openSession(args, proc);
-          } else if (args.get(0).equals("save")) {
-            args.remove(0);
-            this.saveSession(args, proc);
-            this.setInteractiveInputExitCode(ExitCode.CLEAN_NO_FLUSH);
-          } else if (args.get(0).equals("list")) {
-            args.remove(0);
-            this.setInteractiveInputExitCode(this.listSessions(args, proc));
-          } else {
-            this.messages.add("Invalid sub-command. See `session -h` for details.");
-            this.setInteractiveInputExitCode(ExitCode.ERROR);
-          }
+          this.openSession(args, proc);
+
+        } else if (cmdTokens.get(0).equals("sessionSave")) {
+          List<String> args = new ArrayList<>(cmdTokens);
+          args.remove(0);
+          this.saveSession(args, proc);
+          this.setInteractiveInputExitCode(ExitCode.CLEAN_NO_FLUSH);
+
+        } else if (cmdTokens.get(0).equals("sessionList")) {
+          List<String> args = new ArrayList<>(cmdTokens);
+          args.remove(0);
+          this.setInteractiveInputExitCode(this.listSessions(args, proc));
+
         } else if (cmdTokens.get(0).equals("setGenome")) {
           this.setGenome(cmdTokens, proc);
 
@@ -879,9 +866,7 @@ public class InteractiveInput {
   }
 
   private ExitCode listSessions(List<String> args, TrackProcessor proc)
-      throws InvalidGenomicCoordsException,
-          IOException,
-          InvalidCommandLineException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
     File sessionYamlFile =
         new File(
             Utils.getArgForParam(
@@ -900,6 +885,8 @@ public class InteractiveInput {
     }
     int nsessions = Integer.parseInt(Utils.getArgForParam(args, "-n", "10"));
     String sessionString = sh.print(nsessions, true);
+    sessionString += "\nCurrent session: ";
+    sessionString += this.getCurrentSessionName() == null ? "n/a" : this.getCurrentSessionName();
     System.err.println(Utils.padEndMultiLine(sessionString, proc.getWindowSize()));
     return ExitCode.CLEAN_NO_FLUSH;
   }

@@ -98,36 +98,41 @@ public class CommandList {
     System.err.println("Command help file written to " + destFile.getAbsolutePath());
   }
 
-  public static String fullHelp() throws InvalidCommandLineException, InvalidColourException {
-    String help = "\n      N a v i g a t i o n \n\n";
-    for (CommandHelp x : CommandList.getCommandsForSection(Section.NAVIGATION)) {
-      help += (x.printCommandHelp() + "\n");
-    }
-    help += "\n      F i n d \n\n";
-    for (CommandHelp x : CommandList.getCommandsForSection(Section.FIND)) {
-      help += (x.printCommandHelp() + "\n");
-    }
-    help += "\n      D i s p l a y \n\n";
-    for (CommandHelp x : CommandList.getCommandsForSection(Section.DISPLAY)) {
-      help += (x.printCommandHelp() + "\n");
-    }
-
-    help += "\n      A l i g n m e n t s \n\n";
-    for (CommandHelp x : CommandList.getCommandsForSection(Section.ALIGNMENTS)) {
-      help += (x.printCommandHelp() + "\n");
-    }
-
-    for (CommandHelp x : CommandList.getCommandsForSection(Section.GENERAL)) {
-      help += (x.printCommandHelp() + "\n");
-    }
-
-    help += "\n      G e n e r a l \n\n";
-    for (CommandHelp x : CommandList.getCommandsForSection(Section.GENERAL)) {
-      help += (x.printCommandHelp());
-    }
-    help += SEE_ALSO;
-    return help;
-  }
+  //  public static String fullHelp() throws InvalidCommandLineException, InvalidColourException {
+  //    String help = "\n      N a v i g a t i o n \n\n";
+  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.NAVIGATION)) {
+  //      help += (x.printCommandHelp() + "\n");
+  //    }
+  //    help += "\n      F i n d \n\n";
+  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.FIND)) {
+  //      help += (x.printCommandHelp() + "\n");
+  //    }
+  //    help += "\n      D i s p l a y \n\n";
+  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.DISPLAY)) {
+  //      help += (x.printCommandHelp() + "\n");
+  //    }
+  //
+  //    help += "\n      A l i g n m e n t s \n\n";
+  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.ALIGNMENTS)) {
+  //      help += (x.printCommandHelp() + "\n");
+  //    }
+  //
+  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.GENERAL)) {
+  //      help += (x.printCommandHelp() + "\n");
+  //    }
+  //
+  //    help += "\n      G e n e r a l \n\n";
+  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.GENERAL)) {
+  //      help += (x.printCommandHelp());
+  //    }
+  //
+  //    help += "\n      S e s s i o n \n\n";
+  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.SESSION)) {
+  //      help += (x.printCommandHelp());
+  //    }
+  //    help += SEE_ALSO;
+  //    return help;
+  //  }
 
   public static String briefHelp() throws InvalidCommandLineException, InvalidColourException {
     String help =
@@ -147,9 +152,12 @@ public class CommandList {
     for (CommandHelp x : CommandList.getCommandsForSection(Section.DISPLAY)) {
       help += (x.printBriefHelp());
     }
-
     help += "\n      A l i g n m e n t s \n\n";
     for (CommandHelp x : CommandList.getCommandsForSection(Section.ALIGNMENTS)) {
+      help += (x.printBriefHelp());
+    }
+    help += "\n      S e s s i o n \n\n";
+    for (CommandHelp x : CommandList.getCommandsForSection(Section.SESSION)) {
       help += (x.printBriefHelp());
     }
     help += "\n      G e n e r a l \n\n";
@@ -1416,24 +1424,65 @@ public class CommandList {
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
-    cmd.setName("session");
-    cmd.setArgs("<open|save|list> [-f session.yaml] <sessionName|index>");
-    cmd.inSection = Section.GENERAL;
-    cmd.setBriefDescription("Commands to :code:`open`, :code:`save`, or :code:`list` sessions.");
+    cmd.setName("sessionOpen");
+    cmd.setArgs("[-f session.yml] [sessionName|index]");
+    cmd.inSection = Section.SESSION;
+    cmd.setBriefDescription("Open a previous session");
     cmd.setAdditionalDescription(
-        "A session stores (most of) the settings about genome and tracks.\n"
+        "Since a session file can hold multiple sessions, choose the session to open by name or"
+            + " index. Without arguments, reproduce the settings from the last time ASCIIGenome"
+            + " exited regardless of whether those settings were savedin a session.\n"
             + "\n"
-            + "* :code:`-f` File to read or save session to. Default"
-            + " \\~/.asciigenome/session.yaml.\n"
+            + "* :code:`-f` Read sessions from this yaml file. Default: "
+            + " :code:`\\~/.asciigenome/session.yaml`\n"
             + "\n"
-            + "* :code:`sessioName|index` Session name to open or save. Use 'last' to refer to the"
-            + " last opened session. Alternatively, use a numeric index to refer a session in"
-            + " reverse chronological order (1: last opened, 2: second last, etc).\n"
+            + "* :code:`sessioName|index` Session name or index to open. The index refers to"
+            + " sessions in reverse chronological order (1: last opened, 2: second last, etc)."
+            + " Default: 1\n"
             + "\n"
             + "Examples::\n"
             + "\n"
-            + "    session open last~// Open last read session from default file\n"
-            + "    open save -f my-sessions.yaml myTracks // Save to file current session \n");
+            + "    sessionOpen // Reproduce the settings from last exit of ASCIIGenome\n"
+            + "    sessionOpen 1 // Last session saved in default session file\n"
+            + "    sessionOpen -f ss.yml myTracks // Open `myTracks` from ss.yml\n");
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
+    cmd.setName("sessionSave");
+    cmd.setArgs("[-f session.yml] [sessionName]");
+    cmd.inSection = Section.SESSION;
+    cmd.setBriefDescription("Save current session");
+    cmd.setAdditionalDescription(
+        "Note a session file can hold multiple sessions. *I.e.*, there's no need to save each"
+            + " session to a separate file. Execute :code:`sessionList` to get the current session"
+            + " file and name.\n"
+            + "\n"
+            + "* :code:`-f` Save session to this file. Default: "
+            + " :code:`\\~/.asciigenome/session.yaml`\n"
+            + "\n"
+            + "* :code:`sessioName` If given, save session with this name (equivalent to a typical"
+            + " \"save as\" command).  Otherwise save to the current session (equivalent to the"
+            + " usual Ctrl+S shortcut)\n"
+            + "\n"
+            + "Examples::\n"
+            + "\n"
+            + "    sessionSave // Save to current session, if any has been opened\n"
+            + "    sessionSave mySession // Save to default session file\n"
+            + "    sessionSave -f ss.yml mySession // Save to ss.yml");
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
+    cmd.setName("sessionList");
+    cmd.setArgs("[-f session.yml]");
+    cmd.inSection = Section.SESSION;
+    cmd.setBriefDescription("List sessions in file and report current session file and name.");
+    cmd.setAdditionalDescription(
+        "Sessions are listed in reverse chronological order (*i.e.*, most recent last)\n"
+            + "\n"
+            + "* :code:`-f` List sessions in this file. Default: "
+            + " :code:`\\~/.asciigenome/session.yaml`\n"
+            + "\n"
+            + "* :code:`-n` List up to this many sessions. Default 10");
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
@@ -1448,7 +1497,7 @@ public class CommandList {
             + " preserved.\n"
             + "\n"
             + "A track is dropped if it cannot be reloaded, for example when the sequence"
-            + " disctionary has become incompatible with the current one.\n"
+            + " dictionary has become incompatible with the current one.\n"
             + "\n"
             + "Examples::\n"
             + "\n"
@@ -1722,7 +1771,9 @@ public class CommandList {
     paramList.add("explainSamFlag");
     paramList.add("show");
     paramList.add("open");
-    paramList.add("session");
+    paramList.add("sessionOpen");
+    paramList.add("sessionSave");
+    paramList.add("sessionList");
     paramList.add("reload");
     paramList.add("recentlyOpened");
     paramList.add("dropTracks");

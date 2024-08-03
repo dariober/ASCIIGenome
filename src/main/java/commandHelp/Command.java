@@ -43,7 +43,9 @@ public enum Command {
   showGenome("showGenome"),
   infoTracks("infoTracks"),
   open("open"),
-  session("session"),
+  sessionOpen("sessionOpen"),
+  sessionSave("sessionSave"),
+  sessionList("sessionList"),
   reload("reload"),
   recentlyOpened("recentlyOpened"),
   dropTracks("dropTracks"),
@@ -53,8 +55,7 @@ public enum Command {
   rpm("rpm"),
   samtools("samtools"),
   BSseq("BSseq"),
-  save("save"),
-  sessionSave("sessionSave");
+  save("save");
 
   private final String commandDescription;
 

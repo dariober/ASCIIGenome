@@ -5,5 +5,6 @@ public enum Section {
   FIND,
   DISPLAY,
   ALIGNMENTS,
-  GENERAL
+  GENERAL,
+  SESSION,
 }

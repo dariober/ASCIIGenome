@@ -1,5 +1,7 @@
 package samTextViewer;
 
+import static org.junit.Assert.*;
+
 import colouring.Config;
 import com.google.common.base.Splitter;
 import exceptions.InvalidCommandLineException;
@@ -18,14 +20,13 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import jline.console.ConsoleReader;
 import org.junit.Test;
 import session.SessionHandler;
 import tracks.Track;
 import tracks.TrackPileup;
 import tracks.TrackSet;
-
-import static org.junit.Assert.*;
 
 public class InteractiveInputTest {
 
@@ -78,31 +79,41 @@ public class InteractiveInputTest {
           InvalidCommandLineException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
-    ProcessInput pi = processInput(ip, "session list -f test_data/session.yaml -n 1", proc);
+    ProcessInput pi = processInput(ip, "sessionList -f test_data/session.yaml -n 1", proc);
     assertTrue(pi.stderr.contains("sessionName: no-fastafile"));
 
     assertFalse(pi.stderr.replaceFirst("sessionName", "").contains("sessionName"));
     assertTrue(pi.stderr.contains("test_data/session.yaml"));
 
-    pi = processInput(ip, "session list -f test_data/missing.yml", proc);
+    pi = processInput(ip, "sessionList -f test_data/missing.yml", proc);
     assertTrue(pi.stderr.contains("does not exist or is not readable"));
-    pi = processInput(ip, "session list -f test_data/broken.yml", proc);
+    pi = processInput(ip, "sessionList -f test_data/broken.yml", proc);
     assertTrue(pi.stderr.contains("Failed to process"));
   }
 
   @Test
-  public void canPrintSessionHelp()
-          throws IOException,
+  public void canListCurrentSessionNameAndFile()
+      throws IOException,
           SQLException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
           InvalidRecordException,
-          InvalidCommandLineException {
+          InvalidCommandLineException,
+          InvalidConfigException {
+    new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
-    ProcessInput pi = processInput(ip, "session list -h", proc);
-    assertEquals(ExitCode.CLEAN_NO_FLUSH, ip.getInteractiveInputExitCode());
-    assertTrue(pi.stderr.trim().startsWith("session <open"));
+
+    ProcessInput pi = processInput(ip, "sessionList", proc);
+    assertTrue(
+        Pattern.compile("Session file: /.*/.asciigenome/session.yml").matcher(pi.stderr).find());
+    assertTrue(pi.stderr.contains("Current session: n/a"));
+
+    ip.processInput("sessionOpen -f test_data/session.yaml no-fastafile", proc);
+    pi = processInput(ip, "sessionList -f test_data/session.yaml no-fastafile", proc);
+    assertTrue(
+        Pattern.compile("Session file: /.*/test_data/session.yaml").matcher(pi.stderr).find());
+    assertTrue(pi.stderr.contains("Current session: no-fastafile"));
   }
 
   @Test
@@ -121,24 +132,24 @@ public class InteractiveInputTest {
     new File("tmp.yml").delete();
     new File("tmp2.yml").delete();
 
-    ip.processInput("session save -f tmp.yml foo1", proc);
+    ip.processInput("sessionSave -f tmp.yml foo1", proc);
     String yml = new String(Files.readAllBytes(Paths.get("tmp.yml")));
     assertTrue(yml.contains("foo1"));
 
-    ip.processInput("session save -f tmp.yml foo2", proc);
+    ip.processInput("sessionSave -f tmp.yml foo2", proc);
     yml = new String(Files.readAllBytes(Paths.get("tmp.yml")));
     assertTrue(yml.contains("foo1") && yml.contains("foo2"));
 
-    ip.processInput("session save foo3", proc);
+    ip.processInput("sessionSave foo3", proc);
     yml = new String(Files.readAllBytes(Paths.get("tmp.yml")));
     assertTrue(yml.contains("foo1") && yml.contains("foo2") && yml.contains("foo3"));
 
-    ip.processInput("session save -f tmp2.yml foo4", proc);
+    ip.processInput("sessionSave -f tmp2.yml foo4", proc);
     yml = new String(Files.readAllBytes(Paths.get("tmp2.yml")));
     assertTrue(yml.contains("foo4") && !yml.contains("foo3"));
 
     proc.getGenomicCoordsHistory().current().setTo(100000);
-    ip.processInput("session save", proc);
+    ip.processInput("sessionSave", proc);
 
     assertEquals(
         100000, (long) new SessionHandler(new File("tmp2.yml")).get("foo4").getGenome().to);
@@ -159,10 +170,10 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
-    ip.processInput("session open -f test_data/session.yaml newSession", proc);
+    ip.processInput("sessionOpen -f test_data/session.yaml newSession", proc);
     String fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
     assertEquals("TTATT", fasta.substring(0, 5));
-    ip.processInput("session open -f test_data/session.yaml fastafile-not-found", proc);
+    ip.processInput("sessionOpen -f test_data/session.yaml fastafile-not-found", proc);
     assertEquals(null, proc.getGenomicCoordsHistory().current().getFastaFile());
     ip.processInput("setGenome test_data/chr7.fa", proc);
     fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
@@ -185,7 +196,7 @@ public class InteractiveInputTest {
 
     ByteArrayOutputStream err = new ByteArrayOutputStream();
     System.setErr(new PrintStream(err));
-    ip.processInput("session open -f test_data/session.yaml file-not-found", proc);
+    ip.processInput("sessionOpen -f test_data/session.yaml file-not-found", proc);
     String errStr = err.toString();
     assertTrue(errStr.contains("Sequence dictionary"));
     assertTrue(errStr.contains("xs#2"));
@@ -211,7 +222,7 @@ public class InteractiveInputTest {
 
     ByteArrayOutputStream err = new ByteArrayOutputStream();
     System.setErr(new PrintStream(err));
-    ip.processInput("session open -f test_data/session.yaml fastafile-not-found", proc);
+    ip.processInput("sessionOpen -f test_data/session.yaml fastafile-not-found", proc);
     String errStr = err.toString();
     assertTrue(errStr.contains("missing.fa"));
     System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
@@ -231,13 +242,13 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0);
-    ProcessInput pi = this.processInput(ip, "session open -f missing.yml foo", proc);
+    ProcessInput pi = this.processInput(ip, "sessionOpen -f missing.yml foo", proc);
     assertTrue(pi.stderr.contains("does not exist"));
 
-    pi = this.processInput(ip, "session save -f foo/bar/tmp.yaml foo", proc);
+    pi = this.processInput(ip, "sessionSave -f foo/bar/tmp.yaml foo", proc);
     assertTrue(pi.stderr.contains("Directory '"));
 
-    pi = this.processInput(ip, "session save -f /tmp.yaml foo", proc);
+    pi = this.processInput(ip, "sessionSave -f /tmp.yaml foo", proc);
     assertTrue(pi.stderr.contains("Cannot write "));
   }
 
@@ -253,7 +264,7 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
-    ProcessInput pi = this.processInput(ip, "session open -f test_data/session.yaml spam", proc);
+    ProcessInput pi = this.processInput(ip, "sessionOpen -f test_data/session.yaml spam", proc);
     assertTrue(pi.stderr.contains("Cannot find session with name 'spam'"));
   }
 
@@ -272,13 +283,13 @@ public class InteractiveInputTest {
     ip.processInput("session", proc);
     assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
 
-    ip.processInput("session open foo bar", proc);
+    ip.processInput("sessionOpen foo bar", proc);
     assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
 
-    ip.processInput("session open -f test_data/session.yaml foobar", proc);
+    ip.processInput("sessionOpen -f test_data/session.yaml foobar", proc);
     assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
 
-    ip.processInput("session open -f test_data/session.yaml 1", proc);
+    ip.processInput("sessionOpen -f test_data/session.yaml 1", proc);
     assertEquals(2, proc.getTrackSet().getTrackList().size());
   }
 
@@ -295,8 +306,8 @@ public class InteractiveInputTest {
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     Files.deleteIfExists(new File("test_data/tmp.yml").toPath());
-    this.processInput(ip, "session save -f test_data/tmp.yml test", proc);
-    this.processInput(ip, "session open -f test_data/tmp.yml test", proc);
+    this.processInput(ip, "sessionSave -f test_data/tmp.yml test", proc);
+    this.processInput(ip, "sessionOpen -f test_data/tmp.yml test", proc);
     ProcessInput pi = this.processInput(ip, "show genome", proc);
     assertTrue(pi.stderr.contains("159138663"));
     Files.deleteIfExists(new File("test_data/tmp.yml").toPath());
@@ -318,7 +329,7 @@ public class InteractiveInputTest {
     Track tr = new TrackPileup("test_data/ds051.actb.bam", gc);
     proc.getTrackSet().addTrack(tr, "tr#1");
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
-    ip.processInput("session save -f tmp.yml tr1", proc);
+    ip.processInput("sessionSave -f tmp.yml tr1", proc);
     SessionHandler sh = new SessionHandler(new File("tmp.yml"));
     Files.deleteIfExists(new File("tmp.yml").toPath());
   }
