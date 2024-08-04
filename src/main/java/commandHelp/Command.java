@@ -46,6 +46,7 @@ public enum Command {
   sessionOpen("sessionOpen"),
   sessionSave("sessionSave"),
   sessionList("sessionList"),
+  sessionDelete("sessionDelete"),
   reload("reload"),
   recentlyOpened("recentlyOpened"),
   dropTracks("dropTracks"),

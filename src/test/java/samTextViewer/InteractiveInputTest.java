@@ -36,12 +36,7 @@ public class InteractiveInputTest {
   }
 
   public ProcessInput processInput(InteractiveInput ip, String cmd, TrackProcessor p)
-      throws SQLException,
-          InvalidGenomicCoordsException,
-          InvalidCommandLineException,
-          IOException,
-          ClassNotFoundException,
-          InvalidRecordException {
+      throws InvalidGenomicCoordsException, IOException {
     ByteArrayOutputStream err = new ByteArrayOutputStream();
     System.setErr(new PrintStream(err));
     ip.processInput(cmd, p);
@@ -117,6 +112,42 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canDeleteSession()
+      throws IOException,
+          InvalidConfigException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
+    new Config(null);
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+
+    ProcessInput pi = processInput(ip, "sessionDelete", proc);
+    pi = processInput(ip, "sessionDelete -f test_data/session.yaml", proc);
+    assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
+    assertEquals("Please provide the name of the session to delete", pi.stderr.trim());
+
+    pi = processInput(ip, "sessionDelete", proc);
+    assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
+    assertEquals("Please provide the name of the session to delete", pi.stderr.trim());
+
+    File f = new File("tmp.yml");
+    f.delete();
+    Files.copy(Paths.get("test_data/session.yaml"), Paths.get("tmp.yml"));
+
+    processInput(ip, "sessionDelete -f tmp.yml newSession", proc);
+    assertEquals(ExitCode.CLEAN_NO_FLUSH, ip.getInteractiveInputExitCode());
+    String txt = new String(Files.readAllBytes(Paths.get("tmp.yml")));
+    assertTrue(!txt.contains("newSession"));
+
+    processInput(ip, "sessionDelete -f tmp.yml newSession", proc);
+    assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
+    f.delete();
+  }
+
+  @Test
   public void canSaveCurrentSessionInPlace()
       throws IOException,
           InvalidConfigException,
@@ -124,7 +155,6 @@ public class InteractiveInputTest {
           InvalidGenomicCoordsException,
           ClassNotFoundException,
           InvalidRecordException,
-          InvalidCommandLineException,
           SessionException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
@@ -165,7 +195,6 @@ public class InteractiveInputTest {
           IOException,
           ClassNotFoundException,
           InvalidRecordException,
-          InvalidCommandLineException,
           InvalidConfigException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
@@ -187,8 +216,7 @@ public class InteractiveInputTest {
           SQLException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
-          InvalidRecordException,
-          InvalidCommandLineException {
+          InvalidRecordException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
 
@@ -213,8 +241,7 @@ public class InteractiveInputTest {
           SQLException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
-          InvalidRecordException,
-          InvalidCommandLineException {
+          InvalidRecordException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
 
@@ -275,8 +302,7 @@ public class InteractiveInputTest {
           SQLException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
-          InvalidRecordException,
-          InvalidCommandLineException {
+          InvalidRecordException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
@@ -321,7 +347,6 @@ public class InteractiveInputTest {
           InvalidGenomicCoordsException,
           ClassNotFoundException,
           InvalidRecordException,
-          InvalidCommandLineException,
           SessionException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80);
@@ -341,8 +366,7 @@ public class InteractiveInputTest {
           ClassNotFoundException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
-          SQLException,
-          InvalidCommandLineException {
+          SQLException {
     new Config(null);
     TrackProcessor proc;
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
@@ -358,7 +382,6 @@ public class InteractiveInputTest {
           InvalidRecordException,
           ClassNotFoundException,
           SQLException,
-          InvalidCommandLineException,
           InvalidConfigException {
 
     new Config(null);
@@ -422,12 +445,7 @@ public class InteractiveInputTest {
 
   @Test
   public void canPrintHelp()
-      throws InvalidGenomicCoordsException,
-          IOException,
-          ClassNotFoundException,
-          InvalidRecordException,
-          SQLException,
-          InvalidCommandLineException {
+      throws InvalidGenomicCoordsException, IOException, InvalidRecordException {
 
     InteractiveInput ip = new InteractiveInput(null, 1);
 

@@ -1,5 +1,7 @@
 package samTextViewer;
 
+import static session.SessionHandler.writeSessions;
+
 import colouring.Config;
 import colouring.ConfigKey;
 import com.google.common.base.Joiner;
@@ -180,7 +182,14 @@ public class InteractiveInput {
           System.out.print("\033[0m");
           console.clearScreen();
           console.flush();
-          SessionHandler.saveAs(SessionHandler.DEFAULT_SESSION_FILE, proc.toSession(), "");
+          try {
+            SessionHandler.saveAs(SessionHandler.DEFAULT_SESSION_FILE, proc.toSession(), "");
+          } catch (Exception e) {
+            System.err.println(
+                "Error saving session to file: " + SessionHandler.DEFAULT_SESSION_FILE);
+            System.err.println(e.getMessage());
+            System.exit(1);
+          }
           System.exit(0);
 
           // * These commands change the GenomicCoordinates (navigate) but do not touch the tracks.
@@ -289,6 +298,11 @@ public class InteractiveInput {
           List<String> args = new ArrayList<>(cmdTokens);
           args.remove(0);
           this.setInteractiveInputExitCode(this.listSessions(args, proc));
+
+        } else if (cmdTokens.get(0).equals("sessionDelete")) {
+          List<String> args = new ArrayList<>(cmdTokens);
+          args.remove(0);
+          this.setInteractiveInputExitCode(this.deleteSession(args, proc));
 
         } else if (cmdTokens.get(0).equals("setGenome")) {
           this.setGenome(cmdTokens, proc);
@@ -888,6 +902,51 @@ public class InteractiveInput {
     sessionString += "\nCurrent session: ";
     sessionString += this.getCurrentSessionName() == null ? "n/a" : this.getCurrentSessionName();
     System.err.println(Utils.padEndMultiLine(sessionString, proc.getWindowSize()));
+    return ExitCode.CLEAN_NO_FLUSH;
+  }
+
+  private ExitCode deleteSession(List<String> args, TrackProcessor proc)
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+    File sessionYamlFile =
+        new File(
+            Utils.getArgForParam(
+                args, "-f", SessionHandler.DEFAULT_SESSION_FILE.getAbsolutePath()));
+    SessionHandler sh;
+    if (this.sessionHandler == null) {
+      try {
+        sh = new SessionHandler(sessionYamlFile);
+      } catch (Exception e) {
+        this.messages.add(
+            "Failed to process session file '" + sessionYamlFile + "':\n" + e.getMessage());
+        return ExitCode.ERROR;
+      }
+    } else {
+      sh = this.sessionHandler;
+    }
+    if (args.size() == 0) {
+      this.messages.add("Please provide the name of the session to delete");
+      return ExitCode.ERROR;
+    }
+    if (args.size() > 1) {
+      this.messages.add("Please provide only one session to delete");
+      return ExitCode.ERROR;
+    }
+    String sessionName = args.get(0);
+    boolean found = sh.hasSessionName(sessionName);
+    if (!found) {
+      this.messages.add(
+          "No session with name '" + sessionName + "' found in file '" + sessionYamlFile + "'");
+      return ExitCode.ERROR;
+    }
+    boolean deleted = sh.deleteSession(sessionName);
+    if (deleted) {
+      System.err.println(
+          Utils.padEndMultiLine("Session '" + sessionName + "' deleted", proc.getWindowSize()));
+    } else {
+      this.messages.add("Failed to delete session '" + sessionName + "'");
+      return ExitCode.ERROR;
+    }
+    writeSessions(sh.getSessions(), sessionYamlFile);
     return ExitCode.CLEAN_NO_FLUSH;
   }
 

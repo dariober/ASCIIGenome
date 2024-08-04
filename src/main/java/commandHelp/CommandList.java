@@ -1486,6 +1486,19 @@ public class CommandList {
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
+    cmd.setName("sessionDelete");
+    cmd.setArgs("[-f session.yml] <sessionName>");
+    cmd.inSection = Section.SESSION;
+    cmd.setBriefDescription("Delete session by name.");
+    cmd.setAdditionalDescription(
+        "\n"
+            + "* :code:`-f` List sessions in this file. Default: "
+            + " :code:`\\~/.asciigenome/session.yaml`\n"
+            + "\n"
+            + "* :code:`sessionName` Session name to delete");
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
     cmd.setName("reload");
     cmd.setArgs("[track_regex = .*]...");
     cmd.inSection = Section.GENERAL;
@@ -1774,6 +1787,7 @@ public class CommandList {
     paramList.add("sessionOpen");
     paramList.add("sessionSave");
     paramList.add("sessionList");
+    paramList.add("sessionDelete");
     paramList.add("reload");
     paramList.add("recentlyOpened");
     paramList.add("dropTracks");

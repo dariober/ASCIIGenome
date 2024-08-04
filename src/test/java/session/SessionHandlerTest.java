@@ -1,7 +1,6 @@
 package session;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import colouring.Config;
 import exceptions.InvalidColourException;
@@ -27,11 +26,19 @@ import tracks.TrackSet;
 public class SessionHandlerTest {
 
   @Test
-  public void testGetSessionByNameOrIndex()
-      throws IOException,
-          SessionException,
-          InvalidGenomicCoordsException,
-          InvalidTrackTypeException {
+  public void canDeleteSession() throws IOException, SessionException {
+    InputStream yaml = Files.newInputStream(Paths.get("test_data/session.yaml"));
+    SessionHandler sh = new SessionHandler(new File("test_data/session.yaml"));
+    sh.get("newSession");
+    boolean deleted = sh.deleteSession("newSession");
+    assertTrue(deleted);
+
+    deleted = sh.deleteSession("newSession");
+    assertFalse(deleted);
+  }
+
+  @Test
+  public void testGetSessionByNameOrIndex() throws IOException, SessionException {
     InputStream yaml = Files.newInputStream(Paths.get("test_data/session.yaml"));
     SessionHandler sh = new SessionHandler(new File("test_data/session.yaml"));
     assertEquals("no-fastafile", sh.get("1").getSessionName());

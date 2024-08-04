@@ -10,10 +10,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.base.Joiner;
 import exceptions.SessionException;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -75,6 +72,16 @@ public class SessionHandler {
     sortSessionsByLastRead(sessions);
   }
 
+  public static void writeSessions(List<Session> sessions, File sessionFile) throws IOException {
+    YAMLFactory yf = new YAMLFactory();
+    yf.configure(WRITE_DOC_START_MARKER, false);
+    ObjectMapper mapper = new ObjectMapper(yf);
+    FileOutputStream fos = new FileOutputStream(sessionFile);
+    SequenceWriter sw = mapper.writerWithDefaultPrettyPrinter().writeValues(fos);
+    sw.write(sessions);
+    sw.close();
+  }
+
   public static void saveAs(File sessionFile, Session session, String sessionName)
       throws IOException, SessionException {
     session.setSessionName(sessionName);
@@ -83,13 +90,7 @@ public class SessionHandler {
       sessions = read(sessionFile);
     }
     addOrReplaceSession(sessions, session);
-    YAMLFactory yf = new YAMLFactory();
-    yf.configure(WRITE_DOC_START_MARKER, false);
-    ObjectMapper mapper = new ObjectMapper(yf);
-    FileOutputStream fos = new FileOutputStream(sessionFile);
-    SequenceWriter sw = mapper.writerWithDefaultPrettyPrinter().writeValues(fos);
-    sw.write(sessions);
-    sw.close();
+    writeSessions(sessions, sessionFile);
   }
 
   private static void sortSessionsByLastRead(List<Session> sessions) {
@@ -134,6 +135,15 @@ public class SessionHandler {
     this.sessionFile = sessionFile;
   }
 
+  public boolean hasSessionName(String sessionName) {
+    for (Session x : this.getSessions()) {
+      if (x.getSessionName().equals(sessionName)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public String print(int upto, boolean mostRecentLast) throws IOException {
     List<String> out = new ArrayList<>();
     int i = 0;
@@ -154,5 +164,16 @@ public class SessionHandler {
     }
     out.add("Session file: " + this.getSessionFile());
     return Joiner.on("\n").join(out);
+  }
+
+  public boolean deleteSession(String sessionName) {
+    Session ss;
+    try {
+      ss = this.get(sessionName);
+    } catch (SessionException e) {
+      return false;
+    }
+    this.getSessions().remove(ss);
+    return true;
   }
 }

@@ -16,6 +16,8 @@ New in 1.19.0
 
   * `sessionList`
 
+  * `sessionDelete`
+
 * Move ASCIIGenome files and settings to `~/.asciigenome` directory.
 
 * `print` command does not decode the URL escapes for line feed and carriage
