@@ -6,7 +6,7 @@ apply plugin: 'jacoco'
 
 def jversion= JavaVersion.VERSION_1_8
 
-sourceCompatibility= jversion 
+sourceCompatibility= jversion
 targetCompatibility= jversion
 
 if(JavaVersion.current() < jversion) {
@@ -106,7 +106,7 @@ dependencies {
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.21.0.1'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.17.1'
     implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.17.1'
-
+    implementation group: 'org.openjdk.nashorn', name: 'nashorn-core', version: '15.6'
     testImplementation 'junit:junit:4.12'
 }
 

@@ -15,7 +15,8 @@ import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFHeader;
@@ -1290,8 +1291,7 @@ public abstract class Track {
       System.err.println("Invalid coordinates for filter from > to: " + from + ", " + to);
       throw new InvalidGenomicCoordsException();
     }
-    IndexedFastaSequenceFile faSeqFile =
-        new IndexedFastaSequenceFile(new File(this.getGc().getFastaFile()));
+    ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.getGc().getFastaFile()));
     byte[] faSeq = faSeqFile.getSubsequenceAt(chrom, from, to).getBases();
     faSeqFile.close();
     this.getFeatureFilter().setVariantReadInInterval(chrom, from, to, faSeq);

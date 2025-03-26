@@ -1172,7 +1172,6 @@ public class UtilsTest {
     if (new File("test_data/noindex.fa.fai").isFile()) {
       new File("test_data/noindex.fa.fai").delete();
     }
-
     Utils.checkFasta(fastaFile, 0);
 
     assertTrue((new File("test_data/noindex.fa.fai")).isFile());

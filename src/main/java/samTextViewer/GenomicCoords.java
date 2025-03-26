@@ -12,7 +12,8 @@ import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -403,9 +404,9 @@ public class GenomicCoords implements Cloneable {
   }
 
   public byte[] getSequenceFromFasta() throws IOException {
-    IndexedFastaSequenceFile faSeqFile = null;
+    ReferenceSequenceFile faSeqFile = null;
     try {
-      faSeqFile = new IndexedFastaSequenceFile(new File(this.fastaFile));
+      faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.fastaFile));
       try {
         byte[] seq = faSeqFile.getSubsequenceAt(this.chrom, this.from, this.to).getBases();
         faSeqFile.close();

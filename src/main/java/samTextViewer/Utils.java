@@ -26,7 +26,8 @@ import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.index.tabix.TabixFormat;
@@ -279,11 +280,10 @@ public class Utils {
       }
     }
 
-    IndexedFastaSequenceFile faSeqFile = null;
-    try {
-      faSeqFile = new IndexedFastaSequenceFile(fafile);
+    ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(fafile);
+    if (faSeqFile.isIndexed()) {
       faSeqFile.close();
-    } catch (FileNotFoundException e) {
+    } else {
       System.err.println("\nIndexing '" + fasta + "'.");
       new Faidx(new File(fasta));
       (new File(fasta + ".fai")).deleteOnExit();
@@ -880,9 +880,9 @@ public class Utils {
 
     byte[] faSeq = null;
     if (fasta != null) {
-      IndexedFastaSequenceFile faSeqFile = null;
+      ReferenceSequenceFile faSeqFile = null;
       try {
-        faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
+        faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fasta));
         try {
           faSeq = faSeqFile.getSubsequenceAt(gc.getChrom(), gc.getFrom(), gc.getTo()).getBases();
         } catch (NullPointerException e) {

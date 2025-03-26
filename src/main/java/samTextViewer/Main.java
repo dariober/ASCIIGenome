@@ -16,7 +16,8 @@ import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import faidx.UnindexableFastaFileException;
 import htsjdk.samtools.SAMSequenceDictionary;
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -275,7 +276,7 @@ public class Main {
     }
     // Try to initialize from fasta
     if (fasta != null && !fasta.trim().isEmpty()) {
-      IndexedFastaSequenceFile faSeqFile = new IndexedFastaSequenceFile(new File(fasta));
+      ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fasta));
       String region = faSeqFile.nextSequence().getName();
       faSeqFile.close();
       return region;

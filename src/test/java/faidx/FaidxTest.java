@@ -1,9 +1,11 @@
 package faidx;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -77,7 +79,7 @@ public class FaidxTest {
 
     new Faidx(fasta);
 
-    List<String> observed = Arrays.asList(FileUtils.readFileToString(fai).split("\n"));
+    String[] observed = FileUtils.readFileToString(fai).split("\n");
     for (String x : observed) {
       if (x.startsWith("empty")) { // Empty sequences just check sequence length is 0
         assertEquals("0", x.split("\t")[1]);
@@ -85,41 +87,40 @@ public class FaidxTest {
     }
 
     // Can retrieve seqs
-    IndexedFastaSequenceFile ref =
-        new IndexedFastaSequenceFile(new File("test_data/faidx/empty.fa"));
-    assertEquals("ACTGNNNNNNNNNNNNN", new String(ref.getSubsequenceAt("seq", 1, 17).getBases()));
-    assertEquals("AACCGGTTNN", new String(ref.getSubsequenceAt("seq2", 1, 10).getBases()));
-    assertEquals("GGGAAATTTNNNCCC", new String(ref.getSubsequenceAt("seq3", 1, 15).getBases()));
+    ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File("test_data/faidx/empty.fa"));
+    assertEquals("ACTGNNNNNNNNNNNNN", new String(faSeqFile.getSubsequenceAt("seq", 1, 17).getBases()));
+    assertEquals("AACCGGTTNN", new String(faSeqFile.getSubsequenceAt("seq2", 1, 10).getBases()));
+    assertEquals("GGGAAATTTNNNCCC", new String(faSeqFile.getSubsequenceAt("seq3", 1, 15).getBases()));
 
-    ref.close();
+    faSeqFile.close();
   }
 
   @Test(expected = UnindexableFastaFileException.class)
   public void exceptionOnDuplicateName() throws IOException, UnindexableFastaFileException {
     File fasta = new File("test_data/faidx/dups.fa");
     new Faidx(fasta);
-    assertTrue(!new File(fasta.getAbsolutePath() + ".fai").exists());
+    assertFalse(new File(fasta.getAbsolutePath() + ".fai").exists());
   }
 
   @Test(expected = UnindexableFastaFileException.class)
   public void exceptionOnDifferentLineLength() throws IOException, UnindexableFastaFileException {
     File fasta = new File("test_data/faidx/lineLen.fa");
     new Faidx(fasta);
-    assertTrue(!new File(fasta.getAbsolutePath() + ".fai").exists());
+    assertFalse(new File(fasta.getAbsolutePath() + ".fai").exists());
   }
 
   @Test(expected = UnindexableFastaFileException.class)
   public void exceptionOnGzipInput() throws IOException, UnindexableFastaFileException {
     File fasta = new File("test_data/faidx/indexable.fa.gz");
     new Faidx(fasta);
-    assertTrue(!new File(fasta.getAbsolutePath() + ".fai").exists());
+    assertFalse(new File(fasta.getAbsolutePath() + ".fai").exists());
   }
 
   @Test(expected = UnindexableFastaFileException.class)
   public void exceptionOnNonASCIIchars() throws IOException, UnindexableFastaFileException {
     File fasta = new File("test_data/faidx/nonascii.fa");
     new Faidx(fasta);
-    assertTrue(!new File(fasta.getAbsolutePath() + ".fai").exists());
+    assertFalse(new File(fasta.getAbsolutePath() + ".fai").exists());
   }
 
   //	@Test

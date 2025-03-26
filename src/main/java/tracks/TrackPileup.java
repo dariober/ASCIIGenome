@@ -12,7 +12,8 @@ import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.filter.SamRecordFilter;
-import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.samtools.util.IntervalTree;
 import java.io.File;
 import java.io.IOException;
@@ -411,8 +412,7 @@ public class TrackPileup extends TrackBedgraph {
     // We could get the refseq from genomicCoords but maybe safer to extract it again from scratch.
     byte[] refSeq = null;
     if (this.getGc().getFastaFile() != null) {
-      IndexedFastaSequenceFile faSeqFile =
-          new IndexedFastaSequenceFile(new File(this.getGc().getFastaFile()));
+      ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.getGc().getFastaFile()));
       refSeq =
           faSeqFile
               .getSubsequenceAt(
