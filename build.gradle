@@ -4,7 +4,7 @@ import java.nio.file.Paths
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-def jversion= JavaVersion.VERSION_1_8
+def jversion= JavaVersion.VERSION_11
 java {
     sourceCompatibility= jversion
     targetCompatibility= jversion
