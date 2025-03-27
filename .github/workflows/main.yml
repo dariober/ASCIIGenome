@@ -4,7 +4,7 @@ jobs:
   build-and-test:
     strategy:
       matrix:
-        version: [8, 'latest']
+        version: [8, 23]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
