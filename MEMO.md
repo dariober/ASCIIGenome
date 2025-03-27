@@ -1,3 +1,19 @@
+<!-- vim-markdown-toc GFM -->
+
+* [Notes on maintenance and development](#notes-on-maintenance-and-development)
+    * [Code style](#code-style)
+    * [Release new version](#release-new-version)
+        * [Upload release to github](#upload-release-to-github)
+        * [Upload ASCIIGenome-x.y.z.zip to github](#upload-asciigenome-xyzzip-to-github)
+        * [Update brew formula](#update-brew-formula)
+    * [Test brew installation](#test-brew-installation)
+        * [Update bioconda](#update-bioconda)
+    * [Start new development branch](#start-new-development-branch)
+        * [Create a new branch:](#create-a-new-branch)
+* [Install or update gradle](#install-or-update-gradle)
+
+<!-- vim-markdown-toc -->
+
 Notes on maintenance and development
 ====================================
 
@@ -127,3 +143,16 @@ git checkout v1.18.0       # Switch to new branch
 git push -u origin v1.18.0 # Add branch to remote     
 ```
 
+# Install or update gradle
+
+Assuming you don't have gradle already installed, in a conda env:
+
+```
+mamba install gradle
+```
+
+Create or update the gradlew wrapper:
+
+```
+gradle wrapper
+```

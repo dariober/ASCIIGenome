@@ -5,9 +5,10 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 
 def jversion= JavaVersion.VERSION_1_8
-
-sourceCompatibility= jversion
-targetCompatibility= jversion
+java {
+    sourceCompatibility= jversion
+    targetCompatibility= jversion
+}
 
 if(JavaVersion.current() < jversion) {
     throw new GradleException("Java >= " + jversion + " is required but you are running " + JavaVersion.current())
