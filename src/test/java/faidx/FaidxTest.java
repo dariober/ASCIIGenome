@@ -87,10 +87,13 @@ public class FaidxTest {
     }
 
     // Can retrieve seqs
-    ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File("test_data/faidx/empty.fa"));
-    assertEquals("ACTGNNNNNNNNNNNNN", new String(faSeqFile.getSubsequenceAt("seq", 1, 17).getBases()));
+    ReferenceSequenceFile faSeqFile =
+        ReferenceSequenceFileFactory.getReferenceSequenceFile(new File("test_data/faidx/empty.fa"));
+    assertEquals(
+        "ACTGNNNNNNNNNNNNN", new String(faSeqFile.getSubsequenceAt("seq", 1, 17).getBases()));
     assertEquals("AACCGGTTNN", new String(faSeqFile.getSubsequenceAt("seq2", 1, 10).getBases()));
-    assertEquals("GGGAAATTTNNNCCC", new String(faSeqFile.getSubsequenceAt("seq3", 1, 15).getBases()));
+    assertEquals(
+        "GGGAAATTTNNNCCC", new String(faSeqFile.getSubsequenceAt("seq3", 1, 15).getBases()));
 
     faSeqFile.close();
   }

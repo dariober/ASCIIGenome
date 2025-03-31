@@ -412,7 +412,9 @@ public class TrackPileup extends TrackBedgraph {
     // We could get the refseq from genomicCoords but maybe safer to extract it again from scratch.
     byte[] refSeq = null;
     if (this.getGc().getFastaFile() != null) {
-      ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.getGc().getFastaFile()));
+      ReferenceSequenceFile faSeqFile =
+          ReferenceSequenceFileFactory.getReferenceSequenceFile(
+              new File(this.getGc().getFastaFile()));
       refSeq =
           faSeqFile
               .getSubsequenceAt(

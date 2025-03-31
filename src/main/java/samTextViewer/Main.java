@@ -276,7 +276,8 @@ public class Main {
     }
     // Try to initialize from fasta
     if (fasta != null && !fasta.trim().isEmpty()) {
-      ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fasta));
+      ReferenceSequenceFile faSeqFile =
+          ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fasta));
       String region = faSeqFile.nextSequence().getName();
       faSeqFile.close();
       return region;

@@ -32,7 +32,10 @@ public class Faidx {
     if (this.isCompressed(fasta)) {
       // System.err.println(fasta.getAbsolutePath() + " is gzip compressed. Indexing of gzip file is
       // not supported.");
-      throw new UnindexableFastaFileException(fasta.getAbsolutePath() + " is gzip compressed. Compressed files must be bgzip'd and have fai and gzi indexes.");
+      throw new UnindexableFastaFileException(
+          fasta.getAbsolutePath()
+              + " is gzip compressed. Compressed files must be bgzip'd and have fai and gzi"
+              + " indexes.");
     }
 
     FileChannel fileChannel = FileChannel.open(Paths.get(fasta.getAbsolutePath()));
@@ -80,7 +83,8 @@ public class Faidx {
             faidxRecord.makeSeqNameFromRawLine(line);
 
             if (seqNames.contains(faidxRecord.getSeqName())) {
-              throw new UnindexableFastaFileException(                  fasta.getAbsolutePath()
+              throw new UnindexableFastaFileException(
+                  fasta.getAbsolutePath()
                       + ": Duplicate sequence name found for "
                       + faidxRecord.getSeqName());
             } else {
@@ -90,7 +94,8 @@ public class Faidx {
             isFirstSeqLine = true;
           } else {
             if (isLast) {
-              throw new UnindexableFastaFileException(fasta.getAbsolutePath()
+              throw new UnindexableFastaFileException(
+                  fasta.getAbsolutePath()
                       + ": Different line length in "
                       + faidxRecord.getSeqName());
             }

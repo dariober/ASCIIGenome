@@ -1291,7 +1291,9 @@ public abstract class Track {
       System.err.println("Invalid coordinates for filter from > to: " + from + ", " + to);
       throw new InvalidGenomicCoordsException();
     }
-    ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.getGc().getFastaFile()));
+    ReferenceSequenceFile faSeqFile =
+        ReferenceSequenceFileFactory.getReferenceSequenceFile(
+            new File(this.getGc().getFastaFile()));
     byte[] faSeq = faSeqFile.getSubsequenceAt(chrom, from, to).getBases();
     faSeqFile.close();
     this.getFeatureFilter().setVariantReadInInterval(chrom, from, to, faSeq);

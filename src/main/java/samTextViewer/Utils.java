@@ -1064,7 +1064,6 @@ public class Utils {
    * http://stackoverflow.com/questions/10791568/calculating-average-of-an-array-list null values
    * are ignored, like R mean(..., na.rm= TRUE). Returns Float.NaN if input list is empty or only
    * nulls. You can check for Float.NaN with Float.isNaN(x);
-   *
    */
   public static Double calculateAverage(List<Double> list) {
     double sum = 0;
