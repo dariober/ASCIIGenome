@@ -294,6 +294,13 @@ public class GenomicCoordsTest {
   }
 
   @Test
+  public void printRefSeqBgzip()
+          throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+    GenomicCoords gc = new GenomicCoords("chr7:5540580-5540590", 80, null, "test_data/chr7.fa.gz");
+    assertEquals("ggccggctggg\n", gc.printableRefSeq(true));
+  }
+
+  @Test
   public void canTestForEqualCoords() throws InvalidGenomicCoordsException, IOException {
     GenomicCoords gc = new GenomicCoords("chr1:1-10", 80, null, null);
     GenomicCoords other = new GenomicCoords("chr1:1-10", 80, null, null);

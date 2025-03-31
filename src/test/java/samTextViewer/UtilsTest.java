@@ -1187,6 +1187,21 @@ public class UtilsTest {
   }
 
   @Test
+  public void bgzipFastaWithoutIndex() throws IOException, UnindexableFastaFileException {
+    File bgzip = new File("test_data/tmp.chr7.fa.gz");
+    bgzip.deleteOnExit();
+    FileUtils.copyFile(new File("test_data/chr7.fa.gz"), bgzip);
+    Utils.checkFasta(bgzip.getAbsolutePath(), 2);
+    boolean pass = false;
+    try {
+      Utils.checkFasta(bgzip.getAbsolutePath(), 0);
+    } catch (UnindexableFastaFileException e) {
+      pass = true;
+    }
+    assertTrue(pass);
+  }
+
+  @Test
   public void canMergeIntervals() throws InvalidGenomicCoordsException, InvalidColourException {
 
     // Zero len list

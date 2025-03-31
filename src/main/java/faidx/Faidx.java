@@ -29,11 +29,10 @@ public class Faidx {
    * <p>Index will be genome.fa.fai
    */
   public Faidx(File fasta) throws IOException, UnindexableFastaFileException {
-
     if (this.isCompressed(fasta)) {
       // System.err.println(fasta.getAbsolutePath() + " is gzip compressed. Indexing of gzip file is
       // not supported.");
-      throw new UnindexableFastaFileException();
+      throw new UnindexableFastaFileException(fasta.getAbsolutePath() + " is gzip compressed. Compressed files must be bgzip'd and have fai and gzi indexes.");
     }
 
     FileChannel fileChannel = FileChannel.open(Paths.get(fasta.getAbsolutePath()));
@@ -59,7 +58,7 @@ public class Faidx {
         char x = (char) buffer.get();
 
         if (!CharMatcher.ascii().matches(x)) {
-          throw new UnindexableFastaFileException();
+          throw new UnindexableFastaFileException("");
         }
 
         currOffset++;
@@ -81,11 +80,9 @@ public class Faidx {
             faidxRecord.makeSeqNameFromRawLine(line);
 
             if (seqNames.contains(faidxRecord.getSeqName())) {
-              System.err.println(
-                  fasta.getAbsolutePath()
+              throw new UnindexableFastaFileException(                  fasta.getAbsolutePath()
                       + ": Duplicate sequence name found for "
                       + faidxRecord.getSeqName());
-              throw new UnindexableFastaFileException();
             } else {
               seqNames.add(faidxRecord.getSeqName());
             }
@@ -93,11 +90,9 @@ public class Faidx {
             isFirstSeqLine = true;
           } else {
             if (isLast) {
-              System.err.println(
-                  fasta.getAbsolutePath()
+              throw new UnindexableFastaFileException(fasta.getAbsolutePath()
                       + ": Different line length in "
                       + faidxRecord.getSeqName());
-              throw new UnindexableFastaFileException();
             }
             int seqLen = line.replaceAll("\\s", "").length();
             faidxRecord.seqLength += seqLen;

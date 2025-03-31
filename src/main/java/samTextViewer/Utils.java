@@ -262,8 +262,8 @@ public class Utils {
     if (fasta == null) {
       return;
     }
-    File fafile = new File(fasta);
-    if (!fafile.isFile()) {
+    File faFile = new File(fasta);
+    if (!faFile.isFile()) {
       System.err.println("Fasta file '" + fasta + "' not found.");
       if (debug == 0 || debug == 1) {
         System.exit(1);
@@ -271,7 +271,7 @@ public class Utils {
         throw new IOException();
       }
     }
-    if (!fafile.canRead()) {
+    if (!faFile.canRead()) {
       System.err.println("Fasta file '" + fasta + "' is not readable.");
       if (debug == 0 || debug == 1) {
         System.exit(1);
@@ -280,7 +280,7 @@ public class Utils {
       }
     }
 
-    ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(fafile);
+    ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(faFile);
     if (faSeqFile.isIndexed()) {
       faSeqFile.close();
     } else {
@@ -919,15 +919,6 @@ public class Utils {
     return (int) pos;
   }
 
-  /**
-   * Parse user to modify the current genomics coordinates in input to new ones to move.
-   *
-   * @param bam
-   * @return
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidCommandLineException
-   */
   public static String parseConsoleInput(List<String> tokens, GenomicCoords gc)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
@@ -1074,8 +1065,6 @@ public class Utils {
    * are ignored, like R mean(..., na.rm= TRUE). Returns Float.NaN if input list is empty or only
    * nulls. You can check for Float.NaN with Float.isNaN(x);
    *
-   * @param marks
-   * @return
    */
   public static Double calculateAverage(List<Double> list) {
     double sum = 0;

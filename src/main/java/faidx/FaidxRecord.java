@@ -19,8 +19,7 @@ class FaidxRecord {
 
   protected void makeSeqNameFromRawLine(String line) throws UnindexableFastaFileException {
     if (!line.startsWith(">")) {
-      System.err.println("Invalid name: Does not start with '>'");
-      throw new UnindexableFastaFileException();
+      throw new UnindexableFastaFileException("Invalid name: Does not start with '>'");
     }
     String name = line.substring(1).trim().replaceAll("\\s.*", "");
     this.seqName = name;
