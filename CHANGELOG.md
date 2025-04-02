@@ -23,6 +23,8 @@ New in 1.19.0
 * `print` command does not decode the URL escapes for line feed and carriage
   return. Decoding `\n` and `\r` would split a gff line when printed.
 
+* Support for bgzip'd fasta reference (better late than never)
+
 New in 1.18.0
 =============
 

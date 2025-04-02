@@ -97,18 +97,9 @@ public class Main {
 
     messageVersion(opts.getBoolean("noFormat"));
 
-    String workingFasta = fasta;
-    if (fasta != null && (fasta.toLowerCase().replaceAll("\\.gz$", "").endsWith("gff")
-        || fasta.toLowerCase().replaceAll("\\.gz$", "").endsWith("gff3")
-        || fasta.toLowerCase().replaceAll("\\.gz$", "").endsWith("gtf"))) {
-      File gfxFasta =
-          Utils.createTempFile(".asciigenome." + new File(fasta).getName() + ".", ".fasta", true);
-      Utils.getFastaFromGfx(new File(fasta), gfxFasta);
-      workingFasta = gfxFasta.getAbsolutePath();
-    }
     /* Set up console */
 
-    Utils.checkFasta(workingFasta, debug);
+    Utils.checkFasta(fasta, debug);
 
     /* Test input files exist */
     List<String> inputFileList = new ArrayList<String>();
@@ -116,7 +107,13 @@ public class Main {
 
     /* If we load a cram, check we also have a genome */
     for (String x : inputFileList) {
-        Utils.isCRAM(x);
+      if (Utils.isCRAM(x) && fasta == null) {
+        System.err.println(
+            "\nUnable to add file '"
+                + x
+                + "': CRAM input requires a genome file.\nSee option --fasta/-fa");
+        System.exit(1);
+      }
     }
 
     /* Initialize trackSet */
@@ -124,13 +121,13 @@ public class Main {
     // This part only prepares a dummy GenomicCoords object to initialize the start position:
 
     if (region == null || region.isEmpty()) {
-      region = initRegion(inputFileList, workingFasta, null, debug);
+      region = initRegion(inputFileList, fasta, null, debug);
     }
     int terminalWidth = Utils.getTerminalWidth();
     GenomicCoords initGc = new GenomicCoords(region, terminalWidth, null, null);
 
     List<String> initGenomeList = new ArrayList<String>(inputFileList);
-    initGenomeList.add(workingFasta);
+    initGenomeList.add(fasta);
     initGc.setGenome(initGenomeList, false);
 
     // Genomic positions start here:
@@ -138,7 +135,6 @@ public class Main {
     GenomicCoords start =
         new GenomicCoords(
             initGc.toStringRegion(), terminalWidth, initGc.getSamSeqDict(), initGc.getFastaFile());
-    start.setOriginalFastaFile(fasta);
     gch.readHistory(asciiGenomeHistory.getFileName(), start);
     gch.add(start);
     gch.current().setSamSeqDictSource(initGc.getSamSeqDictSource());

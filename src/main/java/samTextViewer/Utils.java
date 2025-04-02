@@ -42,7 +42,16 @@ import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderVersion;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.HttpURLConnection;
@@ -75,7 +84,6 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
@@ -106,38 +114,6 @@ public class Utils {
     BigDecimal bd = new BigDecimal(Double.toString(value));
     bd = bd.setScale(places, RoundingMode.HALF_EVEN);
     return bd.doubleValue();
-  }
-
-  public static void getFastaFromGfx(File gfxFile, File outFasta) throws IOException {
-    BufferedReader br;
-    InputStream fileStream = new FileInputStream(gfxFile);
-    try {
-      InputStream gzipStream = new GZIPInputStream(fileStream);
-      Reader decoder = new InputStreamReader(gzipStream);
-      br = new BufferedReader(decoder);
-    } catch (ZipException e) {
-      br = new BufferedReader(new FileReader(gfxFile));
-    }
-
-    String line;
-    Writer writer =
-        new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(outFasta.toPath())));
-    boolean markerFound = false;
-    while ((line = br.readLine()) != null) {
-      if (line.trim().equals("##FASTA")) {
-        markerFound = true;
-        continue;
-      }
-      if (!markerFound) {
-        continue;
-      }
-      writer.write(line + "\n");
-    }
-    writer.close();
-    br.close();
-    if (!markerFound) {
-      throw new IOException("Unable to get fasta sequence from " + gfxFile.getAbsolutePath());
-    }
   }
 
   /**

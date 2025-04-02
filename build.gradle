@@ -94,7 +94,7 @@ dependencies {
     implementation 'com.github.dariober:Jawk:e5c8f26'
     implementation group: 'com.github.igvteam', name: 'igv', version: 'v2.6.3'
     implementation group: 'log4j', name: 'log4j', version: '1.2.17'
-    implementation group: 'com.github.dariober', name: 'htsjdk', version: 'b8f559b9f'
+    implementation group: 'com.github.dariober', name: 'htsjdk', version: '59c1d26cc'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
     implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
     implementation group: 'commons-validator', name: 'commons-validator', version: '1.6'

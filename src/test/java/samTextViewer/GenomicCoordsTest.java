@@ -295,7 +295,7 @@ public class GenomicCoordsTest {
 
   @Test
   public void printRefSeqBgzip()
-      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+          throws InvalidGenomicCoordsException, IOException, InvalidColourException {
     GenomicCoords gc = new GenomicCoords("chr7:5540580-5540590", 80, null, "test_data/chr7.fa.gz");
     assertEquals("ggccggctggg\n", gc.printableRefSeq(true));
   }
