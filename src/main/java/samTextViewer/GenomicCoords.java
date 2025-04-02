@@ -64,6 +64,7 @@ public class GenomicCoords implements Cloneable {
   private boolean singleBaseResolution = false;
   private int terminalWidth;
   private List<Double> mapping;
+  private String originalFastaFile;
 
   /* Constructors */
   public GenomicCoords() throws InvalidGenomicCoordsException, IOException {}
@@ -1433,5 +1434,13 @@ public class GenomicCoords implements Cloneable {
       return;
     }
     this.singleBaseResolution = this.getUserWindowSize() == this.getGenomicWindowSize();
+  }
+
+  public void setOriginalFastaFile(String fasta) {
+    this.originalFastaFile = fasta;
+  }
+
+  public String getOriginalFastaFile() {
+    return this.originalFastaFile;
   }
 }

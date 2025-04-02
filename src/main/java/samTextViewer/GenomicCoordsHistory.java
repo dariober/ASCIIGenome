@@ -13,7 +13,7 @@ import java.util.List;
 public class GenomicCoordsHistory {
 
   /** List of genomic positions in order as they have been visited. */
-  private List<GenomicCoords> currentSessionHistory = new ArrayList<GenomicCoords>();
+  private final List<GenomicCoords> currentSessionHistory = new ArrayList<GenomicCoords>();
 
   /** List index stating where we are in history */
   private int positionTracker = -1;
@@ -28,7 +28,7 @@ public class GenomicCoordsHistory {
    * one in history. The position tracker is reset to the last when a new position is added
    */
   public void add(GenomicCoords gc) {
-    if (this.currentSessionHistory.size() == 0
+    if (this.currentSessionHistory.isEmpty()
         || !this.currentSessionHistory.get(this.currentSessionHistory.size() - 1).equalCoords(gc)) {
       this.currentSessionHistory.add((GenomicCoords) gc.clone());
     }
@@ -46,7 +46,7 @@ public class GenomicCoordsHistory {
 
     int idx = this.positionTracker - 1;
 
-    if (this.currentSessionHistory.size() == 0) {
+    if (this.currentSessionHistory.isEmpty()) {
       this.positionTracker = -1;
     } else if (this.currentSessionHistory.size() == 1) {
       this.positionTracker = 0;
@@ -61,7 +61,7 @@ public class GenomicCoordsHistory {
 
     int idx = this.positionTracker + 1;
 
-    if (this.currentSessionHistory.size() == 0) {
+    if (this.currentSessionHistory.isEmpty()) {
       this.positionTracker = -1;
     } else if (this.currentSessionHistory.size() == 1) {
       this.positionTracker = 0;
@@ -84,7 +84,7 @@ public class GenomicCoordsHistory {
   public void setGenome(List<String> tokens)
       throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
 
-    if (tokens.size() == 0) {
+    if (tokens.isEmpty()) {
       throw new InvalidCommandLineException();
     }
 
@@ -113,7 +113,7 @@ public class GenomicCoordsHistory {
     if (this.positionTracker
         < 0) { // The position from where the genome was set is not part of the dictionary
 
-      if (this.getCurrentSessionHistory().size() > 0) { // Try to move to the last valid position.
+      if (!this.getCurrentSessionHistory().isEmpty()) { // Try to move to the last valid position.
         this.positionTracker = this.getCurrentSessionHistory().size() - 1;
 
       } else { // There are no valid positions in the history so create a new one and move there

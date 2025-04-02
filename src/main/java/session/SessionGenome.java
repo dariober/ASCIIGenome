@@ -25,7 +25,7 @@ public class SessionGenome {
     this.from = gc.getFrom();
     this.to = gc.getTo();
     this.fastaFile =
-        gc.getFastaFile() == null ? null : new File(gc.getFastaFile()).getAbsolutePath();
+        gc.getOriginalFastaFile() == null ? null : new File(gc.getOriginalFastaFile()).getAbsolutePath();
     this.samSeqDictSource = gc.getSamSeqDictSource();
   }
 
