@@ -44,6 +44,18 @@ public class FaidxTest {
   }
 
   @Test
+  public void canIndexGfx() throws IOException, UnindexableFastaFileException {
+    File fasta = new File("test_data/faidx/fasta.gff");
+    new Faidx(fasta);
+    File fai = new File(fasta.getAbsoluteFile() + ".fai");
+    fai.deleteOnExit();
+    List<String> observed = Arrays.asList(FileUtils.readFileToString(fai).split("\n"));
+    assertEquals(2, observed.size());
+    assertEquals("1\t1195\t194\t50\t51", observed.get(0));
+    assertEquals("2\t1262\t1416\t50\t51", observed.get(1));
+  }
+
+  @Test
   public void canHandleWindowsLineEndings() throws IOException, UnindexableFastaFileException {
 
     File fasta = new File("test_data/faidx/indexable.crlf.fa");

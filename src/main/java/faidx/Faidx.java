@@ -21,7 +21,13 @@ import java.util.zip.ZipException;
 public class Faidx {
 
   public Faidx(File fasta) throws UnindexableFastaFileException, IOException {
-    new Faidx(fasta, FastaFormat.FASTA);
+    FastaFormat fastaFormat = FastaFormat.FASTA;
+    if (fasta.getName().toLowerCase().endsWith(".gff")
+        || fasta.getName().toLowerCase().endsWith(".gff3")
+        || fasta.getName().toLowerCase().endsWith(".gtf")) {
+      fastaFormat = FastaFormat.GFX;
+    }
+    new Faidx(fasta, fastaFormat);
   }
 
   /**
@@ -34,9 +40,7 @@ public class Faidx {
    */
   public Faidx(File fasta, FastaFormat fastaFormat)
       throws IOException, UnindexableFastaFileException {
-    if (!fastaFormat.equals(FastaFormat.FASTA)) {
-      throw new UnindexableFastaFileException("Not implemented yet");
-    }
+
     if (this.isCompressed(fasta)) {
       // System.err.println(fasta.getAbsolutePath() + " is gzip compressed. Indexing of gzip file is
       // not supported.");
@@ -54,6 +58,7 @@ public class Faidx {
     long currOffset = 0;
     long prevOffset = 0;
     boolean isLast = false; // True when line is expected to be the last one of sequence
+    boolean startFastaSection = fastaFormat.equals(FastaFormat.FASTA) ? true : false;
 
     Set<String> seqNames = new HashSet<String>();
     List<FaidxRecord> records = new ArrayList<FaidxRecord>();
@@ -68,18 +73,23 @@ public class Faidx {
       while (buffer.hasRemaining()) {
         char x = (char) buffer.get();
 
-        if (!CharMatcher.ascii().matches(x)) {
-          throw new UnindexableFastaFileException("");
+        if (startFastaSection && !CharMatcher.ascii().matches(x)) {
+          throw new UnindexableFastaFileException("Non ascii characters found in " + fasta.getAbsoluteFile());
         }
-
         currOffset++;
         sb.append(x);
         if (x == '\n') { // One full line read.
-
           String line = sb.toString();
           sb.setLength(0);
           if (line.trim().isEmpty()) {
             isLast = true;
+            continue;
+          }
+          if (fastaFormat.equals(FastaFormat.GFX) && line.trim().equals("##FASTA")) {
+            startFastaSection = true;
+            continue;
+          }
+          if (fastaFormat.equals(FastaFormat.GFX) && !startFastaSection) {
             continue;
           }
           if (line.startsWith(">")) {
@@ -123,6 +133,11 @@ public class Faidx {
     } // End of reading channel.
 
     records.add(faidxRecord); // Add last record
+
+    if (fastaFormat.equals(FastaFormat.GFX) && !startFastaSection) {
+      throw new UnindexableFastaFileException(
+          "No fasta sequence found in " + fasta.getAbsolutePath());
+    }
 
     // Write out index
     BufferedWriter wr =
