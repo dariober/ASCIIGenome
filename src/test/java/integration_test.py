@@ -269,7 +269,7 @@ class TestCLI(unittest.TestCase):
         self.assertTrue('DDX11L1' in p.stdout)
 
     def testCanReadBgzipFasta(self):
-        cmd = f"""{ASCIIGenome} -fa ../../../test_data/chr7.fa.gz -r 'chr7:10000'
+        cmd = f"""{ASCIIGenome} -nf -fa ../../../test_data/chr7.fa.gz -r 'chr7:10000'
             """
         print(cmd)
         p = shell(cmd)

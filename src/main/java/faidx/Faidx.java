@@ -20,6 +20,10 @@ import java.util.zip.ZipException;
 
 public class Faidx {
 
+  public Faidx(File fasta) throws UnindexableFastaFileException, IOException {
+    new Faidx(fasta, FastaFormat.FASTA);
+  }
+
   /**
    * Read input fasta and write out the corresponding .fai index. See tests/faidx for examples.
    * Basically just do:
@@ -28,7 +32,11 @@ public class Faidx {
    *
    * <p>Index will be genome.fa.fai
    */
-  public Faidx(File fasta) throws IOException, UnindexableFastaFileException {
+  public Faidx(File fasta, FastaFormat fastaFormat)
+      throws IOException, UnindexableFastaFileException {
+    if (!fastaFormat.equals(FastaFormat.FASTA)) {
+      throw new UnindexableFastaFileException("Not implemented yet");
+    }
     if (this.isCompressed(fasta)) {
       // System.err.println(fasta.getAbsolutePath() + " is gzip compressed. Indexing of gzip file is
       // not supported.");
