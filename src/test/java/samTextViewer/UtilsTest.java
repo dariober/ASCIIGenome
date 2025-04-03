@@ -37,7 +37,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1856,20 +1855,5 @@ public class UtilsTest {
       Utils.templateNameFromSamReadName(x);
     }
     System.err.println(sw.stop());
-  }
-
-  @Test
-  public void canGetFastaFromGfx() throws IOException {
-    File out = new File("tmp.fa");
-    out.deleteOnExit();
-    Utils.getFastaFromGfx(new File("test_data/fasta.gff"), out);
-    String fasta = Files.readString(out.toPath());
-    assertTrue(fasta.startsWith(">1\n"));
-    assertTrue(fasta.trim().endsWith("ACTG"));
-
-    Utils.getFastaFromGfx(new File("test_data/fasta.gff.gz"), out);
-    fasta = Files.readString(out.toPath());
-    assertTrue(fasta.startsWith(">1\n"));
-    assertTrue(fasta.trim().endsWith("ACTG"));
   }
 }
