@@ -249,7 +249,9 @@ public class GenomicCoords implements Cloneable {
       int maxLines,
       boolean noFormat)
       throws InvalidGenomicCoordsException, IOException {
-
+    if (maxLines < 0) {
+      maxLines = Integer.MAX_VALUE;
+    }
     // Prepare sequence dictionary. It may be the dictionary stored in the object or a list of known
     // contigs
     ArrayList<SAMSequenceRecord> ctg = new ArrayList<SAMSequenceRecord>();

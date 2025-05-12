@@ -94,6 +94,7 @@ public class GenomicCoordsTest {
     assertEquals(5, outList.size());
 
     out = gc.printSequenceDictionary(null, -1, -1, ".", ContigOrder.ALPHANUMERIC_ASC, 30, -1, true);
+    System.err.println(out);
     outList = Splitter.on("\n").splitToList(out);
     assertTrue(outList.get(0).startsWith("Genome size: 3095693983; Number of contigs: 25"));
     assertEquals(outList.size(), 26);
