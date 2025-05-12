@@ -319,13 +319,18 @@ public class GenomicCoords implements Cloneable {
 
     List<String> table = Utils.tabulateList(tabList, -1, " ");
     StringBuilder out = new StringBuilder();
-    out.append(this.summarizeSequenceDictionary(ctg) + "\n");
+    out.append(this.summarizeSequenceDictionary(ctg)).append("\n");
     int i = 0;
     for (String x : table) {
       if (i < maxLines || maxLines < 0) {
         out.append(x).append("\n");
       }
       i++;
+    }
+
+    int omitted = ctg.size() - maxLines;
+    if (omitted > 0) {
+      out.append("[").append(omitted).append(" contigs omitted]");
     }
     return out.toString().trim();
   }

@@ -1235,11 +1235,14 @@ public class InteractiveInput {
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
     int maxLines;
     try {
-      String n = Utils.getArgForParam(cmdTokens, "-n", "-1");
+      String n = Utils.getArgForParam(cmdTokens, "-n", "50");
       maxLines = Integer.valueOf(n);
     } catch (NumberFormatException e) {
       System.err.println("Argument to -n must be an integer");
       return ExitCode.CLEAN_NO_FLUSH;
+    }
+    if (maxLines < 0) {
+      maxLines = Integer.MAX_VALUE;
     }
     String genome =
         proc.getGenomicCoordsHistory()
@@ -1253,7 +1256,6 @@ public class InteractiveInput {
                 30,
                 maxLines,
                 proc.isNoFormat());
-
     if (genome != null && !genome.isEmpty()) {
       System.err.println(Utils.padEndMultiLine(genome, proc.getWindowSize()));
     }

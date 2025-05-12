@@ -371,8 +371,27 @@ public class InteractiveInputTest {
     TrackProcessor proc;
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     proc = gimmeTrackProcessor("chr7:1001-1800", 80);
-    ip.processInput("show ge -n -1", proc);
-    ip.processInput("show ge -n 10", proc);
+
+    ProcessInput pi = this.processInput(ip, "show ge -n -1", proc);
+    assertTrue(!pi.stderr.contains("omitted"));
+    String[] out = pi.stderr.split("\n");
+    assertEquals("Genome size: 3095693983; Number of contigs: 25", out[0].trim());
+    assertEquals(26, out.length);
+
+    pi = this.processInput(ip, "show ge -n 25", proc);
+    assertTrue(!pi.stderr.contains("omitted"));
+    out = pi.stderr.split("\n");
+    assertEquals(26, out.length);
+
+    pi = this.processInput(ip, "show ge -n 24", proc);
+    out = pi.stderr.split("\n");
+    assertEquals(26, out.length);
+    assertTrue(pi.stderr.trim().endsWith("1 contigs omitted]"));
+
+    pi = this.processInput(ip, "show ge -n 23", proc);
+    out = pi.stderr.split("\n");
+    assertEquals(25, out.length);
+    assertTrue(pi.stderr.trim().endsWith("2 contigs omitted]"));
   }
 
   @Test
