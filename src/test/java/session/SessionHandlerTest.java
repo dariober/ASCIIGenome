@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
 import samTextViewer.InteractiveInputTest;
@@ -76,7 +77,7 @@ public class SessionHandlerTest {
 
   @Test
   public void testCanLoadGenomicCoords()
-      throws IOException, InvalidGenomicCoordsException, InvalidColourException, SessionException {
+      throws IOException, InvalidGenomicCoordsException, InvalidColourException, SessionException, CompoundNotFoundException {
     SessionHandler sh = new SessionHandler(new File("test_data/session.yaml"));
     assertEquals(4, sh.getSessions().size());
 

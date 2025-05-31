@@ -40,7 +40,9 @@ public enum ConfigKey {
   highlight_mid_char("Highlight mid-character in read tracks?"),
   nucs_as_letters("Show read nucleotides as letters at single base resolution?"),
   show_soft_clip("NOT IN USE YET - Show soft clipped bases in read tracks?"),
-  stop_codon("Colour for stop codon");
+  stop_codon("Colour for stop codon"),
+  start_codon("Colour for start codon"),
+  codon("Colour for codons other than start and stop");
 
   private String value;
 
@@ -71,7 +73,9 @@ public enum ConfigKey {
     ColourKeys.add(ConfigKey.chrom_ideogram);
     ColourKeys.add(ConfigKey.ruler);
     ColourKeys.add(ConfigKey.shade_structural_variant);
+    ColourKeys.add(ConfigKey.start_codon);
     ColourKeys.add(ConfigKey.stop_codon);
+    ColourKeys.add(ConfigKey.codon);
     return ColourKeys;
   }
 

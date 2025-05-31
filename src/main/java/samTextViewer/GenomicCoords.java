@@ -52,7 +52,7 @@ public class GenomicCoords implements Cloneable {
   private Integer from;
   private Integer to;
   private SAMSequenceDictionary samSeqDict; // Can be null
-
+  private GenomicSequence genomicSequence;
   /**
    * Size of the screen window Only user getUserWindowSize() to access it after init at constructor.
    */
@@ -110,20 +110,20 @@ public class GenomicCoords implements Cloneable {
       }
     }
     this.samSeqDict = samSeqDict;
-    if (this.samSeqDict != null && this.samSeqDict.size() > 0) {
+    if (this.samSeqDict != null && !this.samSeqDict.isEmpty()) {
       correctCoordsAgainstSeqDict(samSeqDict);
     }
     if (fastaFile != null) {
       this.setSamSeqDictFromFasta(fastaFile);
       this.setFastaFile(fastaFile);
     }
-
+    genomicSequence = new GenomicSequence(this.getRefSeq());
     this.update();
   }
 
   public GenomicCoords(
       String region, int terminalWidth, SAMSequenceDictionary samSeqDict, String fastaFile)
-      throws InvalidGenomicCoordsException, IOException {
+      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
     this(region, terminalWidth, samSeqDict, fastaFile, true);
   }
 
@@ -156,7 +156,7 @@ public class GenomicCoords implements Cloneable {
         cleanList.add(Utils.tildeToHomeDir(x));
       }
     }
-    if (cleanList.size() == 0) {
+    if (cleanList.isEmpty()) {
       return;
     }
 
@@ -199,18 +199,16 @@ public class GenomicCoords implements Cloneable {
 
     // Prepare sequence dictionary. It may be the dictionary stored in the object or a list of known
     // contigs
-    ArrayList<SAMSequenceRecord> ctg = new ArrayList<SAMSequenceRecord>();
+    ArrayList<SAMSequenceRecord> ctg;
     if (this.samSeqDict == null) {
       ctg = this.makeSequenceDictionaryFromContigs(knownContigs);
     } else {
-      for (SAMSequenceRecord seq : samSeqDict.getSequences()) {
-        ctg.add(seq);
-      }
+      ctg = new ArrayList<>(samSeqDict.getSequences());
     }
 
     ArrayList<SAMSequenceRecord> selected =
         this.sortAndFilterSequenceDictionary(ctg, minSize, maxSize, regex, sortOrder);
-    if (selected.size() == 0) {
+    if (selected.isEmpty()) {
       throw new InvalidGenomicCoordsException("There is no contig passing filters");
     }
 
@@ -325,7 +323,7 @@ public class GenomicCoords implements Cloneable {
     out.append(this.summarizeSequenceDictionary(ctg)).append("\n");
     int i = 0;
     for (String x : table) {
-      if (i < maxLines || maxLines < 0) {
+      if (i < maxLines) {
         out.append(x).append("\n");
       }
       i++;
@@ -1019,10 +1017,9 @@ public class GenomicCoords implements Cloneable {
    * @throws InvalidColourException
    */
   public String printableRefSeq(boolean noFormat)
-          throws IOException, InvalidGenomicCoordsException, InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
-    GenomicSequence refSeq = new GenomicSequence(this.getRefSeq());
-    refSeq.setNoFormat(noFormat);
-    return refSeq.getPrintableSequence();
+          throws InvalidColourException {
+    this.genomicSequence.setNoFormat(noFormat);
+    return this.genomicSequence.getPrintableSequence();
   }
 
   private boolean setSamSeqDictFromAnySource(List<String> testfiles, boolean includeGenomeFile)
@@ -1300,7 +1297,7 @@ public class GenomicCoords implements Cloneable {
    * @throws IOException
    * @throws InvalidGenomicCoordsException
    */
-  public Integer getGenomicWindowSize() throws InvalidGenomicCoordsException {
+  public Integer getGenomicWindowSize() {
     if (this.getTo() == null || this.getFrom() == null) {
       return null;
     }
@@ -1425,5 +1422,9 @@ public class GenomicCoords implements Cloneable {
 
   public String getOriginalFastaFile() {
     return this.originalFastaFile;
+  }
+
+  public GenomicSequence getGenomicSequence() {
+    return this.genomicSequence;
   }
 }

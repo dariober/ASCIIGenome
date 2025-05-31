@@ -21,6 +21,8 @@ import java.util.regex.PatternSyntaxException;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
+import org.biojava.nbio.core.sequence.transcription.Frame;
 import session.Session;
 import session.SessionHandler;
 import tracks.Track;
@@ -47,7 +49,7 @@ public class InteractiveInput {
 
   /** Parse the input list of commands to print information or modify the input TrackProcessor. */
   protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc)
-      throws InvalidGenomicCoordsException, IOException {
+      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
     cmdConcatInput = cmdConcatInput.replaceAll("//.*", "").trim();
     int terminalWidth = Utils.getTerminalWidth();
     // cmdInputList: List of individual commands in tokens to be issued.
@@ -471,6 +473,10 @@ public class InteractiveInput {
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
           }
+        } else if (cmdTokens.get(0).equals("translate")) {
+          List<String> args = new ArrayList<>(cmdTokens);
+          args.remove(0);
+          this.interactiveInputExitCode = this.translate(args, proc);
 
         } else if (cmdTokens.get(0).equals("bookmark")) {
           messages.add(
@@ -559,6 +565,28 @@ public class InteractiveInput {
     }
     this.messages = new ArrayList<>();
     return proc;
+  }
+
+  private ExitCode translate(List<String> args, TrackProcessor proc)
+      throws InvalidCommandLineException {
+    String frame = Utils.getArgForParam(args, "-frame", "none");
+    String codon = Utils.getArgForParam(args, "-codon", "all");
+
+    if (frame.equalsIgnoreCase("none")) {
+      proc.getGenomicCoordsHistory().current().getGenomicSequence().setFrames(new Frame[] {});
+    } else if (frame.equalsIgnoreCase("all")) {
+      proc.getGenomicCoordsHistory().current().getGenomicSequence().setFrames(Frame.getAllFrames());
+    } else if (frame.equalsIgnoreCase("forward")) {
+      proc.getGenomicCoordsHistory().current().getGenomicSequence().setFrames(Frame.getForwardFrames());
+    } else if (frame.equalsIgnoreCase("reverse")) {
+      proc.getGenomicCoordsHistory().current().getGenomicSequence().setFrames(Frame.getReverseFrames());
+    } else {
+      System.err.println("Invalid option for frame: " + frame);
+      return ExitCode.CLEAN_NO_FLUSH;
+    }
+    PrintCodon printCodon = PrintCodon.valueOf(codon.toUpperCase());
+    proc.getGenomicCoordsHistory().current().getGenomicSequence().setPrintCodon(printCodon);
+    return ExitCode.CLEAN;
   }
 
   private ExitCode nextChrom(List<String> cmdTokens, TrackProcessor proc)
@@ -1014,7 +1042,7 @@ public class InteractiveInput {
   }
 
   private void setGenome(List<String> cmdTokens, TrackProcessor proc)
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, CompoundNotFoundException {
 
     List<String> tokens = new ArrayList<String>(cmdTokens);
     tokens.remove(0);
@@ -1124,7 +1152,7 @@ public class InteractiveInput {
    * itself. The side effect is to modify the TrackProcessor obj to update the position.
    */
   private void next(List<String> cmdInput, TrackProcessor proc)
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, CompoundNotFoundException {
 
     List<String> args = new ArrayList<String>(cmdInput);
     args.remove(0); // Remove command name
@@ -1299,7 +1327,7 @@ public class InteractiveInput {
   }
 
   private void addTracks(List<String> cmdTokens, TrackProcessor proc)
-      throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException {
+      throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException, CompoundNotFoundException {
     List<String> globbed = Utils.globFiles(cmdTokens);
     if (globbed.isEmpty()) {
       globbed = this.openFilesFromIndexes(proc.getTrackSet().getOpenedFiles(), cmdTokens);

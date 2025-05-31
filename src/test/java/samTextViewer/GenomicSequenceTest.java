@@ -38,7 +38,7 @@ public class GenomicSequenceTest {
 
     @Test
     public void canGetGeneticCodeNames()
-            throws CompoundNotFoundException {
+            throws CompoundNotFoundException, InvalidGenomicCoordsException {
         String dna = "";
         GenomicSequence gs = new GenomicSequence(dna.getBytes());
         assertEquals(17, gs.geneticCodeNames().size());
@@ -47,11 +47,12 @@ public class GenomicSequenceTest {
 
     @Test
     public void canTranslateSequence()
-            throws InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
+            throws InvalidColourException, CompoundNotFoundException, InvalidCommandLineException, InvalidGenomicCoordsException {
         String dna = "ATGCTGTAG";
         GenomicSequence gs = new GenomicSequence(dna.getBytes());
         gs.setGeneticCode("UNIVERSAL");
         gs.setNoFormat(false);
+        gs.setPrintCodon(PrintCodon.STOP);
 
         gs.setFrames(Frame.getAllFrames());
         System.out.print(gs.getPrintableSequence() + "---\n");

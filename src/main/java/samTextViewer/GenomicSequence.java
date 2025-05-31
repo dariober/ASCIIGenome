@@ -4,6 +4,7 @@ import colouring.Config;
 import colouring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
+import exceptions.InvalidGenomicCoordsException;
 import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.biojava.nbio.core.sequence.DNASequence;
 import org.biojava.nbio.core.sequence.compound.AmbiguityDNACompoundSet;
@@ -14,35 +15,44 @@ import org.biojava.nbio.core.sequence.transcription.Frame;
 import org.biojava.nbio.core.sequence.transcription.TranscriptionEngine;
 
 import java.util.*;
+import tracks.FeatureChar;
 
 public class GenomicSequence {
     private final byte[] sequence;
     private boolean noFormat = false;
     private String geneticCode = "UNIVERSAL";
-    private Map<Frame, Sequence<AminoAcidCompound>> sixFrameTranslation = new HashMap<>();
-    private ArrayList<Frame> frames = new ArrayList<>();
+    private final Map<Frame, Sequence<AminoAcidCompound>> sixFrameTranslation = new HashMap<>();
+    private List<Frame> frames = Arrays.asList(Frame.getAllFrames()); // new ArrayList<>();
+    private PrintCodon printCodon = PrintCodon.ALL;
 
-    public GenomicSequence(byte[] sequence) throws CompoundNotFoundException {
-        this.sequence = sequence;
+    public GenomicSequence(byte[] sequence) throws InvalidGenomicCoordsException {
         IUPACParser.IUPACTable table = IUPACParser.getInstance().getTable(this.geneticCode);
         TranscriptionEngine transcriptionEngine = new TranscriptionEngine.Builder()
                 .table(table)
                 .initMet(true)
                 .trimStop(false)
                 .build();
-        DNASequence dna = new DNASequence(new String(this.sequence), AmbiguityDNACompoundSet.getDNACompoundSet());
-        for (Frame frame : Frame.getAllFrames()) {
-            Map<Frame, Sequence<AminoAcidCompound>> tr = new LinkedHashMap<>();
-            try {
-                tr = transcriptionEngine.multipleFrameTranslation(dna, frame);
-            } catch(Exception e) {
-                //
+        this.sequence = sequence;
+        if (this.sequence != null) {
+          DNASequence dna = null;
+          try {
+            dna = new DNASequence(new String(this.sequence), AmbiguityDNACompoundSet.getDNACompoundSet());
+          } catch (CompoundNotFoundException e) {
+                throw new InvalidGenomicCoordsException(e.getMessage());
+          }
+          for (Frame frame : Frame.getAllFrames()) {
+                Map<Frame, Sequence<AminoAcidCompound>> tr = new LinkedHashMap<>();
+                try {
+                    tr = transcriptionEngine.multipleFrameTranslation(dna, frame);
+                } catch(Exception e) {
+                    //
+                }
+                this.sixFrameTranslation.put(frame, tr.get(frame));
             }
-            this.sixFrameTranslation.put(frame, tr.get(frame));
         }
     }
 
-    public String getPrintableSequence() throws InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
+    public String getPrintableSequence() throws InvalidColourException {
         if (this.sequence == null) {
             return "";
         }
@@ -50,7 +60,7 @@ public class GenomicSequence {
 
         for (Frame x : Frame.getForwardFrames()) {
             if (this.frames.contains(x)) {
-                faSeqStr.append(this.proteinToString(x)).append('\n');
+                faSeqStr.append(this.proteinToString(x, this.printCodon)).append('\n');
             }
         }
 
@@ -78,7 +88,7 @@ public class GenomicSequence {
 
         for (Frame x : Frame.getReverseFrames()) {
             if (this.frames.contains(x)) {
-                faSeqStr.append(this.proteinToString(x)).append('\n');
+                faSeqStr.append(this.proteinToString(x, this.printCodon)).append('\n');
             }
         }
         return faSeqStr.toString();
@@ -92,50 +102,82 @@ public class GenomicSequence {
         return tables;
     }
 
-    private String proteinToString(Frame frame) throws InvalidColourException {
+    private String proteinToString(Frame frame, PrintCodon printCodon) throws InvalidColourException {
         Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);
-        StringBuilder out = new StringBuilder();
-        int width = 0;
-        if (frame.equals(Frame.TWO)) {
-            out.append("_");
-            width += 1;
+        ArrayList<FeatureChar> fmtSeq =new ArrayList<>();
+
+        int sidePadding = 0;
+        if (frame.equals(Frame.TWO) || frame.equals(Frame.REVERSED_TWO)) {
+            sidePadding = 1;
         }
-        if (frame.equals(Frame.THREE)) {
-            out.append("__");
-            width += 2;
+        if (frame.equals(Frame.THREE) || frame.equals(Frame.REVERSED_THREE)) {
+            sidePadding = 2;
+        }
+
+        int width = 0;
+        for (int i = 0; i < sidePadding; i++) {
+            FeatureChar c = new FeatureChar();
+            c.setText(' ');
+            c.setFgColour(Config.get(ConfigKey.codon));
+            fmtSeq.add(c);
+            width += 1;
         }
 
         if (protein != null) {
             for (AminoAcidCompound aa : protein.getAsList()) {
-                String aaStr = "_" + aa.getShortName() + "_";
-                if (!this.noFormat && aa.getShortName().equals("*")) {
-                    String prefix = "\033[48;5;" + Config.get256Colour(ConfigKey.background) + ";38;5;";
-                    aaStr = prefix + Config.get256Colour(ConfigKey.stop_codon) + "m" + aaStr + "\033[0m";
-                    System.out.println("HERE " + aaStr);
+                char[] aaStr = {' ', aa.getShortName().charAt(0), ' '};
+                for (char s : aaStr) {
+                    FeatureChar c = new FeatureChar();
+                    if (printCodon.equals(PrintCodon.ALL)) {
+                        c.setText(s);
+                    }
+                    else if ((printCodon.equals(PrintCodon.START)) && s == 'M') {
+                        c.setText(s);
+                    }
+                    else if (printCodon.equals(PrintCodon.STOP) && s == '*') {
+                        c.setText(s);
+                    }
+                    else if (printCodon.equals(PrintCodon.START_AND_STOP) && (s == '*' || s == 'M')) {
+                        c.setText(s);
+                    }
+                    else {
+                        c.setText(' ');
+                    }
+
+                    if (aa.getShortName().equals("*")) {
+                        c.setFgColour(Config.get(ConfigKey.stop_codon));
+                        c.setInvertFgBgColour(true);
+                    } else if (aa.getShortName().equalsIgnoreCase("M")) {
+                        c.setFgColour(Config.get(ConfigKey.start_codon));
+                        c.setInvertFgBgColour(true);
+                    } else {
+                        c.setFgColour(Config.get(ConfigKey.codon));
+                    }
+                    fmtSeq.add(c);
                 }
-                out.append(aaStr);
                 width += 3;
             }
         }
 
-        if (frame.equals(Frame.REVERSED_TWO)) {
-            out.insert(0, "_");
-            width += 1;
-        }
-        if (frame.equals(Frame.REVERSED_THREE)) {
-            out.insert(0,"__");
-            width += 2;
-        }
-
         if (frame.name().startsWith("REVERSED")) {
-            String str = new String(out.reverse()).toLowerCase();
+            Collections.reverse(fmtSeq);
             int npad = this.sequence.length - width;
-            if (npad > 0) {
-                str = "_".repeat(npad) + str;
+            while (npad > 0) {
+                FeatureChar c = new FeatureChar();
+                c.setText(' ');
+                c.setFgColour(Config.get(ConfigKey.codon));
+                fmtSeq.add(0, c);
+                npad--;
             }
-            return str;
+            fmtSeq.get(0).setText('-');
+        } else {
+            fmtSeq.get(0).setText('+');
         }
-        return new String(out).toUpperCase();
+        StringBuilder sb = new StringBuilder();
+        for (FeatureChar x : fmtSeq) {
+            sb.append(x.format(this.noFormat));
+        }
+        return new String(sb);
     }
 
     public boolean isNoFormat() {
@@ -154,7 +196,7 @@ public class GenomicSequence {
         this.geneticCode = geneticCode;
     }
 
-    public ArrayList<Frame> getFrames() {
+    public List<Frame> getFrames() {
         return frames;
     }
 
@@ -170,5 +212,13 @@ public class GenomicSequence {
 
     public void setFrames(Frame[] frames) {
         this.frames = new ArrayList<>(Arrays.asList(frames));
+    }
+
+    public PrintCodon getPrintCodon() {
+        return printCodon;
+    }
+
+    public void setPrintCodon(PrintCodon printCodon) {
+        this.printCodon = printCodon;
     }
 }

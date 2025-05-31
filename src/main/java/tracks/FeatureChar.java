@@ -7,7 +7,7 @@ import exceptions.InvalidColourException;
 import htsjdk.variant.variantcontext.Genotype;
 
 /** Class to model a *single* character printed on terminal representing an interval feature. */
-class FeatureChar {
+public class FeatureChar {
 
   private char text;
 
@@ -19,10 +19,11 @@ class FeatureChar {
 
   private boolean invertFgBgColour = false;
   private boolean underline = false;
+  private boolean bold = false;
 
   /*  C O N S T R U C T O R  */
 
-  protected FeatureChar() {
+  public FeatureChar() {
     this.fgColour = Config.get(ConfigKey.foreground);
     this.bgColour = Config.get(ConfigKey.background);
   }
@@ -34,7 +35,7 @@ class FeatureChar {
    *
    * @throws InvalidColourException
    */
-  protected String format(boolean noFormat) throws InvalidColourException {
+  public String format(boolean noFormat) throws InvalidColourException {
     StringBuilder sb = new StringBuilder();
     if (noFormat) {
       return sb.append(this.getText()).toString();
@@ -45,6 +46,9 @@ class FeatureChar {
     }
     if (this.isUnderline()) {
       sb.append("4;");
+    }
+    if (this.bold) {
+      sb.append("1;");
     }
     sb.append("48;5;");
     sb.append(Xterm256.colourNameToXterm256(this.getBgColour()));
@@ -60,7 +64,7 @@ class FeatureChar {
   }
 
   /** Add format to this instance according to input and default configuration. */
-  protected void addFormatGFF(char txt, char strand) {
+  public void addFormatGFF(char txt, char strand) {
     this.setText(txt);
     this.setFgColour(Config.get(ConfigKey.foreground));
     if (strand == '+') {
@@ -72,7 +76,7 @@ class FeatureChar {
     }
   }
 
-  protected void addFormatVCF(char textForVariant) {
+  public void addFormatVCF(char textForVariant) {
     this.setText(textForVariant);
     if (textForVariant == 'A' || textForVariant == 'a') {
       this.setFgColour(Config.get(ConfigKey.seq_a));
@@ -118,30 +122,30 @@ class FeatureChar {
 
   /*  S E T T E R S   A N D   G E T T E R S  */
 
-  protected char getText() {
+  public char getText() {
     return text;
   }
 
-  protected void setText(char text) {
+  public void setText(char text) {
     this.text = text;
   }
 
-  protected String getBgColour() {
+  public String getBgColour() {
     return this.bgColour;
   }
 
-  protected void setBgColour(String bgColour) {
+  public void setBgColour(String bgColour) {
     if (bgColour == null) {
       bgColour = Config.get(ConfigKey.background);
     }
     this.bgColour = bgColour;
   }
 
-  protected String getFgColour() {
+  public String getFgColour() {
     return this.fgColour;
   }
 
-  protected void setFgColour(String fgColour) {
+  public void setFgColour(String fgColour) {
     if (fgColour == null) {
       fgColour = Config.get(ConfigKey.foreground);
     }
@@ -158,5 +162,13 @@ class FeatureChar {
 
   public void setInvertFgBgColour(boolean invert) {
     this.invertFgBgColour = invert;
+  }
+
+  public boolean isBold() {
+    return bold;
+  }
+
+  public void setBold(boolean bold) {
+    this.bold = bold;
   }
 }

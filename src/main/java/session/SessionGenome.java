@@ -6,6 +6,7 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import java.io.File;
 import java.io.IOException;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -29,7 +30,7 @@ public class SessionGenome {
     this.samSeqDictSource = gc.getSamSeqDictSource();
   }
 
-  public GenomicCoords toGenomicCoords() throws InvalidGenomicCoordsException, IOException {
+  public GenomicCoords toGenomicCoords() throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
     String region = this.chrom + ':' + this.from + '-' + this.to;
     String ff = null;
     if (this.fastaFile != null && new File(this.fastaFile).exists()) {

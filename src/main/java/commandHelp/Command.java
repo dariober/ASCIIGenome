@@ -27,6 +27,7 @@ public enum Command {
   next("next"),
   find("find"),
   seqRegex("seqRegex"),
+  translate("translate"),
   bookmark("bookmark"),
   grep("grep"),
   nameForFeatures("nameForFeatures"),

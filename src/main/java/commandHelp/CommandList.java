@@ -511,6 +511,26 @@ public class CommandList {
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
+    cmd.setName("translate");
+    cmd.setArgs("[-frame]");
+    cmd.setArgs("[-codon=all]");
+    cmd.inSection = Section.DISPLAY;
+    cmd.setBriefDescription(
+        "Show translation of DNA to codons. ");
+    cmd.setAdditionalDescription(
+        "Options:\n"
+            + "\n"
+            + "* :code:`-frame` Frames to translate. Options: all, forward, reverse, none"
+            + "\n"
+            + "* :code:`-codon` Which codons to show. Options: all, start, stop, start_and_stop"
+            + "\n"
+            + "Examples::\n"
+            + "\n"
+            + "    translate\n"
+            );
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
     // cmd.setName("bookmark"); cmd.setArgs("[name] | [-rm] | [-print] | [> [file]]");
     // cmd.inSection= Section.FIND;
     cmd.setName("bookmark");
@@ -1761,6 +1781,7 @@ public class CommandList {
     paramList.add("nextChrom");
     paramList.add("find");
     paramList.add("seqRegex");
+    paramList.add("translate");
     paramList.add("bookmark");
     paramList.add("grep");
     paramList.add("awk");

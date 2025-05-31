@@ -269,7 +269,7 @@ public class Main {
         System.err.println("Done from: " + x);
         return region;
       } catch (Exception e) {
-        System.err.println("\nCould not initilize from file " + x);
+        System.err.println("\nCould not initialize from file " + x);
         if (debug > 0) {
           e.printStackTrace();
         }

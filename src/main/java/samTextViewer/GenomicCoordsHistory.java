@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 
 public class GenomicCoordsHistory {
 
@@ -82,7 +83,7 @@ public class GenomicCoordsHistory {
    * @throws InvalidGenomicCoordsException
    */
   public void setGenome(List<String> tokens)
-      throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
+      throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, CompoundNotFoundException {
 
     if (tokens.isEmpty()) {
       throw new InvalidCommandLineException();

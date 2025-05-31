@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import samTextViewer.ExitCode;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -1631,7 +1632,7 @@ public class TrackSet {
    */
   public GenomicCoords goToNextFeatureOnFile(
       String trackId, GenomicCoords currentGc, double slop, boolean getPrevious)
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, CompoundNotFoundException {
 
     List<TrackIntervalFeature> tr = this.matchIntervalFeatureTrack(trackId.trim());
 
@@ -1733,7 +1734,7 @@ public class TrackSet {
 
   public GenomicCoords findNextMatchOnTrack(
       Pattern pattern, String trackregex, GenomicCoords currentGc, boolean all)
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, CompoundNotFoundException {
 
     List<TrackIntervalFeature> tif = matchIntervalFeatureTrack(trackregex.trim());
     if (tif.size() == 0) {
@@ -1814,11 +1815,12 @@ public class TrackSet {
 
     // List<String> args= new ArrayList<String>(tokens);
     // boolean invertSelection= Utils.argListContainsFlag(args, "-v");
-
+    boolean reverse = tokens.contains("-v");
+    tokens.remove("-v");
     List<String> newOrder = new ArrayList<String>(tokens);
 
-    if (newOrder.size() == 0) {
-      this.sortTracksByTagName();
+    if (newOrder.isEmpty()) {
+      this.sortTracksByTagName(reverse);
       return;
     }
 
@@ -1857,12 +1859,14 @@ public class TrackSet {
         throw new RuntimeException("\nReordered track does not contain " + x.getTrackTag());
       }
     }
-
+    if (reverse) {
+      Collections.reverse(newTrackList);
+    }
     // Replace old with new hashmap
     this.trackList = newTrackList;
   }
 
-  private void sortTracksByTagName() {
+  private void sortTracksByTagName(boolean reverse) {
 
     Collections.sort(
         this.trackList,
@@ -1872,6 +1876,9 @@ public class TrackSet {
             return o1.getTrackTag().compareTo(o2.getTrackTag());
           }
         });
+    if (reverse) {
+      Collections.reverse(this.trackList);
+    }
   }
 
   /** Simple method to get list of track tags */
@@ -1929,7 +1936,7 @@ public class TrackSet {
           InvalidRecordException,
           SQLException,
           InvalidGenomicCoordsException,
-          InvalidCommandLineException {
+          InvalidCommandLineException, CompoundNotFoundException {
 
     String messages = "";
 
@@ -2418,7 +2425,7 @@ public class TrackSet {
   }
 
   public GenomicCoords trimCoordsForTrack(List<String> cmdInput)
-      throws InvalidGenomicCoordsException, IOException {
+      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
 
     List<String> args = new ArrayList<String>(cmdInput);
     args.remove(0); // Remove cmd name
@@ -2438,7 +2445,7 @@ public class TrackSet {
   }
 
   private GenomicCoords trimTrack(TrackIntervalFeature tr)
-      throws InvalidGenomicCoordsException, IOException {
+      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
     GenomicCoords current = tr.getGc();
     TrackIntervalFeature itr = (TrackIntervalFeature) tr;
     List<IntervalFeature> features = itr.getIntervalFeatureList();

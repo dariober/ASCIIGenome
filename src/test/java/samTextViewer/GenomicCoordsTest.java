@@ -38,7 +38,7 @@ public class GenomicCoordsTest {
 
   @Test
   public void canPrintSequenceDictionaryOnlyContigs()
-      throws InvalidGenomicCoordsException, IOException {
+      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
     ArrayList<String> knownContigs = new ArrayList<String>();
     knownContigs.add("chr3");
     knownContigs.add("chr1");
@@ -56,7 +56,7 @@ public class GenomicCoordsTest {
 
   @Test
   public void canPrintSequenceDictionaryBoldCurrentChrom()
-      throws InvalidGenomicCoordsException, IOException {
+      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
     ArrayList<String> knownContigs = new ArrayList<String>();
     knownContigs.add("chr3");
     knownContigs.add("chr1");
@@ -76,7 +76,7 @@ public class GenomicCoordsTest {
   }
 
   @Test
-  public void canPrintSequenceDictionary() throws InvalidGenomicCoordsException, IOException {
+  public void canPrintSequenceDictionary() throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
     GenomicCoords gc = new GenomicCoords("chrM:1000-2000", 80, samSeqDict, null);
 
     String out = gc.printSequenceDictionary(null, -1, -1, ".", ContigOrder.SIZE_DESC, 30, -1, true);
@@ -524,7 +524,7 @@ public class GenomicCoordsTest {
   }
 
   @Test
-  public void canZoom() throws InvalidGenomicCoordsException, IOException {
+  public void canZoom() throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
     GenomicCoords gc = new GenomicCoords("chr1:101-105", 80, samSeqDict, null);
     gc.zoomOut();
     assertEquals(99, (int) gc.getFrom()); // exp 95,111 if zoom fact is x2
