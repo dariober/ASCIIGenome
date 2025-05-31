@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 
 /**
  * Class to set up the horizontal axis on screen.
@@ -1018,35 +1019,10 @@ public class GenomicCoords implements Cloneable {
    * @throws InvalidColourException
    */
   public String printableRefSeq(boolean noFormat)
-      throws IOException, InvalidGenomicCoordsException, InvalidColourException {
-
-    byte[] refSeq = this.getRefSeq();
-    if (refSeq == null) {
-      return "";
-    }
-
-    if (noFormat) {
-      return new String(refSeq) + "\n";
-    } else {
-      String faSeqStr = "";
-      for (byte c : refSeq) {
-        // For colour scheme see http://www.umass.edu/molvis/tutorials/dna/atgc.htm
-        char base = (char) c;
-        String prefix = "\033[48;5;" + Config.get256Colour(ConfigKey.background) + ";38;5;";
-        if (base == 'A' || base == 'a') {
-          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_a) + "m" + base;
-        } else if (base == 'C' || base == 'c') {
-          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_c) + "m" + base;
-        } else if (base == 'G' || base == 'g') {
-          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_g) + "m" + base;
-        } else if (base == 'T' || base == 't') {
-          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_t) + "m" + base;
-        } else {
-          faSeqStr += prefix + Config.get256Colour(ConfigKey.seq_other) + "m" + base;
-        }
-      }
-      return faSeqStr + "\n";
-    }
+          throws IOException, InvalidGenomicCoordsException, InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
+    GenomicSequence refSeq = new GenomicSequence(this.getRefSeq());
+    refSeq.setNoFormat(noFormat);
+    return refSeq.getPrintableSequence();
   }
 
   private boolean setSamSeqDictFromAnySource(List<String> testfiles, boolean includeGenomeFile)

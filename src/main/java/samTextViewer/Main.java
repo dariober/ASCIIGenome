@@ -36,6 +36,7 @@ import jline.console.history.History;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.commons.lang3.StringUtils;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
@@ -52,7 +53,7 @@ public class Main {
       new File(System.getProperty("user.home") + File.separator + ".asciigenome");
 
   public static void main(String[] args)
-      throws IOException,
+          throws IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
           InvalidRecordException,
@@ -62,7 +63,7 @@ public class Main {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException {
+          InvalidConfigException, CompoundNotFoundException {
 
     /* Start parsing arguments *
      * *** If you change something here change also in console input ***/

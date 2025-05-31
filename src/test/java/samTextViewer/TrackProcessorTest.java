@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.junit.Test;
 import tracks.TrackSet;
 
@@ -50,7 +52,7 @@ public class TrackProcessorTest {
 
   @Test
   public void canProcessTracksNewline()
-      throws InvalidGenomicCoordsException,
+          throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
           BamIndexNotFoundException,
@@ -59,7 +61,7 @@ public class TrackProcessorTest {
           InvalidConfigException,
           InvalidCommandLineException,
           DocumentException,
-          InvalidColourException {
+          InvalidColourException, CompoundNotFoundException {
 
     new Config(null);
 

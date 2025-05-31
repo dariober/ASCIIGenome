@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -289,14 +291,14 @@ public class GenomicCoordsTest {
 
   @Test
   public void printRefSeq()
-      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+          throws InvalidGenomicCoordsException, IOException, InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
     GenomicCoords gc = new GenomicCoords("chr7:5540580-5540590", 80, null, "test_data/chr7.fa");
     assertEquals("ggccggctggg\n", gc.printableRefSeq(true));
   }
 
   @Test
   public void printRefSeqBgzip()
-          throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+          throws InvalidGenomicCoordsException, IOException, InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
     GenomicCoords gc = new GenomicCoords("chr7:5540580-5540590", 80, null, "test_data/chr7.fa.gz");
     assertEquals("ggccggctggg\n", gc.printableRefSeq(true));
   }
@@ -410,7 +412,7 @@ public class GenomicCoordsTest {
 
   @Test
   public void canPrintRefSeq()
-      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+          throws InvalidGenomicCoordsException, IOException, InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
     GenomicCoords gc = new GenomicCoords("chr7:5566770-5566790", 80, samSeqDict, fastaFile);
     assertEquals("CACTTGGCCTCATTTTTAAGG\n", gc.printableRefSeq(true));
     // with format

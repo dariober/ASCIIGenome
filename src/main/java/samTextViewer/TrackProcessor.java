@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import session.Session;
 import session.SessionGenome;
 import session.SessionTrack;
@@ -50,14 +51,14 @@ public class TrackProcessor {
   /* M E T H O D S */
 
   public void iterateTracks()
-      throws IOException,
+          throws IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
           ClassNotFoundException,
           SQLException,
           InvalidCommandLineException,
           DocumentException,
-          InvalidColourException {
+          InvalidColourException, CompoundNotFoundException {
 
     final GenomicCoords currentGC = this.genomicCoordsHistory.current();
 
