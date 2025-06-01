@@ -31,7 +31,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 
 /**
  * Class to set up the horizontal axis on screen.
@@ -53,6 +52,7 @@ public class GenomicCoords implements Cloneable {
   private Integer to;
   private SAMSequenceDictionary samSeqDict; // Can be null
   private GenomicSequence genomicSequence;
+
   /**
    * Size of the screen window Only user getUserWindowSize() to access it after init at constructor.
    */
@@ -61,7 +61,7 @@ public class GenomicCoords implements Cloneable {
   private String samSeqDictSource =
       null; // Source of the sequence dictionary. Can be path to file of fasta, bam, genome. Or
   // genome tag e.g. hg19.
-  private byte[] refSeq = null;
+  // private byte[] refSeq = null;
   private boolean singleBaseResolution = false;
   private int terminalWidth;
   private List<Double> mapping;
@@ -95,12 +95,12 @@ public class GenomicCoords implements Cloneable {
     }
 
     // Check valid input
-    if (chrom == null || (to != null && from == null) || (from > to) || from < 1 || to < 1) {
+    if (chrom == null || from == null || from > to || from < 1) {
       System.err.println("Got: " + chrom + ":" + from + "-" + to);
       InvalidGenomicCoordsException e = new InvalidGenomicCoordsException();
       throw e;
     }
-    if (samSeqDict != null && samSeqDict.size() > 0) { // If dict is present, check against it
+    if (samSeqDict != null && !samSeqDict.isEmpty()) { // If dict is present, check against it
       if (samSeqDict.getSequence(chrom) == null) {
         if (verbose) {
           System.err.println("\nCannot find chromosome '" + chrom + "' in sequence dictionary.");
@@ -117,13 +117,13 @@ public class GenomicCoords implements Cloneable {
       this.setSamSeqDictFromFasta(fastaFile);
       this.setFastaFile(fastaFile);
     }
-    genomicSequence = new GenomicSequence(this.getRefSeq());
     this.update();
+    genomicSequence = new GenomicSequence(this.getRefSeq());
   }
 
   public GenomicCoords(
       String region, int terminalWidth, SAMSequenceDictionary samSeqDict, String fastaFile)
-      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException {
     this(region, terminalWidth, samSeqDict, fastaFile, true);
   }
 
@@ -133,7 +133,6 @@ public class GenomicCoords implements Cloneable {
 
   /** Update a bunch of fields when coordinates change */
   private void update() throws InvalidGenomicCoordsException, IOException {
-    // this.setTerminalWindowSize();
     this.resetSingleBaseResolution(); // True if one text character corresponds to 1 bp
     this.setRefSeq();
     this.mapping = this.seqFromToLenOut(this.getTerminalWidth());
@@ -397,17 +396,21 @@ public class GenomicCoords implements Cloneable {
 
   protected void setRefSeq() throws IOException, InvalidGenomicCoordsException {
     if (this.fastaFile == null || !this.singleBaseResolution) {
-      this.refSeq = null;
+      if (this.genomicSequence == null) {
+        this.genomicSequence = new GenomicSequence(null);
+      } else {
+        this.genomicSequence.setSequence(null);
+      }
       return;
     }
-    this.refSeq = this.getSequenceFromFasta();
+    this.genomicSequence.setSequence(this.getSequenceFromFasta());
   }
 
-  public byte[] getRefSeq() throws IOException, InvalidGenomicCoordsException {
-    if (this.refSeq == null) {
+  private byte[] getRefSeq() throws IOException, InvalidGenomicCoordsException {
+    if (this.genomicSequence.getSequence() == null) {
       this.setRefSeq();
     }
-    return this.refSeq;
+    return this.genomicSequence.getSequence();
   }
 
   public byte[] getSequenceFromFasta() throws IOException {
@@ -657,7 +660,7 @@ public class GenomicCoords implements Cloneable {
     // * Extend midpoint left by window size x2 and check coords
     this.from = midpoint - (range * zoom);
     this.from = (this.from <= 0) ? 1 : this.from;
-    if (this.samSeqDict != null && this.samSeqDict.size() > 0) {
+    if (this.samSeqDict != null && !this.samSeqDict.isEmpty()) {
       if (this.samSeqDict.getSequence(this.chrom).getSequenceLength() > 0) {
         this.to =
             (this.to > this.samSeqDict.getSequence(this.chrom).getSequenceLength())
@@ -1017,7 +1020,7 @@ public class GenomicCoords implements Cloneable {
    * @throws InvalidColourException
    */
   public String printableRefSeq(boolean noFormat)
-          throws InvalidColourException {
+      throws InvalidColourException, InvalidGenomicCoordsException {
     this.genomicSequence.setNoFormat(noFormat);
     return this.genomicSequence.getPrintableSequence();
   }
@@ -1404,24 +1407,12 @@ public class GenomicCoords implements Cloneable {
     return this.singleBaseResolution;
   }
 
-  public void setSingleBaseResolution(boolean singleBaseResolution) {
-    this.singleBaseResolution = singleBaseResolution;
-  }
-
   private void resetSingleBaseResolution() throws InvalidGenomicCoordsException, IOException {
     if (this.getGenomicWindowSize() == null) {
       this.singleBaseResolution = false;
       return;
     }
     this.singleBaseResolution = this.getUserWindowSize() == this.getGenomicWindowSize();
-  }
-
-  public void setOriginalFastaFile(String fasta) {
-    this.originalFastaFile = fasta;
-  }
-
-  public String getOriginalFastaFile() {
-    return this.originalFastaFile;
   }
 
   public GenomicSequence getGenomicSequence() {

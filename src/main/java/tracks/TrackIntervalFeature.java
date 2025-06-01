@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -280,7 +279,7 @@ public class TrackIntervalFeature extends Track {
    * feature and the end is the start + windowSize.
    */
   public GenomicCoords coordsOfNextFeature(GenomicCoords currentGc, boolean getPrevious)
-      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException {
 
     IntervalFeature nextFeature;
     if (getPrevious) {
@@ -470,7 +469,7 @@ public class TrackIntervalFeature extends Track {
   }
 
   protected GenomicCoords startEndOfNextFeature(GenomicCoords currentGc, boolean getPrevious)
-      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException {
     IntervalFeature nextFeature;
     if (getPrevious) {
       nextFeature = getPreviousFeature(currentGc.getChrom(), currentGc.getFrom());
@@ -491,7 +490,7 @@ public class TrackIntervalFeature extends Track {
   }
 
   public GenomicCoords findNextMatch(GenomicCoords currentGc, Pattern pattern)
-      throws IOException, InvalidGenomicCoordsException, CompoundNotFoundException {
+      throws IOException, InvalidGenomicCoordsException {
 
     IntervalFeature nextFeature =
         findNextRegexInGenome(pattern, currentGc.getChrom(), currentGc.getTo());
@@ -514,7 +513,7 @@ public class TrackIntervalFeature extends Track {
    * Execute findAllChromRegexInGenome() and return the extreme coordinates of the matched features
    */
   protected GenomicCoords genomicCoordsAllChromMatchInGenome(
-      Pattern pattern, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException, CompoundNotFoundException {
+      Pattern pattern, GenomicCoords currentGc) throws IOException, InvalidGenomicCoordsException {
 
     List<IntervalFeature> matchedFeatures = this.findAllChromMatchInGenome(pattern, currentGc);
 

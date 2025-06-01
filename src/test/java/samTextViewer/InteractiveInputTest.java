@@ -47,7 +47,7 @@ public class InteractiveInputTest {
     return pi;
   }
 
-  public static TrackProcessor gimmeTrackProcessor(String region, int terminalWidth)
+  public static TrackProcessor gimmeTrackProcessor(String region, int terminalWidth, String genome)
       throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
@@ -55,13 +55,22 @@ public class InteractiveInputTest {
           SQLException {
     GenomicCoords gc = new GenomicCoords(region, terminalWidth, null, null);
     List<String> gf = new ArrayList<String>();
-    gf.add("test_data/ds051.actb.bam");
+    gf.add(genome);
     gc.setGenome(gf, false);
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
     gch.add(gc);
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
     TrackProcessor proc = new TrackProcessor(trackSet, gch);
     return proc;
+  }
+
+  public static TrackProcessor gimmeTrackProcessor(String region, int terminalWidth)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    return gimmeTrackProcessor(region, terminalWidth, "test_data/ds051.actb.bam");
   }
 
   @Test
@@ -392,6 +401,26 @@ public class InteractiveInputTest {
     out = pi.stderr.split("\n");
     assertEquals(25, out.length);
     assertTrue(pi.stderr.trim().endsWith("2 contigs omitted]"));
+  }
+
+  @Test
+  public void canPrintTranslation()
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidConfigException {
+    new Config(null);
+    TrackProcessor proc;
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    proc = gimmeTrackProcessor("chr7:10001-10061", 80, "test_data/chr7.fa");
+    ProcessInput pi = this.processInput(ip, "+1", proc);
+    pi = this.processInput(ip, "translate -frame all", proc);
+    pi = this.processInput(ip, "zo", proc);
+    pi = this.processInput(ip, ":chr7:10001", proc);
+    pi = this.processInput(ip, "translate -frame all", proc);
+    System.err.println(pi.stderr);
   }
 
   @Test

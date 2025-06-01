@@ -9,13 +9,12 @@ import exceptions.InvalidGenomicCoordsException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.junit.Test;
 
 public class GenomicCoordsHistoryTest {
 
   @Test
-  public void canReadHistoricPositions() throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+  public void canReadHistoricPositions() throws InvalidGenomicCoordsException, IOException {
 
     // This is the initial coordinates. Set by the user or reading the input files.
     // The historic positions will be checked against this coordinates.
@@ -42,7 +41,7 @@ public class GenomicCoordsHistoryTest {
 
   @Test
   public void canGetHistoryAsStringForHistoryFile()
-      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException {
 
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
     // History is mixture of positions read from file, some of which invalid, and
@@ -83,7 +82,7 @@ public class GenomicCoordsHistoryTest {
   }
 
   @Test
-  public void canMoveBackAndForthInHistory() throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+  public void canMoveBackAndForthInHistory() throws InvalidGenomicCoordsException, IOException {
 
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
     GenomicCoords g1 = new GenomicCoords("chr7:1-100", 80, null, null);
@@ -143,7 +142,7 @@ public class GenomicCoordsHistoryTest {
 
   @Test
   public void canMoveBackAndForthInHistoryWithInvalidPosition()
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
     gch.setGenome(Utils.tokenize("test_data/ds051.actb.bam", "\t"));
@@ -157,7 +156,7 @@ public class GenomicCoordsHistoryTest {
   }
 
   @Test
-  public void getAndPutItems() throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+  public void getAndPutItems() throws InvalidGenomicCoordsException, IOException {
 
     GenomicCoords g1 = new GenomicCoords("chr7:1-100", 80, null, null);
 
@@ -174,7 +173,7 @@ public class GenomicCoordsHistoryTest {
 
   @Test
   public void canSetGenome()
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
     gch.add(new GenomicCoords("chr7:1-100", 80, null, null));
@@ -197,7 +196,7 @@ public class GenomicCoordsHistoryTest {
 
   @Test
   public void canSetGenomeWithInvalidInput()
-      throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, CompoundNotFoundException {
+      throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
 
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
     gch.add(new GenomicCoords("chr7:1-100", 80, null, null));
@@ -210,7 +209,7 @@ public class GenomicCoordsHistoryTest {
 
   @Test
   public void canSetGenomeFromInvalidPosition()
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
     gch.add(new GenomicCoords("nonexisting:1-100", 80, null, null));

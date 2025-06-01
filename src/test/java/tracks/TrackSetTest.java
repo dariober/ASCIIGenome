@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.commons.io.FileUtils;
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.ExitCode;
@@ -45,7 +44,7 @@ public class TrackSetTest {
           BamIndexNotFoundException,
           InvalidRecordException,
           SQLException,
-          InvalidCommandLineException, CompoundNotFoundException {
+          InvalidCommandLineException {
 
     int ws = 100;
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
@@ -89,7 +88,7 @@ public class TrackSetTest {
           BamIndexNotFoundException,
           InvalidRecordException,
           SQLException,
-          InvalidCommandLineException, CompoundNotFoundException {
+          InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
@@ -116,7 +115,7 @@ public class TrackSetTest {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException,
-          InvalidCommandLineException, CompoundNotFoundException {
+          InvalidCommandLineException {
 
     Pattern pattern = Pattern.compile("NM_032291_");
 
@@ -167,7 +166,7 @@ public class TrackSetTest {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException,
-          InvalidCommandLineException, CompoundNotFoundException {
+          InvalidCommandLineException {
     // Check we correctly find a feature if we are on an empty chromsomome
     Pattern pattern = Pattern.compile("NM_032291_");
 
@@ -191,7 +190,7 @@ public class TrackSetTest {
           InvalidRecordException,
           SQLException,
           BamIndexNotFoundException,
-          InvalidColourException, CompoundNotFoundException {
+          InvalidColourException {
     GenomicCoords gc = new GenomicCoords("chr7:5566778-5566946", 80, null, "test_data/chr7.fa");
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
     ts.addTrackFromSource("test_data/ds051.actb.cram", gc, null);
@@ -218,7 +217,7 @@ public class TrackSetTest {
           InvalidRecordException,
           SQLException,
           BamIndexNotFoundException,
-          InvalidColourException, CompoundNotFoundException {
+          InvalidColourException {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
@@ -267,7 +266,7 @@ public class TrackSetTest {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException,
-          InvalidCommandLineException, CompoundNotFoundException {
+          InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("chr7:5565052-5571960", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
@@ -307,7 +306,7 @@ public class TrackSetTest {
           ClassNotFoundException,
           BamIndexNotFoundException,
           InvalidRecordException,
-          SQLException, CompoundNotFoundException {
+          SQLException {
 
     GenomicCoords gc = new GenomicCoords("chr7:5565052-5571960", 80, null, null);
 
@@ -355,7 +354,7 @@ public class TrackSetTest {
           SQLException,
           InvalidCommandLineException,
           InvalidColourException,
-          ArgumentParserException, CompoundNotFoundException {
+          ArgumentParserException {
 
     // --------------------------------------------------------------------
     // Prepare coords and trackSet
@@ -410,7 +409,7 @@ public class TrackSetTest {
           BamIndexNotFoundException,
           InvalidRecordException,
           SQLException,
-          InvalidCommandLineException, CompoundNotFoundException {
+          InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("chr7:1-100", 80, null, null);
 
@@ -442,7 +441,7 @@ public class TrackSetTest {
           BamIndexNotFoundException,
           InvalidRecordException,
           ClassNotFoundException,
-          SQLException, CompoundNotFoundException {
+          SQLException {
 
     GenomicCoords gc = new GenomicCoords("chr7:1-100", 80, null, null);
 
@@ -464,7 +463,7 @@ public class TrackSetTest {
           BamIndexNotFoundException,
           InvalidRecordException,
           ClassNotFoundException,
-          SQLException, CompoundNotFoundException {
+          SQLException {
     // Original htsjdk throws this error since the input vcf does indeed miss the
     // length of the contig.
     // htsjdk.tribble.TribbleException: Contig chr1 does not have a length field.
@@ -480,7 +479,7 @@ public class TrackSetTest {
           IOException,
           InvalidRecordException,
           ClassNotFoundException,
-          SQLException, CompoundNotFoundException {
+          SQLException {
 
     List<String> inputFileList = new ArrayList<String>();
     inputFileList.add("test_data/ear045.oxBS.actb.bam");
@@ -500,7 +499,7 @@ public class TrackSetTest {
           InvalidRecordException,
           SQLException,
           InvalidCommandLineException,
-          InvalidColourException, CompoundNotFoundException {
+          InvalidColourException {
     ArrayList<String> cmdInput = new ArrayList<String>();
     cmdInput.add("bookmark");
     cmdInput.add("999");
@@ -650,7 +649,7 @@ public class TrackSetTest {
     // Reverse order
     reverseOrder.add("-v");
     ts.orderTracks(reverseOrder);
-    assertEquals("bla.gz#3", ts.getTrackTags().get(ts.getTrackTags().size()-1));
+    assertEquals("bla.gz#3", ts.getTrackTags().get(ts.getTrackTags().size() - 1));
     assertEquals(3, ts.getTrackTags().size());
   }
 
@@ -661,7 +660,7 @@ public class TrackSetTest {
           InvalidGenomicCoordsException,
           ClassNotFoundException,
           InvalidRecordException,
-          SQLException, CompoundNotFoundException {
+          SQLException {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-100", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
@@ -704,7 +703,7 @@ public class TrackSetTest {
           InvalidGenomicCoordsException,
           ClassNotFoundException,
           InvalidRecordException,
-          SQLException, CompoundNotFoundException {
+          SQLException {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-100", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
@@ -964,7 +963,7 @@ public class TrackSetTest {
           SQLException,
           InvalidRecordException,
           ClassNotFoundException,
-          InvalidColourException, CompoundNotFoundException {
+          InvalidColourException {
     GenomicCoords gc = new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
@@ -1012,7 +1011,7 @@ public class TrackSetTest {
           SQLException,
           InvalidRecordException,
           ClassNotFoundException,
-          InvalidColourException, CompoundNotFoundException {
+          InvalidColourException {
 
     GenomicCoords gc = new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 
@@ -1124,7 +1123,7 @@ public class TrackSetTest {
           InvalidGenomicCoordsException,
           SQLException,
           InvalidRecordException,
-          ClassNotFoundException, CompoundNotFoundException {
+          ClassNotFoundException {
 
     GenomicCoords gc = new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 
@@ -1203,7 +1202,7 @@ public class TrackSetTest {
           IOException,
           ClassNotFoundException,
           InvalidRecordException,
-          SQLException, CompoundNotFoundException {
+          SQLException {
 
     GenomicCoords gc = new GenomicCoords("chr7:1-1000", 80, null, "test_data/chr7.fa");
 
@@ -1375,7 +1374,7 @@ public class TrackSetTest {
           InvalidGenomicCoordsException,
           ClassNotFoundException,
           InvalidRecordException,
-          SQLException, CompoundNotFoundException {
+          SQLException {
 
     String intervalFileName = "test_data/bgz_noindex.vcf.bgz";
     GenomicCoords gc = new GenomicCoords("1:1-200000000", 80, null, null);
@@ -1418,7 +1417,7 @@ public class TrackSetTest {
           InvalidRecordException,
           SQLException,
           InvalidColourException,
-          InvalidCommandLineException, CompoundNotFoundException {
+          InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("1:577583-759855", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
@@ -1450,7 +1449,7 @@ public class TrackSetTest {
           InvalidRecordException,
           SQLException,
           InvalidColourException,
-          InvalidCommandLineException, CompoundNotFoundException {
+          InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("1:113054356-113054534", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);

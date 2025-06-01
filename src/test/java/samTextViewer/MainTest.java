@@ -17,15 +17,13 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.junit.Test;
 
 public class MainTest {
 
   @Test
   public void canStartFromCram()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -35,7 +33,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args =
         new String[] {
           "-ni",
@@ -55,7 +53,7 @@ public class MainTest {
   @Test
   /*You should really test this in InteractiveInputTest.java but setting it up is a bit of a mess */
   public void canGoToNextChromosome()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -65,7 +63,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args =
         new String[] {"-ni", "-nf", "--exec", "nextChrom -s u", "test_data/ds051.actb.bam"};
     String out = Joiner.on("\n").join(this.runMain(args));
@@ -107,7 +105,7 @@ public class MainTest {
   @Test
   /*You should really test this in InteractiveInputTest.java but setting it up is a bit of a mess */
   public void canGoToNextChromosomeRegex()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -117,7 +115,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args =
         new String[] {"-ni", "-nf", "--exec", "nextChrom M", "test_data/ds051.actb.bam"};
     String out = Joiner.on("\n").join(this.runMain(args));
@@ -141,7 +139,7 @@ public class MainTest {
 
   @Test
   public void canSuggestCommand()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -151,7 +149,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args = new String[] {"-ni", "-nf", "--exec", "prnt"};
     List<String> out = this.runMain(args);
     assertTrue(out.get(1).contains("Maybe you mean print?"));
@@ -159,7 +157,7 @@ public class MainTest {
 
   @Test
   public void canSetConfig()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -169,7 +167,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args =
         new String[] {"-ni", "-nf", "--exec", "setConfig nucs f", "test_data/ds051.short.bam"};
     List<String> out = this.runMain(args);
@@ -178,7 +176,7 @@ public class MainTest {
 
   @Test
   public void canFlipBooleanConfig()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -188,7 +186,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args =
         new String[] {"-ni", "-nf", "--exec", "setConfig nucs", "test_data/ds051.short.bam"};
     List<String> out = this.runMain(args);
@@ -197,7 +195,7 @@ public class MainTest {
 
   @Test
   public void doNotSetInvalidBooleanConfig()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -207,7 +205,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args =
         new String[] {"-ni", "-nf", "--exec", "setConfig nucs 999", "test_data/ds051.short.bam"};
     List<String> out = this.runMain(args);
@@ -217,7 +215,7 @@ public class MainTest {
 
   @Test
   public void doNotSetInvalidColourConfig()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -227,7 +225,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args =
         new String[] {"-ni", "-nf", "--exec", "setConfig seq_a 999", "test_data/ds051.short.bam"};
     List<String> out = this.runMain(args);
@@ -237,7 +235,7 @@ public class MainTest {
 
   @Test
   public void doNotSetInvalidIntegerConfig()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -247,7 +245,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args =
         new String[] {
           "-ni", "-nf", "--exec", "setConfig shade_baseq foo", "test_data/ds051.short.bam"
@@ -259,7 +257,7 @@ public class MainTest {
 
   @Test
   public void canIgnoreComments()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -269,7 +267,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
     String[] args =
         new String[] {
           "-ni", "-nf", "--exec", "print && grep -i NCTNTCCN", "test_data/ds051.short.bam"
@@ -308,7 +306,7 @@ public class MainTest {
    * stdout and 2) stderr.
    */
   private List<String> runMain(String[] args)
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -318,7 +316,7 @@ public class MainTest {
           DocumentException,
           UnindexableFastaFileException,
           InvalidColourException,
-          InvalidConfigException, CompoundNotFoundException {
+          InvalidConfigException {
 
     PrintStream stdout = System.out;
     ByteArrayOutputStream baosOut = new ByteArrayOutputStream();

@@ -74,7 +74,8 @@ public class Faidx {
         char x = (char) buffer.get();
 
         if (startFastaSection && !CharMatcher.ascii().matches(x)) {
-          throw new UnindexableFastaFileException("Non ascii characters found in " + fasta.getAbsoluteFile());
+          throw new UnindexableFastaFileException(
+              "Non ascii characters found in " + fasta.getAbsoluteFile());
         }
         currOffset++;
         sb.append(x);

@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,7 +36,7 @@ public class GenomicCoordsTest {
 
   @Test
   public void canPrintSequenceDictionaryOnlyContigs()
-      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException {
     ArrayList<String> knownContigs = new ArrayList<String>();
     knownContigs.add("chr3");
     knownContigs.add("chr1");
@@ -56,7 +54,7 @@ public class GenomicCoordsTest {
 
   @Test
   public void canPrintSequenceDictionaryBoldCurrentChrom()
-      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException {
     ArrayList<String> knownContigs = new ArrayList<String>();
     knownContigs.add("chr3");
     knownContigs.add("chr1");
@@ -76,7 +74,7 @@ public class GenomicCoordsTest {
   }
 
   @Test
-  public void canPrintSequenceDictionary() throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+  public void canPrintSequenceDictionary() throws InvalidGenomicCoordsException, IOException {
     GenomicCoords gc = new GenomicCoords("chrM:1000-2000", 80, samSeqDict, null);
 
     String out = gc.printSequenceDictionary(null, -1, -1, ".", ContigOrder.SIZE_DESC, 30, -1, true);
@@ -291,14 +289,20 @@ public class GenomicCoordsTest {
 
   @Test
   public void printRefSeq()
-          throws InvalidGenomicCoordsException, IOException, InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
+      throws InvalidGenomicCoordsException,
+          IOException,
+          InvalidColourException,
+          InvalidCommandLineException {
     GenomicCoords gc = new GenomicCoords("chr7:5540580-5540590", 80, null, "test_data/chr7.fa");
     assertEquals("ggccggctggg\n", gc.printableRefSeq(true));
   }
 
   @Test
   public void printRefSeqBgzip()
-          throws InvalidGenomicCoordsException, IOException, InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
+      throws InvalidGenomicCoordsException,
+          IOException,
+          InvalidColourException,
+          InvalidCommandLineException {
     GenomicCoords gc = new GenomicCoords("chr7:5540580-5540590", 80, null, "test_data/chr7.fa.gz");
     assertEquals("ggccggctggg\n", gc.printableRefSeq(true));
   }
@@ -412,7 +416,10 @@ public class GenomicCoordsTest {
 
   @Test
   public void canPrintRefSeq()
-          throws InvalidGenomicCoordsException, IOException, InvalidColourException, CompoundNotFoundException, InvalidCommandLineException {
+      throws InvalidGenomicCoordsException,
+          IOException,
+          InvalidColourException,
+          InvalidCommandLineException {
     GenomicCoords gc = new GenomicCoords("chr7:5566770-5566790", 80, samSeqDict, fastaFile);
     assertEquals("CACTTGGCCTCATTTTTAAGG\n", gc.printableRefSeq(true));
     // with format
@@ -510,9 +517,9 @@ public class GenomicCoordsTest {
   @Test
   public void canGetRefSeq() throws InvalidGenomicCoordsException, IOException {
     GenomicCoords gc = new GenomicCoords("chr7:5566770-5566790", 80, samSeqDict, fastaFile);
-    assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
+    assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getGenomicSequence().getSequence()));
     gc = new GenomicCoords("chr7:1-80", 79, samSeqDict, fastaFile);
-    assertEquals(null, gc.getRefSeq());
+    assertEquals(null, gc.getGenomicSequence().getSequence());
 
     // Return seq even if len(seq) > windowSize
     // assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
@@ -524,7 +531,7 @@ public class GenomicCoordsTest {
   }
 
   @Test
-  public void canZoom() throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+  public void canZoom() throws InvalidGenomicCoordsException, IOException {
     GenomicCoords gc = new GenomicCoords("chr1:101-105", 80, samSeqDict, null);
     gc.zoomOut();
     assertEquals(99, (int) gc.getFrom()); // exp 95,111 if zoom fact is x2

@@ -52,31 +52,31 @@ public enum ConfigKey {
 
   /** U P D A T E M E Configuration parameters that are NOT COLOURS */
   public static Set<ConfigKey> colourKeys() {
-    Set<ConfigKey> ColourKeys = new HashSet<ConfigKey>();
-    ColourKeys.add(ConfigKey.background);
-    ColourKeys.add(ConfigKey.foreground);
-    ColourKeys.add(ConfigKey.seq_a);
-    ColourKeys.add(ConfigKey.seq_c);
-    ColourKeys.add(ConfigKey.seq_g);
-    ColourKeys.add(ConfigKey.seq_t);
-    ColourKeys.add(ConfigKey.seq_other);
-    ColourKeys.add(ConfigKey.shade_low_mapq);
-    ColourKeys.add(ConfigKey.methylated_foreground);
-    ColourKeys.add(ConfigKey.unmethylated_foreground);
-    ColourKeys.add(ConfigKey.methylated_background);
-    ColourKeys.add(ConfigKey.unmethylated_background);
-    ColourKeys.add(ConfigKey.title_colour);
-    ColourKeys.add(ConfigKey.feature_background_positive_strand);
-    ColourKeys.add(ConfigKey.feature_background_negative_strand);
-    ColourKeys.add(ConfigKey.feature_background_no_strand);
-    ColourKeys.add(ConfigKey.footer);
-    ColourKeys.add(ConfigKey.chrom_ideogram);
-    ColourKeys.add(ConfigKey.ruler);
-    ColourKeys.add(ConfigKey.shade_structural_variant);
-    ColourKeys.add(ConfigKey.start_codon);
-    ColourKeys.add(ConfigKey.stop_codon);
-    ColourKeys.add(ConfigKey.codon);
-    return ColourKeys;
+    Set<ConfigKey> colourKeys = new HashSet<ConfigKey>();
+    colourKeys.add(ConfigKey.background);
+    colourKeys.add(ConfigKey.foreground);
+    colourKeys.add(ConfigKey.seq_a);
+    colourKeys.add(ConfigKey.seq_c);
+    colourKeys.add(ConfigKey.seq_g);
+    colourKeys.add(ConfigKey.seq_t);
+    colourKeys.add(ConfigKey.seq_other);
+    colourKeys.add(ConfigKey.shade_low_mapq);
+    colourKeys.add(ConfigKey.methylated_foreground);
+    colourKeys.add(ConfigKey.unmethylated_foreground);
+    colourKeys.add(ConfigKey.methylated_background);
+    colourKeys.add(ConfigKey.unmethylated_background);
+    colourKeys.add(ConfigKey.title_colour);
+    colourKeys.add(ConfigKey.feature_background_positive_strand);
+    colourKeys.add(ConfigKey.feature_background_negative_strand);
+    colourKeys.add(ConfigKey.feature_background_no_strand);
+    colourKeys.add(ConfigKey.footer);
+    colourKeys.add(ConfigKey.chrom_ideogram);
+    colourKeys.add(ConfigKey.ruler);
+    colourKeys.add(ConfigKey.shade_structural_variant);
+    colourKeys.add(ConfigKey.start_codon);
+    colourKeys.add(ConfigKey.stop_codon);
+    colourKeys.add(ConfigKey.codon);
+    return colourKeys;
   }
 
   /** U P D A T E M E */

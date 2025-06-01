@@ -108,18 +108,7 @@ class TextRead extends IntervalFeature {
 
   /*       M e t h o d s       */
 
-  /**
-   * Return read ready to be printed on track.
-   *
-   * @param refSeq Reference sequence. Can be null in which case bases are displayed as they are.
-   * @param bs Should the read be converted to BS-Seq mode?
-   * @param noFormat Do not apply string formatting (colours, etc.)
-   * @param withReadName Print the read name instead of the bases.
-   * @return
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidColourException
-   */
+  /** Return read ready to be printed on track. */
   public String getPrintableTextRead(boolean bs, boolean noFormat, boolean withReadName)
       throws IOException, InvalidGenomicCoordsException, InvalidColourException {
     List<FeatureChar> fmt = this.getTextReadAsFeatureChars(bs);
@@ -343,8 +332,10 @@ class TextRead extends IntervalFeature {
     byte[] baseQual = this.samRecord.getBaseQualities();
 
     byte[] ref = null;
-    if (this.gc.getRefSeq() != null) {
-      ref = Arrays.copyOfRange(this.gc.getRefSeq(), this.textStart - 1, this.textEnd);
+    if (this.gc.getGenomicSequence().getSequence() != null) {
+      ref =
+          Arrays.copyOfRange(
+              this.gc.getGenomicSequence().getSequence(), this.textStart - 1, this.textEnd);
     }
     int SHADE_BASEQ = Integer.parseInt(Config.get(ConfigKey.shade_baseq));
 
@@ -541,16 +532,11 @@ class TextRead extends IntervalFeature {
   /**
    * Memo: You compare the reads with these bases on the reference: 1st | 2nd -------+------ +ve C |
    * G -------+------ -ve g | c
-   *
-   * @param refSeq
-   * @return
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
    */
   private void convertDnaBaseToTextBS(FeatureChar dnaBase, char refBase)
       throws IOException, InvalidGenomicCoordsException {
 
-    if (this.gc.getRefSeq() == null) { // Effectively don't convert
+    if (this.gc.getGenomicSequence().getSequence() == null) { // Effectively don't convert
       return;
     }
 

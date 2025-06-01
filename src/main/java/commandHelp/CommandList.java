@@ -512,22 +512,28 @@ public class CommandList {
 
     cmd = new CommandHelp();
     cmd.setName("translate");
-    cmd.setArgs("[-frame]");
+    cmd.setArgs("[-frame=all]");
     cmd.setArgs("[-codon=all]");
+    cmd.setArgs("[-geneticCode=universal]");
     cmd.inSection = Section.DISPLAY;
-    cmd.setBriefDescription(
-        "Show translation of DNA to codons. ");
+    cmd.setBriefDescription("Show translation of DNA to codons. ");
     cmd.setAdditionalDescription(
         "Options:\n"
             + "\n"
-            + "* :code:`-frame` Frames to translate. Options: all, forward, reverse, none"
+            + "* :code:`-frame` Frames to translate. Options: all, forward, reverse, none\n"
             + "\n"
-            + "* :code:`-codon` Which codons to show. Options: all, start, stop, start_and_stop"
+            + "* :code:`-codon` Which codons to show. Options: all, start, stop, start_and_stop\n"
+            + "\n"
+            + "* :code:`-geneticCode` Genetic code to translate codons\n"
+            + "\n"
+            + "Use :code:`-geneticCode show` to view available codes. See also `ncbi <https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi>`\n"
+            + "With no arguments toggle display on and off\n"
             + "\n"
             + "Examples::\n"
             + "\n"
             + "    translate\n"
-            );
+            + "    translate -geneticCode bacterial\n"
+            + "    translate -frame none -> Turn off\n");
     cmdList.add(cmd);
 
     cmd = new CommandHelp();

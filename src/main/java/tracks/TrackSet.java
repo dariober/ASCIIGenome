@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import samTextViewer.ExitCode;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -1632,7 +1631,7 @@ public class TrackSet {
    */
   public GenomicCoords goToNextFeatureOnFile(
       String trackId, GenomicCoords currentGc, double slop, boolean getPrevious)
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
     List<TrackIntervalFeature> tr = this.matchIntervalFeatureTrack(trackId.trim());
 
@@ -1734,7 +1733,7 @@ public class TrackSet {
 
   public GenomicCoords findNextMatchOnTrack(
       Pattern pattern, String trackregex, GenomicCoords currentGc, boolean all)
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
     List<TrackIntervalFeature> tif = matchIntervalFeatureTrack(trackregex.trim());
     if (tif.size() == 0) {
@@ -1936,7 +1935,7 @@ public class TrackSet {
           InvalidRecordException,
           SQLException,
           InvalidGenomicCoordsException,
-          InvalidCommandLineException, CompoundNotFoundException {
+          InvalidCommandLineException {
 
     String messages = "";
 
@@ -2425,7 +2424,7 @@ public class TrackSet {
   }
 
   public GenomicCoords trimCoordsForTrack(List<String> cmdInput)
-      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException {
 
     List<String> args = new ArrayList<String>(cmdInput);
     args.remove(0); // Remove cmd name
@@ -2445,7 +2444,7 @@ public class TrackSet {
   }
 
   private GenomicCoords trimTrack(TrackIntervalFeature tr)
-      throws InvalidGenomicCoordsException, IOException, CompoundNotFoundException {
+      throws InvalidGenomicCoordsException, IOException {
     GenomicCoords current = tr.getGc();
     TrackIntervalFeature itr = (TrackIntervalFeature) tr;
     List<IntervalFeature> features = itr.getIntervalFeatureList();
