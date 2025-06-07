@@ -8,6 +8,7 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import org.biojava.nbio.core.sequence.transcription.Frame;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +32,6 @@ public class GenomicSequenceTest {
   public void canTranslateSequence() throws InvalidColourException, InvalidGenomicCoordsException {
     String dna = "ATGCTGTAG";
     GenomicSequence gs = new GenomicSequence(dna.getBytes());
-    // gs.setGeneticCode("UNIVERSAL");
     gs.setNoFormat(false);
     gs.setPrintCodon(PrintCodon.ALL);
 
@@ -45,4 +45,11 @@ public class GenomicSequenceTest {
     gs.setFrames(new ArrayList<>());
     System.out.print(gs.getPrintableSequence() + "---\n");
   }
+
+//  @Test
+//  public void test() throws InvalidColourException, InvalidGenomicCoordsException, IOException {
+//    GenomicCoords gc = new GenomicCoords("chr3:1000-100000", 80, null, null);
+//    int idx = Utils.getIndexOfclosestValue(2000, gc.getMapping());
+//    System.out.print(idx);
+//  }
 }

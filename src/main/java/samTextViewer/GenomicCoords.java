@@ -132,9 +132,9 @@ public class GenomicCoords implements Cloneable {
   }
 
   /** Update a bunch of fields when coordinates change */
-  private void update() throws InvalidGenomicCoordsException, IOException {
+  protected void update() throws InvalidGenomicCoordsException, IOException {
     this.resetSingleBaseResolution(); // True if one text character corresponds to 1 bp
-    this.setRefSeq();
+    this.resetGenomicSequence();
     this.mapping = this.seqFromToLenOut(this.getTerminalWidth());
   }
 
@@ -394,7 +394,7 @@ public class GenomicCoords implements Cloneable {
     return chroms;
   }
 
-  protected void setRefSeq() throws IOException, InvalidGenomicCoordsException {
+  protected void resetGenomicSequence() throws IOException, InvalidGenomicCoordsException {
     if (this.fastaFile == null || !this.singleBaseResolution) {
       if (this.genomicSequence == null) {
         this.genomicSequence = new GenomicSequence(null);
@@ -408,7 +408,7 @@ public class GenomicCoords implements Cloneable {
 
   private byte[] getRefSeq() throws IOException, InvalidGenomicCoordsException {
     if (this.genomicSequence.getSequence() == null) {
-      this.setRefSeq();
+      this.resetGenomicSequence();
     }
     return this.genomicSequence.getSequence();
   }
@@ -418,7 +418,7 @@ public class GenomicCoords implements Cloneable {
     try {
       faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.fastaFile));
       try {
-        byte[] seq = faSeqFile.getSubsequenceAt(this.chrom, this.from, this.to).getBases();
+        byte[] seq = faSeqFile.getSubsequenceAt(this.chrom, this.from, this.getTo()).getBases();
         faSeqFile.close();
         return seq;
       } catch (NullPointerException e) {
@@ -660,6 +660,11 @@ public class GenomicCoords implements Cloneable {
     // * Extend midpoint left by window size x2 and check coords
     this.from = midpoint - (range * zoom);
     this.from = (this.from <= 0) ? 1 : this.from;
+    this.resetToPosition();
+    this.update();
+  }
+
+  private void resetToPosition(){
     if (this.samSeqDict != null && !this.samSeqDict.isEmpty()) {
       if (this.samSeqDict.getSequence(this.chrom).getSequenceLength() > 0) {
         this.to =
@@ -668,7 +673,6 @@ public class GenomicCoords implements Cloneable {
                 : this.to;
       }
     }
-    this.update();
   }
 
   /**
@@ -1269,6 +1273,7 @@ public class GenomicCoords implements Cloneable {
   }
 
   public Integer getTo() {
+    this.resetToPosition();
     return to;
   }
 
@@ -1379,14 +1384,12 @@ public class GenomicCoords implements Cloneable {
     args.remove(0); // Remove cmd name
 
     String refpoint = "window";
-    if (args.contains("window")) {
-      args.remove("window");
-    }
+    args.remove("window");
     if (args.contains("mid")) {
       refpoint = "mid";
       args.remove("mid");
     }
-    if (args.size() == 0) {
+    if (args.isEmpty()) {
       throw new InvalidCommandLineException();
     }
     int left = Integer.parseInt(args.get(0));

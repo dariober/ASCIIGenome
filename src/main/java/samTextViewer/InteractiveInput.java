@@ -920,7 +920,7 @@ public class InteractiveInput {
   }
 
   private void saveSession(List<String> args, TrackProcessor proc)
-      throws InvalidCommandLineException, IOException, SessionException {
+      throws InvalidCommandLineException, IOException, SessionException, InvalidGenomicCoordsException {
     File sessionYamlFile;
     String sf = Utils.getArgForParam(args, "-f", null);
     if (sf == null && this.sessionHandler == null) {

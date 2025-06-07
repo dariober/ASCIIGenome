@@ -131,6 +131,10 @@ public class GenomicSequence {
     return tables;
   }
 
+//  private String startStopCodonsToString(Sequence<AminoAcidCompound> protein) {
+//
+//  }
+//
   private String proteinToString(Frame frame, PrintCodon printCodon)
       throws InvalidColourException, InvalidGenomicCoordsException {
     Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);

@@ -39,11 +39,16 @@ public class InteractiveInputTest {
       throws InvalidGenomicCoordsException, IOException {
     ByteArrayOutputStream err = new ByteArrayOutputStream();
     System.setErr(new PrintStream(err));
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    System.setOut(new PrintStream(out));
     ip.processInput(cmd, p);
     String errStr = err.toString();
     System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
+    String outStr = out.toString();
+    System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
     ProcessInput pi = new ProcessInput();
     pi.stderr = errStr;
+    pi.stdout = outStr;
     return pi;
   }
 
@@ -413,15 +418,125 @@ public class InteractiveInputTest {
           InvalidConfigException {
     new Config(null);
     TrackProcessor proc;
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
     proc = gimmeTrackProcessor("chr7:10001-10061", 80, "test_data/chr7.fa");
-    ProcessInput pi = this.processInput(ip, "+1", proc);
-    pi = this.processInput(ip, "translate -frame all", proc);
+    proc.setNoFormat(true);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    ProcessInput pi = this.processInput(ip, "translate", proc);
+    assertTrue(pi.stdout.contains("\nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccc\n"));
+    assertTrue(pi.stdout.contains("\n3 *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P \n"));
+    assertTrue(pi.stdout.contains("\n2L  T  L  T  L  T  L  T  L  T  L  T  L  T  L  T  L  T  L  T  \n"));
+    assertTrue(pi.stdout.contains("\n1  N  P  N  P  N  P  N  P  N  P  N  P  N  P  N  P  N  P  N   \n"));
+    assertTrue(pi.stdout.contains("\n *  G  *  G  *  G  *  G  *  G  *  G  *  G  *  G  *  G  *  G 1\n"));
+    assertTrue(pi.stdout.contains("\n   V  R  V  R  V  R  V  R  V  R  V  R  V  R  V  R  V  R  V  2\n"));
+    assertTrue(pi.stdout.contains("\n  L  G  L  G  L  G  L  G  L  G  L  G  L  G  L  G  L  G  L  G3\n"));
+
+    /* TO BE FIXED
+    pi = this.processInput(ip, "translate -geneticCode vertebrate_mitochondrial", proc);
+    assertTrue(pi.stdout.contains("\n   V  *  V  *  V  *  V  *  V  *  V  *  V  *  V  *  V  *  V  3\n"));
+
+    pi = this.processInput(ip, "+10000", proc);
+    assertTrue(pi.stdout.contains("\n2 A  *  K  A  D  T  S  S  K  S  I  T  E  A  M  V  Q  P  K  L \n"));
+
+    pi = this.processInput(ip, "translate -codon start_and_stop", proc);
+    assertTrue(pi.stdout.contains("\n2    *                                      M                \n"));
+
+    pi = this.processInput(ip, "translate -codon start", proc);
+    assertTrue(pi.stdout.contains("\n2                                           M                \n"));
+
+    pi = this.processInput(ip, "translate -codon stop", proc);
+    assertTrue(pi.stdout.contains("\n2    *                                                       \n"));
+
+    pi = this.processInput(ip, "translate -codon all", proc);
+    assertTrue(pi.stdout.contains("\n1C  Q  E  S  *  H  I  I  K  I  H  Y  *  G  Y  S  S  A  K  A  \n"));
+
     pi = this.processInput(ip, "zo", proc);
-    pi = this.processInput(ip, ":chr7:10001", proc);
-    pi = this.processInput(ip, "translate -frame all", proc);
-    System.err.println(pi.stderr);
+    assertFalse(pi.stdout.contains("C  Q  E"));
+
+    // MEMO: zo && zi does not return to *exactly* the same position
+    pi = this.processInput(ip, "zi", proc);
+    assertTrue(pi.stdout.contains("C  Q  E"));
+
+    pi = this.processInput(ip, "translate -frame none", proc);
+    assertFalse(pi.stdout.contains("C  Q  E"));
+    */
   }
+
+  @Test
+  public void canMoveToNextChrom()
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    TrackProcessor proc = gimmeTrackProcessor("small", 150, "test_data/seq_cg.fa");
+    proc.setNoFormat(true);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    ProcessInput pi = this.processInput(ip, "nextChrom", proc);
+    assertTrue(pi.stdout.contains("seq:1-120"));
+  }
+
+    @Test
+  public void canUpdateSequenceWhenMovingCoords()
+      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+    TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/chr7.fa");
+    proc.setNoFormat(true);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    ProcessInput pi = this.processInput(ip, "+1", proc);
+    assertTrue(pi.stdout.contains("\nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccc\n"));
+
+    pi = this.processInput(ip, "+1", proc);
+    assertTrue(pi.stdout.contains("\ntaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccct\n"));
+
+    pi = this.processInput(ip, "[", proc);
+    assertTrue(pi.stdout.contains("\naaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaacccta\n"));
+
+    pi = this.processInput(ip, "100000", proc);
+    assertTrue(pi.stdout.contains("\ncagaaggaaaacgggaaacttcacaattagtgaatatttaaaaacagactcttaagaaacc\n"));
+
+    pi = this.processInput(ip, "goto chr7:100010-100070", proc);
+    assertTrue(pi.stdout.contains("\nacgggaaacttcacaattagtgaatatttaaaaacagactcttaagaaaccaaaggatcaa\n"));
+
+    pi = this.processInput(ip, "0.17 0.33", proc);
+    assertTrue(pi.stdout.contains("\ntcacaattagt\n"));
+
+    pi = this.processInput(ip, "zo", proc);
+    assertTrue(pi.stdout.contains("\naaacttcacaattagtgaata\n"));
+
+    this.processInput(ip, "goto chr7:100010-100070", proc);
+    this.processInput(ip, "f", proc);
+    pi = this.processInput(ip, "ff", proc);
+    assertTrue(pi.stdout.contains("\ngactcttaagaaaccaaaggatcaaggaagataccacagggaaaaatagagaatatctcaa\n"));
+
+    this.processInput(ip, "goto chr7:100010-100070", proc);
+    this.processInput(ip, "bb", proc);
+    pi = this.processInput(ip, "b", proc);
+    assertTrue(pi.stdout.contains("\naaaggaatgaaactagaaatcaacagcagaaggaaaacgggaaacttcacaattagtgaat\n"));
+
+    this.processInput(ip, "goto chr7:100010-100020", proc);
+    pi = this.processInput(ip, "extend 10", proc);
+    assertTrue(pi.stdout.contains("\ncagaaggaaaacgggaaacttcacaattagt\n"));
+
+    this.processInput(ip, "goto chr7:200000-200060", proc);
+    this.processInput(ip, "goto chr7:200010-200070", proc);
+    pi = this.processInput(ip, "p", proc);
+    assertTrue(pi.stdout.contains("\nTTCTTGACACTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTA\n"));
+
+    this.processInput(ip, "goto chr7:200000-200060", proc);
+    this.processInput(ip, "goto chr7:200010-200070", proc);
+    this.processInput(ip, "p", proc);
+    pi = this.processInput(ip, "n", proc);
+    assertTrue(pi.stdout.contains("\nTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTAACCAGCGGGT\n"));
+
+    this.processInput(ip, "goto chr7:200000-200060", proc);
+    this.processInput(ip, "open test_data/hg19_genes.gtf.gz", proc);
+    pi = this.processInput(ip, "next -c", proc);
+    assertTrue(pi.stdout.contains("\nTGACCCTGTTTCTCTCCCTCCTTCCTGCAGCCATGAAGTCGGGGGGCACGCAGCTGAAGCT\n"));
+    pi = this.processInput(ip, "next -c", proc);
+    assertTrue(pi.stdout.contains("\nACCGTTTCTGTTTCTGTCTTGTTTTCTCAGACAAACGAGGGAGCAGGAGACACCCCCTGAC\n"));
+    System.err.println(pi.stdout);
+  }
+
+
 
   @Test
   public void canMovePositionByColumn()

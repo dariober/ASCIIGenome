@@ -259,7 +259,7 @@ public class TrackProcessor {
     this.showCruler = showCruler;
   }
 
-  public Session toSession() {
+  public Session toSession() throws InvalidGenomicCoordsException, IOException {
     Map<String, SessionTrack> tracks = new LinkedHashMap<>();
     for (Track tr : this.getTrackSet().getTrackList()) {
       File fn = new File(tr.getFilename());

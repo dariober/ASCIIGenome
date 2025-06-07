@@ -24,7 +24,7 @@ public class GenomicCoordsHistory {
   /*  Methods */
 
   /**
-   * Add GenomicCoords obj to history provided this item is not equal in coordinates to to the last
+   * Add GenomicCoords obj to history provided this item is not equal in coordinates to the last
    * one in history. The position tracker is reset to the last when a new position is added
    */
   public void add(GenomicCoords gc) {
@@ -35,14 +35,16 @@ public class GenomicCoordsHistory {
     this.positionTracker = this.currentSessionHistory.size() - 1;
   }
 
-  public GenomicCoords current() {
+  public GenomicCoords current() throws InvalidGenomicCoordsException, IOException {
     if (positionTracker < 0) {
       return null;
     }
-    return this.currentSessionHistory.get(positionTracker);
+    GenomicCoords gc = this.currentSessionHistory.get(positionTracker);
+    gc.update();
+    return gc;
   }
 
-  public void previous() {
+  public void previous() throws InvalidGenomicCoordsException, IOException {
 
     int idx = this.positionTracker - 1;
 
@@ -55,9 +57,10 @@ public class GenomicCoordsHistory {
     } else {
       this.positionTracker = idx;
     }
+    this.current();
   }
 
-  public void next() {
+  public void next() throws InvalidGenomicCoordsException, IOException {
 
     int idx = this.positionTracker + 1;
 
@@ -70,6 +73,7 @@ public class GenomicCoordsHistory {
     } else {
       this.positionTracker = idx;
     }
+    this.current();
   }
 
   protected List<GenomicCoords> getCurrentSessionHistory() {
