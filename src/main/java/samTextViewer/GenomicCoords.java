@@ -133,7 +133,7 @@ public class GenomicCoords implements Cloneable {
 
   private Integer getSequenceLength() {
     Integer sequenceLength = null;
-    if (this.getSamSeqDict() != null) {
+    if (this.getSamSeqDict() != null && this.getSamSeqDict().getSequence(this.chrom) != null) {
       sequenceLength = this.getSamSeqDict().getSequence(this.chrom).getSequenceLength();
     }
     return sequenceLength;
@@ -678,7 +678,7 @@ public class GenomicCoords implements Cloneable {
 
   private void resetToPosition(){
     if (this.samSeqDict != null && !this.samSeqDict.isEmpty()) {
-      if (this.samSeqDict.getSequence(this.chrom).getSequenceLength() > 0) {
+      if (this.samSeqDict.getSequence(this.chrom) != null && this.samSeqDict.getSequence(this.chrom).getSequenceLength() > 0) {
         this.to =
             (this.to > this.samSeqDict.getSequence(this.chrom).getSequenceLength())
                 ? this.samSeqDict.getSequence(this.chrom).getSequenceLength()

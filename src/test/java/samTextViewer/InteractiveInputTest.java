@@ -3,6 +3,7 @@ package samTextViewer;
 import static org.junit.Assert.*;
 
 import colouring.Config;
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
@@ -724,13 +725,10 @@ public class InteractiveInputTest {
 
     pi = this.processInput(ip, "goto chr7:159138663", proc);
     assertTrue(pi.stdout.contains("-159138663;")); // Something like chr7:159138583-159138663
-    System.out.println(pi.stdout);
-    System.err.println(pi.stderr);
   }
 
   @Test
   public void canGoToRegionAndCenter() throws InvalidGenomicCoordsException, IOException {
-
     InteractiveInput ip = new InteractiveInput(null, 0);
 
     GenomicCoords gc = new GenomicCoords("chr1:1-20", 20, null, null);
@@ -742,5 +740,47 @@ public class InteractiveInputTest {
 
     region = ip.gotoOnCurrentChrom(Splitter.on(" ").splitToList("16 c"), gc);
     assertEquals("chr1:6-26", region);
+  }
+
+  @Test
+  public void canGoToNextChromosome()
+      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+    TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
+    proc.setNoFormat(true);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+
+    ProcessInput pi = this.processInput(ip, "nextChrom -s u", proc);
+    assertTrue(pi.stdout.contains("chr8:1-"));
+
+    pi = this.processInput(ip, "goto chrM && nextChrom -s u", proc);
+    assertTrue(pi.stdout.contains("chr1:1-"));
+
+    pi = this.processInput(ip, "goto chrY && nextChrom -s u", proc);
+    assertTrue(pi.stdout.contains("chrM:1-"));
+  }
+
+  @Test
+  public void canIgnoreComments()
+      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+    TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
+    proc.setNoFormat(true);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    ProcessInput pi = this.processInput(ip, "print && grep -i NCTNTCCN", proc);
+    String woComm = pi.stdout;
+
+    pi = this.processInput(ip, "print && grep -i NCTNTCCN // A comment", proc);
+    String withComm = pi.stdout;
+    assertEquals(woComm, withComm);
+
+    pi = this.processInput(ip, "goto chr7", proc);
+    woComm = pi.stdout;
+
+    pi = this.processInput(ip, "goto chr7//comment", proc);
+    withComm = pi.stdout;
+    assertEquals(woComm, withComm);
+
+    pi = this.processInput(ip, "goto chr7 // comment", proc);
+    withComm = pi.stdout;
+    assertEquals(woComm, withComm);
   }
 }

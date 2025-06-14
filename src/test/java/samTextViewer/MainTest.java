@@ -51,7 +51,7 @@ public class MainTest {
   }
 
   @Test
-  /*You should really test this in InteractiveInputTest.java but setting it up is a bit of a mess */
+  /*Add these to canGoToNextChromosome in InteractiveInputTest.java */
   public void canGoToNextChromosome()
       throws ClassNotFoundException,
           IOException,
@@ -64,31 +64,10 @@ public class MainTest {
           UnindexableFastaFileException,
           InvalidColourException,
           InvalidConfigException {
-    String[] args =
-        new String[] {"-ni", "-nf", "--exec", "nextChrom -s u", "test_data/ds051.actb.bam"};
-    String out = Joiner.on("\n").join(this.runMain(args));
-    System.err.println(out);
-    assertTrue(out.contains("chr8:1-"));
-
-    args =
-        new String[] {
-          "-ni", "-nf", "--exec", "goto chrM && nextChrom -s u", "test_data/ds051.actb.bam"
-        };
-    out = Joiner.on("\n").join(this.runMain(args));
-    assertTrue(out.contains("chr1:1-"));
-
-    // Wrap around
-    args =
-        new String[] {
-          "-ni", "-nf", "--exec", "goto chrY && nextChrom -s u", "test_data/ds051.actb.bam"
-        };
-    out = Joiner.on("\n").join(this.runMain(args));
-    assertTrue(out.contains("chrM:1-"));
-
     // One chrom - stay there.
-    args =
+    String[] args =
         new String[] {"-ni", "-nf", "--exec", "nextChrom -s u", "test_data/refSeq.hg19.short.bed"};
-    out = Joiner.on("\n").join(this.runMain(args));
+    String out = Joiner.on("\n").join(this.runMain(args));
     assertTrue(out.contains("chr1:67208779"));
 
     // No tracks, no genome
@@ -171,6 +150,7 @@ public class MainTest {
     String[] args =
         new String[] {"-ni", "-nf", "--exec", "setConfig nucs f", "test_data/ds051.short.bam"};
     List<String> out = this.runMain(args);
+    System.out.println(out);
     assertTrue(out.get(0).contains(">>>>>>>>>>>>>>>>>>>"));
   }
 
@@ -253,50 +233,6 @@ public class MainTest {
     List<String> out = this.runMain(args);
     System.err.println(out);
     assertTrue(out.get(1).contains("Unable to set"));
-  }
-
-  @Test
-  public void canIgnoreComments()
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          BamIndexNotFoundException,
-          SQLException,
-          DocumentException,
-          UnindexableFastaFileException,
-          InvalidColourException,
-          InvalidConfigException {
-    String[] args =
-        new String[] {
-          "-ni", "-nf", "--exec", "print && grep -i NCTNTCCN", "test_data/ds051.short.bam"
-        };
-    List<String> woComm = this.runMain(args);
-    args =
-        new String[] {
-          "-ni",
-          "-nf",
-          "--exec",
-          "print && grep -i NCTNTCCN // A comment",
-          "test_data/ds051.short.bam"
-        };
-    List<String> withComm = this.runMain(args);
-    assertEquals(woComm, withComm);
-
-    args = new String[] {"-ni", "-nf", "--exec", "goto chr7", "test_data/ds051.short.bam"};
-    woComm = this.runMain(args);
-
-    args = new String[] {"-ni", "-nf", "--exec", "goto chr7//comment", "test_data/ds051.short.bam"};
-    withComm = this.runMain(args);
-
-    assertEquals(woComm, withComm);
-
-    args =
-        new String[] {"-ni", "-nf", "--exec", "goto chr7 // comment", "test_data/ds051.short.bam"};
-    withComm = this.runMain(args);
-
-    assertEquals(woComm, withComm);
   }
 
   /* H E L P E R S */

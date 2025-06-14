@@ -151,11 +151,8 @@ public class InteractiveInput {
 
         } else if (cmdTokens.get(0).equals("setConfig")) {
           try {
-            this.interactiveInputExitCode = this.setConfigOpt(cmdTokens);
+            this.interactiveInputExitCode = this.setConfigOpt(cmdTokens, proc);
           } catch (Exception e) {
-            System.err.println(
-                Utils.padEndMultiLine("Unable to set configuration", proc.getWindowSize()));
-            this.interactiveInputExitCode = ExitCode.ERROR;
             if (debug > 0) {
               e.printStackTrace();
             }
@@ -918,27 +915,26 @@ public class InteractiveInput {
       }
       // return gc.getChrom() + ":" + regFrom + "-" + regTo;
     } else if (args.size() == 1 && !center) {
-      regFrom = Integer.valueOf(args.get(0));
+      regFrom = Integer.parseInt(args.get(0));
       regTo = regFrom + gc.getUserWindowSize() - 1;
     } else if (!center) {
-      regFrom = Integer.valueOf(args.get(0));
-      regTo = Integer.valueOf(args.get(args.size() - 1));
+      regFrom = Integer.parseInt(args.get(0));
+      regTo = Integer.parseInt(args.get(args.size() - 1));
     } else if (center) {
-      regFrom = Integer.valueOf(args.get(0)) - (int) Math.floor(gc.getGenomicWindowSize() / 2);
-      regFrom = regFrom < 1 ? 1 : regFrom;
+      regFrom = Integer.parseInt(args.get(0)) - (int) Math.floor((double) gc.getGenomicWindowSize() / 2);
+      regFrom = Math.max(regFrom, 1);
       regTo = regFrom + gc.getGenomicWindowSize() - 1;
     } else {
       throw new IllegalArgumentException();
     }
-    String newRegion = gc.getChrom() + ":" + regFrom + "-" + regTo;
-    return newRegion;
+    return gc.getChrom() + ":" + regFrom + "-" + regTo;
   }
 
-  private ExitCode setConfigOpt(List<String> cmdTokens)
+  private ExitCode setConfigOpt(List<String> cmdTokens, TrackProcessor proc)
       throws IOException,
           InvalidConfigException,
           InvalidCommandLineException,
-          InvalidColourException {
+          InvalidColourException, InvalidGenomicCoordsException {
     List<String> args = new ArrayList<String>(cmdTokens);
     args.remove(0);
     if (args.isEmpty()) {
@@ -961,10 +957,12 @@ public class InteractiveInput {
       try {
         Config.set(key, value);
       } catch (Exception e) {
+        System.err.println(
+            Utils.padEndMultiLine("Unable to set configuration", proc.getWindowSize()));
         return ExitCode.ERROR;
       }
     }
-    return ExitCode.CLEAN_NO_FLUSH;
+    return ExitCode.CLEAN;
   }
 
   private void saveSession(List<String> args, TrackProcessor proc)
