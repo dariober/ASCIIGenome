@@ -1348,4 +1348,10 @@ public abstract class Track {
   public TrackHeader getHeader() {
     return this.header;
   }
+
+//  public abstract GenomicCoords coordsOfNextFeature(GenomicCoords currentGc, boolean getPrevious)
+//      throws InvalidGenomicCoordsException, IOException;
+//
+//  protected abstract GenomicCoords startEndOfNextFeature(GenomicCoords currentGc, boolean getPrevious)
+//      throws InvalidGenomicCoordsException, IOException;
 }

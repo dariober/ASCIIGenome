@@ -2231,8 +2231,14 @@ public class Utils {
     } else if (nsep == 1) { // From and To positions given.
       from = Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
       to = Integer.parseInt(StringUtils.substringAfter(fromTo, "-").trim());
-      if (from > to || from <= 0 || to <= 0 || (to - from + 1) > 536870912) {
-        throw new InvalidGenomicCoordsException();
+      if (from > to) {
+        throw new InvalidGenomicCoordsException("Start coordinate (" + from + ") is larger than end coordinate (" + to + ") in: " + region);
+      }
+      if (from <= 0) {
+        throw new InvalidGenomicCoordsException("Error in " + region + ": Start position must be greater or equal to 1");
+      }
+      if (to - from + 1 > 536870912) {
+        throw new InvalidGenomicCoordsException("Interval between start and end exceeds the maximum allowed of 536870912 in: " + region);
       }
     } else {
       throw new InvalidGenomicCoordsException();

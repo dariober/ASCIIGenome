@@ -1635,7 +1635,7 @@ public class TrackSet {
 
     List<TrackIntervalFeature> tr = this.matchIntervalFeatureTrack(trackId.trim());
 
-    if (tr.size() == 0) {
+    if (tr.isEmpty()) {
       return currentGc;
     }
 

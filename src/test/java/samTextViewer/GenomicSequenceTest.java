@@ -1,6 +1,7 @@
 package samTextViewer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
 import exceptions.InvalidColourException;
@@ -23,7 +24,7 @@ public class GenomicSequenceTest {
   @Test
   public void canGetGeneticCodeNames() throws InvalidGenomicCoordsException {
     String dna = "";
-    GenomicSequence gs = new GenomicSequence(dna.getBytes());
+    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, 10);
     assertEquals(17, gs.geneticCodeNames().size());
     assertEquals("UNIVERSAL", gs.geneticCodeNames().get(1));
   }
@@ -31,25 +32,32 @@ public class GenomicSequenceTest {
   @Test
   public void canTranslateSequence() throws InvalidColourException, InvalidGenomicCoordsException {
     String dna = "ATGCTGTAG";
-    GenomicSequence gs = new GenomicSequence(dna.getBytes());
-    gs.setNoFormat(false);
+    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 4, 12);
+    gs.setNoFormat(true);
     gs.setPrintCodon(PrintCodon.ALL);
-
     gs.setFrames(Frame.getAllFrames());
-    System.out.print(gs.getPrintableSequence() + "---\n");
-    gs.setFrames(Frame.getForwardFrames());
-    System.out.print(gs.getPrintableSequence() + "---\n");
-    gs.setFrames(Frame.getReverseFrames());
-    System.out.print(gs.getPrintableSequence() + "---\n");
 
-    gs.setFrames(new ArrayList<>());
-    System.out.print(gs.getPrintableSequence() + "---\n");
+    assertTrue(gs.getPrintableSequence().contains("\n1M  L  * "));
+    assertTrue(gs.getPrintableSequence().contains("\n2 C  C "));
+    assertTrue(gs.getPrintableSequence().startsWith("3  A  V"));
+
+    assertTrue(gs.getPrintableSequence().contains("\n H  Q  L1\n"));
+    assertTrue(gs.getPrintableSequence().contains("\n   S  Y 2\n"));
+    assertTrue(gs.getPrintableSequence().endsWith("\n  A  T  3\n"));
+
+    gs = new GenomicSequence(dna.getBytes(), 2, 11);
+    gs.setNoFormat(true);
+    gs.setPrintCodon(PrintCodon.ALL);
+    gs.setFrames(Frame.getAllFrames());
+
+    assertTrue(gs.getPrintableSequence().contains("\n1  A  V"));
+    assertTrue(gs.getPrintableSequence().contains("\n2M  L  *"));
+    assertTrue(gs.getPrintableSequence().startsWith("3 C  C"));
+
+    assertTrue(gs.getPrintableSequence().contains("\n  A  T  1\n"));
+    assertTrue(gs.getPrintableSequence().contains("\n H  Q  L2\n"));
+    assertTrue(gs.getPrintableSequence().endsWith("\n   S  Y 3\n"));
+
+    System.err.println(gs.getPrintableSequence());
   }
-
-//  @Test
-//  public void test() throws InvalidColourException, InvalidGenomicCoordsException, IOException {
-//    GenomicCoords gc = new GenomicCoords("chr3:1000-100000", 80, null, null);
-//    int idx = Utils.getIndexOfclosestValue(2000, gc.getMapping());
-//    System.out.print(idx);
-//  }
 }

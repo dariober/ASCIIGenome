@@ -639,18 +639,6 @@ public class TrackIntervalFeature extends Track {
     return StringUtils.join(printable, "\n").replaceAll("\n$", "");
   }
 
-  /**
-   * Put in the same list reads that will go in the same line of text. This method separates
-   * features touching or overlapping each other, useful for visualization. Each item of the output
-   * list going on its own line.
-   *
-   * @param space Space between text feature that touch each other on screen. Use 1 to have at least
-   *     one space so that distinct features never look merged with adjacent ones. 0 will not put
-   *     any space and will give more compact view. See also TrackReads.stackReads();
-   * @throws InvalidGenomicCoordsException
-   * @throws IOException
-   * @throws InvalidColourException
-   */
   private List<List<IntervalFeature>> stackFeatures()
       throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 

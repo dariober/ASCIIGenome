@@ -51,7 +51,7 @@ public class GenomicCoords implements Cloneable {
   private Integer from;
   private Integer to;
   private SAMSequenceDictionary samSeqDict; // Can be null
-  private GenomicSequence genomicSequence;
+  private GenomicSequence genomicSequence = new GenomicSequence();
 
   /**
    * Size of the screen window Only user getUserWindowSize() to access it after init at constructor.
@@ -118,7 +118,7 @@ public class GenomicCoords implements Cloneable {
       this.setFastaFile(fastaFile);
     }
     this.update();
-    genomicSequence = new GenomicSequence(this.getRefSeq());
+    genomicSequence = new GenomicSequence(this.getRefSeq(), this.getFrom(), this.getSequenceLength());
   }
 
   public GenomicCoords(
@@ -130,6 +130,15 @@ public class GenomicCoords implements Cloneable {
   GenomicCoords(int terminalWidth) throws InvalidGenomicCoordsException, IOException {
     this.terminalWidth = terminalWidth;
   }
+
+  private Integer getSequenceLength() {
+    Integer sequenceLength = null;
+    if (this.getSamSeqDict() != null) {
+      sequenceLength = this.getSamSeqDict().getSequence(this.chrom).getSequenceLength();
+    }
+    return sequenceLength;
+  }
+
 
   /** Update a bunch of fields when coordinates change */
   protected void update() throws InvalidGenomicCoordsException, IOException {
@@ -368,14 +377,14 @@ public class GenomicCoords implements Cloneable {
 
     if (sortOrder.equals(ContigOrder.SIZE_ASC)) {
       // Sort by ascending size: Return next chrom bigger than current
-      Collections.sort(ctg, (o1, o2) -> o1.getLengthOnReference() - o2.getLengthOnReference());
+      ctg.sort((o1, o2) -> o1.getLengthOnReference() - o2.getLengthOnReference());
     } else if (sortOrder.equals(ContigOrder.SIZE_DESC)) {
       // Sort by descending size: Return next chrom smaller than current
-      Collections.sort(ctg, (o1, o2) -> o2.getLengthOnReference() - o1.getLengthOnReference());
+      ctg.sort((o1, o2) -> o2.getLengthOnReference() - o1.getLengthOnReference());
     } else if (sortOrder.equals(ContigOrder.ALPHANUMERIC_ASC)) {
-      Collections.sort(ctg, (o1, o2) -> o1.getSequenceName().compareTo(o2.getSequenceName()));
+      ctg.sort((o1, o2) -> o1.getSequenceName().compareTo(o2.getSequenceName()));
     } else if (sortOrder.equals(ContigOrder.ALPHANUMERIC_DESC)) {
-      Collections.sort(ctg, (o1, o2) -> o2.getSequenceName().compareTo(o1.getSequenceName()));
+      ctg.sort((o1, o2) -> o2.getSequenceName().compareTo(o1.getSequenceName()));
     }
 
     if (maxSize <= 0) {
@@ -394,16 +403,19 @@ public class GenomicCoords implements Cloneable {
     return chroms;
   }
 
-  protected void resetGenomicSequence() throws IOException, InvalidGenomicCoordsException {
+  private void resetGenomicSequence() throws IOException, InvalidGenomicCoordsException {
+    GenomicSequence gs = new GenomicSequence();
     if (this.fastaFile == null || !this.singleBaseResolution) {
-      if (this.genomicSequence == null) {
-        this.genomicSequence = new GenomicSequence(null);
-      } else {
-        this.genomicSequence.setSequence(null);
-      }
-      return;
+      gs.setGeneticCode(this.genomicSequence.getGeneticCode());
+      gs.setFrames(this.genomicSequence.getFrames());
+      gs.setPrintCodon(this.genomicSequence.getPrintCodon());
+    } else {
+      gs = new GenomicSequence(this.getSequenceFromFasta(), this.getFrom(), this.getSequenceLength());
     }
-    this.genomicSequence.setSequence(this.getSequenceFromFasta());
+    gs.setGeneticCode(this.genomicSequence.getGeneticCode());
+    gs.setFrames(this.genomicSequence.getFrames());
+    gs.setPrintCodon(this.genomicSequence.getPrintCodon());
+    this.genomicSequence = gs;
   }
 
   private byte[] getRefSeq() throws IOException, InvalidGenomicCoordsException {
@@ -579,19 +591,19 @@ public class GenomicCoords implements Cloneable {
       this.from = 1;
     }
     // Reset max coords
-    if (this.from != null && this.from > samSeqDict.getSequence(this.chrom).getSequenceLength()) {
+    if (this.from != null && this.from > this.getSequenceLength()) {
       this.from =
-          samSeqDict.getSequence(this.chrom).getSequenceLength() - this.getGenomicWindowSize() + 1;
+          this.getSequenceLength() - this.getGenomicWindowSize() + 1;
       if (this.from <= 0) {
         this.from = 1;
       }
       this.to = this.from + this.getGenomicWindowSize() - 1;
-      if (this.to > samSeqDict.getSequence(this.chrom).getSequenceLength()) {
-        this.to = samSeqDict.getSequence(this.chrom).getSequenceLength();
+      if (this.to > this.getSequenceLength()) {
+        this.to = this.getSequenceLength();
       }
     }
-    if (this.to != null && this.to > samSeqDict.getSequence(this.chrom).getSequenceLength()) {
-      this.to = samSeqDict.getSequence(this.chrom).getSequenceLength();
+    if (this.to != null && this.to > this.getSequenceLength()) {
+      this.to = this.getSequenceLength();
     }
   }
 

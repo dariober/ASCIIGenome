@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -45,6 +46,11 @@ public class TrackSeqRegex extends TrackIntervalFeature {
     this.setTrackTag(new File(gc.getFastaFile()).getName());
     this.setHideTrack(true);
     this.setTrackFormat(TrackFormat.BED);
+  }
+
+  @Override
+  public GenomicCoords coordsOfNextFeature(GenomicCoords currentGc, boolean getPrevious) {
+    throw new NotImplementedException("Searching for regex outside of the current window is not implemented yet.");
   }
 
   @Override

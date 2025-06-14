@@ -207,14 +207,7 @@ public class InteractiveInput {
           proc.getGenomicCoordsHistory().add(gc);
 
         } else if (cmdTokens.get(0).matches("(\\[+|\\]+)\\d*")) {
-
-          int times = this.countBrackets(cmdTokens);
-          String newRegion =
-              this.moveWindowByColumns(proc.getGenomicCoordsHistory().current(), times);
-          GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
-          this.repositionGenomicCoords(gc, newRegion, terminalWidth);
-          proc.getGenomicCoordsHistory().add(gc);
-
+          this.interactiveInputExitCode = this.bracketsCommand(cmdTokens, proc, terminalWidth);
         } else if (cmdTokens.get(0).matches("^\\d+.*") || cmdTokens.get(0).matches("^\\.\\d+.*")) {
           String newRegion;
           try {
@@ -229,10 +222,7 @@ public class InteractiveInput {
           proc.getGenomicCoordsHistory().add(gc);
 
         } else if (cmdTokens.get(0).equals("goto") || cmdTokens.get(0).startsWith(":")) {
-          String newRegion = Joiner.on(" ").join(cmdTokens).replaceFirst("goto|:", "").trim();
-          GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
-          this.repositionGenomicCoords(gc, newRegion, terminalWidth);
-          proc.getGenomicCoordsHistory().add(gc);
+          this.interactiveInputExitCode = this.goTo(cmdTokens, proc, terminalWidth);
 
         } else if (cmdTokens.get(0).equals("nextChrom")) {
           cmdTokens.remove(0);
@@ -417,7 +407,6 @@ public class InteractiveInput {
 
           // * These commands change both the Tracks and the GenomicCoordinates
         } else if (cmdTokens.get(0).equals("next")) {
-
           this.next(cmdTokens, proc);
 
         } else if (cmdTokens.get(0).equals("find")) {
@@ -570,9 +559,62 @@ public class InteractiveInput {
     return proc;
   }
 
+  private ExitCode bracketsCommand(List<String> cmdTokens, TrackProcessor proc, int terminalWidth)
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+    int times = 0;
+    try {
+      times = this.countBrackets(cmdTokens);
+    } catch (InvalidCommandLineException e) {
+      return ExitCode.ERROR;
+    }
+    String newRegion =
+        this.moveWindowByColumns(proc.getGenomicCoordsHistory().current(), times);
+    GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
+    this.repositionGenomicCoords(gc, newRegion, terminalWidth);
+    proc.getGenomicCoordsHistory().add(gc);
+    return ExitCode.CLEAN;
+  }
+
+  private ExitCode goTo(List<String> cmdTokens, TrackProcessor proc, int terminalWidth)
+      throws InvalidGenomicCoordsException, IOException {
+    String tmpRegion = Joiner.on(" ").join(cmdTokens).replaceFirst("goto|:", "").trim();
+
+    List<String> reg;
+    try {
+      reg = Utils.parseStringCoordsToList(tmpRegion);
+    } catch (InvalidGenomicCoordsException e) {
+      System.err.println(e.getMessage());
+      return ExitCode.CLEAN_NO_FLUSH;
+    }
+    int from = Integer.parseInt(reg.get(1));
+    int to = Integer.parseInt(reg.get(2));
+    if (from == to) {
+      to = to + terminalWidth;
+    }
+    String newRegion = Utils.coordinatesToString(reg.get(0), from, to);
+    GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
+    this.repositionGenomicCoords(gc, newRegion, terminalWidth);
+    proc.getGenomicCoordsHistory().add(gc);
+    this.interactiveInputExitCode = ExitCode.CLEAN;
+    return ExitCode.CLEAN;
+  }
+
   private void repositionGenomicCoords(GenomicCoords gc, String newRegion, int terminalWidth)
       throws InvalidGenomicCoordsException, IOException {
-    GenomicCoords tmp = new GenomicCoords(newRegion, terminalWidth, this.samSeqDict, this.fasta);
+    List<String> reg = Utils.parseStringCoordsToList(newRegion);
+    String chrom = reg.get(0);
+    int from = Integer.parseInt(reg.get(1));
+    int to = Integer.parseInt(reg.get(2));
+    int span = to - from + 1;
+    if (this.samSeqDict != null ) {
+      int seqLen = this.samSeqDict.getSequence(chrom).getSequenceLength();
+      if (to > seqLen) {
+        to = seqLen;
+        from = to - span +  1;
+        from = Math.max(from, 1);
+      }
+    }
+    GenomicCoords tmp = new GenomicCoords(Utils.coordinatesToString(chrom, from, to), terminalWidth, this.samSeqDict, this.fasta);
     gc.setChrom(tmp.getChrom());
     gc.setTo(tmp.getTo());
     gc.setFrom(tmp.getFrom());
@@ -580,6 +622,7 @@ public class InteractiveInput {
     gc.setSamSeqDict(this.samSeqDict);
     gc.setFastaFile(this.fasta);
   }
+
   private void repositionGenomicCoords(GenomicCoords gc)
       throws InvalidGenomicCoordsException, IOException {
     this.repositionGenomicCoords(gc, gc.toStringRegion(), gc.getTerminalWidth());
@@ -588,6 +631,11 @@ public class InteractiveInput {
   private ExitCode translate(List<String> args, TrackProcessor proc)
       throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException {
     GenomicSequence gs = proc.getGenomicCoordsHistory().current().getGenomicSequence();
+    if (gs.getSequence() == null) {
+      System.err.println(
+          Utils.padEndMultiLine("Unable to translate without a reference sequence", proc.getWindowSize()));
+      return ExitCode.ERROR;
+    }
     String frame;
     if (args.isEmpty()){
       // With no arguments: toggle on/off
@@ -858,8 +906,8 @@ public class InteractiveInput {
         regTo = (int) Math.rint(gc.getMapping().get(screenIdx));
 
       } else if (center) {
-        regFrom = regFrom - (int) Math.floor(gc.getGenomicWindowSize() / 2) - 1;
-        regFrom = regFrom < 1 ? 1 : regFrom;
+        regFrom = regFrom - (int) Math.floor((double) gc.getGenomicWindowSize() / 2) - 1;
+        regFrom = Math.max(regFrom, 1);
         regTo = regFrom + gc.getGenomicWindowSize() - 1;
       } else {
         regTo = regFrom + gc.getGenomicWindowSize() - 1;

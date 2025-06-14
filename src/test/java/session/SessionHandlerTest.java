@@ -54,7 +54,7 @@ public class SessionHandlerTest {
           InvalidConfigException,
           SessionException {
     new Config(null);
-    TrackProcessor proc = InteractiveInputTest.gimmeTrackProcessor("chr7:1001-1800", 80);
+    TrackProcessor proc = InteractiveInputTest.gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
     proc.getGenomicCoordsHistory().current().setFastaFile("test_data/chr7.fa");
     TrackPileup tr =
         new TrackPileup("test_data/ds051.actb.bam", proc.getGenomicCoordsHistory().current());
