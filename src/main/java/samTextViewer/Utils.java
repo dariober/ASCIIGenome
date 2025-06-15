@@ -2249,12 +2249,8 @@ public class Utils {
     } else {
       throw new InvalidGenomicCoordsException();
     }
-    System.err.println(coords);
-    System.err.println(from);
-    System.err.println(to);
     coords.set(1, from.toString());
     coords.set(2, to.toString());
-
     return coords;
   }
 

@@ -31,7 +31,7 @@ import utils.Tokenizer;
 /** Class to process input from console */
 public class InteractiveInput {
 
-  private boolean nonInteractive;
+  private final boolean nonInteractive;
   private ExitCode interactiveInputExitCode = ExitCode.CLEAN;
   private final ConsoleReader console;
   private static int debug;
@@ -42,7 +42,8 @@ public class InteractiveInput {
   private SessionHandler sessionHandler;
   private String currentSessionName;
 
-  public InteractiveInput(ConsoleReader console, int debug) {
+  public InteractiveInput(ConsoleReader console, int debug, boolean nonInteractive) {
+    this.nonInteractive = nonInteractive;
     InteractiveInput.debug = debug;
     this.console = console;
   }
@@ -469,7 +470,6 @@ public class InteractiveInput {
         } else if (cmdTokens.get(0).equals("bookmark")) {
           messages.add(
               proc.getTrackSet().bookmark(proc.getGenomicCoordsHistory().current(), cmdTokens));
-
         } else {
           System.err.println(
               Utils.padEndMultiLine(
@@ -538,6 +538,7 @@ public class InteractiveInput {
           }
         }
       }
+
       if (this.interactiveInputExitCode.equals(ExitCode.ERROR)) {
         // If something goes wrong or help is invoked, stop executing commands and restart asking
         // for input
@@ -582,7 +583,8 @@ public class InteractiveInput {
       System.err.println(e.getMessage());
       return ExitCode.ERROR;
     }
-    if (!proc.getGenomicCoordsHistory().current().isChromInSequenceDictionary(reg.get(0))) {
+    Boolean validChrom = proc.getGenomicCoordsHistory().current().isChromInSequenceDictionary(reg.get(0));
+    if (validChrom != null && !validChrom) {
       System.err.println("Cannot find chromosome '" + reg.get(0) + "' in sequence dictionary");
       return ExitCode.ERROR;
     }

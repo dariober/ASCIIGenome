@@ -167,7 +167,7 @@ public class Main {
         IntervalFeature target = new IntervalFeature(line, TrackFormat.BED, null, -1);
         String reg = target.getChrom() + ":" + target.getFrom() + "-" + target.getTo();
         String gotoAndExec = ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
-        InteractiveInput itr = new InteractiveInput(console, debug);
+        InteractiveInput itr = new InteractiveInput(console, debug, opts.getBoolean("nonInteractive"));
         itr.processInput(gotoAndExec, proc);
         if (itr.getInteractiveInputExitCode().equals(ExitCode.ERROR)) {
           System.err.println("Error processing '" + gotoAndExec + "' at line '" + line + "'");
@@ -183,7 +183,7 @@ public class Main {
     console.flush();
     proc.iterateTracks();
     if (!exec.isEmpty() || opts.getBoolean("nonInteractive")) {
-      InteractiveInput itr = new InteractiveInput(console, debug);
+      InteractiveInput itr = new InteractiveInput(console, debug, opts.getBoolean("nonInteractive"));
       itr.processInput(exec, proc);
       if (opts.getBoolean("nonInteractive")) {
         System.out.print("\033[0m");
@@ -200,7 +200,7 @@ public class Main {
       // keep going until quit or if no interactive input set
       // *** START processing interactive input
       String cmdConcatInput = ""; // String like "zi && -F 16 && mapq 10"
-      InteractiveInput interactiveInput = new InteractiveInput(console, debug);
+      InteractiveInput interactiveInput = new InteractiveInput(console, debug, opts.getBoolean("nonInteractive"));
       ExitCode currentExitCode = ExitCode.NULL;
       interactiveInput.setInteractiveInputExitCode(currentExitCode);
 

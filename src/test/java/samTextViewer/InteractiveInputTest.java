@@ -70,15 +70,6 @@ public class InteractiveInputTest {
     return proc;
   }
 
-//  public static TrackProcessor gimmeTrackProcessor(String region, int terminalWidth)
-//      throws SQLException,
-//          InvalidGenomicCoordsException,
-//          IOException,
-//          ClassNotFoundException,
-//          InvalidRecordException {
-//    return gimmeTrackProcessor(region, terminalWidth, "test_data/ds051.actb.bam");
-//  }
-
   @Test
   public void canListSessions()
       throws IOException,
@@ -88,7 +79,7 @@ public class InteractiveInputTest {
           InvalidRecordException,
           InvalidCommandLineException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = processInput(ip, "sessionList -f test_data/session.yaml -n 1", proc);
     assertTrue(pi.stderr.contains("sessionName: no-fastafile"));
 
@@ -112,7 +103,7 @@ public class InteractiveInputTest {
           InvalidConfigException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
 
     ProcessInput pi = processInput(ip, "sessionList", proc);
     assertTrue(
@@ -137,7 +128,7 @@ public class InteractiveInputTest {
           InvalidCommandLineException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
 
     ProcessInput pi = processInput(ip, "sessionDelete", proc);
     pi = processInput(ip, "sessionDelete -f test_data/session.yaml", proc);
@@ -173,7 +164,7 @@ public class InteractiveInputTest {
           SessionException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     new File("tmp.yml").delete();
     new File("tmp2.yml").delete();
 
@@ -213,7 +204,7 @@ public class InteractiveInputTest {
           InvalidConfigException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ip.processInput("sessionOpen -f test_data/session.yaml newSession", proc);
     String fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
     assertEquals("TTATT", fasta.substring(0, 5));
@@ -235,7 +226,7 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
 
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
 
     ByteArrayOutputStream err = new ByteArrayOutputStream();
     System.setErr(new PrintStream(err));
@@ -260,7 +251,7 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
 
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
 
     ByteArrayOutputStream err = new ByteArrayOutputStream();
     System.setErr(new PrintStream(err));
@@ -283,7 +274,7 @@ public class InteractiveInputTest {
           InvalidCommandLineException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
     ProcessInput pi = this.processInput(ip, "sessionOpen -f missing.yml foo", proc);
     assertTrue(pi.stderr.contains("does not exist"));
 
@@ -305,7 +296,7 @@ public class InteractiveInputTest {
           InvalidCommandLineException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "sessionOpen -f test_data/session.yaml spam", proc);
     assertTrue(pi.stderr.contains("Cannot find session with name 'spam'"));
   }
@@ -320,7 +311,7 @@ public class InteractiveInputTest {
           InvalidRecordException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ip.processInput("session", proc);
     assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
 
@@ -345,7 +336,7 @@ public class InteractiveInputTest {
           InvalidCommandLineException {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     Files.deleteIfExists(new File("test_data/tmp.yml").toPath());
     this.processInput(ip, "sessionSave -f test_data/tmp.yml test", proc);
     this.processInput(ip, "sessionOpen -f test_data/tmp.yml test", proc);
@@ -368,7 +359,7 @@ public class InteractiveInputTest {
     GenomicCoords gc = proc.getGenomicCoordsHistory().current();
     Track tr = new TrackPileup("test_data/ds051.actb.bam", gc);
     proc.getTrackSet().addTrack(tr, "tr#1");
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ip.processInput("sessionSave -f tmp.yml tr1", proc);
     SessionHandler sh = new SessionHandler(new File("tmp.yml"));
     Files.deleteIfExists(new File("tmp.yml").toPath());
@@ -384,7 +375,7 @@ public class InteractiveInputTest {
           SQLException {
     new Config(null);
     TrackProcessor proc;
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
 
     ProcessInput pi = this.processInput(ip, "show ge -n -1", proc);
@@ -421,7 +412,7 @@ public class InteractiveInputTest {
     TrackProcessor proc;
     proc = gimmeTrackProcessor("chr7:10001-10061", 80, "test_data/chr7.fa");
     proc.setNoFormat(true);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "translate", proc);
     assertTrue(pi.stdout.contains("\nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccc\n"));
     assertTrue(pi.stdout.contains("\n3 *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P \n"));
@@ -466,7 +457,7 @@ public class InteractiveInputTest {
     TrackProcessor proc;
     proc = gimmeTrackProcessor("chr7:10001-10061", 80, "test_data/ds051.actb.bam");
     proc.setNoFormat(true);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "translate", proc);
     assertEquals("Unable to translate without a reference sequence", pi.stderr.trim());
   }
@@ -480,7 +471,7 @@ public class InteractiveInputTest {
           InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("small", 150, "test_data/seq_cg.fa");
     proc.setNoFormat(true);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "nextChrom", proc);
     assertTrue(pi.stdout.contains("seq:1-120"));
     assertTrue(pi.stdout.contains("ATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGA"));
@@ -491,7 +482,7 @@ public class InteractiveInputTest {
       throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/chr7.fa");
     proc.setNoFormat(true);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "goto chr7:200000-200060", proc);
     assertTrue(pi.stdout.contains("\nTTCTTGACACTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTA\n"));
     pi = this.processInput(ip, "zo", proc);
@@ -505,7 +496,7 @@ public class InteractiveInputTest {
       throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/chr7.fa");
     proc.setNoFormat(true);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "+1", proc);
     assertTrue(pi.stdout.contains("\nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccc\n"));
 
@@ -575,7 +566,7 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc;
 
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
     GenomicCoords gc2 = ip.processInput("[", proc).getGenomicCoordsHistory().current();
     assertEquals(1011, (int) gc2.getFrom());
@@ -635,7 +626,7 @@ public class InteractiveInputTest {
   public void canPrintHelp()
       throws InvalidGenomicCoordsException, IOException, InvalidRecordException {
 
-    InteractiveInput ip = new InteractiveInput(null, 1);
+    InteractiveInput ip = new InteractiveInput(null, 1, false);
 
     GenomicCoords gc = new GenomicCoords("chr7:1-100", 80, null, null);
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
@@ -691,7 +682,7 @@ public class InteractiveInputTest {
   @Test
   public void canGoToRegion() throws InvalidGenomicCoordsException, IOException {
 
-    InteractiveInput ip = new InteractiveInput(null, 1);
+    InteractiveInput ip = new InteractiveInput(null, 1, false);
 
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     String region = ip.gotoOnCurrentChrom(Splitter.on(" ").splitToList("1 100"), gc);
@@ -709,7 +700,7 @@ public class InteractiveInputTest {
       throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/chr7.fa");
     proc.setNoFormat(true);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "goto chr7:200000-200060", proc);
     assertTrue(pi.stdout.contains("chr7:200000-200060"));
     assertTrue(pi.stdout.contains("\n200000 "));
@@ -729,7 +720,7 @@ public class InteractiveInputTest {
 
   @Test
   public void canGoToRegionAndCenter() throws InvalidGenomicCoordsException, IOException {
-    InteractiveInput ip = new InteractiveInput(null, 0);
+    InteractiveInput ip = new InteractiveInput(null, 0, false);
 
     GenomicCoords gc = new GenomicCoords("chr1:1-20", 20, null, null);
 
@@ -747,7 +738,7 @@ public class InteractiveInputTest {
       throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
     proc.setNoFormat(true);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
 
     ProcessInput pi = this.processInput(ip, "nextChrom -s u", proc);
     assertTrue(pi.stdout.contains("chr8:1-"));
@@ -764,7 +755,7 @@ public class InteractiveInputTest {
       throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
     proc.setNoFormat(true);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "print && grep -i NCTNTCCN", proc);
     String woComm = pi.stdout;
 
