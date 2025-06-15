@@ -5,11 +5,15 @@ import static org.junit.Assert.*;
 import colouring.Config;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.itextpdf.text.DocumentException;
+import exceptions.BamIndexNotFoundException;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import exceptions.SessionException;
+import faidx.UnindexableFastaFileException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -773,5 +777,35 @@ public class InteractiveInputTest {
     pi = this.processInput(ip, "goto chr7 // comment", proc);
     withComm = pi.stdout;
     assertEquals(woComm, withComm);
+  }
+
+  @Test
+  public void canSuggestCommand()
+      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+    TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
+    proc.setNoFormat(true);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi = this.processInput(ip, "prnt", proc);
+    assertTrue(pi.stderr.contains("Maybe you mean print?"));
+  }
+
+  @Test
+  public void doNotSetInvalidBooleanConfig()
+      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+   TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
+   proc.setNoFormat(true);
+   InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+   ProcessInput pi = this.processInput(ip, "setConfig nucs 999", proc);
+    assertTrue(pi.stderr.contains("Unable to set"));
+  }
+
+  @Test
+  public void doNotSetInvalidIntegerConfig()
+      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+    TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
+    proc.setNoFormat(true);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi = this.processInput(ip, "setConfig shade_baseq foo", proc);
+    assertTrue(pi.stderr.contains("Unable to set"));
   }
 }

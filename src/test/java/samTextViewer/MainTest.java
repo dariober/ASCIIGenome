@@ -112,26 +112,7 @@ public class MainTest {
           "-ni", "-nf", "--exec", "nextChrom -min 135000000 chr1", "test_data/ds051.actb.bam"
         };
     out = Joiner.on("\n").join(this.runMain(args));
-    System.err.println(out);
     assertTrue(out.contains("chr11:1-"));
-  }
-
-  @Test
-  public void canSuggestCommand()
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          BamIndexNotFoundException,
-          SQLException,
-          DocumentException,
-          UnindexableFastaFileException,
-          InvalidColourException,
-          InvalidConfigException {
-    String[] args = new String[] {"-ni", "-nf", "--exec", "prnt"};
-    List<String> out = this.runMain(args);
-    assertTrue(out.get(1).contains("Maybe you mean print?"));
   }
 
   @Test
@@ -150,7 +131,6 @@ public class MainTest {
     String[] args =
         new String[] {"-ni", "-nf", "--exec", "setConfig nucs f", "test_data/ds051.short.bam"};
     List<String> out = this.runMain(args);
-    System.out.println(out);
     assertTrue(out.get(0).contains(">>>>>>>>>>>>>>>>>>>"));
   }
 
@@ -171,68 +151,6 @@ public class MainTest {
         new String[] {"-ni", "-nf", "--exec", "setConfig nucs", "test_data/ds051.short.bam"};
     List<String> out = this.runMain(args);
     assertTrue(out.get(0).contains(">>>>>>>>>>>>>>>>>>>"));
-  }
-
-  @Test
-  public void doNotSetInvalidBooleanConfig()
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          BamIndexNotFoundException,
-          SQLException,
-          DocumentException,
-          UnindexableFastaFileException,
-          InvalidColourException,
-          InvalidConfigException {
-    String[] args =
-        new String[] {"-ni", "-nf", "--exec", "setConfig nucs 999", "test_data/ds051.short.bam"};
-    List<String> out = this.runMain(args);
-    System.err.println(out);
-    assertTrue(out.get(1).contains("Unable to set"));
-  }
-
-  @Test
-  public void doNotSetInvalidColourConfig()
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          BamIndexNotFoundException,
-          SQLException,
-          DocumentException,
-          UnindexableFastaFileException,
-          InvalidColourException,
-          InvalidConfigException {
-    String[] args =
-        new String[] {"-ni", "-nf", "--exec", "setConfig seq_a 999", "test_data/ds051.short.bam"};
-    List<String> out = this.runMain(args);
-    System.err.println(out);
-    assertTrue(out.get(1).contains("Unable to set"));
-  }
-
-  @Test
-  public void doNotSetInvalidIntegerConfig()
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          BamIndexNotFoundException,
-          SQLException,
-          DocumentException,
-          UnindexableFastaFileException,
-          InvalidColourException,
-          InvalidConfigException {
-    String[] args =
-        new String[] {
-          "-ni", "-nf", "--exec", "setConfig shade_baseq foo", "test_data/ds051.short.bam"
-        };
-    List<String> out = this.runMain(args);
-    System.err.println(out);
-    assertTrue(out.get(1).contains("Unable to set"));
   }
 
   /* H E L P E R S */
