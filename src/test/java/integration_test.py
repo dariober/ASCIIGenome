@@ -154,7 +154,7 @@ class TestCLI(unittest.TestCase):
                   """
         print(cmd)
         p = shell(cmd)
-        self.assertEqual(p.returncode, 0)
+        self.assertEqual(p.returncode, 1)
         self.assertTrue(
             "Cannot find chromosome 'FOO' in sequence dictionary" in p.stderr
         )
