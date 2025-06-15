@@ -1,4 +1,4 @@
-@SQ	SN:chr7	LN:159138663	UR:Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome.fa	M5:618366e953d6aaad97dbe4777c29375e
+@SQ	SN:chr7	LN:159138663	UR:Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/tmpGenome.fa	M5:618366e953d6aaad97dbe4777c29375e
 r1/1	99	chr7	1	30	2S5M3S	=	20	0	GGNANANGGG	*
 r1/2	147	chr7	20	30	3S5M2S	=	1	0	gggntntngg	*
 r0/1	99	chr7	10	30	2S5M3S	=	30	0	GGNANANGGG	*

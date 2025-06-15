@@ -18,11 +18,6 @@ FIXME
 Features
 --------
 
-* 17-08-2023: Allow whitespace (in addition to tab) to be a column separator in
-  bed/bedgraph. Do it in `MakeTabixIndex.sortByChromThenPos` (if a file is
-  sorted and tabix-indexed it is also tab-separated since tabix only allows
-  tab)
-
 * 01-08-2023: Add a `moveTracks` command to reorder tracks. You probably need a
   `TrackSet.moveTracks(cmdTokens)` method similar to `TrackSet.orderTracks(...)`. 
   CLI:
@@ -42,7 +37,7 @@ moveTracks FOO FOO --after BAR # Make sure FOO is not duplicated
 # Should these command return the same order?
 moveTracks FOO SPAM --after BAR
 moveTracks SPAM FOO --after BAR
-``
+```
 
 * 01-07-2023: Allow the first line in bed/bedgraph/gtf to fail under assumption it is the header
 

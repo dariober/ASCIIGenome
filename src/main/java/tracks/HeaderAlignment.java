@@ -1,7 +1,7 @@
 package tracks;
 
 enum HeaderAlignment {
-    LEFT,
-    CENTER, 
-    RIGHT,
+  LEFT,
+  CENTER,
+  RIGHT,
 }

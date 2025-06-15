@@ -1,0 +1,73 @@
+## MEMO: For testing use relative paths so they work locally and on github
+
+- sessionName: "no-fastafile"
+  lastRead: "2024-07-27T12:17:21.176154"
+  genome:
+    samSeqDictSource: "test_data/ds051.actb.bam"
+    chrom: "chr7"
+    from: 80
+    to: 1001
+    fastaFile: null
+  tracks:
+    ds#1:
+      filename: "test_data/ds051.actb.bam"
+      type: "tracks.TrackPileup"
+      colour: "blue"
+      awk: ""
+    ds#2:
+      filename: "test_data/ds051.actb.bam"
+      type: "tracks.TrackReads"
+      colour: "0"
+      awk: ""
+- sessionName: "file-not-found"
+  lastRead: "2023-05-29T22:26:33.850521"
+  genome:
+    samSeqDictSource: "notfound.bam"
+    chrom: "chr7"
+    from: 5567000
+    to: 5568000
+    fastaFile: null
+  tracks:
+    xs#1:
+      filename: "test_data/ds051.actb.bam"
+      type: "tracks.TrackPileup"
+      colour: "blue"
+      awk: null
+    xs#2:
+      filename: "missing.bam"
+      type: "tracks.TrackReads"
+      colour: "0"
+      awk: null
+- sessionName: "newSession"
+  lastRead: "2023-05-29T22:26:33.764802"
+  genome:
+    samSeqDictSource: "test_data/chr7.fa"
+    chrom: "chr7"
+    from: 5566800
+    to: 5567000
+    fastaFile: "test_data/chr7.fa"
+  tracks:
+    ds#1:
+      filename: "test_data/ds051.actb.bam"
+      type: "tracks.TrackPileup"
+      colour: "red"
+      awk: null
+    ds#2:
+      filename: "test_data/ds051.actb.bam"
+      type: "tracks.TrackReads"
+      colour: "0"
+      awk: null
+- sessionName: "fastafile-not-found"
+  lastRead: "2022-05-29T22:26:33.850521"
+  genome:
+    samSeqDictSource: null
+    chrom: "chr7"
+    from: 5567000
+    to: 5568000
+    fastaFile: "missing.fa"
+  tracks:
+    xy#1:
+      filename: "test_data/ds051.actb.bam"
+      type: "tracks.TrackPileup"
+      colour: "blue"
+      awk: null

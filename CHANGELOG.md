@@ -1,3 +1,37 @@
+New in 1.19.0
+=============
+
+* Command
+  [translate](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#translate)
+  to show 6-frame translation. TODO: Show starts and stops when bases per
+  character are above single base resolution.
+
+![six-frame](docs/screenshots/sixframe.png)
+
+* Support for sessions via `session*` commands. Similar to other genome
+  browsers, ASCIIGenome can save a session to be re-opened later. Sessions are
+  saved in a yaml file (default `~/.asciigenome/session.yml`) which is a list
+  of dictionaries (each dictionary is a session). If desired, these files
+  should be fairly easy to edit with a text editor. At present, only some basic
+  configurations are saved and things could change in the future.
+
+  Current session* commands, use `<command> -h` for more detail:
+
+  * `sessionOpen`
+
+  * `sessionSave`
+
+  * `sessionList`
+
+  * `sessionDelete`
+
+* Move ASCIIGenome files and settings to `~/.asciigenome` directory.
+
+* `print` command does not decode the URL escapes for line feed and carriage
+  return. Decoding `\n` and `\r` would split a gff line when printed.
+
+* Support for bgzip'd fasta reference (better late than never)
+
 New in 1.18.0
 =============
 

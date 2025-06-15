@@ -1,9 +1,35 @@
+<!-- vim-markdown-toc GFM -->
+
+* [Notes on maintenance and development](#notes-on-maintenance-and-development)
+    * [Code style](#code-style)
+    * [Release new version](#release-new-version)
+        * [Upload release to github](#upload-release-to-github)
+        * [Upload ASCIIGenome-x.y.z.zip to github](#upload-asciigenome-xyzzip-to-github)
+        * [Update brew formula](#update-brew-formula)
+    * [Test brew installation](#test-brew-installation)
+        * [Update bioconda](#update-bioconda)
+    * [Start new development branch](#start-new-development-branch)
+        * [Create a new branch:](#create-a-new-branch)
+* [Install or update gradle](#install-or-update-gradle)
+
+<!-- vim-markdown-toc -->
+
 Notes on maintenance and development
 ====================================
 
 These notes are howto's and they are not part of the documentation. They are
 here just for pro memoria. A lot of references are not general but depend on the
 system. For authoritative references see github, svn, eclipse, ..., docs. 
+
+Code style
+----------
+
+Reformat code *in place*:
+
+```
+curl -O -L https://github.com/google/google-java-format/releases/download/v1.22.0/google-java-format-1.22.0-all-deps.jar
+java -jar google-java-format-1.22.0-all-deps.jar -i `find src/ -name '*.java'`
+```
 
 Release new version
 -------------------
@@ -14,6 +40,8 @@ you want to release it as a new version.
 * Make sure the version set in `ArgParse.VERSION` is bumped as appropriate.
 
 * Test and build jar file. All tests should PASS.
+
+* Reformat code (see above)
 
 ```
 ./gradlew clean
@@ -115,21 +143,16 @@ git checkout v1.18.0       # Switch to new branch
 git push -u origin v1.18.0 # Add branch to remote     
 ```
 
-### Set up Eclipse project
+# Install or update gradle
 
-Before importing to eclipse make sure you are in the git branch you wnat to
-develop. In the ASCIIGenome repository use `git branch -a` to view available
-branches and `git checkout <branch name>` to switch to the requested branch.
+Assuming you don't have gradle already installed, in a conda env:
 
-* In `build.gradle` (temporarily) comment out the chunk of code preparing test
-  data. This is because the importer will complain that the requested file(s)
-  cannot be found.
+```
+mamba install gradle
+```
 
-* File `->` Import `->` Gradle `->` Existing Gradle Project `->` Next
+Create or update the gradlew wrapper:
 
-* Project root directory `~/git_repos/ASCIIGenome` (or where the git repository
-  has been cloned). Go `Next` in the following steps until `Finish`. There
-  should be nothing to change.
-
-* Reset `build.gradle` to bring back the code commented out above
-
+```
+gradle wrapper
+```

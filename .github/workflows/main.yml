@@ -2,13 +2,16 @@ name: CI
 on: [push]
 jobs:
   build-and-test:
+    strategy:
+      matrix:
+        version: [11, 23]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '8'
+          java-version: ${{ matrix.version }}
       - name: Build and Test
         run: |
           ./gradlew build test jacocoTestReport -PexcludeTests=**/TravisExcludedTest*

@@ -408,13 +408,13 @@ Return the value of the **FORMAT** tag for sample index *sample_idx* (default to
 
 * :code:`getAlnEnd()` on **SAM**
 
-Returns the position of the alignment end. For example, select reads ending after position 1000`here <http://jonasjacek.github.io/colors/>`_             
+Returns the position of the alignment end. For example, select reads ending after position 1000`here <http://jonasjacek.github.io/colours/>`_             
 
 Example::
 
-    colorTrack cyan1 ts.*gtf ts.*bam 
-    colorTrack 40                   <- By INT
-    colorTrack darkv                <- Same as darkviolet
+    colourTrack cyan1 ts.*gtf ts.*bam 
+    colourTrack 40                   <- By INT
+    colourTrack darkv                <- Same as darkviolet
 
 
 
@@ -520,7 +520,7 @@ addHeader
 
 Add header to track(s). Example use case: You have several tracks sorted in a meanignful way (say WT and CTRL tracks). Add a header to the first track of each group for ease of reading. Useful also to add one or more blank lines for more separation between tracks.
 
-* :code:`-c` Color for the header - see :code: `colorTrack -h` for options
+* :code:`-c` Colour for the header - see :code: `colourTrack -h` for options
 
 * :code:`-a` Header alignment. Either a number between 0 (left-align) and 1 (right-align) or a keyword left, center, right. Default is 0.5 (center-align)
 
@@ -824,7 +824,7 @@ reload
 
 Reload track files.  *reload* is useful when an input track file is edited by external actions and you want to reload it in the current session. This is easier than dropping and re-opening tracks with *dropTracks ... && open ...* since track formattings and filters are preserved.
 
-A track is dropped if it cannot be reloaded, for example when the sequence disctionary has become incompatible with the current one.
+A track is dropped if it cannot be reloaded, for example when the sequence dictionary has become incompatible with the current one.
 
 Examples::
 
@@ -926,5 +926,64 @@ For help on individual commands use one of::
     help command
 
 e.g. `ylim -h` 
+
+Session
+-------
+
+sessionOpen
++++++++++++
+
+:code:`sessionOpen [-f session.yml] [sessionName|index]`
+
+Open a previous session Since a session file can hold multiple sessions, choose the session to open by name or index. Without arguments, reproduce the settings from the last time ASCIIGenome exited regardless of whether those settings were savedin a session.
+
+* :code:`-f` Read sessions from this yaml file. Default:  :code:`\ /.asciigenome/session.yaml`
+
+* :code:`sessioName|index` Session name or index to open. The index refers to sessions in reverse chronological order (1: last opened, 2: second last, etc). Default: 1
+
+Examples::
+
+    sessionOpen // Reproduce the settings from last exit of ASCIIGenome
+    sessionOpen 1 // Last session saved in default session file
+    sessionOpen -f ss.yml myTracks // Open `myTracks` from ss.yml
+
+
+sessionSave
++++++++++++
+
+:code:`sessionSave [-f session.yml] [sessionName]`
+
+Save current session Note a session file can hold multiple sessions. *I.e.*, there's no need to save each session to a separate file. Execute :code:`sessionList` to get the current session file and name.
+
+* :code:`-f` Save session to this file. Default:  :code:`\ /.asciigenome/session.yaml`
+
+* :code:`sessioName` If given, save session with this name (equivalent to a typical "save as" command).  Otherwise save to the current session (equivalent to the usual Ctrl+S shortcut)
+
+Examples::
+
+    sessionSave // Save to current session, if any has been opened
+    sessionSave mySession // Save to default session file
+    sessionSave -f ss.yml mySession // Save to ss.yml
+
+sessionList
++++++++++++
+
+:code:`sessionList [-f session.yml]`
+
+List sessions in file and report current session file and name. Sessions are listed in reverse chronological order (*i.e.*, most recent last)
+
+* :code:`-f` List sessions in this file. Default:  :code:`\ /.asciigenome/session.yaml`
+
+* :code:`-n` List up to this many sessions. Default 10
+
+sessionDelete
++++++++++++++
+
+:code:`sessionDelete [-f session.yml] <sessionName>`
+
+Delete session by name. 
+* :code:`-f` List sessions in this file. Default:  :code:`\ /.asciigenome/session.yaml`
+
+* :code:`sessionName` Session name to delete
 
 

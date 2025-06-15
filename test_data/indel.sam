@@ -1,5 +1,5 @@
 @HD	VN:1.4	SO:coordinate
-@SQ	SN:chr7	LN:159138663	UR:Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome.fa	M5:618366e953d6aaad97dbe4777c29375e
+@SQ	SN:chr7	LN:159138663	UR:Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/tmpGenome.fa	M5:618366e953d6aaad97dbe4777c29375e
 r1	0	chr7	10001	50	1M10I3M	*	0	0	CnnnnnnnnnnCCT	*
 r2	0	chr7	10001	50	10M1I10M	*	0	0	CCCCCCCCCTnAAAAAAAAAA	*
 r4	0	chr7	10001	50	3S10M1I10M	*	0	0	gggCCCCCCCCCTnAAAAAAAAAA	*
