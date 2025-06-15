@@ -189,9 +189,7 @@ public class GenomicCoordsTest {
 
   @Test
   public void canPrintPerecentRuler()
-      throws InvalidGenomicCoordsException,
-          IOException,
-          InvalidColourException {
+      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 
     GenomicCoords gc = new GenomicCoords("chr1:101-2000", 80, samSeqDict, null);
     assertTrue(gc.printablePercentRuler(10, true).length() > 10);
@@ -261,9 +259,7 @@ public class GenomicCoordsTest {
 
   @Test
   public void canPrintChromMap()
-      throws InvalidGenomicCoordsException,
-          IOException,
-          InvalidColourException {
+      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 
     GenomicCoords gc = new GenomicCoords("chr7:1-100", 80, samSeqDict, null);
 
@@ -484,9 +480,9 @@ public class GenomicCoordsTest {
     assertEquals(1000, (int) gc.getFrom());
     assertEquals(2000, (int) gc.getTo());
 
-//    gc = new GenomicCoords("chr7:1,000,000,000", 80, samSeqDict, null);
-//    assertEquals(159138663 - 79, (int) gc.getFrom()); // Reset to chrom size
-//    assertEquals(159138663, (int) gc.getTo());
+    //    gc = new GenomicCoords("chr7:1,000,000,000", 80, samSeqDict, null);
+    //    assertEquals(159138663 - 79, (int) gc.getFrom()); // Reset to chrom size
+    //    assertEquals(159138663, (int) gc.getTo());
 
     gc = new GenomicCoords("chr7:1,000,000,000", 80, null, null);
     assertEquals(1000000000, (int) gc.getFrom()); // Fine, no dict to check against.

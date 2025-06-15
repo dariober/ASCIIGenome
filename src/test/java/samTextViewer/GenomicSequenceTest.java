@@ -8,8 +8,6 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import org.biojava.nbio.core.sequence.transcription.Frame;
 import org.junit.Before;
 import org.junit.Test;

@@ -50,7 +50,8 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 
   @Override
   public GenomicCoords coordsOfNextFeature(GenomicCoords currentGc, boolean getPrevious) {
-    throw new NotImplementedException("Searching for regex outside of the current window is not implemented yet.");
+    throw new NotImplementedException(
+        "Searching for regex outside of the current window is not implemented yet.");
   }
 
   @Override

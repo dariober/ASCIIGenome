@@ -118,7 +118,8 @@ public class GenomicCoords implements Cloneable {
       this.setFastaFile(fastaFile);
     }
     this.update();
-    genomicSequence = new GenomicSequence(this.getRefSeq(), this.getFrom(), this.getSequenceLength());
+    genomicSequence =
+        new GenomicSequence(this.getRefSeq(), this.getFrom(), this.getSequenceLength());
   }
 
   public GenomicCoords(
@@ -138,7 +139,6 @@ public class GenomicCoords implements Cloneable {
     }
     return sequenceLength;
   }
-
 
   /** Update a bunch of fields when coordinates change */
   protected void update() throws InvalidGenomicCoordsException, IOException {
@@ -410,7 +410,9 @@ public class GenomicCoords implements Cloneable {
       gs.setFrames(this.genomicSequence.getFrames());
       gs.setPrintCodon(this.genomicSequence.getPrintCodon());
     } else {
-      gs = new GenomicSequence(this.getSequenceFromFasta(), this.getFrom(), this.getSequenceLength());
+      gs =
+          new GenomicSequence(
+              this.getSequenceFromFasta(), this.getFrom(), this.getSequenceLength());
     }
     gs.setGeneticCode(this.genomicSequence.getGeneticCode());
     gs.setFrames(this.genomicSequence.getFrames());
@@ -592,8 +594,7 @@ public class GenomicCoords implements Cloneable {
     }
     // Reset max coords
     if (this.from != null && this.from > this.getSequenceLength()) {
-      this.from =
-          this.getSequenceLength() - this.getGenomicWindowSize() + 1;
+      this.from = this.getSequenceLength() - this.getGenomicWindowSize() + 1;
       if (this.from <= 0) {
         this.from = 1;
       }
@@ -676,9 +677,10 @@ public class GenomicCoords implements Cloneable {
     this.update();
   }
 
-  private void resetToPosition(){
+  private void resetToPosition() {
     if (this.samSeqDict != null && !this.samSeqDict.isEmpty()) {
-      if (this.samSeqDict.getSequence(this.chrom) != null && this.samSeqDict.getSequence(this.chrom).getSequenceLength() > 0) {
+      if (this.samSeqDict.getSequence(this.chrom) != null
+          && this.samSeqDict.getSequence(this.chrom).getSequenceLength() > 0) {
         this.to =
             (this.to > this.samSeqDict.getSequence(this.chrom).getSequenceLength())
                 ? this.samSeqDict.getSequence(this.chrom).getSequenceLength()
@@ -1293,11 +1295,10 @@ public class GenomicCoords implements Cloneable {
     this.to = to;
   }
 
-  /** Return
-   * * True if chrom is a sequence name in the sequence dictionary
-   * * null if this GenomicCoords has no dictionary
-   * * false otherwise
-   * */
+  /**
+   * Return * True if chrom is a sequence name in the sequence dictionary * null if this
+   * GenomicCoords has no dictionary * false otherwise
+   */
   public Boolean isChromInSequenceDictionary(String chrom) {
     if (this.getSamSeqDict() == null) {
       return null;

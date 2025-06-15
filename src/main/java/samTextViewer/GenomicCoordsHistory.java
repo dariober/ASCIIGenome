@@ -24,8 +24,8 @@ public class GenomicCoordsHistory {
   /*  Methods */
 
   /**
-   * Add GenomicCoords obj to history provided this item is not equal in coordinates to the last
-   * one in history. The position tracker is reset to the last when a new position is added
+   * Add GenomicCoords obj to history provided this item is not equal in coordinates to the last one
+   * in history. The position tracker is reset to the last when a new position is added
    */
   public void add(GenomicCoords gc) {
     if (this.currentSessionHistory.isEmpty()

@@ -565,8 +565,7 @@ public class InteractiveInput {
     } catch (InvalidCommandLineException e) {
       return ExitCode.ERROR;
     }
-    String newRegion =
-        this.moveWindowByColumns(proc.getGenomicCoordsHistory().current(), times);
+    String newRegion = this.moveWindowByColumns(proc.getGenomicCoordsHistory().current(), times);
     GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
     this.repositionGenomicCoords(gc, newRegion, terminalWidth);
     proc.getGenomicCoordsHistory().add(gc);
@@ -583,7 +582,8 @@ public class InteractiveInput {
       System.err.println(e.getMessage());
       return ExitCode.ERROR;
     }
-    Boolean validChrom = proc.getGenomicCoordsHistory().current().isChromInSequenceDictionary(reg.get(0));
+    Boolean validChrom =
+        proc.getGenomicCoordsHistory().current().isChromInSequenceDictionary(reg.get(0));
     if (validChrom != null && !validChrom) {
       System.err.println("Cannot find chromosome '" + reg.get(0) + "' in sequence dictionary");
       return ExitCode.ERROR;
@@ -613,15 +613,17 @@ public class InteractiveInput {
     int from = Integer.parseInt(reg.get(1));
     int to = Integer.parseInt(reg.get(2));
     int span = to - from + 1;
-    if (this.samSeqDict != null ) {
+    if (this.samSeqDict != null) {
       int seqLen = this.samSeqDict.getSequence(chrom).getSequenceLength();
       if (to > seqLen) {
         to = seqLen;
-        from = to - span +  1;
+        from = to - span + 1;
         from = Math.max(from, 1);
       }
     }
-    GenomicCoords tmp = new GenomicCoords(Utils.coordinatesToString(chrom, from, to), terminalWidth, this.samSeqDict, this.fasta);
+    GenomicCoords tmp =
+        new GenomicCoords(
+            Utils.coordinatesToString(chrom, from, to), terminalWidth, this.samSeqDict, this.fasta);
     gc.setChrom(tmp.getChrom());
     gc.setTo(tmp.getTo());
     gc.setFrom(tmp.getFrom());
@@ -640,11 +642,12 @@ public class InteractiveInput {
     GenomicSequence gs = proc.getGenomicCoordsHistory().current().getGenomicSequence();
     if (gs.getSequence() == null) {
       System.err.println(
-          Utils.padEndMultiLine("Unable to translate without a reference sequence", proc.getWindowSize()));
+          Utils.padEndMultiLine(
+              "Unable to translate without a reference sequence", proc.getWindowSize()));
       return ExitCode.ERROR;
     }
     String frame;
-    if (args.isEmpty()){
+    if (args.isEmpty()) {
       // With no arguments: toggle on/off
       if (gs.getFrames().isEmpty()) {
         frame = "all";
@@ -931,7 +934,8 @@ public class InteractiveInput {
       regFrom = Integer.parseInt(args.get(0));
       regTo = Integer.parseInt(args.get(args.size() - 1));
     } else if (center) {
-      regFrom = Integer.parseInt(args.get(0)) - (int) Math.floor((double) gc.getGenomicWindowSize() / 2);
+      regFrom =
+          Integer.parseInt(args.get(0)) - (int) Math.floor((double) gc.getGenomicWindowSize() / 2);
       regFrom = Math.max(regFrom, 1);
       regTo = regFrom + gc.getGenomicWindowSize() - 1;
     } else {
@@ -944,7 +948,8 @@ public class InteractiveInput {
       throws IOException,
           InvalidConfigException,
           InvalidCommandLineException,
-          InvalidColourException, InvalidGenomicCoordsException {
+          InvalidColourException,
+          InvalidGenomicCoordsException {
     List<String> args = new ArrayList<String>(cmdTokens);
     args.remove(0);
     if (args.isEmpty()) {
@@ -976,7 +981,10 @@ public class InteractiveInput {
   }
 
   private void saveSession(List<String> args, TrackProcessor proc)
-      throws InvalidCommandLineException, IOException, SessionException, InvalidGenomicCoordsException {
+      throws InvalidCommandLineException,
+          IOException,
+          SessionException,
+          InvalidGenomicCoordsException {
     File sessionYamlFile;
     String sf = Utils.getArgForParam(args, "-f", null);
     if (sf == null && this.sessionHandler == null) {

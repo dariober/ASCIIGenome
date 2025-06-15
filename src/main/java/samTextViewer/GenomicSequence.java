@@ -28,7 +28,8 @@ public class GenomicSequence {
   private final Integer forwardOffset;
   private final Integer reverseOffset;
 
-  protected GenomicSequence(byte[] sequence, Integer genomicPositionStart, Integer chromSize) throws InvalidGenomicCoordsException {
+  protected GenomicSequence(byte[] sequence, Integer genomicPositionStart, Integer chromSize)
+      throws InvalidGenomicCoordsException {
     this.sequence = sequence;
     if (sequence == null) {
       this.forwardOffset = null;
@@ -53,8 +54,7 @@ public class GenomicSequence {
     if (this.sequence == null) {
       return;
     }
-    IUPACTable table =
-        IUPACParser.getInstance().getTable(this.geneticCode.toUpperCase());
+    IUPACTable table = IUPACParser.getInstance().getTable(this.geneticCode.toUpperCase());
     if (table == null) {
       throw new InvalidGenomicCoordsException(
           "Invalid translation table " + this.geneticCode.toUpperCase());
@@ -63,58 +63,58 @@ public class GenomicSequence {
         new Builder().table(table).initMet(true).trimStop(false).build();
 
     HashMap<Frame, Sequence<AminoAcidCompound>> sixFrame = new HashMap<>();
-      DNASequence dna;
+    DNASequence dna;
+    try {
+      dna = new DNASequence(new String(this.sequence));
+    } catch (CompoundNotFoundException e) {
+      throw new InvalidGenomicCoordsException(e.getMessage());
+    }
+    for (Frame frame : Frame.getAllFrames()) {
+      Map<Frame, Sequence<AminoAcidCompound>> tr = Map.of();
       try {
-        dna = new DNASequence(new String(this.sequence));
-      } catch (CompoundNotFoundException e) {
-        throw new InvalidGenomicCoordsException(e.getMessage());
+        tr = transcriptionEngine.multipleFrameTranslation(dna, frame);
+      } catch (TranslationException e) {
+        // System.err.println(frame);
       }
-      for (Frame frame : Frame.getAllFrames()) {
-        Map<Frame, Sequence<AminoAcidCompound>> tr = Map.of();
-        try {
-          tr = transcriptionEngine.multipleFrameTranslation(dna, frame);
-        } catch (TranslationException e) {
-          // System.err.println(frame);
-        }
-        sixFrame.put(frame, tr.get(frame));
-      }
-      this.sixFrameTranslation.putAll(this.recodeFrames(sixFrame));
+      sixFrame.put(frame, tr.get(frame));
+    }
+    this.sixFrameTranslation.putAll(this.recodeFrames(sixFrame));
   }
 
-  private Map<Frame, Sequence<AminoAcidCompound>> recodeFrames(Map<Frame, Sequence<AminoAcidCompound>> tr) {
+  private Map<Frame, Sequence<AminoAcidCompound>> recodeFrames(
+      Map<Frame, Sequence<AminoAcidCompound>> tr) {
     Map<Frame, Sequence<AminoAcidCompound>> tr2 = new HashMap<>(Map.of());
-    tr.forEach((frame, sequence) -> {
-      // MEMO: frame.ordinal() is between 0 and 5
-      int oldFrame = frame.ordinal() <= 2 ? frame.ordinal() + 1 : frame.ordinal() - 2;
+    tr.forEach(
+        (frame, sequence) -> {
+          // MEMO: frame.ordinal() is between 0 and 5
+          int oldFrame = frame.ordinal() <= 2 ? frame.ordinal() + 1 : frame.ordinal() - 2;
 
-      if (frame.ordinal() <= 2) {
-        int newForwardFrame = (oldFrame + this.forwardOffset) % 3;
-        newForwardFrame = newForwardFrame == 0 ? 3 : newForwardFrame;
-        if (newForwardFrame == 1) {
-          tr2.put(Frame.ONE, sequence);
-        }
-        else if (newForwardFrame == 2) {
-          tr2.put(Frame.TWO, sequence);
-        }
-        else if (newForwardFrame == 3) {
-          tr2.put(Frame.THREE, sequence);
-        } else {
-          throw new RuntimeException("Unexpected frame");
-        }
-      } else {
-        int newReverseFrame = (oldFrame + this.reverseOffset) % 3;
-        newReverseFrame = newReverseFrame == 0 ? 3 : newReverseFrame;
-        if (newReverseFrame == 1) {
-          tr2.put(Frame.REVERSED_ONE, sequence);
-        }
-        if (newReverseFrame == 2) {
-          tr2.put(Frame.REVERSED_TWO, sequence);
-        }
-        if (newReverseFrame == 3) {
-          tr2.put(Frame.REVERSED_THREE, sequence);
-        }
-      }
-    });
+          if (frame.ordinal() <= 2) {
+            int newForwardFrame = (oldFrame + this.forwardOffset) % 3;
+            newForwardFrame = newForwardFrame == 0 ? 3 : newForwardFrame;
+            if (newForwardFrame == 1) {
+              tr2.put(Frame.ONE, sequence);
+            } else if (newForwardFrame == 2) {
+              tr2.put(Frame.TWO, sequence);
+            } else if (newForwardFrame == 3) {
+              tr2.put(Frame.THREE, sequence);
+            } else {
+              throw new RuntimeException("Unexpected frame");
+            }
+          } else {
+            int newReverseFrame = (oldFrame + this.reverseOffset) % 3;
+            newReverseFrame = newReverseFrame == 0 ? 3 : newReverseFrame;
+            if (newReverseFrame == 1) {
+              tr2.put(Frame.REVERSED_ONE, sequence);
+            }
+            if (newReverseFrame == 2) {
+              tr2.put(Frame.REVERSED_TWO, sequence);
+            }
+            if (newReverseFrame == 3) {
+              tr2.put(Frame.REVERSED_THREE, sequence);
+            }
+          }
+        });
     return tr2;
   }
 
@@ -192,16 +192,19 @@ public class GenomicSequence {
     return tables;
   }
 
-//  private String startStopCodonsToString(Sequence<AminoAcidCompound> protein) {
-//
-//  }
-//
+  //  private String startStopCodonsToString(Sequence<AminoAcidCompound> protein) {
+  //
+  //  }
+  //
   private String proteinToString(Frame frame, PrintCodon printCodon)
       throws InvalidColourException, InvalidGenomicCoordsException {
     Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);
     ArrayList<FeatureChar> fmtSeq = new ArrayList<>();
 
-    int sidePadding = frame.name().startsWith("REVERSED") ?  (3 - this.reverseOffset) % 3 : (3 - this.forwardOffset) % 3;
+    int sidePadding =
+        frame.name().startsWith("REVERSED")
+            ? (3 - this.reverseOffset) % 3
+            : (3 - this.forwardOffset) % 3;
     if (frame.equals(Frame.TWO) || frame.equals(Frame.REVERSED_TWO)) {
       sidePadding = (sidePadding + 1) % 3;
     }
@@ -340,7 +343,8 @@ public class GenomicSequence {
   public String toString() {
     String sequence = "n/a";
     if (this.getSequence() != null) {
-      sequence = new String(this.getSequence()).substring(0, Math.min(10, this.getSequence().length));
+      sequence =
+          new String(this.getSequence()).substring(0, Math.min(10, this.getSequence().length));
     }
     String frames = String.valueOf(this.getFrames());
     return "Frames: "
@@ -349,7 +353,9 @@ public class GenomicSequence {
         + sequence
         + "\nreverseOffset"
         + this.reverseOffset
-        + "\nforwardOffset" + this.forwardOffset
-        + "\nGenetic code: " + this.getGeneticCode();
+        + "\nforwardOffset"
+        + this.forwardOffset
+        + "\nGenetic code: "
+        + this.getGeneticCode();
   }
 }

@@ -2196,14 +2196,14 @@ public class Utils {
   }
 
   /**
-   * Parse string region in the form <chrom>:[start[-end]] to a list containing the three
-   * elements. See tests for behavior. <start> and <end> if present are guaranteed to be parsable to
-   * positive int.
+   * Parse string region in the form <chrom>:[start[-end]] to a list containing the three elements.
+   * See tests for behavior. <start> and <end> if present are guaranteed to be parsable to positive
+   * int.
    *
    * @throws InvalidGenomicCoordsException
    */
-  public static List<String> parseStringCoordsToList(String region, Integer defaultFrom, Integer defaultTo)
-      throws InvalidGenomicCoordsException {
+  public static List<String> parseStringCoordsToList(
+      String region, Integer defaultFrom, Integer defaultTo) throws InvalidGenomicCoordsException {
 
     List<String> coords = new ArrayList<String>(3);
     coords.add(null);
@@ -2238,13 +2238,22 @@ public class Utils {
       from = Integer.parseInt(StringUtils.substringBefore(fromTo, "-").trim());
       to = Integer.parseInt(StringUtils.substringAfter(fromTo, "-").trim());
       if (from > to) {
-        throw new InvalidGenomicCoordsException("Start coordinate (" + from + ") is larger than end coordinate (" + to + ") in: " + region);
+        throw new InvalidGenomicCoordsException(
+            "Start coordinate ("
+                + from
+                + ") is larger than end coordinate ("
+                + to
+                + ") in: "
+                + region);
       }
       if (from <= 0) {
-        throw new InvalidGenomicCoordsException("Error in " + region + ": Start position must be greater or equal to 1");
+        throw new InvalidGenomicCoordsException(
+            "Error in " + region + ": Start position must be greater or equal to 1");
       }
       if (to - from + 1 > 536870912) {
-        throw new InvalidGenomicCoordsException("Interval between start and end exceeds the maximum allowed of 536870912 in: " + region);
+        throw new InvalidGenomicCoordsException(
+            "Interval between start and end exceeds the maximum allowed of 536870912 in: "
+                + region);
       }
     } else {
       throw new InvalidGenomicCoordsException();

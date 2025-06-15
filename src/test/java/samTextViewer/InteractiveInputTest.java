@@ -3,17 +3,12 @@ package samTextViewer;
 import static org.junit.Assert.*;
 
 import colouring.Config;
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.itextpdf.text.DocumentException;
-import exceptions.BamIndexNotFoundException;
-import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import exceptions.SessionException;
-import faidx.UnindexableFastaFileException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -418,31 +413,44 @@ public class InteractiveInputTest {
     proc.setNoFormat(true);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "translate", proc);
-    assertTrue(pi.stdout.contains("\nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccc\n"));
-    assertTrue(pi.stdout.contains("\n3 *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P \n"));
-    assertTrue(pi.stdout.contains("\n2L  T  L  T  L  T  L  T  L  T  L  T  L  T  L  T  L  T  L  T  \n"));
-    assertTrue(pi.stdout.contains("\n1  N  P  N  P  N  P  N  P  N  P  N  P  N  P  N  P  N  P  N   \n"));
-    assertTrue(pi.stdout.contains("\n   V  R  V  R  V  R  V  R  V  R  V  R  V  R  V  R  V  R  V  1\n"));
-    assertTrue(pi.stdout.contains("\n  L  G  L  G  L  G  L  G  L  G  L  G  L  G  L  G  L  G  L  G2\n"));
-    assertTrue(pi.stdout.contains("\n *  G  *  G  *  G  *  G  *  G  *  G  *  G  *  G  *  G  *  G 3\n"));
+    assertTrue(
+        pi.stdout.contains("\nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccc\n"));
+    assertTrue(
+        pi.stdout.contains("\n3 *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P  *  P \n"));
+    assertTrue(
+        pi.stdout.contains("\n2L  T  L  T  L  T  L  T  L  T  L  T  L  T  L  T  L  T  L  T  \n"));
+    assertTrue(
+        pi.stdout.contains("\n1  N  P  N  P  N  P  N  P  N  P  N  P  N  P  N  P  N  P  N   \n"));
+    assertTrue(
+        pi.stdout.contains("\n   V  R  V  R  V  R  V  R  V  R  V  R  V  R  V  R  V  R  V  1\n"));
+    assertTrue(
+        pi.stdout.contains("\n  L  G  L  G  L  G  L  G  L  G  L  G  L  G  L  G  L  G  L  G2\n"));
+    assertTrue(
+        pi.stdout.contains("\n *  G  *  G  *  G  *  G  *  G  *  G  *  G  *  G  *  G  *  G 3\n"));
 
     pi = this.processInput(ip, "translate -geneticCode vertebrate_mitochondrial", proc);
-    assertTrue(pi.stdout.contains("\n   V  *  V  *  V  *  V  *  V  *  V  *  V  *  V  *  V  *  V  1\n"));
+    assertTrue(
+        pi.stdout.contains("\n   V  *  V  *  V  *  V  *  V  *  V  *  V  *  V  *  V  *  V  1\n"));
 
     pi = this.processInput(ip, "+10000", proc);
-    assertTrue(pi.stdout.contains("\n1 A  *  K  A  D  T  S  S  K  S  I  T  E  A  M  V  Q  P  K  L \n"));
+    assertTrue(
+        pi.stdout.contains("\n1 A  *  K  A  D  T  S  S  K  S  I  T  E  A  M  V  Q  P  K  L \n"));
 
     pi = this.processInput(ip, "translate -codon start_and_stop", proc);
-    assertTrue(pi.stdout.contains("    *                                      M                \n"));
+    assertTrue(
+        pi.stdout.contains("    *                                      M                \n"));
 
     pi = this.processInput(ip, "translate -codon start", proc);
-    assertTrue(pi.stdout.contains("                                           M                \n"));
+    assertTrue(
+        pi.stdout.contains("                                           M                \n"));
 
     pi = this.processInput(ip, "translate -codon stop", proc);
-    assertTrue(pi.stdout.contains("    *                                                       \n"));
+    assertTrue(
+        pi.stdout.contains("    *                                                       \n"));
 
     pi = this.processInput(ip, "translate -codon all", proc);
-    assertTrue(pi.stdout.contains("C  Q  E  S  *  H  I  I  K  I  H  Y  *  G  Y  S  S  A  K  A  \n"));
+    assertTrue(
+        pi.stdout.contains("C  Q  E  S  *  H  I  I  K  I  H  Y  *  G  Y  S  S  A  K  A  \n"));
 
     pi = this.processInput(ip, "zo", proc);
     assertFalse(pi.stdout.contains("C  Q  E"));
@@ -456,7 +464,13 @@ public class InteractiveInputTest {
   }
 
   @Test
-  public void canHandleTranslateWithoutReference() throws IOException, InvalidConfigException, SQLException, InvalidGenomicCoordsException, ClassNotFoundException, InvalidRecordException {
+  public void canHandleTranslateWithoutReference()
+      throws IOException,
+          InvalidConfigException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException {
     new Config(null);
     TrackProcessor proc;
     proc = gimmeTrackProcessor("chr7:10001-10061", 80, "test_data/ds051.actb.bam");
@@ -483,38 +497,53 @@ public class InteractiveInputTest {
 
   @Test
   public void canOmitSequenceWhenZoomout()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/chr7.fa");
     proc.setNoFormat(true);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "goto chr7:200000-200060", proc);
-    assertTrue(pi.stdout.contains("\nTTCTTGACACTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTA\n"));
+    assertTrue(
+        pi.stdout.contains("\nTTCTTGACACTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTA\n"));
     pi = this.processInput(ip, "zo", proc);
-    assertFalse(pi.stdout.contains("TTCTTGACACTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTA"));
+    assertFalse(
+        pi.stdout.contains("TTCTTGACACTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTA"));
     pi = this.processInput(ip, "zi", proc);
     assertTrue(pi.stdout.contains("TTCTTGACACTGATTGATCTGCCAAAAGGGGAAGAATGAG"));
   }
 
   @Test
   public void canUpdateSequenceWhenMovingCoords()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/chr7.fa");
     proc.setNoFormat(true);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = this.processInput(ip, "+1", proc);
-    assertTrue(pi.stdout.contains("\nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccc\n"));
+    assertTrue(
+        pi.stdout.contains("\nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccc\n"));
 
     pi = this.processInput(ip, "+1", proc);
-    assertTrue(pi.stdout.contains("\ntaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccct\n"));
+    assertTrue(
+        pi.stdout.contains("\ntaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccct\n"));
 
     pi = this.processInput(ip, "[", proc);
-    assertTrue(pi.stdout.contains("\naaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaacccta\n"));
+    assertTrue(
+        pi.stdout.contains("\naaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaacccta\n"));
 
     pi = this.processInput(ip, "100000", proc);
-    assertTrue(pi.stdout.contains("\ncagaaggaaaacgggaaacttcacaattagtgaatatttaaaaacagactcttaagaaacc\n"));
+    assertTrue(
+        pi.stdout.contains("\ncagaaggaaaacgggaaacttcacaattagtgaatatttaaaaacagactcttaagaaacc\n"));
 
     pi = this.processInput(ip, "goto chr7:100010-100070", proc);
-    assertTrue(pi.stdout.contains("\nacgggaaacttcacaattagtgaatatttaaaaacagactcttaagaaaccaaaggatcaa\n"));
+    assertTrue(
+        pi.stdout.contains("\nacgggaaacttcacaattagtgaatatttaaaaacagactcttaagaaaccaaaggatcaa\n"));
 
     pi = this.processInput(ip, "0.17 0.33", proc);
     assertTrue(pi.stdout.contains("\ntcacaattagt\n"));
@@ -525,12 +554,14 @@ public class InteractiveInputTest {
     this.processInput(ip, "goto chr7:100010-100070", proc);
     this.processInput(ip, "f", proc);
     pi = this.processInput(ip, "ff", proc);
-    assertTrue(pi.stdout.contains("\ngactcttaagaaaccaaaggatcaaggaagataccacagggaaaaatagagaatatctcaa\n"));
+    assertTrue(
+        pi.stdout.contains("\ngactcttaagaaaccaaaggatcaaggaagataccacagggaaaaatagagaatatctcaa\n"));
 
     this.processInput(ip, "goto chr7:100010-100070", proc);
     this.processInput(ip, "bb", proc);
     pi = this.processInput(ip, "b", proc);
-    assertTrue(pi.stdout.contains("\naaaggaatgaaactagaaatcaacagcagaaggaaaacgggaaacttcacaattagtgaat\n"));
+    assertTrue(
+        pi.stdout.contains("\naaaggaatgaaactagaaatcaacagcagaaggaaaacgggaaacttcacaattagtgaat\n"));
 
     this.processInput(ip, "goto chr7:100010-100020", proc);
     pi = this.processInput(ip, "extend 10", proc);
@@ -539,23 +570,28 @@ public class InteractiveInputTest {
     this.processInput(ip, "goto chr7:200000-200060", proc);
     this.processInput(ip, "goto chr7:200010-200070", proc);
     pi = this.processInput(ip, "p", proc);
-    assertTrue(pi.stdout.contains("\nTTCTTGACACTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTA\n"));
+    assertTrue(
+        pi.stdout.contains("\nTTCTTGACACTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTA\n"));
 
     this.processInput(ip, "goto chr7:200000-200060", proc);
     this.processInput(ip, "goto chr7:200010-200070", proc);
     this.processInput(ip, "p", proc);
     pi = this.processInput(ip, "n", proc);
-    assertTrue(pi.stdout.contains("\nTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTAACCAGCGGGT\n"));
+    assertTrue(
+        pi.stdout.contains("\nTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTAACCAGCGGGT\n"));
 
     this.processInput(ip, "goto chr7:200000-200060", proc);
     this.processInput(ip, "open test_data/hg19_genes.gtf.gz", proc);
     pi = this.processInput(ip, "next -c", proc);
-    assertTrue(pi.stdout.contains("\nTGACCCTGTTTCTCTCCCTCCTTCCTGCAGCCATGAAGTCGGGGGGCACGCAGCTGAAGCT\n"));
+    assertTrue(
+        pi.stdout.contains("\nTGACCCTGTTTCTCTCCCTCCTTCCTGCAGCCATGAAGTCGGGGGGCACGCAGCTGAAGCT\n"));
     pi = this.processInput(ip, "next -c", proc);
-    assertTrue(pi.stdout.contains("\nACCGTTTCTGTTTCTGTCTTGTTTTCTCAGACAAACGAGGGAGCAGGAGACACCCCCTGAC\n"));
+    assertTrue(
+        pi.stdout.contains("\nACCGTTTCTGTTTCTGTCTTGTTTTCTCAGACAAACGAGGGAGCAGGAGACACCCCCTGAC\n"));
 
     pi = this.processInput(ip, "zo", proc);
-    assertFalse(pi.stdout.contains("ACCGTTTCTGTTTCTGTCTTGTTTTCTCAGACAAACGAGGGAGCAGGAGACACCCCCTGAC"));
+    assertFalse(
+        pi.stdout.contains("ACCGTTTCTGTTTCTGTCTTGTTTTCTCAGACAAACGAGGGAGCAGGAGACACCCCCTGAC"));
   }
 
   @Test
@@ -701,7 +737,11 @@ public class InteractiveInputTest {
 
   @Test
   public void canGoToInteractive()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/chr7.fa");
     proc.setNoFormat(true);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
@@ -739,7 +779,11 @@ public class InteractiveInputTest {
 
   @Test
   public void canGoToNextChromosome()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
     proc.setNoFormat(true);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
@@ -756,7 +800,11 @@ public class InteractiveInputTest {
 
   @Test
   public void canIgnoreComments()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
     proc.setNoFormat(true);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
@@ -781,7 +829,11 @@ public class InteractiveInputTest {
 
   @Test
   public void canSuggestCommand()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
     proc.setNoFormat(true);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
@@ -791,17 +843,25 @@ public class InteractiveInputTest {
 
   @Test
   public void doNotSetInvalidBooleanConfig()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
-   TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
-   proc.setNoFormat(true);
-   InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
-   ProcessInput pi = this.processInput(ip, "setConfig nucs 999", proc);
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
+    proc.setNoFormat(true);
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi = this.processInput(ip, "setConfig nucs 999", proc);
     assertTrue(pi.stderr.contains("Unable to set"));
   }
 
   @Test
   public void doNotSetInvalidIntegerConfig()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
     proc.setNoFormat(true);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
