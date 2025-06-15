@@ -284,7 +284,7 @@ public class GenomicCoords implements Cloneable {
 
     ArrayList<SAMSequenceRecord> chroms =
         this.sortAndFilterSequenceDictionary(ctg, minSize, maxSize, regex, sortOrder);
-    if (chroms.size() == 0) {
+    if (chroms.isEmpty()) {
       throw new InvalidGenomicCoordsException("There are no contigs passing filters");
     }
 
@@ -1291,6 +1291,18 @@ public class GenomicCoords implements Cloneable {
 
   public void setTo(int to) {
     this.to = to;
+  }
+
+  /** Return
+   * * True if chrom is a sequence name in the sequence dictionary
+   * * null if this GenomicCoords has no dictionary
+   * * false otherwise
+   * */
+  public Boolean isChromInSequenceDictionary(String chrom) {
+    if (this.getSamSeqDict() == null) {
+      return null;
+    }
+    return this.getSamSeqDict().getSequence(chrom) != null;
   }
 
   /**

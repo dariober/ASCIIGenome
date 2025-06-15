@@ -632,4 +632,13 @@ public class GenomicCoordsTest {
     assertEquals(60, (int) gc.getFrom());
     assertEquals(139, (int) gc.getTo());
   }
+
+  @Test
+  public void canTestForChromInDictionary() throws InvalidGenomicCoordsException, IOException {
+    GenomicCoords gc = new GenomicCoords("chr1:100-1000", 80, null, null);
+    assertEquals(null, gc.isChromInSequenceDictionary("foobar"));
+    gc = new GenomicCoords("chr1:2001234-3006789", 80, samSeqDict, null);
+    assertEquals(true, gc.isChromInSequenceDictionary("chr1"));
+    assertEquals(false, gc.isChromInSequenceDictionary("chrXXX"));
+  }
 }

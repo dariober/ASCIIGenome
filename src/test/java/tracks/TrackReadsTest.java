@@ -70,8 +70,7 @@ public class TrackReadsTest {
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
-          SQLException,
-          InvalidColourException {
+          SQLException {
     GenomicCoords gc = new GenomicCoords("chr7:1-80", 80, null, null);
     TrackReads tr = new TrackReads("test_data/testTopBottomStrand.sam", gc);
     tr.setNoFormat(true);

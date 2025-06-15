@@ -459,6 +459,25 @@ public class UtilsTest {
   //    }
 
   @Test
+  public void canParseStringToCoordsSetDefaults() throws InvalidGenomicCoordsException {
+    assertEquals(
+        Arrays.asList(new String[] {"chr1", "1", "10"}),
+        Utils.parseStringCoordsToList("chr1", 1, 10));
+
+    assertEquals(
+        Arrays.asList(new String[] {"chr1", "9", "10"}),
+        Utils.parseStringCoordsToList("chr1", 9, 10));
+
+    assertEquals(
+        Arrays.asList(new String[] {"chr1", "9", null}),
+        Utils.parseStringCoordsToList("chr1", 9, null));
+
+    assertEquals(
+        Arrays.asList(new String[] {"chr1", null, null}),
+        Utils.parseStringCoordsToList("chr1", null, null));
+  }
+
+  @Test
   public void canParseStringToCoords() throws InvalidGenomicCoordsException {
 
     assertEquals(

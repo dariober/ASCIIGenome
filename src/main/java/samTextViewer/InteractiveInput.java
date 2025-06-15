@@ -575,16 +575,24 @@ public class InteractiveInput {
   private ExitCode goTo(List<String> cmdTokens, TrackProcessor proc, int terminalWidth)
       throws InvalidGenomicCoordsException, IOException {
     String tmpRegion = Joiner.on(" ").join(cmdTokens).replaceFirst("goto|:", "").trim();
-
     List<String> reg;
     try {
-      reg = Utils.parseStringCoordsToList(tmpRegion);
+      reg = Utils.parseStringCoordsToList(tmpRegion, 1, null);
     } catch (InvalidGenomicCoordsException e) {
       System.err.println(e.getMessage());
-      return ExitCode.CLEAN_NO_FLUSH;
+      return ExitCode.ERROR;
+    }
+    if (!proc.getGenomicCoordsHistory().current().isChromInSequenceDictionary(reg.get(0))) {
+      System.err.println("Cannot find chromosome '" + reg.get(0) + "' in sequence dictionary");
+      return ExitCode.ERROR;
     }
     int from = Integer.parseInt(reg.get(1));
-    int to = Integer.parseInt(reg.get(2));
+    int to;
+    if (reg.get(2) == null) {
+      to = from + terminalWidth;
+    } else {
+      to = Integer.parseInt(reg.get(2));
+    }
     if (from == to) {
       to = to + terminalWidth;
     }

@@ -2188,21 +2188,27 @@ public class Utils {
     return Joiner.on("\n").join(mline);
   }
 
+  public static List<String> parseStringCoordsToList(String region)
+      throws InvalidGenomicCoordsException {
+    // Max size of binning index for tabix is 2^29. See also
+    // https://github.com/samtools/htslib/issues/435
+    return parseStringCoordsToList(region, 1, 536870912);
+  }
+
   /**
-   * Parse string region in the form <chrom>:[start[-end]] to a list containing the the three
+   * Parse string region in the form <chrom>:[start[-end]] to a list containing the three
    * elements. See tests for behavior. <start> and <end> if present are guaranteed to be parsable to
    * positive int.
    *
    * @throws InvalidGenomicCoordsException
    */
-  public static List<String> parseStringCoordsToList(String region)
+  public static List<String> parseStringCoordsToList(String region, Integer defaultFrom, Integer defaultTo)
       throws InvalidGenomicCoordsException {
 
     List<String> coords = new ArrayList<String>(3);
     coords.add(null);
-    coords.add("1");
-    coords.add("536870912"); // Max size of binning index for tabix is 2^29. See also
-    // https://github.com/samtools/htslib/issues/435
+    coords.add(defaultFrom == null ? null : String.valueOf(defaultFrom));
+    coords.add(defaultTo == null ? null : String.valueOf(defaultTo));
 
     String chrom = StringUtils.substringBeforeLast(region, ":").trim();
     coords.set(0, chrom);
@@ -2243,6 +2249,9 @@ public class Utils {
     } else {
       throw new InvalidGenomicCoordsException();
     }
+    System.err.println(coords);
+    System.err.println(from);
+    System.err.println(to);
     coords.set(1, from.toString());
     coords.set(2, to.toString());
 
