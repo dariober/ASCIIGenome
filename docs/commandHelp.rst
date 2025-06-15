@@ -329,6 +329,29 @@ Examples::
 Display
 -------
 
+translate
++++++++++
+
+:code:`translate [-geneticCode=universal]`
+
+Show translation of DNA to codons.  Options:
+
+* :code:`-frame` Frames to translate. Options: all, forward, reverse, none
+
+* :code:`-codon` Which codons to show. Options: all, start, stop, start_and_stop
+
+* :code:`-geneticCode` Genetic code to translate codons
+
+Use :code:`-geneticCode show` to view available codes. See also `ncbi <https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi>`
+With no arguments toggle display on and off
+
+Examples::
+
+    translate
+    translate -geneticCode bacterial
+    translate -frame none -> Turn off
+
+
 grep
 ++++
 
@@ -763,6 +786,9 @@ Parameters and current settings::
     highlight_mid_char                 true  # Highlight mid-character in read tracks?                                              
     nucs_as_letters                    true  # Show read nucleotides as letters at single base resolution?                          
     show_soft_clip                     false # NOT IN USE YET - Show soft clipped bases in read tracks?                             
+    stop_codon                         9     # Colour for stop codon                                                                
+    start_codon                        2     # Colour for start codon                                                               
+    codon                              249   # Colour for codons other than start and stop                                          
 
 explainSamFlag
 ++++++++++++++
