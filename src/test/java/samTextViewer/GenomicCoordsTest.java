@@ -503,11 +503,10 @@ public class GenomicCoordsTest {
   public void canGetRefSeq() throws InvalidGenomicCoordsException, IOException {
     GenomicCoords gc = new GenomicCoords("chr7:5566770-5566790", 80, samSeqDict, fastaFile);
     assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getGenomicSequence().getSequence()));
-    gc = new GenomicCoords("chr7:1-80", 79, samSeqDict, fastaFile);
-    assertEquals(null, gc.getGenomicSequence().getSequence());
-
+    gc = new GenomicCoords("chr7:10000-10080", 79, samSeqDict, fastaFile);
     // Return seq even if len(seq) > windowSize
-    // assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getRefSeq()));
+    assertEquals("Nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccct", new String(gc.getGenomicSequence().getSequence()));
+    // assertEquals(null, gc.getGenomicSequence().getSequence());
   }
 
   @Test(expected = InvalidGenomicCoordsException.class)

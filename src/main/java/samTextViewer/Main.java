@@ -70,7 +70,7 @@ public class Main {
 
     List<String> initFileList = opts.getList("input");
     String region = opts.getString("region");
-    final String fasta = opts.getString("fasta");
+    String fasta = opts.getString("fasta");
     String exec = opts.getString("exec");
     String config = opts.getString("config");
     exec = parseExec(exec);
@@ -98,7 +98,10 @@ public class Main {
     messageVersion(opts.getBoolean("noFormat"));
 
     /* Set up console */
-
+    if (fasta == null) {
+      fasta = Utils.findFastaInInputFileList(initFileList);
+      initFileList.remove(fasta);
+    }
     Utils.checkFasta(fasta, debug);
 
     /* Test input files exist */

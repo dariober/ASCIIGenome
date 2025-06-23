@@ -281,6 +281,14 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertTrue("Nctaaccctaaccctaaccc" in p.stdout)
 
+    def testCanGuessFastaInput(self):
+        cmd = f"""{ASCIIGenome} -nf  ../../../test_data/ds051.actb.bam ../../../test_data/chr7.fa.gz -r 'chr7:10000'
+            """
+        print(cmd)
+        p = shell(cmd)
+        self.assertEqual(p.returncode, 0)
+        self.assertTrue("Nctaaccctaaccctaaccc" in p.stdout)
+        self.assertTrue("test_data/ds051.actb.bam#1;" in p.stdout)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1875,4 +1875,19 @@ public class UtilsTest {
     }
     System.err.println(sw.stop());
   }
+
+  @Test
+  public void canGetFastaFromInputList() {
+    List<String> fileList = new ArrayList<>();
+    fileList.add("test_data/ds051.actb.bam");
+    fileList.add("foobar.fa");
+    fileList.add("test_data/noindex.fa");
+    String fa = Utils.findFastaInInputFileList(fileList);
+    assertEquals("test_data/noindex.fa", fa);
+
+    fileList.clear();
+    fileList.add("test_data/ds051.actb.bam");
+    fa = Utils.findFastaInInputFileList(fileList);
+    assertEquals(null, fa);
+  }
 }

@@ -35,27 +35,38 @@ public class GenomicSequenceTest {
     gs.setPrintCodon(PrintCodon.ALL);
     gs.setFrames(Frame.getAllFrames());
 
-    assertTrue(gs.getPrintableSequence().contains("\n1M  L  * "));
-    assertTrue(gs.getPrintableSequence().contains("\n2 C  C "));
-    assertTrue(gs.getPrintableSequence().startsWith("3  A  V"));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n1M  L  * "));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n2 C  C "));
+    assertTrue(gs.getPrintableSequence(dna.length()).startsWith("3  A  V"));
 
-    assertTrue(gs.getPrintableSequence().contains("\n H  Q  L1\n"));
-    assertTrue(gs.getPrintableSequence().contains("\n   S  Y 2\n"));
-    assertTrue(gs.getPrintableSequence().endsWith("\n  A  T  3\n"));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n H  Q  L1\n"));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n   S  Y 2\n"));
+    assertTrue(gs.getPrintableSequence(dna.length()).endsWith("\n  A  T  3\n"));
 
     gs = new GenomicSequence(dna.getBytes(), 2, 11);
     gs.setNoFormat(true);
     gs.setPrintCodon(PrintCodon.ALL);
     gs.setFrames(Frame.getAllFrames());
 
-    assertTrue(gs.getPrintableSequence().contains("\n1  A  V"));
-    assertTrue(gs.getPrintableSequence().contains("\n2M  L  *"));
-    assertTrue(gs.getPrintableSequence().startsWith("3 C  C"));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n1  A  V"));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n2M  L  *"));
+    assertTrue(gs.getPrintableSequence(dna.length()).startsWith("3 C  C"));
 
-    assertTrue(gs.getPrintableSequence().contains("\n  A  T  1\n"));
-    assertTrue(gs.getPrintableSequence().contains("\n H  Q  L2\n"));
-    assertTrue(gs.getPrintableSequence().endsWith("\n   S  Y 3\n"));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n  A  T  1\n"));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n H  Q  L2\n"));
+    assertTrue(gs.getPrintableSequence(dna.length()).endsWith("\n   S  Y 3\n"));
 
-    System.err.println(gs.getPrintableSequence());
+    System.err.println(gs.getPrintableSequence(dna.length()));
+  }
+
+  @Test
+  public void canAdaptSequenceToWindowSize() throws InvalidColourException, InvalidGenomicCoordsException {
+    String dna = "ATGCTGTAG";
+    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, 9);
+    gs.setNoFormat(true);
+    gs.setPrintCodon(PrintCodon.ALL);
+    gs.setFrames(Frame.ONE);
+
+    System.out.println(gs.getPrintableSequence(dna.length()));
   }
 }
