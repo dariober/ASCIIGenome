@@ -55,8 +55,6 @@ public class GenomicSequenceTest {
     assertTrue(gs.getPrintableSequence(dna.length()).contains("\n  A  T  1\n"));
     assertTrue(gs.getPrintableSequence(dna.length()).contains("\n H  Q  L2\n"));
     assertTrue(gs.getPrintableSequence(dna.length()).endsWith("\n   S  Y 3\n"));
-
-    System.err.println(gs.getPrintableSequence(dna.length()));
   }
 
   @Test
@@ -66,7 +64,5 @@ public class GenomicSequenceTest {
     gs.setNoFormat(true);
     gs.setPrintCodon(PrintCodon.ALL);
     gs.setFrames(Frame.ONE);
-
-    System.out.println(gs.getPrintableSequence(dna.length()));
   }
 }
