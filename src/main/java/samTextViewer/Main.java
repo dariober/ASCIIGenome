@@ -102,7 +102,6 @@ public class Main {
       fasta = Utils.findFastaInInputFileList(initFileList);
       initFileList.remove(fasta);
     }
-    fasta = null;
     Utils.checkFasta(fasta, debug);
 
     /* Test input files exist */
