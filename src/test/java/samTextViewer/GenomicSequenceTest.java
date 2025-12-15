@@ -69,6 +69,5 @@ public class GenomicSequenceTest {
     gs.setNoFormat(true);
     gs.setPrintCodon(PrintCodon.ALL);
     gs.setFrames(Frame.ONE);
-    System.out.println(gs.getPrintableSequence(8));
   }
 }
