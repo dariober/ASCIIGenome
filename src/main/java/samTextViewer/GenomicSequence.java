@@ -129,34 +129,34 @@ public class GenomicSequence {
         String prefix = "\033[48;5;" + Config.get256Colour(ConfigKey.background) + ";38;5;";
         if (base == 'A' || base == 'a') {
           faSeqStr
-                  .append(prefix)
-                  .append(Config.get256Colour(ConfigKey.seq_a))
-                  .append("m")
-                  .append(base);
+              .append(prefix)
+              .append(Config.get256Colour(ConfigKey.seq_a))
+              .append("m")
+              .append(base);
         } else if (base == 'C' || base == 'c') {
           faSeqStr
-                  .append(prefix)
-                  .append(Config.get256Colour(ConfigKey.seq_c))
-                  .append("m")
-                  .append(base);
+              .append(prefix)
+              .append(Config.get256Colour(ConfigKey.seq_c))
+              .append("m")
+              .append(base);
         } else if (base == 'G' || base == 'g') {
           faSeqStr
-                  .append(prefix)
-                  .append(Config.get256Colour(ConfigKey.seq_g))
-                  .append("m")
-                  .append(base);
+              .append(prefix)
+              .append(Config.get256Colour(ConfigKey.seq_g))
+              .append("m")
+              .append(base);
         } else if (base == 'T' || base == 't') {
           faSeqStr
-                  .append(prefix)
-                  .append(Config.get256Colour(ConfigKey.seq_t))
-                  .append("m")
-                  .append(base);
+              .append(prefix)
+              .append(Config.get256Colour(ConfigKey.seq_t))
+              .append("m")
+              .append(base);
         } else {
           faSeqStr
-                  .append(prefix)
-                  .append(Config.get256Colour(ConfigKey.seq_other))
-                  .append("m")
-                  .append(base);
+              .append(prefix)
+              .append(Config.get256Colour(ConfigKey.seq_other))
+              .append("m")
+              .append(base);
         }
       }
     }
@@ -169,20 +169,24 @@ public class GenomicSequence {
       return "";
     }
     StringBuilder faSeqStr = new StringBuilder();
-    for (int i = Frame.getForwardFrames().length - 1; i >= 0; i--) {
-      Frame x = Frame.getForwardFrames()[i];
-      if (this.frames.contains(x)) {
-        faSeqStr.append(this.proteinToString(x, this.printCodon, userWindowSize)).append('\n');
+
+    if (userWindowSize >= this.sequence.length) {
+      // Process FORWARD frames and add to output string
+      for (int i = Frame.getForwardFrames().length - 1; i >= 0; i--) {
+        Frame x = Frame.getForwardFrames()[i];
+        if (this.frames.contains(x)) {
+          faSeqStr.append(this.proteinToString(x, this.printCodon, userWindowSize)).append('\n');
+        }
       }
-    }
 
-    if (userWindowSize == this.sequence.length) {
+      // Process DNA output string
       faSeqStr.append(this.getPrintableDna());
-    }
 
-    for (Frame x : Frame.getReverseFrames()) {
-      if (this.frames.contains(x)) {
-        faSeqStr.append(this.proteinToString(x, this.printCodon, userWindowSize)).append('\n');
+      // Process REVERSE frames and add to output string
+      for (Frame x : Frame.getReverseFrames()) {
+        if (this.frames.contains(x)) {
+          faSeqStr.append(this.proteinToString(x, this.printCodon, userWindowSize)).append('\n');
+        }
       }
     }
     return faSeqStr.toString();
@@ -199,13 +203,14 @@ public class GenomicSequence {
     return tables;
   }
 
-  private List<Character> adaptProteinToWindowSize(Sequence<AminoAcidCompound> protein, int userWindowSize) {
+  private List<Character> adaptProteinToWindowSize(
+      Sequence<AminoAcidCompound> protein, int userWindowSize) {
     /*
     . . . ..
     QWERTYUI O P
     */
     List<Character> adapted = new ArrayList<>();
-    int step = Math.round((float) protein.getLength() / userWindowSize);
+    int step = Math.round((float) (3 * protein.getLength()) / userWindowSize);
     int i = 0;
     Character x = null;
     for (AminoAcidCompound aa : protein.getAsList()) {
@@ -230,7 +235,6 @@ public class GenomicSequence {
   private String proteinToString(Frame frame, PrintCodon printCodon, int userWindowSize)
       throws InvalidColourException {
     Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);
-    System.err.println(this.adaptProteinToWindowSize(protein, userWindowSize));
     ArrayList<FeatureChar> fmtSeq = new ArrayList<>();
 
     int sidePadding =

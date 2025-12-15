@@ -68,8 +68,7 @@ public class GenomicCoords implements Cloneable {
   private List<Double> mapping;
 
   /* Constructors */
-  public GenomicCoords() throws InvalidGenomicCoordsException, IOException {
-  }
+  public GenomicCoords() throws InvalidGenomicCoordsException, IOException {}
 
   public GenomicCoords(
       String region,
@@ -356,10 +355,7 @@ public class GenomicCoords implements Cloneable {
     if (gs.equals("0")) {
       gs = "n/a";
     }
-    return "Genome size: "
-        + gs
-        + "; Number of contigs: "
-        + samSequenceDictionary.size();
+    return "Genome size: " + gs + "; Number of contigs: " + samSequenceDictionary.size();
   }
 
   private ArrayList<SAMSequenceRecord> makeSequenceDictionaryFromContigs(
@@ -406,7 +402,8 @@ public class GenomicCoords implements Cloneable {
 
   private void resetGenomicSequence() throws IOException, InvalidGenomicCoordsException {
     GenomicSequence gs = new GenomicSequence();
-    if (this.fastaFile == null || this.getGenomicWindowSize() > MAX_SEQ_SIZE) { // !this.singleBaseResolution
+    if (this.fastaFile == null
+        || this.getGenomicWindowSize() > MAX_SEQ_SIZE) { // !this.singleBaseResolution
       gs.setGeneticCode(this.genomicSequence.getGeneticCode());
       gs.setFrames(this.genomicSequence.getFrames());
       gs.setPrintCodon(this.genomicSequence.getPrintCodon());
@@ -1039,7 +1036,7 @@ public class GenomicCoords implements Cloneable {
    * @throws InvalidColourException
    */
   public String printableRefSeq(boolean noFormat)
-          throws InvalidColourException, InvalidGenomicCoordsException, IOException {
+      throws InvalidColourException, InvalidGenomicCoordsException, IOException {
     this.genomicSequence.setNoFormat(noFormat);
     return this.genomicSequence.getPrintableSequence(this.getUserWindowSize());
   }

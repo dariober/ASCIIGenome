@@ -18,7 +18,7 @@ public class GenomicCoordsHistoryTest {
 
     // This is the initial coordinates. Set by the user or reading the input files.
     // The historic positions will be checked against this coordinates.
-    GenomicCoords checkGc = new GenomicCoords("chr1:1-10000", 80, null, "test_data/chr7.fa");
+    GenomicCoords checkGc = new GenomicCoords("chr7:1-10000", 80, null, "test_data/chr7.fa");
 
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
     gch.readHistory("test_data/asciigenome.yaml", checkGc);

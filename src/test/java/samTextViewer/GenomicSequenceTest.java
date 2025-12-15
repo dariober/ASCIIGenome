@@ -1,6 +1,7 @@
 package samTextViewer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
@@ -58,16 +59,27 @@ public class GenomicSequenceTest {
   }
 
   @Test
-  public void canAdaptSequenceToWindowSize() throws InvalidColourException, InvalidGenomicCoordsException {
-    String dna = "ATGCTGTAG";
-    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, 9);
+  public void canAdaptSequenceToWindowSize()
+      throws InvalidColourException, InvalidGenomicCoordsException {
+    String dna = "ATGCTGTAGATGCTGTAGATGCTGTAG";
+    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
     gs.setNoFormat(true);
     gs.setPrintCodon(PrintCodon.ALL);
     gs.setFrames(Frame.ONE);
 
-    gs = new GenomicSequence(dna.getBytes(), 1, 9);
-    gs.setNoFormat(true);
-    gs.setPrintCodon(PrintCodon.ALL);
-    gs.setFrames(Frame.ONE);
+    // Window size same as DNA length: Print DNA and aminoacids
+    String seq = gs.getPrintableSequence(dna.length());
+    assertTrue(seq.contains("1M  L  *"));
+    assertTrue(seq.contains(dna));
+
+    // Window size larger DNA length: Print DNA and aminoacids
+    seq = gs.getPrintableSequence(dna.length() * 2);
+    assertTrue(seq.contains("1M  L  *"));
+    assertTrue(seq.contains(dna));
+
+    // Window size smaller DNA length (1 char on screen spans more than 1 nt)
+    seq = gs.getPrintableSequence(10);
+    assertFalse(seq.contains("ATG"));
+    assertFalse(seq.contains("M"));
   }
 }

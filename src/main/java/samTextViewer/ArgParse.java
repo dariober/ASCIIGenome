@@ -56,7 +56,8 @@ public class ArgParse {
         .addArgument("--fasta", "-fa")
         .type(String.class)
         .help(
-            "Optional reference fasta file. If null, ASCIIGenome will check whether the input file list contains a suitable fasta.");
+            "Optional reference fasta file. If null, ASCIIGenome will check whether the input file"
+                + " list contains a suitable fasta.");
 
     parser
         .addArgument("--exec", "-x")

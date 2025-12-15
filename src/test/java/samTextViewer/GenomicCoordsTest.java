@@ -505,7 +505,9 @@ public class GenomicCoordsTest {
     assertEquals("CACTTGGCCTCATTTTTAAGG", new String(gc.getGenomicSequence().getSequence()));
     gc = new GenomicCoords("chr7:10000-10080", 79, samSeqDict, fastaFile);
     // Return seq even if len(seq) > windowSize
-    assertEquals("Nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccct", new String(gc.getGenomicSequence().getSequence()));
+    assertEquals(
+        "Nctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccctaaccct",
+        new String(gc.getGenomicSequence().getSequence()));
     // assertEquals(null, gc.getGenomicSequence().getSequence());
   }
 

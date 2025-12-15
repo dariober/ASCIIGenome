@@ -2823,7 +2823,8 @@ public class Utils {
   public static String findFastaInInputFileList(List<String> fileList) {
     for (String fa : fileList) {
       try {
-        ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fa));
+        ReferenceSequenceFile faSeqFile =
+            ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fa));
         faSeqFile.close();
         return fa;
       } catch (Exception e) {
