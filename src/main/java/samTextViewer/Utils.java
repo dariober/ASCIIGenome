@@ -279,7 +279,6 @@ public class Utils {
         throw new IOException();
       }
     }
-
     ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(faFile);
     if (faSeqFile.isIndexed()) {
       faSeqFile.close();
@@ -2826,6 +2825,11 @@ public class Utils {
         ReferenceSequenceFile faSeqFile =
             ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fa));
         faSeqFile.close();
+        // It's not enough to check that the getReferenceSequenceFile call succeeds.
+        if (faSeqFile.isIndexed()) {
+          return fa;
+        }
+        new Faidx(new File(fa));
         return fa;
       } catch (Exception e) {
 

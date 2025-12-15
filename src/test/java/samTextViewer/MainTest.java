@@ -153,6 +153,25 @@ public class MainTest {
     assertTrue(out.get(0).contains(">>>>>>>>>>>>>>>>>>>"));
   }
 
+  @Test
+  public void canInitWithoutDictionary()
+      throws UnindexableFastaFileException,
+          SQLException,
+          DocumentException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidColourException,
+          IOException,
+          InvalidConfigException,
+          BamIndexNotFoundException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    String[] args =
+        new String[] {"-ni", "-nf", "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3"};
+    List<String> out = this.runMain(args);
+    System.out.println(out);
+  }
+
   /* H E L P E R S */
 
   /**
