@@ -1,3 +1,16 @@
+New in 1.20.0
+=============
+
+* More convenient CLI: No need to explictly use the `--fasta/-fa` option to
+read the reference fasta file. If `--fasta/-fa` is unset, ASCIIGenome will
+attempt the find a fasta file in the input file list. So these are all ok:
+
+```
+ASCIIGenome -fa chr7.fa ds051.actb.bam # < v1.20.0
+ASCIIGenome chr7.fa ds051.actb.bam     # >= v1.20.0
+ASCIIGenome ds051.actb.bam             # No ref at all
+```
+
 New in 1.19.0
 =============
 

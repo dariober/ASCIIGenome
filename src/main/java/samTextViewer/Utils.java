@@ -279,7 +279,6 @@ public class Utils {
         throw new IOException();
       }
     }
-
     ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(faFile);
     if (faSeqFile.isIndexed()) {
       faSeqFile.close();
@@ -2818,5 +2817,24 @@ public class Utils {
     }
     br.close();
     return sep;
+  }
+
+  public static String findFastaInInputFileList(List<String> fileList) {
+    for (String fa : fileList) {
+      try {
+        ReferenceSequenceFile faSeqFile =
+            ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fa));
+        faSeqFile.close();
+        // It's not enough to check that the getReferenceSequenceFile call succeeds.
+        if (faSeqFile.isIndexed()) {
+          return fa;
+        }
+        new Faidx(new File(fa));
+        return fa;
+      } catch (Exception e) {
+
+      }
+    }
+    return null;
   }
 }

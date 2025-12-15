@@ -10,7 +10,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class ArgParse {
 
   public static String PROG_NAME = "ASCIIGenome";
-  public static String VERSION = "1.19.0";
+  public static String VERSION = "1.20.0";
   public static String WEB_ADDRESS = "https://github.com/dariober/ASCIIGenome";
   public static String WEB_RTD = "http://asciigenome.readthedocs.io/";
 
@@ -34,7 +34,7 @@ public class ArgParse {
         .type(String.class)
         .required(false)
         .nargs("*")
-        .help("Input files to be displayed: bam, bed, gtf, bigwig, bedgraph, etc");
+        .help("Input files to be displayed: bam, bed, gtf, bigwig, bedgraph, etc.");
 
     parser
         .addArgument("--batchFile", "-b")
@@ -56,8 +56,8 @@ public class ArgParse {
         .addArgument("--fasta", "-fa")
         .type(String.class)
         .help(
-            "Optional reference fasta file. If given, must be indexed, e.g. with\n"
-                + "samtools faidx ref.fa");
+            "Optional reference fasta file. If null, ASCIIGenome will check whether the input file"
+                + " list contains a suitable fasta.");
 
     parser
         .addArgument("--exec", "-x")

@@ -1875,4 +1875,41 @@ public class UtilsTest {
     }
     System.err.println(sw.stop());
   }
+
+  @Test
+  public void canGetFastaFromInputList() {
+    List<String> fileList = new ArrayList<>();
+    fileList.add("test_data/ds051.actb.bam");
+    fileList.add("foobar.fa");
+    fileList.add("test_data/chr7.fa");
+    String fa = Utils.findFastaInInputFileList(fileList);
+    assertEquals("test_data/chr7.fa", fa);
+
+    fileList.clear();
+    fileList.add("test_data/ds051.actb.bam");
+    fa = Utils.findFastaInInputFileList(fileList);
+    assertNull(fa);
+
+    File fai = new File("test_data/noindex.fa.fai");
+    if (fai.exists()) {
+      fai.delete();
+    }
+    fileList.clear();
+    fileList.add("test_data/noindex.fa");
+    fa = Utils.findFastaInInputFileList(fileList);
+    assertEquals("test_data/noindex.fa", fa);
+  }
+
+  @Test
+  public void canHandleMissingFastaInInputList() {
+    List<String> fileList = new ArrayList<>();
+    fileList.add("test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3");
+    String fa = Utils.findFastaInInputFileList(fileList);
+    assertNull(fa);
+
+    fileList = new ArrayList<>();
+    fileList.add("test_data/batch_actb.bed");
+    fa = Utils.findFastaInInputFileList(fileList);
+    assertNull(fa);
+  }
 }

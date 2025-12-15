@@ -46,6 +46,7 @@ public class GenomicCoords implements Cloneable {
 
   public static final String SPACER = "-"; // Background character as spacer
   public static final String TICKED = "*"; // Char to use to mark region
+  public static final int MAX_SEQ_SIZE = 100000; // Store sequence if below this size
 
   private String chrom;
   private Integer from;
@@ -65,7 +66,6 @@ public class GenomicCoords implements Cloneable {
   private boolean singleBaseResolution = false;
   private int terminalWidth;
   private List<Double> mapping;
-  private String originalFastaFile;
 
   /* Constructors */
   public GenomicCoords() throws InvalidGenomicCoordsException, IOException {}
@@ -355,10 +355,7 @@ public class GenomicCoords implements Cloneable {
     if (gs.equals("0")) {
       gs = "n/a";
     }
-    return "Genome size: "
-        + gs
-        + "; Number of contigs: "
-        + String.valueOf(samSequenceDictionary.size());
+    return "Genome size: " + gs + "; Number of contigs: " + samSequenceDictionary.size();
   }
 
   private ArrayList<SAMSequenceRecord> makeSequenceDictionaryFromContigs(
@@ -405,7 +402,8 @@ public class GenomicCoords implements Cloneable {
 
   private void resetGenomicSequence() throws IOException, InvalidGenomicCoordsException {
     GenomicSequence gs = new GenomicSequence();
-    if (this.fastaFile == null || !this.singleBaseResolution) {
+    if (this.fastaFile == null
+        || this.getGenomicWindowSize() > MAX_SEQ_SIZE) { // !this.singleBaseResolution
       gs.setGeneticCode(this.genomicSequence.getGeneticCode());
       gs.setFrames(this.genomicSequence.getFrames());
       gs.setPrintCodon(this.genomicSequence.getPrintCodon());
@@ -807,7 +805,7 @@ public class GenomicCoords implements Cloneable {
     double step = ((double) span - 1) / (size - 1);
     mapping.add((double) this.from);
     for (int i = 1; i < size; i++) {
-      mapping.add((double) mapping.get(i - 1) + step);
+      mapping.add(mapping.get(i - 1) + step);
     }
 
     // First check last point is close enough to expectation. If so, replace last point with
@@ -1003,7 +1001,7 @@ public class GenomicCoords implements Cloneable {
       Set<String> uniq = new HashSet<String>(rMarks);
       if (uniq.size() == marks.size()) {
         // No duplicates after rounding
-        break markLoop;
+        break;
       }
     }
 
@@ -1038,9 +1036,9 @@ public class GenomicCoords implements Cloneable {
    * @throws InvalidColourException
    */
   public String printableRefSeq(boolean noFormat)
-      throws InvalidColourException, InvalidGenomicCoordsException {
+      throws InvalidColourException, InvalidGenomicCoordsException, IOException {
     this.genomicSequence.setNoFormat(noFormat);
-    return this.genomicSequence.getPrintableSequence();
+    return this.genomicSequence.getPrintableSequence(this.getUserWindowSize());
   }
 
   private boolean setSamSeqDictFromAnySource(List<String> testfiles, boolean includeGenomeFile)
@@ -1314,7 +1312,6 @@ public class GenomicCoords implements Cloneable {
    * @throws InvalidGenomicCoordsException
    */
   public int getUserWindowSize() throws InvalidGenomicCoordsException, IOException {
-
     int userWindowSize = this.getTerminalWidth();
     if (userWindowSize > this.getGenomicWindowSize()) {
       return this.getGenomicWindowSize();
