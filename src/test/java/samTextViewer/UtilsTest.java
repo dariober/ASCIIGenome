@@ -1898,6 +1898,9 @@ public class UtilsTest {
     fileList.add("test_data/noindex.fa");
     fa = Utils.findFastaInInputFileList(fileList);
     assertEquals("test_data/noindex.fa", fa);
+    if (fai.exists()) {
+      fai.delete();
+    }
   }
 
   @Test
