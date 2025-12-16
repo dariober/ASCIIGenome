@@ -17,6 +17,8 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.Test;
 
 public class MainTest {
@@ -169,7 +171,41 @@ public class MainTest {
     String[] args =
         new String[] {"-ni", "-nf", "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3"};
     List<String> out = this.runMain(args);
-    System.out.println(out);
+    assertTrue(out.get(0).contains("ENST00000331789"));
+  }
+
+  @Test
+  public void addHeaderIssue108()
+      throws UnindexableFastaFileException,
+          SQLException,
+          DocumentException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidColourException,
+          IOException,
+          InvalidConfigException,
+          BamIndexNotFoundException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    String[] args =
+        new String[] {
+          "-ni",
+          "-nf",
+          "--exec",
+          "addHeader FOOBAR @2 && addHeader 'SPAMEGGS {-}'",
+          "test_data/ds051.actb.bam"
+        };
+    String out = this.runMain(args).get(0);
+
+    // Add SPAMEGGS only to the track(s) with header
+    Matcher matcher = Pattern.compile(Pattern.quote("SPAMEGGS")).matcher(out);
+    assertEquals(1, matcher.results().count());
+
+    matcher = Pattern.compile(Pattern.quote("SPAMEGGS FOOBAR")).matcher(out);
+    assertEquals(1, matcher.results().count());
+
+    matcher = Pattern.compile(Pattern.quote("{-}")).matcher(out);
+    assertEquals(0, matcher.results().count());
   }
 
   /* H E L P E R S */
