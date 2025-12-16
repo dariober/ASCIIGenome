@@ -42,7 +42,6 @@ public class MainTest {
           "-nf",
           "--debug",
           "2",
-          "-fa",
           "test_data/chr7.fa",
           "--exec",
           "goto chr7:5567419-5567599",
@@ -206,6 +205,40 @@ public class MainTest {
 
     matcher = Pattern.compile(Pattern.quote("{-}")).matcher(out);
     assertEquals(0, matcher.results().count());
+  }
+
+  @Test
+  public void showGenomeIssue107()
+      throws UnindexableFastaFileException,
+          SQLException,
+          DocumentException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidColourException,
+          IOException,
+          InvalidConfigException,
+          BamIndexNotFoundException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    String[] args = new String[] {"-ni", "-nf", "--exec", "show ge", "test_data/chr7.fa"};
+    String out = this.runMain(args).toString();
+    assertTrue(out.contains("chr7 159138663 |||||"));
+
+    args =
+        new String[] {"-ni", "-nf", "--exec", "seqRegex ACTCACTG && show ge", "test_data/chr7.fa"};
+    out = this.runMain(args).toString();
+    assertTrue(out.contains("chr7 159138663 |||||"));
+
+    args = new String[] {"-ni", "-nf", "--exec", "show ge", "test_data/ds051.actb.bam"};
+    out = this.runMain(args).toString();
+    assertTrue(out.contains("chr1  249250621 |||||||||"));
+
+    args =
+        new String[] {
+          "-ni", "-nf", "--exec", "show ge", "test_data/Homo_sapiens.GRCh38.86.ENST00000331789.gff3"
+        };
+    out = this.runMain(args).toString();
+    assertTrue(out.contains("Number of contigs: 1"));
   }
 
   /* H E L P E R S */
