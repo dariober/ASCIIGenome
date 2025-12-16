@@ -88,12 +88,28 @@ class TrackHeader {
       this.headerText = header;
     } else {
       String current = this.headerText;
+      if (current == null && header.contains("{-}")) {
+        // Do nothing since there is nothing to replace `{-}`
+        return;
+      }
       if (current != null) {
         header = header.replace("{-}", current);
       }
       this.headerText = header;
     }
   }
+
+  //  protected void setHeaderText(String header) {
+  //    if (header == null) {
+  //      this.headerText = header;
+  //    } else {
+  //      String current = this.headerText;
+  //      if (current != null) {
+  //        header = header.replace("{-}", current);
+  //      }
+  //      this.headerText = header;
+  //    }
+  //  }
 
   protected void setColour(String colour) {
     this.colour = colour;
