@@ -1112,24 +1112,6 @@ public class Utils {
       }
     }
     return closest;
-
-    //		double bestDiff= Integer.MAX_VALUE;
-    //		int closest= -1;
-    //		for(int idx= 0; idx < mapping.size(); idx++){
-    //			// Iterate through entire list to find closest position on screen, it's a bit wasteful
-    // since
-    //			// the list is ordered, but it's ok.
-    //			double candidate= mapping.get(idx);
-    //			double diff= Math.abs(genomePos - candidate);
-    //			if(diff < bestDiff){
-    //				closest= idx;
-    //				bestDiff= diff;
-    //			}
-    //		}
-    //		if(closest < 0){
-    //			throw new RuntimeException("Invalid index position: " + closest);
-    //		}
-    //		return closest;
   }
 
   /** Return true */

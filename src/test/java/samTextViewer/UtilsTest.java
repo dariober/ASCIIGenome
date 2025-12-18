@@ -1580,10 +1580,7 @@ public class UtilsTest {
 
   @Test
   public void canGetClosestIndex() {
-
     List<Double> seq = Utils.seqFromToLenOut(10, 50, 5);
-
-    System.err.println(seq);
     assertEquals(2, Utils.getIndexOfclosestValue(30, seq));
     assertEquals(
         3,

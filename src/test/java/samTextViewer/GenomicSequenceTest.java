@@ -82,4 +82,21 @@ public class GenomicSequenceTest {
     assertFalse(seq.contains("ATG"));
     assertFalse(seq.contains("M"));
   }
+
+  @Test
+  public void tmpAdaptSequenceToWindowSize()
+      throws InvalidColourException, InvalidGenomicCoordsException {
+    String dna = "TAGcccTAGTAG";
+    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
+    gs.setNoFormat(true);
+    gs.setPrintCodon(PrintCodon.ALL);
+    gs.setFrames(Frame.ONE);
+
+    // Window size same as DNA length: Print DNA and aminoacids
+    // gs.getPrintableSequence(11);
+    System.out.println(gs.getPrintableSequence(12));
+    System.out.println(gs.getPrintableSequence(11));
+    System.out.println(gs.getPrintableSequence(3));
+    System.out.println(gs.getPrintableSequence(24));
+  }
 }

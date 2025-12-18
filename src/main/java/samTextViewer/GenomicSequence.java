@@ -2,6 +2,7 @@ package samTextViewer;
 
 import colouring.Config;
 import colouring.ConfigKey;
+import com.google.common.base.Joiner;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import java.util.*;
@@ -27,6 +28,7 @@ public class GenomicSequence {
   private PrintCodon printCodon = PrintCodon.ALL;
   private final Integer forwardOffset;
   private final Integer reverseOffset;
+  private final char START_AND_STOP = '$';
 
   protected GenomicSequence(byte[] sequence, Integer genomicPositionStart, Integer chromSize)
       throws InvalidGenomicCoordsException {
@@ -170,12 +172,33 @@ public class GenomicSequence {
     }
     StringBuilder faSeqStr = new StringBuilder();
 
+    if (userWindowSize < this.sequence.length) {
+      // Process FORWARD frames and add to output string
+      for (int i = Frame.getForwardFrames().length - 1; i >= 0; i--) {
+        Frame x = Frame.getForwardFrames()[i];
+        if (this.frames.contains(x)) {
+          Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(x);
+          faSeqStr.append(this.adaptProteinToWindowSize(protein, userWindowSize)).append('\n');
+        }
+      }
+      faSeqStr.append("\n");
+      // Process REVERSE frames and add to output string
+      for (Frame x : Frame.getReverseFrames()) {
+        if (this.frames.contains(x)) {
+          Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(x);
+          String adapted = this.adaptProteinToWindowSize(protein, userWindowSize);
+          adapted= new StringBuilder(adapted).reverse().toString();
+          faSeqStr.append(adapted).append('\n');
+        }
+      }
+    }
+
     if (userWindowSize >= this.sequence.length) {
       // Process FORWARD frames and add to output string
       for (int i = Frame.getForwardFrames().length - 1; i >= 0; i--) {
         Frame x = Frame.getForwardFrames()[i];
         if (this.frames.contains(x)) {
-          faSeqStr.append(this.proteinToString(x, this.printCodon, userWindowSize)).append('\n');
+          faSeqStr.append(this.proteinToString(x, this.printCodon)).append('\n');
         }
       }
 
@@ -185,7 +208,7 @@ public class GenomicSequence {
       // Process REVERSE frames and add to output string
       for (Frame x : Frame.getReverseFrames()) {
         if (this.frames.contains(x)) {
-          faSeqStr.append(this.proteinToString(x, this.printCodon, userWindowSize)).append('\n');
+          faSeqStr.append(this.proteinToString(x, this.printCodon)).append('\n');
         }
       }
     }
@@ -203,36 +226,37 @@ public class GenomicSequence {
     return tables;
   }
 
-  private List<Character> adaptProteinToWindowSize(
+  private String adaptProteinToWindowSize(
       Sequence<AminoAcidCompound> protein, int userWindowSize) {
-    /*
-    . . . ..
-    QWERTYUI O P
-    */
     List<Character> adapted = new ArrayList<>();
-    int step = Math.round((float) (3 * protein.getLength()) / userWindowSize);
-    int i = 0;
-    Character x = null;
-    for (AminoAcidCompound aa : protein.getAsList()) {
-      char a = aa.getShortName().charAt(0);
-      if (i < step) {
-        if (x == null) {
-          x = a;
-        } else if ((a != 'M' && a != '*') || x == a) {
-          //
-        } else {
-          x = '#'; // We have start and stop codon in the same slot. Use this char to indicate that.
+    for (int i = 0; i < userWindowSize; i++) {
+      adapted.add(' ');
+    }
+
+    List<Double> relWindowMapping = Utils.seqFromToLenOut(0, 1, userWindowSize);
+
+    for (int i = 0; i < protein.getLength(); i++) {
+      char aa = protein.getAsList().get(i).getShortName().charAt(0);
+      if (aa == '*' || aa == 'M') {
+        int idxDna = (i * 3) + 1;
+        float relPosDna = (float) idxDna / (protein.getLength() * 3);
+        int idxWindow = Utils.getIndexOfclosestValue(relPosDna, relWindowMapping);
+        char current = adapted.get(idxWindow);
+        if (current == ' ') {
+          adapted.set(idxWindow, aa);
         }
-        i++;
-      } else {
-        i = 0;
-        adapted.add(x);
+        else if (current == aa || current == this.START_AND_STOP) {
+          //
+        }
+        else {
+          adapted.set(idxWindow, this.START_AND_STOP);
+        }
       }
     }
-    return adapted;
+    return Joiner.on("").join(adapted);
   }
 
-  private String proteinToString(Frame frame, PrintCodon printCodon, int userWindowSize)
+  private String proteinToString(Frame frame, PrintCodon printCodon)
       throws InvalidColourException {
     Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);
     ArrayList<FeatureChar> fmtSeq = new ArrayList<>();
