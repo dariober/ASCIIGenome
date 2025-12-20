@@ -11,6 +11,8 @@ ASCIIGenome chr7.fa ds051.actb.bam     # >= v1.20.0
 ASCIIGenome ds051.actb.bam             # No ref at all
 ```
 
+* Fix terminal width in Windows
+
 New in 1.19.0
 =============
 

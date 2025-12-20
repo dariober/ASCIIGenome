@@ -84,19 +84,60 @@ public class GenomicSequenceTest {
   }
 
   @Test
-  public void tmpAdaptSequenceToWindowSize()
+  public void testAdaptSequenceToWindowSizeForward()
       throws InvalidColourException, InvalidGenomicCoordsException {
-    String dna = "TAGcccTAGTAG";
+    String dna =
+            "TAAATG" +
+            "n".repeat(300) +
+            "atgTAA" +
+            "n".repeat(150) +
+            "ATGatgATG" +
+            "n".repeat(150) +
+            "ATGtaaATG" +
+            "n".repeat(150) +
+            "TAATAATAA" +
+            "n".repeat(150) +
+            "TAA";
     GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
     gs.setNoFormat(true);
-    gs.setPrintCodon(PrintCodon.ALL);
     gs.setFrames(Frame.ONE);
 
-    // Window size same as DNA length: Print DNA and aminoacids
-    // gs.getPrintableSequence(11);
-    System.out.println(gs.getPrintableSequence(12));
-    System.out.println(gs.getPrintableSequence(11));
-    System.out.println(gs.getPrintableSequence(3));
-    System.out.println(gs.getPrintableSequence(24));
+    String out = gs.getPrintableSequence(dna.length() - 1);
+    assertTrue(out.startsWith(" *  M "));
+    assertTrue(out.endsWith(" * \n"));
+
+    out = gs.getPrintableSequence(30);
+    assertEquals("$        *    M    $    *    *\n", out);
+    System.out.println(out);
+
+    dna = "n" + dna;
+    gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
+    gs.setNoFormat(true);
+    gs.setFrames(Frame.TWO);
+
+    out = gs.getPrintableSequence(dna.length() - 1);
+    assertTrue(out.startsWith("  *  M "));
+    assertTrue(out.endsWith(" * \n"));
+
+    dna = "n" + dna;
+    gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
+    gs.setNoFormat(true);
+    gs.setFrames(Frame.THREE);
+
+    out = gs.getPrintableSequence(dna.length() - 1);
+    assertTrue(out.startsWith("   *  M "));
+    assertTrue(out.endsWith(" * \n"));
+  }
+
+  @Test
+  public void testAdaptSequenceToWindowSizeReverse()
+          throws InvalidColourException, InvalidGenomicCoordsException {
+    String dna = "TTAnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnCATnn";
+    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
+    gs.setNoFormat(true);
+    gs.setFrames(Frame.REVERSED_THREE);
+
+    String out = gs.getPrintableSequence(dna.length() - 1);
+    assertEquals(" *                                                    M   \n", out);
   }
 }

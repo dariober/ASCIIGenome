@@ -175,18 +175,17 @@ public class GenomicSequence {
     if (userWindowSize < this.sequence.length) {
       // Process FORWARD frames and add to output string
       for (int i = Frame.getForwardFrames().length - 1; i >= 0; i--) {
-        Frame x = Frame.getForwardFrames()[i];
-        if (this.frames.contains(x)) {
-          Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(x);
-          faSeqStr.append(this.adaptProteinToWindowSize(protein, userWindowSize)).append('\n');
+        Frame frame = Frame.getForwardFrames()[i];
+        if (this.frames.contains(frame)) {
+          Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);
+          faSeqStr.append(this.adaptProteinToWindowSize(protein, userWindowSize, frame)).append('\n');
         }
       }
-      faSeqStr.append("\n");
       // Process REVERSE frames and add to output string
-      for (Frame x : Frame.getReverseFrames()) {
-        if (this.frames.contains(x)) {
-          Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(x);
-          String adapted = this.adaptProteinToWindowSize(protein, userWindowSize);
+      for (Frame frame : Frame.getReverseFrames()) {
+        if (this.frames.contains(frame)) {
+          Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);
+          String adapted = this.adaptProteinToWindowSize(protein, userWindowSize, frame);
           adapted= new StringBuilder(adapted).reverse().toString();
           faSeqStr.append(adapted).append('\n');
         }
@@ -227,25 +226,34 @@ public class GenomicSequence {
   }
 
   private String adaptProteinToWindowSize(
-      Sequence<AminoAcidCompound> protein, int userWindowSize) {
+      Sequence<AminoAcidCompound> protein, int userWindowSize, Frame frame) {
     List<Character> adapted = new ArrayList<>();
     for (int i = 0; i < userWindowSize; i++) {
       adapted.add(' ');
     }
 
-    List<Double> relWindowMapping = Utils.seqFromToLenOut(0, 1, userWindowSize);
-
+    int offset = 0;
+    if (frame.name().contains("TWO")) {
+        offset = 1;
+    } else if (frame.name().contains("THREE")) {
+        offset = 2;
+    }
+    int dnaLength = (protein.getLength() * 3) + offset;
     for (int i = 0; i < protein.getLength(); i++) {
       char aa = protein.getAsList().get(i).getShortName().charAt(0);
       if (aa == '*' || aa == 'M') {
-        int idxDna = (i * 3) + 1;
-        float relPosDna = (float) idxDna / (protein.getLength() * 3);
-        int idxWindow = Utils.getIndexOfclosestValue(relPosDna, relWindowMapping);
+        int posDna = ((i+1) * 3) - 1 + offset;
+        float relPosDna = (float) posDna / dnaLength;
+        float relPosWindow = relPosDna * userWindowSize;
+        int idxWindow = Math.max(0, Math.round(relPosWindow) - 1);
         char current = adapted.get(idxWindow);
         if (current == ' ') {
           adapted.set(idxWindow, aa);
         }
-        else if (current == aa || current == this.START_AND_STOP) {
+        else if (aa == '*') {
+          adapted.set(idxWindow, aa);
+        }
+        else if (aa == 'M' && current == 'M') {
           //
         }
         else {
