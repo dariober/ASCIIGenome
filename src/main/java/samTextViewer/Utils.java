@@ -85,6 +85,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -2292,6 +2293,9 @@ public class Utils {
     int terminalWidth = jline.TerminalFactory.get().getWidth();
     if (terminalWidth <= 0) {
       terminalWidth = 80;
+    }
+    if (SystemUtils.IS_OS_WINDOWS) {
+      terminalWidth -= 1;
     }
     return terminalWidth;
   }
