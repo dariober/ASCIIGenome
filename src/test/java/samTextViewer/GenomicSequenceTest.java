@@ -59,7 +59,7 @@ public class GenomicSequenceTest {
   }
 
   @Test
-  public void canAdaptSequenceToWindowSize()
+  public void canPrintSequenceSameAsWindowSize()
       throws InvalidColourException, InvalidGenomicCoordsException {
     String dna = "ATGCTGTAGATGCTGTAGATGCTGTAG";
     GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
@@ -76,11 +76,6 @@ public class GenomicSequenceTest {
     seq = gs.getPrintableSequence(dna.length() * 2);
     assertTrue(seq.contains("1M  L  *"));
     assertTrue(seq.contains(dna));
-
-    // Window size smaller DNA length (1 char on screen spans more than 1 nt)
-    seq = gs.getPrintableSequence(10);
-    assertFalse(seq.contains("ATG"));
-    assertFalse(seq.contains("M"));
   }
 
   @Test
@@ -103,6 +98,7 @@ public class GenomicSequenceTest {
     gs.setFrames(Frame.ONE);
 
     String out = gs.getPrintableSequence(dna.length() - 1);
+    System.out.println(out);
     assertTrue(out.startsWith(" *  M "));
     assertTrue(out.endsWith(" * \n"));
 

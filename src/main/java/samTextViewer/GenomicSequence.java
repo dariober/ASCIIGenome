@@ -226,10 +226,11 @@ public class GenomicSequence {
   }
 
   private String adaptProteinToWindowSize(
-      Sequence<AminoAcidCompound> protein, int userWindowSize, Frame frame) {
-    List<Character> adapted = new ArrayList<>();
+      Sequence<AminoAcidCompound> protein, int userWindowSize, Frame frame) throws InvalidColourException {
+    ArrayList<FeatureChar> adapted = new ArrayList<>();
+    FeatureChar filler = new FeatureChar(' ');
     for (int i = 0; i < userWindowSize; i++) {
-      adapted.add(' ');
+      adapted.add(filler);
     }
 
     int offset = 0;
@@ -246,22 +247,26 @@ public class GenomicSequence {
         float relPosDna = (float) posDna / dnaLength;
         float relPosWindow = relPosDna * userWindowSize;
         int idxWindow = Math.max(0, Math.round(relPosWindow) - 1);
-        char current = adapted.get(idxWindow);
-        if (current == ' ') {
-          adapted.set(idxWindow, aa);
-        }
-        else if (aa == '*') {
-          adapted.set(idxWindow, aa);
+        char current = adapted.get(idxWindow).getText();
+        if (current == filler.getText() || aa == '*') {
+          FeatureChar c = new FeatureChar(aa);
+          if (aa == 'M') {
+            c.setFgColour(Config.get(ConfigKey.start_codon));
+          } else {
+            c.setFgColour(Config.get(ConfigKey.stop_codon));
+          }
+          adapted.set(idxWindow, c);
         }
         else if (aa == 'M' && current == 'M') {
           //
         }
         else {
-          adapted.set(idxWindow, this.START_AND_STOP);
+          FeatureChar c = new FeatureChar(this.START_AND_STOP);
+          adapted.set(idxWindow, c);
         }
       }
     }
-    return Joiner.on("").join(adapted);
+    return this.formatProteinSequence(adapted);
   }
 
   private String proteinToString(Frame frame, PrintCodon printCodon)
@@ -341,8 +346,12 @@ public class GenomicSequence {
     } else {
       fmtSeq.set(0, this.formatFrameChar(frame));
     }
+    return this.formatProteinSequence(fmtSeq);
+  }
+
+  private String formatProteinSequence(ArrayList<FeatureChar> proteinSequence) throws InvalidColourException {
     StringBuilder sb = new StringBuilder();
-    for (FeatureChar x : fmtSeq) {
+    for (FeatureChar x : proteinSequence) {
       sb.append(x.format(this.noFormat));
     }
     return new String(sb);
