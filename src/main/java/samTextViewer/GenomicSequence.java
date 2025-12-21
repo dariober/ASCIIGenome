@@ -2,7 +2,6 @@ package samTextViewer;
 
 import colouring.Config;
 import colouring.ConfigKey;
-import com.google.common.base.Joiner;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import java.util.*;
@@ -28,7 +27,7 @@ public class GenomicSequence {
   private PrintCodon printCodon = PrintCodon.ALL;
   private final Integer forwardOffset;
   private final Integer reverseOffset;
-  private final char START_AND_STOP = '$';
+  private final char STOP_THEN_START = '$';
 
   protected GenomicSequence(byte[] sequence, Integer genomicPositionStart, Integer chromSize)
       throws InvalidGenomicCoordsException {
@@ -261,9 +260,36 @@ public class GenomicSequence {
           //
         }
         else {
-          FeatureChar c = new FeatureChar(this.START_AND_STOP);
+          FeatureChar c = new FeatureChar(this.STOP_THEN_START);
           adapted.set(idxWindow, c);
         }
+      }
+    }
+    // Connect ORFs which span at least so many characters
+    int minOrfLength = 1;
+    List<Integer> candidateOrf = new ArrayList<>();
+    boolean open = false;
+    char orfChar = frame.name().startsWith("REVERSED") ? '<' : '>';
+    for (int i = 0; i < adapted.size(); i++){
+      char aa = adapted.get(i).getText();
+      if (open) {
+        candidateOrf.add(i);
+        if (candidateOrf.size() >= minOrfLength) {
+          for (int idx : candidateOrf) {
+            if (adapted.get(idx).getText() == ' ') {
+              FeatureChar c = new FeatureChar(orfChar);
+              c.setFgColour(Config.get(ConfigKey.codon));
+              adapted.set(idx, c);
+            }
+          }
+        }
+      }
+      if (aa == '*') {
+        open = false;
+        candidateOrf.clear();
+      }
+      if (aa == 'M' || aa == this.STOP_THEN_START) {
+        open = true;
       }
     }
     return this.formatProteinSequence(adapted);

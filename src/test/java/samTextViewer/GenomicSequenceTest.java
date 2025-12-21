@@ -99,12 +99,13 @@ public class GenomicSequenceTest {
 
     String out = gs.getPrintableSequence(dna.length() - 1);
     System.out.println(out);
-    assertTrue(out.startsWith(" *  M "));
+    assertTrue(out.startsWith(" *  M>>>>>>"));
+    assertTrue(out.contains(">>>>M>>*"));
+    assertTrue(out.contains("*  *  * "));
     assertTrue(out.endsWith(" * \n"));
 
     out = gs.getPrintableSequence(30);
-    assertEquals("$        *    M    $    *    *\n", out);
-    System.out.println(out);
+    assertEquals("$>>>>>>>>*    M>>>>$>>>>*    *\n", out);
 
     dna = "n" + dna;
     gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
@@ -112,7 +113,7 @@ public class GenomicSequenceTest {
     gs.setFrames(Frame.TWO);
 
     out = gs.getPrintableSequence(dna.length() - 1);
-    assertTrue(out.startsWith("  *  M "));
+    assertTrue(out.startsWith("  *  M>>>>"));
     assertTrue(out.endsWith(" * \n"));
 
     dna = "n" + dna;
@@ -121,7 +122,7 @@ public class GenomicSequenceTest {
     gs.setFrames(Frame.THREE);
 
     out = gs.getPrintableSequence(dna.length() - 1);
-    assertTrue(out.startsWith("   *  M "));
+    assertTrue(out.startsWith("   *  M>>>"));
     assertTrue(out.endsWith(" * \n"));
   }
 
@@ -134,6 +135,6 @@ public class GenomicSequenceTest {
     gs.setFrames(Frame.REVERSED_THREE);
 
     String out = gs.getPrintableSequence(dna.length() - 1);
-    assertEquals(" *                                                    M   \n", out);
+    assertEquals(" *<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<M   \n", out);
   }
 }
