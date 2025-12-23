@@ -27,9 +27,8 @@ public class GenomicSequence {
   private PrintCodon printCodon = PrintCodon.ALL;
   private final Integer forwardOffset;
   private final Integer reverseOffset;
-  private final char STOP_THEN_START = '$';
 
-  protected GenomicSequence(byte[] sequence, Integer genomicPositionStart, Integer chromSize)
+    protected GenomicSequence(byte[] sequence, Integer genomicPositionStart, Integer chromSize)
       throws InvalidGenomicCoordsException {
     this.sequence = sequence;
     if (sequence == null) {
@@ -61,7 +60,7 @@ public class GenomicSequence {
           "Invalid translation table " + this.geneticCode.toUpperCase());
     }
     TranscriptionEngine transcriptionEngine =
-        new Builder().table(table).initMet(true).trimStop(false).build();
+        new Builder().table(table).initMet(false).trimStop(false).build();
 
     HashMap<Frame, Sequence<AminoAcidCompound>> sixFrame = new HashMap<>();
     DNASequence dna;
@@ -185,7 +184,6 @@ public class GenomicSequence {
         if (this.frames.contains(frame)) {
           Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);
           String adapted = this.adaptProteinToWindowSize(protein, userWindowSize, frame);
-          adapted= new StringBuilder(adapted).reverse().toString();
           faSeqStr.append(adapted).append('\n');
         }
       }
@@ -194,19 +192,17 @@ public class GenomicSequence {
     if (userWindowSize >= this.sequence.length) {
       // Process FORWARD frames and add to output string
       for (int i = Frame.getForwardFrames().length - 1; i >= 0; i--) {
-        Frame x = Frame.getForwardFrames()[i];
-        if (this.frames.contains(x)) {
-          faSeqStr.append(this.proteinToString(x, this.printCodon)).append('\n');
+        Frame frame = Frame.getForwardFrames()[i];
+        if (this.frames.contains(frame)) {
+          faSeqStr.append(this.proteinToString(frame, this.printCodon)).append('\n');
         }
       }
-
       // Process DNA output string
       faSeqStr.append(this.getPrintableDna());
-
       // Process REVERSE frames and add to output string
-      for (Frame x : Frame.getReverseFrames()) {
-        if (this.frames.contains(x)) {
-          faSeqStr.append(this.proteinToString(x, this.printCodon)).append('\n');
+      for (Frame frame : Frame.getReverseFrames()) {
+        if (this.frames.contains(frame)) {
+          faSeqStr.append(this.proteinToString(frame, this.printCodon)).append('\n');
         }
       }
     }
@@ -227,9 +223,9 @@ public class GenomicSequence {
   private String adaptProteinToWindowSize(
       Sequence<AminoAcidCompound> protein, int userWindowSize, Frame frame) throws InvalidColourException {
     ArrayList<FeatureChar> adapted = new ArrayList<>();
-    FeatureChar filler = new FeatureChar(' ');
+    char filler = ' ';
     for (int i = 0; i < userWindowSize; i++) {
-      adapted.add(filler);
+      adapted.add(new FeatureChar(filler));
     }
 
     int offset = 0;
@@ -239,7 +235,8 @@ public class GenomicSequence {
         offset = 2;
     }
     int dnaLength = (protein.getLength() * 3) + offset;
-    for (int i = 0; i < protein.getLength(); i++) {
+      char STOP_THEN_START = '$';
+      for (int i = 0; i < protein.getLength(); i++) {
       char aa = protein.getAsList().get(i).getShortName().charAt(0);
       if (aa == '*' || aa == 'M') {
         int posDna = ((i+1) * 3) - 1 + offset;
@@ -247,7 +244,7 @@ public class GenomicSequence {
         float relPosWindow = relPosDna * userWindowSize;
         int idxWindow = Math.max(0, Math.round(relPosWindow) - 1);
         char current = adapted.get(idxWindow).getText();
-        if (current == filler.getText() || aa == '*') {
+        if (current == filler || aa == '*') {
           FeatureChar c = new FeatureChar(aa);
           if (aa == 'M') {
             c.setFgColour(Config.get(ConfigKey.start_codon));
@@ -260,37 +257,33 @@ public class GenomicSequence {
           //
         }
         else {
-          FeatureChar c = new FeatureChar(this.STOP_THEN_START);
+          FeatureChar c = new FeatureChar(STOP_THEN_START);
           adapted.set(idxWindow, c);
         }
       }
     }
-    // Connect ORFs which span at least so many characters
-    int minOrfLength = 1;
-    List<Integer> candidateOrf = new ArrayList<>();
+
+    // Connect ORFs
     boolean open = false;
     char orfChar = frame.name().startsWith("REVERSED") ? '<' : '>';
     for (int i = 0; i < adapted.size(); i++){
       char aa = adapted.get(i).getText();
       if (open) {
-        candidateOrf.add(i);
-        if (candidateOrf.size() >= minOrfLength) {
-          for (int idx : candidateOrf) {
-            if (adapted.get(idx).getText() == ' ') {
-              FeatureChar c = new FeatureChar(orfChar);
-              c.setFgColour(Config.get(ConfigKey.codon));
-              adapted.set(idx, c);
-            }
-          }
+        if (adapted.get(i).getText() == filler) {
+            FeatureChar c = new FeatureChar(orfChar);
+            c.setFgColour(Config.get(ConfigKey.codon));
+            adapted.set(i, c);
         }
       }
       if (aa == '*') {
         open = false;
-        candidateOrf.clear();
       }
-      if (aa == 'M' || aa == this.STOP_THEN_START) {
+      if (aa == 'M' || aa == STOP_THEN_START) {
         open = true;
       }
+    }
+    if (frame.name().startsWith("REVERSED")) {
+      Collections.reverse(adapted);
     }
     return this.formatProteinSequence(adapted);
   }

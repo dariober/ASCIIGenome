@@ -9,7 +9,17 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Map;
+
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
+import org.biojava.nbio.core.sequence.DNASequence;
+import org.biojava.nbio.core.sequence.compound.AminoAcidCompound;
+import org.biojava.nbio.core.sequence.io.IUPACParser;
+import org.biojava.nbio.core.sequence.template.Sequence;
 import org.biojava.nbio.core.sequence.transcription.Frame;
+import org.biojava.nbio.core.sequence.transcription.TranscriptionEngine;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -98,7 +108,6 @@ public class GenomicSequenceTest {
     gs.setFrames(Frame.ONE);
 
     String out = gs.getPrintableSequence(dna.length() - 1);
-    System.out.println(out);
     assertTrue(out.startsWith(" *  M>>>>>>"));
     assertTrue(out.contains(">>>>M>>*"));
     assertTrue(out.contains("*  *  * "));
@@ -136,5 +145,25 @@ public class GenomicSequenceTest {
 
     String out = gs.getPrintableSequence(dna.length() - 1);
     assertEquals(" *<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<M   \n", out);
+  }
+
+  @Test
+  public void initMet()
+          throws InvalidColourException, InvalidGenomicCoordsException {
+    /*
+    If the transcriptionEngine includes '.initMet(true)' then you tell biojava
+    to start with Met if the first codon is a suitable alternative start codon.
+    TTG is a possible initiation codon and biojava translates it as Met if
+    .initMet(true). However, we set .initMet(false) and we expect Leu instead
+    of Met.
+     */
+    String dna = "TTC CAA TA".replaceAll(" ", "");
+    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
+    gs.setNoFormat(true);
+    gs.setFrames(Frame.REVERSED_THREE);
+
+    String out = gs.getPrintableSequence(dna.length());
+    System.out.println(out);
+    assertTrue(out.contains(" E  L "));
   }
 }
