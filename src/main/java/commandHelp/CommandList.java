@@ -522,7 +522,7 @@ public class CommandList {
             + "\n"
             + "* :code:`-frame` Frames to translate. Options: all, forward, reverse, none\n"
             + "\n"
-            + "* :code:`-codon` Which codons to show. Options: all, start, stop, start_and_stop\n"
+            + "* :code:`-codon` Which codons to show. Options: all [a], start, stop, start_and_stop [ss]\n"
             + "\n"
             + "* :code:`-geneticCode` Genetic code to translate codons\n"
             + "\n"

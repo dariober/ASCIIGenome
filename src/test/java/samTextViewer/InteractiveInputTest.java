@@ -436,7 +436,7 @@ public class InteractiveInputTest {
     assertTrue(
         pi.stdout.contains("\n1 A  *  K  A  D  T  S  S  K  S  I  T  E  A  M  V  Q  P  K  L \n"));
 
-    pi = this.processInput(ip, "translate -codon start_and_stop", proc);
+    pi = this.processInput(ip, "translate -codon ss", proc);
     assertTrue(
         pi.stdout.contains("    *                                      M                \n"));
 
@@ -448,7 +448,7 @@ public class InteractiveInputTest {
     assertTrue(
         pi.stdout.contains("    *                                                       \n"));
 
-    pi = this.processInput(ip, "translate -codon all", proc);
+    pi = this.processInput(ip, "translate -codon a", proc);
     assertTrue(
         pi.stdout.contains("C  Q  E  S  *  H  I  I  K  I  H  Y  *  G  Y  S  S  A  K  A  \n"));
 

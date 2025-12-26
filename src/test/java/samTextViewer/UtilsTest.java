@@ -1912,4 +1912,18 @@ public class UtilsTest {
     fa = Utils.findFastaInInputFileList(fileList);
     assertNull(fa);
   }
+
+  @Test
+  public void canMatchPartialOption() throws InvalidCommandLineException {
+    List<String> options = new ArrayList<>();
+    options.add("All");
+    options.add("forward");
+    options.add("Fork");
+    ArrayList<String> found = Utils.partialMatch("f", options, true);
+    assertEquals(1, found.size());
+    found = Utils.partialMatch("for", options, false);
+    assertEquals(2, found.size());
+    found = Utils.partialMatch("X", options, false);
+    assertEquals(0, found.size());
+  }
 }
