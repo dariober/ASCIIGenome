@@ -2825,7 +2825,8 @@ public class Utils {
     return null;
   }
 
-  public static ArrayList<String> partialMatch(String query, List<String> options, boolean matchCase) {
+  public static ArrayList<String> partialMatch(
+      String query, List<String> options, boolean matchCase) {
     ArrayList<String> found = new ArrayList<>();
     for (String x : options) {
       if (matchCase) {
