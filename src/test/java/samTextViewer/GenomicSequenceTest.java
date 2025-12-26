@@ -136,15 +136,32 @@ public class GenomicSequenceTest {
   }
 
   @Test
+  public void testAdaptSequenceNotMultipleOfThreeForward()
+          throws InvalidColourException, InvalidGenomicCoordsException {
+    String dna = "TGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTAACCAGCGGGTGAGCTTCAAGGAACAAAGGGCTTCCGCTGGGTCAGCCCACGAGAGGGAGCTGCCTGCAGGTACCTGGGAGGGCACAGCCACCGTGTCTGATGCT";
+    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 3, 1000);
+    gs.setNoFormat(true);
+    gs.setFrames(Frame.THREE);
+    String out = gs.getPrintableSequence(dna.length() - 1);
+    assertTrue(out.startsWith(" *  "));
+
+    dna = "nTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTAACCAGCGGGTGAGCTTCAAGGAACAAAGGGCTTCCGCTGGGTCAGCCCACGAGAGGGAGCTGCCTGCAGGTACCTGGGAGGGCACAGCCACCGTGTCTGTTCCT";
+    gs = new GenomicSequence(dna.getBytes(), 1, 1000);
+    gs.setNoFormat(true);
+    gs.setFrames(Frame.TWO);
+    out = gs.getPrintableSequence(dna.length()-1);
+    assertTrue(out.startsWith("  *  "));
+  }
+
+  @Test
   public void testAdaptSequenceToWindowSizeReverse()
           throws InvalidColourException, InvalidGenomicCoordsException {
-    String dna = "TTAnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnCATnn";
+    String dna = "TTAnnnTTAnnnCATnnnnnnTTAnnnnnnnnnnnnnnnnnnCATnnnCATnnnCATnn";
     GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
     gs.setNoFormat(true);
     gs.setFrames(Frame.REVERSED_THREE);
-
     String out = gs.getPrintableSequence(dna.length() - 1);
-    assertEquals(" *<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<M   \n", out);
+    assertEquals(" *     *<<<<<M        *<<<<<<<<<<<<<<<<<<<M<<<<<M<<<<<M   \n", out);
   }
 
   @Test
@@ -163,7 +180,6 @@ public class GenomicSequenceTest {
     gs.setFrames(Frame.REVERSED_THREE);
 
     String out = gs.getPrintableSequence(dna.length());
-    System.out.println(out);
     assertTrue(out.contains(" E  L "));
   }
 }

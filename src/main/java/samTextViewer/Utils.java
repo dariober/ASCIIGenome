@@ -2816,6 +2816,7 @@ public class Utils {
           return fa;
         }
         new Faidx(new File(fa));
+        (new File(fa + ".fai")).deleteOnExit();
         return fa;
       } catch (Exception e) {
 

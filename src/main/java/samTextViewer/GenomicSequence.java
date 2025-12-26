@@ -27,8 +27,9 @@ public class GenomicSequence {
   private PrintCodon printCodon = PrintCodon.ALL;
   private final Integer forwardOffset;
   private final Integer reverseOffset;
+  private final char STOP_THEN_START = '$';
 
-    protected GenomicSequence(byte[] sequence, Integer genomicPositionStart, Integer chromSize)
+  protected GenomicSequence(byte[] sequence, Integer genomicPositionStart, Integer chromSize)
       throws InvalidGenomicCoordsException {
     this.sequence = sequence;
     if (sequence == null) {
@@ -74,7 +75,7 @@ public class GenomicSequence {
       try {
         tr = transcriptionEngine.multipleFrameTranslation(dna, frame);
       } catch (TranslationException e) {
-        // System.err.println(frame);
+
       }
       sixFrame.put(frame, tr.get(frame));
     }
@@ -176,7 +177,9 @@ public class GenomicSequence {
         Frame frame = Frame.getForwardFrames()[i];
         if (this.frames.contains(frame)) {
           Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);
-          faSeqStr.append(this.adaptProteinToWindowSize(protein, userWindowSize, frame)).append('\n');
+          faSeqStr
+              .append(this.adaptProteinToWindowSize(protein, userWindowSize, frame))
+              .append('\n');
         }
       }
       // Process REVERSE frames and add to output string
@@ -220,28 +223,43 @@ public class GenomicSequence {
     return tables;
   }
 
+  private int getTranslationStartOnDnaSeq(Frame frame) {
+    int frameOffset = 0;
+    if (frame.name().contains("TWO")) {
+      frameOffset = 1;
+    }
+    if (frame.name().contains("THREE")) {
+      frameOffset = 2;
+    }
+    int dnaStart;
+    if (frame.name().startsWith("REVERSED")) {
+      dnaStart = this.getSequence().length - this.reverseOffset - frameOffset;
+    } else {
+      dnaStart = 3 - this.forwardOffset + 1;
+      dnaStart = dnaStart + frameOffset;
+      if (dnaStart > 3) {
+        dnaStart = dnaStart - 3;
+      }
+    }
+    return dnaStart;
+  }
+
   private String adaptProteinToWindowSize(
-      Sequence<AminoAcidCompound> protein, int userWindowSize, Frame frame) throws InvalidColourException {
+      Sequence<AminoAcidCompound> protein, int userWindowSize, Frame frame)
+      throws InvalidColourException {
     ArrayList<FeatureChar> adapted = new ArrayList<>();
     char filler = ' ';
     for (int i = 0; i < userWindowSize; i++) {
       adapted.add(new FeatureChar(filler));
     }
-
-    int offset = 0;
-    if (frame.name().contains("TWO")) {
-        offset = 1;
-    } else if (frame.name().contains("THREE")) {
-        offset = 2;
-    }
-    int dnaLength = (protein.getLength() * 3) + offset;
-      char STOP_THEN_START = '$';
-      for (int i = 0; i < protein.getLength(); i++) {
+    boolean isReversed = frame.name().startsWith("REVERSED");
+    int dnaStart = this.getTranslationStartOnDnaSeq(frame);
+    for (int i = 0; i < protein.getLength(); i++) {
       char aa = protein.getAsList().get(i).getShortName().charAt(0);
       if (aa == '*' || aa == 'M') {
-        int posDna = ((i+1) * 3) - 1 + offset;
-        float relPosDna = (float) posDna / dnaLength;
-        float relPosWindow = relPosDna * userWindowSize;
+        int posDnaMidChar = isReversed ? dnaStart - (i * 3) - 1 : dnaStart + (i * 3) + 1;
+        float pctPosDna = (float) posDnaMidChar / this.getSequence().length;
+        float relPosWindow = pctPosDna * userWindowSize;
         int idxWindow = Math.max(0, Math.round(relPosWindow) - 1);
         char current = adapted.get(idxWindow).getText();
         if (current == filler || aa == '*') {
@@ -252,44 +270,46 @@ public class GenomicSequence {
             c.setFgColour(Config.get(ConfigKey.stop_codon));
           }
           adapted.set(idxWindow, c);
-        }
-        else if (aa == 'M' && current == 'M') {
+        } else if (aa == 'M' && current == 'M') {
           //
-        }
-        else {
+        } else {
           FeatureChar c = new FeatureChar(STOP_THEN_START);
           adapted.set(idxWindow, c);
         }
       }
     }
+    this.connectOrf(adapted, isReversed, filler);
+    return this.formatProteinSequence(adapted);
+  }
 
-    // Connect ORFs
+  private void connectOrf(List<FeatureChar> aaList, boolean isReversed, char filler) {
+    if (isReversed) {
+      Collections.reverse(aaList);
+    }
     boolean open = false;
-    char orfChar = frame.name().startsWith("REVERSED") ? '<' : '>';
-    for (int i = 0; i < adapted.size(); i++){
-      char aa = adapted.get(i).getText();
+    char orfChar = isReversed ? '<' : '>';
+    for (int i = 0; i < aaList.size(); i++) {
+      char aa = aaList.get(i).getText();
       if (open) {
-        if (adapted.get(i).getText() == filler) {
-            FeatureChar c = new FeatureChar(orfChar);
-            c.setFgColour(Config.get(ConfigKey.codon));
-            adapted.set(i, c);
+        if (aaList.get(i).getText() == filler) {
+          FeatureChar c = new FeatureChar(orfChar);
+          c.setFgColour(Config.get(ConfigKey.codon));
+          aaList.set(i, c);
         }
       }
       if (aa == '*') {
         open = false;
       }
-      if (aa == 'M' || aa == STOP_THEN_START) {
+      if (aa == 'M' || aa == this.STOP_THEN_START) {
         open = true;
       }
     }
-    if (frame.name().startsWith("REVERSED")) {
-      Collections.reverse(adapted);
+    if (isReversed) {
+      Collections.reverse(aaList);
     }
-    return this.formatProteinSequence(adapted);
   }
 
-  private String proteinToString(Frame frame, PrintCodon printCodon)
-      throws InvalidColourException {
+  private String proteinToString(Frame frame, PrintCodon printCodon) throws InvalidColourException {
     Sequence<AminoAcidCompound> protein = this.sixFrameTranslation.get(frame);
     ArrayList<FeatureChar> fmtSeq = new ArrayList<>();
 
@@ -351,7 +371,8 @@ public class GenomicSequence {
       }
     }
 
-    if (frame.name().startsWith("REVERSED")) {
+    boolean isReversed = frame.name().startsWith("REVERSED");
+    if (isReversed) {
       Collections.reverse(fmtSeq);
       int npad = this.sequence.length - width;
       while (npad > 0) {
@@ -365,10 +386,12 @@ public class GenomicSequence {
     } else {
       fmtSeq.set(0, this.formatFrameChar(frame));
     }
+    // this.connectOrf(fmtSeq, isReversed, ' ');
     return this.formatProteinSequence(fmtSeq);
   }
 
-  private String formatProteinSequence(ArrayList<FeatureChar> proteinSequence) throws InvalidColourException {
+  private String formatProteinSequence(ArrayList<FeatureChar> proteinSequence)
+      throws InvalidColourException {
     StringBuilder sb = new StringBuilder();
     for (FeatureChar x : proteinSequence) {
       sb.append(x.format(this.noFormat));

@@ -1,5 +1,7 @@
 package samTextViewer;
 
+import static java.nio.file.StandardCopyOption.*;
+
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.esotericsoftware.yamlbeans.YamlWriter;
 import java.io.File;
@@ -7,13 +9,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
 import org.apache.commons.io.FileUtils;
-
-import static java.nio.file.StandardCopyOption.*;
 
 public class ASCIIGenomeHistory {
 
@@ -229,12 +228,12 @@ public class ASCIIGenomeHistory {
               + DEFAULT_FILENAME);
       File newFile = new File(DEFAULT_FILENAME);
       newFile.getParentFile().mkdirs();
-        try {
-            Files.copy(oldFile.toPath(), newFile.toPath(), REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        oldFile.delete();
+      try {
+        Files.copy(oldFile.toPath(), newFile.toPath(), REPLACE_EXISTING);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      oldFile.delete();
     }
   }
 }
