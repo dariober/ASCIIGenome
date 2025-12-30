@@ -278,23 +278,23 @@ public class GenomicSequence {
         }
       }
     }
-    this.connectOrf(adapted, isReversed, filler);
+    this.connectOrf(adapted, isReversed, filler, '>');
     return this.formatProteinSequence(adapted);
   }
 
-  private void connectOrf(List<FeatureChar> aaList, boolean isReversed, char filler) {
+  private void connectOrf(List<FeatureChar> aaList, boolean isReversed, char filler, char orfChar) {
     if (isReversed) {
       Collections.reverse(aaList);
     }
     boolean open = false;
-    char orfChar = isReversed ? '<' : '>';
+    if (orfChar == '<' || orfChar == '>') {
+      orfChar = isReversed ? '<' : '>';
+    }
     for (int i = 0; i < aaList.size(); i++) {
       char aa = aaList.get(i).getText();
       if (open) {
         if (aaList.get(i).getText() == filler) {
-          FeatureChar c = new FeatureChar(orfChar);
-          c.setFgColour(Config.get(ConfigKey.codon));
-          aaList.set(i, c);
+          aaList.get(i).setText(orfChar);
         }
       }
       if (aa == '*') {
@@ -386,7 +386,7 @@ public class GenomicSequence {
     } else {
       fmtSeq.set(0, this.formatFrameChar(frame));
     }
-    // this.connectOrf(fmtSeq, isReversed, ' ');
+    this.connectOrf(fmtSeq, isReversed, ' ', '-');
     return this.formatProteinSequence(fmtSeq);
   }
 

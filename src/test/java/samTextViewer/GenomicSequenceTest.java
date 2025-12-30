@@ -46,7 +46,7 @@ public class GenomicSequenceTest {
     gs.setPrintCodon(PrintCodon.ALL);
     gs.setFrames(Frame.getAllFrames());
 
-    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n1M  L  * "));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n1M--L--* "));
     assertTrue(gs.getPrintableSequence(dna.length()).contains("\n2 C  C "));
     assertTrue(gs.getPrintableSequence(dna.length()).startsWith("3  A  V"));
 
@@ -60,7 +60,7 @@ public class GenomicSequenceTest {
     gs.setFrames(Frame.getAllFrames());
 
     assertTrue(gs.getPrintableSequence(dna.length()).contains("\n1  A  V"));
-    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n2M  L  *"));
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n2M--L--*"));
     assertTrue(gs.getPrintableSequence(dna.length()).startsWith("3 C  C"));
 
     assertTrue(gs.getPrintableSequence(dna.length()).contains("\n  A  T  1\n"));
@@ -79,12 +79,12 @@ public class GenomicSequenceTest {
 
     // Window size same as DNA length: Print DNA and aminoacids
     String seq = gs.getPrintableSequence(dna.length());
-    assertTrue(seq.contains("1M  L  *"));
+    assertTrue(seq.contains("1M--L--*"));
     assertTrue(seq.contains(dna));
 
     // Window size larger DNA length: Print DNA and aminoacids
     seq = gs.getPrintableSequence(dna.length() * 2);
-    assertTrue(seq.contains("1M  L  *"));
+    assertTrue(seq.contains("1M--L--*"));
     assertTrue(seq.contains(dna));
   }
 

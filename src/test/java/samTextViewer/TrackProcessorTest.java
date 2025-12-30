@@ -25,10 +25,7 @@ public class TrackProcessorTest {
           BamIndexNotFoundException,
           InvalidRecordException,
           SQLException,
-          InvalidConfigException,
-          InvalidCommandLineException,
-          DocumentException,
-          InvalidColourException {
+          InvalidConfigException {
 
     new Config(null);
 
