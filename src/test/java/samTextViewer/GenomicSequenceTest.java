@@ -1,7 +1,6 @@
 package samTextViewer;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
@@ -9,17 +8,7 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Map;
-
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
-import org.biojava.nbio.core.sequence.DNASequence;
-import org.biojava.nbio.core.sequence.compound.AminoAcidCompound;
-import org.biojava.nbio.core.sequence.io.IUPACParser;
-import org.biojava.nbio.core.sequence.template.Sequence;
 import org.biojava.nbio.core.sequence.transcription.Frame;
-import org.biojava.nbio.core.sequence.transcription.TranscriptionEngine;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -92,17 +81,17 @@ public class GenomicSequenceTest {
   public void testAdaptSequenceToWindowSizeForward()
       throws InvalidColourException, InvalidGenomicCoordsException {
     String dna =
-            "TAAATG" +
-            "n".repeat(300) +
-            "atgTAA" +
-            "n".repeat(150) +
-            "ATGatgATG" +
-            "n".repeat(150) +
-            "ATGtaaATG" +
-            "n".repeat(150) +
-            "TAATAATAA" +
-            "n".repeat(150) +
-            "TAA";
+        "TAAATG"
+            + "n".repeat(300)
+            + "atgTAA"
+            + "n".repeat(150)
+            + "ATGatgATG"
+            + "n".repeat(150)
+            + "ATGtaaATG"
+            + "n".repeat(150)
+            + "TAATAATAA"
+            + "n".repeat(150)
+            + "TAA";
     GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
     gs.setNoFormat(true);
     gs.setFrames(Frame.ONE);
@@ -137,25 +126,27 @@ public class GenomicSequenceTest {
 
   @Test
   public void testAdaptSequenceNotMultipleOfThreeForward()
-          throws InvalidColourException, InvalidGenomicCoordsException {
-    String dna = "TGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTAACCAGCGGGTGAGCTTCAAGGAACAAAGGGCTTCCGCTGGGTCAGCCCACGAGAGGGAGCTGCCTGCAGGTACCTGGGAGGGCACAGCCACCGTGTCTGATGCT";
+      throws InvalidColourException, InvalidGenomicCoordsException {
+    String dna =
+        "TGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTAACCAGCGGGTGAGCTTCAAGGAACAAAGGGCTTCCGCTGGGTCAGCCCACGAGAGGGAGCTGCCTGCAGGTACCTGGGAGGGCACAGCCACCGTGTCTGATGCT";
     GenomicSequence gs = new GenomicSequence(dna.getBytes(), 3, 1000);
     gs.setNoFormat(true);
     gs.setFrames(Frame.THREE);
     String out = gs.getPrintableSequence(dna.length() - 1);
     assertTrue(out.startsWith(" *  "));
 
-    dna = "nTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTAACCAGCGGGTGAGCTTCAAGGAACAAAGGGCTTCCGCTGGGTCAGCCCACGAGAGGGAGCTGCCTGCAGGTACCTGGGAGGGCACAGCCACCGTGTCTGTTCCT";
+    dna =
+        "nTGATTGATCTGCCAAAAGGGGAAGAATGAGTCCAGCTAGAATCCAGGACTAACCAGCGGGTGAGCTTCAAGGAACAAAGGGCTTCCGCTGGGTCAGCCCACGAGAGGGAGCTGCCTGCAGGTACCTGGGAGGGCACAGCCACCGTGTCTGTTCCT";
     gs = new GenomicSequence(dna.getBytes(), 1, 1000);
     gs.setNoFormat(true);
     gs.setFrames(Frame.TWO);
-    out = gs.getPrintableSequence(dna.length()-1);
+    out = gs.getPrintableSequence(dna.length() - 1);
     assertTrue(out.startsWith("  *  "));
   }
 
   @Test
   public void testAdaptSequenceToWindowSizeReverse()
-          throws InvalidColourException, InvalidGenomicCoordsException {
+      throws InvalidColourException, InvalidGenomicCoordsException {
     String dna = "TTAnnnTTAnnnCATnnnnnnTTAnnnnnnnnnnnnnnnnnnCATnnnCATnnnCATnn";
     GenomicSequence gs = new GenomicSequence(dna.getBytes(), 1, dna.length());
     gs.setNoFormat(true);
@@ -165,8 +156,7 @@ public class GenomicSequenceTest {
   }
 
   @Test
-  public void initMet()
-          throws InvalidColourException, InvalidGenomicCoordsException {
+  public void initMet() throws InvalidColourException, InvalidGenomicCoordsException {
     /*
     If the transcriptionEngine includes '.initMet(true)' then you tell biojava
     to start with Met if the first codon is a suitable alternative start codon.
