@@ -290,5 +290,22 @@ class TestCLI(unittest.TestCase):
         self.assertTrue("Nctaaccctaaccctaaccc" in p.stdout)
         self.assertTrue("test_data/ds051.actb.bam#1;" in p.stdout)
 
+    def testDeleteIndexOnExit(self):
+        self.assertTrue(os.path.isfile("../../../test_data/noindex.fa.fai") is False)
+        cmd = f"""{ASCIIGenome} -nf ../../../test_data/noindex.fa
+            """
+        print(cmd)
+        p = shell(cmd)
+        self.assertEqual(p.returncode, 0)
+        self.assertTrue(os.path.isfile("../../../test_data/noindex.fa.fai") is False)
+
+        self.assertTrue(os.path.isfile("../../../test_data/chr7.fa.fai"))
+        cmd = f"""{ASCIIGenome} -nf ../../../test_data/chr7.fa
+            """
+        print(cmd)
+        p = shell(cmd)
+        self.assertEqual(p.returncode, 0)
+        self.assertTrue(os.path.isfile("../../../test_data/chr7.fa.fai"))
+
 if __name__ == "__main__":
     unittest.main()

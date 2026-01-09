@@ -434,33 +434,32 @@ public class InteractiveInputTest {
 
     pi = this.processInput(ip, "+10000", proc);
     assertTrue(
-        pi.stdout.contains("\n1 A  *  K  A  D  T  S  S  K  S  I  T  E  A  M  V  Q  P  K  L \n"));
+        pi.stdout.contains("\n1 A  *  K  A  D  T  S  S  K  S  I  T  E  A  M--V--Q--P--K--L-\n"));
 
-    pi = this.processInput(ip, "translate -codon start_and_stop", proc);
+    pi = this.processInput(ip, "translate -codon ss", proc);
     assertTrue(
-        pi.stdout.contains("    *                                      M                \n"));
+        pi.stdout.contains("    *                                      M----------------\n"));
 
     pi = this.processInput(ip, "translate -codon start", proc);
     assertTrue(
-        pi.stdout.contains("                                           M                \n"));
+        pi.stdout.contains("                                           M----------------\n"));
 
     pi = this.processInput(ip, "translate -codon stop", proc);
     assertTrue(
         pi.stdout.contains("    *                                                       \n"));
 
-    pi = this.processInput(ip, "translate -codon all", proc);
+    pi = this.processInput(ip, "translate -codon a", proc);
     assertTrue(
         pi.stdout.contains("C  Q  E  S  *  H  I  I  K  I  H  Y  *  G  Y  S  S  A  K  A  \n"));
-
     pi = this.processInput(ip, "zo", proc);
-    assertFalse(pi.stdout.contains("C  Q  E"));
+    assertFalse(pi.stdout.contains("H  I  I"));
 
     // MEMO: zo && zi does not return to *exactly* the same position
     pi = this.processInput(ip, "zi", proc);
-    assertTrue(pi.stdout.contains("C  Q  E"));
+    assertTrue(pi.stdout.contains("H  I  I"));
 
     pi = this.processInput(ip, "translate -frame none", proc);
-    assertFalse(pi.stdout.contains("C  Q  E"));
+    assertFalse(pi.stdout.contains("H  I  I"));
   }
 
   @Test

@@ -85,6 +85,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.text.StrMatcher;
 import org.apache.commons.lang3.text.StrTokenizer;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -1112,24 +1113,6 @@ public class Utils {
       }
     }
     return closest;
-
-    //		double bestDiff= Integer.MAX_VALUE;
-    //		int closest= -1;
-    //		for(int idx= 0; idx < mapping.size(); idx++){
-    //			// Iterate through entire list to find closest position on screen, it's a bit wasteful
-    // since
-    //			// the list is ordered, but it's ok.
-    //			double candidate= mapping.get(idx);
-    //			double diff= Math.abs(genomePos - candidate);
-    //			if(diff < bestDiff){
-    //				closest= idx;
-    //				bestDiff= diff;
-    //			}
-    //		}
-    //		if(closest < 0){
-    //			throw new RuntimeException("Invalid index position: " + closest);
-    //		}
-    //		return closest;
   }
 
   /** Return true */
@@ -2311,6 +2294,9 @@ public class Utils {
     if (terminalWidth <= 0) {
       terminalWidth = 80;
     }
+    if (SystemUtils.IS_OS_WINDOWS) {
+      terminalWidth -= 1;
+    }
     return terminalWidth;
   }
 
@@ -2830,11 +2816,29 @@ public class Utils {
           return fa;
         }
         new Faidx(new File(fa));
+        (new File(fa + ".fai")).deleteOnExit();
         return fa;
       } catch (Exception e) {
 
       }
     }
     return null;
+  }
+
+  public static ArrayList<String> partialMatch(
+      String query, List<String> options, boolean matchCase) {
+    ArrayList<String> found = new ArrayList<>();
+    for (String x : options) {
+      if (matchCase) {
+        if (x.startsWith(query)) {
+          found.add(x);
+        }
+      } else {
+        if (x.toLowerCase().startsWith(query.toLowerCase())) {
+          found.add(x);
+        }
+      }
+    }
+    return found;
   }
 }

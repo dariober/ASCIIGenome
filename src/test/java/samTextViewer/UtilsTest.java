@@ -1580,10 +1580,7 @@ public class UtilsTest {
 
   @Test
   public void canGetClosestIndex() {
-
     List<Double> seq = Utils.seqFromToLenOut(10, 50, 5);
-
-    System.err.println(seq);
     assertEquals(2, Utils.getIndexOfclosestValue(30, seq));
     assertEquals(
         3,
@@ -1914,5 +1911,19 @@ public class UtilsTest {
     fileList.add("test_data/batch_actb.bed");
     fa = Utils.findFastaInInputFileList(fileList);
     assertNull(fa);
+  }
+
+  @Test
+  public void canMatchPartialOption() throws InvalidCommandLineException {
+    List<String> options = new ArrayList<>();
+    options.add("All");
+    options.add("forward");
+    options.add("Fork");
+    ArrayList<String> found = Utils.partialMatch("f", options, true);
+    assertEquals(1, found.size());
+    found = Utils.partialMatch("for", options, false);
+    assertEquals(2, found.size());
+    found = Utils.partialMatch("X", options, false);
+    assertEquals(0, found.size());
   }
 }

@@ -660,6 +660,12 @@ public class InteractiveInput {
       frame = Utils.getArgForParam(args, "-frame", "all");
     }
     String codon = Utils.getArgForParam(args, "-codon", "all");
+    if (codon.equalsIgnoreCase("ss")) {
+      codon = "start_and_stop";
+    }
+    if (codon.equalsIgnoreCase("a")) {
+      codon = "all";
+    }
 
     String currentCode = gs.getGeneticCode();
     if (currentCode == null) {

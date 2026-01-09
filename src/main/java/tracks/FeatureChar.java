@@ -28,6 +28,11 @@ public class FeatureChar {
     this.bgColour = Config.get(ConfigKey.background);
   }
 
+  public FeatureChar(char text) {
+    this();
+    this.setText(text);
+  }
+
   /*  M E T H O D S  */
 
   /**
