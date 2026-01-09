@@ -588,7 +588,8 @@ public abstract class Track {
         break;
       }
     }
-    String columnSep = " \033[32m|\033[39m ";
+    String columnSep =
+        String.format(" \033[32m|\033[38;5;%dm ", Config.get256Colour(ConfigKey.foreground));
     if (this.isNoFormat()) {
       columnSep = Utils.stripAnsiCodes(columnSep);
     }
@@ -596,7 +597,7 @@ public abstract class Track {
         Utils.tabulateList(featureList, this.getGc().getUserWindowSize(), columnSep);
     StringBuilder sb = new StringBuilder();
     if (!omitString.isEmpty()) {
-      sb.append(omitString + "\n");
+      sb.append(omitString).append("\n");
     }
 
     // Trim to fit size ignoring formatting
@@ -625,7 +626,7 @@ public abstract class Track {
       if (nAnsiEscape % 2 != 0) {
         line.append("\033[27m"); // If the closing escape have been trimmed off, put it back
       }
-      sb.append(line.toString() + "\n");
+      sb.append(line).append("\n");
     }
 
     if (this.isNoFormat()) {
@@ -637,8 +638,7 @@ public abstract class Track {
               + ";48;5;"
               + Config.get256Colour(ConfigKey.background)
               + "m"
-              + sb.toString();
-
+              + sb;
       return formatted;
     }
   }
@@ -648,7 +648,7 @@ public abstract class Track {
 
     String[] xline = line.split("\t");
 
-    int flag = Integer.valueOf(xline[1]);
+    int flag = Integer.parseInt(xline[1]);
     StringBuilder ex = new StringBuilder();
     ex.append(flag);
     ex.append("|");
@@ -696,7 +696,7 @@ public abstract class Track {
     }
     int pad = 0;
     for (String x : hdrIndexToName.values()) {
-      if (requiredHeader.size() == 0 || requiredHeader.contains(x)) {
+      if (requiredHeader.isEmpty() || requiredHeader.contains(x)) {
         if (x.length() > pad) {
           pad = x.length();
         }
@@ -719,7 +719,7 @@ public abstract class Track {
           if (lst.get(i).isEmpty()) {
             continue;
           }
-          if (requiredHeader.size() > 0 && !requiredHeader.contains(hdrIndexToName.get(i))) {
+          if (!requiredHeader.isEmpty() && !requiredHeader.contains(hdrIndexToName.get(i))) {
             continue;
           }
           String hdr = header.get(i);
@@ -803,7 +803,7 @@ public abstract class Track {
         hlValueIdx.add(i);
       }
     }
-    if (hlValueIdx.size() == 0) {
+    if (hlValueIdx.isEmpty()) {
       return vcf; // Nothing replace
     }
 
@@ -844,7 +844,7 @@ public abstract class Track {
       sb.append("\033[27m");
       idx = m.end();
     }
-    String prefix = x.substring(idx, x.length());
+    String prefix = x.substring(idx);
     sb.append(prefix);
     return sb.toString();
   }
@@ -888,10 +888,6 @@ public abstract class Track {
   /**
    * Stream the list of string recordsAsStrings through the system command(s) given in sysCmd. The
    * system command(s) must read from stdin and write to stdout.
-   *
-   * @throws IOException
-   * @throws InvalidCommandLineException
-   * @throws InterruptedException
    */
   private List<String> execSystemCommand(List<String> recordsAsStrings, String sysCmd)
       throws IOException {

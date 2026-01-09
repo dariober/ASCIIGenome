@@ -4,6 +4,7 @@ docs/_build
 docs/_static
 /target/
 /.gradle/
+/.idea/
 build/
 caches/
 daemon/
