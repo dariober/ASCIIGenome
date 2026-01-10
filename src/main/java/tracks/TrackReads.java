@@ -253,11 +253,11 @@ public class TrackReads extends Track {
 
     List<SamSequenceFragment> fragments = new ArrayList<SamSequenceFragment>();
 
-    while (textReads.size() > 0) {
+    while (!textReads.isEmpty()) {
       // Keep going until all reads have been moved to the list of fragments.
       TextRead tr = textReads.get(0);
       textReads.remove(0);
-      if (!asPair || !tr.getSamRecord().getProperPairFlag()) {
+      if (!asPair || ! (tr.getSamRecord().getReadPairedFlag() && tr.getSamRecord().getProperPairFlag())) {
         SamSequenceFragment frag = new SamSequenceFragment(tr);
         if (!asPair) {
           frag.setSingleton(true);
@@ -267,7 +267,7 @@ public class TrackReads extends Track {
         // Find the mate of this read, if present.
         TextRead mate = null;
         for (TextRead candidateMate : textReads) {
-          if (candidateMate.getSamRecord().getProperPairFlag()
+          if ((candidateMate.getSamRecord().getReadPairedFlag() && candidateMate.getSamRecord().getProperPairFlag())
               && Utils.equalReadNames(
                   tr.getSamRecord().getReadName(), candidateMate.getSamRecord().getReadName())
               && tr.getSamRecord().getAlignmentStart()

@@ -282,7 +282,7 @@ class TextRead extends IntervalFeature {
       } else if (this.samRecord.getReadNegativeStrandFlag()) {
         sq.setFgColour(Config.get(ConfigKey.feature_background_negative_strand));
       }
-      if (this.samRecord.getSecondOfPairFlag()) {
+      if (this.getSamRecord().getReadPairedFlag() && this.samRecord.getSecondOfPairFlag()) {
         sq.setUnderline(true);
       }
       squashedRead.add(sq);
@@ -417,7 +417,7 @@ class TextRead extends IntervalFeature {
                 xc.setBgColour(Config.get(ConfigKey.shade_low_mapq));
               }
             }
-            if (this.samRecord.getSecondOfPairFlag()) {
+            if (this.samRecord.getReadPairedFlag() && this.samRecord.getSecondOfPairFlag()) {
               xc.setUnderline(true);
             }
             dnaRead.add(xc);

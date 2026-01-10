@@ -6,12 +6,21 @@ read the reference fasta file. If `--fasta/-fa` is unset, ASCIIGenome will
 attempt the find a fasta file in the input file list. So these are all ok:
 
 ```
-ASCIIGenome -fa chr7.fa ds051.actb.bam # < v1.20.0
 ASCIIGenome chr7.fa ds051.actb.bam     # >= v1.20.0
+ASCIIGenome -fa chr7.fa ds051.actb.bam # < v1.20.0
 ASCIIGenome ds051.actb.bam             # No ref at all
 ```
 
-* Fix terminal width in Windows
+* Six frame translation shows start and stops codons and ORFs when resolution
+  is above single base.
+
+![six-frame](docs/screenshots/sixframe_out.png)
+
+* Support CRAM version 3.1 (better late than never)
+
+* Use native `htsjdk` which means no support for malformed VCF files anymore
+
+* Fix terminal width in Windows (Windows support remains minimal)
 
 New in 1.19.0
 =============
@@ -19,7 +28,7 @@ New in 1.19.0
 * Command
   [translate](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#translate)
   to show 6-frame translation. TODO: Show starts and stops when bases per
-  character are above single base resolution.
+  character are above single base resolution (done in 1.20.0).
 
 ![six-frame](docs/screenshots/sixframe.png)
 

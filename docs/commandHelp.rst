@@ -334,16 +334,18 @@ translate
 
 :code:`translate [-geneticCode=universal]`
 
-Show translation of DNA to codons.  Options:
+Show translation of DNA to aminoacids.  Options:
 
 * :code:`-frame` Frames to translate. Options: all, forward, reverse, none
 
-* :code:`-codon` Which codons to show. Options: all, start, stop, start_and_stop
+* :code:`-codon` Which codons to show. Options: all [a], start, stop, start_and_stop [ss]
 
 * :code:`-geneticCode` Genetic code to translate codons
 
 Use :code:`-geneticCode show` to view available codes. See also `ncbi <https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi>`
-With no arguments toggle display on and off
+With no arguments toggle display on and off.
+
+If a single character spans more than 1 nucleotide, only show starts (M) and stops (*). The character :code:`$` indicates a stop followed by a start.
 
 Examples::
 
