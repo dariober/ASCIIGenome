@@ -42,12 +42,7 @@ public class IntervalFeatureTest {
     // NB: NumberUtils.isCreatable comes from samtools even if it is imported via apache commons
     Package pkg = NumberUtils.class.getPackage();
     System.out.println(pkg.getImplementationVersion() + " | " + pkg.getImplementationVendor());
-    System.out.println(
-            NumberUtils.class
-                    .getProtectionDomain()
-                    .getCodeSource()
-                    .getLocation()
-    );
+    System.out.println(NumberUtils.class.getProtectionDomain().getCodeSource().getLocation());
 
     // Valid numbers
     assertTrue(NumberUtils.isCreatable("1.1"));
@@ -419,26 +414,26 @@ public class IntervalFeatureTest {
     assertEquals(4, f.getScreenTo());
   }
 
-//  @Test
-//  public void handleSpaceInVCFInfoAndInvalidKey() {
-//    // This reading would fail on the original htsjdk-1.141
-//    VCFFileReader reader = new VCFFileReader(new File("test_data/malformed.vcf"));
-//    reader.query("chr1", 1, 16000000);
-//    reader.close();
-//  }
+  //  @Test
+  //  public void handleSpaceInVCFInfoAndInvalidKey() {
+  //    // This reading would fail on the original htsjdk-1.141
+  //    VCFFileReader reader = new VCFFileReader(new File("test_data/malformed.vcf"));
+  //    reader.query("chr1", 1, 16000000);
+  //    reader.close();
+  //  }
 
-//  @Test
-//  public void handleUnsupportedVersion() {
-//    // This reading would fail on the original htsjdk-1.141
-//    VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header2.vcf.gz"));
-//    reader.close();
-//  }
+  //  @Test
+  //  public void handleUnsupportedVersion() {
+  //    // This reading would fail on the original htsjdk-1.141
+  //    VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header2.vcf.gz"));
+  //    reader.close();
+  //  }
 
-//  @Test
-//  public void handleMissingVersionLine() {
-//    VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header4.vcf.gz"));
-//    reader.close();
-//  }
+  //  @Test
+  //  public void handleMissingVersionLine() {
+  //    VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header4.vcf.gz"));
+  //    reader.close();
+  //  }
 
   @Test
   public void handleMissingInfoLinesInHeader() {

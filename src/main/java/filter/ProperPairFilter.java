@@ -14,6 +14,7 @@ public class ProperPairFilter implements SamRecordFilter {
   public ProperPairFilter(final boolean include) {
     this.include = include;
   }
+
   /**
    * Determines whether a SAMRecord matches this filter
    *
