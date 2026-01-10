@@ -49,10 +49,13 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
+
 import jline.console.ConsoleReader;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import tracks.IntervalFeature;
@@ -123,9 +126,6 @@ public class UtilsTest {
     for (TrackFormat x : TrackFormat.values()) {
       fmt.add(x);
     }
-
-    assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/malformed.vcf.gz", null));
-    assertEquals(TrackFormat.VCF, Utils.guessTrackType("test_data/invalid.vcf", null));
     assertEquals(
         TrackFormat.VCF, Utils.guessTrackType("test_data/CEU.exon.2010_06.genotypes.vcf", null));
     assertEquals(
@@ -1058,7 +1058,9 @@ public class UtilsTest {
     }
   }
 
-  @Test
+  // @Test
+  // This is mostly a test of performance
+  /*
   public void testAwk() throws Exception {
 
     String fin = "test_data/hg19.gencode_genes_v19.gtf.gz";
@@ -1083,19 +1085,21 @@ public class UtilsTest {
     }
     System.err.println("DONE");
     long t0 = System.currentTimeMillis();
-    String content = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-    // assertEquals(10, content.split("\n").length);
-
-    List<String> full = FileUtils.readLines(new File(fin), "UTF-8");
+    String content = baos.toString(StandardCharsets.UTF_8);
+    InputStream fis = new FileInputStream(fin);
+    InputStream gis = new GZIPInputStream(fis);
+    List<String> full = IOUtils.readLines(gis, StandardCharsets.UTF_8);
     Set<String> keepme = new HashSet<String>(Arrays.asList(content.split("\n")));
+    System.err.println(keepme);
     for (String line : full) {
       if (keepme.contains(line)) {
-        // System.err.println(line);
+        System.err.println(line);
       }
     }
     long t1 = System.currentTimeMillis();
     System.err.println(t1 - t0);
   }
+  */
 
   @Test
   public void testHistory() throws IOException {

@@ -52,6 +52,79 @@ public class MainTest {
   }
 
   @Test
+  public void canStartFromCramVersion3_1()
+          throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
+    String[] args =
+            new String[] {
+                    "-ni",
+                    "-nf",
+                    "--debug",
+                    "2",
+                    "test_data/chr7.fa",
+                    "--exec",
+                    "goto chr7:5567419-5567599",
+                    "test_data/ds051.actb.v3_1.cram"
+            };
+    String out = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(out.contains("chr7:5567419-5567599") && out.contains("<<<<<"));
+  }
+
+  @Test
+  public void canHandlePairedFilterInSingleEndBam()
+          throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
+    String[] args =
+            new String[] {
+                    "-r",
+                    "chr7:5566778-5566857",
+                    "-ni",
+                    "-nf",
+                    "--debug",
+                    "2",
+                    "--exec",
+                    "samtools -F 2",
+                    "test_data/ds051.actb.bam"
+            };
+    String out = Joiner.on("\n").join(this.runMain(args));
+    System.out.println(out);
+    assertTrue(out.contains("Reads: 292"));
+
+    args =
+            new String[] {
+                    "-r",
+                    "chr7:5566778-5566857",
+                    "-ni",
+                    "-nf",
+                    "--debug",
+                    "2",
+                    "--exec",
+                    "samtools -f 2",
+                    "test_data/ds051.actb.bam"
+            };
+    out = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(out.contains("Reads: 0"));
+  }
+
+  @Test
   /*Add these to canGoToNextChromosome in InteractiveInputTest.java */
   public void canGoToNextChromosome()
       throws ClassNotFoundException,
@@ -206,6 +279,8 @@ public class MainTest {
     matcher = Pattern.compile(Pattern.quote("{-}")).matcher(out);
     assertEquals(0, matcher.results().count());
   }
+
+
 
   @Test
   public void showGenomeIssue107()

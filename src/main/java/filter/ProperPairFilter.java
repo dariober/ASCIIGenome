@@ -14,7 +14,6 @@ public class ProperPairFilter implements SamRecordFilter {
   public ProperPairFilter(final boolean include) {
     this.include = include;
   }
-
   /**
    * Determines whether a SAMRecord matches this filter
    *
@@ -23,12 +22,12 @@ public class ProperPairFilter implements SamRecordFilter {
    */
   public boolean filterOut(final SAMRecord record) {
     if (include) {
-      if (record.getProperPairFlag()) {
+      if (record.getReadPairedFlag() && record.getProperPairFlag()) {
         return false;
       }
     } else {
       // exclude
-      if (!record.getProperPairFlag()) {
+      if (!(record.getReadPairedFlag() && record.getProperPairFlag())) {
         return false;
       }
     }

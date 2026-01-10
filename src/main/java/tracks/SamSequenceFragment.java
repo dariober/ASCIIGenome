@@ -22,7 +22,7 @@ class SamSequenceFragment {
     // Only one read is present in this fragment.
     // We need to decide whether it is a singleton. It may not be a singleton
     // if the mate of this read exist but it wasn't found.
-    if (tr.getSamRecord().getProperPairFlag() && tr.getSamRecord().getMateAlignmentStart() > 0) {
+    if (tr.getSamRecord().getReadPairedFlag() && tr.getSamRecord().getProperPairFlag() && tr.getSamRecord().getMateAlignmentStart() > 0) {
       // Note that the position of the mate must be known.
       this.isSingleton = false;
     } else {

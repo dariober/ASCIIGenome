@@ -274,13 +274,17 @@ public class TrackPileup extends TrackBedgraph {
    * between qryFrom and qryTo.
    */
   private void add(SAMRecord samRecord, int qryFrom, int qryTo, Map<Integer, Locus> accumulator) {
-
-    // Is this read forward or reverse? First or second in pair?
-    boolean isFirstOFPair = !samRecord.getFirstOfPairFlag();
+    boolean isFirstOFPair;
+    if (!samRecord.getReadPairedFlag()) {
+      // If not paired, consider it first of pair
+      isFirstOFPair = true;
+    } else {
+      isFirstOFPair = samRecord.getFirstOfPairFlag();
+    }
     boolean isReverse = samRecord.getReadNegativeStrandFlag();
 
     List<AlignmentBlock> alnBlocks = samRecord.getAlignmentBlocks();
-    if (alnBlocks.size() == 0) {
+    if (alnBlocks.isEmpty()) {
       // Nothing to be done. This may happen with e.g. fully clipped reads
       return;
     }

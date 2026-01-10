@@ -511,37 +511,6 @@ public class CommandList {
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
-    cmd.setName("translate");
-    cmd.setArgs("[-frame=all]");
-    cmd.setArgs("[-codon=all]");
-    cmd.setArgs("[-geneticCode=universal]");
-    cmd.inSection = Section.DISPLAY;
-    cmd.setBriefDescription("Show translation of DNA to aminoacids. ");
-    cmd.setAdditionalDescription(
-        "Options:\n"
-            + "\n"
-            + "* :code:`-frame` Frames to translate. Options: all, forward, reverse, none\n"
-            + "\n"
-            + "* :code:`-codon` Which codons to show. Options: all [a], start, stop, start_and_stop"
-            + " [ss]\n"
-            + "\n"
-            + "* :code:`-geneticCode` Genetic code to translate codons\n"
-            + "\n"
-            + "Use :code:`-geneticCode show` to view available codes. See also `ncbi"
-            + " <https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi>`\n"
-            + "With no arguments toggle display on and off.\n"
-            + "\n"
-            + "If a single character spans more than 1 nucleotide, only show starts (M) and stops"
-            + " (*). The character :code:`$` indicates a stop followed by a start.\n"
-            + "\n"
-            + "Examples::\n"
-            + "\n"
-            + "    translate\n"
-            + "    translate -geneticCode bacterial\n"
-            + "    translate -frame none -> Turn off\n");
-    cmdList.add(cmd);
-
-    cmd = new CommandHelp();
     // cmd.setName("bookmark"); cmd.setArgs("[name] | [-rm] | [-print] | [> [file]]");
     // cmd.inSection= Section.FIND;
     cmd.setName("bookmark");
@@ -766,10 +735,8 @@ public class CommandList {
             + "\n"
             + "*NOTES & LIMITATIONS*\n"
             + "\n"
-            + "* This is a java implementation of awk and it is independent on whether awk is on"
-            + " the local system. It should behave very similar to UNIX awk and therefore it has"
-            + " lots of functionalities. In fact, awk is a programming language in itself, search"
-            + " Google for more. The original code is from https://github.com/hoijui/Jawk\n"
+            + "* The :code:`awk` utility must available on the user's :code:`PATH` (this should be " +
+                "the case on all \\*nix systems)\n"
             + "\n"
             + "* Use awk only to filter features, do not use it to edit them. If features are"
             + " changed by the awk script than nothing will be retained. This is because the awk"
@@ -1632,7 +1599,7 @@ public class CommandList {
     cmd.setBriefDescription(
         "Apply samtools filters to alignment tracks captured by the list of track regexes.");
     cmd.setAdditionalDescription(
-        "Useful for stranded RNA-Seq and BS-Seq: bit flag 4096 is selects reads mapping to TOP"
+        "Useful for stranded RNA-Seq and BS-Seq: bit flag 4096 selects reads mapping to TOP"
             + " STRAND.\n"
             + "\n"
             + "* :code:`-F` Filter out flags with these bits set. NB: 4 is always set.\n"
@@ -1733,6 +1700,37 @@ public class CommandList {
     cmd.setBriefDescription(
         ":code:`help`, :code:`h`, :code:`-h`, and :code:`?` show this help.\n" + CMD_HELP);
     cmd.setAdditionalDescription("");
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
+    cmd.setName("translate");
+    cmd.setArgs("[-frame=all]");
+    cmd.setArgs("[-codon=all]");
+    cmd.setArgs("[-geneticCode=universal]");
+    cmd.inSection = Section.DISPLAY;
+    cmd.setBriefDescription("Show translation of DNA to aminoacids. ");
+    cmd.setAdditionalDescription(
+            "Options:\n"
+                    + "\n"
+                    + "* :code:`-frame` Frames to translate. Options: all, forward, reverse, none\n"
+                    + "\n"
+                    + "* :code:`-codon` Which codons to show. Options: all [a], start, stop, start_and_stop"
+                    + " [ss]\n"
+                    + "\n"
+                    + "* :code:`-geneticCode` Genetic code to translate codons\n"
+                    + "\n"
+                    + "Use :code:`-geneticCode show` to view available codes. See also `ncbi"
+                    + " <https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi>`\n"
+                    + "With no arguments toggle display on and off.\n"
+                    + "\n"
+                    + "If a single character spans more than 1 nucleotide, only show starts (M) and stops"
+                    + " (*). The character :code:`$` indicates a stop followed by a start.\n"
+                    + "\n"
+                    + "Examples::\n"
+                    + "\n"
+                    + "    translate\n"
+                    + "    translate -geneticCode bacterial\n"
+                    + "    translate -frame none -> Turn off\n");
     cmdList.add(cmd);
 
     // Make sure there are no undocumented cmds

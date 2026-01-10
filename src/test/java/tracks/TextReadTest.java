@@ -268,6 +268,7 @@ public class TextReadTest {
     rec.setReadBases("AACCGGTTAACCGGTTAACCGGTT".getBytes());
     TextRead textRead = new TextRead(rec, gc, false);
 
+    rec.setReadPairedFlag(true);
     rec.setSecondOfPairFlag(false);
     assertTrue(!textRead.getPrintableTextRead(true, false, false).contains("4;")); // '4': Underline
 
