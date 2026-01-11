@@ -201,6 +201,30 @@ public class GenomicCoordsTest {
   }
 
   @Test
+  public void canExtendCoordinatesByPctScreen()
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+    GenomicCoords gc = new GenomicCoords("chr7:1001-1100", 80, null, null);
+    assertEquals(100, (int) gc.getGenomicWindowSize());
+    List<String> cmdInput = new ArrayList<String>();
+    cmdInput.add("extend");
+    cmdInput.add("0.1");
+    cmdInput.add("0.2");
+    gc.cmdInputExtend(cmdInput);
+    assertEquals(1001 - 10, (int) gc.getFrom());
+    assertEquals(1100 + 20, (int) gc.getTo());
+
+    // Can mix pct and int
+    gc = new GenomicCoords("chr7:1001-1100", 80, null, null);
+    cmdInput = new ArrayList<String>();
+    cmdInput.add("extend");
+    cmdInput.add("0.1");
+    cmdInput.add("100");
+    gc.cmdInputExtend(cmdInput);
+    assertEquals(1001 - 10, (int) gc.getFrom());
+    assertEquals(1100 + 100, (int) gc.getTo());
+  }
+
+  @Test
   public void canExtendCoordinates()
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 

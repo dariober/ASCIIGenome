@@ -354,19 +354,32 @@ public class CommandList {
 
     cmd = new CommandHelp();
     cmd.setName("extend");
-    cmd.setArgs("[mid|window] [INT left] [INT right]");
+    cmd.setArgs("[mid|window] [INT|FLOAT left] [INT|FLOAT right]");
     cmd.inSection = Section.NAVIGATION;
-    cmd.setBriefDescription("Extend the current window by `INT` bases left and right.\n");
+    cmd.setBriefDescription("Extend the current window left and/or right.");
     cmd.setAdditionalDescription(
-        "\n"
-            + "* :code:`window` (default): Extend the current window left and right by `INT`"
-            + " bases\n"
+        " If left or right are integers, extend by this many bases. If the are floats, extend by"
+            + " this percent of the current window size\n"
+            + "\n"
+            + "If only one number is given extend both left and right. Negative numbers will shrink"
+            + " instead of extend the window.\n"
+            + "\n"
+            + "* :code:`window` (default): Extend the current window left and right\n"
             + "\n"
             + "* :code:`mid` The new window is given by the midpoint of the current window plus and"
-            + " minus `INT` bases left and right.\n"
+            + " left and right.\n"
             + "\n"
-            + "If only one INT is given it is applied to both left and right. Negative INTs will"
-            + " shrink instead of extend the window.");
+            + "Examples::\n"
+            + "\n"
+            + "extend 10~~~~~~~// Extend left and right by 10 bases\n"
+            + "\n"
+            + "extend 10 20~~~~// Extend left 10 and right by 20 bases\n"
+            + "\n"
+            + "extend 0.1~~~~~~// Extend left and right by 10% of the current window size\n"
+            + "\n"
+            + "extend -0.1~~~~~~// Shrink by 10% of the current window size\n"
+            + "\n"
+            + "extend mid 1000~// Extend the midpoint of the current window by 1kb\n");
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
@@ -735,8 +748,8 @@ public class CommandList {
             + "\n"
             + "*NOTES & LIMITATIONS*\n"
             + "\n"
-            + "* The :code:`awk` utility must available on the user's :code:`PATH` (this should be " +
-                "the case on all \\*nix systems)\n"
+            + "* The :code:`awk` utility must available on the user's :code:`PATH` (this should be "
+            + "the case on all \\*nix systems)\n"
             + "\n"
             + "* Use awk only to filter features, do not use it to edit them. If features are"
             + " changed by the awk script than nothing will be retained. This is because the awk"
@@ -1710,27 +1723,27 @@ public class CommandList {
     cmd.inSection = Section.DISPLAY;
     cmd.setBriefDescription("Show translation of DNA to aminoacids. ");
     cmd.setAdditionalDescription(
-            "Options:\n"
-                    + "\n"
-                    + "* :code:`-frame` Frames to translate. Options: all, forward, reverse, none\n"
-                    + "\n"
-                    + "* :code:`-codon` Which codons to show. Options: all [a], start, stop, start_and_stop"
-                    + " [ss]\n"
-                    + "\n"
-                    + "* :code:`-geneticCode` Genetic code to translate codons\n"
-                    + "\n"
-                    + "Use :code:`-geneticCode show` to view available codes. See also `ncbi"
-                    + " <https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi>`\n"
-                    + "With no arguments toggle display on and off.\n"
-                    + "\n"
-                    + "If a single character spans more than 1 nucleotide, only show starts (M) and stops"
-                    + " (*). The character :code:`$` indicates a stop followed by a start.\n"
-                    + "\n"
-                    + "Examples::\n"
-                    + "\n"
-                    + "    translate\n"
-                    + "    translate -geneticCode bacterial\n"
-                    + "    translate -frame none -> Turn off\n");
+        "Options:\n"
+            + "\n"
+            + "* :code:`-frame` Frames to translate. Options: all, forward, reverse, none\n"
+            + "\n"
+            + "* :code:`-codon` Which codons to show. Options: all [a], start, stop, start_and_stop"
+            + " [ss]\n"
+            + "\n"
+            + "* :code:`-geneticCode` Genetic code to translate codons\n"
+            + "\n"
+            + "Use :code:`-geneticCode show` to view available codes. See also `ncbi"
+            + " <https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi>`\n"
+            + "With no arguments toggle display on and off.\n"
+            + "\n"
+            + "If a single character spans more than 1 nucleotide, only show starts (M) and stops"
+            + " (*). The character :code:`$` indicates a stop followed by a start.\n"
+            + "\n"
+            + "Examples::\n"
+            + "\n"
+            + "    translate\n"
+            + "    translate -geneticCode bacterial\n"
+            + "    translate -frame none -> Turn off\n");
     cmdList.add(cmd);
 
     // Make sure there are no undocumented cmds

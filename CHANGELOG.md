@@ -22,6 +22,9 @@ ASCIIGenome ds051.actb.bam             # No ref at all
 
 * Fix terminal width in Windows (Windows support remains minimal)
 
+* `extend` command can use percent window size. E.g. `extend 0.1` will extend
+  the current window by 10% 
+
 New in 1.19.0
 =============
 
