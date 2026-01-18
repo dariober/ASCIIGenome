@@ -525,7 +525,7 @@ public class Main {
                 new Runnable() {
                   public void run() {
                     try {
-                      List<String> up = Utils.checkUpdates(5000);
+                      List<String> up = Utils.checkUpdates(2000);
                       int cmp = Utils.versionCompare(up.get(0), up.get(1));
                       // cmp= -1; // For testing
                       String msg = "";

@@ -103,6 +103,7 @@ import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
 import utils.Tokenizer;
+import java.net.URLConnection;
 
 /**
  * @author berald01
@@ -1878,23 +1879,27 @@ public class Utils {
    * @param timeout Return if no response is received after so many milliseconds.
    * @throws IOException
    */
-  protected static List<String> checkUpdates(long timeout) throws IOException {
+  protected static List<String> checkUpdates(int timeout) throws IOException {
 
     List<String> thisAndGitVersion = new ArrayList<String>();
 
     // Get version of this ASCIIGenome
     thisAndGitVersion.add(ArgParse.VERSION);
 
+
     BufferedReader br = null;
-    timeout = timeout + System.currentTimeMillis();
     // Get github versions
     URL url = new URL("https://api.github.com/repos/dariober/ASCIIGenome/tags");
-    br = new BufferedReader(new InputStreamReader(url.openStream()));
+    URLConnection conn = url.openConnection();
+    conn.setConnectTimeout(timeout);
+    conn.setReadTimeout(timeout * 2);
+
+    br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
     String line;
     StringBuilder sb = new StringBuilder();
     while ((line = br.readLine()) != null) {
-      sb.append(line + '\n');
+      sb.append(line).append('\n');
     }
 
     JsonElement jelement = new JsonParser().parse(sb.toString());
@@ -1907,7 +1912,7 @@ public class Utils {
       JsonObject jobj = (JsonObject) iter.next();
       tag.add(jobj.get("name").getAsString().replaceAll("^[^0-9]*", "").trim());
     }
-    if (tag.size() == 0) {
+    if (tag.isEmpty()) {
       thisAndGitVersion.add("0");
     } else {
       thisAndGitVersion.add(tag.get(0));
