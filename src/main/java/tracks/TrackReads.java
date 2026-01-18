@@ -298,8 +298,8 @@ public class TrackReads extends Track {
           @Override
           public int compare(final SamSequenceFragment frag1, final SamSequenceFragment frag2) {
             return Integer.compare(
-                frag1.getLeftRead().getSamRecord().getAlignmentStart(),
-                frag2.getLeftRead().getSamRecord().getAlignmentStart());
+                frag1.getLeftRead().getAlignmentStart(),
+                frag2.getLeftRead().getAlignmentStart());
           }
         });
   }
