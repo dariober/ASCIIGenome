@@ -133,24 +133,7 @@ public class MakeTabixIndex {
       if (line.startsWith("##FASTA") && dataLinesFound) {
         break;
       }
-      try {
-        addLineToIndex(line, indexCreator, filePosition, vcfHeader, vcfCodec);
-      } catch (Exception e) {
-        if (e.getMessage().contains("added out sequence of order")
-            || e.getMessage().contains("Features added out of order")) {
-          // Get a string marker for out-of-order from
-          // htsjdk/tribble/index/tabix/TabixIndexCreator.java
-          writer.close();
-          throw new InvalidRecordException();
-        }
-        if (nWarnings >= 0) {
-          System.err.println("Warning: " + e.getMessage() + ". Skipping:\n" + line);
-        }
-        if (nWarnings == 0) {
-          System.err.println("Additional warnings will not be show.");
-        }
-        nWarnings--;
-      }
+      addLineToIndex(line, indexCreator, filePosition, vcfHeader, vcfCodec);
       writer.write(line.getBytes());
       writer.write('\n');
       filePosition = writer.getFilePointer();
