@@ -466,7 +466,7 @@ Customise the genotype rows printed under the VCF tracks.
 
 :code:`-r` Edit sample names to replace <pattern> with <replacement>. Names are edited only for display. To completely hide names replace with empty string :code:`-r .* ''`. To restore original names use a regex matching nothing e.g. '^$'
 
-:code:`-f` Filter samples using an expression in javascript syntax. See below for details.
+:code:`-f` Filter samples using an expression in Python syntax. See below for details.
 
 :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
 
@@ -480,7 +480,7 @@ The value(s) in a TAG are converted to the appropriate data type (Integer, Strin
 
 Note that the ALT and FILTER fields are always arrays, even if only one allele is present.
 
-After substitution of the :code:`{TAG}` placeholders with the actual values, the expression string is evaluated as a javascript script so any valid JS code is allowed including the common operators: :code:`> < == != && ||`.
+After substitution of the :code:`{TAG}` placeholders with the actual values, the expression string is evaluated as Python syntax so any valid Python code is allowed including the common operators: :code:`> < == != && ||`.
 
 Importantly, the result of the expression must be a boolean, i.e. it must evaluate to true or false.
 
@@ -509,10 +509,10 @@ The following tags can be used to filter on the genotype. When substituted, they
 Examples of filters::
 
     genotype -f '{DP} > 30' -> Display samples having DP > 30
-    genotype -f '{DP} > 30 && {ID} == "rs99"' -> Select also for ID
-    genotype -f '{FMT/XA} > 30 && {INFO/XA} == "foo"' -> Disambiguate tags
+    genotype -f '{DP} > 30 and {ID} == "rs99"' -> Select also for ID
+    genotype -f '{FMT/XA} > 30 and {INFO/XA} == "foo"' -> Disambiguate tags
     genotype -f '{ALT}[0] == "C"'  -> Access the first ALT allele
-    genotype -f '{HOM_REF} == false' -> Discard if homozygote ref.
+    genotype -f '{HOM_REF} == False' -> Discard if homozygote ref.
 
 
 

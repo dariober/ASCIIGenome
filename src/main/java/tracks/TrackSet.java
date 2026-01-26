@@ -833,7 +833,7 @@ public class TrackSet {
         tr.getGenotypeMatrix().setSubSampleRegex(subSampleRegex.get(0), rplc);
       }
       if (jsScriptFilter != null) {
-        tr.getGenotypeMatrix().setJsScriptFilter(jsScriptFilter);
+        tr.getGenotypeMatrix().setPyScriptFilter(jsScriptFilter);
       }
     }
   }

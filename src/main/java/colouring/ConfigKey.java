@@ -42,7 +42,8 @@ public enum ConfigKey {
   show_soft_clip("NOT IN USE YET - Show soft clipped bases in read tracks?"),
   stop_codon("Colour for stop codon"),
   start_codon("Colour for start codon"),
-  codon("Colour for codons other than start and stop");
+  codon("Colour for codons other than start and stop"),
+  python("Python executable. Use full path if there is no python on PATH");
 
   private String value;
 
@@ -80,6 +81,12 @@ public enum ConfigKey {
   }
 
   /** U P D A T E M E */
+  public static Set<ConfigKey> stringKeys() {
+    Set<ConfigKey> stringKeys = new HashSet<ConfigKey>();
+    stringKeys.add(ConfigKey.python);
+    return stringKeys;
+  }
+
   public static Set<ConfigKey> booleanKeys() {
     Set<ConfigKey> booleanKeys = new HashSet<ConfigKey>();
     booleanKeys.add(ConfigKey.highlight_mid_char);
@@ -123,7 +130,7 @@ public enum ConfigKey {
       key = ConfigKey.valueOf(configkey);
     } else {
       List<String> candidates = Utils.suggestCommand(configkey, optionKeys);
-      if (candidates.size() == 0) {
+      if (candidates.isEmpty()) {
         System.err.println(
             Utils.padEndMultiLine(
                 "No config key found for " + configkey, Utils.getTerminalWidth()));
