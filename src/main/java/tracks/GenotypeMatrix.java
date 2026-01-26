@@ -5,7 +5,6 @@ import colouring.ConfigKey;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
-import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.Genotype;
@@ -290,14 +289,18 @@ class GenotypeMatrix {
       py =
           py.replace(
               "{HOM_VAR}",
-                  gt.isHomVar() ? "True" : "False"); // true if all observed alleles are alt; if any alleles are
+              gt.isHomVar()
+                  ? "True"
+                  : "False"); // true if all observed alleles are alt; if any alleles are
       // no-calls, return false.
     }
     if (py.contains("{HET_NON_REF}")) {
       py =
           py.replace(
               "{HET_NON_REF}",
-                  gt.isHetNonRef() ? "True" : "False"); // true if we're het (observed alleles differ) and neither
+              gt.isHetNonRef()
+                  ? "True"
+                  : "False"); // true if we're het (observed alleles differ) and neither
       // allele is reference; if the ploidy is less than 2 or if
       // any alleles are no-calls, this method will return false.
     }
@@ -305,14 +308,18 @@ class GenotypeMatrix {
       py =
           py.replace(
               "{CALLED}",
-                  gt.isCalled() ? "True" : "False"); // true if this genotype is comprised of any alleles that are
+              gt.isCalled()
+                  ? "True"
+                  : "False"); // true if this genotype is comprised of any alleles that are
       // not no-calls (even if some are).
     }
     if (py.contains("{NO_CALL}")) {
       py =
           py.replace(
               "{NO_CALL}",
-                  gt.isNoCall() ? "True" : "False"); // true if this genotype is not actually a genotype but a "no
+              gt.isNoCall()
+                  ? "True"
+                  : "False"); // true if this genotype is not actually a genotype but a "no
       // call" (e.g. './.' in VCF); if any alleles are not no-calls
       // (even if some are), this method will return false.
     }
@@ -320,7 +327,9 @@ class GenotypeMatrix {
       py =
           py.replace(
               "{MIXED}",
-                  gt.isMixed() ? "True" : "False"); // true if this genotype is comprised of both calls and no-calls.
+              gt.isMixed()
+                  ? "True"
+                  : "False"); // true if this genotype is comprised of both calls and no-calls.
     }
     return py;
   }
@@ -393,7 +402,14 @@ class GenotypeMatrix {
       throws IOException {
     for (String key : this.ambiguousInfoFmtTags(vcfHeader)) {
       if (pyScript.contains("{" + key + "}")) {
-        throw new IOException("Key '" + key + "' found in INFO and FORMAT. Please disambiguate using {FMT/" + key + "} or {INFO/" + key + "}.");
+        throw new IOException(
+            "Key '"
+                + key
+                + "' found in INFO and FORMAT. Please disambiguate using {FMT/"
+                + key
+                + "} or {INFO/"
+                + key
+                + "}.");
       }
     }
 
@@ -411,13 +427,11 @@ class GenotypeMatrix {
           listParam.append("[");
           for (Object unk : unknList) {
             listParam.append(
-                this.formatObjectForPy(unk, vcfHeader.getInfoHeaderLine(key).getType())
-                    + ", ");
+                this.formatObjectForPy(unk, vcfHeader.getInfoHeaderLine(key).getType()) + ", ");
           }
           fmtValue = listParam.append("]").toString();
         } catch (ClassCastException e) {
-          fmtValue =
-              this.formatObjectForPy(unkValue, vcfHeader.getInfoHeaderLine(key).getType());
+          fmtValue = this.formatObjectForPy(unkValue, vcfHeader.getInfoHeaderLine(key).getType());
         } catch (NullPointerException e) {
           fmtValue = "None";
           if (headerLine.getType().equals(VCFHeaderLineType.Flag)) {
@@ -508,8 +522,7 @@ class GenotypeMatrix {
     if (type.equals(VCFHeaderLineType.Flag)) {
       return (boolean) unk ? "True" : "False";
     }
-    if (type.equals(VCFHeaderLineType.Integer)
-        || type.equals(VCFHeaderLineType.Float)) {
+    if (type.equals(VCFHeaderLineType.Integer) || type.equals(VCFHeaderLineType.Float)) {
       return unk.toString();
     } else {
       return '"' + unk.toString() + '"';

@@ -31,11 +31,12 @@ public class GenotypeMatrixTest {
   @Test
   public void bigData()
       throws InvalidGenomicCoordsException,
-      IOException,
-      ClassNotFoundException,
-      InvalidRecordException,
-      SQLException,
-      InvalidColourException, InvalidCommandLineException {
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException,
+          InvalidCommandLineException {
 
     VCFFileReader reader =
         new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
@@ -55,12 +56,12 @@ public class GenotypeMatrixTest {
   @Test
   public void canDetectAmbigousTags()
       throws InvalidGenomicCoordsException,
-      IOException,
-      ClassNotFoundException,
-      InvalidRecordException,
-      SQLException,
-      InvalidColourException,
-      IOException {
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException,
+          IOException {
 
     VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
     VCFHeader vcfHeader = reader.getFileHeader();
@@ -79,7 +80,8 @@ public class GenotypeMatrixTest {
     } catch (Exception e) {
       if (e.getMessage().contains("XA")) {
         pass = true;
-      };
+      }
+      ;
     }
     assertTrue(pass);
   }
@@ -167,7 +169,12 @@ public class GenotypeMatrixTest {
 
   @Test
   public void flagFilterInPy()
-      throws InvalidGenomicCoordsException, IOException, SQLException, ClassNotFoundException, InvalidRecordException, InvalidColourException {
+      throws InvalidGenomicCoordsException,
+          IOException,
+          SQLException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidColourException {
     VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
@@ -258,12 +265,13 @@ public class GenotypeMatrixTest {
   @Test
   public void invalidPyScripts()
       throws ClassNotFoundException,
-      IOException,
-      InvalidGenomicCoordsException,
-      InvalidRecordException,
-      SQLException,
-      InvalidColourException,
-      IOException, InvalidCommandLineException {
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException,
+          IOException,
+          InvalidCommandLineException {
 
     VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
     VCFHeader vcfHeader = reader.getFileHeader();
@@ -291,12 +299,13 @@ public class GenotypeMatrixTest {
   @Test
   public void canFilterGenotypeWithPy()
       throws IOException,
-      ClassNotFoundException,
-      IOException,
-      InvalidGenomicCoordsException,
-      InvalidRecordException,
-      SQLException,
-      InvalidColourException, InvalidCommandLineException {
+          ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException,
+          InvalidCommandLineException {
 
     VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
     VCFHeader vcfHeader = reader.getFileHeader();

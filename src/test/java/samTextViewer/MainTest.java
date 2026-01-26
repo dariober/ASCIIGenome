@@ -27,25 +27,25 @@ public class MainTest {
   @Test
   public void canFilterGenotype()
       throws ClassNotFoundException,
-      IOException,
-      InvalidGenomicCoordsException,
-      InvalidCommandLineException,
-      InvalidRecordException,
-      BamIndexNotFoundException,
-      SQLException,
-      DocumentException,
-      UnindexableFastaFileException,
-      InvalidColourException,
-      InvalidConfigException {
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
     String[] args =
         new String[] {
-            "-ni",
-            "-nf",
-            "--debug",
-            "2",
-            "--exec",
-            "genotype -f '{GT} == \"1|2\"'",
-            "test_data/info_formats.vcf.gz"
+          "-ni",
+          "-nf",
+          "--debug",
+          "2",
+          "--exec",
+          "genotype -f '{GT} == \"1|2\"'",
+          "test_data/info_formats.vcf.gz"
         };
     // Genotype filter selects for "sample2". "sample1" appears once right at the start before the
     // filtering is applied.
