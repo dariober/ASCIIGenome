@@ -3,6 +3,8 @@ package tracks;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.util.SequenceUtil;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import java.io.BufferedWriter;
@@ -304,6 +306,16 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 
     this.seqRegex = regex;
     this.update();
+  }
+
+  @Override
+  public ArrayList<String> getChromosomeNames() {
+    List<SAMSequenceRecord> samSeqRecs = this.getGc().getSamSeqDict().getSequences();
+    ArrayList<String> chromosomeNames = new ArrayList<>();
+    for (SAMSequenceRecord seq : samSeqRecs) {
+      chromosomeNames.add(seq.getSequenceName());
+    }
+    return chromosomeNames;
   }
 
   @Override

@@ -346,6 +346,29 @@ public class MainTest {
     assertTrue(out.contains("Number of contigs: 1"));
   }
 
+  @Test
+  public void seqRegexIssue123()
+          throws UnindexableFastaFileException,
+          SQLException,
+          DocumentException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidColourException,
+          IOException,
+          InvalidConfigException,
+          BamIndexNotFoundException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    String[] args = new String[] {"-ni", "-nf", "--exec", "seqRegex ACTG", "test_data/seq_cg.fa"};
+    String out = this.runMain(args).toString();
+    assertTrue(out.contains("ACTGACTG"));
+
+    args =
+            new String[] {"-ni", "-nf", "--exec", "seqRegex ACTG && nextChrom", "test_data/seq_cg.fa"};
+    out = this.runMain(args).toString();
+    assertTrue(out.contains("ATCGATCGATCGATCG"));
+  }
+
   /* H E L P E R S */
 
   /**

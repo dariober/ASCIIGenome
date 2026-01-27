@@ -1407,7 +1407,7 @@ public class InteractiveInput {
       maxLines = Integer.MAX_VALUE;
     }
 
-    ArrayList<String> knownContigs = this.getKnownContigs(proc.getTrackSet());
+    ArrayList<String> knownContigs = proc.getTrackSet().getKnownContigs();
 
     String genome =
         proc.getGenomicCoordsHistory()
@@ -1420,16 +1420,16 @@ public class InteractiveInput {
     return ExitCode.CLEAN_NO_FLUSH;
   }
 
-  private ArrayList<String> getKnownContigs(TrackSet trackSet) {
-    ArrayList<String> knownContigs = new ArrayList<String>();
-    if (this.samSeqDict != null) {
-      for (SAMSequenceRecord seq : this.samSeqDict.getSequences()) {
-        knownContigs.add(seq.getSequenceName());
-      }
-      return knownContigs;
-    }
-    return trackSet.getKnownContigs();
-  }
+//  private ArrayList<String> getKnownContigs(TrackSet trackSet) {
+//    ArrayList<String> knownContigs = new ArrayList<String>();
+//    if (this.samSeqDict != null) {
+//      for (SAMSequenceRecord seq : this.samSeqDict.getSequences()) {
+//        knownContigs.add(seq.getSequenceName());
+//      }
+//      return knownContigs;
+//    }
+//    return trackSet.getKnownContigs();
+//  }
 
   private String cmdHistoryToString(List<String> cmdInput) throws InvalidCommandLineException {
 
