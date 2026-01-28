@@ -39,7 +39,6 @@ public enum ConfigKey {
       "Background colour for reads suggesting structural variation or 'false' for no shading"),
   highlight_mid_char("Highlight mid-character in read tracks?"),
   nucs_as_letters("Show read nucleotides as letters at single base resolution?"),
-  show_soft_clip("NOT IN USE YET - Show soft clipped bases in read tracks?"),
   stop_codon("Colour for stop codon"),
   start_codon("Colour for start codon"),
   codon("Colour for codons other than start and stop"),
@@ -91,7 +90,6 @@ public enum ConfigKey {
     Set<ConfigKey> booleanKeys = new HashSet<ConfigKey>();
     booleanKeys.add(ConfigKey.highlight_mid_char);
     booleanKeys.add(ConfigKey.nucs_as_letters);
-    booleanKeys.add(ConfigKey.show_soft_clip);
     return booleanKeys;
   }
 

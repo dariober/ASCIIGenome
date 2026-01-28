@@ -439,6 +439,51 @@ public class TrackSet {
     }
   }
 
+  public void setShowSoftClipForRegex(List<String> tokens)
+      throws InvalidCommandLineException,
+          ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
+    List<String> args = new ArrayList<String>(tokens);
+    args.remove(0);
+
+    boolean invertSelection = Utils.argListContainsFlag(args, "-v");
+
+    Boolean showSoftClip = null;
+    if (args.contains("-on")) {
+      showSoftClip = true;
+      args.remove("-on");
+    }
+    if (args.contains("-off")) {
+      showSoftClip = false;
+      args.remove("-off");
+    }
+
+    // Regex
+    List<String> trackNameRegex = new ArrayList<String>();
+    if (!args.isEmpty()) {
+      trackNameRegex = args;
+    } else {
+      trackNameRegex.add(".*"); // Default: Capture everything
+    }
+
+    // And set as required:
+    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (Track tr : tracksToReset) {
+      if (showSoftClip == null) {
+        if (tr.isShowSoftClip()) { // Invert setting
+          tr.setShowSoftClip(false);
+        } else {
+          tr.setShowSoftClip(true);
+        }
+      } else {
+        tr.setShowSoftClip(showSoftClip);
+      }
+    }
+  }
+
   public void setFeatureDisplayModeForRegex(List<String> tokens)
       throws InvalidCommandLineException {
 

@@ -43,19 +43,6 @@ public class TrackReads extends Track {
 
   public TrackReads() {}
 
-  /**
-   * Create read track
-   *
-   * @param sam Bam file to extract reads from
-   * @param gc Interval to consider
-   * @bs Should the track be displayed as BS-Seq data
-   * @param maxReadsStack Accumulate at most this many reads.
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws SQLException
-   * @throws InvalidRecordException
-   * @throws ClassNotFoundException
-   */
   public TrackReads(String bam, GenomicCoords gc)
       throws IOException,
           InvalidGenomicCoordsException,
@@ -135,9 +122,7 @@ public class TrackReads extends Track {
           // rndOffset).getBytes()).asLong();
           Random rand = new Random(v);
           if (rand.nextFloat() < probSample) { // Downsampler
-            TextRead tr =
-                new TextRead(
-                    rec, this.getGc(), Utils.asBoolean(Config.get(ConfigKey.show_soft_clip)));
+            TextRead tr = new TextRead(rec, this.getGc(), this.getShowSoftClip());
             textReads.add(tr);
           }
         }
@@ -245,9 +230,6 @@ public class TrackReads extends Track {
   /**
    * Match reads in textReads list to return a list fragments. Fragments are returned sorted by
    * start position.
-   *
-   * @param paired If true try to match up read pairs in the same fragment. If false, each read is a
-   *     fragment so the resulting list is effectively the same as the input.
    */
   private List<SamSequenceFragment> makeFragments(List<TextRead> textReads, boolean asPair) {
 
@@ -298,22 +280,12 @@ public class TrackReads extends Track {
           @Override
           public int compare(final SamSequenceFragment frag1, final SamSequenceFragment frag2) {
             return Integer.compare(
-                frag1.getLeftRead().getAlignmentStart(),
-                frag2.getLeftRead().getAlignmentStart());
+                frag1.getLeftRead().getAlignmentStart(), frag2.getLeftRead().getAlignmentStart());
           }
         });
   }
 
-  /**
-   * Prepare a printable string of each output line.
-   *
-   * @param textReads List reads to print out on the same line.
-   * @param noFormat Do not format reads.
-   * @return
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidColourException
-   */
+  /** Prepare a printable string of each output line. */
   private String linePrinter(List<SamSequenceFragment> fragments, boolean bs, boolean noFormat)
       throws IOException, InvalidGenomicCoordsException, InvalidColourException {
     StringBuilder sb = new StringBuilder();
@@ -433,6 +405,13 @@ public class TrackReads extends Track {
   public void setReadsAsPairs(boolean readsAsPairs)
       throws InvalidGenomicCoordsException, IOException {
     this.readsAsPairs = readsAsPairs;
+    this.update();
+  }
+
+  @Override
+  public void setShowSoftClip(boolean showSoftClip)
+      throws InvalidGenomicCoordsException, IOException {
+    this.showSoftClip = showSoftClip;
     this.update();
   }
 

@@ -73,8 +73,12 @@ class TextRead extends IntervalFeature {
   protected TextRead(SAMRecord rec, GenomicCoords gc, boolean showSoftClip)
       throws InvalidGenomicCoordsException, IOException {
     this.samRecord = rec;
-    this.alignmentStart = showSoftClip ? this.getSoftUnclippedAlignmentStart() : this.getSamRecord().getAlignmentStart();
-    this.alignmentEnd = showSoftClip ? this.getSoftUnclippedAlignmentEnd() : this.getSamRecord().getAlignmentEnd();
+    this.alignmentStart =
+        showSoftClip
+            ? this.getSoftUnclippedAlignmentStart()
+            : this.getSamRecord().getAlignmentStart();
+    this.alignmentEnd =
+        showSoftClip ? this.getSoftUnclippedAlignmentEnd() : this.getSamRecord().getAlignmentEnd();
 
     // At least part of the read must be in the window
     //            |  window  |
@@ -146,7 +150,8 @@ class TextRead extends IntervalFeature {
    * @throws InvalidGenomicCoordsException
    */
   private void setTextStart() throws InvalidGenomicCoordsException, IOException {
-    if (this.alignmentStart <= gc.getFrom()) { // Read starts right at the window start or even earlier
+    if (this.alignmentStart
+        <= gc.getFrom()) { // Read starts right at the window start or even earlier
       this.textStart = 1;
       return;
     }
@@ -300,23 +305,23 @@ class TextRead extends IntervalFeature {
     }
   }
 
-//  private Character convertNucleotideToSoftClipChar(char nt) {
-//    if(nt == 'A') {
-//      return "A̶".charAt(0);
-//    }
-//    if(nt == 'C') {
-//      return "C̶".charAt(0);
-//    }
-//    if(nt == 'G') {
-//      return "G̶".charAt(0);
-//    }
-//    if(nt == 'T') {
-//      return "T̶".charAt(0);
-//    }
-//    return 'S';
-//    //"̶C̶T̶G̶N̶ ̶a̶c̶t̶g̶n̶"
-//  }
-//
+  //  private Character convertNucleotideToSoftClipChar(char nt) {
+  //    if(nt == 'A') {
+  //      return "A̶".charAt(0);
+  //    }
+  //    if(nt == 'C') {
+  //      return "C̶".charAt(0);
+  //    }
+  //    if(nt == 'G') {
+  //      return "G̶".charAt(0);
+  //    }
+  //    if(nt == 'T') {
+  //      return "T̶".charAt(0);
+  //    }
+  //    return 'S';
+  //    //"̶C̶T̶G̶N̶ ̶a̶c̶t̶g̶n̶"
+  //  }
+  //
   /**
    * Get a representation of the read as it appears aligned to the reference. I.e. clipped ends
    * omitted and deletions appearing as gaps (empty byte). Only the portion contained between the
@@ -453,7 +458,9 @@ class TextRead extends IntervalFeature {
           curBaseGenomicPos++;
         }
       } else if (el.getOperator().equals(CigarOperator.I)) {
-        if (!dnaRead.isEmpty()) { // If the insertion is outside the terminal window, there is no base to mark
+        if (!dnaRead
+            .isEmpty()) { // If the insertion is outside the terminal window, there is no base to
+                          // mark
           dnaRead.get(dnaRead.size() - 1).setInvertFgBgColour(true);
         }
         curBaseReadPos += el.getLength();
@@ -464,7 +471,7 @@ class TextRead extends IntervalFeature {
               FeatureChar xc = new FeatureChar();
               xc.setText((char) readBases[curBaseReadPos]);
               xc.setFaint(true);
-              //xc.setText(
+              // xc.setText(
               //    this.samRecord.getReadNegativeStrandFlag()
               //        ? Character.toLowerCase(SOFT_CLIP)
               //        : SOFT_CLIP);
@@ -631,6 +638,7 @@ class TextRead extends IntervalFeature {
   public int getAlignmentStart() {
     return this.alignmentStart;
   }
+
   public int getAlignmentEnd() {
     return this.alignmentEnd;
   }

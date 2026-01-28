@@ -1152,7 +1152,7 @@ public class TrackIntervalFeature extends Track {
     return x;
   }
 
-  private TabixBigBedReader getReader() {
+  TabixBigBedReader getReader() {
 
     if (this.bigBedReader != null && this.tabixReader != null) {
       System.err.println("You cannot have both tabix and bigBed readers set!");

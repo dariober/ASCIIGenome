@@ -103,6 +103,7 @@ public abstract class Track {
   private int gap = 1;
   protected boolean readsAsPairs = false;
   protected boolean rpm = false;
+  protected boolean showSoftClip = false;
   private boolean hideTrack = false;
   private boolean hideTitle = false;
   private TrackFormat trackFormat;
@@ -368,13 +369,20 @@ public abstract class Track {
     this.gap = gap;
   }
 
-  public void setRpm(boolean rpm)
-      throws MalformedURLException,
-          ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidRecordException,
-          SQLException {
+  public boolean isShowSoftClip() {
+    return this.showSoftClip;
+  }
+
+  public void setShowSoftClip(boolean showSoftClip)
+      throws InvalidGenomicCoordsException, IOException {
+    // Do nothing in tracks that do not override this method
+  }
+
+  public boolean getShowSoftClip() {
+    return this.showSoftClip;
+  }
+
+  public void setRpm(boolean rpm) {
     this.rpm = rpm;
     this.updateToRPM();
   }

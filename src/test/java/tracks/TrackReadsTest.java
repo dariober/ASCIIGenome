@@ -222,6 +222,18 @@ public class TrackReadsTest {
   }
 
   @Test
+  public void canShowSoftClip() throws Exception {
+    /*
+     *  TODO: Test:
+     *   * Show soft clip left and right at single base resolution
+     *   * Same as above when 1 char > 1 bp
+     *   * With paired reads: Behaviour when soft clipped bases overlap
+     *   * With paired reads: Behaviour when activate readsAsPaired
+     *
+     * */
+  }
+
+  @Test
   public void canReturnReadsAsRawStrings()
       throws ClassNotFoundException,
           IOException,

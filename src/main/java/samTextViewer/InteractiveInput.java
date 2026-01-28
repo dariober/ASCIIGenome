@@ -321,6 +321,9 @@ public class InteractiveInput {
         } else if (cmdTokens.get(0).equals("ylim")) {
           proc.getTrackSet().setTrackYlimitsForRegex(cmdTokens);
 
+        } else if (cmdTokens.get(0).equals("showSoftClip")) {
+          proc.getTrackSet().setShowSoftClipForRegex(cmdTokens);
+
         } else if (cmdTokens.get(0).equals("trackHeight")) {
           proc.getTrackSet().setTrackHeightForRegex(cmdTokens);
 

@@ -180,6 +180,7 @@ public class FeatureChar {
   public void setBold(boolean bold) {
     this.bold = bold;
   }
+
   public void setFaint(boolean isFaint) {
     this.faint = isFaint;
   }
