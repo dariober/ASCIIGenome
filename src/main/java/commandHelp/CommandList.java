@@ -980,6 +980,21 @@ public class CommandList {
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
+    cmd.setName("showSoftClip");
+    cmd.setArgs("[-v] INT [track_regex = .*]...");
+    cmd.inSection = Section.ALIGNMENTS;
+    cmd.setBriefDescription("Show soft clipped bases in BAM/CRAM reads. ");
+    cmd.setAdditionalDescription(
+        "\n"
+            + "* :code:`-on | -off` Set mode on/off. Without arguments toggle between on and off.\n"
+            + "\n"
+            + "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of"
+            + " track_regex\n"
+            + "\n"
+            + "* :code:`track_regex` List of regexes to capture target tracks.");
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
     cmd.setName("bedToBedgraph");
     cmd.setArgs("[-v] [track_regex = .*]...");
     cmd.inSection = Section.DISPLAY;
@@ -1826,6 +1841,7 @@ public class CommandList {
     paramList.add("setGenome");
     paramList.add("explainSamFlag");
     paramList.add("show");
+    paramList.add("showSoftClip");
     paramList.add("open");
     paramList.add("sessionOpen");
     paramList.add("sessionSave");

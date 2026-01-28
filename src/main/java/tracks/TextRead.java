@@ -65,35 +65,43 @@ class TextRead extends IntervalFeature {
   private List<int[]> textPositionsOfSkippedBases = new ArrayList<int[]>();
 
   private boolean showSoftClip = false;
+  private int alignmentStart = -1;
+  private int alignmentEnd = -1;
 
   /*    C o n s t r u c t o r s    */
 
   protected TextRead(SAMRecord rec, GenomicCoords gc, boolean showSoftClip)
       throws InvalidGenomicCoordsException, IOException {
+    this.samRecord = rec;
+    this.alignmentStart =
+        showSoftClip
+            ? this.getSoftUnclippedAlignmentStart()
+            : this.getSamRecord().getAlignmentStart();
+    this.alignmentEnd =
+        showSoftClip ? this.getSoftUnclippedAlignmentEnd() : this.getSamRecord().getAlignmentEnd();
 
     // At least part of the read must be in the window
     //            |  window  |
     //                         |------| read
-    if (rec.getAlignmentStart() > gc.getTo()) {
+    if (this.alignmentStart > gc.getTo()) {
       System.err.println("Alignment starts beyond text window!");
       System.err.println(rec.getSAMString());
-      System.err.println("Aln starts: " + rec.getAlignmentStart());
-      System.err.println("Aln ends: " + rec.getAlignmentEnd());
+      System.err.println("Aln starts: " + this.alignmentStart);
+      System.err.println("Aln ends: " + this.alignmentEnd);
       System.err.println("Window: " + gc.toString());
       throw new RuntimeException();
     }
     //            |  window  |
     // |---------| read
-    if (rec.getAlignmentEnd() < gc.getFrom() && !showSoftClip) {
+    if (this.alignmentEnd < gc.getFrom() && !showSoftClip) {
       System.err.println("Alignment ends before text window!");
       System.err.println(rec.getSAMString());
-      System.err.println("Aln starts: " + rec.getAlignmentStart());
-      System.err.println("Aln ends: " + rec.getAlignmentEnd());
+      System.err.println("Aln starts: " + this.alignmentStart);
+      System.err.println("Aln ends: " + this.alignmentEnd);
       System.err.println("Window: " + gc.toString());
       throw new RuntimeException();
     }
     this.gc = gc;
-    this.samRecord = rec;
     this.showSoftClip = showSoftClip;
     this.setTextStart();
     this.setTextEnd();
@@ -142,23 +150,18 @@ class TextRead extends IntervalFeature {
    * @throws InvalidGenomicCoordsException
    */
   private void setTextStart() throws InvalidGenomicCoordsException, IOException {
-    int alnStart;
-    if (this.showSoftClip) {
-      alnStart = this.getSoftUnclippedAlignmentStart(samRecord);
-    } else {
-      alnStart = samRecord.getAlignmentStart();
-    }
-    if (alnStart <= gc.getFrom()) { // Read starts right at the window start or even earlier
+    if (this.alignmentStart
+        <= gc.getFrom()) { // Read starts right at the window start or even earlier
       this.textStart = 1;
       return;
     }
-    this.textStart = Utils.getIndexOfclosestValue(alnStart, gc.getMapping()) + 1;
-    return;
+    this.textStart = Utils.getIndexOfclosestValue(this.alignmentStart, gc.getMapping()) + 1;
   }
 
-  public int getSoftUnclippedAlignmentStart(SAMRecord rec) {
+  public int getSoftUnclippedAlignmentStart() {
+    SAMRecord rec = this.getSamRecord();
     List<CigarElement> cigar = rec.getCigar().getCigarElements();
-    if (cigar.size() == 0) {
+    if (cigar.isEmpty()) {
       return rec.getUnclippedStart();
     }
     if (cigar.size() == 1 && cigar.get(0).getOperator().equals(CigarOperator.SOFT_CLIP)) {
@@ -183,17 +186,11 @@ class TextRead extends IntervalFeature {
   }
 
   private void setTextEnd() throws InvalidGenomicCoordsException, IOException {
-    int alnEnd;
-    if (this.showSoftClip) {
-      alnEnd = this.getSoftUnclippedAlignmentEnd(samRecord);
-    } else {
-      alnEnd = samRecord.getAlignmentEnd();
-    }
-    this.textEnd = Utils.getIndexOfclosestValue(alnEnd, gc.getMapping()) + 1;
-    return;
+    this.textEnd = Utils.getIndexOfclosestValue(this.alignmentEnd, gc.getMapping()) + 1;
   }
 
-  private int getSoftUnclippedAlignmentEnd(SAMRecord rec) {
+  private int getSoftUnclippedAlignmentEnd() {
+    SAMRecord rec = this.getSamRecord();
     List<CigarElement> cigar = rec.getCigar().getCigarElements();
     if (cigar.size() == 0) {
       return rec.getAlignmentEnd();
@@ -230,7 +227,7 @@ class TextRead extends IntervalFeature {
    * @throws InvalidGenomicCoordsException
    */
   private void setTextPositionsOfSkippedBases() throws InvalidGenomicCoordsException, IOException {
-    int genomicPosition = this.getSamRecord().getAlignmentStart();
+    int genomicPosition = this.alignmentStart;
     List<CigarElement> cigar = this.getSamRecord().getCigar().getCigarElements();
     for (CigarElement el : cigar) {
       if (el.getOperator().equals(CigarOperator.SKIPPED_REGION)) {
@@ -254,7 +251,6 @@ class TextRead extends IntervalFeature {
    * as simplified bases
    */
   private List<FeatureChar> getSquashedRead() {
-
     ArrayList<FeatureChar> squashedRead = new ArrayList<FeatureChar>();
     char xc;
     if (this.samRecord.getReadNegativeStrandFlag()) {
@@ -309,6 +305,23 @@ class TextRead extends IntervalFeature {
     }
   }
 
+  //  private Character convertNucleotideToSoftClipChar(char nt) {
+  //    if(nt == 'A') {
+  //      return "A̶".charAt(0);
+  //    }
+  //    if(nt == 'C') {
+  //      return "C̶".charAt(0);
+  //    }
+  //    if(nt == 'G') {
+  //      return "G̶".charAt(0);
+  //    }
+  //    if(nt == 'T') {
+  //      return "T̶".charAt(0);
+  //    }
+  //    return 'S';
+  //    //"̶C̶T̶G̶N̶ ̶a̶c̶t̶g̶n̶"
+  //  }
+  //
   /**
    * Get a representation of the read as it appears aligned to the reference. I.e. clipped ends
    * omitted and deletions appearing as gaps (empty byte). Only the portion contained between the
@@ -341,7 +354,7 @@ class TextRead extends IntervalFeature {
 
     // Walk along the aligned read and append bases to textRead as long as
     // the genomic position of the base is inside the genomic coords of the window
-    int curBaseGenomicPos = this.samRecord.getAlignmentStart();
+    int curBaseGenomicPos = this.alignmentStart;
     int curBaseReadPos = 0; // Position on read. Start from zero walk along the read
     List<CigarElement> cigarEls = this.samRecord.getCigar().getCigarElements();
     for (CigarElement el : cigarEls) {
@@ -445,8 +458,9 @@ class TextRead extends IntervalFeature {
           curBaseGenomicPos++;
         }
       } else if (el.getOperator().equals(CigarOperator.I)) {
-        if (dnaRead.size()
-            > 0) { // If the insertion is outside the terminal window, there is no base to mark
+        if (!dnaRead
+            .isEmpty()) { // If the insertion is outside the terminal window, there is no base to
+                          // mark
           dnaRead.get(dnaRead.size() - 1).setInvertFgBgColour(true);
         }
         curBaseReadPos += el.getLength();
@@ -455,10 +469,12 @@ class TextRead extends IntervalFeature {
           if (curBaseGenomicPos >= gc.getFrom() && curBaseGenomicPos <= gc.getTo()) {
             if (this.showSoftClip) {
               FeatureChar xc = new FeatureChar();
-              xc.setText(
-                  this.samRecord.getReadNegativeStrandFlag()
-                      ? Character.toLowerCase(SOFT_CLIP)
-                      : SOFT_CLIP);
+              xc.setText((char) readBases[curBaseReadPos]);
+              xc.setFaint(true);
+              // xc.setText(
+              //    this.samRecord.getReadNegativeStrandFlag()
+              //        ? Character.toLowerCase(SOFT_CLIP)
+              //        : SOFT_CLIP);
               dnaRead.add(xc);
               curBaseGenomicPos++;
             } else {
@@ -617,6 +633,14 @@ class TextRead extends IntervalFeature {
 
   public int getTextEnd() {
     return textEnd;
+  }
+
+  public int getAlignmentStart() {
+    return this.alignmentStart;
+  }
+
+  public int getAlignmentEnd() {
+    return this.alignmentEnd;
   }
 
   protected SAMRecord getSamRecord() {

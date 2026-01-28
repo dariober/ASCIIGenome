@@ -33,7 +33,7 @@ class SamSequenceFragment {
   }
 
   protected SamSequenceFragment(TextRead tr, TextRead mate) {
-    if (tr.getSamRecord().getAlignmentStart() <= mate.getSamRecord().getAlignmentStart()) {
+    if (tr.getAlignmentStart() <= mate.getAlignmentStart()) {
       this.leftRead = tr;
       this.rightRead = mate;
     } else {

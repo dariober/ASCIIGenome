@@ -20,6 +20,7 @@ public class FeatureChar {
   private boolean invertFgBgColour = false;
   private boolean underline = false;
   private boolean bold = false;
+  private boolean faint = false;
 
   /*  C O N S T R U C T O R  */
 
@@ -54,6 +55,9 @@ public class FeatureChar {
     }
     if (this.bold) {
       sb.append("1;");
+    }
+    if (this.faint) {
+      sb.append("2;");
     }
     sb.append("48;5;");
     sb.append(Xterm256.colourNameToXterm256(this.getBgColour()));
@@ -175,5 +179,9 @@ public class FeatureChar {
 
   public void setBold(boolean bold) {
     this.bold = bold;
+  }
+
+  public void setFaint(boolean isFaint) {
+    this.faint = isFaint;
   }
 }
