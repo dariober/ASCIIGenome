@@ -11,7 +11,6 @@ import commandHelp.Command;
 import commandHelp.CommandList;
 import exceptions.*;
 import htsjdk.samtools.SAMSequenceDictionary;
-import htsjdk.samtools.SAMSequenceRecord;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +26,6 @@ import org.biojava.nbio.core.sequence.transcription.Frame;
 import session.Session;
 import session.SessionHandler;
 import tracks.Track;
-import tracks.TrackSet;
 import utils.Tokenizer;
 
 /** Class to process input from console */
@@ -1407,7 +1405,7 @@ public class InteractiveInput {
       maxLines = Integer.MAX_VALUE;
     }
 
-    ArrayList<String> knownContigs = this.getKnownContigs(proc.getTrackSet());
+    ArrayList<String> knownContigs = proc.getTrackSet().getKnownContigs();
 
     String genome =
         proc.getGenomicCoordsHistory()
@@ -1418,17 +1416,6 @@ public class InteractiveInput {
       System.err.println(Utils.padEndMultiLine(genome, proc.getWindowSize()));
     }
     return ExitCode.CLEAN_NO_FLUSH;
-  }
-
-  private ArrayList<String> getKnownContigs(TrackSet trackSet) {
-    ArrayList<String> knownContigs = new ArrayList<String>();
-    if (this.samSeqDict != null) {
-      for (SAMSequenceRecord seq : this.samSeqDict.getSequences()) {
-        knownContigs.add(seq.getSequenceName());
-      }
-      return knownContigs;
-    }
-    return trackSet.getKnownContigs();
   }
 
   private String cmdHistoryToString(List<String> cmdInput) throws InvalidCommandLineException {
