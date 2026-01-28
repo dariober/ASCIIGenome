@@ -6,8 +6,10 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import org.junit.Assert;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
 import tracks.TrackReads;
@@ -51,10 +53,12 @@ public class ConfigTest {
 
   @Test
   public void canReadConfigFromTag() throws IOException, InvalidConfigException {
-    // If you add new themes add them here to test
-    new Config("black_on_white");
-    new Config("white_on_black");
-    new Config("metal");
+    File configDir = new File("src/main/resources/config");
+    File[] configFiles = configDir.listFiles((d, name) -> name.endsWith(".conf"));
+    Assert.assertNotNull(configFiles);
+    for (File cfg : configFiles) {
+      new Config(cfg.getName().replace(".conf", ""));
+    }
   }
 
   @Test

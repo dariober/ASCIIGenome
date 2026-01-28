@@ -1,5 +1,7 @@
 package tracks;
 
+import colouring.Config;
+import colouring.ConfigKey;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
@@ -11,9 +13,13 @@ import htsjdk.variant.vcf.VCFFormatHeaderLine;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLineType;
 import htsjdk.variant.vcf.VCFInfoHeaderLine;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,9 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import org.apache.commons.io.FilenameUtils;
+import samTextViewer.Utils;
 
 class GenotypeMatrix {
 
@@ -40,7 +45,7 @@ class GenotypeMatrix {
 
   private Map<String, String> subSampleRegex = new HashMap<String, String>();
 
-  private String jsScriptFilter;
+  private String pyScriptFilter;
 
   private ScriptEngine engine; // Leave this null. Only if required use the getter to create it.
   // The engine maybe called 1000s of times. So if created only once.
@@ -68,7 +73,7 @@ class GenotypeMatrix {
    * @throws IOException
    */
   private void makeMatrix(List<IntervalFeature> variantList, int terminalWidth, VCFHeader vcfHeader)
-      throws InvalidGenomicCoordsException, IOException {
+      throws IOException {
 
     this.matrix = new LinkedHashMap<String, List<FeatureChar>>();
 
@@ -78,15 +83,15 @@ class GenotypeMatrix {
 
     Map<VariantContext, String> vcfRecordWithScript = new HashMap<VariantContext, String>();
     if (vcfHeader != null
-        && this.getJsScriptFilter() != null
-        && !this.getJsScriptFilter().trim().isEmpty()) {
-      // We assign to each VCF record the JS script formatted with the fields that
+        && this.getPyScriptFilter() != null
+        && !this.getPyScriptFilter().trim().isEmpty()) {
+      // We assign to each VCF record the py script formatted with the fields that
       // do not change across samples, so we do the formatting only once.
       for (IntervalFeature ctx : variantList) {
-        String js =
-            this.formatJsScriptWithFixedFields(this.getJsScriptFilter(), ctx.getVariantContext());
-        js = this.formatJsScriptWithInfo(js, ctx.getVariantContext(), vcfHeader);
-        vcfRecordWithScript.put(ctx.getVariantContext(), js);
+        String py =
+            this.formatPyScriptWithFixedFields(this.getPyScriptFilter(), ctx.getVariantContext());
+        py = this.formatPyScriptWithInfo(py, ctx.getVariantContext(), vcfHeader);
+        vcfRecordWithScript.put(ctx.getVariantContext(), py);
       }
     }
     List<String> samples = new ArrayList<String>();
@@ -109,8 +114,8 @@ class GenotypeMatrix {
 
       boolean keep = true;
       if (vcfHeader != null
-          && this.getJsScriptFilter() != null
-          && !this.getJsScriptFilter().trim().isEmpty()) {
+          && this.getPyScriptFilter() != null
+          && !this.getPyScriptFilter().trim().isEmpty()) {
         keep = this.isPassedFilter(vcfRecordWithScript, sampleName, vcfHeader);
         if (!keep) {
           continue;
@@ -178,7 +183,7 @@ class GenotypeMatrix {
   }
 
   /**
-   * Return true if ANY of the variants in the given sample pass the filters in javascript.
+   * Return true if ANY of the variants in the given sample pass the filters in python.
    *
    * @throws InvalidGenomicCoordsException
    * @throws IOException
@@ -189,7 +194,7 @@ class GenotypeMatrix {
     //    	Stopwatch sw= Stopwatch.createUnstarted();
     boolean subGenotype = false;
     for (String g : this.genotypes) {
-      if (this.getJsScriptFilter().contains(g)) {
+      if (this.getPyScriptFilter().contains(g)) {
         subGenotype = true;
         break;
       }
@@ -204,151 +209,216 @@ class GenotypeMatrix {
     // This is important especially for GT where we have few combinations of genotype appearing many
     // times
     // across markers.
-    Set<String> concatJS = new HashSet<String>();
+    Set<String> concatPy = new HashSet<String>();
 
     for (VariantContext ctx : vcfRecordWithScript.keySet()) {
       // We format the JS script and apply it to this sample for each record in the
       // window. As soon as a record passes the filter, we pass the sample.
-      String js = vcfRecordWithScript.get(ctx);
+      String py = vcfRecordWithScript.get(ctx);
 
-      js = this.formatJsScriptWithFormat(js, sampleName, ctx, vcfHeader);
+      py = this.formatPyScriptWithFormat(py, sampleName, ctx, vcfHeader);
       if (subGenotype) {
-        js = this.formatJsScriptWithGenotype(js, ctx.getGenotype(sampleName));
+        py = this.formatPyScriptWithGenotype(py, ctx.getGenotype(sampleName));
       }
-      concatJS.add("(" + js + ")");
+      concatPy.add("(" + py + ")");
     }
-    String concat = Joiner.on(" || ").join(concatJS);
-    Object b = null;
-    //		sw.start();
+    String concat = Joiner.on(" or ").join(concatPy);
     try {
-      b = this.getEngine().eval(concat);
-      if ((boolean) b) {
-        return true;
-      }
-    } catch (ClassCastException | ScriptException e) {
-      String x = concatJS.size() > 0 ? concatJS.iterator().next() : concat;
-      System.err.println(
-          "ERROR in expression. It may be that the expression is not valid Javascript syntax\n"
-              + "or its result is not a boolean (true or false). First evaluated expression was:\n"
-              + x
-              + ". Final result= "
-              + b
-              + "\n");
-      this.setJsScriptFilter(null);
+      return this.evalScript(concat);
+    } catch (IOException e) {
+      System.err.println(e.getMessage());
+      this.setPyScriptFilter(null);
+      return false;
     }
-    return false;
   }
 
-  private String formatJsScriptWithGenotype(String js, Genotype gt) {
+  private boolean evalScript(String script) throws IOException {
+    File tmpScriptFile = Utils.createTempFile(".asciigenome.", ".py", true);
+    Files.writeString(tmpScriptFile.toPath(), "print(" + script + ")\n");
+
+    ArrayList<String> cmd = new ArrayList<String>();
+    cmd.add(Config.get(ConfigKey.python));
+    cmd.add(tmpScriptFile.getAbsolutePath());
+    ProcessBuilder pb = new ProcessBuilder().command(cmd);
+    pb.redirectErrorStream(true);
+    Process p = pb.start();
+    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+    List<String> outLines = new ArrayList<String>();
+    String line = "";
+    while ((line = reader.readLine()) != null) {
+      outLines.add(line.strip());
+    }
+    reader.close();
+    try {
+      p.waitFor();
+      if (p.exitValue() != 0) {
+        throw new IOException(Joiner.on("\n").join(outLines));
+      }
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    if (outLines.size() != 1) {
+      throw new IOException("Expected 1 line of output. Got:\n" + Joiner.on("\n").join(outLines));
+    }
+    String output = outLines.get(0);
+    if (output.equals("True")) {
+      tmpScriptFile.delete();
+      return true;
+    }
+    if (output.equals("False")) {
+      tmpScriptFile.delete();
+      return false;
+    } else {
+      throw new IOException("Expected output to be True or False. Got: '" + output + "'");
+    }
+  }
+
+  private String formatPyScriptWithGenotype(String py, Genotype gt) {
 
     // Comments are copied from htsjdk
-    if (js.contains("{HOM}")) {
-      js = js.replace("{HOM}", Boolean.toString(gt.isHom()));
+    if (py.contains("{HOM}")) {
+      py = py.replace("{HOM}", gt.isHom() ? "True" : "False");
     }
-    if (js.contains("{HET}")) {
-      js = js.replace("{HET}", Boolean.toString(gt.isHet()));
+    if (py.contains("{HET}")) {
+      py = py.replace("{HET}", gt.isHet() ? "True" : "False");
     }
-    if (js.contains("{HOM_REF}")) {
-      js = js.replace("{HOM_REF}", Boolean.toString(gt.isHomRef()));
+    if (py.contains("{HOM_REF}")) {
+      py = py.replace("{HOM_REF}", gt.isHomRef() ? "True" : "False");
     }
-    if (js.contains("{HOM_VAR}")) {
-      js =
-          js.replace(
+    if (py.contains("{HOM_VAR}")) {
+      py =
+          py.replace(
               "{HOM_VAR}",
-              Boolean.toString(
-                  gt.isHomVar())); // true if all observed alleles are alt; if any alleles are
+              gt.isHomVar()
+                  ? "True"
+                  : "False"); // true if all observed alleles are alt; if any alleles are
       // no-calls, return false.
     }
-    if (js.contains("{HET_NON_REF}")) {
-      js =
-          js.replace(
+    if (py.contains("{HET_NON_REF}")) {
+      py =
+          py.replace(
               "{HET_NON_REF}",
-              Boolean.toString(
-                  gt.isHetNonRef())); // true if we're het (observed alleles differ) and neither
+              gt.isHetNonRef()
+                  ? "True"
+                  : "False"); // true if we're het (observed alleles differ) and neither
       // allele is reference; if the ploidy is less than 2 or if
       // any alleles are no-calls, this method will return false.
     }
-    if (js.contains("{CALLED}")) {
-      js =
-          js.replace(
+    if (py.contains("{CALLED}")) {
+      py =
+          py.replace(
               "{CALLED}",
-              Boolean.toString(
-                  gt.isCalled())); // true if this genotype is comprised of any alleles that are
+              gt.isCalled()
+                  ? "True"
+                  : "False"); // true if this genotype is comprised of any alleles that are
       // not no-calls (even if some are).
     }
-    if (js.contains("{NO_CALL}")) {
-      js =
-          js.replace(
+    if (py.contains("{NO_CALL}")) {
+      py =
+          py.replace(
               "{NO_CALL}",
-              Boolean.toString(
-                  gt.isNoCall())); // true if this genotype is not actually a genotype but a "no
+              gt.isNoCall()
+                  ? "True"
+                  : "False"); // true if this genotype is not actually a genotype but a "no
       // call" (e.g. './.' in VCF); if any alleles are not no-calls
       // (even if some are), this method will return false.
     }
-    if (js.contains("{MIXED}")) {
-      js =
-          js.replace(
+    if (py.contains("{MIXED}")) {
+      py =
+          py.replace(
               "{MIXED}",
-              Boolean.toString(
-                  gt.isMixed())); // true if this genotype is comprised of both calls and no-calls.
+              gt.isMixed()
+                  ? "True"
+                  : "False"); // true if this genotype is comprised of both calls and no-calls.
     }
-    return js;
+    return py;
   }
 
   /** Replace the JS script string with the actual values in the fixed VCF fields. */
-  private String formatJsScriptWithFixedFields(String js, VariantContext ctx) {
+  private String formatPyScriptWithFixedFields(String py, VariantContext ctx) {
 
-    if (js.contains("{CHROM}")) {
-      js = js.replace("{CHROM}", '"' + ctx.getContig() + '"');
+    if (py.contains("{CHROM}")) {
+      py = py.replace("{CHROM}", '"' + ctx.getContig() + '"');
     }
-    if (js.contains("{POS}")) {
-      js = js.replace("{POS}", Integer.toString(ctx.getStart()));
+    if (py.contains("{POS}")) {
+      py = py.replace("{POS}", Integer.toString(ctx.getStart()));
     }
-    if (js.contains("{ID}")) {
-      js = js.replace("{ID}", '"' + ctx.getID() + '"');
+    if (py.contains("{ID}")) {
+      py = py.replace("{ID}", '"' + ctx.getID() + '"');
     }
-    if (js.contains("{REF}")) {
-      js = js.replace("{REF}", '"' + ctx.getReference().getBaseString() + '"');
+    if (py.contains("{REF}")) {
+      py = py.replace("{REF}", '"' + ctx.getReference().getBaseString() + '"');
     }
-    if (js.contains("{ALT}")) {
+    if (py.contains("{ALT}")) {
       StringBuilder alleles = new StringBuilder();
       alleles.append("[");
       for (Allele a : ctx.getAlternateAlleles()) {
         alleles.append('"' + a.getBaseString() + '"' + ", ");
       }
       alleles.append("]");
-      js = js.replace("{ALT}", alleles.toString());
+      py = py.replace("{ALT}", alleles.toString());
     }
-    if (js.contains("{QUAL}")) {
-      js = js.replace("{QUAL}", Double.toString(ctx.getPhredScaledQual()));
+    if (py.contains("{QUAL}")) {
+      py = py.replace("{QUAL}", Double.toString(ctx.getPhredScaledQual()));
     }
-    if (js.contains("{FILTER}")) {
+    if (py.contains("{FILTER}")) {
       StringBuilder x = new StringBuilder();
       x.append("[");
-      if (ctx.getFilters().size() > 0) {
+      if (!ctx.getFilters().isEmpty()) {
         for (String f : ctx.getFilters()) {
           x.append('"' + f + '"' + ", ");
         }
         x.append("]");
-        js = js.replace("{FILTER}", x.toString());
+        py = py.replace("{FILTER}", x.toString());
       } else {
-        js = js.replace("{FILTER}", "[null]");
+        py = py.replace("{FILTER}", "[null]");
       }
     }
-    return js;
+    return py;
+  }
+
+  private List<String> ambiguousInfoFmtTags(VCFHeader vcfHeader) {
+    Collection<VCFInfoHeaderLine> infoLines = vcfHeader.getInfoHeaderLines();
+    List<String> info = new ArrayList<String>();
+    for (VCFInfoHeaderLine line : infoLines) {
+      info.add(line.getID());
+    }
+    Collection<VCFFormatHeaderLine> formatLines = vcfHeader.getFormatHeaderLines();
+    List<String> found = new ArrayList<String>();
+    for (VCFFormatHeaderLine line : formatLines) {
+      String key = line.getID();
+      if (info.contains(key)) {
+        found.add(key);
+      }
+    }
+    return found;
   }
 
   /**
    * Replace INFO tags in the jsScript with the actual values found in the variant context object
    */
   @SuppressWarnings("unchecked")
-  private String formatJsScriptWithInfo(String jsScript, VariantContext ctx, VCFHeader vcfHeader) {
+  private String formatPyScriptWithInfo(String pyScript, VariantContext ctx, VCFHeader vcfHeader)
+      throws IOException {
+    for (String key : this.ambiguousInfoFmtTags(vcfHeader)) {
+      if (pyScript.contains("{" + key + "}")) {
+        throw new IOException(
+            "Key '"
+                + key
+                + "' found in INFO and FORMAT. Please disambiguate using {FMT/"
+                + key
+                + "} or {INFO/"
+                + key
+                + "}.");
+      }
+    }
+
     Iterator<VCFInfoHeaderLine> iter = vcfHeader.getInfoHeaderLines().iterator();
     while (iter.hasNext()) {
-      // We iterate through each key in the header and see if there is a match in JS script.
+      // We iterate through each key in the header and see if there is a match in python script.
       VCFInfoHeaderLine headerLine = iter.next();
       String key = headerLine.getID();
-      if (jsScript.contains('{' + key + '}') || jsScript.contains("{INFO/" + key + '}')) {
+      if (pyScript.contains('{' + key + '}') || pyScript.contains("{INFO/" + key + '}')) {
         Object unkValue = ctx.getAttributes().get(key);
         String fmtValue;
         try {
@@ -357,51 +427,50 @@ class GenotypeMatrix {
           listParam.append("[");
           for (Object unk : unknList) {
             listParam.append(
-                this.formatObjectForJS(key, unk, vcfHeader.getInfoHeaderLine(key).getType())
-                    + ", ");
+                this.formatObjectForPy(unk, vcfHeader.getInfoHeaderLine(key).getType()) + ", ");
           }
           fmtValue = listParam.append("]").toString();
         } catch (ClassCastException e) {
-          fmtValue =
-              this.formatObjectForJS(key, unkValue, vcfHeader.getInfoHeaderLine(key).getType());
+          fmtValue = this.formatObjectForPy(unkValue, vcfHeader.getInfoHeaderLine(key).getType());
         } catch (NullPointerException e) {
+          fmtValue = "None";
           if (headerLine.getType().equals(VCFHeaderLineType.Flag)) {
             // A flag type returns null if the flag is missing, which is odd. Shouldn't it return
             // false?
-            fmtValue = "false";
-          } else {
-            fmtValue = "null";
+            if (unkValue == null) {
+              fmtValue = "False";
+            }
           }
         }
-        jsScript = jsScript.replace("{INFO/" + key + '}', fmtValue);
-        jsScript = jsScript.replace('{' + key + '}', fmtValue);
+        pyScript = pyScript.replace("{INFO/" + key + '}', fmtValue);
+        pyScript = pyScript.replace('{' + key + '}', fmtValue);
       }
     }
-    return jsScript;
+    return pyScript;
   }
 
   /** Similar to formatJsScriptWithInfo but applied to FORMAT. */
-  private String formatJsScriptWithFormat(
-      String jsScript, String sampleName, VariantContext ctx, VCFHeader vcfHeader) {
+  private String formatPyScriptWithFormat(
+      String pyScript, String sampleName, VariantContext ctx, VCFHeader vcfHeader) {
 
     Iterator<VCFFormatHeaderLine> iter = vcfHeader.getFormatHeaderLines().iterator();
     while (iter.hasNext()) {
       // We iterate through each key in the header and see if there is a match in JS script.
       VCFFormatHeaderLine headerLine = iter.next();
       String key = headerLine.getID();
-      if (jsScript.contains('{' + key + '}') || jsScript.contains("{FMT/" + key + '}')) {
+      if (pyScript.contains('{' + key + '}') || pyScript.contains("{FMT/" + key + '}')) {
 
         if (key.equals("GT")) { // We put GT as string rather than list.
           String gt = this.genotypeAsAlleleIndexes(ctx, sampleName);
-          jsScript = jsScript.replace("{FMT/" + key + '}', gt);
-          jsScript = jsScript.replace('{' + key + '}', gt);
+          pyScript = pyScript.replace("{FMT/" + key + '}', gt);
+          pyScript = pyScript.replace('{' + key + '}', gt);
           continue;
         }
 
         Object unkValue = ctx.getGenotype(sampleName).getAnyAttribute(key);
         String fmtValue;
         if (headerLine.getCount(ctx) == 1) {
-          fmtValue = this.formatObjectForJS(key, unkValue, headerLine.getType());
+          fmtValue = this.formatObjectForPy(unkValue, headerLine.getType());
         } else {
           List<String> strList = Splitter.on(",").splitToList(unkValue.toString());
           StringBuilder listParam = new StringBuilder();
@@ -416,11 +485,11 @@ class GenotypeMatrix {
           }
           fmtValue = listParam.append("]").toString();
         }
-        jsScript = jsScript.replace("{FMT/" + key + '}', fmtValue);
-        jsScript = jsScript.replace('{' + key + '}', fmtValue);
+        pyScript = pyScript.replace("{FMT/" + key + '}', fmtValue);
+        pyScript = pyScript.replace('{' + key + '}', fmtValue);
       }
     }
-    return jsScript;
+    return pyScript;
   }
 
   /**
@@ -444,16 +513,16 @@ class GenotypeMatrix {
 
   /**
    * Return Object unk as a string quoted or not quoted depending on its type and suitable for a
-   * javascript script.
+   * python script.
    */
-  private String formatObjectForJS(String key, Object unk, VCFHeaderLineType type) {
-
+  private String formatObjectForPy(Object unk, VCFHeaderLineType type) {
     if (unk == null) {
-      return "null"; // Can this actually happen?
+      return "None"; // Can this actually happen?
     }
-    if (type.equals(VCFHeaderLineType.Flag)
-        || type.equals(VCFHeaderLineType.Integer)
-        || type.equals(VCFHeaderLineType.Float)) {
+    if (type.equals(VCFHeaderLineType.Flag)) {
+      return (boolean) unk ? "True" : "False";
+    }
+    if (type.equals(VCFHeaderLineType.Integer) || type.equals(VCFHeaderLineType.Float)) {
       return unk.toString();
     } else {
       return '"' + unk.toString() + '"';
@@ -536,19 +605,11 @@ class GenotypeMatrix {
     this.subSampleRegex.put("replacement", replacement);
   }
 
-  protected void setJsScriptFilter(String jsScriptFilter) {
-    this.jsScriptFilter = jsScriptFilter;
+  protected void setPyScriptFilter(String pyScriptFilter) {
+    this.pyScriptFilter = pyScriptFilter;
   }
 
-  protected String getJsScriptFilter() {
-    return this.jsScriptFilter;
-  }
-
-  private ScriptEngine getEngine() {
-    if (this.engine == null) {
-      ScriptEngineManager factory = new ScriptEngineManager();
-      this.engine = factory.getEngineByName("JavaScript");
-    }
-    return this.engine;
+  protected String getPyScriptFilter() {
+    return this.pyScriptFilter;
   }
 }

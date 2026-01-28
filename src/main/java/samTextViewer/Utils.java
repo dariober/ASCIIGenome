@@ -57,6 +57,7 @@ import java.math.RoundingMode;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -103,7 +104,6 @@ import tracks.IntervalFeature;
 import tracks.Track;
 import tracks.TrackFormat;
 import utils.Tokenizer;
-import java.net.URLConnection;
 
 /**
  * @author berald01
@@ -1885,7 +1885,6 @@ public class Utils {
 
     // Get version of this ASCIIGenome
     thisAndGitVersion.add(ArgParse.VERSION);
-
 
     BufferedReader br = null;
     // Get github versions

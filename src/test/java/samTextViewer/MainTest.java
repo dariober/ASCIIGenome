@@ -19,9 +19,41 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 public class MainTest {
+
+  @Test
+  public void canFilterGenotype()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
+    String[] args =
+        new String[] {
+          "-ni",
+          "-nf",
+          "--debug",
+          "2",
+          "--exec",
+          "genotype -f '{GT} == \"1|2\"'",
+          "test_data/info_formats.vcf.gz"
+        };
+    // Genotype filter selects for "sample2". "sample1" appears once right at the start before the
+    // filtering is applied.
+    String out = Joiner.on("\n").join(this.runMain(args));
+    assertEquals(1, StringUtils.countMatches(out, "sample1"));
+    assertEquals(2, StringUtils.countMatches(out, "sample2"));
+    System.out.println(out);
+  }
 
   @Test
   public void canStartFromCram()
