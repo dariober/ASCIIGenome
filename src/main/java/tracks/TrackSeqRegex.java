@@ -3,7 +3,6 @@ package tracks;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.util.SequenceUtil;
 import htsjdk.tribble.index.tabix.TabixFormat;

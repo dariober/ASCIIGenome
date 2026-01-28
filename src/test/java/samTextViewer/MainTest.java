@@ -348,7 +348,7 @@ public class MainTest {
 
   @Test
   public void seqRegexIssue123()
-          throws UnindexableFastaFileException,
+      throws UnindexableFastaFileException,
           SQLException,
           DocumentException,
           InvalidGenomicCoordsException,
@@ -364,7 +364,7 @@ public class MainTest {
     assertTrue(out.contains("ACTGACTG"));
 
     args =
-            new String[] {"-ni", "-nf", "--exec", "seqRegex ACTG && nextChrom", "test_data/seq_cg.fa"};
+        new String[] {"-ni", "-nf", "--exec", "seqRegex ACTG && nextChrom", "test_data/seq_cg.fa"};
     out = this.runMain(args).toString();
     assertTrue(out.contains("ATCGATCGATCGATCG"));
   }
