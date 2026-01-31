@@ -10,7 +10,6 @@ import htsjdk.samtools.SAMRecord;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -40,8 +39,10 @@ class TextRead extends IntervalFeature {
   private static final char charFwd = '>';
   private static final char charRev = '<';
   private static final char SOFT_CLIP = '-';
+
   /** Char to represent deletions from the reference. I.e. gaps in the read */
   private final char DEL = '-';
+
   /** Char to represent region skip. I.e. gaps in the read */
   private final char SKIP = '_';
 
@@ -281,11 +282,13 @@ class TextRead extends IntervalFeature {
     }
     if (this.showSoftClip) {
       // We need to compute how many characters need to be fainted
-      int alnLenUnclip = (this.getSoftUnclippedAlignmentEnd() - this.getSoftUnclippedAlignmentStart()) + 1;
-      int leftClipBp = this.getSamRecord().getAlignmentStart() - this.getSoftUnclippedAlignmentStart();
+      int alnLenUnclip =
+          (this.getSoftUnclippedAlignmentEnd() - this.getSoftUnclippedAlignmentStart()) + 1;
+      int leftClipBp =
+          this.getSamRecord().getAlignmentStart() - this.getSoftUnclippedAlignmentStart();
       int rightClipBp = this.getSoftUnclippedAlignmentEnd() - this.getSamRecord().getAlignmentEnd();
-      int leftChars = Math.round(((float) leftClipBp /alnLenUnclip) * squashedRead.size());
-      int rightChars = Math.round(((float) rightClipBp /alnLenUnclip) * squashedRead.size());
+      int leftChars = Math.round(((float) leftClipBp / alnLenUnclip) * squashedRead.size());
+      int rightChars = Math.round(((float) rightClipBp / alnLenUnclip) * squashedRead.size());
       for (int i = 0; i < leftChars; i++) {
         squashedRead.get(i).setText(SOFT_CLIP);
         squashedRead.get(i).setFaint(true);
@@ -474,7 +477,7 @@ class TextRead extends IntervalFeature {
       } else if (el.getOperator().equals(CigarOperator.I)) {
         if (!dnaRead
             .isEmpty()) { // If the insertion is outside the terminal window, there is no base to
-                          // mark
+          // mark
           dnaRead.get(dnaRead.size() - 1).setInvertFgBgColour(true);
         }
         curBaseReadPos += el.getLength();
