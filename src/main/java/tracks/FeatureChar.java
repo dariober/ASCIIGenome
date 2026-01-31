@@ -184,4 +184,8 @@ public class FeatureChar {
   public void setFaint(boolean isFaint) {
     this.faint = isFaint;
   }
+
+  public boolean isFaint() {
+    return this.faint;
+  }
 }

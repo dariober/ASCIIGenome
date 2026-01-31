@@ -9,6 +9,7 @@ import java.util.List;
 /** Model a sequenced fragment typically represented by a pair of reads. */
 class SamSequenceFragment {
 
+  private static final char CONNECTING_CHAR = '~';
   private TextRead leftRead = null;
   private TextRead rightRead = null;
   private boolean isSingleton;
@@ -88,7 +89,7 @@ class SamSequenceFragment {
       int len = this.getTextEnd() - this.getTextStart() + 1; // MEMO: Start is 1-based
       for (int i = 0; i < len; i++) {
         FeatureChar x = new FeatureChar();
-        x.setText('~');
+        x.setText(CONNECTING_CHAR);
         lst.add(x);
       }
       int i = 0;
@@ -100,7 +101,10 @@ class SamSequenceFragment {
       // Where does the right read starts from?
       int from = this.getRightRead().getTextStart() - this.getLeftRead().getTextStart();
       for (FeatureChar x : this.getRightRead().getTextReadAsFeatureChars(bs)) {
-        lst.set(from, x);
+        if (lst.get(from).isFaint() || lst.get(from).getText() == CONNECTING_CHAR) {
+          // Replace a fainted colour char or a connecting char.
+          lst.set(from, x);
+        }
         from++;
       }
       StringBuilder sb = new StringBuilder();

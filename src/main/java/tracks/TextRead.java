@@ -192,7 +192,7 @@ class TextRead extends IntervalFeature {
   private int getSoftUnclippedAlignmentEnd() {
     SAMRecord rec = this.getSamRecord();
     List<CigarElement> cigar = rec.getCigar().getCigarElements();
-    if (cigar.size() == 0) {
+    if (cigar.isEmpty()) {
       return rec.getAlignmentEnd();
     }
     if (cigar.size() == 1 && cigar.get(0).getOperator().equals(CigarOperator.SOFT_CLIP)) {

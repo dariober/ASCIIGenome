@@ -173,6 +173,7 @@ public class TrackReadsTest {
     assertTrue(tr.printToScreen().trim().length() > 1);
   }
 
+  @Test
   public void canExplainSamFlag()
       throws ClassNotFoundException,
           IOException,
@@ -188,7 +189,6 @@ public class TrackReadsTest {
     tr.setPrintMode(PrintRawLine.FULL);
     tr.setExplainSamFlag(true);
     String printable = tr.printLines();
-    System.err.println(printable);
     assertTrue(printable.contains("163|+|pair|prop-p|mate-rev|2nd"));
   }
 
@@ -231,6 +231,25 @@ public class TrackReadsTest {
      *   * With paired reads: Behaviour when activate readsAsPaired
      *
      * */
+    GenomicCoords gc = new GenomicCoords("chr7:5529094-5529375", 300, null, null);
+    TrackReads tr = new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
+    tr.setNoFormat(true);
+    tr.setShowHideRegex(Pattern.compile("HSQ9103:404:C6F0VANXX:5:2315:16412:74740"), Pattern.compile("$^"));
+    assertTrue(tr.printToScreen().contains("               AATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAAC "));
+    assertTrue(tr.printToScreen().contains("                             acgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat "));
+
+    tr.setShowSoftClip(true);
+    assertTrue(tr.printToScreen().contains(" AACCGATAAAATAAAATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAACTT "));
+    assertTrue(tr.printToScreen().contains(" atcaaaaaatcaaaaccaactaaccaacacgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat "));
+
+    tr.setNoFormat(false);
+    assertTrue(tr.printToScreen().contains("2;")); // 2 is escape code for faint
+
+    tr.setNoFormat(true);
+    tr.setReadsAsPairs(true);
+    assertTrue(tr.printToScreen().contains(" AACCGATAAAATAAAATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAACacgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat "));
+    tr.setShowSoftClip(false);
+    assertTrue(tr.printToScreen().contains("               AATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAACacgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat "));
   }
 
   @Test
