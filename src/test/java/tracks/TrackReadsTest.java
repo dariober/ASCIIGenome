@@ -116,7 +116,6 @@ public class TrackReadsTest {
 
     GenomicCoords gc = new GenomicCoords("chr7:999-1041", 80, null, null);
     TrackReads tr = new TrackReads("test_data/missingReadSeq.bam", gc);
-    System.err.println(tr.printToScreen());
     assertTrue(tr.printToScreen().trim().startsWith("[48;5;" + xshade));
 
     // Read with soft clipped bases
@@ -173,6 +172,7 @@ public class TrackReadsTest {
     assertTrue(tr.printToScreen().trim().length() > 1);
   }
 
+  @Test
   public void canExplainSamFlag()
       throws ClassNotFoundException,
           IOException,
@@ -188,7 +188,6 @@ public class TrackReadsTest {
     tr.setPrintMode(PrintRawLine.FULL);
     tr.setExplainSamFlag(true);
     String printable = tr.printLines();
-    System.err.println(printable);
     assertTrue(printable.contains("163|+|pair|prop-p|mate-rev|2nd"));
   }
 
@@ -207,11 +206,10 @@ public class TrackReadsTest {
     assertTrue(tr.printToScreen().contains(" GGGGG~~~~~~~~~~~~~~~ggggg "));
 
     // Overlapping pair
-    assertTrue(tr.printToScreen().contains("ATATATAgcgcgcgcgc "));
-    System.err.println(tr.printToScreen());
+    assertTrue(tr.printToScreen().contains("ATATATAnnncgcgcgc "));
 
     // Pair where one read is fully contained in the other
-    assertTrue(tr.printToScreen().contains(" CCaaaaaaCC "));
+    assertTrue(tr.printToScreen().contains(" CCnnnnnnCC "));
 
     // Properly paired but mate is not in the window
     assertTrue(tr.printToScreen().contains("TTTTT  "));
@@ -222,15 +220,121 @@ public class TrackReadsTest {
   }
 
   @Test
-  public void canShowSoftClip() throws Exception {
-    /*
-     *  TODO: Test:
-     *   * Show soft clip left and right at single base resolution
-     *   * Same as above when 1 char > 1 bp
-     *   * With paired reads: Behaviour when soft clipped bases overlap
-     *   * With paired reads: Behaviour when activate readsAsPaired
-     *
-     * */
+  public void canShowSoftClipBpRes() throws Exception {
+    GenomicCoords gc = new GenomicCoords("chr7:5529094-5529375", 300, null, null);
+    TrackReads tr = new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
+    tr.setNoFormat(true);
+    tr.setShowHideRegex(
+        Pattern.compile("HSQ9103:404:C6F0VANXX:5:2315:16412:74740"), Pattern.compile("$^"));
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                "              "
+                    + " AATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAAC"
+                    + " "));
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                "                            "
+                    + " acgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat"
+                    + " "));
+
+    tr.setShowSoftClip(true);
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                " AACCGATAAAATAAAATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAACTT"
+                    + " "));
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                " atcaaaaaatcaaaaccaactaaccaacacgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat"
+                    + " "));
+
+    tr.setNoFormat(false);
+    assertTrue(tr.printToScreen().contains("2;")); // 2 is escape code for faint
+
+    tr.setNoFormat(true);
+    tr.setReadsAsPairs(true);
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                " AACCGATAAAATAAAATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAACacgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat"
+                    + " "));
+    tr.setShowSoftClip(false);
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                "              "
+                    + " AATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAACacgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat"
+                    + " "));
+  }
+
+  @Test
+  public void canShowSoftClipWithHardClip() throws Exception {
+    GenomicCoords gc = new GenomicCoords("chr7:5529928-5530209", 300, null, null);
+    TrackReads tr = new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
+    tr.setNoFormat(true);
+    tr.setShowHideRegex(
+        Pattern.compile("HSQ9103:403:C6F0HANXX:1:2208:9377:45675"), Pattern.compile("$^"));
+    assertTrue(
+        tr.printToScreen().contains(" TGTTATTTTTTATATCGTTTATTAAGTTTTAGTTTTTTTTAGGAATCGTTTT "));
+    assertTrue(
+        tr.printToScreen()
+            .contains(" tgttattttttatatcgtttattaagttttagttttttttaggaatcgtttttttttaatttgtgttta "));
+
+    tr.setShowSoftClip(true);
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                " gggatgtagaaattatagtgagatgagattatgttattttttatatcgtttattaagttttagttttttttaggaatcgtttttttttaatttgtgttta"
+                    + " "));
+    assertTrue(
+        tr.printToScreen().contains(" TGTTATTTTTTATATCGTTTATTAAGTTTTAGTTTTTTTTAGGAATCGTTTT "));
+  }
+
+  @Test
+  public void canShowSoftClipExtendedRes() throws Exception {
+    GenomicCoords gc = new GenomicCoords("chr7:5529094-5529375", 281, null, null);
+    TrackReads tr = new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
+    tr.setNoFormat(true);
+    tr.setShowHideRegex(
+        Pattern.compile("HSQ9103:404:C6F0VANXX:5:2315:16412:74740"), Pattern.compile("$^"));
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+                    + " "));
+
+    tr.setShowSoftClip(true);
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                " -------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>--"
+                    + " "));
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                " ----------------------------<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+                    + " "));
+
+    tr.setNoFormat(false);
+    assertTrue(tr.printToScreen().contains("2;")); // 2 is escape code for faint
+
+    tr.setNoFormat(true);
+    tr.setReadsAsPairs(true);
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                " -------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+                    + " "));
+    tr.setShowSoftClip(false);
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                "              "
+                    + " >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+                    + " "));
   }
 
   @Test
@@ -373,7 +477,6 @@ public class TrackReadsTest {
     assertEquals(2, tr.printToScreen().split("\n").length); // Default: only variants
 
     tr.setVariantReadInInterval("chr7", 1000028, 1000028, false);
-    System.err.println(tr.printToScreen());
     assertEquals(4, tr.printToScreen().split("\n").length);
   }
 
@@ -397,7 +500,6 @@ public class TrackReadsTest {
     tr.setAwk("'$1 ~ \"NCNNNCCC\"'");
     assertEquals(6, tr.printToScreen().split("\n").length);
     assertTrue(tr.getTitle().contains("awk"));
-    System.err.println(tr.getTitle());
   }
 
   @Test
@@ -529,8 +631,6 @@ public class TrackReadsTest {
     //        "          CCCCCCCCCC                       ";
     tr.setyMaxLines(yMaxLines);
     assertEquals(2, tr.printToScreen().split("\n").length); // Two lines
-
-    System.out.println(tr.printToScreen());
 
     gc = new GenomicCoords("chr7:1-100", 80, samSeqDict, null);
     tr = new TrackReads(bam, gc);

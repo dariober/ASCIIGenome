@@ -985,7 +985,9 @@ public class CommandList {
     cmd.inSection = Section.ALIGNMENTS;
     cmd.setBriefDescription("Show soft clipped bases in BAM/CRAM reads. ");
     cmd.setAdditionalDescription(
-        "\n"
+        "A faint colour indicates soft clipping at single-base resolution. At lower resolution show"
+            + " soft clipping with dashes.\n"
+            + "\n"
             + "* :code:`-on | -off` Set mode on/off. Without arguments toggle between on and off.\n"
             + "\n"
             + "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of"

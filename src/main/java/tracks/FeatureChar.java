@@ -7,7 +7,7 @@ import exceptions.InvalidColourException;
 import htsjdk.variant.variantcontext.Genotype;
 
 /** Class to model a *single* character printed on terminal representing an interval feature. */
-public class FeatureChar {
+public class FeatureChar implements Cloneable {
 
   private char text;
 
@@ -21,6 +21,7 @@ public class FeatureChar {
   private boolean underline = false;
   private boolean bold = false;
   private boolean faint = false;
+  private boolean isSoftClipped = false;
 
   /*  C O N S T R U C T O R  */
 
@@ -129,6 +130,14 @@ public class FeatureChar {
     return null;
   }
 
+  public Object clone() {
+    try {
+      return super.clone();
+    } catch (CloneNotSupportedException e) {
+      return null;
+    }
+  }
+
   /*  S E T T E R S   A N D   G E T T E R S  */
 
   public char getText() {
@@ -183,5 +192,17 @@ public class FeatureChar {
 
   public void setFaint(boolean isFaint) {
     this.faint = isFaint;
+  }
+
+  public boolean isFaint() {
+    return this.faint;
+  }
+
+  public boolean isSoftClipped() {
+    return isSoftClipped;
+  }
+
+  public void setSoftClipped(boolean isSoftClipped) {
+    this.isSoftClipped = isSoftClipped;
   }
 }

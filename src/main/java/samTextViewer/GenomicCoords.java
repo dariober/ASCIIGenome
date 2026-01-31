@@ -1207,7 +1207,6 @@ public class GenomicCoords implements Cloneable {
   }
 
   public Object clone() {
-    // shallow copy
     try {
       return super.clone();
     } catch (CloneNotSupportedException e) {

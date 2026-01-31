@@ -1,5 +1,7 @@
 package tracks;
 
+import colouring.Config;
+import colouring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import java.io.IOException;
@@ -9,6 +11,7 @@ import java.util.List;
 /** Model a sequenced fragment typically represented by a pair of reads. */
 class SamSequenceFragment {
 
+  private static final char CONNECTING_CHAR = '~';
   private TextRead leftRead = null;
   private TextRead rightRead = null;
   private boolean isSingleton;
@@ -88,7 +91,7 @@ class SamSequenceFragment {
       int len = this.getTextEnd() - this.getTextStart() + 1; // MEMO: Start is 1-based
       for (int i = 0; i < len; i++) {
         FeatureChar x = new FeatureChar();
-        x.setText('~');
+        x.setText(CONNECTING_CHAR);
         lst.add(x);
       }
       int i = 0;
@@ -99,8 +102,27 @@ class SamSequenceFragment {
       // Fill up with the right read. NB: Reads might be fully contained one into the other
       // Where does the right read starts from?
       int from = this.getRightRead().getTextStart() - this.getLeftRead().getTextStart();
-      for (FeatureChar x : this.getRightRead().getTextReadAsFeatureChars(bs)) {
-        lst.set(from, x);
+      for (FeatureChar rightNt : this.getRightRead().getTextReadAsFeatureChars(bs)) {
+        FeatureChar leftNt = lst.get(from);
+        if (leftNt.getText() == CONNECTING_CHAR) {
+          lst.set(from, rightNt);
+        } else if (!leftNt.isSoftClipped() && !rightNt.isSoftClipped()) {
+          if (Character.toUpperCase(leftNt.getText()) == Character.toUpperCase(rightNt.getText())) {
+            lst.set(from, rightNt);
+          } else {
+            FeatureChar n = (FeatureChar) rightNt.clone();
+            n.setText(Character.isUpperCase(n.getText()) ? 'N' : 'n');
+            n.setFgColour(Config.get(ConfigKey.seq_other));
+            lst.set(from, n);
+          }
+        } else if (!leftNt.isSoftClipped() && rightNt.isSoftClipped()) {
+          lst.set(from, leftNt);
+        } else if (leftNt.isSoftClipped() && !rightNt.isSoftClipped()) {
+          lst.set(from, rightNt);
+        } else if (leftNt.isSoftClipped() && rightNt.isSoftClipped()) {
+          // Both faint, just pick one.
+          lst.set(from, rightNt);
+        }
         from++;
       }
       StringBuilder sb = new StringBuilder();

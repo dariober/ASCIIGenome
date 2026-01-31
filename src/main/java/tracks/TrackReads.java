@@ -360,11 +360,11 @@ public class TrackReads extends Track {
         || !this.getHideRegex().pattern().equals(Filter.DEFAULT_HIDE_REGEX.getValue())) {
       title.add("grep");
     }
-    if (this.get_f_flag() != Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue())
-        || this.get_F_flag() != Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue())) {
+    if (this.get_f_flag() != Integer.parseInt(Filter.DEFAULT_f_FLAG.getValue())
+        || this.get_F_flag() != Integer.parseInt(Filter.DEFAULT_F_FLAG.getValue())) {
       title.add("bit-flag");
     }
-    if (this.getMapq() != Integer.valueOf(Filter.DEFAULT_MAPQ.getValue())) {
+    if (this.getMapq() != Integer.parseInt(Filter.DEFAULT_MAPQ.getValue())) {
       title.add("mapq");
     }
     if (!this.getFeatureFilter()
@@ -372,7 +372,7 @@ public class TrackReads extends Track {
         .equals(Filter.DEFAULT_VARIANT_CHROM.getValue())) {
       title.add("var-read");
     }
-    if (title.size() > 0) {
+    if (!title.isEmpty()) {
       return "; filters: " + title.toString();
     } else {
       return "";
@@ -395,11 +395,6 @@ public class TrackReads extends Track {
   }
 
   /* S e t t e r s   and   G e t t e r s */
-
-  @Override
-  public boolean getReadsAsPairs() {
-    return this.readsAsPairs;
-  }
 
   @Override
   public void setReadsAsPairs(boolean readsAsPairs)
