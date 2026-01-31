@@ -106,19 +106,20 @@ class SamSequenceFragment {
         FeatureChar leftNt = lst.get(from);
         if (leftNt.getText() == CONNECTING_CHAR) {
           lst.set(from, rightNt);
-        } else if (!leftNt.isFaint() && !rightNt.isFaint()) {
+        } else if (!leftNt.isSoftClipped() && !rightNt.isSoftClipped()) {
           if (Character.toUpperCase(leftNt.getText()) == Character.toUpperCase(rightNt.getText())) {
             lst.set(from, rightNt);
           } else {
             FeatureChar n = (FeatureChar) rightNt.clone();
             n.setText(Character.isUpperCase(n.getText()) ? 'N' : 'n');
+            n.setFgColour(Config.get(ConfigKey.seq_other));
             lst.set(from, n);
           }
-        } else if (!leftNt.isFaint() && rightNt.isFaint()) {
+        } else if (!leftNt.isSoftClipped() && rightNt.isSoftClipped()) {
           lst.set(from, leftNt);
-        } else if (leftNt.isFaint() && !rightNt.isFaint()) {
+        } else if (leftNt.isSoftClipped() && !rightNt.isSoftClipped()) {
           lst.set(from, rightNt);
-        } else if (leftNt.isFaint() && rightNt.isFaint()) {
+        } else if (leftNt.isSoftClipped() && rightNt.isSoftClipped()) {
           // Both faint, just pick one.
           lst.set(from, rightNt);
         }

@@ -21,6 +21,7 @@ public class FeatureChar implements Cloneable {
   private boolean underline = false;
   private boolean bold = false;
   private boolean faint = false;
+  private boolean isSoftClipped = false;
 
   /*  C O N S T R U C T O R  */
 
@@ -195,5 +196,13 @@ public class FeatureChar implements Cloneable {
 
   public boolean isFaint() {
     return this.faint;
+  }
+
+  public boolean isSoftClipped() {
+    return isSoftClipped;
+  }
+
+  public void setSoftClipped(boolean isSoftClipped) {
+    this.isSoftClipped = isSoftClipped;
   }
 }

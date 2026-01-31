@@ -10,6 +10,7 @@ import htsjdk.samtools.SAMRecord;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -38,13 +39,9 @@ class TextRead extends IntervalFeature {
   private static final char charu = 'u';
   private static final char charFwd = '>';
   private static final char charRev = '<';
-  // private final static int  SHADE_MAPQ= 5;
-  // private final static int  SHADE_BASEQ= 13;
-  private static final char SOFT_CLIP = 'S';
-
+  private static final char SOFT_CLIP = '-';
   /** Char to represent deletions from the reference. I.e. gaps in the read */
   private final char DEL = '-';
-
   /** Char to represent region skip. I.e. gaps in the read */
   private final char SKIP = '_';
 
@@ -171,6 +168,7 @@ class TextRead extends IntervalFeature {
     for (int i = 0; i < cigar.size(); i++) {
       CigarElement op = cigar.get(i);
       if (op.getOperator().equals(CigarOperator.HARD_CLIP)) {
+        // From SAM format: H can only be present as the first and/or last operation.
         continue;
       } else if (op.getOperator().equals(CigarOperator.SOFT_CLIP)) {
         offset += op.getLength();
@@ -179,9 +177,6 @@ class TextRead extends IntervalFeature {
       }
     }
     int start = rec.getAlignmentStart() - offset;
-    //		if(start < 1){
-    //			start= 1;
-    //		}
     return start;
   }
 
@@ -206,6 +201,7 @@ class TextRead extends IntervalFeature {
     for (int i = cigar.size() - 1; i >= 0; i--) {
       CigarElement op = cigar.get(i);
       if (op.getOperator().equals(CigarOperator.HARD_CLIP)) {
+        // From SAM format: H can only be present as the first and/or last operation.
         continue;
       } else if (op.getOperator().equals(CigarOperator.SOFT_CLIP)) {
         offset += op.getLength();
@@ -282,6 +278,24 @@ class TextRead extends IntervalFeature {
         sq.setUnderline(true);
       }
       squashedRead.add(sq);
+    }
+    if (this.showSoftClip) {
+      // We need to compute how many characters need to be fainted
+      int alnLenUnclip = (this.getSoftUnclippedAlignmentEnd() - this.getSoftUnclippedAlignmentStart()) + 1;
+      int leftClipBp = this.getSamRecord().getAlignmentStart() - this.getSoftUnclippedAlignmentStart();
+      int rightClipBp = this.getSoftUnclippedAlignmentEnd() - this.getSamRecord().getAlignmentEnd();
+      int leftChars = Math.round(((float) leftClipBp /alnLenUnclip) * squashedRead.size());
+      int rightChars = Math.round(((float) rightClipBp /alnLenUnclip) * squashedRead.size());
+      for (int i = 0; i < leftChars; i++) {
+        squashedRead.get(i).setText(SOFT_CLIP);
+        squashedRead.get(i).setFaint(true);
+        squashedRead.get(i).setSoftClipped(true);
+      }
+      for (int i = 0; i < rightChars; i++) {
+        squashedRead.get((squashedRead.size() - 1) - i).setText(SOFT_CLIP);
+        squashedRead.get((squashedRead.size() - 1) - i).setFaint(true);
+        squashedRead.get((squashedRead.size() - 1) - i).setSoftClipped(true);
+      }
     }
     return squashedRead;
   }
@@ -471,10 +485,7 @@ class TextRead extends IntervalFeature {
               FeatureChar xc = new FeatureChar();
               xc.setText((char) readBases[curBaseReadPos]);
               xc.setFaint(true);
-              // xc.setText(
-              //    this.samRecord.getReadNegativeStrandFlag()
-              //        ? Character.toLowerCase(SOFT_CLIP)
-              //        : SOFT_CLIP);
+              xc.setSoftClipped(true);
               dnaRead.add(xc);
               curBaseGenomicPos++;
             } else {
