@@ -1,5 +1,7 @@
 package tracks;
 
+import colouring.Config;
+import colouring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import java.io.IOException;
@@ -100,10 +102,25 @@ class SamSequenceFragment {
       // Fill up with the right read. NB: Reads might be fully contained one into the other
       // Where does the right read starts from?
       int from = this.getRightRead().getTextStart() - this.getLeftRead().getTextStart();
-      for (FeatureChar x : this.getRightRead().getTextReadAsFeatureChars(bs)) {
-        if (lst.get(from).isFaint() || lst.get(from).getText() == CONNECTING_CHAR) {
-          // Replace a fainted colour char or a connecting char.
-          lst.set(from, x);
+      for (FeatureChar rightNt : this.getRightRead().getTextReadAsFeatureChars(bs)) {
+        FeatureChar leftNt = lst.get(from);
+        if (leftNt.getText() == CONNECTING_CHAR) {
+          lst.set(from, rightNt);
+        } else if (!leftNt.isFaint() && !rightNt.isFaint()) {
+          if (Character.toUpperCase(leftNt.getText()) == Character.toUpperCase(rightNt.getText())) {
+            lst.set(from, rightNt);
+          } else {
+            FeatureChar n = (FeatureChar) rightNt.clone();
+            n.setText(Character.isUpperCase(n.getText()) ? 'N' : 'n');
+            lst.set(from, n);
+          }
+        } else if (!leftNt.isFaint() && rightNt.isFaint()) {
+          lst.set(from, leftNt);
+        } else if (leftNt.isFaint() && !rightNt.isFaint()) {
+          lst.set(from, rightNt);
+        } else if (leftNt.isFaint() && rightNt.isFaint()) {
+          // Both faint, just pick one.
+          lst.set(from, rightNt);
         }
         from++;
       }

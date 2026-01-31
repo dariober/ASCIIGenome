@@ -116,7 +116,6 @@ public class TrackReadsTest {
 
     GenomicCoords gc = new GenomicCoords("chr7:999-1041", 80, null, null);
     TrackReads tr = new TrackReads("test_data/missingReadSeq.bam", gc);
-    System.err.println(tr.printToScreen());
     assertTrue(tr.printToScreen().trim().startsWith("[48;5;" + xshade));
 
     // Read with soft clipped bases
@@ -207,11 +206,10 @@ public class TrackReadsTest {
     assertTrue(tr.printToScreen().contains(" GGGGG~~~~~~~~~~~~~~~ggggg "));
 
     // Overlapping pair
-    assertTrue(tr.printToScreen().contains("ATATATAgcgcgcgcgc "));
-    System.err.println(tr.printToScreen());
+    assertTrue(tr.printToScreen().contains("ATATATAnnncgcgcgc "));
 
     // Pair where one read is fully contained in the other
-    assertTrue(tr.printToScreen().contains(" CCaaaaaaCC "));
+    assertTrue(tr.printToScreen().contains(" CCnnnnnnCC "));
 
     // Properly paired but mate is not in the window
     assertTrue(tr.printToScreen().contains("TTTTT  "));
@@ -225,10 +223,7 @@ public class TrackReadsTest {
   public void canShowSoftClip() throws Exception {
     /*
      *  TODO: Test:
-     *   * Show soft clip left and right at single base resolution
      *   * Same as above when 1 char > 1 bp
-     *   * With paired reads: Behaviour when soft clipped bases overlap
-     *   * With paired reads: Behaviour when activate readsAsPaired
      *
      * */
     GenomicCoords gc = new GenomicCoords("chr7:5529094-5529375", 300, null, null);
@@ -247,6 +242,7 @@ public class TrackReadsTest {
 
     tr.setNoFormat(true);
     tr.setReadsAsPairs(true);
+    System.out.println(tr.printToScreen());
     assertTrue(tr.printToScreen().contains(" AACCGATAAAATAAAATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAACacgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat "));
     tr.setShowSoftClip(false);
     assertTrue(tr.printToScreen().contains("               AATAACTCACACCTATAATCCCAACACTTAAAAAAACC-AAACGAACAAATCACGAAATCAAAAAATCAAAACAATCCTAACCAACacgaaaaaaccccgtctctactaaaaaaaaaaaaaatacaaaaaattaaccgaatataataacgaacgcctat "));
