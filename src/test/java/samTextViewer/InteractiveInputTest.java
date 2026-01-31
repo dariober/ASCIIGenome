@@ -819,6 +819,10 @@ public class InteractiveInputTest {
 
     pi = this.processInput(ip, "  goto chr9", proc);
     assertTrue(pi.stdout.contains("chr9"));
+
+    // # has effect only at the beginning of the line
+    pi = this.processInput(ip, "goto #foo", proc);
+    assertTrue(pi.stderr.contains("Cannot find chromosome '#foo' in sequence dictionary"));
   }
 
   @Test

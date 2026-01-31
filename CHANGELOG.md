@@ -25,6 +25,18 @@ ASCIIGenome ds051.actb.bam             # No ref at all
 * `extend` command can use percent window size. E.g. `extend 0.1` will extend
   the current window by 10% 
 
+* Breaking change: `//` is no longer the comment string since it interfers with, for example: 
+
+```
+print -sys 'sed "s/foo//"'
+```
+
+Now you can only comment out an entire command line using the usual `#` character as *first* non-blank characters. *E.g*:
+
+```
+# print -sys 'sed "s/foo//"'
+```
+
 New in 1.19.0
 =============
 

@@ -51,7 +51,7 @@ public class InteractiveInput {
   /** Parse the input list of commands to print information or modify the input TrackProcessor. */
   protected TrackProcessor processInput(String cmdConcatInput, TrackProcessor proc)
       throws InvalidGenomicCoordsException, IOException {
-    cmdConcatInput = cmdConcatInput.trim().replaceAll("(^#.*)", "").trim();
+    cmdConcatInput = cmdConcatInput.trim().replaceAll("^#.*", "").trim();
     int terminalWidth = Utils.getTerminalWidth();
     // cmdInputList: List of individual commands in tokens to be issued.
     // E.g.: [ ["zi"],
