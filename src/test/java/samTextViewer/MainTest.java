@@ -347,6 +347,32 @@ public class MainTest {
   }
 
   @Test
+  public void canParseLinesWithBash()
+          throws UnindexableFastaFileException,
+          SQLException,
+          DocumentException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidColourException,
+          IOException,
+          InvalidConfigException,
+          BamIndexNotFoundException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    String[] args = new String[] {"-ni", "-nf", "--exec", "print -sys 'cut -f 1,3'", "test_data/hg19_genes_head.gtf.gz"};
+    String out = this.runMain(args).toString();
+    assertTrue(out.contains("chr1 | exon"));
+
+    args = new String[] {"-ni", "-nf", "--exec", "print -sys \"cut -f 1,3 | sed 's/exon/EXON/'\"", "test_data/hg19_genes_head.gtf.gz"};
+    out = this.runMain(args).toString();
+    assertTrue(out.contains("chr1 | EXON"));
+
+    args = new String[] {"-ni", "-nf", "--exec", "print -sys \"cut -f 1,3 | sed 's/exon//'\"", "test_data/hg19_genes_head.gtf.gz"};
+    out = this.runMain(args).toString();
+    assertFalse(out.contains("exon"));
+  }
+
+  @Test
   public void seqRegexIssue123()
       throws UnindexableFastaFileException,
           SQLException,

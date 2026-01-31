@@ -807,23 +807,22 @@ public class InteractiveInputTest {
     TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
     proc.setNoFormat(true);
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
-    ProcessInput pi = this.processInput(ip, "print && grep -i NCTNTCCN", proc);
-    String woComm = pi.stdout;
 
-    pi = this.processInput(ip, "print && grep -i NCTNTCCN // A comment", proc);
-    String withComm = pi.stdout;
-    assertEquals(woComm, withComm);
+    ProcessInput pi = this.processInput(ip, "goto chr8", proc);
+    assertTrue(pi.stdout.contains("chr8"));
 
-    pi = this.processInput(ip, "goto chr7", proc);
-    woComm = pi.stdout;
+    pi = this.processInput(ip, "# goto chr9", proc);
+    assertFalse(pi.stdout.contains("chr9"));
+    pi = this.processInput(ip, "  # goto chr9", proc);
+    System.out.println(pi.stdout);
+    assertFalse(pi.stdout.contains("chr9"));
 
-    pi = this.processInput(ip, "goto chr7//comment", proc);
-    withComm = pi.stdout;
-    assertEquals(woComm, withComm);
+    pi = this.processInput(ip, "  goto chr9", proc);
+    assertTrue(pi.stdout.contains("chr9"));
 
-    pi = this.processInput(ip, "goto chr7 // comment", proc);
-    withComm = pi.stdout;
-    assertEquals(woComm, withComm);
+    // # has effect only at the beginning of the line
+    pi = this.processInput(ip, "goto #foo", proc);
+    assertTrue(pi.stderr.contains("Cannot find chromosome '#foo' in sequence dictionary"));
   }
 
   @Test
