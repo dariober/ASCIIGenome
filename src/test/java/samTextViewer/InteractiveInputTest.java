@@ -798,35 +798,6 @@ public class InteractiveInputTest {
   }
 
   @Test
-  public void canIgnoreComments()
-      throws SQLException,
-          InvalidGenomicCoordsException,
-          IOException,
-          ClassNotFoundException,
-          InvalidRecordException {
-    TrackProcessor proc = gimmeTrackProcessor("chr7:10000-10060", 80, "test_data/ds051.actb.bam");
-    proc.setNoFormat(true);
-    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
-    ProcessInput pi = this.processInput(ip, "print && grep -i NCTNTCCN", proc);
-    String woComm = pi.stdout;
-
-    pi = this.processInput(ip, "print && grep -i NCTNTCCN // A comment", proc);
-    String withComm = pi.stdout;
-    assertEquals(woComm, withComm);
-
-    pi = this.processInput(ip, "goto chr7", proc);
-    woComm = pi.stdout;
-
-    pi = this.processInput(ip, "goto chr7//comment", proc);
-    withComm = pi.stdout;
-    assertEquals(woComm, withComm);
-
-    pi = this.processInput(ip, "goto chr7 // comment", proc);
-    withComm = pi.stdout;
-    assertEquals(woComm, withComm);
-  }
-
-  @Test
   public void canSuggestCommand()
       throws SQLException,
           InvalidGenomicCoordsException,

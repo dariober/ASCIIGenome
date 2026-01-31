@@ -14,3 +14,4 @@ wrapper/
 *.swp
 /google-java-format-*.jar
 /test_data/noindex.fa.fai
+tmp.sh
