@@ -220,6 +220,33 @@ public class TrackReadsTest {
   }
 
   @Test
+  public void canShowSoftClipIntersectingScreen() throws Exception {
+    GenomicCoords gc = new GenomicCoords("chr7:5529641", 80, null, null);
+    TrackReads tr = new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
+    tr.setNoFormat(true);
+    tr.setShowSoftClip(true);
+    tr.setShowHideRegex(
+        Pattern.compile("HSQ9103:403:C6F0HANXX:7:2109:1417:69076.*16S39M10S"), Pattern.compile("$^"));
+    assertTrue(tr.printToScreen().contains(" AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC "));
+
+    gc = new GenomicCoords("chr7:5529642", 80, null, null);
+    tr = new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
+    tr.setNoFormat(true);
+    tr.setShowSoftClip(true);
+    tr.setShowHideRegex(
+        Pattern.compile("HSQ9103:403:C6F0HANXX:7:2109:1417:69076.*16S39M10S"), Pattern.compile("$^"));
+    assertTrue(tr.printToScreen().matches("^AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC +"));
+
+    gc = new GenomicCoords("chr7:5529643", 80, null, null);
+    tr = new TrackReads("test_data/ear045.oxBS.actb.bam", gc);
+    tr.setNoFormat(true);
+    tr.setShowSoftClip(true);
+    tr.setShowHideRegex(
+        Pattern.compile("HSQ9103:403:C6F0HANXX:7:2109:1417:69076.*16S39M10S"), Pattern.compile("$^"));
+    assertTrue(tr.printToScreen().matches("^ACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC +"));
+  }
+
+  @Test
   public void canShowSoftClipBpRes() throws Exception {
     GenomicCoords gc = new GenomicCoords("chr7:5529094-5529375", 300, null, null);
     TrackReads tr = new TrackReads("test_data/ear045.oxBS.actb.bam", gc);

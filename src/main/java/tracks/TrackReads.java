@@ -41,8 +41,6 @@ public class TrackReads extends Track {
 
   /* C o n s t r u c t o r s */
 
-  public TrackReads() {}
-
   public TrackReads(String bam, GenomicCoords gc)
       throws IOException,
           InvalidGenomicCoordsException,
@@ -67,10 +65,6 @@ public class TrackReads extends Track {
     this.setGc(gc);
   }
 
-  public TrackReads(String filename) {
-    this.setFilename(filename);
-  }
-
   /* M e t h o d s */
 
   @Override
@@ -84,7 +78,7 @@ public class TrackReads extends Track {
 
     this.userWindowSize = this.getGc().getUserWindowSize();
 
-    this.readStack = new ArrayList<List<SamSequenceFragment>>();
+    this.readStack = new ArrayList<>();
     if (this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE) {
 
       SamReader samReader = Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
@@ -149,11 +143,10 @@ public class TrackReads extends Track {
     // If there are more lines (inner lists) than desired lines of output (yMaxLines), get a
     // representative sample
     List<Double> keep = new ArrayList<Double>();
-    if (this.readStack.size() == 0) {
+    if (this.readStack.isEmpty()) {
       return "";
     } else if (this.readStack.size() > yMaxLines) {
       keep = Utils.seqFromToLenOut(0, yMaxLines, yMaxLines);
-      // keep= Utils.seqFromToLenOut(0, this.readStack.size()-1, yMaxLines);
     } else {
       keep = Utils.seqFromToLenOut(0, this.readStack.size() - 1, this.readStack.size());
     }

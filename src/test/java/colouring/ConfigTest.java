@@ -1,5 +1,6 @@
 package colouring;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import exceptions.InvalidColourException;
@@ -81,5 +82,27 @@ public class ConfigTest {
       assertTrue(Config.get256Colour(ConfigKey.background) > -1);
       i++;
     }
+  }
+
+  @Test
+  public void canGetColourForSoftClip()
+      throws InvalidColourException, IOException, InvalidConfigException {
+    new Config(null);
+    Config.set(ConfigKey.soft_clip_colour, "blue");
+    assertEquals("12", Config.get(ConfigKey.soft_clip_colour));
+    Config.set(ConfigKey.soft_clip_colour, "253");
+    assertEquals("253", Config.get(ConfigKey.soft_clip_colour));
+    Config.set(ConfigKey.soft_clip_colour, "False");
+    assertEquals("false", Config.get(ConfigKey.soft_clip_colour));
+
+    Config.set(ConfigKey.soft_clip_colour, "100");
+    boolean pass = false;
+    try {
+      Config.set(ConfigKey.soft_clip_colour, "foobar");
+    } catch (InvalidColourException e) {
+      assertEquals("100", Config.get(ConfigKey.soft_clip_colour));
+      pass = true;
+    }
+    assertTrue(pass);
   }
 }
