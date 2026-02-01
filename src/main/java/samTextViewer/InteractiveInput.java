@@ -960,9 +960,14 @@ public class InteractiveInput {
           InvalidColourException,
           InvalidGenomicCoordsException {
     List<String> args = new ArrayList<String>(cmdTokens);
-    args.remove(0);
+    String commandName = args.remove(0);
     if (args.isEmpty()) {
-      throw new InvalidCommandLineException();
+      String help =
+          Utils.padEndMultiLine(
+              "\n" + CommandList.getHelpForCommand(commandName), proc.getWindowSize());
+      System.err.println(help);
+      this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
+      return ExitCode.CLEAN_NO_FLUSH;
     }
     if (args.size() == 1) {
       ConfigKey key = ConfigKey.getConfigKeyFromShort(args.get(0));

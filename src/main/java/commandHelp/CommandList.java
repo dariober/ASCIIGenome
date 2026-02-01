@@ -1345,6 +1345,11 @@ public class CommandList {
             + "\n"
             + "If two arguments are given, they are taken as a key/value pair to reset.\n"
             + "\n"
+            + "Available colours are from the Xterm256 palette: \n"
+            + "\n"
+            + Xterm256.colourShowForTerminal().replaceAll(" ", "~")
+            + "\n"
+            + "\n"
             + "Examples::\n"
             + "\n"
             + "    setConfig metal\n"

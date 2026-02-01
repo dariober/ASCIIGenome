@@ -20,7 +20,9 @@ public enum ConfigKey {
   seq_g("Colour for nucleotide G"),
   seq_t("Colour for nucleotide T"),
   seq_other("Colour for any other nucleotide"),
-  soft_clip_colour("Colour for soft-clipped characters. 'false' use the same (fainted) colour as for the for unclipped"),
+  soft_clip_colour(
+      "Colour for soft-clipped characters. 'false' use the same (fainted) colour as for the for"
+          + " unclipped"),
   shade_low_mapq("Colour for shading reads with low MAPQ"),
   low_mapq("Shade reads below this MAPQ"),
   methylated_foreground("Foreground colour for methylated C"),

@@ -37,36 +37,35 @@ public class TextReadTest {
     new Config(null);
   }
 
-//  @Test
-//  public void canColourSoftClip()
-//      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
-//    SAMRecord rec = new SAMRecord(null);
-//    rec.setAlignmentStart(5529658);
-//    rec.setCigarString("16S39M10S");
-//    rec.setMappingQuality(30);
-//    rec.setReadBases(
-//        "AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC".getBytes());
-//    GenomicCoords gc = new GenomicCoords("chr7:5529642", 80, null, null);
-//    TextRead tr = new TextRead(rec, gc, false);
-//    String txt = tr.getPrintableTextRead(false, false, false);
-//    assertFalse(txt.contains(";2;")); // Escape for faint
-//
-//    tr = new TextRead(rec, gc, true);
-//    txt = tr.getPrintableTextRead(false, false, false);
-//    assertFalse(txt.contains("253"));
-//    System.out.println(tr.getTextReadAsFeatureChars(false).get(0).format(false));
-//    assertTrue(txt.contains(";2;")); // Escape for faint
-//
-//    Config.set(ConfigKey.soft_clip_colour, "253");
-//    txt = tr.getPrintableTextRead(false, false, false);
-//    assertTrue(txt.contains("253"));
-//    assertFalse(txt.contains(";2;")); // Escape for faint
-//
-//    Config.set(ConfigKey.soft_clip_colour, "false");
-//    txt = tr.getPrintableTextRead(false, false, false);
-//    assertFalse(txt.contains("253"));
-//    assertFalse(txt.contains(";2;")); // Escape for faint
-//  }
+  @Test
+  public void canColourSoftClip()
+      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+    SAMRecord rec = new SAMRecord(null);
+    rec.setAlignmentStart(5529658);
+    rec.setCigarString("16S39M10S");
+    rec.setMappingQuality(30);
+    rec.setReadBases(
+        "AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC".getBytes());
+    GenomicCoords gc = new GenomicCoords("chr7:5529642", 80, null, null);
+    TextRead tr = new TextRead(rec, gc, false);
+    String txt = tr.getPrintableTextRead(false, false, false);
+    assertFalse(txt.contains("2;")); // Escape for faint
+
+    tr = new TextRead(rec, gc, true);
+    txt = tr.getPrintableTextRead(false, false, false);
+    assertFalse(txt.contains("253"));
+    assertTrue(txt.contains("2;")); // Escape for faint
+
+    Config.set(ConfigKey.soft_clip_colour, "253");
+    txt = tr.getPrintableTextRead(false, false, false);
+    assertTrue(txt.contains("253;"));
+    assertTrue(txt.contains("2;")); // Escape for faint
+
+    Config.set(ConfigKey.soft_clip_colour, "false");
+    txt = tr.getPrintableTextRead(false, false, false);
+    assertFalse(txt.contains("253"));
+    assertTrue(txt.contains("2;")); // Escape for faint
+  }
 
   @Test
   public void canHandleSoftClipIntersectingScreen()
@@ -75,7 +74,8 @@ public class TextReadTest {
     rec.setAlignmentStart(5529658);
     rec.setCigarString("16S39M10S");
     rec.setMappingQuality(30);
-    rec.setReadBases("AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC".getBytes());
+    rec.setReadBases(
+        "AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC".getBytes());
 
     // Read is right at the left-edge of the screen
     GenomicCoords gc = new GenomicCoords("chr7:5529642", 80, null, null);
