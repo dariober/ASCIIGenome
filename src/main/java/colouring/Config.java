@@ -139,6 +139,17 @@ public class Config {
   /** Get value associated to this configuration key */
   public static String get(ConfigKey key) {
     return config.get(key);
+    //    if (key.equals(ConfigKey.soft_clip_colour)) {
+    //      if (value.equalsIgnoreCase("false")) {
+    //        value = value.toLowerCase();
+    //      } else {
+    //        try {
+    //          value = Integer.toString(Xterm256.colourNameToXterm256(value));
+    //        } catch (InvalidColourException e) {
+    //          throw new InvalidColourException();
+    //        }
+    //      }
+    //    }
   }
 
   public static void set(ConfigKey key, String value) throws InvalidColourException {
@@ -149,9 +160,18 @@ public class Config {
       Integer.valueOf(value);
       config.put(key, value);
     } else {
-      if (key.equals(ConfigKey.shade_structural_variant) && value.equals("false")) {
+      if (key.equals(ConfigKey.shade_structural_variant) && value.equalsIgnoreCase("false")) {
         // This is very much a hack: If colour is false we reset to background
         value = config.get(ConfigKey.background);
+      }
+      if (key.equals(ConfigKey.soft_clip_colour)) {
+        if (value.equalsIgnoreCase("false")) {
+          value = value.toLowerCase();
+        } else {
+          value = Integer.toString(Xterm256.colourNameToXterm256(value));
+        }
+        config.put(key, value);
+        return;
       }
       config.put(key, value);
       colourNameToInt();

@@ -38,6 +38,71 @@ public class TextReadTest {
   }
 
   @Test
+  public void canColourSoftClip()
+      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+    SAMRecord rec = new SAMRecord(null);
+    rec.setAlignmentStart(5529658);
+    rec.setCigarString("16S39M10S");
+    rec.setMappingQuality(30);
+    rec.setReadBases(
+        "AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC".getBytes());
+    GenomicCoords gc = new GenomicCoords("chr7:5529642", 80, null, null);
+    TextRead tr = new TextRead(rec, gc, false);
+    String txt = tr.getPrintableTextRead(false, false, false);
+    assertFalse(txt.contains("2;")); // Escape for faint
+
+    tr = new TextRead(rec, gc, true);
+    txt = tr.getPrintableTextRead(false, false, false);
+    assertFalse(txt.contains("253"));
+    assertTrue(txt.contains("2;")); // Escape for faint
+
+    Config.set(ConfigKey.soft_clip_colour, "253");
+    txt = tr.getPrintableTextRead(false, false, false);
+    assertTrue(txt.contains("253"));
+    assertTrue(txt.contains("2;")); // Escape for faint
+
+    Config.set(ConfigKey.soft_clip_colour, "false");
+    txt = tr.getPrintableTextRead(false, false, false);
+    assertFalse(txt.contains("253"));
+    assertTrue(txt.contains("2;")); // Escape for faint
+  }
+
+  @Test
+  public void canHandleSoftClipIntersectingScreen()
+      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
+    SAMRecord rec = new SAMRecord(null);
+    rec.setAlignmentStart(5529658);
+    rec.setCigarString("16S39M10S");
+    rec.setMappingQuality(30);
+    rec.setReadBases(
+        "AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC".getBytes());
+
+    // Read is right at the left-edge of the screen
+    GenomicCoords gc = new GenomicCoords("chr7:5529642", 80, null, null);
+    TextRead tr = new TextRead(rec, gc, true);
+    String txt = tr.getPrintableTextRead(false, true, false);
+    assertEquals("AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC", txt);
+
+    // Read intersects the left-edge of the screen
+    gc = new GenomicCoords("chr7:5529643", 80, null, null);
+    tr = new TextRead(rec, gc, true);
+    txt = tr.getPrintableTextRead(false, true, false);
+    assertEquals("ACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC", txt);
+
+    // Read right at the right-edge of the screen
+    gc = new GenomicCoords("chr7:5529627", 80, null, null);
+    tr = new TextRead(rec, gc, true);
+    txt = tr.getPrintableTextRead(false, true, false);
+    assertEquals("AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCCC", txt);
+
+    // Read intersects the right-edge of the screen
+    gc = new GenomicCoords("chr7:5529626", 80, null, null);
+    tr = new TextRead(rec, gc, true);
+    txt = tr.getPrintableTextRead(false, true, false);
+    assertEquals("AACAAACAAACCAAAAAAAAAAAAAAAAAACCAAACAAAAATTATTCCAAAAACACCCCCCGCC", txt);
+  }
+
+  @Test
   public void canResetColourForStructuralVariant()
       throws InvalidGenomicCoordsException, IOException, InvalidColourException {
     GenomicCoords gc = new GenomicCoords("chr7:1-80", 80, null, null);
@@ -65,7 +130,6 @@ public class TextReadTest {
     Config.set(ConfigKey.shade_structural_variant, "123");
     txt = tr.getPrintableTextRead(false, false, false);
     assertTrue(txt.contains(";" + "123" + ";"));
-    System.err.println(txt);
   }
 
   @Test
@@ -153,12 +217,7 @@ public class TextReadTest {
     rec.setMappingQuality(30);
     rec.setReadBases("AAAAATTTTT".getBytes());
     rec.setBaseQualities("!!!!!IIIII".getBytes());
-    System.err.println(rec.getSAMString());
     TextRead tr = new TextRead(rec, gc, false);
-    System.err.println(
-        Splitter.on("m")
-            .omitEmptyStrings()
-            .splitToList(tr.getPrintableTextRead(false, false, false)));
   }
 
   @Test
@@ -184,46 +243,6 @@ public class TextReadTest {
     assertTrue(!printable.get(2).contains("249")); // Base qual= C
     assertTrue(printable.get(3).contains("249")); // Base qual= #
   }
-
-  //	@Test
-  //	public void canShowSoftClips() throws InvalidGenomicCoordsException, IOException,
-  // InvalidColourException {
-  //
-  //		GenomicCoords gc= new GenomicCoords("chr7:1-80", 80, null, null);
-  //		SAMRecord rec= new SAMRecord(null);
-  //		rec.setAlignmentStart(1);
-  //		rec.setCigarString("1S10M5S3H");
-  //
-  //		TextRead textRead= new TextRead(rec, gc, true);
-  //
-  //		System.err.println(textRead.getSoftUnclippedAlignmentStart(textRead.getSamRecord()));
-  //
-  //		assertEquals(15, textRead.getTextEnd());
-  //		assertEquals(1, textRead.getTextStart());
-  //		// We start with N even if the first operation is S. This is because the
-  //		// alignment starts at 1 so the first soft clip base(s) is lost on the left.
-  //		assertTrue(textRead.getPrintableTextRead(false, true, false).startsWith("N"));
-  //		assertTrue(textRead.getPrintableTextRead(false, true, false).endsWith("S"));
-  //
-  //		rec.setCigarString("10S");
-  //		textRead= new TextRead(rec, gc, true);
-  //		assertEquals(10, textRead.getTextEnd());
-  //		assertEquals(1, textRead.getTextStart());
-  //
-  //		rec.setCigarString("1S10M");
-  //		rec.setAlignmentStart(2);
-  //		textRead= new TextRead(rec, gc, true);
-  //		assertEquals(1, textRead.getTextStart());
-  //
-  //		rec.setAlignmentStart(3);
-  //		textRead= new TextRead(rec, gc, true);
-  //		assertEquals(2, textRead.getTextStart());
-  //
-  //		rec.setCigarString("1S2S10M");
-  //		rec.setAlignmentStart(4);
-  //		textRead= new TextRead(rec, gc, true);
-  //		assertEquals(1, textRead.getTextStart());
-  //	}
 
   @Test
   public void canPrintDNARead()

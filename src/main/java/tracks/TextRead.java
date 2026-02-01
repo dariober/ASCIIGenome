@@ -58,9 +58,9 @@ class TextRead extends IntervalFeature {
    */
   private int textEnd;
 
-  private SAMRecord samRecord;
+  private final SAMRecord samRecord;
   private GenomicCoords gc;
-  private List<int[]> textPositionsOfSkippedBases = new ArrayList<int[]>();
+  private final List<int[]> textPositionsOfSkippedBases = new ArrayList<int[]>();
 
   private boolean showSoftClip = false;
   private int alignmentStart = -1;
@@ -91,7 +91,7 @@ class TextRead extends IntervalFeature {
     }
     //            |  window  |
     // |---------| read
-    if (this.alignmentEnd < gc.getFrom() && !showSoftClip) {
+    if (this.alignmentEnd < gc.getFrom()) {
       System.err.println("Alignment ends before text window!");
       System.err.println(rec.getSAMString());
       System.err.println("Aln starts: " + this.alignmentStart);
@@ -357,7 +357,7 @@ class TextRead extends IntervalFeature {
     }
 
     // Accumulate here the read bases inside the window
-    ArrayList<FeatureChar> dnaRead = new ArrayList<FeatureChar>();
+    ArrayList<FeatureChar> dnaRead = new ArrayList<>();
     byte[] readBases = samRecord.getReadBases();
     byte[] baseQual = this.samRecord.getBaseQualities();
 
@@ -377,7 +377,8 @@ class TextRead extends IntervalFeature {
     for (CigarElement el : cigarEls) {
       if (el.getOperator().equals(CigarOperator.MATCH_OR_MISMATCH)
           || el.getOperator().equals(CigarOperator.EQ)
-          || el.getOperator().equals(CigarOperator.X)) {
+          || el.getOperator().equals(CigarOperator.X)
+          || (el.getOperator().equals(CigarOperator.S) && this.showSoftClip)) {
         // Add nucleotide chars to growing read
         for (int i = 0; i < el.getLength(); i++) {
           if (curBaseGenomicPos >= gc.getFrom() && curBaseGenomicPos <= gc.getTo()) {
@@ -431,6 +432,13 @@ class TextRead extends IntervalFeature {
             } else if (!bs && this.samRecord.getReadNegativeStrandFlag()) {
               xc.setFgColour(Config.get(ConfigKey.feature_background_negative_strand));
             }
+            if (el.getOperator().equals(CigarOperator.S) && this.showSoftClip) {
+              xc.setFaint(true);
+              xc.setSoftClipped(true);
+              if (!Config.get(ConfigKey.soft_clip_colour).equalsIgnoreCase("false")) {
+                xc.setFgColour(Config.get(ConfigKey.soft_clip_colour));
+              }
+            }
 
             if (baseQual.length > 0) {
               /*
@@ -482,21 +490,7 @@ class TextRead extends IntervalFeature {
         }
         curBaseReadPos += el.getLength();
       } else if (el.getOperator().equals(CigarOperator.SOFT_CLIP)) {
-        for (int i = 0; i < el.getLength(); i++) {
-          if (curBaseGenomicPos >= gc.getFrom() && curBaseGenomicPos <= gc.getTo()) {
-            if (this.showSoftClip) {
-              FeatureChar xc = new FeatureChar();
-              xc.setText((char) readBases[curBaseReadPos]);
-              xc.setFaint(true);
-              xc.setSoftClipped(true);
-              dnaRead.add(xc);
-              curBaseGenomicPos++;
-            } else {
-              //
-            }
-          }
-          curBaseReadPos++;
-        }
+        curBaseReadPos += el.getLength();
       } else if (el.getOperator().equals(CigarOperator.H)) {
         // Nothing to do
       } else if (el.getOperator().equals(CigarOperator.P)) {
