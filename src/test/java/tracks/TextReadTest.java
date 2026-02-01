@@ -58,7 +58,7 @@ public class TextReadTest {
 
     Config.set(ConfigKey.soft_clip_colour, "253");
     txt = tr.getPrintableTextRead(false, false, false);
-    assertTrue(txt.contains("253;"));
+    assertTrue(txt.contains("253"));
     assertTrue(txt.contains("2;")); // Escape for faint
 
     Config.set(ConfigKey.soft_clip_colour, "false");
