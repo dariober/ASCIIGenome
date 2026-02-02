@@ -56,6 +56,7 @@ public enum Command {
   history("history"),
   rpm("rpm"),
   samtools("samtools"),
+  showSoftClip("showSoftClip"),
   BSseq("BSseq"),
   save("save");
 
