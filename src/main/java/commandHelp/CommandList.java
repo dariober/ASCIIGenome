@@ -36,13 +36,13 @@ public class CommandList {
 
     intro += "" + "Command reference\n" + "=================\n\n";
     intro +=
-        "This is the documentation for the indvidual commands. The help documented here can be"
+        "This is the documentation for the individual commands. The help documented here can be"
             + " invoked also at the command prompt with `command -h`, for example to get the help"
             + " for `ylim`::\n"
             + "\n"
             + "    ylim -h\n"
             + "\n"
-            + "Parameters in square brakets are optional and the default argument is indicated by"
+            + "Parameters in square brackets are optional and the default argument is indicated by"
             + " the `=` sign. The syntax `...` indicate that the argument can be repeated multiple"
             + " times. For example::\n"
             + "\n"

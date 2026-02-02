@@ -6,11 +6,11 @@
 Command reference
 =================
 
-This is the documentation for the indvidual commands. The help documented here can be invoked also at the command prompt with `command -h`, for example to get the help for `ylim`::
+This is the documentation for the individual commands. The help documented here can be invoked also at the command prompt with `command -h`, for example to get the help for `ylim`::
 
     ylim -h
 
-Parameters in square brakets are optional and the default argument is indicated by the `=` sign. The syntax `...` indicate that the argument can be repeated multiple times. For example::
+Parameters in square brackets are optional and the default argument is indicated by the `=` sign. The syntax `...` indicate that the argument can be repeated multiple times. For example::
 
     ylim min max [track_regex = .*]...
 
@@ -175,15 +175,28 @@ Zoom out INT times. Each zoom doubles the window size.  To zoom quickly use INT=
 extend
 ++++++
 
-:code:`extend [mid|window] [INT left] [INT right]`
+:code:`extend [mid|window] [INT|FLOAT left] [INT|FLOAT right]`
 
-Extend the current window by `INT` bases left and right.
- 
-* :code:`window` (default): Extend the current window left and right by `INT` bases
+Extend the current window left and/or right.  If left or right are integers, extend by this many bases. If the are floats, extend by this percent of the current window size
 
-* :code:`mid` The new window is given by the midpoint of the current window plus and minus `INT` bases left and right.
+If only one number is given extend both left and right. Negative numbers will shrink instead of extend the window.
 
-If only one INT is given it is applied to both left and right. Negative INTs will shrink instead of extend the window.
+* :code:`window` (default): Extend the current window left and right
+
+* :code:`mid` The new window is given by the midpoint of the current window plus and left and right.
+
+Examples::
+
+extend 10       // Extend left and right by 10 bases
+
+extend 10 20    // Extend left 10 and right by 20 bases
+
+extend 0.1      // Extend left and right by 10% of the current window size
+
+extend -0.1      // Shrink by 10% of the current window size
+
+extend mid 1000 // Extend the midpoint of the current window by 1kb
+
 
 l - left
 ++++++++
@@ -329,31 +342,6 @@ Examples::
 Display
 -------
 
-translate
-+++++++++
-
-:code:`translate [-geneticCode=universal]`
-
-Show translation of DNA to aminoacids.  Options:
-
-* :code:`-frame` Frames to translate. Options: all, forward, reverse, none
-
-* :code:`-codon` Which codons to show. Options: all [a], start, stop, start_and_stop [ss]
-
-* :code:`-geneticCode` Genetic code to translate codons
-
-Use :code:`-geneticCode show` to view available codes. See also `ncbi <https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi>`
-With no arguments toggle display on and off.
-
-If a single character spans more than 1 nucleotide, only show starts (M) and stops (*). The character :code:`$` indicates a stop followed by a start.
-
-Examples::
-
-    translate
-    translate -geneticCode bacterial
-    translate -frame none -> Turn off
-
-
 grep
 ++++
 
@@ -435,325 +423,6 @@ Return the value of the **FORMAT** tag for sample index *sample_idx* (default to
 
 Returns the position of the alignment end. For example, select reads ending after position 1000`here <http://jonasjacek.github.io/colours/>`_             
 
-Example::
-
-    colourTrack cyan1 ts.*gtf ts.*bam 
-    colourTrack 40                   <- By INT
-    colourTrack darkv                <- Same as darkviolet
-
-
-
-hideTitle
-+++++++++
-
-:code:`hideTitle [-on | -off] [-v] [track_regex = .*]...`
-
-Set the display of the title line matched by track_regex.  Without argument -on or -off toggle between the two modes for all tracks matched by the list of regexes.
-
-:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-
-genotype
-++++++++
-
-:code:`genotype [-n 10] [-s .*] [-r pattern rplc] [-f expr] [-v] [track_regex = .*]...`
-
-Customise the genotype rows printed under the VCF tracks.  
-
-:code:`-n` Display up to this many samples (rows). -1 for no limit.
-
-:code:`-s` Select samples matching this regex.
-
-:code:`-r` Edit sample names to replace <pattern> with <replacement>. Names are edited only for display. To completely hide names replace with empty string :code:`-r .* ''`. To restore original names use a regex matching nothing e.g. '^$'
-
-:code:`-f` Filter samples using an expression in Python syntax. See below for details.
-
-:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-FILTER EXPRESSION
-
-Samples can be filtered by applying arbitrary expressions to the VCF records. The VCF fields of a sample are accessed using the syntax :code:`{TAG}`.
-
-TAG is one of the fixed fields: CHROM, POS, ID, REF, ALT, QUAL, FILTER, or one of the INFO or FORMAT tags. In case of ambiguity, the prefix 'INFO/' or 'FMT/' should be used to identify the target tag (e.g. :code:`{FMT/ID}` will access the ID field in FORMAT rather than the ID in the header).
-
-The value(s) in a TAG are converted to the appropriate data type (Integer, String, etc). Tags holding more than one value are returned as arrays whose individual values should be accessed using the syntax :code:`[index]`. E.g. :code:`{ALT}[0]` will access the first alternate allele.
-
-Note that the ALT and FILTER fields are always arrays, even if only one allele is present.
-
-After substitution of the :code:`{TAG}` placeholders with the actual values, the expression string is evaluated as Python syntax so any valid Python code is allowed including the common operators: :code:`> < == != && ||`.
-
-Importantly, the result of the expression must be a boolean, i.e. it must evaluate to true or false.
-
-For each sample, the expression is evaluated for each VCF record in the current window and if ANY record returns *true*, the sample is filtered-in. To apply the filter to specific records either include only those records using e.g. commands :code:`grep` or :code:`awk` or make the expression more selective, e.g. by including the POS field.
-
-As elsewhere in ASCIIGenome, if the argument (expression) contains spaces it must be enclosed in single quotes and single quotes inside the expression must be escaped. To remove the expression filter pass a blank string as argument :code:`-f ' '` (note the white space between single quotes).
-
-The following tags can be used to filter on the genotype. When substituted, they evaluate to true according to the sample genotype. Testing the :code:`{GT}` tag, e.g. :code:`{GT} == "0/1"`, achieves a similar result and gives more control but using these tags is less error prone:
-
-* :code:`{HOM}` genotype is homozygote.
-
-* :code:`{HET}` genotype is heterozygote.
-
-* :code:`{HOM_REF}` genotype is homozygote reference.
-
-* :code:`{HOM_VAR}` homozygote for an ALT allele.
-
-* :code:`{HET_NON_REF}` heterozygote and all alleles are non-reference.
-
-* :code:`{CALLED}` at least one allele is not a missing value ('.' in vcf).
-
-* :code:`{NO_CALL}` No allele is called (e.g. it appears as ./. in vcf).
-
-* :code:`{MIXED}` genotype is comprised of both calls and no-calls.
-
-Examples of filters::
-
-    genotype -f '{DP} > 30' -> Display samples having DP > 30
-    genotype -f '{DP} > 30 and {ID} == "rs99"' -> Select also for ID
-    genotype -f '{FMT/XA} > 30 and {INFO/XA} == "foo"' -> Disambiguate tags
-    genotype -f '{ALT}[0] == "C"'  -> Access the first ALT allele
-    genotype -f '{HOM_REF} == False' -> Discard if homozygote ref.
-
-
-
-editNames
-+++++++++
-
-:code:`editNames [-t] [-v] <pattern> <replacement> [track_re=.*]...`
-
-Edit track names by substituting regex pattern with replacement. Pattern and replacement are required arguments, the default regex for track is '.*' (i.e. all tracks).
-
-* :code:`-t` (test) flag shows what renaming would be done without actually editing the names.
-
-* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-* :code:`-F` Interpret pattern as fixed strings, not regular expressions
-
-Use '' (empty string in single quotes) to replace pattern with nothing. Examples: Given track names 'fk123_hela.bam#1' and 'fk123_hela.bed#2'::
-
-    editNames fk123_ ''       -> hela.bam#1, hela.bed#2
-    editNames fk123_ '' bam   -> hela.bam#1, fk123_hela.bed#2
-    editNames _ ' '           -> fk123 hela.bam#1,  fk123 hela.bed#2
-    editNames ^.*# cells      -> cells#1, cells#2
-    editNames ^ xx_           -> xx_fk123_hela.bam#1, xx_fk123_hela.bed#2 (add prefix)
-
-
-addHeader
-+++++++++
-
-:code:`addHeader [-c] [-a] [-b] [-off] [-v] <header> [track_re=.*]...`
-
-Add header to track(s). Example use case: You have several tracks sorted in a meanignful way (say WT and CTRL tracks). Add a header to the first track of each group for ease of reading. Useful also to add one or more blank lines for more separation between tracks.
-
-* :code:`-c` Colour for the header - see :code: `colourTrack -h` for options
-
-* :code:`-a` Header alignment. Either a number between 0 (left-align) and 1 (right-align) or a keyword left, center, right. Default is 0.5 (center-align)
-
-* :code:`-b` Do not make header in boldface
-
-* :code:`-off` Remove header
-
-* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-* :code:`<header>` Header text. To change the text format and leave the text as is, use :code:`-`. Use :code:`{-}` as placeholder of current header; e.g. add stars around existing header: :code:`** {-} **` 
-
-Use :code: `-` for <header> if you want to change the format but leave the text as is.
-Examples::
-
-    addHeader WT    > Header 'WT' to all tracks
-    addHeader ''    > Add a blank line before each track
-    addHeader -c red 'WILD TYPE' #1    > Header in red before track #1
-    addHeader 'WILD\nTYPE'    > Span multiple lines
-    addHeader -c cyan -a left    > Only change colour and alignment
-    addHeader -c cyan -a left - #1    > Only change colour and alignment in #1 (note '-' before #1)
-    addHeader '** {-} **'     > Add decorative stars around existing header
-
-
-dataCol
-+++++++
-
-:code:`dataCol [-v] [index = 4] [track_regex = .*]...`
-
-Select data column for bedgraph tracks containing regex.  First column has index 1. This command applies only to tracks of type bedgraph.
-
-:code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-For example, use column 5 on tracks containing #1 and #3::
- 
-    dataCol 5 #1 #3
-
-
-
-print
-+++++
-
-:code:`print [-n INT] [-full] [-off] [-round INT] [-hl re] [-esf] [-v] [-sys CMD] [track_regex = .*]... [>|>> file]`
-
-Print lines for the tracks matched by `track_regex`.  Useful to show exactly what features are present in the current window. Features are filtered in/out according to the :code:`grep` command. Options:
-
-* :code:`track_regex` Apply to tracks matched by one or more of these regexes.
-
-* :code:`-n INT=10` Print up to this many lines, default 10. No limit if < 0.
-
-* :code:`-clip` Clip lines longer than the screen width. This is the default.
-
-* :code:`-full` Wrap lines longer than the screen width.
-
-* :code:`-round INT` Round numbers to this many decimal places. What constitutes a number is inferred from context. Default 3, do not round if < 0.
-
-* :code:`-hl regex` Highlight substrings matching regex. If regex matches a FORMAT tag in a VCF record, highlight the tag itself and also the sample values corresponding to that tag. Alternatively, regex may be a comma separated list of column indexes to highlight. Indexes are recognized by the $ prefix. E.g. :code:`-hl '$1, $3, $10'` will highlight columns 1, 3, 10.
-
-* :code:`-esf` Explain SAM Flag. Add to SAM flag an abbreviated description.
-
-* :code:`-off` Turn off printing.
-
-* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-* :code:`-sys` Parse the raw output with the given system command(s). Use :code:`-sys null` to turn off the system commands. These commands are executed by :code:`bash` so bash is expected to be available on the system. The commands should read from stdin and write to stdout, this is usually the case for Unix commands like :code:`cut`, :code:`sort`, etc. The command string must be enclosed in single quotes, single quotes inside the string can be escaped as \' (backslash-quote)
-
-* :code:`>` and :code:`>>` Write output to `file`. `>` overwrites and `>>` appends to existing file. The %r variable in the filename is expanded to the current genomic coordinates. Writing to file overrides options -n and -off, lines are written in full without limit.
-
-Without options toggle tracks between OFF and CLIP mode.
-
-Examples::
-
-    print                        -> Print all tracks, same as `print .*`
-    print -off                   -> Turn off printing for all tracks
-    print genes.bed >> genes.txt -> Append features in track(s) 'genes.bed' to file
-    print -sys 'cut -f 1-5 | sort'  -> Select columns with `cut` and then sort
-    print -sys null              -> Turn off the execution of sysy commands
-
-
-Alignments
-----------
-
-readsAsPairs
-++++++++++++
-
-:code:`readsAsPairs [-on | -off] [-v] [track_regex = .*]...`
-
-Show SAM records as pairs.
- If set, properly paired reads in the current window are showed joined up by tildes.
-
-* :code:`-on|-off` Turn on/off the pairing mode. Or toggle between the two modes if none of these flags is set.
-
-* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-* :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.
-
-
-filterVariantReads
-++++++++++++++++++
-
-:code:`filterVariantReads [-r from/to] [-all] [-v] [track_regex = .*]...`
-
-Filter reads containing a variant in the given interval.
- :code:`filterVariantReads` selects for reads where the read sequence mismatches with the reference sequence in the given interval on the current chromosome. This command is useful to inspect reads supporting a putative alternate allele at a variant site.
-
-NOTES
-
-* :code:`filterVariantReads` requires a reference fasta sequence to be set, e.g. via the command line option :code:`-fa <ref.fa>` or with command :code:`setGenome`.
-
-* The CIGAR string determines a mismatch between read and reference. Consequently, there may be an inconsistency between variant positions in reads and positions in a VCF file if some normalization or indel realignment has been performed by the variant caller that generated the VCF. In such cases consider enlarging the target interval.
-
-* The position (POS) of deletions in VCF files refer to the first non-deleted base on the reference. Therefore, the interval to :code:`-r` should be POS+1 to filter for reads supporting a deletion (but see also the previous point).
-
-OPTIONS
-
-* :code:`-r region` Select reads mismatching in this interval. *region* can be given as: a single position, a position plus and/or minus an offset, an interval. See examples.
-
-* :code:`-all` Return *all* reads intersecting the :code:`-r` interval, not just the variant ones.
-
-* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-* :code:`[track_regex = .*]...` Apply to read tracks captured by these regexes.
-
-EXAMPLES::
-
-    filterVariantReads -r 1000+10   <- From 1000 to 1010
-    filterVariantReads -r 1000-10   <- From 990 to 1000
-    filterVariantReads -r 1000+/-10 <- From 990 to 1010
-    filterVariantReads -r 1000:1100 <- From 1000 to 1100
-    filterVariantReads -r 1000 vars.*vcf <- Apply to tracks captured by `vars.*vcf`
-    filterVariantReads              <- Remove filter for all tracks
-
-
-rpm
-+++
-
-:code:`rpm [-on | -off] [-v] [track_regex = .*]`
-
-Set display to reads per million for BAM and TDF files.
- 
-* :code:`-on | -off` Set mode on/off. Without arguments toggle between on and off.
-
-* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-* :code:`track_regex` List of regexes to capture target tracks.
-
-samtools
-++++++++
-
-:code:`samtools [-f INT=0] [-F INT=4] [-q INT=0] [-v] [track_re = .*] ...`
-
-Apply samtools filters to alignment tracks captured by the list of track regexes. Useful for stranded RNA-Seq and BS-Seq: bit flag 4096 is selects reads mapping to TOP STRAND.
-
-* :code:`-F` Filter out flags with these bits set. NB: 4 is always set.
-
-* :code:`-f` Require alignment to have these bits sets.
-
-* :code:`-q` Require alignments to have MAPQ >= than this.
-
-* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-Examples::
-
-    samtools -q 10           -> Set mapq for all tracks. -f and -F reset to default
-    samtools -F 1024 foo bar -> Set -F for all track containing re foo or bar
-    samtools -f 4096         -> Select TOP STRAND reads
-    samtools -F 4096         -> Select BOTTOM STRAND reads
-    samtools                 -> Reset all to default.
-
-
-BSseq
-+++++
-
-:code:`BSseq [-on | -off] [-v] [track_regex = .*]...`
-
-Set bisulfite mode for read tracks matched by regex. In bisulfite mode, the characters M and m mark methylated bases (i.e. unconverted C to T) and U and u are used for unmethylated bases (i.e. C converted to T). Upper case is used for reads on  forward strand, small case for reverse.
-
-* :code:`-on | -off` Set mode. Without arguments toggle between on and off.
-
-* :code:`-v` Invert selection: apply changes to the tracks not selected by list of track_regex
-
-* :code:`track_regex` List of regexes to capture target tracks.
-
-Ignored without reference fasta sequence.
-
-General
--------
-
-setGenome
-+++++++++
-
-:code:`setGenome fasta|bam|genome`
-
-Set genome and reference sequence. The genome, i.e. the list of contig names and sizes, can be extracted from the fasta reference, from a bam file or from a genome identifier (e.g. hg19). If a fasta file is used also the reference sequence becomes available.
-
-Without arguments, set the genome using the last opened fasta file, if any and if compatible with the current tracks.
-
-setConfig
-+++++++++
-
-:code:`setConfig <file|tag> | <key> <value>`
-
-Set configuration arguments. 
-
-If only one argument is given then the entire settings are replaced. Configuration can be set with one of the built-in themes: 'black_on_white', 'white_on_black', 'metal'. Alternatively, configuration can be read from file. For examples files see 
-https://github.com/dariober/ASCIIGenome/blob/master/resources/config/
-
-If two arguments are given, they are taken as a key/value pair to reset.
-
 Examples::
 
     setConfig metal
@@ -762,35 +431,36 @@ Examples::
 
 Parameters and current settings::
 
-    background                         231   # Background colour                                                                    
-    foreground                         0     # Foreground colour                                                                    
-    seq_a                              12    # Colour for nucleotide A                                                              
-    seq_c                              9     # Colour for nucleotide C                                                              
-    seq_g                              2     # Colour for nucleotide G                                                              
-    seq_t                              11    # Colour for nucleotide T                                                              
-    seq_other                          0     # Colour for any other nucleotide                                                      
-    shade_low_mapq                     249   # Colour for shading reads with low MAPQ                                               
-    low_mapq                           5     # Shade reads below this MAPQ                                                          
-    methylated_foreground              231   # Foreground colour for methylated C                                                   
-    unmethylated_foreground            231   # Foreground colour for unmethylated C                                                 
-    methylated_background              9     # Background colour for methylated C                                                   
-    unmethylated_background            12    # Background colour for unmethylated C                                                 
-    title_colour                       0     # Default Colour for titles                                                            
-    feature_background_positive_strand 147   # Colour for features on forward strand                                                
-    feature_background_negative_strand 224   # Colour for features on reverse strand                                                
-    feature_background_no_strand       249   # Colour for features without strand information                                       
-    footer                             12    # Colour for footer line                                                               
-    chrom_ideogram                     0     # Colour for chromosome ideogram                                                       
-    ruler                              0     # Colour for ruler                                                                     
-    max_reads_in_stack                 2000  # Max number of reads to accumulate when showing read tracks                           
-    shade_baseq                        13    # Shade read base when quality is below this threshold                                 
-    shade_structural_variant           33    # Background colour for reads suggesting structural variation or 'false' for no shading
-    highlight_mid_char                 true  # Highlight mid-character in read tracks?                                              
-    nucs_as_letters                    true  # Show read nucleotides as letters at single base resolution?                          
-    show_soft_clip                     false # NOT IN USE YET - Show soft clipped bases in read tracks?                             
-    stop_codon                         9     # Colour for stop codon                                                                
-    start_codon                        2     # Colour for start codon                                                               
-    codon                              249   # Colour for codons other than start and stop                                          
+    background                         231     # Background colour                                                                                 
+    foreground                         0       # Foreground colour                                                                                 
+    seq_a                              12      # Colour for nucleotide A                                                                           
+    seq_c                              9       # Colour for nucleotide C                                                                           
+    seq_g                              2       # Colour for nucleotide G                                                                           
+    seq_t                              11      # Colour for nucleotide T                                                                           
+    seq_other                          0       # Colour for any other nucleotide                                                                   
+    soft_clip_colour                   false   # Colour for soft-clipped characters. 'false' use the same (fainted) colour as for the for unclipped
+    shade_low_mapq                     249     # Colour for shading reads with low MAPQ                                                            
+    low_mapq                           5       # Shade reads below this MAPQ                                                                       
+    methylated_foreground              231     # Foreground colour for methylated C                                                                
+    unmethylated_foreground            231     # Foreground colour for unmethylated C                                                              
+    methylated_background              9       # Background colour for methylated C                                                                
+    unmethylated_background            12      # Background colour for unmethylated C                                                              
+    title_colour                       0       # Default Colour for titles                                                                         
+    feature_background_positive_strand 147     # Colour for features on forward strand                                                             
+    feature_background_negative_strand 224     # Colour for features on reverse strand                                                             
+    feature_background_no_strand       249     # Colour for features without strand information                                                    
+    footer                             12      # Colour for footer line                                                                            
+    chrom_ideogram                     0       # Colour for chromosome ideogram                                                                    
+    ruler                              0       # Colour for ruler                                                                                  
+    max_reads_in_stack                 2000    # Max number of reads to accumulate when showing read tracks                                        
+    shade_baseq                        13      # Shade read base when quality is below this threshold                                              
+    shade_structural_variant           33      # Background colour for reads suggesting structural variation or 'false' for no shading             
+    highlight_mid_char                 true    # Highlight mid-character in read tracks?                                                           
+    nucs_as_letters                    true    # Show read nucleotides as letters at single base resolution?                                       
+    stop_codon                         9       # Colour for stop codon                                                                             
+    start_codon                        2       # Colour for start codon                                                                            
+    codon                              249     # Colour for codons other than start and stop                                                       
+    python                             python3 # Python executable. Use full path if there is no python on PATH                                    
 
 explainSamFlag
 ++++++++++++++
