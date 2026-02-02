@@ -1,7 +1,13 @@
 New in 1.20.0
 =============
 
-* More convenient CLI: No need to explictly use the `--fasta/-fa` option to
+* `showSoftClip` command to show soft clipped bases in read tracks. Soft
+  clipped bases have fainted colours. See also `setConfig soft_clip_colour`.
+  These are examples of reads with soft clipped bases on the right:
+
+![soft-clip](docs/screenshots/soft_clip.png)
+
+* Auto-detection of fasta file: No need to explictly use the `--fasta/-fa` option to
 read the reference fasta file. If `--fasta/-fa` is unset, ASCIIGenome will
 attempt the find a fasta file in the input file list. So these are all ok:
 
@@ -11,19 +17,19 @@ ASCIIGenome -fa chr7.fa ds051.actb.bam # < v1.20.0
 ASCIIGenome ds051.actb.bam             # No ref at all
 ```
 
-* Six frame translation shows start and stops codons and ORFs when resolution
+* Six frame translation (command `translate`) shows start and stops codons and ORFs when resolution
   is above single base.
 
 ![six-frame](docs/screenshots/sixframe_out.png)
 
-* Support CRAM version 3.1 (better late than never)
+* Support **CRAM** version 3.1 (better late than never)
 
-* Use native `htsjdk` which means no support for malformed VCF files anymore
+* Use native, and latest, `htsjdk` which means no support for malformed VCF files anymore
 
 * Fix terminal width in Windows (Windows support remains minimal)
 
 * `extend` command can use percent window size. E.g. `extend 0.1` will extend
-  the current window by 10% 
+  the current window by 10% left and right.
 
 * Breaking change: `//` is no longer the comment string since it interfers with, for example: 
 
