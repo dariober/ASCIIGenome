@@ -5,7 +5,7 @@ New in 1.20.0
   clipped bases have fainted colours. See also `setConfig soft_clip_colour`.
   These are examples of reads with soft clipped bases on the right:
 
-![soft-clip](docs/screenshots/soft_clip.png)
+<img src="docs/screenshots/soft_clip.png" alt="soft_clip" width="70%"/>
 
 * Auto-detection of fasta file: No need to explictly use the `--fasta/-fa` option to
 read the reference fasta file. If `--fasta/-fa` is unset, ASCIIGenome will
