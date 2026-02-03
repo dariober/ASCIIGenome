@@ -53,14 +53,11 @@ public class CommandList {
 
     String help = "";
     for (Section sec : Section.values()) {
-
       help +=
           toTitleCase(sec.toString() + "\n")
               + StringUtils.repeat("-", sec.toString().length())
               + "\n\n";
-
       for (CommandHelp x : CommandList.getCommandsForSection(sec)) {
-
         help +=
             x.getPrintName() + "\n" + StringUtils.repeat("+", x.getPrintName().length()) + "\n\n";
         help += ":code:`" + (x.getName() + " " + x.getArgs()).trim() + "`\n\n";
@@ -85,54 +82,16 @@ public class CommandList {
       throws InvalidCommandLineException, IOException, InvalidColourException {
 
     BufferedWriter wr = new BufferedWriter(new FileWriter(destFile));
-    String doc = reStructuredTextHelp();
-
+    String help = reStructuredTextHelp();
     // Replace ansi escapes
-    doc =
-        doc.replaceAll(
+    help =
+        help.replaceAll(
             "\n*0: [\\s|\\S]+grey93\033\\[38;5;0;48;5;231m",
             "`here <http://jonasjacek.github.io/colours/>`_ ");
-
-    wr.write(doc + "\n");
+    wr.write(help + "\n");
     wr.close();
     System.err.println("Command help file written to " + destFile.getAbsolutePath());
   }
-
-  //  public static String fullHelp() throws InvalidCommandLineException, InvalidColourException {
-  //    String help = "\n      N a v i g a t i o n \n\n";
-  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.NAVIGATION)) {
-  //      help += (x.printCommandHelp() + "\n");
-  //    }
-  //    help += "\n      F i n d \n\n";
-  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.FIND)) {
-  //      help += (x.printCommandHelp() + "\n");
-  //    }
-  //    help += "\n      D i s p l a y \n\n";
-  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.DISPLAY)) {
-  //      help += (x.printCommandHelp() + "\n");
-  //    }
-  //
-  //    help += "\n      A l i g n m e n t s \n\n";
-  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.ALIGNMENTS)) {
-  //      help += (x.printCommandHelp() + "\n");
-  //    }
-  //
-  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.GENERAL)) {
-  //      help += (x.printCommandHelp() + "\n");
-  //    }
-  //
-  //    help += "\n      G e n e r a l \n\n";
-  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.GENERAL)) {
-  //      help += (x.printCommandHelp());
-  //    }
-  //
-  //    help += "\n      S e s s i o n \n\n";
-  //    for (CommandHelp x : CommandList.getCommandsForSection(Section.SESSION)) {
-  //      help += (x.printCommandHelp());
-  //    }
-  //    help += SEE_ALSO;
-  //    return help;
-  //  }
 
   public static String briefHelp() throws InvalidCommandLineException, InvalidColourException {
     String help =

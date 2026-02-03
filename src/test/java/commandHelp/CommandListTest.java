@@ -6,6 +6,8 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+
 import org.junit.Test;
 
 public class CommandListTest {
