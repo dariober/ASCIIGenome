@@ -29,8 +29,8 @@ With Homebrew
 ------------------------------
 
 ASCIIGenome can also be installed through `brew <http://brew.sh>`_ / `Linux Brew <https://github.com/Linuxbrew/brew>`_, although it is still not an official package::
-
-    brew install https://raw.githubusercontent.com/dariober/ASCIIGenome/master/install/brew/asciigenome.rb
+    
+    brew install dariober/asciigenome/asciigenome
 
 A little more detail
 --------------------

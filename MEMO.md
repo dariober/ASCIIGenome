@@ -83,13 +83,12 @@ rm -r ASCIIGenome-${VERSION}
 
 ### Update brew formula 
 
-* Edit `install/brew/asciigenome.rb` to change **release version** and **sha sum** of the zip file.
+* Edit [asciigenome.rb](https://github.com/dariober/homebrew-asciigenome/blob/main/Formula/asciigenome.rb) to change **release version** and **sha sum** of the zip file.
 
 Get sha256 sum with:
 
 ```
 shasum -a 256 ASCIIGenome-${VERSION}.zip
-vi install/brew/asciigenome.rb ## Edit version and sha
 ```
 
 * Add, commit and push edits:
@@ -101,25 +100,13 @@ git commit -m 'Update brew'
 git push
 ```
 
-* Merge branch to master: 
-
-```
-git merge master              # Resolve conflict
-git checkout master           # Switch to master  
-git merge --no-ff <my-branch> # Merge branch into master
-git commit -m 'Merge to master'
-git push
-```
-
 Test brew installation 
 ----------------------
 
 ```
-brew install https://raw.githubusercontent.com/dariober/ASCIIGenome/master/install/brew/asciigenome.rb
-# Or more likely:
-brew upgrade https://raw.githubusercontent.com/dariober/ASCIIGenome/master/install/brew/asciigenome.rb
-
-/usr/local/Cellar/asciigenome/${VERSION}/bin/ASCIIGenome # Full path to make sure you use the brew version
+brew install dariober/asciigenome/asciigenome
+# Check it works by executing ASCIIGenome from the brepath e.g.:
+/opt/homebrew/bin/ASCIIGenome
 ```
 
 ### Update bioconda
