@@ -104,7 +104,7 @@ Test brew installation
 ----------------------
 
 ```
-brew install dariober/asciigenome/asciigenome
+brew reinstall dariober/asciigenome/asciigenome
 # Check it works by executing ASCIIGenome from the brepath e.g.:
 /opt/homebrew/bin/ASCIIGenome
 ```
