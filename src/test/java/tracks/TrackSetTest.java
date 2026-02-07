@@ -554,13 +554,13 @@ public class TrackSetTest {
           SQLException {
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
 
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     t1.setFilename("foo.gz");
     ts.addTrack(t1, "foo.gz");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     t2.setFilename("foo.txt");
     ts.addTrack(t2, "foo.txt");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     t3.setFilename("bla.gz");
     ts.addTrack(t3, "bla.gz");
 
@@ -617,13 +617,13 @@ public class TrackSetTest {
           SQLException {
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
 
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     t1.setFilename("foo.gz");
     ts.addTrack(t1, "foo.gz");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     t2.setFilename("foo.txt");
     ts.addTrack(t2, "foo.txt");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     t3.setFilename("bla.gz");
     ts.addTrack(t3, "bla.gz");
 
@@ -665,11 +665,11 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr1:1-100", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
 
-    Track t1 = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+    AbstractTrack t1 = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc);
+    AbstractTrack t2 = new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc);
     ts.addTrack(t2, "x");
-    Track t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
+    AbstractTrack t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
     ts.addTrack(t3, "x");
 
     // MEMO: Track tags:
@@ -707,11 +707,11 @@ public class TrackSetTest {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-100", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    Track t1 = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+    AbstractTrack t1 = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc);
+    AbstractTrack t2 = new TrackIntervalFeature("test_data/hg19_genes_head.gtf.gz", gc);
     ts.addTrack(t2, "x");
-    Track t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
+    AbstractTrack t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
     ts.addTrack(t3, "x");
 
     // Set for one track
@@ -763,7 +763,7 @@ public class TrackSetTest {
     }
     assertTrue(pass);
 
-    Track t4 = new TrackWiggles("test_data/ear045.oxBS.actb.tdf", gc);
+    AbstractTrack t4 = new TrackWiggles("test_data/ear045.oxBS.actb.tdf", gc);
     ts.addTrack(t4, "x");
     cmdInput = "awk '1<2'";
     ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
@@ -774,7 +774,7 @@ public class TrackSetTest {
 
     GenomicCoords gc = new GenomicCoords("1:200000-200317", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    Track t1 =
+    AbstractTrack t1 =
         new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     ts.addTrack(t1, "vcf");
 
@@ -794,12 +794,12 @@ public class TrackSetTest {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-100", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    Track t1 =
+    AbstractTrack t1 =
         new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     ts.addTrack(t1, "vcf");
-    Track t2 = new TrackPileup("test_data/ds051.actb.bam", gc);
+    AbstractTrack t2 = new TrackPileup("test_data/ds051.actb.bam", gc);
     ts.addTrack(t2, "bam");
-    Track t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
+    AbstractTrack t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
     ts.addTrack(t3, "bed");
 
     ts.setAwkForTrack(
@@ -848,13 +848,13 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     t1.setFilename("foo.bam");
     ts.addTrack(t1, "foo.bam");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     t2.setFilename("bar.bam");
     ts.addTrack(t2, "bar.bam");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     t3.setFilename("foo.bam");
     ts.addTrack(t3, "foo.bam");
 
@@ -877,13 +877,13 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     t1.setFilename("foo.bam");
     ts.addTrack(t1, "foo.bam");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     t2.setFilename("bar.bam");
     ts.addTrack(t2, "bar.bam");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     t3.setFilename("foo.bam");
     ts.addTrack(t3, "foo.bam");
 
@@ -906,11 +906,11 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     ts.addTrack(t2, "x");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     ts.addTrack(t3, "x");
 
     String cmdInput = "rpm #1 #3";
@@ -922,7 +922,7 @@ public class TrackSetTest {
     assertTrue(!ts.getTrack(t1).isRpm());
 
     ts.setRpmForRegex(Utils.tokenize("rpm -on", " "));
-    for (Track tr : ts.getTrackList()) {
+    for (AbstractTrack tr : ts.getTrackList()) {
       assertTrue(tr.isRpm());
     }
   }
@@ -937,11 +937,11 @@ public class TrackSetTest {
           ClassNotFoundException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     ts.addTrack(t1, "foo.gff");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     ts.addTrack(t2, "foo.bed");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     ts.addTrack(t3, "baz.narrowPeak");
 
     ts.editNamesForRegex(Utils.tokenize("editNames foo FOO", " "));
@@ -967,13 +967,13 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    Track t1 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
+    AbstractTrack t1 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
+    AbstractTrack t2 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
     ts.addTrack(t2, "y");
-    Track t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
+    AbstractTrack t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
     ts.addTrack(t3, "z");
-    for (Track tr : ts.getTrackList()) {
+    for (AbstractTrack tr : ts.getTrackList()) {
       tr.setNoFormat(false);
     }
     // Only change colour, leave text as is
@@ -1016,13 +1016,13 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    Track t1 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
+    AbstractTrack t1 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
+    AbstractTrack t2 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
     ts.addTrack(t2, "y");
-    Track t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
+    AbstractTrack t3 = new TrackIntervalFeature("test_data/refSeq.bed", gc);
     ts.addTrack(t3, "z");
-    for (Track tr : ts.getTrackList()) {
+    for (AbstractTrack tr : ts.getTrackList()) {
       tr.setNoFormat(true);
     }
 
@@ -1064,7 +1064,7 @@ public class TrackSetTest {
     assertTrue(ts.getTrack(t1).concatTitleAndTrack().startsWith("  FOOBAR\n"));
 
     /* Formatting */
-    for (Track tr : ts.getTrackList()) {
+    for (AbstractTrack tr : ts.getTrackList()) {
       tr.setNoFormat(false);
     }
     ts.addHeader(Utils.tokenize("addHeader -c hotpink HEADER #1", " "), 80);
@@ -1105,7 +1105,7 @@ public class TrackSetTest {
           ClassNotFoundException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     ts.addTrack(t1, "foo|bar.gff");
 
     String msg = ts.editNamesForRegex(Utils.tokenize("editNames -F o|b O|B", " "));
@@ -1128,11 +1128,11 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr7:5566000-5567000", 80, null, null);
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    Track t1 = new TrackReads("test_data/ds051.short.bam", gc);
+    AbstractTrack t1 = new TrackReads("test_data/ds051.short.bam", gc);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackReads("test_data/ds051.short.bam", gc);
+    AbstractTrack t2 = new TrackReads("test_data/ds051.short.bam", gc);
     ts.addTrack(t2, "x");
-    Track t3 = new TrackReads("test_data/ds051.short.bam", gc);
+    AbstractTrack t3 = new TrackReads("test_data/ds051.short.bam", gc);
     ts.addTrack(t3, "x");
 
     // String cmdInput= "-F 1024 #1 #3";
@@ -1173,11 +1173,11 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     ts.addTrack(t2, "x");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     ts.addTrack(t3, "x");
 
     ts.setFeatureDisplayModeForRegex(Utils.tokenize("featureDisplayMode #1 #3", " "));
@@ -1207,11 +1207,11 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr7:1-1000", 80, null, "test_data/chr7.fa");
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    Track t1 = new TrackReads("test_data/ds051.actb.bam", gc);
+    AbstractTrack t1 = new TrackReads("test_data/ds051.actb.bam", gc);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackReads("test_data/ds051.actb.bam", gc);
+    AbstractTrack t2 = new TrackReads("test_data/ds051.actb.bam", gc);
     ts.addTrack(t2, "x");
-    Track t3 = new TrackReads("test_data/ds051.actb.bam", gc);
+    AbstractTrack t3 = new TrackReads("test_data/ds051.actb.bam", gc);
     ts.addTrack(t3, "x");
 
     ts.setFilterVariantReads(Utils.tokenize("filterVariantReads -r 1:10", " "));
@@ -1263,11 +1263,11 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     ts.addTrack(t2, "x");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     ts.addTrack(t3, "x");
 
     ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print #1 #3", " "));
@@ -1313,13 +1313,13 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     t1.setFilename("foo.gz");
     ts.addTrack(t1, "foo.gz");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     t2.setFilename("foo.txt");
     ts.addTrack(t2, "foo.txt");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     t3.setFilename("bla.gz");
     ts.addTrack(t3, "bla.gz");
 
@@ -1381,11 +1381,11 @@ public class TrackSetTest {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
 
-    Track t1 = new TrackIntervalFeature(intervalFileName, gc);
+    AbstractTrack t1 = new TrackIntervalFeature(intervalFileName, gc);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackIntervalFeature(intervalFileName, gc);
+    AbstractTrack t2 = new TrackIntervalFeature(intervalFileName, gc);
     ts.addTrack(t2, "x");
-    Track t3 = new TrackIntervalFeature(intervalFileName, gc);
+    AbstractTrack t3 = new TrackIntervalFeature(intervalFileName, gc);
     ts.addTrack(t3, "x");
 
     String cmdInput = "trackHeight 2 #1 #3";
@@ -1422,7 +1422,7 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("1:577583-759855", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
     String vcf = "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
-    Track t1 = new TrackIntervalFeature(vcf, gc);
+    AbstractTrack t1 = new TrackIntervalFeature(vcf, gc);
     ts.addTrack(t1, "x");
     t1.setNoFormat(true);
 
@@ -1454,7 +1454,7 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("1:113054356-113054534", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
     String vcf = "test_data/CEU.exon.2010_06.genotypes.vcf";
-    Track t1 = new TrackIntervalFeature(vcf, gc);
+    AbstractTrack t1 = new TrackIntervalFeature(vcf, gc);
     ts.addTrack(t1, "x");
     t1.setNoFormat(true);
 
@@ -1474,11 +1474,11 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     ts.addTrack(t1, "x");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     ts.addTrack(t2, "x");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     ts.addTrack(t3, "x");
 
     String cmdInput = "ylim 10 20 #1 #2";
@@ -1500,7 +1500,7 @@ public class TrackSetTest {
     // First reset all
     cmdInput = "ylim 0 10";
     ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
-    for (Track tr : ts.getTrackList()) {
+    for (AbstractTrack tr : ts.getTrackList()) {
       assertEquals(0, tr.getYLimitMin(), 0.001);
       assertEquals(10, tr.getYLimitMax(), 0.001);
     }
@@ -1518,7 +1518,7 @@ public class TrackSetTest {
     // First reset all
     cmdInput = "ylim 0 10";
     ts.setTrackYlimitsForRegex(Utils.tokenize(cmdInput, " "));
-    for (Track tr : ts.getTrackList()) {
+    for (AbstractTrack tr : ts.getTrackList()) {
       assertEquals(0, tr.getYLimitMin(), 0.001);
       assertEquals(10, tr.getYLimitMax(), 0.001);
     }
@@ -1535,15 +1535,15 @@ public class TrackSetTest {
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
     assertEquals("", ts.showTrackInfo());
 
-    Track t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature(null);
     t1.setFilename("/path/to/foo.gz");
     t1.setTrackFormat(TrackFormat.BED);
     ts.addTrack(t1, "foo.gz");
-    Track t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature(null);
     t2.setFilename("/path/to/foo.vcf");
     t1.setTrackFormat(TrackFormat.BED);
     ts.addTrack(t2, "foo.vcf");
-    Track t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature(null);
     t3.setFilename("/path/to/bla.gz");
     t1.setTrackFormat(TrackFormat.BED);
     ts.addTrack(t3, "bla.gz");

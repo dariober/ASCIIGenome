@@ -72,10 +72,10 @@ class GenotypeMatrix {
    * @throws InvalidGenomicCoordsException
    * @throws IOException
    */
-  private void makeMatrix(List<IntervalFeature> variantList, int terminalWidth, VCFHeader vcfHeader)
+  private void makeMatrix(List<VCFFeature> variantList, int terminalWidth, VCFHeader vcfHeader)
       throws IOException {
 
-    this.matrix = new LinkedHashMap<String, List<FeatureChar>>();
+    this.matrix = new LinkedHashMap<>();
 
     if (variantList.size() == 0) {
       return;
@@ -226,7 +226,6 @@ class GenotypeMatrix {
     try {
       return this.evalScript(concat);
     } catch (IOException e) {
-      System.err.println(e.getMessage());
       this.setPyScriptFilter(null);
       return false;
     }
@@ -530,7 +529,7 @@ class GenotypeMatrix {
   }
 
   protected String printToScreen(
-      boolean noFormat, List<IntervalFeature> linf, int terminalWidth, VCFHeader vcfHeader)
+      boolean noFormat, List<VCFFeature> linf, int terminalWidth, VCFHeader vcfHeader)
       throws InvalidColourException, InvalidGenomicCoordsException, IOException {
 
     this.makeMatrix(linf, terminalWidth, vcfHeader);

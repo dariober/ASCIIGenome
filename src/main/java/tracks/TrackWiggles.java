@@ -24,7 +24,7 @@ import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
 /** Process wiggle file formats. Mostly using IGV classes. bigBed, bigWig, */
-public class TrackWiggles extends Track {
+public class TrackWiggles extends AbstractTrack {
 
   private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList;
   private BBFileReader bigWigReader;

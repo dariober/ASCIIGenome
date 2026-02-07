@@ -101,7 +101,7 @@ import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
 import tracks.IntervalFeature;
-import tracks.Track;
+import tracks.AbstractTrack;
 import tracks.TrackFormat;
 import utils.Tokenizer;
 
@@ -320,19 +320,28 @@ public class Utils {
   }
 
   /**
+   * Merge two features representing the first and last elements
+   * of a contiguous overlapping block.
+   */
+  @FunctionalInterface
+  public interface FeatureMerger<T extends IntervalFeature> {
+    T merge(T a, T b, boolean screenCoords)
+            throws InvalidGenomicCoordsException, InvalidColourException;
+  }
+
+  /**
    * Merge overlapping features. If screenCoords is true, merge is based on the screen coordinates.
    * Otherwise use genomic coordinates.
    *
    * @throws InvalidColourException
    */
-  public static List<IntervalFeature> mergeIntervalFeatures(
-      List<IntervalFeature> intervalList, boolean screenCoords)
+  public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
+      List<T> intervalList, boolean screenCoords, FeatureMerger<T> merger)
       throws InvalidGenomicCoordsException, InvalidColourException {
-    List<IntervalFeature> mergedList = new ArrayList<IntervalFeature>();
+    List<T> mergedList = new ArrayList<>();
     if (intervalList.size() == 0) {
       return mergedList;
     }
-
     String mergedChrom = null;
     int mergedFrom = -1;
     int mergedTo = -1;
@@ -346,7 +355,7 @@ public class Utils {
     for (int i = 0; i < (intervalList.size() + 1); i++) {
       // We do an additional loop to add to the mergedList the last interval.
       // The last loop has interval == null so below you need to account for it
-      IntervalFeature interval = null;
+      T interval = null;
       if (i < intervalList.size()) {
         interval = intervalList.get(i);
       }
@@ -389,9 +398,11 @@ public class Utils {
         overlap = false;
       } else {
         // No overlap add merged interval to list and reset new merged interval
-        IntervalFeature x =
-            new IntervalFeature(
-                mergedChrom + "\t" + (mergedFrom - 1) + "\t" + mergedTo, TrackFormat.BED, null, -1);
+        T x = merger.merge(
+                intervalList.get(i - numMrgIntv),
+                intervalList.get(i - 1),
+                screenCoords
+        );
         x.setScreenFrom(mergedScreenFrom);
         x.setScreenTo(mergedScreenTo);
         if (strand.size() == 1) {
@@ -416,7 +427,7 @@ public class Utils {
         }
       }
     }
-    for (IntervalFeature x : mergedList) {
+    for (T x : mergedList) {
       x.getIdeogram(true, true);
     }
     return mergedList;
@@ -2025,7 +2036,7 @@ public class Utils {
 
     args.add(0, "awk");
     String script = args.remove(args.size() - 1); // 'remove' returns the element removed
-    script = Track.awkFunc + "\n" + script;
+    script = AbstractTrack.awkFunc + "\n" + script;
     args.add(script);
 
     return args;

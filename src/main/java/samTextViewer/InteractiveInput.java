@@ -25,7 +25,7 @@ import org.biojava.nbio.core.sequence.io.IUPACParser;
 import org.biojava.nbio.core.sequence.transcription.Frame;
 import session.Session;
 import session.SessionHandler;
-import tracks.Track;
+import tracks.AbstractTrack;
 import utils.Tokenizer;
 
 /** Class to process input from console */
@@ -1171,7 +1171,7 @@ public class InteractiveInput {
               + e.getMessage());
     }
     List<String> passed = new ArrayList<>();
-    for (Track x : proc.getTrackSet().getTrackList()) {
+    for (AbstractTrack x : proc.getTrackSet().getTrackList()) {
       passed.add(x.getTrackTag());
     }
     for (String tag : session.getTracks().keySet()) {

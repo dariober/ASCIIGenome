@@ -24,7 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import session.Session;
 import session.SessionGenome;
 import session.SessionTrack;
-import tracks.Track;
+import tracks.AbstractTrack;
 import tracks.TrackSet;
 
 /** Process a TrackSet given the necessary elements */
@@ -70,7 +70,7 @@ public class TrackProcessor {
     }
 
     // Update tracks to new genomic coords
-    for (Track track : trackSet.getTrackList()) {
+    for (AbstractTrack track : trackSet.getTrackList()) {
       if (!track.getGc().equalCoordsAndWindowSize(currentGC)
           && track.getyMaxLines() > 0
           && !track.isHideTrack()) {
@@ -83,7 +83,7 @@ public class TrackProcessor {
     this.getTrackSet().setAutoYLimits();
 
     // Visualise as required
-    for (Track track : trackSet.getTrackList()) {
+    for (AbstractTrack track : trackSet.getTrackList()) {
 
       track.setNoFormat(this.noFormat);
       if (track.getyMaxLines() > 0 && !track.isHideTrack()) {
@@ -261,7 +261,7 @@ public class TrackProcessor {
 
   public Session toSession() throws InvalidGenomicCoordsException, IOException {
     Map<String, SessionTrack> tracks = new LinkedHashMap<>();
-    for (Track tr : this.getTrackSet().getTrackList()) {
+    for (AbstractTrack tr : this.getTrackSet().getTrackList()) {
       File fn = new File(tr.getFilename());
       if (fn.getName().startsWith(".asciigenome.")) {
         continue;

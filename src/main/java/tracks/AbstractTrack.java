@@ -51,7 +51,7 @@ import samTextViewer.Main;
 import samTextViewer.Utils;
 import utils.Tokenizer;
 
-public abstract class Track {
+public abstract class AbstractTrack {
 
   public static String awkFunc = "";
 
@@ -125,7 +125,7 @@ public abstract class Track {
 
   private TrackHeader header = new TrackHeader(null);
 
-  public Track() {}
+  public AbstractTrack() {}
 
   /**
    * Format the title string to add colour or return title as it is if no format is set.
@@ -219,8 +219,7 @@ public abstract class Track {
 
   /** Set the GenomicCoords object AND update the track by calling the update method. */
   public void setGc(GenomicCoords gc)
-      throws MalformedURLException,
-          ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,

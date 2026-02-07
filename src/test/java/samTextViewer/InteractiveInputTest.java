@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 import jline.console.ConsoleReader;
 import org.junit.Test;
 import session.SessionHandler;
-import tracks.Track;
+import tracks.AbstractTrack;
 import tracks.TrackPileup;
 import tracks.TrackSet;
 
@@ -356,7 +356,7 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
     GenomicCoords gc = proc.getGenomicCoordsHistory().current();
-    Track tr = new TrackPileup("test_data/ds051.actb.bam", gc);
+    AbstractTrack tr = new TrackPileup("test_data/ds051.actb.bam", gc);
     proc.getTrackSet().addTrack(tr, "tr#1");
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ip.processInput("sessionSave -f tmp.yml tr1", proc);

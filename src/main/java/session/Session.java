@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import tracks.Track;
+import tracks.AbstractTrack;
 import tracks.TrackSet;
 
 public class Session {
@@ -24,11 +24,11 @@ public class Session {
   }
 
   public TrackSet toTrackSet() {
-    List<Track> trackList = new ArrayList<>();
+    List<AbstractTrack> trackList = new ArrayList<>();
     for (String trackName : tracks.keySet()) {
       try {
         SessionTrack st = tracks.get(trackName);
-        Track tr = st.toTrack(trackName, this.getGenome().toGenomicCoords());
+        AbstractTrack tr = st.toTrack(trackName, this.getGenome().toGenomicCoords());
         trackList.add(tr);
       } catch (Exception e) {
         //
