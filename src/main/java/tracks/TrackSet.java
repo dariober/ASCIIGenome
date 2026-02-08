@@ -63,34 +63,25 @@ public class TrackSet {
         if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)) {
           /* Coverage track */
           TrackPileup trackPileup = new TrackPileup(sourceName, gc);
-          // trackPileup.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
           trackPileup.setTrackTag(sourceName + "#" + this.getNextTrackId());
           this.trackList.add(trackPileup);
 
           /* Read track */
           TrackReads trackReads = new TrackReads(sourceName, gc);
-          // trackReads.setTrackTag(new File(sourceName).getName() + "@" + this.getNextTrackId());
           trackReads.setTrackTag(sourceName + "@" + this.getNextTrackId());
           this.trackList.add(trackReads);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)
-            || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGBED)) {
-          //
-          // Annotatation
-          //
-          TrackIntervalFeature tif = new TrackIntervalFeature(sourceName, gc);
-          // this.addTrack(tif, new File(sourceName).getName());
-          this.addTrack(tif, sourceName);
+          this.addTrack(new TrackIntervalFeature(sourceName, gc), sourceName);
+        } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)) {
+          this.addTrack(new TrackVCF(sourceName, gc), sourceName);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)) {
-          TrackBedgraph tw = new TrackBedgraph(sourceName, gc);
-          this.addTrack(tw, sourceName);
+          this.addTrack(new TrackBedgraph(sourceName, gc), sourceName);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.TDF)) {
-          TrackWiggles tw = new TrackWiggles(sourceName, gc);
-          this.addTrack(tw, sourceName);
-
+          this.addTrack(new TrackWiggles(sourceName, gc), sourceName);
         } else {
           // NB: You never get here because Utils.getFileTypeFromName returns
           // BED for any file that cannot be classified.

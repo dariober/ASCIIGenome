@@ -52,7 +52,6 @@ public class MainTest {
     String out = Joiner.on("\n").join(this.runMain(args));
     assertEquals(1, StringUtils.countMatches(out, "sample1"));
     assertEquals(2, StringUtils.countMatches(out, "sample2"));
-    System.out.println(out);
   }
 
   @Test
@@ -137,7 +136,6 @@ public class MainTest {
           "test_data/ds051.actb.bam"
         };
     String out = Joiner.on("\n").join(this.runMain(args));
-    System.out.println(out);
     assertTrue(out.contains("Reads: 292"));
 
     args =
