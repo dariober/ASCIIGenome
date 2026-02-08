@@ -14,7 +14,7 @@ import samTextViewer.Utils;
  * @author berald01
  */
 public class VCFFeature extends IntervalFeature {
-  private final VariantContext variantContext;
+  private VariantContext variantContext = null;
 
   /* C o n s t r u c t o r s */
 
@@ -30,6 +30,8 @@ public class VCFFeature extends IntervalFeature {
     this.setName(this.variantContext.getID());
     this.setRaw(line);
   }
+
+  public VCFFeature() { }
 
   /* M e t h o d s */
 

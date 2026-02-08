@@ -320,16 +320,6 @@ public class Utils {
     return alnCount;
   }
 
-  //  /**
-  //   * Merge two features representing the first and last elements of a contiguous overlapping
-  // block.
-  //   */
-  //  @FunctionalInterface
-  //  public interface FeatureMerger<T extends IntervalFeature> {
-  //    T merge(T a, T b, boolean screenCoords)
-  //        throws InvalidGenomicCoordsException, InvalidColourException;
-  //  }
-
   public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
       List<T> intervalList, boolean screenCoords)
       throws InvalidGenomicCoordsException, InvalidColourException {

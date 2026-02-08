@@ -137,6 +137,23 @@ public class TrackVCFTest {
   }
 
   @Test
+  public void canChangeFeatureDisplayMode()
+      throws IOException,
+      InvalidGenomicCoordsException,
+      ClassNotFoundException,
+      InvalidRecordException,
+      SQLException, InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("1:632191-1685839", 200, null, null);
+    String fn = "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf";
+    TrackVCF tif = new TrackVCF(fn, gc);
+    tif.setNoFormat(true);
+    System.err.println(tif.printToScreen());
+    tif.setFeatureDisplayMode(FeatureDisplayMode.COLLAPSED);
+    System.err.println(tif.printToScreen());
+  }
+
+  @Test
   public void canPrintNormalizedVcfLines()
       throws ClassNotFoundException,
           IOException,

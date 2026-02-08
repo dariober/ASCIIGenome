@@ -268,6 +268,24 @@ public class TrackSetTest {
           SQLException,
           InvalidCommandLineException {
 
+    GenomicCoords gc = new GenomicCoords("chr1:11869-12130", 80, null, null);
+    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
+
+    trackSet.addTrackFromSource("test_data/CEU.exon.2010_06.genotypes.vcf", gc, null);
+    GenomicCoords newgc = trackSet.findNextMatchOnTrack(Pattern.compile("113054374"), "vcf", gc, false);
+    assertEquals(113054374, (int) newgc.getFrom());
+  }
+
+  @Test
+  public void canFindNextMatchOnVCFTrack()
+      throws ClassNotFoundException,
+      IOException,
+      BamIndexNotFoundException,
+      InvalidGenomicCoordsException,
+      InvalidRecordException,
+      SQLException,
+      InvalidCommandLineException {
+
     GenomicCoords gc = new GenomicCoords("chr7:5565052-5571960", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
 
@@ -275,28 +293,8 @@ public class TrackSetTest {
     trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
     trackSet.addTrackFromSource("test_data/hg19_genes_head.gtf.gz", gc, null);
     trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
-
-    //        // Not found in any track
-    //        GenomicCoords newgc = trackSet.findNextMatchOnTrack(Pattern.compile("foobar"), "", gc,
-    // false);
-    //        assertTrue(gc.equalCoords(newgc));
-    //
-    //        // Present in #1...
-    //        newgc = trackSet.findNextMatchOnTrack(Pattern.compile("NM_020223_utr3"), "#1", gc,
-    // false);
-    //        assertEquals(299947, (int)newgc.getFrom());
-    //
-    //        // ...but not in #3
-    //        newgc = trackSet.findNextMatchOnTrack(Pattern.compile("NM_020223_utr3"), "#3", gc,
-    // false);
-    //        assertTrue(gc.equalCoords(newgc));
-
     GenomicCoords newgc = trackSet.findNextMatchOnTrack(Pattern.compile("DDX"), "gtf", gc, false);
     assertEquals(11874, (int) newgc.getFrom());
-
-    // Present in BAM but bam is not searched:
-    //        newgc = trackSet.findNextMatchOnTrack(Pattern.compile("HWI"), ".*", gc, false);
-    //        assertTrue(gc.equalCoords(newgc));
   }
 
   @Test
@@ -1168,7 +1166,7 @@ public class TrackSetTest {
           InvalidRecordException,
           SQLException {
 
-    TrackSet ts = new TrackSet(new ArrayList<String>(), null);
+    TrackSet ts = new TrackSet(new ArrayList<>(), null);
     AbstractTrack t1 = new TrackIntervalFeature(null);
     ts.addTrack(t1, "x");
     AbstractTrack t2 = new TrackIntervalFeature(null);

@@ -472,7 +472,7 @@ public class TrackSet {
   public void setFeatureDisplayModeForRegex(List<String> tokens)
       throws InvalidCommandLineException {
 
-    List<String> args = new ArrayList<String>(tokens);
+    List<String> args = new ArrayList<>(tokens);
     args.remove(0); // remove command name
 
     // Display mode
@@ -506,7 +506,7 @@ public class TrackSet {
     boolean invertSelection = Utils.argListContainsFlag(args, "-v");
 
     // Regex to capture tracks: Everything left after removing command name and args:
-    List<String> trackNameRegex = new ArrayList<String>();
+    List<String> trackNameRegex = new ArrayList<>();
     if (!args.isEmpty()) {
       trackNameRegex.addAll(args);
     } else {
@@ -539,13 +539,13 @@ public class TrackSet {
 
     // --------------------------------------------------------------------
     // PARSE ARGUMENTS
-    List<String> args = new ArrayList<String>(cmdInput);
+    List<String> args = new ArrayList<>(cmdInput);
     args.remove(0); // Remove cmd name.
 
     // Defaults if no args given
     PrintRawLine printMode = null;
     int count = 10; // opts.getInt("nlines"); // Default number of lines to print
-    List<String> trackNameRegex = new ArrayList<String>(); // opts.getList("track_regex");
+    List<String> trackNameRegex = new ArrayList<>(); // opts.getList("track_regex");
     trackNameRegex.add(".*");
 
     String printToFile = null;
@@ -1657,13 +1657,13 @@ public class TrackSet {
       String trackId, GenomicCoords currentGc, double slop, boolean getPrevious)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
-    List<TrackIntervalFeature> tr = this.matchIntervalFeatureTrack(trackId.trim());
+    List<AbstractTrackFeature<? extends IntervalFeature>> tr = this.matchIntervalFeatureTrack(trackId.trim());
 
     if (tr.isEmpty()) {
       return currentGc;
     }
 
-    TrackIntervalFeature tif = tr.get(0);
+    AbstractTrackFeature<? extends IntervalFeature> tif = tr.get(0);
     if (slop < 0) {
       return tif.coordsOfNextFeature(currentGc, getPrevious);
     } else {
@@ -1684,20 +1684,20 @@ public class TrackSet {
    *
    * @throws InvalidCommandLineException
    */
-  private List<TrackIntervalFeature> matchIntervalFeatureTrack(String trackTag)
+  private List<AbstractTrackFeature<? extends IntervalFeature>> matchIntervalFeatureTrack(String trackTag)
       throws InvalidCommandLineException {
 
     if (trackTag.isEmpty()) {
       trackTag = ".*";
     }
 
-    List<TrackIntervalFeature> ifTracks = this.getIntervalFeatureTracks();
-    List<AbstractTrack> matched = matchTracks(Arrays.asList(new String[] {trackTag}), true, false);
-    List<TrackIntervalFeature> tr = new ArrayList<TrackIntervalFeature>();
+    List<AbstractTrackFeature<? extends IntervalFeature>> ifTracks = this.getIntervalFeatureTracks();
+    List<AbstractTrack> matched = matchTracks(List.of(trackTag), true, false);
+    List<AbstractTrackFeature<? extends IntervalFeature>> tr = new ArrayList<>();
 
     for (AbstractTrack xtr : matched) {
       if (ifTracks.contains(xtr)) {
-        tr.add((TrackIntervalFeature) xtr);
+        tr.add((AbstractTrackFeature<? extends IntervalFeature>) xtr);
       }
     }
     return tr;
@@ -1739,7 +1739,7 @@ public class TrackSet {
       }
       return inv;
     } else {
-      return new ArrayList<AbstractTrack>(matchedTracks);
+      return new ArrayList<>(matchedTracks);
     }
   }
 
@@ -1760,11 +1760,11 @@ public class TrackSet {
       Pattern pattern, String trackregex, GenomicCoords currentGc, boolean all)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
-    List<TrackIntervalFeature> tif = matchIntervalFeatureTrack(trackregex.trim());
-    if (tif.size() == 0) {
+    List<AbstractTrackFeature<? extends IntervalFeature>> tif = this.matchIntervalFeatureTrack(trackregex.trim());
+    if (tif.isEmpty()) {
       return currentGc;
     }
-    for (TrackIntervalFeature tr : tif) {
+    for (AbstractTrackFeature tr : tif) {
       GenomicCoords gc;
       if (all) {
         gc = tr.genomicCoordsAllChromMatchInGenome(pattern, currentGc);
@@ -1778,14 +1778,12 @@ public class TrackSet {
     return currentGc;
   }
 
-  private List<TrackIntervalFeature> getIntervalFeatureTracks() {
-
-    // TrackSet ifSet= new TrackSet();
-    List<TrackIntervalFeature> ifSet = new ArrayList<TrackIntervalFeature>();
+  private List<AbstractTrackFeature<? extends IntervalFeature>> getIntervalFeatureTracks() {
+    List<AbstractTrackFeature<? extends IntervalFeature>> ifSet = new ArrayList<>();
 
     for (AbstractTrack tr : this.getTrackList()) {
-      if ((tr instanceof TrackIntervalFeature) && !(tr instanceof TrackPileup)) {
-        ifSet.add((TrackIntervalFeature) tr);
+      if ((tr instanceof AbstractTrackFeature) && !(tr instanceof TrackPileup)) {
+        ifSet.add((AbstractTrackFeature) tr);
       }
     }
     return ifSet;

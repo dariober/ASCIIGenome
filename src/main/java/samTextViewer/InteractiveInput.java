@@ -411,11 +411,9 @@ public class InteractiveInput {
           this.next(cmdTokens, proc);
 
         } else if (cmdTokens.get(0).equals("find")) {
-
           boolean all = Utils.argListContainsFlag(cmdTokens, "-all");
           boolean fixedPattern = Utils.argListContainsFlag(cmdTokens, "-F");
           boolean caseIns = Utils.argListContainsFlag(cmdTokens, "-c");
-
           if (cmdTokens.size() < 2) {
             System.err.println(
                 Utils.padEndMultiLine(
