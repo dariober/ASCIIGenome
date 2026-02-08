@@ -26,44 +26,6 @@ public class TrackTest {
     new Config(null);
   }
 
-  //	@Test
-  //	public void canSetVariantReadsFilterBasedOnScreenPercent() throws InvalidCommandLineException,
-  // InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException,
-  // SQLException{
-  //
-  //		GenomicCoords gc= new GenomicCoords("chr7:3-101", 1000, null, "test_data/chr7.fa");
-  //
-  //		Track t1= new TrackReads("test_data/ds051.actb.bam", gc);
-  //
-  //		t1.setVariantReadInInterval("0.0", true);
-  //		assertEquals(3, t1.getFeatureFilter().getVariantFrom());
-  //		assertEquals(3, t1.getFeatureFilter().getVariantTo());
-  //
-  //		t1.setVariantReadInInterval("1.0", true);
-  //		assertEquals(101, t1.getFeatureFilter().getVariantFrom());
-  //		assertEquals(101, t1.getFeatureFilter().getVariantTo());
-  //
-  //		//     (101-3+1) * 0.5 = 49.5
-  //		// We round to 49.5 to 50. So:
-  //		//     3 + 50 - 1 = 52
-  //		t1.setVariantReadInInterval("0.5", true);
-  //		assertEquals(52, t1.getFeatureFilter().getVariantFrom());
-  //
-  //		gc= new GenomicCoords("chr7:3-102", 1000, null, "test_data/chr7.fa");
-  //		t1= new TrackReads("test_data/ds051.actb.bam", gc);
-  //		t1.setVariantReadInInterval("0.5", true);
-  //		assertEquals(52, t1.getFeatureFilter().getVariantFrom());
-  //
-  //		// Must fail
-  //		boolean pass= false;
-  //		try{
-  //			t1.setVariantReadInInterval("foo", true);
-  //		} catch(NumberFormatException e){
-  //			pass= true;
-  //		}
-  //		assertTrue(pass);
-  //	}
-
   @Test
   public void canConcatHeader()
       throws ClassNotFoundException,
@@ -75,7 +37,7 @@ public class TrackTest {
           InvalidColourException {
     new Config(null);
     GenomicCoords gc = new GenomicCoords("1:735171-2045891", 80, null, null);
-    TrackIntervalFeature tif = new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf", gc);
+    TrackVCF tif = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf", gc);
     tif.setNoFormat(true);
     tif.setTrackTag("title.bed");
 
@@ -107,7 +69,7 @@ public class TrackTest {
           InvalidColourException {
     new Config(null);
     GenomicCoords gc = new GenomicCoords("1:735171-2045891", 80, null, null);
-    TrackIntervalFeature tif = new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf", gc);
+    TrackVCF tif = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf", gc);
     tif.setNoFormat(true);
     tif.setTrackTag("title.bed");
     String[] lines = tif.concatTitleAndTrack().split("\n");
@@ -119,7 +81,6 @@ public class TrackTest {
     tif.setTrackTag(
         "LoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongTitle.bed");
     lines = tif.concatTitleAndTrack().split("\n");
-    System.err.println(tif.concatTitleAndTrack());
     assertEquals(4, lines.length);
   }
 
@@ -134,7 +95,7 @@ public class TrackTest {
           InvalidColourException {
     new Config(null);
     GenomicCoords gc = new GenomicCoords("1:1-1000", 80, null, null);
-    TrackIntervalFeature tif = new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf", gc);
+    TrackVCF tif = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf", gc);
     tif.setNoFormat(true);
     tif.setTrackTag("title.bed");
     String[] lines = tif.concatTitleAndTrack().split("\n");
@@ -191,8 +152,8 @@ public class TrackTest {
           InvalidColourException,
           InvalidCommandLineException {
     GenomicCoords gc = new GenomicCoords("1:1-400000", 80, null, null);
-    TrackIntervalFeature tif =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+    TrackVCF tif =
+        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     tif.setPrintMode(PrintRawLine.FULL);
     tif.setHighlightPattern(Pattern.compile("$2, $4"));
     String out = tif.printLines();
@@ -216,8 +177,8 @@ public class TrackTest {
           InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("1:1-400000", 80, null, null);
-    TrackIntervalFeature tif =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+    TrackVCF tif =
+        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     tif.setPrintMode(PrintRawLine.FULL);
     tif.setHighlightPattern(Pattern.compile("200000"));
     String out = tif.printLines();
@@ -274,7 +235,7 @@ public class TrackTest {
           InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("1:1-20000000", 80, null, null);
-    TrackIntervalFeature tif = new TrackIntervalFeature("test_data/info_formats.vcf.gz", gc);
+    TrackVCF tif = new TrackVCF("test_data/info_formats.vcf.gz", gc);
     tif.setPrintMode(PrintRawLine.FULL);
 
     // Highlight FORMAT tag and associated values
@@ -406,8 +367,8 @@ public class TrackTest {
           InvalidConfigException {
     new Config(null);
     GenomicCoords gc = new GenomicCoords("1:1019492-1019672", 160, null, null);
-    TrackIntervalFeature tif =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+    TrackVCF tif =
+        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     tif.setNoFormat(true);
     tif.setPrintMode(PrintRawLine.CLIP);
     assertTrue(tif.printLines().contains(" GTCAC["));
@@ -436,7 +397,6 @@ public class TrackTest {
     // The sys command is still on
     gc = new GenomicCoords("chr7:5566733-5566904", 80, null, null);
     tif.setGc(gc);
-    System.err.println(tif.printLines());
     assertEquals(2, tif.printLines().split("\n").length);
 
     // Now turn it off:

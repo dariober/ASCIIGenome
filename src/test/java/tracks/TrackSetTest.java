@@ -1450,13 +1450,12 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("1:113054356-113054534", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
     String vcf = "test_data/CEU.exon.2010_06.genotypes.vcf";
-    AbstractTrack t1 = new TrackIntervalFeature(vcf, gc);
+    AbstractTrack t1 = new TrackVCF(vcf, gc);
     ts.addTrack(t1, "x");
     t1.setNoFormat(true);
 
     // Number of samples
     ts.setGenotypeMatrix(Utils.tokenize("genotype -n -1 -f 'DP > 100'", " "));
-    System.err.println(ts.getTrack(t1).printToScreen());
   }
 
   @Test
