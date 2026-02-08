@@ -1724,7 +1724,8 @@ public class TrackSet {
     return tr;
   }
 
-  private List<AbstractTrack> matchTracks(List<String> patterns, boolean asRegex, boolean invertSelection)
+  private List<AbstractTrack> matchTracks(
+      List<String> patterns, boolean asRegex, boolean invertSelection)
       throws InvalidCommandLineException {
 
     // Validate regexes

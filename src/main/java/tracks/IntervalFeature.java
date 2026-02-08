@@ -2,11 +2,7 @@ package tracks;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
-import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
-import htsjdk.variant.variantcontext.Allele;
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFCodec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +35,7 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
   private TrackFormat trackFormat = TrackFormat.BED;
 
   /** Name to be displayed to the user */
-  private String name = ".";
+  protected String name = ".";
 
   /** Use this attribute to as key to assign the name field */
   private String gtfAttributeForName = null;
@@ -61,7 +57,6 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
   // The feature as it would be represented on screen. Each String of the array
   // is a character to be printed on screen (e.g. "E") possibly formatted (e.g. "\033[m5;45E\033")
   private List<FeatureChar> ideogram;
-  private VariantContext variantContext;
 
   /* C o n s t r u c t o r s */
 
@@ -69,7 +64,7 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
    * Create an IntervalFeature from a String. Typically this is a line read from file. vcfHeader can
    * be null if trackformat is not VCF.
    */
-  public IntervalFeature(String line, TrackFormat format, VCFCodec vcfCodec, int scoreColIdx)
+  public IntervalFeature(String line, TrackFormat format, int scoreColIdx)
       throws InvalidGenomicCoordsException {
 
     if (scoreColIdx < 0) {
@@ -91,49 +86,9 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
       this.intervalFeatureFromGtfLine(line);
       this.trackFormat = TrackFormat.GFF;
 
-    } else if (format.equals(TrackFormat.VCF)) {
-      this.variantContext = vcfCodec.decode(line);
-      this.setRaw(line);
-      this.trackFormat = TrackFormat.VCF;
-      this.chrom = this.variantContext.getContig();
-      this.from = this.setFromForVCF();
-      this.to = this.setToForVCF();
-      this.name = this.variantContext.getID();
-
     } else {
       System.err.println("Format " + format + " not supported");
       throw new RuntimeException();
-    }
-  }
-
-  private int setFromForVCF() {
-    int from = this.variantContext.getStart();
-    this.setToForVCF();
-    return from;
-  }
-
-  private int setToForVCF() {
-    if (this.variantContext.getAlleles().size() > 2) { // Multiallelic
-      return this.variantContext.getEnd();
-    } else if (this.variantContext.isSNP()) {
-      return this.variantContext.getStart();
-    } else if (this.variantContext.isSimpleInsertion()) {
-      int alt_len = this.variantContext.getAlleles().get(1).length();
-      return this.variantContext.getStart() + alt_len - 1;
-    } else if (this.variantContext.isSimpleDeletion() || this.variantContext.isMNP()) {
-      int ref_len = this.variantContext.getAlleles().get(0).length();
-      return this.variantContext.getStart() + ref_len - 1;
-    } else if (this.variantContext.isComplexIndel()) {
-      int ref_len = this.variantContext.getAlleles().get(0).length();
-      int alt_len = this.variantContext.getAlleles().get(1).length();
-      if (ref_len > alt_len) { // Similar to a deletion
-        return this.variantContext.getStart() + ref_len - 1;
-      } else {
-        // Similar to an insertion
-        return this.variantContext.getStart() + alt_len - 1;
-      }
-    } else {
-      return this.variantContext.getEnd();
     }
   }
 
@@ -156,12 +111,11 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
     this.trackFormat = format;
   }
 
-  /** Only used to make TextRead(...) work */
-  protected IntervalFeature() {}
+  public IntervalFeature() {}
 
   /* M e t h o d s */
 
-  private IntervalFeature intervalFeatureFromBedLine(String bedLine, int scoreColIdx)
+  private void intervalFeatureFromBedLine(String bedLine, int scoreColIdx)
       throws InvalidGenomicCoordsException {
     this.setRaw(bedLine);
 
@@ -196,10 +150,9 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
       }
     }
     this.validateIntervalFeature();
-    return this;
   }
 
-  private IntervalFeature intervalFeatureFromGtfLine(String gtfLine)
+  private void intervalFeatureFromGtfLine(String gtfLine)
       throws InvalidGenomicCoordsException {
     // chr1    unknown exon    11874   12227   .       +       .       gene_id "DDX11L1";
     // transcript_id "NR_046018_1"; gene_name "DDX11L1"; tss_id "TSS14523";
@@ -217,7 +170,7 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
     }
 
     // Strand
-    if (gtfList.get(6).trim().length() == 0) {
+    if (gtfList.get(6).trim().isEmpty()) {
       this.strand = '.';
     } else {
       char strand = gtfList.get(6).trim().charAt(0);
@@ -229,7 +182,6 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
     }
     this.name = this.getNameForIdeogram(null);
     this.validateIntervalFeature();
-    return this;
   }
 
   /**
@@ -240,17 +192,14 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
   private void validateIntervalFeature() throws InvalidGenomicCoordsException {
 
     if (!chrom.trim().equals(chrom)) {
-      System.err.println("Chrom name must not start or end with whitespaces. Got '" + chrom + "'");
-      throw new InvalidGenomicCoordsException();
+      throw new InvalidGenomicCoordsException("Chrom name must not start or end with whitespaces. Got '" + chrom + "'");
     }
 
     if (from < 1 || to < 1 || (from > to)) {
-      System.err.println("Invalid coordinates: " + from + " " + to);
-      throw new InvalidGenomicCoordsException();
+      throw new InvalidGenomicCoordsException("Invalid coordinates: " + from + " " + to);
     }
     if (this.strand != '+' && this.strand != '-' && this.strand != '.') {
-      System.err.println("Invalid strand char " + this.strand);
-      throw new InvalidGenomicCoordsException();
+      throw new InvalidGenomicCoordsException("Invalid strand char " + this.strand);
     }
   }
 
@@ -261,31 +210,15 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
    *     the screen. width mapping genome coords to screen coords.
    */
   public void mapToScreen(List<Double> rulerMap) {
-
-    int xfrom = this.from;
-    int xto = this.to;
-
-    // For INDELS where the first base of the ALT allele is the same as the REF allele,
-    // we bump the start position by 1 so that 1bp indels are shown as 1 character rather than 2.
-    if (this.trackFormat.equals(TrackFormat.VCF)
-        && this.variantContext.getReference().getBases().length > 0
-        && this.variantContext.getAlleles().size() > 1
-        && this.variantContext.getAlleles().get(1).getBases().length > 0
-        && this.variantContext.getReference().getBases()[0]
-            == this.variantContext.getAlleles().get(1).getBases()[0]) {
-      xfrom = xfrom + 1;
-      if (xfrom
-          > xto) { // This can happen for multiallelic. See docstring this.variantContext.getEnd()
-        xto = xfrom;
-      }
-    }
+    int xfrom = this.getFrom();
+    int xto = this.getTo();
     /*        |============| <- ruler
      *   ===                  ===  <- Interval(s)
      */
     if ((xfrom < rulerMap.get(0) && xto < rulerMap.get(0))
         || (xfrom > rulerMap.get(rulerMap.size() - 1)) && xto > rulerMap.get(rulerMap.size() - 1)) {
-      this.screenFrom = -1;
-      this.screenTo = -1;
+      this.setScreenFrom(-1);
+      this.setScreenTo(-1);
       return;
     }
 
@@ -295,26 +228,25 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
      *   ===================== <- Interval
      */
     if (xfrom <= rulerMap.get(0) && this.to >= rulerMap.get(rulerMap.size() - 1)) {
-      this.screenFrom = 0;
-      this.screenTo = rulerMap.size() - 1;
+      this.setScreenFrom(0);
+      this.setScreenTo(rulerMap.size() - 1);
       return;
     }
 
     // Feature is all or partially contained
-    screenFrom = Utils.getIndexOfclosestValue(xfrom, rulerMap);
-    screenTo = Utils.getIndexOfclosestValue(xto, rulerMap);
+    this.setScreenFrom(Utils.getIndexOfclosestValue(xfrom, rulerMap));
+    this.setScreenTo(Utils.getIndexOfclosestValue(xto, rulerMap));
     /*        |============|      <- ruler
      *   ========   ===    =====  <- Interval(s)
      */
-    if (screenFrom == -1) {
-      screenFrom = 0;
+    if (this.getScreenFrom() == -1) {
+      this.setScreenFrom(0);
     }
-    if (screenTo == -1) {
-      screenTo = rulerMap.size() - 1;
+    if (this.getScreenTo() == -1) {
+      this.setScreenTo(rulerMap.size() - 1);
     }
-    if (screenFrom == -1 || screenTo == -1) {
-      System.err.println("Unexpected mapping of features to ruler.");
-      throw new RuntimeException();
+    if (this.getScreenFrom() == -1 || this.getScreenTo() == -1) {
+      throw new RuntimeException("Unexpected mapping of features to ruler.");
     }
   }
 
@@ -348,7 +280,7 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
   }
 
   /** Edit the ideogram list with chars from feature name replaced */
-  private void addNameToIdeogram() {
+  void addNameToIdeogram() {
 
     if (this.getName() == null
         || this.getName().trim().isEmpty()
@@ -415,43 +347,17 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
     return text;
   }
 
-  private char getCharForVCFIdeogram() {
-
-    if (this.variantContext.getAlleles().size() > 2) { // Multiallelic
-      return '|';
-    } else if (this.variantContext.isSNP()) {
-      Allele alt = this.variantContext.getAlleles().get(1);
-      return alt.getBaseString().charAt(0);
-    } else if (this.variantContext.isSimpleInsertion()) {
-      return 'I';
-    } else if (this.variantContext.isSimpleDeletion()) {
-      return 'D';
-    } else if (this.variantContext.isMNP()) {
-      return 'M';
-    } else if (this.variantContext.isComplexIndel()) {
-      return 'X';
-    } else {
-      return '|';
-    }
-  }
-
-  private void makeIdeogram(boolean addName) throws InvalidColourException {
-
+  protected void makeIdeogram(boolean addName) {
     int ideogramLength = this.getScreenTo() - this.getScreenFrom() + 1;
-    this.ideogram = new ArrayList<FeatureChar>(ideogramLength);
+    this.setIdeogram(new ArrayList<>(ideogramLength), false);
 
     for (int i = 0; i < ideogramLength; i++) {
       FeatureChar c = new FeatureChar();
       char ideogramChar;
-      if (this.trackFormat.equals(TrackFormat.VCF)) {
-        ideogramChar = this.getCharForVCFIdeogram();
-        c.addFormatVCF(ideogramChar);
-      } else {
-        ideogramChar = this.getCharForIdeogram();
-        c.addFormatGFF(ideogramChar, this.getStrand());
-      }
+      ideogramChar = this.getCharForIdeogram();
+      c.addFormatGFF(ideogramChar, this.getStrand());
       c.setText(ideogramChar);
-      this.ideogram.add(c);
+      this.getIdeogram(false, false).add(c);
     }
 
     if (addName) {
@@ -460,25 +366,21 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
   }
 
   protected void setIdeogram(List<FeatureChar> ideogram, boolean addName) {
-
     if (ideogram == null) {
       this.ideogram = null;
       return;
     }
-
-    int expFeatureLen = (this.getScreenTo() - this.getScreenFrom() + 1);
-    if (expFeatureLen != ideogram.size()) {
-      System.err.println(
-          "Length of text for screen ("
-              + ideogram.size()
-              + ") "
-              + "does not equal feature length on screen from= "
-              + this.getScreenFrom()
-              + " to= "
-              + this.getScreenTo()
-              + " expected: to-from+1");
-      throw new RuntimeException();
-    }
+//    int expFeatureLen = (this.getScreenTo() - this.getScreenFrom() + 1);
+//    if (expFeatureLen != ideogram.size()) {
+//      throw new RuntimeException("Length of ideogram is "
+//          + ideogram.size()
+//          + " "
+//          + " and does not equal feature length on screen from="
+//          + this.getScreenFrom()
+//          + " to="
+//          + this.getScreenTo()
+//          + " expected: to-from+1");
+//      }
     this.ideogram = ideogram;
     if (addName) {
       this.addNameToIdeogram();
@@ -489,8 +391,7 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
    * Return the ideogram, optionally create it and add a title. If makeIt and withName are false
    * simply return whatever is in the ideogram field.
    */
-  public List<FeatureChar> getIdeogram(boolean makeIt, boolean withName)
-      throws InvalidColourException {
+  public List<FeatureChar> getIdeogram(boolean makeIt, boolean withName) {
     if (makeIt) {
       this.makeIdeogram(false);
     }
@@ -526,10 +427,6 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
   /**
    * Return the name for the feature given the attributes. Here you decide what the user should see
    * as name for different types of GTF/GFF attributes.
-   *
-   * @param attributeName: Attribute to use as key to get name from. E.g. gene_name. If null use the
-   *     default precedence rule to find one. If attributeName is not found, set name to '.'
-   *     (missing).
    */
   private String getNameForIdeogram(String attributeKey) {
 
@@ -683,10 +580,6 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
     return raw;
   }
 
-  protected VariantContext getVariantContext() {
-    return this.variantContext;
-  }
-
   public String getGtfAttributeForName() {
     return this.gtfAttributeForName;
   }
@@ -714,8 +607,7 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
     return i;
   }
 
-  private void setRaw(String line) {
-    // line= line.replaceAll("\n$|\r$", "");
+  void setRaw(String line) {
     this.raw = line.trim();
   }
 
@@ -744,5 +636,17 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
   protected void setBedFieldName(int i) throws InvalidGenomicCoordsException {
     this.bedFieldName = i;
     this.intervalFeatureFromBedLine(this.getRaw(), this.scoreColIdx);
+  }
+
+  public void setChrom(String chrom) {
+    this.chrom = chrom;
+  }
+
+  public void setFrom(int from) {
+    this.from = from;
+  }
+
+  public void setTo(int to) {
+    this.to = to;
   }
 }

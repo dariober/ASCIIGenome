@@ -114,8 +114,8 @@ public class TrackVCFTest {
             InvalidColourException {
 
         GenomicCoords gc = new GenomicCoords("1:577583-759855", 80, null, null);
-        String intervalFileName = "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
-        TrackVCF tif = new TrackVCF(intervalFileName, gc);
+        String fn = "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
+        TrackVCF tif = new TrackVCF(fn, gc);
         tif.setNoFormat(true);
         assertTrue(tif.printToScreen().contains("HG00096"));
     }
@@ -129,9 +129,9 @@ public class TrackVCFTest {
             SQLException {
 
         GenomicCoords gc = new GenomicCoords("1:113050000", 80, null, null);
-        String intervalFileName = "test_data/CEU.exon.2010_06.genotypes.vcf.gz";
-        TrackVCF tif = new TrackVCF(intervalFileName, gc);
-        IntervalFeature x = tif.findNextRegexInGenome(Pattern.compile(".*113054374.*"), "1", 113050000);
+        String fn = "test_data/CEU.exon.2010_06.genotypes.vcf.gz";
+        TrackVCF tif = new TrackVCF(fn, gc);
+        VCFFeature x = tif.findNextRegexInGenome(Pattern.compile(".*113054374.*"), "1", 113050000);
         assertTrue(x.getRaw().contains("\t113054374\t"));
         assertEquals(113054374, x.getFrom());
     }
@@ -178,47 +178,47 @@ public class TrackVCFTest {
             InvalidColourException,
             InvalidCommandLineException {
         GenomicCoords gc = new GenomicCoords("chr1:14327-14836", 80, null, null);
-        TrackVCF tif = new TrackVCF("test_data/vep.vcf", gc);
-        tif.setPrintMode(PrintRawLine.FULL);
-        tif.setNoFormat(true);
-        String woVep = tif.printLines();
-        tif.setPrintFormattedVep("");
-        String printed = tif.printLines();
-        assertTrue(Splitter.on("\n").splitToList(tif.printLines()).size() > 50);
+        TrackVCF tvcf = new TrackVCF("test_data/vep.vcf", gc);
+        tvcf.setPrintMode(PrintRawLine.FULL);
+        tvcf.setNoFormat(true);
+        String woVep = tvcf.printLines();
+        tvcf.setPrintFormattedVep("");
+        String printed = tvcf.printLines();
+        assertTrue(Splitter.on("\n").splitToList(tvcf.printLines()).size() > 50);
         assertTrue(printed.contains("Consequence "));
         assertFalse(printed.contains("SWISSPROT"));
 
         // INFO tag not found: Do nothing
-        tif.setPrintFormattedVep("csq_na");
-        printed = tif.printLines();
+        tvcf.setPrintFormattedVep("csq_na");
+        printed = tvcf.printLines();
         assertEquals(woVep, printed);
 
         // Only ask for some headers, case insensitive
-        tif.setPrintFormattedVep("CSQ,ConseQUENCE,Allele");
-        printed = tif.printLines();
+        tvcf.setPrintFormattedVep("CSQ,ConseQUENCE,Allele");
+        printed = tvcf.printLines();
         assertTrue(printed.contains("Consequence"));
         assertTrue(printed.contains("Allele"));
         assertFalse(printed.contains("IMPACT"));
 
         // Omit CSQ
-        tif.setPrintFormattedVep("CSQ,null");
-        printed = tif.printLines();
+        tvcf.setPrintFormattedVep("CSQ,null");
+        printed = tvcf.printLines();
         assertTrue(printed.contains("CSQ=... "));
 
         // No effect without VEP tag
         gc = new GenomicCoords("1:1105468-34435998", 80, null, null);
-        tif = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf", gc);
-        tif.setPrintMode(PrintRawLine.FULL);
-        tif.setNoFormat(true);
-        tif.setPrintFormattedVep(null);
-        woVep = tif.printLines();
-        tif.setPrintFormattedVep("");
-        String withVep = tif.printLines();
+        tvcf = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf", gc);
+        tvcf.setPrintMode(PrintRawLine.FULL);
+        tvcf.setNoFormat(true);
+        tvcf.setPrintFormattedVep(null);
+        woVep = tvcf.printLines();
+        tvcf.setPrintFormattedVep("");
+        String withVep = tvcf.printLines();
         assertEquals(woVep, withVep);
 
         // No effect on non-VCF track
         gc = new GenomicCoords("chr18:1-10000", 80, null, null);
-        tif = new TrackVCF("test_data/refSeq.hg19.short.bed", gc);
+        TrackIntervalFeature tif = new TrackIntervalFeature("test_data/refSeq.hg19.short.bed", gc);
         tif.setPrintMode(PrintRawLine.FULL);
         tif.setNoFormat(true);
         tif.setPrintFormattedVep(null);
@@ -241,9 +241,9 @@ public class TrackVCFTest {
         TrackVCF tif =
                 new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
 
-        List<IntervalFeature> xset = tif.getFeaturesInInterval("1", 1, 10000000);
+        List<VCFFeature> xset = tif.getFeaturesInInterval("1", 1, 10000000);
         assertEquals(9, xset.size());
-        IntervalFeature x = xset.get(1);
+        VCFFeature x = xset.get(1);
         assertEquals("1", x.getChrom());
         assertEquals(1108138, x.getFrom());
         System.err.println(tif.printToScreen());
@@ -260,9 +260,9 @@ public class TrackVCFTest {
         GenomicCoords gc = new GenomicCoords("chr18:1-10000", 80, null, null);
         TrackVCF tif =
                 new TrackVCF("test_data/CHD.exon.2010_03.sites.unsorted.vcf", gc);
-        List<IntervalFeature> xset = tif.getFeaturesInInterval("1", 1, 10000000);
+        List<VCFFeature> xset = tif.getFeaturesInInterval("1", 1, 10000000);
         assertEquals(9, xset.size());
-        IntervalFeature x = xset.get(1);
+        VCFFeature x = xset.get(1);
         assertEquals("1", x.getChrom());
         assertEquals(1108138, x.getFrom());
     }

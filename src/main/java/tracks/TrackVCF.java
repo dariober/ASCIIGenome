@@ -19,14 +19,14 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
 
-public class TrackVCF extends AbstractTrackIntervalFeature<VCFFeature> {
+public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
   protected List<VCFFeature> vcfFeatureList = new ArrayList<>();
   private VCFCodec vcfCodec;
@@ -66,14 +66,28 @@ public class TrackVCF extends AbstractTrackIntervalFeature<VCFFeature> {
   }
 
   @Override
-  protected VCFFeature createFeature(String line)
-          throws InvalidGenomicCoordsException {
-
+  protected VCFFeature createFeature(String line) {
     return new VCFFeature(
             line,
             getVCFCodec()
     );
   }
+
+  // This is a bad but for now let's get on with it
+  // --->
+  @Override
+  protected Map<String, List<VCFFeature>> groupByGFFAttribute() {
+    return Map.of();
+  }
+  @Override
+  protected Map<String, List<VCFFeature>> groupByGTFAttribute() {
+    return Map.of();
+  }
+  @Override
+  protected VCFFeature collapseGFFTranscript(List<VCFFeature> features, List<Double> mapToScreen) {
+    return null;
+  }
+  // <----
 
   @Override
   /**
@@ -90,51 +104,40 @@ public class TrackVCF extends AbstractTrackIntervalFeature<VCFFeature> {
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
-    this.intervalFeatureList =
+    this.vcfFeatureList =
             this.getFeaturesInInterval(
                     this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
-    for (IntervalFeature ift : this.intervalFeatureList) {
+    for (VCFFeature ift : this.vcfFeatureList) {
       ift.mapToScreen(this.getGc().getMapping());
     }
   }
 
-
-  @Override
-  protected VCFFeature mergeFeatures(
-          VCFFeature a,
-          VCFFeature b,
-          boolean screenCoords)
-          throws InvalidGenomicCoordsException, InvalidColourException {
-
-    return new VCFFeature(a, b, screenCoords);
-  }
-
-  protected IntervalFeature findNextRegexInGenome(Pattern pattern, String chrom, int from)
-          throws IOException, InvalidGenomicCoordsException {
-    return super.findNextRegexInGenome(pattern, chrom, from);
-  }
-
-  @Override
-  protected List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to)
-      throws IOException, InvalidGenomicCoordsException {
-    if (from < 1) {
-      System.err.println("from < 1: " + from + "; resetting to 1.");
-      from = 1;
-    }
-    if (from > to) {
-      System.err.println(
-          "Invalid coordinates: from: "
-              + from
-              + "; to: "
-              + to
-              + "; Resetting to initial 1-"
-              + Integer.MAX_VALUE);
-      throw new InvalidGenomicCoordsException();
-    }
-    List<IntervalFeature> xFeatures = this.getFeaturesInVCFInterval(chrom, from, to);
-    this.removeInvisibleFeatures(xFeatures);
-    return xFeatures;
-  }
+//  protected IntervalFeature findNextRegexInGenome(Pattern pattern, String chrom, int from)
+//          throws IOException, InvalidGenomicCoordsException {
+//    return super.findNextRegexInGenome(pattern, chrom, from);
+//  }
+//
+//  @Override
+//  protected List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to)
+//      throws IOException, InvalidGenomicCoordsException {
+//    if (from < 1) {
+//      System.err.println("from < 1: " + from + "; resetting to 1.");
+//      from = 1;
+//    }
+//    if (from > to) {
+//      System.err.println(
+//          "Invalid coordinates: from: "
+//              + from
+//              + "; to: "
+//              + to
+//              + "; Resetting to initial 1-"
+//              + Integer.MAX_VALUE);
+//      throw new InvalidGenomicCoordsException();
+//    }
+//    List<IntervalFeature> xFeatures = this.getFeaturesInVCFInterval(chrom, from, to);
+//    this.removeInvisibleFeatures(xFeatures);
+//    return xFeatures;
+//  }
 
   private VCFCodec getVCFCodec() {
     if (this.vcfCodec == null) {
@@ -147,7 +150,7 @@ public class TrackVCF extends AbstractTrackIntervalFeature<VCFFeature> {
 
 
 
-  private List<VCFFeature> getFeaturesInVCFInterval(String chrom, int from, int to)
+  protected List<VCFFeature> getFeaturesInInterval(String chrom, int from, int to)
       throws IOException, InvalidGenomicCoordsException {
 
     // Get header if not set yet
@@ -172,9 +175,9 @@ public class TrackVCF extends AbstractTrackIntervalFeature<VCFFeature> {
       if (q == null) {
         break;
       }
-      VCFFeature intervalFeature =
-          new VCFFeature(q, this.getVCFCodec(), this.getScoreColIdx());
-      xFeatures.add(intervalFeature);
+      VCFFeature vcfFeature =
+          new VCFFeature(q, this.getVCFCodec());
+      xFeatures.add(vcfFeature);
     }
     return xFeatures;
   }
@@ -184,7 +187,7 @@ public class TrackVCF extends AbstractTrackIntervalFeature<VCFFeature> {
     List<String> printable = new ArrayList<>();
     int nLines = 0;
     try {
-      for (List<IntervalFeature> listToPrint : this.stackFeatures()) {
+      for (List<VCFFeature> listToPrint : this.stackFeatures()) {
         nLines++;
         if (nLines > this.yMaxLines) {
           // Limit the number of lines in output
@@ -213,9 +216,14 @@ public class TrackVCF extends AbstractTrackIntervalFeature<VCFFeature> {
   }
 
   @Override
+  public void setFeatureName(String gtfAttributeForName) {
+
+  }
+
+  @Override
   protected List<String> getRecordsAsStrings() {
     List<String> featureList = new ArrayList<>();
-    for (VCFFeature ift : this.intervalFeatureList) {
+    for (VCFFeature ift : this.vcfFeatureList) {
       if (this.getPrintNormalizedVcf()) {
         List<String> line =
                 this.normalizeVcfRecordBySample(
@@ -250,5 +258,9 @@ public class TrackVCF extends AbstractTrackIntervalFeature<VCFFeature> {
       tsv.add(tabLine);
     }
     return tsv;
+  }
+
+  protected List<VCFFeature> getIntervalFeatureList() {
+    return this.vcfFeatureList;
   }
 }

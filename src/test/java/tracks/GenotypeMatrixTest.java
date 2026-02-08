@@ -43,10 +43,10 @@ public class GenotypeMatrixTest {
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:5934301-6000000", 80, null, null);
-    TrackIntervalFeature vcf =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    TrackVCF vcf =
+        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
 
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
     gm.setPyScriptFilter("{GT} == 10 or 1>2");
@@ -67,8 +67,8 @@ public class GenotypeMatrixTest {
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
-    TrackIntervalFeature vcf = new TrackIntervalFeature("test_data/info_formats.vcf.gz", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf = new TrackVCF("test_data/info_formats.vcf.gz", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
     GenotypeMatrix gm = new GenotypeMatrix();
     // No filter
     assertEquals(2, gm.printToScreen(true, linf, 80, vcfHeader).split("\n").length);
@@ -100,9 +100,9 @@ public class GenotypeMatrixTest {
     reader.close();
 
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
-    TrackIntervalFeature vcf = new TrackIntervalFeature("test_data/info_formats.vcf.gz", gc);
+    TrackVCF vcf = new TrackVCF("test_data/info_formats.vcf.gz", gc);
 
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
 
@@ -180,9 +180,9 @@ public class GenotypeMatrixTest {
     reader.close();
 
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
-    TrackIntervalFeature vcf = new TrackIntervalFeature("test_data/info_formats.vcf.gz", gc);
+    TrackVCF vcf = new TrackVCF("test_data/info_formats.vcf.gz", gc);
 
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
 
@@ -206,20 +206,20 @@ public class GenotypeMatrixTest {
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
-    TrackIntervalFeature vcf = new TrackIntervalFeature("test_data/info_formats.vcf.gz", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf = new TrackVCF("test_data/info_formats.vcf.gz", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
 
     gm.setPyScriptFilter("{GT} == '1/0'");
     String x = gm.printToScreen(true, linf, 80, vcfHeader);
     assertTrue(x.contains("sample1"));
-    assertTrue(!x.contains("sample2"));
+    assertFalse(x.contains("sample2"));
 
     gm.setPyScriptFilter("{GT} == './.'");
     x = gm.printToScreen(true, linf, 80, vcfHeader);
     assertTrue(x.contains("sample1"));
-    assertTrue(!x.contains("sample2"));
+    assertFalse(x.contains("sample2"));
   }
 
   @Test
@@ -236,8 +236,8 @@ public class GenotypeMatrixTest {
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
-    TrackIntervalFeature vcf = new TrackIntervalFeature("test_data/info_formats.vcf.gz", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf = new TrackVCF("test_data/info_formats.vcf.gz", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
 
@@ -277,8 +277,8 @@ public class GenotypeMatrixTest {
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
-    TrackIntervalFeature vcf = new TrackIntervalFeature("test_data/info_formats.vcf.gz", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf = new TrackVCF("test_data/info_formats.vcf.gz", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
 
@@ -311,8 +311,8 @@ public class GenotypeMatrixTest {
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
-    TrackIntervalFeature vcf = new TrackIntervalFeature("test_data/info_formats.vcf.gz", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf = new TrackVCF("test_data/info_formats.vcf.gz", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
     GenotypeMatrix gm = new GenotypeMatrix();
     // Missing alleles
     gm.setPyScriptFilter("{GT} == \"./.\"");
@@ -368,15 +368,15 @@ public class GenotypeMatrixTest {
     reader.close();
 
     GenomicCoords gc = new GenomicCoords("1:572807-755079", 80, null, null);
-    TrackIntervalFeature vcf =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    TrackVCF vcf =
+        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
 
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
 
     // No feature at all
-    assertTrue(gm.printToScreen(true, new ArrayList<IntervalFeature>(), 80, vcfHeader).isEmpty());
+    assertTrue(gm.printToScreen(true, new ArrayList<VCFFeature>(), 80, vcfHeader).isEmpty());
 
     String x = gm.printToScreen(true, linf, 80, vcfHeader);
 
@@ -411,9 +411,9 @@ public class GenotypeMatrixTest {
 
     // Same genotype: no ambiguity.
     GenomicCoords gc = new GenomicCoords("1:199882-200100", 80, null, null);
-    TrackIntervalFeature vcf =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf =
+        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
     String x = gm.printToScreen(false, linf, 80, vcfHeader);
@@ -425,9 +425,9 @@ public class GenotypeMatrixTest {
   public void canSelectSamplesByRegex() throws Exception {
 
     GenomicCoords gc = new GenomicCoords("1:572807-755079", 80, null, null);
-    TrackIntervalFeature vcf =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf =
+        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
     gm.setSelectSampleRegex("96|99");
@@ -463,9 +463,9 @@ public class GenotypeMatrixTest {
           SQLException,
           InvalidColourException {
     GenomicCoords gc = new GenomicCoords("2:1-1000", 80, null, null);
-    TrackIntervalFeature vcf =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf =
+        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
     // gm.makeMatrix(linf, 80, null);
@@ -476,9 +476,9 @@ public class GenotypeMatrixTest {
   @Test
   public void canHandleVCFWithNoSamples() throws Exception {
     GenomicCoords gc = new GenomicCoords("1:1-10000000", 80, null, null);
-    TrackIntervalFeature vcf =
-        new TrackIntervalFeature("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf =
+        new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
     assertTrue(
         linf.size() > 0); // Make sure we do have some features otherwise the test is meaningless.
 
@@ -490,8 +490,8 @@ public class GenotypeMatrixTest {
   @Test
   public void sampleOrderIsTheSameAsInVcf() throws Exception {
     GenomicCoords gc = new GenomicCoords("1:199982-200052", 70, null, null);
-    TrackIntervalFeature vcf = new TrackIntervalFeature("test_data/sample_order.vcf", gc);
-    List<IntervalFeature> linf = vcf.getIntervalFeatureList();
+    TrackVCF vcf = new TrackVCF("test_data/sample_order.vcf", gc);
+    List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
     String x = gm.printToScreen(true, linf, 80, vcf.getVcfHeader());

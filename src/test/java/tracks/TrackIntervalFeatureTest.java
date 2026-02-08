@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
 import colouring.Xterm256;
-import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
@@ -114,20 +113,10 @@ public class TrackIntervalFeatureTest {
     gc = new GenomicCoords("FOO:1-100000", 80, null, null);
     tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
     assertEquals(0, tif.getRecordsAsStrings().size());
-
-    //        tif.setPrintRawLineCount(10);
-    //        assertEquals(10, tif.getRecordsAsStrings().size());
-    //
-    //        tif.setPrintRawLineCount(0);
-    //        assertEquals(0, tif.getRecordsAsStrings().size());
-    //
-    //        tif.setPrintRawLineCount(-1); // Return all
-    //        assertEquals(24, tif.getRecordsAsStrings().size());
-
   }
 
   @Test
-  public void canHandleGFFWithoutSupeFeatures()
+  public void canHandleGFFWithoutSuperFeatures()
       throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
@@ -138,7 +127,6 @@ public class TrackIntervalFeatureTest {
     // We have a GFF with only exons. Since there are no "transcripts", there is nothing to group
     // by.
     // See also issue #74.
-
     GenomicCoords gc = new GenomicCoords("chr1:11800-20000", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature("test_data/issue74.gff3.gz", gc);
     tif.setNoFormat(true);
@@ -179,7 +167,6 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("chr7:5568562-5572120", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
     tif.setNoFormat(true);
-    System.err.println(tif.printToScreen());
     assertTrue(tif.printToScreen().trim().startsWith("ccc"));
     assertTrue(tif.printToScreen().trim().endsWith("eee"));
     assertEquals(6, tif.getIntervalFeatureList().size());
@@ -214,7 +201,6 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("7:1-100000", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
     tif.setNoFormat(true);
-    System.err.println(tif.printToScreen());
     assertTrue(tif.printToScreen().contains("||||||"));
     assertTrue(tif.printToScreen().contains("eee"));
   }
@@ -232,7 +218,7 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("7:5527151-5530709", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
     tif.setNoFormat(true);
-    System.out.println("PRINTING:" + tif.printToScreen());
+    assertTrue(tif.printToScreen().startsWith("uuuuu"));
     assertTrue(tif.printToScreen().startsWith("uuuuu"));
     assertTrue(tif.printToScreen().endsWith("www"));
 
@@ -289,7 +275,6 @@ public class TrackIntervalFeatureTest {
     assertTrue(tif.printToScreen().contains("chromosome:7"));
 
     tif.setFeatureName("Alias");
-    System.err.println(tif.printToScreen());
     assertTrue(tif.printToScreen().contains("CM000669"));
   }
 
@@ -536,7 +521,6 @@ public class TrackIntervalFeatureTest {
 
     gc = new GenomicCoords("chr7:5566000-5571000", 80, null, null);
     tif = new TrackIntervalFeature(intervalFileName, gc);
-    System.out.println(tif);
   }
 
   @Test
@@ -697,7 +681,7 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("chr1:1-1000000", 80, null, null);
     String intervalFileName = "test_data/refSeq.bed";
     TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
-    assertEquals(2, tif.getFeaturesInInterval("chr1", 0, 100000).size());
+    assertEquals(2, tif.getFeaturesInInterval("chr1", 1, 100000).size());
   }
 
   @Test
@@ -898,11 +882,8 @@ public class TrackIntervalFeatureTest {
     for (int i = 14000; i < 14400; i += 10) {
       rulerMap.add((double) i);
     }
-    System.out.println(rulerMap);
-
     GenomicCoords gc = new GenomicCoords("chr18:1-10000", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature("test_data/refSeq.hg19.short.bed", gc);
-    System.out.println(tif.getFeaturesInInterval("chr1", 0, 1000000000).get(0));
   }
 
   @Test

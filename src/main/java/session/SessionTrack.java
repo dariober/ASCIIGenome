@@ -26,7 +26,8 @@ public class SessionTrack {
     this.type = tr.getClass().getName();
   }
 
-  public AbstractTrack toTrack(String trackName, GenomicCoords gc) throws InvalidTrackTypeException {
+  public AbstractTrack toTrack(String trackName, GenomicCoords gc)
+      throws InvalidTrackTypeException {
     try {
       Constructor<?> c = Class.forName(this.type).getConstructor(String.class, GenomicCoords.class);
       AbstractTrack tr = (AbstractTrack) c.newInstance(this.filename, gc);

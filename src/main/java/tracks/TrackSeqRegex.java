@@ -78,7 +78,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
     for (String reg : regionListPos) {
       reg = reg + "\t.\t" + strand;
       IntervalFeature x =
-          new IntervalFeature(reg, this.getTrackFormat(), null, this.getScoreColIdx());
+          new IntervalFeature(reg, this.getTrackFormat(), this.getScoreColIdx());
       iftList.add(x);
     }
     this.removeInvisibleFeatures(iftList);

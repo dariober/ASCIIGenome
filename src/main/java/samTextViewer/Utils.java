@@ -52,6 +52,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.HttpURLConnection;
@@ -100,8 +101,8 @@ import org.broad.igv.bbfile.BigBedIterator;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
-import tracks.IntervalFeature;
 import tracks.AbstractTrack;
+import tracks.IntervalFeature;
 import tracks.TrackFormat;
 import utils.Tokenizer;
 
@@ -319,29 +320,23 @@ public class Utils {
     return alnCount;
   }
 
-  /**
-   * Merge two features representing the first and last elements
-   * of a contiguous overlapping block.
-   */
-  @FunctionalInterface
-  public interface FeatureMerger<T extends IntervalFeature> {
-    T merge(T a, T b, boolean screenCoords)
-            throws InvalidGenomicCoordsException, InvalidColourException;
-  }
+//  /**
+//   * Merge two features representing the first and last elements of a contiguous overlapping block.
+//   */
+//  @FunctionalInterface
+//  public interface FeatureMerger<T extends IntervalFeature> {
+//    T merge(T a, T b, boolean screenCoords)
+//        throws InvalidGenomicCoordsException, InvalidColourException;
+//  }
 
-  /**
-   * Merge overlapping features. If screenCoords is true, merge is based on the screen coordinates.
-   * Otherwise use genomic coordinates.
-   *
-   * @throws InvalidColourException
-   */
   public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
-      List<T> intervalList, boolean screenCoords, FeatureMerger<T> merger)
+      List<T> intervalList, boolean screenCoords)
       throws InvalidGenomicCoordsException, InvalidColourException {
     List<T> mergedList = new ArrayList<>();
-    if (intervalList.size() == 0) {
+    if (intervalList.isEmpty()) {
       return mergedList;
     }
+
     String mergedChrom = null;
     int mergedFrom = -1;
     int mergedTo = -1;
@@ -349,13 +344,12 @@ public class Utils {
     int mergedScreenTo = -1;
     int numMrgIntv = 1; // Number of intervals in the merged one.
     Set<Character> strand =
-        new HashSet<
-            Character>(); // Put here all the different strands found in the merged features.
+        new HashSet<>(); // Put here all the different strands found in the merged features.
 
     for (int i = 0; i < (intervalList.size() + 1); i++) {
       // We do an additional loop to add to the mergedList the last interval.
       // The last loop has interval == null so below you need to account for it
-      T interval = null;
+      IntervalFeature interval = null;
       if (i < intervalList.size()) {
         interval = intervalList.get(i);
       }
@@ -371,8 +365,8 @@ public class Utils {
       // Sanity check: The list to be merged is on the same chrom and sorted by start pos.
       if (i < intervalList.size()
           && (!mergedChrom.equals(interval.getChrom())
-              || mergedFrom > interval.getFrom()
-              || mergedFrom > mergedTo)) {
+          || mergedFrom > interval.getFrom()
+          || mergedFrom > mergedTo)) {
         System.err.println(mergedChrom + " " + mergedFrom + " " + mergedTo);
         throw new RuntimeException();
       }
@@ -381,7 +375,7 @@ public class Utils {
       if (screenCoords
           && i < intervalList.size()
           && (mergedScreenFrom <= interval.getScreenTo()
-              && mergedScreenTo >= (interval.getScreenFrom() - 1))) {
+          && mergedScreenTo >= (interval.getScreenFrom() - 1))) {
         // Overlap: Extend <to> coordinate. See also
         // http://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
         overlap = true;
@@ -395,19 +389,29 @@ public class Utils {
         mergedScreenTo = Math.max(interval.getScreenTo(), mergedScreenTo);
         strand.add(interval.getStrand());
         numMrgIntv++;
-        overlap = false;
       } else {
         // No overlap add merged interval to list and reset new merged interval
-        T x = merger.merge(
-                intervalList.get(i - numMrgIntv),
-                intervalList.get(i - 1),
-                screenCoords
-        );
+        // IntervalFeature x =
+        //    new IntervalFeature(
+        //        mergedChrom + "\t" + (mergedFrom - 1) + "\t" + mergedTo, TrackFormat.BED, null, -1);
+        T x = null;
+        try {
+          x = (T) intervalList.get(i - 1).getClass().getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
+          throw new RuntimeException(e);
+        }
+
+        // Set the merged fields
+        x.setChrom(mergedChrom);
+        x.setFrom(mergedFrom);
+        x.setTo(mergedTo);
         x.setScreenFrom(mergedScreenFrom);
         x.setScreenTo(mergedScreenTo);
         if (strand.size() == 1) {
           x.setStrand(strand.iterator().next());
         }
+
         strand.clear();
 
         if (x.equals(intervalList.get(i - 1)) && numMrgIntv == 1) {
@@ -427,54 +431,11 @@ public class Utils {
         }
       }
     }
-    for (T x : mergedList) {
+    for (IntervalFeature x : mergedList) {
       x.getIdeogram(true, true);
     }
     return mergedList;
   }
-
-  //	public static LinkedHashMap<String, Integer> xterm256ColourCodes(){
-  //		// See http://misc.flogisoft.com/bash/tip_colours_and_formatting
-  //		// From http://jonasjacek.github.io/colours/
-  //		LinkedHashMap<String, Integer> colourCodes= new LinkedHashMap<String, Integer>();
-  //		colourCodes.put("default", 39);
-  //		colourCodes.put("black", 30);
-  //		colourCodes.put("red", 31);
-  //		colourCodes.put("green", 32);
-  //		colourCodes.put("yellow", 33);
-  //		colourCodes.put("blue", 34);
-  //		colourCodes.put("magenta", 35);
-  //		colourCodes.put("cyan", 36);
-  //		colourCodes.put("light_grey", 37);
-  //		colourCodes.put("grey", 90);
-  //		colourCodes.put("light_red", 91);
-  //		colourCodes.put("light_green", 92);
-  //		colourCodes.put("light_yellow", 93);
-  //		colourCodes.put("light_blue", 94);
-  //		colourCodes.put("light_magenta", 95);
-  //		colourCodes.put("light_cyan", 96);
-  //		colourCodes.put("white", 97);
-  //		// To be continued
-  //		return colourCodes;
-  //	}
-
-  //	public static Colour ansiColourToGraphicsColour(int ansiColour) throws InvalidColourException{
-  //
-  //		if(!xterm256ColourCodes().entrySet().contains(ansiColour)){
-  //			throw new InvalidColourException();
-  //		}
-  //		if(ansiColour == 30){ return Colour.BLACK; }
-  //		if(ansiColour == 31 || ansiColour == 91){ return Colour.RED; }
-  //		if(ansiColour == 32 || ansiColour == 92){ return Colour.GREEN; }
-  //		if(ansiColour == 33 || ansiColour == 93){ return Colour.YELLOW; }
-  //		if(ansiColour == 34 || ansiColour == 94){ return Colour.BLUE; }
-  //		if(ansiColour == 35 || ansiColour == 95){ return Colour.MAGENTA; }
-  //		if(ansiColour == 36 || ansiColour == 96){ return Colour.CYAN; }
-  //		if(ansiColour == 37){ return Colour.LIGHT_GRAY; }
-  //		if(ansiColour == 90){ return Colour.DARK_GRAY; }
-  //		if(ansiColour == 97){ return Colour.WHITE; }
-  //		return Colour.BLACK;
-  //	}
 
   /**
    * Return true if fileName has a valid tabix index.
@@ -616,7 +577,7 @@ public class Utils {
           if (!sep.equals("\t")) {
             line = line.replace(sep, "\t");
           }
-          IntervalFeature feature = new IntervalFeature(line, fmt, null, -1);
+          IntervalFeature feature = new IntervalFeature(line, fmt, -1);
           region = feature.getChrom() + ":" + feature.getFrom();
         }
         br.close();

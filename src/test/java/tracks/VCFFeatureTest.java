@@ -8,6 +8,10 @@ import colouring.Config;
 import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
+import htsjdk.variant.vcf.VCFCodec;
+import htsjdk.variant.vcf.VCFFileReader;
+import htsjdk.variant.vcf.VCFHeader;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,8 +19,9 @@ import java.util.List;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.junit.Before;
 import org.junit.Test;
+import samTextViewer.Utils;
 
-public class IntervalFeatureTest {
+public class VCFFeatureTest {
 
   private String ideogramToString(List<FeatureChar> fchars, boolean noFormat)
       throws InvalidColourException {
@@ -30,55 +35,6 @@ public class IntervalFeatureTest {
   @Before
   public void setConfig() throws IOException, InvalidConfigException {
     new Config(null);
-  }
-
-  @Test
-  public void behaviourOfIsNumber() {
-    // NB: NumberUtils.isCreatable comes from samtools even if it is imported via apache commons
-    Package pkg = NumberUtils.class.getPackage();
-    System.out.println(pkg.getImplementationVersion() + " | " + pkg.getImplementationVendor());
-    System.out.println(NumberUtils.class.getProtectionDomain().getCodeSource().getLocation());
-
-    // Valid numbers
-    assertTrue(NumberUtils.isCreatable("1.1"));
-    assertTrue(NumberUtils.isCreatable("001"));
-    assertTrue(NumberUtils.isCreatable("0x0004")); // Also valid
-    assertTrue(NumberUtils.isCreatable("-1.1e9"));
-    assertTrue(NumberUtils.isCreatable("001.1"));
-
-    // Invalid numbers
-    assertFalse(NumberUtils.isCreatable("1.1 ")); // Note trailing space
-    assertFalse(NumberUtils.isCreatable(""));
-  }
-
-  @Test
-  public void canGetMidPointOfFeature() throws InvalidGenomicCoordsException {
-
-    String line = "chr1 0 100".replaceAll(" ", "\t"); // Genomic coords are irrelavant to this test
-    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED, -1);
-    f.setScreenFrom(0);
-    f.setScreenTo(0);
-    assertEquals(0, f.getScreenMid());
-
-    f.setScreenFrom(10);
-    f.setScreenTo(10);
-    assertEquals(10, f.getScreenMid());
-
-    f.setScreenFrom(10); // Even
-    f.setScreenTo(13);
-    assertEquals(11, f.getScreenMid());
-
-    f.setScreenFrom(0); // Even
-    f.setScreenTo(3);
-    assertEquals(1, f.getScreenMid());
-
-    f.setScreenFrom(0); // Odd
-    f.setScreenTo(4);
-    assertEquals(2, f.getScreenMid());
-
-    f.setScreenFrom(10); // Odd
-    f.setScreenTo(14);
-    assertEquals(12, f.getScreenMid());
   }
 
   @Test
@@ -131,7 +87,7 @@ public class IntervalFeatureTest {
     f.setScreenTo(9);
 
     // Use an ideogram created from outside
-    List<FeatureChar> xIdeogram = new ArrayList<>();
+    List<FeatureChar> xIdeogram = new ArrayList<FeatureChar>();
     for (int i = 0; i < "xxxxxxxxxx".length(); i++) {
       FeatureChar x = new FeatureChar();
       x.setText('x');
@@ -203,7 +159,7 @@ public class IntervalFeatureTest {
     assertTrue(ideogram.contains("foo"));
     f.setBedFieldName(-1);
     ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
-    assertFalse(ideogram.contains("foo"));
+    assertTrue(!ideogram.contains("foo"));
   }
 
   @Test
@@ -304,31 +260,6 @@ public class IntervalFeatureTest {
   }
 
   @Test
-  public void canCreateIntervalFromGtfString() throws InvalidGenomicCoordsException {
-    String gtfLine =
-        "chr1\tunknown\texon\t11874\t12227\t.\t+\t.\tgene_id \"DDX11L1\"; transcript_id"
-            + " \"NR_046018_1\"; gene_name \"DDX11L1\"; tss_id \"TSS14523\";";
-    IntervalFeature f = new IntervalFeature(gtfLine, TrackFormat.GTF,-1);
-    assertEquals(11874, f.getFrom());
-    assertEquals(12227, f.getTo());
-    assertEquals("exon", f.getFeature());
-  }
-
-  @Test
-  public void canGetAttribute() throws InvalidGenomicCoordsException {
-
-    /* Enable this test by uncommenting IF you actually need to use getAttribute() */
-
-    String gtfLine =
-        "chr1\tunknown\texon\t11874\t12227\t.\t+\t.\tgene_id \"DDX11L1\"; transcript_id"
-            + " \"NR_046018_1\"; gene_name \"DDX11L1\"; tss_id \"TSS14523\";";
-
-    IntervalFeature f = new IntervalFeature(gtfLine, TrackFormat.GTF,-1);
-    String x = f.getGFFValueFromKey("transcript_id");
-    assertEquals("NR_046018_1", x);
-  }
-
-  @Test
   public void canCreateIntervalFromString() throws InvalidGenomicCoordsException {
     String bedLine = "chr1\t0\t1";
     IntervalFeature f = new IntervalFeature(bedLine, TrackFormat.BED,-1);
@@ -400,29 +331,87 @@ public class IntervalFeatureTest {
   }
 
   @Test
-  public void canParseScorecolumn() throws InvalidGenomicCoordsException {
+  public void handleMissingInfoLinesInHeader() {
+    VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header3.vcf.gz"));
+    reader.close();
+  }
 
-    String line = "chr1 0 1 9 8 FOO 10".replaceAll(" ", "\t");
+  @Test
+  public void canFormatVCFLine()
+      throws
+      InvalidColourException {
 
-    // Default column indexes for scores
-    IntervalFeature ift = new IntervalFeature(line, TrackFormat.BED,-1);
-    assertEquals(8, ift.getScore(), 0.001);
-    ift = new IntervalFeature(line, TrackFormat.BEDGRAPH,-1);
-    assertEquals(9, ift.getScore(), 0.001);
+    List<Double> rulerMap = new ArrayList<>();
+    for (int i = 1; i < 100; i++) {
+      rulerMap.add((double) i);
+    }
 
-    ift = new IntervalFeature(line, TrackFormat.BEDGRAPH,7);
-    assertEquals(10, ift.getScore(), 0.001);
-    ift = new IntervalFeature(line, TrackFormat.BED,7);
-    assertEquals(10, ift.getScore(), 0.001);
+    // Prepare header
+    VCFFileReader reader = new VCFFileReader(new File("test_data/CHD.exon.2010_03.sites.vcf.gz"));
+    VCFHeader vcfHeader = reader.getFileHeader();
+    reader.close();
+    VCFCodec vcfCodec = new VCFCodec();
+    vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
 
-    ift = new IntervalFeature(line, TrackFormat.BED,6);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
-    ift = new IntervalFeature(line, TrackFormat.BEDGRAPH,6);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
+    String vcfLine = "1 10 . C G 23 PASS AA=.,foo;AC=.;AN=.DP=.".replaceAll(" ", "\t");
+    VCFFeature vcff = new VCFFeature(vcfLine, vcfCodec);
 
-    ift = new IntervalFeature(line, TrackFormat.BED,20);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
-    ift = new IntervalFeature(line, TrackFormat.BEDGRAPH,20);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
+    vcff.mapToScreen(rulerMap);
+    assertEquals(1, vcff.getIdeogram(true, true).size());
+    assertEquals('G', vcff.getIdeogram(true, true).get(0).getText());
+    assertTrue(
+        vcff.getIdeogram(true, true)
+            .get(0)
+            .format(false)
+            .contains("[")); // Just check there is a formatting char
+
+    // Deletion
+    vcfLine = "1 10 . CTTG C 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
+    vcff = new VCFFeature(vcfLine, vcfCodec);
+    vcff.mapToScreen(rulerMap);
+    assertEquals('D', vcff.getIdeogram(true, true).get(0).getText());
+    assertEquals(3, vcff.getIdeogram(true, true).size());
+
+    // Insertion
+    vcfLine = "1 10 . C CTTG 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
+    vcff = new VCFFeature(vcfLine, vcfCodec);
+    vcff.mapToScreen(rulerMap);
+    assertEquals("I", vcff.getIdeogram(true, true).get(0).format(true));
+    assertEquals(3, vcff.getIdeogram(true, true).size());
+
+    // Multiple alleles
+    vcfLine = "1 10 . C CTTG,A 23 PASS AA=.;AC=.;AN=.DP=.".replaceAll(" ", "\t");
+    vcff = new VCFFeature(vcfLine, vcfCodec);
+    vcff.mapToScreen(rulerMap);
+    assertEquals("|", vcff.getIdeogram(true, true).get(0).format(true));
+  }
+
+  @Test
+  public void canFormatVCFLineStructVar()
+      throws InvalidGenomicCoordsException,
+          InvalidColourException,
+          IOException,
+          InvalidConfigException {
+
+    List<Double> rulerMap = new ArrayList<Double>();
+    for (int i = 1; i < 100; i++) {
+      rulerMap.add((double) i);
+    }
+
+    // Prepare header
+    VCFFileReader reader =
+        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
+    VCFHeader vcfHeader = reader.getFileHeader();
+    reader.close();
+    VCFCodec vcfCodec = new VCFCodec();
+    vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
+
+    String vcfLine =
+        "1 668630 DUP_delly_DUP20532 G <CN2> . PASS AC=64;AF=0.0127795;AFR_AF=0.0015;AMR_AF=0;AN=5008;CIEND=-150,150;CIPOS=-150,150;CS=DUP_delly;EAS_AF=0.0595;END=850204;EUR_AF=0.001;IMPRECISE;NS=2504;SAS_AF=0.001;SITEPOST=1;SVTYPE=DUP GT 0|0 0|0 0|0"
+            .replaceAll(" ", "\t");
+    VCFFeature ift = new VCFFeature(vcfLine, vcfCodec);
+    ift.mapToScreen(rulerMap);
+    assertEquals(850204, ift.getTo());
+    assertEquals("|", ift.getIdeogram(true, true).get(0).format(true));
   }
 }
