@@ -130,7 +130,7 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("chr1:11800-20000", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature("test_data/issue74.gff3.gz", gc);
     tif.setNoFormat(true);
-    assertEquals(10, tif.intervalFeatureList.size());
+    assertEquals(10, tif.getIntervalFeatureList().size());
   }
 
   @Test

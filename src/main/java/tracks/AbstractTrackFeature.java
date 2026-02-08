@@ -26,7 +26,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
   protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 
   protected BBFileReader bigBedReader;
-  protected List<T> intervalFeatureList = new ArrayList<>();
+  List<T> intervalFeatureList = new ArrayList<>();
   private List<Argument> colourForRegex = null;
 
   protected abstract T createFeature(String line) throws InvalidGenomicCoordsException;
@@ -577,7 +577,6 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
   }
 
   protected String getUnformattedTitle() {
-
     String sq = "";
     if (this.getFeatureDisplayMode().equals(FeatureDisplayMode.COLLAPSED)) {
       sq = "; collapsed";
@@ -590,7 +589,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
         this.getTrackTag()
             + ";"
             + " N: "
-            + this.intervalFeatureList.size()
+            + this.getIntervalFeatureList().size() // .intervalFeatureList.size()
             + sq
             + gapped
             + this.getTitleForActiveFilters();
@@ -751,7 +750,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
   protected List<String> getRecordsAsStrings() {
 
     List<String> featureList = new ArrayList<>();
-    for (T ift : intervalFeatureList) {
+    for (T ift : this.getIntervalFeatureList()) {
       featureList.add(ift.getRaw());
     }
     return featureList;

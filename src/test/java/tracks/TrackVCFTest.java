@@ -246,6 +246,22 @@ public class TrackVCFTest {
     System.err.println(tif.printToScreen());
   }
 
+    @Test
+    public void canShowTitle()
+        throws ClassNotFoundException,
+        InvalidColourException,
+        IOException,
+        InvalidGenomicCoordsException,
+        InvalidRecordException,
+        SQLException {
+        // See issue #42
+        String intervalFileName = "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
+        GenomicCoords gc = new GenomicCoords("1:200000-200261", 80, null, null);
+        TrackVCF tif = new TrackVCF(intervalFileName, gc);
+        tif.setNoFormat(true);
+        assertTrue(tif.getTitle().contains("N: 2"));
+    }
+
   @Test
   public void canReadUnsortedVCF()
       throws IOException,

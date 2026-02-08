@@ -201,7 +201,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
     regexMatchBgzip.delete();
     regexMatchIndex.delete();
 
-    this.intervalFeatureList = regexMatchTrack.getIntervalFeatureList();
+    this.setIntervalFeatureList(regexMatchTrack.getIntervalFeatureList());
   }
 
   /** Trim the String x if longer then x and return it with the trimmed part annotated */

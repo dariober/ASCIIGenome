@@ -69,9 +69,9 @@ public class TrackBedgraph extends TrackIntervalFeature {
           ClassNotFoundException,
           SQLException {
 
-    this.intervalFeatureList =
+    this.setIntervalFeatureList(
         this.getFeaturesInInterval(
-            this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+            this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));
 
     if (this.getScoreColIdx() < 4) {
       System.err.println(
@@ -80,7 +80,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
       this.scoreColIdx = 4;
       throw new InvalidRecordException();
     }
-    this.bedGraphToScores(this.intervalFeatureList);
+    this.bedGraphToScores(this.getIntervalFeatureList());
   }
 
   @Override
