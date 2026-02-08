@@ -152,8 +152,7 @@ public class TrackTest {
           InvalidColourException,
           InvalidCommandLineException {
     GenomicCoords gc = new GenomicCoords("1:1-400000", 80, null, null);
-    TrackVCF tif =
-        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+    TrackVCF tif = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     tif.setPrintMode(PrintRawLine.FULL);
     tif.setHighlightPattern(Pattern.compile("$2, $4"));
     String out = tif.printLines();
@@ -177,8 +176,7 @@ public class TrackTest {
           InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("1:1-400000", 80, null, null);
-    TrackVCF tif =
-        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+    TrackVCF tif = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     tif.setPrintMode(PrintRawLine.FULL);
     tif.setHighlightPattern(Pattern.compile("200000"));
     String out = tif.printLines();
@@ -367,8 +365,7 @@ public class TrackTest {
           InvalidConfigException {
     new Config(null);
     GenomicCoords gc = new GenomicCoords("1:1019492-1019672", 160, null, null);
-    TrackVCF tif =
-        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+    TrackVCF tif = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     tif.setNoFormat(true);
     tif.setPrintMode(PrintRawLine.CLIP);
     assertTrue(tif.printLines().contains(" GTCAC["));
