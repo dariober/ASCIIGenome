@@ -21,8 +21,7 @@ import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
-public abstract class AbstractTrackFeature<T extends IntervalFeature>
-    extends AbstractTrack {
+public abstract class AbstractTrackFeature<T extends IntervalFeature> extends AbstractTrack {
   /** For GTF/GFF data: Use this attribute to get the feature names */
   protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 
@@ -31,8 +30,11 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature>
   private List<Argument> colourForRegex = null;
 
   protected abstract T createFeature(String line) throws InvalidGenomicCoordsException;
+
   protected abstract Map<String, List<T>> groupByGFFAttribute();
+
   protected abstract Map<String, List<T>> groupByGTFAttribute();
+
   protected abstract T collapseGFFTranscript(List<T> features, List<Double> mapToScreen)
       throws InvalidGenomicCoordsException, InvalidColourException;
 
@@ -51,7 +53,6 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature>
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
-
     this.intervalFeatureList =
         this.getFeaturesInInterval(
             this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
@@ -67,12 +68,13 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature>
       from = 1;
     }
     if (from > to) {
-      throw new InvalidGenomicCoordsException("Invalid coordinates: from: "
-          + from
-          + "; to: "
-          + to
-          + "; Resetting to initial 1-"
-          + Integer.MAX_VALUE);
+      throw new InvalidGenomicCoordsException(
+          "Invalid coordinates: from: "
+              + from
+              + "; to: "
+              + to
+              + "; Resetting to initial 1-"
+              + Integer.MAX_VALUE);
     }
     List<T> xFeatures = new ArrayList<>();
     this.removeInvisibleFeatures(xFeatures);
@@ -704,7 +706,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature>
     return chromsStartingAt;
   }
 
-  abstract protected List<T> getIntervalFeatureList();
+  protected abstract List<T> getIntervalFeatureList();
 
   protected void setIntervalFeatureList(List<T> intervalFeatureList) {
     this.intervalFeatureList = intervalFeatureList;

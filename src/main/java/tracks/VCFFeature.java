@@ -1,12 +1,9 @@
 package tracks;
 
-import exceptions.InvalidColourException;
-import exceptions.InvalidGenomicCoordsException;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import samTextViewer.Utils;
 
@@ -171,6 +168,4 @@ public class VCFFeature extends IntervalFeature {
       return this.variantContext.getEnd();
     }
   }
-
-
 }

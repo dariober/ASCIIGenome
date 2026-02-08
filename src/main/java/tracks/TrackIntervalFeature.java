@@ -269,7 +269,6 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
    * <p>mapToScreen: Mapping of genomic coordinates to screen coordinates. This could be obtained
    * inside this method but better to pass it from outside as it can take time to get the terminal
    * window size several times.
-   *
    */
   protected IntervalFeature collapseGFFTranscript(
       List<IntervalFeature> txFeatures, List<Double> mapToScreen)

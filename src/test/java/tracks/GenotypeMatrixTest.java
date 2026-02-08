@@ -43,8 +43,7 @@ public class GenotypeMatrixTest {
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:5934301-6000000", 80, null, null);
-    TrackVCF vcf =
-        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    TrackVCF vcf = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
 
     List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
@@ -368,8 +367,7 @@ public class GenotypeMatrixTest {
     reader.close();
 
     GenomicCoords gc = new GenomicCoords("1:572807-755079", 80, null, null);
-    TrackVCF vcf =
-        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    TrackVCF vcf = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
 
     List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
@@ -411,8 +409,7 @@ public class GenotypeMatrixTest {
 
     // Same genotype: no ambiguity.
     GenomicCoords gc = new GenomicCoords("1:199882-200100", 80, null, null);
-    TrackVCF vcf =
-        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    TrackVCF vcf = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
     List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
@@ -425,8 +422,7 @@ public class GenotypeMatrixTest {
   public void canSelectSamplesByRegex() throws Exception {
 
     GenomicCoords gc = new GenomicCoords("1:572807-755079", 80, null, null);
-    TrackVCF vcf =
-        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    TrackVCF vcf = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
     List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
@@ -463,8 +459,7 @@ public class GenotypeMatrixTest {
           SQLException,
           InvalidColourException {
     GenomicCoords gc = new GenomicCoords("2:1-1000", 80, null, null);
-    TrackVCF vcf =
-        new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    TrackVCF vcf = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
     List<VCFFeature> linf = vcf.getIntervalFeatureList();
 
     GenotypeMatrix gm = new GenotypeMatrix();
@@ -476,8 +471,7 @@ public class GenotypeMatrixTest {
   @Test
   public void canHandleVCFWithNoSamples() throws Exception {
     GenomicCoords gc = new GenomicCoords("1:1-10000000", 80, null, null);
-    TrackVCF vcf =
-        new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
+    TrackVCF vcf = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
     List<VCFFeature> linf = vcf.getIntervalFeatureList();
     assertTrue(
         linf.size() > 0); // Make sure we do have some features otherwise the test is meaningless.

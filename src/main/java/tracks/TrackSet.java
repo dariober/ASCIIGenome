@@ -40,7 +40,7 @@ import samTextViewer.Utils;
 public class TrackSet {
 
   private List<AbstractTrack> trackList = new ArrayList<AbstractTrack>();
-  private List<Pattern> regexForTrackHeight = new ArrayList<Pattern>();
+  private final List<Pattern> regexForTrackHeight = new ArrayList<Pattern>();
   private int trackHeightForRegex = -1;
   private String[] yStrLimits = new String[2];
   private List<AbstractTrack> tracksForYLimits = new ArrayList<AbstractTrack>();
@@ -261,7 +261,7 @@ public class TrackSet {
     if (seqDict != null && seqDict.getSequence(gc.getChrom()) == null) {
       throw new InvalidGenomicCoordsException();
     }
-    TrackIntervalFeature tif = new TrackIntervalFeature(sourceName, gc);
+    TrackVCF tif = new TrackVCF(sourceName, gc);
     tif.setTrackTag(trackId);
     this.trackList.add(tif);
   }
@@ -389,17 +389,16 @@ public class TrackSet {
     boolean invertSelection = Utils.argListContainsFlag(tokens, "-v");
 
     if (tokens.size() < 2) {
-      System.err.println("Error in trackHeight subcommand. Expected 2 args got: " + tokens);
-      throw new InvalidCommandLineException();
+      throw new InvalidCommandLineException(
+          "Error in trackHeight subcommand. Expected 2 args got: " + tokens);
     }
 
     // Get height
     try {
       this.trackHeightForRegex = Integer.parseInt(tokens.get(1));
-      this.trackHeightForRegex = this.trackHeightForRegex < 0 ? 0 : this.trackHeightForRegex;
+      this.trackHeightForRegex = Math.max(this.trackHeightForRegex, 0);
     } catch (NumberFormatException e) {
-      System.err.println("Number format exception: " + this.trackHeightForRegex);
-      throw new InvalidCommandLineException();
+      throw new InvalidCommandLineException("Number format exception: " + this.trackHeightForRegex);
     }
 
     // Regex
@@ -431,12 +430,7 @@ public class TrackSet {
   }
 
   public void setShowSoftClipForRegex(List<String> tokens)
-      throws InvalidCommandLineException,
-          ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidRecordException,
-          SQLException {
+      throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
     List<String> args = new ArrayList<String>(tokens);
     args.remove(0);
 
@@ -513,7 +507,7 @@ public class TrackSet {
 
     // Regex to capture tracks: Everything left after removing command name and args:
     List<String> trackNameRegex = new ArrayList<String>();
-    if (args.size() > 0) {
+    if (!args.isEmpty()) {
       trackNameRegex.addAll(args);
     } else {
       trackNameRegex.add(".*"); // Default: Capture everything
@@ -1217,7 +1211,7 @@ public class TrackSet {
     List<String> trackNameRegex = new ArrayList<String>();
     String awk = "";
 
-    if (args.size() == 0) {
+    if (args.isEmpty()) {
       // This will turn off everything
       trackNameRegex.add(".*");
     } else if (args.get(0).equals("-off")) {
@@ -1231,10 +1225,8 @@ public class TrackSet {
       // * Any args after the script are track regex.
       final List<String> awkOpts =
           Arrays.asList(
-              new String[] {
-                "-F", "-f", "-v", "-t", "-c", "-o", "-z", "-Z", "-d", "-S", "-s", "-x", "-y", "-r",
-                "-ext", "-ni"
-              });
+              "-F", "-f", "-v", "-t", "-c", "-o", "-z", "-Z", "-d", "-S", "-s", "-x", "-y", "-r",
+              "-ext", "-ni");
       int idxScript = 0; // Index of the script in the command args.
       boolean skip = false;
       for (String x : args) {
@@ -1243,7 +1235,6 @@ public class TrackSet {
           skip = true;
         } else if (skip) {
           skip = false;
-          continue;
         } else {
           break;
         }
@@ -1263,7 +1254,7 @@ public class TrackSet {
       trackNameRegex.addAll(args.subList(idxScript + 1, args.size()));
     }
 
-    if (trackNameRegex.size() == 0) {
+    if (trackNameRegex.isEmpty()) {
       trackNameRegex.add(".*"); // Track regex list not given: Set to capture all of them.
     }
 
@@ -1292,14 +1283,12 @@ public class TrackSet {
                 + tr.getTrackTag());
         throw new InvalidCommandLineException();
       }
-      if ((awk.contains("getGtfTag(") || awk.contains("getGtfTag("))
-          && !tr.getTrackFormat().equals(TrackFormat.GTF)) {
+      if (awk.contains("getGtfTag(") && !tr.getTrackFormat().equals(TrackFormat.GTF)) {
         System.err.println(
             "\nFunction getGtfTag() can be applied to GTF tracks only. Got:\n" + tr.getTrackTag());
         throw new InvalidCommandLineException();
       }
-      if ((awk.contains("getGffTag(") || awk.contains("getGffTag("))
-          && !tr.getTrackFormat().equals(TrackFormat.GFF)) {
+      if (awk.contains("getGffTag(") && !tr.getTrackFormat().equals(TrackFormat.GFF)) {
         System.err.println(
             "\nFunction getGffTag() can be applied to GFF tracks only. Got:\n" + tr.getTrackTag());
         throw new InvalidCommandLineException();
@@ -1381,8 +1370,7 @@ public class TrackSet {
       }
       args.set(0, '"' + tag + '"');
       func = fname + "(" + Joiner.on(",").join(args) + ")";
-      awkScript =
-          awkScript.substring(0, gapStart) + func + awkScript.substring(gapEnd, awkScript.length());
+      awkScript = awkScript.substring(0, gapStart) + func + awkScript.substring(gapEnd);
     }
     return awkScript;
   }

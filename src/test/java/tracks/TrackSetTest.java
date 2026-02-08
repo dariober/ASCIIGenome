@@ -771,11 +771,9 @@ public class TrackSetTest {
 
   @Test
   public void canReplaceOverloadedFunctionInAwk2() throws Exception {
-
     GenomicCoords gc = new GenomicCoords("1:200000-200317", 80, null, null);
-    TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    AbstractTrack t1 =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+    TrackSet ts = new TrackSet(new ArrayList<>(), gc);
+    AbstractTrack t1 = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     ts.addTrack(t1, "vcf");
 
     // Nothing to replace (invalid script)
@@ -791,11 +789,9 @@ public class TrackSetTest {
 
   @Test
   public void canReplaceOverloadedFunctionInAwk() throws Exception {
-
     GenomicCoords gc = new GenomicCoords("chr1:1-100", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    AbstractTrack t1 =
-        new TrackIntervalFeature("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
+    AbstractTrack t1 = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf", gc);
     ts.addTrack(t1, "vcf");
     AbstractTrack t2 = new TrackPileup("test_data/ds051.actb.bam", gc);
     ts.addTrack(t2, "bam");
@@ -1376,16 +1372,16 @@ public class TrackSetTest {
           InvalidRecordException,
           SQLException {
 
-    String intervalFileName = "test_data/bgz_noindex.vcf.bgz";
+    String fn = "test_data/bgz_noindex.vcf.bgz";
     GenomicCoords gc = new GenomicCoords("1:1-200000000", 80, null, null);
 
-    TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
+    TrackSet ts = new TrackSet(new ArrayList<>(), gc);
 
-    AbstractTrack t1 = new TrackIntervalFeature(intervalFileName, gc);
+    AbstractTrack t1 = new TrackVCF(fn, gc);
     ts.addTrack(t1, "x");
-    AbstractTrack t2 = new TrackIntervalFeature(intervalFileName, gc);
+    AbstractTrack t2 = new TrackVCF(fn, gc);
     ts.addTrack(t2, "x");
-    AbstractTrack t3 = new TrackIntervalFeature(intervalFileName, gc);
+    AbstractTrack t3 = new TrackVCF(fn, gc);
     ts.addTrack(t3, "x");
 
     String cmdInput = "trackHeight 2 #1 #3";
@@ -1422,7 +1418,7 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("1:577583-759855", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
     String vcf = "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
-    AbstractTrack t1 = new TrackIntervalFeature(vcf, gc);
+    AbstractTrack t1 = new TrackVCF(vcf, gc);
     ts.addTrack(t1, "x");
     t1.setNoFormat(true);
 

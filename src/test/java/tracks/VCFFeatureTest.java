@@ -1,7 +1,6 @@
 package tracks;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.Utils;
@@ -41,7 +39,7 @@ public class VCFFeatureTest {
   public void canMakeIdeogram() throws InvalidGenomicCoordsException, InvalidColourException {
 
     String line = "chr1 0 10".replaceAll(" ", "\t");
-    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED,-1);
+    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED, -1);
     f.setScreenFrom(0);
     f.setScreenTo(9);
 
@@ -60,7 +58,7 @@ public class VCFFeatureTest {
 
     // With GTF feature
     line = "chr1 na exon 1 100 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF,-1);
+    f = new IntervalFeature(line, TrackFormat.GTF, -1);
     f.setScreenFrom(0);
     f.setScreenTo(9);
     f.setGtfAttributeForName("foo");
@@ -82,7 +80,7 @@ public class VCFFeatureTest {
   public void canSetIdeogram() throws InvalidGenomicCoordsException, InvalidColourException {
 
     String line = "chr1 0 10".replaceAll(" ", "\t");
-    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED,-1);
+    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED, -1);
     f.setScreenFrom(0);
     f.setScreenTo(9);
 
@@ -110,7 +108,7 @@ public class VCFFeatureTest {
       throws InvalidGenomicCoordsException, InvalidColourException {
 
     String line = "chr1 0 10 foo bar baz".replaceAll(" ", "\t");
-    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED,-1);
+    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED, -1);
     f.setScreenFrom(0);
     f.setScreenTo(9);
 
@@ -133,7 +131,7 @@ public class VCFFeatureTest {
 
     // Column index not available
     line = "chr1 0 10".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED,-1);
+    f = new IntervalFeature(line, TrackFormat.BED, -1);
     f.setScreenFrom(0);
     f.setScreenTo(9);
     f.setBedFieldName(4);
@@ -142,7 +140,7 @@ public class VCFFeatureTest {
 
     // Name missing
     line = "chr1 0 10 .".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED,-1);
+    f = new IntervalFeature(line, TrackFormat.BED, -1);
     f.setScreenFrom(0);
     f.setScreenTo(9);
     f.setBedFieldName(3);
@@ -151,7 +149,7 @@ public class VCFFeatureTest {
 
     // Name not wanted
     line = "chr1 0 10 foo".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED,-1);
+    f = new IntervalFeature(line, TrackFormat.BED, -1);
     f.setScreenFrom(0);
     f.setScreenTo(9);
     f.setBedFieldName(3);
@@ -170,88 +168,88 @@ public class VCFFeatureTest {
 
     // Name not wanted to display:
     line = "chr1 0 10 myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED,-1);
+    f = new IntervalFeature(line, TrackFormat.BED, -1);
     f.setGtfAttributeForName("-na");
     assertEquals(".", f.getName());
 
     // Do not use a name
     line = "chr1 0 10 myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED,-1);
+    f = new IntervalFeature(line, TrackFormat.BED, -1);
     f.setGtfAttributeForName(null);
     assertEquals("myname", f.getName());
 
     // Custom name from BED: Has no effect
     line = "chr1 0 10 myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED,-1);
+    f = new IntervalFeature(line, TrackFormat.BED, -1);
     f.setGtfAttributeForName("ID");
     assertEquals("myname", f.getName());
 
     // Custom name from GTF
     line = "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF,-1);
+    f = new IntervalFeature(line, TrackFormat.GTF, -1);
     f.setGtfAttributeForName("foo");
     assertEquals("myname", f.getName());
 
     // Custom name from GTF, with attribute not found
     line = "chr1 na exon 1 10 . + . ID=mrna0001;Name=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF,-1);
+    f = new IntervalFeature(line, TrackFormat.GTF, -1);
     f.setGtfAttributeForName("foo");
     assertEquals(".", f.getName());
 
     // BED with and without name
     line = "chr1 0 10".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED,-1);
+    f = new IntervalFeature(line, TrackFormat.BED, -1);
     assertEquals(".", f.getName());
 
     line = "chr1 0 10 myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED,-1);
+    f = new IntervalFeature(line, TrackFormat.BED, -1);
     assertEquals("myname", f.getName());
 
     // GTF/GFF without attributes or without any valid filed to get name from
     line = "chr1 na exon 1 10 . + .".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF,-1);
+    f = new IntervalFeature(line, TrackFormat.GTF, -1);
     assertEquals(".", f.getName());
 
     line = "chr1 na exon 1 10 . + . foo=mrna0001;bar=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF,-1);
+    f = new IntervalFeature(line, TrackFormat.GTF, -1);
     assertEquals(".", f.getName());
 
     // GFF with Name
     line = "chr1 na exon 1 10 . + . ID=mrna0001;Name=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF,-1);
+    f = new IntervalFeature(line, TrackFormat.GTF, -1);
     assertEquals("myname", f.getName());
 
     // GFF use ID
     line = "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
     ;
-    f = new IntervalFeature(line, TrackFormat.GTF,-1);
+    f = new IntervalFeature(line, TrackFormat.GTF, -1);
     assertEquals("mrna0001", f.getName());
 
     // GTF
     line = "chr1\tna\texon\t1\t10\t.\t+\t.\tgene_id \"mygene\"; transcript_id \"mytranx\";";
-    f = new IntervalFeature(line, TrackFormat.GTF,-1);
+    f = new IntervalFeature(line, TrackFormat.GTF, -1);
     assertEquals("mytranx", f.getName());
 
     line = "chr1\tna\texon\t1\t10\t.\t+\t.\tgene_id \"mygene\";";
-    f = new IntervalFeature(line, TrackFormat.GTF,-1);
+    f = new IntervalFeature(line, TrackFormat.GTF, -1);
     assertEquals("mygene", f.getName());
   }
 
   @Test
   public void canTestForEqualCoords() throws InvalidGenomicCoordsException {
     IntervalFeature plus =
-        new IntervalFeature("chr1 0 10 x . +".replaceAll(" ", "\t"), TrackFormat.BED,-1);
+        new IntervalFeature("chr1 0 10 x . +".replaceAll(" ", "\t"), TrackFormat.BED, -1);
     IntervalFeature minus =
-        new IntervalFeature("chr1 0 10 y . -".replaceAll(" ", "\t"), TrackFormat.BED,-1);
+        new IntervalFeature("chr1 0 10 y . -".replaceAll(" ", "\t"), TrackFormat.BED, -1);
 
     assertTrue(plus.equals(minus)); // Strand not matters
     assertTrue(!plus.equalStranded(minus)); // Strand matters
 
     // Strand NA
     IntervalFeature na1 =
-        new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED,-1);
+        new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, -1);
     IntervalFeature na2 =
-        new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED,-1);
+        new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, -1);
     assertTrue(na1.equals(na2));
     assertTrue(na1.equalStranded(na2));
 
@@ -262,28 +260,28 @@ public class VCFFeatureTest {
   @Test
   public void canCreateIntervalFromString() throws InvalidGenomicCoordsException {
     String bedLine = "chr1\t0\t1";
-    IntervalFeature f = new IntervalFeature(bedLine, TrackFormat.BED,-1);
+    IntervalFeature f = new IntervalFeature(bedLine, TrackFormat.BED, -1);
     assertEquals("chr1", f.getChrom());
     assertEquals(1, f.getFrom()); // Note start augmented by 1.
 
     bedLine = "chr1\t0\t1\tgene\t0.1\t+";
-    f = new IntervalFeature(bedLine, TrackFormat.BED,-1);
+    f = new IntervalFeature(bedLine, TrackFormat.BED, -1);
     assertEquals("gene", f.getName());
     assertEquals('+', f.getStrand());
 
     bedLine = " chr1\t0\t1";
-    f = new IntervalFeature(bedLine, TrackFormat.BED,-1);
+    f = new IntervalFeature(bedLine, TrackFormat.BED, -1);
     assertEquals("chr1", f.getChrom()); // NB: spaces in chrom stripped.
   }
 
   @Test
   public void canSortByChromPos() throws InvalidGenomicCoordsException {
     List<IntervalFeature> flist = new ArrayList<IntervalFeature>();
-    flist.add(new IntervalFeature("chrM\t10\t100\tg5", TrackFormat.BED,-1));
-    flist.add(new IntervalFeature("chrM\t1\t100\tg4", TrackFormat.BED,-1));
-    flist.add(new IntervalFeature("chrM\t1\t90\tg3", TrackFormat.BED,-1));
-    flist.add(new IntervalFeature("chr1\t10\t90\tg2", TrackFormat.BED,-1));
-    flist.add(new IntervalFeature("chr1\t1\t90\tg1", TrackFormat.BED,-1));
+    flist.add(new IntervalFeature("chrM\t10\t100\tg5", TrackFormat.BED, -1));
+    flist.add(new IntervalFeature("chrM\t1\t100\tg4", TrackFormat.BED, -1));
+    flist.add(new IntervalFeature("chrM\t1\t90\tg3", TrackFormat.BED, -1));
+    flist.add(new IntervalFeature("chr1\t10\t90\tg2", TrackFormat.BED, -1));
+    flist.add(new IntervalFeature("chr1\t1\t90\tg1", TrackFormat.BED, -1));
     Collections.sort(flist);
     assertEquals("g1", flist.get(0).getName());
     assertEquals("g5", flist.get(4).getName());
@@ -295,36 +293,36 @@ public class VCFFeatureTest {
     for (int i = 10; i < 20; i += 2) {
       rulerMap.add((double) (i + 0.3));
     } // [10.3, 12.3, 14.3, 16.3, 18.3]
-    IntervalFeature f = new IntervalFeature("chrM\t10\t15", TrackFormat.BED,-1);
+    IntervalFeature f = new IntervalFeature("chrM\t10\t15", TrackFormat.BED, -1);
     f.mapToScreen(rulerMap);
     assertEquals(0, f.getScreenFrom());
     assertEquals(2, f.getScreenTo());
 
     // Feature is fully contained in just one text char on screen
-    f = new IntervalFeature("chrM\t10\t11", TrackFormat.BED,-1);
+    f = new IntervalFeature("chrM\t10\t11", TrackFormat.BED, -1);
     f.mapToScreen(rulerMap);
     assertEquals(0, f.getScreenFrom());
     assertEquals(0, f.getScreenTo());
 
     // Feature is not part of ruler:
-    f = new IntervalFeature("chrM\t100\t500", TrackFormat.BED,-1);
+    f = new IntervalFeature("chrM\t100\t500", TrackFormat.BED, -1);
     f.mapToScreen(rulerMap);
     assertEquals(-1, f.getScreenFrom());
     assertEquals(-1, f.getScreenTo());
 
     // NB: Feature is not part of ruler because start coord 18 is augmented by 1 to become 1-based.
-    f = new IntervalFeature("chrM\t18\t30", TrackFormat.BED,-1);
+    f = new IntervalFeature("chrM\t18\t30", TrackFormat.BED, -1);
     f.mapToScreen(rulerMap);
     assertEquals(-1, f.getScreenFrom());
     assertEquals(-1, f.getScreenTo());
 
     // Partial overlap:
-    f = new IntervalFeature("chrM\t1\t16", TrackFormat.BED,-1);
+    f = new IntervalFeature("chrM\t1\t16", TrackFormat.BED, -1);
     f.mapToScreen(rulerMap);
     assertEquals(0, f.getScreenFrom());
     assertEquals(3, f.getScreenTo());
 
-    f = new IntervalFeature("chrM\t17\t30", TrackFormat.BED,-1);
+    f = new IntervalFeature("chrM\t17\t30", TrackFormat.BED, -1);
     f.mapToScreen(rulerMap);
     assertEquals(4, f.getScreenFrom());
     assertEquals(4, f.getScreenTo());
@@ -337,9 +335,7 @@ public class VCFFeatureTest {
   }
 
   @Test
-  public void canFormatVCFLine()
-      throws
-      InvalidColourException {
+  public void canFormatVCFLine() throws InvalidColourException {
 
     List<Double> rulerMap = new ArrayList<>();
     for (int i = 1; i < 100; i++) {

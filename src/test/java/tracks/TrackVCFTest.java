@@ -1,5 +1,7 @@
 package tracks;
 
+import static org.junit.Assert.*;
+
 import colouring.Config;
 import colouring.Xterm256;
 import com.google.common.base.Splitter;
@@ -16,254 +18,248 @@ import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
 
-import static org.junit.Assert.*;
-
 public class TrackVCFTest {
 
-    @Before
-    public void prepareConfig() throws IOException, InvalidConfigException {
-        new Config(null);
-        new Xterm256();
-    }
+  @Before
+  public void prepareConfig() throws IOException, InvalidConfigException {
+    new Config(null);
+    new Xterm256();
+  }
 
-    @Test
-    public void canReadOddFilename()
-            throws InvalidGenomicCoordsException,
-            IOException,
-            ClassNotFoundException,
-            InvalidRecordException,
-            SQLException {
-        GenomicCoords gc = new GenomicCoords("1:1-100000", 80, null, null);
-        TrackVCF tif = new TrackVCF("test_data/odd[filename].vcf.gz", gc);
-        assertEquals("1", (tif.getGc().getChrom()));
-        tif.close();
-    }
+  @Test
+  public void canReadOddFilename()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException {
+    GenomicCoords gc = new GenomicCoords("1:1-100000", 80, null, null);
+    TrackVCF tif = new TrackVCF("test_data/odd[filename].vcf.gz", gc);
+    assertEquals("1", (tif.getGc().getChrom()));
+    tif.close();
+  }
 
-    @Test
-    public void canReadTabixVCFFromHTTP()
-            throws IOException,
-            InvalidGenomicCoordsException,
-            ClassNotFoundException,
-            InvalidRecordException,
-            SQLException {
-        String bgzFn =
-                "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/CHD.exon.2010_03.sites.vcf.gz";
-        GenomicCoords gc = new GenomicCoords("1:1-2000000", 80, null, null);
-        TrackVCF tif = new TrackVCF(bgzFn, gc);
-        assertEquals(3, tif.getIntervalFeatureList().size());
-        assertEquals("http", tif.getWorkFilename().substring(0, 4));
-    }
+  @Test
+  public void canReadTabixVCFFromHTTP()
+      throws IOException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException {
+    String bgzFn =
+        "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/CHD.exon.2010_03.sites.vcf.gz";
+    GenomicCoords gc = new GenomicCoords("1:1-2000000", 80, null, null);
+    TrackVCF tif = new TrackVCF(bgzFn, gc);
+    assertEquals(3, tif.getIntervalFeatureList().size());
+    assertEquals("http", tif.getWorkFilename().substring(0, 4));
+  }
 
-    @Test
-    public void canReadUnsortedVCFFromHTTP()
-            throws IOException,
-            InvalidGenomicCoordsException,
-            ClassNotFoundException,
-            InvalidRecordException,
-            SQLException {
-        GenomicCoords gc = new GenomicCoords("1:1-1142000", 80, null, null);
-        TrackVCF tif =
-                new TrackVCF(
-                        "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/CHD.exon.2010_03.sites.unsorted.vcf",
-                        gc);
-        assertEquals("http", tif.getFilename().substring(0, 4));
-        assertEquals(3, tif.getIntervalFeatureList().size());
-    }
+  @Test
+  public void canReadUnsortedVCFFromHTTP()
+      throws IOException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException {
+    GenomicCoords gc = new GenomicCoords("1:1-1142000", 80, null, null);
+    TrackVCF tif =
+        new TrackVCF(
+            "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/CHD.exon.2010_03.sites.unsorted.vcf",
+            gc);
+    assertEquals("http", tif.getFilename().substring(0, 4));
+    assertEquals(3, tif.getIntervalFeatureList().size());
+  }
 
-    @Test
-    public void canReadTabixVCFFromLocal()
-            throws IOException,
-            InvalidGenomicCoordsException,
-            ClassNotFoundException,
-            InvalidRecordException,
-            SQLException {
-        String bgzFn = "test_data/CHD.exon.2010_03.sites.vcf.gz";
-        GenomicCoords gc = new GenomicCoords("1:1-2000000", 80, null, null);
-        TrackVCF tif = new TrackVCF(bgzFn, gc);
-        assertEquals(3, tif.getIntervalFeatureList().size());
-    }
+  @Test
+  public void canReadTabixVCFFromLocal()
+      throws IOException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException {
+    String bgzFn = "test_data/CHD.exon.2010_03.sites.vcf.gz";
+    GenomicCoords gc = new GenomicCoords("1:1-2000000", 80, null, null);
+    TrackVCF tif = new TrackVCF(bgzFn, gc);
+    assertEquals(3, tif.getIntervalFeatureList().size());
+  }
 
-    @Test
-    public void canReadBgzFileExtension()
-            throws ClassNotFoundException,
-            IOException,
-            InvalidGenomicCoordsException,
-            InvalidRecordException,
-            SQLException {
+  @Test
+  public void canReadBgzFileExtension()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
 
-        GenomicCoords gc = new GenomicCoords("1:1-200000000", 80, null, null);
+    GenomicCoords gc = new GenomicCoords("1:1-200000000", 80, null, null);
 
-        // .bgz, without index
-        String intervalFileName = "test_data/bgz_noindex.vcf.bgz";
-        TrackVCF tif = new TrackVCF(intervalFileName, gc);
-        assertFalse(tif.getIntervalFeatureList().isEmpty());
+    // .bgz, without index
+    String intervalFileName = "test_data/bgz_noindex.vcf.bgz";
+    TrackVCF tif = new TrackVCF(intervalFileName, gc);
+    assertFalse(tif.getIntervalFeatureList().isEmpty());
 
-        // .bgz, with index
-        intervalFileName = "test_data/bgz_index.vcf.bgz";
-        tif = new TrackVCF(intervalFileName, gc);
-        assertFalse(tif.getFeaturesInInterval("1", 1, 200000000).isEmpty());
-    }
+    // .bgz, with index
+    intervalFileName = "test_data/bgz_index.vcf.bgz";
+    tif = new TrackVCF(intervalFileName, gc);
+    assertFalse(tif.getFeaturesInInterval("1", 1, 200000000).isEmpty());
+  }
 
-    @Test
-    public void canPrintGenotypeMatrix()
-            throws InvalidGenomicCoordsException,
-            IOException,
-            ClassNotFoundException,
-            InvalidRecordException,
-            SQLException,
-            InvalidColourException {
+  @Test
+  public void canPrintGenotypeMatrix()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
 
-        GenomicCoords gc = new GenomicCoords("1:577583-759855", 80, null, null);
-        String fn = "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
-        TrackVCF tif = new TrackVCF(fn, gc);
-        tif.setNoFormat(true);
-        assertTrue(tif.printToScreen().contains("HG00096"));
-    }
+    GenomicCoords gc = new GenomicCoords("1:577583-759855", 80, null, null);
+    String fn = "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz";
+    TrackVCF tif = new TrackVCF(fn, gc);
+    tif.setNoFormat(true);
+    assertTrue(tif.printToScreen().contains("HG00096"));
+  }
 
-    @Test
-    public void canFindIndel()
-            throws IOException,
-            InvalidGenomicCoordsException,
-            ClassNotFoundException,
-            InvalidRecordException,
-            SQLException {
+  @Test
+  public void canFindIndel()
+      throws IOException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException {
 
-        GenomicCoords gc = new GenomicCoords("1:113050000", 80, null, null);
-        String fn = "test_data/CEU.exon.2010_06.genotypes.vcf.gz";
-        TrackVCF tif = new TrackVCF(fn, gc);
-        VCFFeature x = tif.findNextRegexInGenome(Pattern.compile(".*113054374.*"), "1", 113050000);
-        assertTrue(x.getRaw().contains("\t113054374\t"));
-        assertEquals(113054374, x.getFrom());
-    }
+    GenomicCoords gc = new GenomicCoords("1:113050000", 80, null, null);
+    String fn = "test_data/CEU.exon.2010_06.genotypes.vcf.gz";
+    TrackVCF tif = new TrackVCF(fn, gc);
+    VCFFeature x = tif.findNextRegexInGenome(Pattern.compile(".*113054374.*"), "1", 113050000);
+    assertTrue(x.getRaw().contains("\t113054374\t"));
+    assertEquals(113054374, x.getFrom());
+  }
 
+  @Test
+  public void canPrintNormalizedVcfLines()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException,
+          InvalidCommandLineException {
 
-    @Test
-    public void canPrintNormalizedVcfLines()
-            throws ClassNotFoundException,
-            IOException,
-            InvalidGenomicCoordsException,
-            InvalidRecordException,
-            SQLException,
-            InvalidColourException,
-            InvalidCommandLineException {
+    GenomicCoords gc = new GenomicCoords("1:645709-645975", 80, null, null);
+    TrackVCF tif = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    tif.setPrintMode(PrintRawLine.FULL);
+    tif.setNoFormat(true);
+    tif.setPrintNormalizedVcf(true);
 
-        GenomicCoords gc = new GenomicCoords("1:645709-645975", 80, null, null);
-        TrackVCF tif =
-                new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
-        tif.setPrintMode(PrintRawLine.FULL);
-        tif.setNoFormat(true);
-        tif.setPrintNormalizedVcf(true);
+    String out = tif.printLines();
+    assertEquals(3, out.split("\n").length);
+    assertTrue(out.contains(" HG00096 | GT"));
 
-        String out = tif.printLines();
-        assertEquals(3, out.split("\n").length);
-        assertTrue(out.contains(" HG00096 | GT"));
+    // VCF with without samples
+    gc = new GenomicCoords("1:1105467-1105647", 80, null, null);
+    tif = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
+    tif.setPrintMode(PrintRawLine.FULL);
+    tif.setNoFormat(true);
+    tif.setPrintNormalizedVcf(true);
 
-        // VCF with without samples
-        gc = new GenomicCoords("1:1105467-1105647", 80, null, null);
-        tif = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
-        tif.setPrintMode(PrintRawLine.FULL);
-        tif.setNoFormat(true);
-        tif.setPrintNormalizedVcf(true);
+    assertEquals(1, tif.printLines().split("\n").length);
+  }
 
-        assertEquals(1, tif.printLines().split("\n").length);
-    }
+  @Test
+  public void canPrintFormattedVepAnnotation()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException,
+          InvalidCommandLineException {
+    GenomicCoords gc = new GenomicCoords("chr1:14327-14836", 80, null, null);
+    TrackVCF tvcf = new TrackVCF("test_data/vep.vcf", gc);
+    tvcf.setPrintMode(PrintRawLine.FULL);
+    tvcf.setNoFormat(true);
+    String woVep = tvcf.printLines();
+    tvcf.setPrintFormattedVep("");
+    String printed = tvcf.printLines();
+    assertTrue(Splitter.on("\n").splitToList(tvcf.printLines()).size() > 50);
+    assertTrue(printed.contains("Consequence "));
+    assertFalse(printed.contains("SWISSPROT"));
 
-    @Test
-    public void canPrintFormattedVepAnnotation()
-            throws InvalidGenomicCoordsException,
-            IOException,
-            ClassNotFoundException,
-            InvalidRecordException,
-            SQLException,
-            InvalidColourException,
-            InvalidCommandLineException {
-        GenomicCoords gc = new GenomicCoords("chr1:14327-14836", 80, null, null);
-        TrackVCF tvcf = new TrackVCF("test_data/vep.vcf", gc);
-        tvcf.setPrintMode(PrintRawLine.FULL);
-        tvcf.setNoFormat(true);
-        String woVep = tvcf.printLines();
-        tvcf.setPrintFormattedVep("");
-        String printed = tvcf.printLines();
-        assertTrue(Splitter.on("\n").splitToList(tvcf.printLines()).size() > 50);
-        assertTrue(printed.contains("Consequence "));
-        assertFalse(printed.contains("SWISSPROT"));
+    // INFO tag not found: Do nothing
+    tvcf.setPrintFormattedVep("csq_na");
+    printed = tvcf.printLines();
+    assertEquals(woVep, printed);
 
-        // INFO tag not found: Do nothing
-        tvcf.setPrintFormattedVep("csq_na");
-        printed = tvcf.printLines();
-        assertEquals(woVep, printed);
+    // Only ask for some headers, case insensitive
+    tvcf.setPrintFormattedVep("CSQ,ConseQUENCE,Allele");
+    printed = tvcf.printLines();
+    assertTrue(printed.contains("Consequence"));
+    assertTrue(printed.contains("Allele"));
+    assertFalse(printed.contains("IMPACT"));
 
-        // Only ask for some headers, case insensitive
-        tvcf.setPrintFormattedVep("CSQ,ConseQUENCE,Allele");
-        printed = tvcf.printLines();
-        assertTrue(printed.contains("Consequence"));
-        assertTrue(printed.contains("Allele"));
-        assertFalse(printed.contains("IMPACT"));
+    // Omit CSQ
+    tvcf.setPrintFormattedVep("CSQ,null");
+    printed = tvcf.printLines();
+    assertTrue(printed.contains("CSQ=... "));
 
-        // Omit CSQ
-        tvcf.setPrintFormattedVep("CSQ,null");
-        printed = tvcf.printLines();
-        assertTrue(printed.contains("CSQ=... "));
+    // No effect without VEP tag
+    gc = new GenomicCoords("1:1105468-34435998", 80, null, null);
+    tvcf = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf", gc);
+    tvcf.setPrintMode(PrintRawLine.FULL);
+    tvcf.setNoFormat(true);
+    tvcf.setPrintFormattedVep(null);
+    woVep = tvcf.printLines();
+    tvcf.setPrintFormattedVep("");
+    String withVep = tvcf.printLines();
+    assertEquals(woVep, withVep);
 
-        // No effect without VEP tag
-        gc = new GenomicCoords("1:1105468-34435998", 80, null, null);
-        tvcf = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf", gc);
-        tvcf.setPrintMode(PrintRawLine.FULL);
-        tvcf.setNoFormat(true);
-        tvcf.setPrintFormattedVep(null);
-        woVep = tvcf.printLines();
-        tvcf.setPrintFormattedVep("");
-        String withVep = tvcf.printLines();
-        assertEquals(woVep, withVep);
+    // No effect on non-VCF track
+    gc = new GenomicCoords("chr18:1-10000", 80, null, null);
+    TrackIntervalFeature tif = new TrackIntervalFeature("test_data/refSeq.hg19.short.bed", gc);
+    tif.setPrintMode(PrintRawLine.FULL);
+    tif.setNoFormat(true);
+    tif.setPrintFormattedVep(null);
+    woVep = tif.printLines();
+    tif.setPrintFormattedVep("");
+    withVep = tif.printLines();
+    assertEquals(woVep, withVep);
+  }
 
-        // No effect on non-VCF track
-        gc = new GenomicCoords("chr18:1-10000", 80, null, null);
-        TrackIntervalFeature tif = new TrackIntervalFeature("test_data/refSeq.hg19.short.bed", gc);
-        tif.setPrintMode(PrintRawLine.FULL);
-        tif.setNoFormat(true);
-        tif.setPrintFormattedVep(null);
-        woVep = tif.printLines();
-        tif.setPrintFormattedVep("");
-        withVep = tif.printLines();
-        assertEquals(woVep, withVep);
-    }
+  @Test
+  public void canReadVCFTabix()
+      throws IOException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
 
-    @Test
-    public void canReadVCFTabix()
-            throws IOException,
-            InvalidGenomicCoordsException,
-            ClassNotFoundException,
-            InvalidRecordException,
-            SQLException,
-            InvalidColourException {
+    GenomicCoords gc = new GenomicCoords("chr18:1-10000", 80, null, null);
+    TrackVCF tif = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
 
-        GenomicCoords gc = new GenomicCoords("chr18:1-10000", 80, null, null);
-        TrackVCF tif =
-                new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
+    List<VCFFeature> xset = tif.getFeaturesInInterval("1", 1, 10000000);
+    assertEquals(9, xset.size());
+    VCFFeature x = xset.get(1);
+    assertEquals("1", x.getChrom());
+    assertEquals(1108138, x.getFrom());
+    System.err.println(tif.printToScreen());
+  }
 
-        List<VCFFeature> xset = tif.getFeaturesInInterval("1", 1, 10000000);
-        assertEquals(9, xset.size());
-        VCFFeature x = xset.get(1);
-        assertEquals("1", x.getChrom());
-        assertEquals(1108138, x.getFrom());
-        System.err.println(tif.printToScreen());
-    }
+  @Test
+  public void canReadUnsortedVCF()
+      throws IOException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException {
 
-    @Test
-    public void canReadUnsortedVCF()
-            throws IOException,
-            InvalidGenomicCoordsException,
-            ClassNotFoundException,
-            InvalidRecordException,
-            SQLException {
-
-        GenomicCoords gc = new GenomicCoords("chr18:1-10000", 80, null, null);
-        TrackVCF tif =
-                new TrackVCF("test_data/CHD.exon.2010_03.sites.unsorted.vcf", gc);
-        List<VCFFeature> xset = tif.getFeaturesInInterval("1", 1, 10000000);
-        assertEquals(9, xset.size());
-        VCFFeature x = xset.get(1);
-        assertEquals("1", x.getChrom());
-        assertEquals(1108138, x.getFrom());
-    }
+    GenomicCoords gc = new GenomicCoords("chr18:1-10000", 80, null, null);
+    TrackVCF tif = new TrackVCF("test_data/CHD.exon.2010_03.sites.unsorted.vcf", gc);
+    List<VCFFeature> xset = tif.getFeaturesInInterval("1", 1, 10000000);
+    assertEquals(9, xset.size());
+    VCFFeature x = xset.get(1);
+    assertEquals("1", x.getChrom());
+    assertEquals(1108138, x.getFrom());
+  }
 }

@@ -152,8 +152,7 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
     this.validateIntervalFeature();
   }
 
-  private void intervalFeatureFromGtfLine(String gtfLine)
-      throws InvalidGenomicCoordsException {
+  private void intervalFeatureFromGtfLine(String gtfLine) throws InvalidGenomicCoordsException {
     // chr1    unknown exon    11874   12227   .       +       .       gene_id "DDX11L1";
     // transcript_id "NR_046018_1"; gene_name "DDX11L1"; tss_id "TSS14523";
     this.setRaw(gtfLine);
@@ -192,7 +191,8 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
   private void validateIntervalFeature() throws InvalidGenomicCoordsException {
 
     if (!chrom.trim().equals(chrom)) {
-      throw new InvalidGenomicCoordsException("Chrom name must not start or end with whitespaces. Got '" + chrom + "'");
+      throw new InvalidGenomicCoordsException(
+          "Chrom name must not start or end with whitespaces. Got '" + chrom + "'");
     }
 
     if (from < 1 || to < 1 || (from > to)) {
@@ -370,17 +370,17 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
       this.ideogram = null;
       return;
     }
-//    int expFeatureLen = (this.getScreenTo() - this.getScreenFrom() + 1);
-//    if (expFeatureLen != ideogram.size()) {
-//      throw new RuntimeException("Length of ideogram is "
-//          + ideogram.size()
-//          + " "
-//          + " and does not equal feature length on screen from="
-//          + this.getScreenFrom()
-//          + " to="
-//          + this.getScreenTo()
-//          + " expected: to-from+1");
-//      }
+    //    int expFeatureLen = (this.getScreenTo() - this.getScreenFrom() + 1);
+    //    if (expFeatureLen != ideogram.size()) {
+    //      throw new RuntimeException("Length of ideogram is "
+    //          + ideogram.size()
+    //          + " "
+    //          + " and does not equal feature length on screen from="
+    //          + this.getScreenFrom()
+    //          + " to="
+    //          + this.getScreenTo()
+    //          + " expected: to-from+1");
+    //      }
     this.ideogram = ideogram;
     if (addName) {
       this.addNameToIdeogram();

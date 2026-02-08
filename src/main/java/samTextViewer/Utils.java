@@ -320,14 +320,15 @@ public class Utils {
     return alnCount;
   }
 
-//  /**
-//   * Merge two features representing the first and last elements of a contiguous overlapping block.
-//   */
-//  @FunctionalInterface
-//  public interface FeatureMerger<T extends IntervalFeature> {
-//    T merge(T a, T b, boolean screenCoords)
-//        throws InvalidGenomicCoordsException, InvalidColourException;
-//  }
+  //  /**
+  //   * Merge two features representing the first and last elements of a contiguous overlapping
+  // block.
+  //   */
+  //  @FunctionalInterface
+  //  public interface FeatureMerger<T extends IntervalFeature> {
+  //    T merge(T a, T b, boolean screenCoords)
+  //        throws InvalidGenomicCoordsException, InvalidColourException;
+  //  }
 
   public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
       List<T> intervalList, boolean screenCoords)
@@ -365,8 +366,8 @@ public class Utils {
       // Sanity check: The list to be merged is on the same chrom and sorted by start pos.
       if (i < intervalList.size()
           && (!mergedChrom.equals(interval.getChrom())
-          || mergedFrom > interval.getFrom()
-          || mergedFrom > mergedTo)) {
+              || mergedFrom > interval.getFrom()
+              || mergedFrom > mergedTo)) {
         System.err.println(mergedChrom + " " + mergedFrom + " " + mergedTo);
         throw new RuntimeException();
       }
@@ -375,7 +376,7 @@ public class Utils {
       if (screenCoords
           && i < intervalList.size()
           && (mergedScreenFrom <= interval.getScreenTo()
-          && mergedScreenTo >= (interval.getScreenFrom() - 1))) {
+              && mergedScreenTo >= (interval.getScreenFrom() - 1))) {
         // Overlap: Extend <to> coordinate. See also
         // http://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
         overlap = true;
@@ -393,12 +394,15 @@ public class Utils {
         // No overlap add merged interval to list and reset new merged interval
         // IntervalFeature x =
         //    new IntervalFeature(
-        //        mergedChrom + "\t" + (mergedFrom - 1) + "\t" + mergedTo, TrackFormat.BED, null, -1);
+        //        mergedChrom + "\t" + (mergedFrom - 1) + "\t" + mergedTo, TrackFormat.BED, null,
+        // -1);
         T x = null;
         try {
           x = (T) intervalList.get(i - 1).getClass().getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException e) {
+        } catch (InstantiationException
+            | IllegalAccessException
+            | InvocationTargetException
+            | NoSuchMethodException e) {
           throw new RuntimeException(e);
         }
 

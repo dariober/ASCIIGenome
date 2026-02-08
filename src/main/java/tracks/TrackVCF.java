@@ -20,7 +20,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -32,7 +31,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   private VCFCodec vcfCodec;
 
   public TrackVCF(final String filename, GenomicCoords gc)
-          throws IOException,
+      throws IOException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
           InvalidRecordException,
@@ -48,14 +47,14 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
         suffix += ".gz";
       }
       String tmpWorkFile =
-              Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
+          Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
       new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
       this.setWorkFilename(tmpWorkFile);
 
       new MakeTabixIndex(
-              filename,
-              new File(this.getWorkFilename()),
-              Utils.trackFormatToTabixFormat(this.getTrackFormat()));
+          filename,
+          new File(this.getWorkFilename()),
+          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
 
       this.tabixReader = this.getTabixReader(this.getWorkFilename());
     } else { // This means the input is tabix indexed.
@@ -67,10 +66,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
   @Override
   protected VCFFeature createFeature(String line) {
-    return new VCFFeature(
-            line,
-            getVCFCodec()
-    );
+    return new VCFFeature(line, getVCFCodec());
   }
 
   // This is a bad but for now let's get on with it
@@ -79,15 +75,23 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   protected Map<String, List<VCFFeature>> groupByGFFAttribute() {
     return Map.of();
   }
+
   @Override
   protected Map<String, List<VCFFeature>> groupByGTFAttribute() {
     return Map.of();
   }
+
   @Override
   protected VCFFeature collapseGFFTranscript(List<VCFFeature> features, List<Double> mapToScreen) {
     return null;
   }
+
   // <----
+
+  @Override
+  protected TrackFormat getTrackFormat() {
+    return TrackFormat.VCF;
+  }
 
   @Override
   /**
@@ -99,45 +103,45 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
    * mapping.
    */
   public void update()
-          throws IOException,
+      throws IOException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
     this.vcfFeatureList =
-            this.getFeaturesInInterval(
-                    this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+        this.getFeaturesInInterval(
+            this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
     for (VCFFeature ift : this.vcfFeatureList) {
       ift.mapToScreen(this.getGc().getMapping());
     }
   }
 
-//  protected IntervalFeature findNextRegexInGenome(Pattern pattern, String chrom, int from)
-//          throws IOException, InvalidGenomicCoordsException {
-//    return super.findNextRegexInGenome(pattern, chrom, from);
-//  }
-//
-//  @Override
-//  protected List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to)
-//      throws IOException, InvalidGenomicCoordsException {
-//    if (from < 1) {
-//      System.err.println("from < 1: " + from + "; resetting to 1.");
-//      from = 1;
-//    }
-//    if (from > to) {
-//      System.err.println(
-//          "Invalid coordinates: from: "
-//              + from
-//              + "; to: "
-//              + to
-//              + "; Resetting to initial 1-"
-//              + Integer.MAX_VALUE);
-//      throw new InvalidGenomicCoordsException();
-//    }
-//    List<IntervalFeature> xFeatures = this.getFeaturesInVCFInterval(chrom, from, to);
-//    this.removeInvisibleFeatures(xFeatures);
-//    return xFeatures;
-//  }
+  //  protected IntervalFeature findNextRegexInGenome(Pattern pattern, String chrom, int from)
+  //          throws IOException, InvalidGenomicCoordsException {
+  //    return super.findNextRegexInGenome(pattern, chrom, from);
+  //  }
+  //
+  //  @Override
+  //  protected List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to)
+  //      throws IOException, InvalidGenomicCoordsException {
+  //    if (from < 1) {
+  //      System.err.println("from < 1: " + from + "; resetting to 1.");
+  //      from = 1;
+  //    }
+  //    if (from > to) {
+  //      System.err.println(
+  //          "Invalid coordinates: from: "
+  //              + from
+  //              + "; to: "
+  //              + to
+  //              + "; Resetting to initial 1-"
+  //              + Integer.MAX_VALUE);
+  //      throw new InvalidGenomicCoordsException();
+  //    }
+  //    List<IntervalFeature> xFeatures = this.getFeaturesInVCFInterval(chrom, from, to);
+  //    this.removeInvisibleFeatures(xFeatures);
+  //    return xFeatures;
+  //  }
 
   private VCFCodec getVCFCodec() {
     if (this.vcfCodec == null) {
@@ -147,8 +151,6 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     }
     return this.vcfCodec;
   }
-
-
 
   protected List<VCFFeature> getFeaturesInInterval(String chrom, int from, int to)
       throws IOException, InvalidGenomicCoordsException {
@@ -175,10 +177,10 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
       if (q == null) {
         break;
       }
-      VCFFeature vcfFeature =
-          new VCFFeature(q, this.getVCFCodec());
+      VCFFeature vcfFeature = new VCFFeature(q, this.getVCFCodec());
       xFeatures.add(vcfFeature);
     }
+    this.removeInvisibleFeatures(xFeatures);
     return xFeatures;
   }
 
@@ -202,12 +204,12 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     // Genotype matrix
     try {
       String gtm =
-              this.getGenotypeMatrix()
-                      .printToScreen(
-                              this.isNoFormat(),
-                              this.vcfFeatureList,
-                              this.getGc().getUserWindowSize(),
-                              this.getVcfHeader());
+          this.getGenotypeMatrix()
+              .printToScreen(
+                  this.isNoFormat(),
+                  this.vcfFeatureList,
+                  this.getGc().getUserWindowSize(),
+                  this.getVcfHeader());
       printable.add(gtm);
     } catch (InvalidColourException | IOException e) {
       e.printStackTrace();
@@ -216,9 +218,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   }
 
   @Override
-  public void setFeatureName(String gtfAttributeForName) {
-
-  }
+  public void setFeatureName(String gtfAttributeForName) {}
 
   @Override
   protected List<String> getRecordsAsStrings() {
@@ -226,8 +226,8 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     for (VCFFeature ift : this.vcfFeatureList) {
       if (this.getPrintNormalizedVcf()) {
         List<String> line =
-                this.normalizeVcfRecordBySample(
-                        this.getVcfHeader().getSampleNamesInOrder(), ift.getRaw());
+            this.normalizeVcfRecordBySample(
+                this.getVcfHeader().getSampleNamesInOrder(), ift.getRaw());
         featureList.addAll(line);
       } else {
         featureList.add(ift.getRaw());
@@ -248,13 +248,13 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
       List<String> fixed = vcfList.subList(0, 8);
       String fmtTags = vcfList.get(8);
       String tabLine =
-              Joiner.on("\t").join(fixed)
-                      + "\t"
-                      + sampleNames.get(i)
-                      + "\t"
-                      + fmtTags
-                      + "\t"
-                      + samples.get(i);
+          Joiner.on("\t").join(fixed)
+              + "\t"
+              + sampleNames.get(i)
+              + "\t"
+              + fmtTags
+              + "\t"
+              + samples.get(i);
       tsv.add(tabLine);
     }
     return tsv;
