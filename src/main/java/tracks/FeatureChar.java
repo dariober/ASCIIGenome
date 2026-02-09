@@ -130,11 +130,14 @@ public class FeatureChar implements Cloneable {
     return null;
   }
 
-  public Object clone() {
+  @Override
+  public FeatureChar clone() {
     try {
-      return super.clone();
+      // String fields are immutable, so no need to deep copy them
+      return (FeatureChar) super.clone();
     } catch (CloneNotSupportedException e) {
-      return null;
+      // This should never happen since we implement Cloneable
+      throw new RuntimeException("Failed to clone FeatureChar", e);
     }
   }
 

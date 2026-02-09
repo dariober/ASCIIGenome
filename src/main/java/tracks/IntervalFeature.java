@@ -17,7 +17,7 @@ import samTextViewer.Utils;
  *
  * @author berald01
  */
-public class IntervalFeature implements Comparable<IntervalFeature> {
+public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
 
   // When reading bed files, we expect fields to be in this order.
   private String chrom; // Required
@@ -89,6 +89,31 @@ public class IntervalFeature implements Comparable<IntervalFeature> {
     } else {
       System.err.println("Format " + format + " not supported");
       throw new RuntimeException();
+    }
+  }
+
+  @Override
+  public IntervalFeature clone() {
+    try {
+      IntervalFeature cloned = (IntervalFeature) super.clone();
+
+      // Deep copy the ideogram list and its contents
+      if (this.ideogram != null) {
+        List<FeatureChar> clonedIdeogram = new ArrayList<>(this.ideogram.size());
+        for (FeatureChar fc : this.ideogram) {
+          FeatureChar clonedFc = fc.clone();
+          clonedIdeogram.add(clonedFc);
+        }
+        cloned.ideogram = clonedIdeogram;
+      }
+
+      // Note: String fields and primitive fields are handled by super.clone()
+      // String fields are immutable, so sharing references is safe
+
+      return cloned;
+    } catch (CloneNotSupportedException e) {
+      // This should never happen since we implement Cloneable
+      throw new RuntimeException("Failed to clone IntervalFeature", e);
     }
   }
 

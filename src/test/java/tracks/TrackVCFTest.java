@@ -148,9 +148,13 @@ public class TrackVCFTest {
     String fn = "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf";
     TrackVCF tif = new TrackVCF(fn, gc);
     tif.setNoFormat(true);
-    System.err.println(tif.printToScreen());
+    assertEquals(9, Splitter.on("\n").splitToList(tif.printToScreen()).size());
+
     tif.setFeatureDisplayMode(FeatureDisplayMode.COLLAPSED);
-    System.err.println(tif.printToScreen());
+    assertEquals(6, Splitter.on("\n").splitToList(tif.printToScreen()).size());
+
+    tif.setFeatureDisplayMode(FeatureDisplayMode.ONELINE);
+    assertEquals(4, Splitter.on("\n").splitToList(tif.printToScreen()).size());
   }
 
   @Test

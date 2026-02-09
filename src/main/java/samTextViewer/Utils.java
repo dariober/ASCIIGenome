@@ -321,8 +321,7 @@ public class Utils {
   }
 
   public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
-      List<T> intervalList, boolean screenCoords)
-      throws InvalidGenomicCoordsException, InvalidColourException {
+      List<T> intervalList, boolean screenCoords) {
     List<T> mergedList = new ArrayList<>();
     if (intervalList.isEmpty()) {
       return mergedList;
@@ -340,7 +339,7 @@ public class Utils {
     for (int i = 0; i < (intervalList.size() + 1); i++) {
       // We do an additional loop to add to the mergedList the last interval.
       // The last loop has interval == null so below you need to account for it
-      IntervalFeature interval = null;
+      T interval = null;
       if (i < intervalList.size()) {
         interval = intervalList.get(i);
       }
@@ -358,8 +357,7 @@ public class Utils {
           && (!mergedChrom.equals(interval.getChrom())
               || mergedFrom > interval.getFrom()
               || mergedFrom > mergedTo)) {
-        System.err.println(mergedChrom + " " + mergedFrom + " " + mergedTo);
-        throw new RuntimeException();
+        throw new RuntimeException(mergedChrom + " " + mergedFrom + " " + mergedTo);
       }
 
       boolean overlap = false;
@@ -386,15 +384,15 @@ public class Utils {
         //    new IntervalFeature(
         //        mergedChrom + "\t" + (mergedFrom - 1) + "\t" + mergedTo, TrackFormat.BED, null,
         // -1);
-        T x = null;
-        try {
-          x = (T) intervalList.get(i - 1).getClass().getDeclaredConstructor().newInstance();
-        } catch (InstantiationException
-            | IllegalAccessException
-            | InvocationTargetException
-            | NoSuchMethodException e) {
-          throw new RuntimeException(e);
-        }
+        T x = (T) intervalList.get(0).clone();
+//        try {
+//          x = (T) intervalList.get(i - 1).getClass().getDeclaredConstructor().newInstance();
+//        } catch (InstantiationException
+//            | IllegalAccessException
+//            | InvocationTargetException
+//            | NoSuchMethodException e) {
+//          throw new RuntimeException(e);
+//        }
 
         // Set the merged fields
         x.setChrom(mergedChrom);

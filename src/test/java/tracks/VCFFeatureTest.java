@@ -384,10 +384,7 @@ public class VCFFeatureTest {
 
   @Test
   public void canFormatVCFLineStructVar()
-      throws InvalidGenomicCoordsException,
-          InvalidColourException,
-          IOException,
-          InvalidConfigException {
+      throws InvalidColourException {
 
     List<Double> rulerMap = new ArrayList<Double>();
     for (int i = 1; i < 100; i++) {

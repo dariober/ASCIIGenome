@@ -31,8 +31,6 @@ public class VCFFeature extends IntervalFeature {
     this.setRaw(line);
   }
 
-  public VCFFeature() { }
-
   /* M e t h o d s */
 
   /**
