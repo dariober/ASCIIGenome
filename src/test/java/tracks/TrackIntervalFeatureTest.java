@@ -130,7 +130,7 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("chr1:11800-20000", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature("test_data/issue74.gff3.gz", gc);
     tif.setNoFormat(true);
-    assertEquals(10, tif.getIntervalFeatureList().size());
+    assertEquals(10, tif.getFeatureList().size());
   }
 
   @Test
@@ -169,7 +169,7 @@ public class TrackIntervalFeatureTest {
     tif.setNoFormat(true);
     assertTrue(tif.printToScreen().trim().startsWith("ccc"));
     assertTrue(tif.printToScreen().trim().endsWith("eee"));
-    assertEquals(6, tif.getIntervalFeatureList().size());
+    assertEquals(6, tif.getFeatureList().size());
   }
 
   @Test
@@ -342,8 +342,8 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("chr1:1-800170", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature(filename, gc);
     tif.setNoFormat(true);
-    assertEquals(12, tif.getIntervalFeatureList().size());
-    assertEquals(564665 + 1, tif.getIntervalFeatureList().get(0).getFrom());
+    assertEquals(12, tif.getFeatureList().size());
+    assertEquals(564665 + 1, tif.getFeatureList().get(0).getFrom());
   }
 
   @Test
@@ -375,7 +375,7 @@ public class TrackIntervalFeatureTest {
             "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/refSeq.bed",
             gc);
     assertEquals("http", tif.getFilename().substring(0, 4));
-    assertEquals(2, tif.getIntervalFeatureList().size());
+    assertEquals(2, tif.getFeatureList().size());
   }
 
   @Test
@@ -403,7 +403,7 @@ public class TrackIntervalFeatureTest {
                 0,
                 4)); // Check we are using the remote file as working file. I.e. no need to download
     // and index.
-    assertEquals(4, tif.getIntervalFeatureList().size());
+    assertEquals(4, tif.getFeatureList().size());
   }
 
   @Test
@@ -420,7 +420,7 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("chr1:1-70", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
     tif.setNoFormat(true);
-    assertEquals(2, tif.getIntervalFeatureList().size());
+    assertEquals(2, tif.getFeatureList().size());
 
     assertEquals("||||", tif.printToScreen().substring(0, 4));
     tif.setNoFormat(false);
@@ -538,10 +538,10 @@ public class TrackIntervalFeatureTest {
 
     tif.setShowHideRegex(
         Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue()), Pattern.compile("\texon\t"));
-    assertEquals(3, tif.getIntervalFeatureList().size());
+    assertEquals(3, tif.getFeatureList().size());
 
     tif.setShowHideRegex(Pattern.compile("WASH7P"), Pattern.compile("^$"));
-    assertTrue(tif.getIntervalFeatureList().size() == 11);
+    assertTrue(tif.getFeatureList().size() == 11);
   }
 
   @Test

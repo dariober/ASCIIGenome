@@ -505,9 +505,9 @@ public class TrackSetTest {
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
     ts.bookmark(gc, cmdInput);
     TrackBookmark bm = (TrackBookmark) ts.getTrackList().get(0);
-    assertEquals("chr1", bm.getIntervalFeatureList().get(0).getChrom());
-    assertEquals(999, bm.getIntervalFeatureList().get(0).getFrom());
-    assertEquals(999, bm.getIntervalFeatureList().get(0).getTo());
+    assertEquals("chr1", bm.getFeatureList().get(0).getChrom());
+    assertEquals(999, bm.getFeatureList().get(0).getFrom());
+    assertEquals(999, bm.getFeatureList().get(0).getTo());
 
     cmdInput = new ArrayList<String>();
     cmdInput.add("bookmark");
@@ -515,9 +515,9 @@ public class TrackSetTest {
     ts = new TrackSet(new ArrayList<String>(), gc);
     ts.bookmark(gc, cmdInput);
     bm = (TrackBookmark) ts.getTrackList().get(0);
-    assertEquals("chr1", bm.getIntervalFeatureList().get(0).getChrom());
-    assertEquals(999, bm.getIntervalFeatureList().get(0).getFrom());
-    assertEquals(1111, bm.getIntervalFeatureList().get(0).getTo());
+    assertEquals("chr1", bm.getFeatureList().get(0).getChrom());
+    assertEquals(999, bm.getFeatureList().get(0).getFrom());
+    assertEquals(1111, bm.getFeatureList().get(0).getTo());
 
     cmdInput = new ArrayList<String>();
     cmdInput.add("bookmark");
@@ -525,9 +525,9 @@ public class TrackSetTest {
     ts = new TrackSet(new ArrayList<String>(), gc);
     ts.bookmark(gc, cmdInput);
     bm = (TrackBookmark) ts.getTrackList().get(0);
-    assertEquals("chr1", bm.getIntervalFeatureList().get(0).getChrom());
-    assertEquals(999, bm.getIntervalFeatureList().get(0).getFrom());
-    assertEquals(999, bm.getIntervalFeatureList().get(0).getTo());
+    assertEquals("chr1", bm.getFeatureList().get(0).getChrom());
+    assertEquals(999, bm.getFeatureList().get(0).getFrom());
+    assertEquals(999, bm.getFeatureList().get(0).getTo());
 
     cmdInput = new ArrayList<String>();
     cmdInput.add("bookmark");
@@ -552,13 +552,13 @@ public class TrackSetTest {
           SQLException {
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
 
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     t1.setFilename("foo.gz");
     ts.addTrack(t1, "foo.gz");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     t2.setFilename("foo.txt");
     ts.addTrack(t2, "foo.txt");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     t3.setFilename("bla.gz");
     ts.addTrack(t3, "bla.gz");
 
@@ -615,13 +615,13 @@ public class TrackSetTest {
           SQLException {
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
 
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     t1.setFilename("foo.gz");
     ts.addTrack(t1, "foo.gz");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     t2.setFilename("foo.txt");
     ts.addTrack(t2, "foo.txt");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     t3.setFilename("bla.gz");
     ts.addTrack(t3, "bla.gz");
 
@@ -842,13 +842,13 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     t1.setFilename("foo.bam");
     ts.addTrack(t1, "foo.bam");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     t2.setFilename("bar.bam");
     ts.addTrack(t2, "bar.bam");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     t3.setFilename("foo.bam");
     ts.addTrack(t3, "foo.bam");
 
@@ -871,13 +871,13 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     t1.setFilename("foo.bam");
     ts.addTrack(t1, "foo.bam");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     t2.setFilename("bar.bam");
     ts.addTrack(t2, "bar.bam");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     t3.setFilename("foo.bam");
     ts.addTrack(t3, "foo.bam");
 
@@ -900,11 +900,11 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     ts.addTrack(t1, "x");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     ts.addTrack(t2, "x");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     ts.addTrack(t3, "x");
 
     String cmdInput = "rpm #1 #3";
@@ -931,11 +931,11 @@ public class TrackSetTest {
           ClassNotFoundException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     ts.addTrack(t1, "foo.gff");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     ts.addTrack(t2, "foo.bed");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     ts.addTrack(t3, "baz.narrowPeak");
 
     ts.editNamesForRegex(Utils.tokenize("editNames foo FOO", " "));
@@ -1099,7 +1099,7 @@ public class TrackSetTest {
           ClassNotFoundException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     ts.addTrack(t1, "foo|bar.gff");
 
     String msg = ts.editNamesForRegex(Utils.tokenize("editNames -F o|b O|B", " "));
@@ -1167,11 +1167,11 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<>(), null);
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     ts.addTrack(t1, "x");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     ts.addTrack(t2, "x");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     ts.addTrack(t3, "x");
 
     ts.setFeatureDisplayModeForRegex(Utils.tokenize("featureDisplayMode #1 #3", " "));
@@ -1257,11 +1257,11 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     ts.addTrack(t1, "x");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     ts.addTrack(t2, "x");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     ts.addTrack(t3, "x");
 
     ts.setPrintModeAndPrintFeaturesForRegex(Utils.tokenize("print #1 #3", " "));
@@ -1307,17 +1307,17 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     t1.setFilename("foo.gz");
     ts.addTrack(t1, "foo.gz");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     t2.setFilename("foo.txt");
     ts.addTrack(t2, "foo.txt");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     t3.setFilename("bla.gz");
     ts.addTrack(t3, "bla.gz");
 
-    String defaultColour = (new TrackIntervalFeature(null)).getTitleColour();
+    String defaultColour = (new TrackIntervalFeature()).getTitleColour();
 
     String cmdInput = "trackColour RED gz#\\d$";
     ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
@@ -1467,11 +1467,11 @@ public class TrackSetTest {
           SQLException {
 
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     ts.addTrack(t1, "x");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     ts.addTrack(t2, "x");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     ts.addTrack(t3, "x");
 
     String cmdInput = "ylim 10 20 #1 #2";
@@ -1528,15 +1528,15 @@ public class TrackSetTest {
     TrackSet ts = new TrackSet(new ArrayList<String>(), null);
     assertEquals("", ts.showTrackInfo());
 
-    AbstractTrack t1 = new TrackIntervalFeature(null);
+    AbstractTrack t1 = new TrackIntervalFeature();
     t1.setFilename("/path/to/foo.gz");
     t1.setTrackFormat(TrackFormat.BED);
     ts.addTrack(t1, "foo.gz");
-    AbstractTrack t2 = new TrackIntervalFeature(null);
+    AbstractTrack t2 = new TrackIntervalFeature();
     t2.setFilename("/path/to/foo.vcf");
     t1.setTrackFormat(TrackFormat.BED);
     ts.addTrack(t2, "foo.vcf");
-    AbstractTrack t3 = new TrackIntervalFeature(null);
+    AbstractTrack t3 = new TrackIntervalFeature();
     t3.setFilename("/path/to/bla.gz");
     t1.setTrackFormat(TrackFormat.BED);
     ts.addTrack(t3, "bla.gz");

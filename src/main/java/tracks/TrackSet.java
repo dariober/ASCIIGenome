@@ -932,7 +932,7 @@ public class TrackSet {
     boolean invertSelection = Utils.argListContainsFlag(tokens, "-v");
 
     // Colour
-    String colour = (new TrackIntervalFeature(null)).getTitleColour();
+    String colour = (new TrackIntervalFeature()).getTitleColour();
     if (tokens.size() >= 2) {
       String xcolour = tokens.get(1).toLowerCase();
 
@@ -2470,7 +2470,7 @@ public class TrackSet {
       throws InvalidGenomicCoordsException, IOException {
     GenomicCoords current = tr.getGc();
     TrackIntervalFeature itr = (TrackIntervalFeature) tr;
-    List<IntervalFeature> features = itr.getIntervalFeatureList();
+    List<IntervalFeature> features = itr.getFeatureList();
     if (features.size() == 0) {
       return current;
     }

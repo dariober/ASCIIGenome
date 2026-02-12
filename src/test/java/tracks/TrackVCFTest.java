@@ -10,10 +10,12 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.regex.Pattern;
+
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
@@ -25,6 +27,20 @@ public class TrackVCFTest {
     new Config(null);
     new Xterm256();
   }
+
+  @Test
+  public void canReadBcf() throws IOException, InvalidGenomicCoordsException, SQLException, ClassNotFoundException, InvalidRecordException {
+    GenomicCoords gc = new GenomicCoords("chr1:1-12160", 80, null, null);
+    TrackVCF tif = new TrackVCF("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc);
+    assertEquals(8, tif.getFeatureList().size());
+    assertTrue(tif.getFeatureList().get(0).getRaw().startsWith("chr1\t11994\t.\tT\tC\t.\tAC0;AS_VQSR\tAC=0;AC_XX=0;AC_XY=0;"));
+  }
+
+//  @Test
+//  public void canReadBcfWithoutIndex() throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+//    GenomicCoords gc = new GenomicCoords("chr1:1-12160", 80, null, null);
+//    TrackVCF tif = new TrackVCF("test_data/gnomad.exomes.v4.1.sites.chr1.no_index.bcf", gc);
+//  }
 
   @Test
   public void canReadOddFilename()
@@ -50,7 +66,7 @@ public class TrackVCFTest {
         "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/CHD.exon.2010_03.sites.vcf.gz";
     GenomicCoords gc = new GenomicCoords("1:1-2000000", 80, null, null);
     TrackVCF tif = new TrackVCF(bgzFn, gc);
-    assertEquals(3, tif.getIntervalFeatureList().size());
+    assertEquals(3, tif.getFeatureList().size());
     assertEquals("http", tif.getWorkFilename().substring(0, 4));
   }
 
@@ -67,7 +83,7 @@ public class TrackVCFTest {
             "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/CHD.exon.2010_03.sites.unsorted.vcf",
             gc);
     assertEquals("http", tif.getFilename().substring(0, 4));
-    assertEquals(3, tif.getIntervalFeatureList().size());
+    assertEquals(3, tif.getFeatureList().size());
   }
 
   @Test
@@ -80,7 +96,8 @@ public class TrackVCFTest {
     String bgzFn = "test_data/CHD.exon.2010_03.sites.vcf.gz";
     GenomicCoords gc = new GenomicCoords("1:1-2000000", 80, null, null);
     TrackVCF tif = new TrackVCF(bgzFn, gc);
-    assertEquals(3, tif.getIntervalFeatureList().size());
+    assertEquals(3, tif.getFeatureList().size());
+    assertEquals("1	1105468	.	G	A	.	PASS	AA=g;AC=2;AN=174;DP=1238", tif.getFeatureList().get(0).getRaw());
   }
 
   @Test
@@ -96,7 +113,7 @@ public class TrackVCFTest {
     // .bgz, without index
     String intervalFileName = "test_data/bgz_noindex.vcf.bgz";
     TrackVCF tif = new TrackVCF(intervalFileName, gc);
-    assertFalse(tif.getIntervalFeatureList().isEmpty());
+    assertFalse(tif.getFeatureList().isEmpty());
 
     // .bgz, with index
     intervalFileName = "test_data/bgz_index.vcf.bgz";
@@ -222,7 +239,7 @@ public class TrackVCFTest {
     // Omit CSQ
     tvcf.setPrintFormattedVep("CSQ,null");
     printed = tvcf.printLines();
-    assertTrue(printed.contains("CSQ=... "));
+    assertTrue(printed.contains("CSQ=..."));
 
     // No effect without VEP tag
     gc = new GenomicCoords("1:1105468-34435998", 80, null, null);
@@ -264,7 +281,6 @@ public class TrackVCFTest {
     VCFFeature x = xset.get(1);
     assertEquals("1", x.getChrom());
     assertEquals(1108138, x.getFrom());
-    System.err.println(tif.printToScreen());
   }
 
     @Test

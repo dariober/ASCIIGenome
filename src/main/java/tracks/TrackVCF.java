@@ -1,34 +1,50 @@
 package tracks;
 
+import com.github.lindenb.jvarkit.variant.bcf.BCFFileReader;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.readers.LineIterator;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.variantcontext.writer.Options;
+import htsjdk.variant.variantcontext.writer.VariantContextWriter;
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+
+import htsjdk.variant.vcf.VCFReader;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
 
+import static htsjdk.variant.vcf.VCFFileReader.isBCF;
+
 public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
-  protected List<VCFFeature> vcfFeatureList = new ArrayList<>();
+  private List<VCFFeature> featureList = new ArrayList<>();
   private VCFCodec vcfCodec;
+  private final VCFReader vcfReader;
 
   public TrackVCF(final String filename, GenomicCoords gc)
       throws IOException,
@@ -39,27 +55,29 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
     this.setFilename(filename);
     this.setTrackFormat(TrackFormat.VCF);
-
-    if (!Utils.hasTabixIndex(filename)) {
+    if (!Utils.hasTabixIndex(filename) && !isBCF(Path.of(filename))) {
       // Tabix index not found for this file. Sort and index input to tmp.
       String suffix = new File(filename).getName();
       if (!suffix.endsWith(".gz")) {
         suffix += ".gz";
       }
       String tmpWorkFile =
-          Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
+              Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
       new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
       this.setWorkFilename(tmpWorkFile);
 
       new MakeTabixIndex(
-          filename,
-          new File(this.getWorkFilename()),
-          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
-
-      this.tabixReader = this.getTabixReader(this.getWorkFilename());
-    } else { // This means the input is tabix indexed.
+              filename,
+              new File(this.getWorkFilename()),
+              Utils.trackFormatToTabixFormat(this.getTrackFormat()));
+    } if (isBCF(Path.of(filename)) && ! new File(Path.of(filename) + ".csi").exists()) {
+      throw new NotImplementedException("Cannot sort and index bcf files.");
+    } else { // This means the input is indexed.
       this.setWorkFilename(filename);
-      this.tabixReader = new TabixReader(this.getWorkFilename());
+    }
+    this.vcfReader = this.prepareVcfReader(this.getWorkFilename());
+    if (!isBCF(Path.of(this.getWorkFilename()))) {
+      this.setTabixReader(new TabixReader(this.getWorkFilename()));
     }
     this.setGc(gc);
   }
@@ -69,28 +87,20 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     return new VCFFeature(line, getVCFCodec());
   }
 
-  // This is a bad but for now let's get on with it
-  // --->
-  @Override
-  protected Map<String, List<VCFFeature>> groupByGFFAttribute() {
-    return Map.of();
-  }
-
-  @Override
-  protected Map<String, List<VCFFeature>> groupByGTFAttribute() {
-    return Map.of();
-  }
-
-  @Override
-  protected VCFFeature collapseGFFTranscript(List<VCFFeature> features, List<Double> mapToScreen) {
-    return null;
-  }
-
-  // <----
-
   @Override
   protected TrackFormat getTrackFormat() {
     return TrackFormat.VCF;
+  }
+
+  @Override
+  public void setGc(GenomicCoords gc)
+          throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
+    this.gc = gc;
+    this.update();
   }
 
   @Override
@@ -108,40 +118,13 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
-    this.vcfFeatureList =
+    this.featureList =
         this.getFeaturesInInterval(
             this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
-    for (VCFFeature ift : this.vcfFeatureList) {
+    for (VCFFeature ift : this.getFeatureList()) {
       ift.mapToScreen(this.getGc().getMapping());
     }
   }
-
-  //  protected IntervalFeature findNextRegexInGenome(Pattern pattern, String chrom, int from)
-  //          throws IOException, InvalidGenomicCoordsException {
-  //    return super.findNextRegexInGenome(pattern, chrom, from);
-  //  }
-  //
-  //  @Override
-  //  protected List<IntervalFeature> getFeaturesInInterval(String chrom, int from, int to)
-  //      throws IOException, InvalidGenomicCoordsException {
-  //    if (from < 1) {
-  //      System.err.println("from < 1: " + from + "; resetting to 1.");
-  //      from = 1;
-  //    }
-  //    if (from > to) {
-  //      System.err.println(
-  //          "Invalid coordinates: from: "
-  //              + from
-  //              + "; to: "
-  //              + to
-  //              + "; Resetting to initial 1-"
-  //              + Integer.MAX_VALUE);
-  //      throw new InvalidGenomicCoordsException();
-  //    }
-  //    List<IntervalFeature> xFeatures = this.getFeaturesInVCFInterval(chrom, from, to);
-  //    this.removeInvisibleFeatures(xFeatures);
-  //    return xFeatures;
-  //  }
 
   private VCFCodec getVCFCodec() {
     if (this.vcfCodec == null) {
@@ -152,36 +135,74 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     return this.vcfCodec;
   }
 
+  @Override
+  public VCFHeader getVcfHeader() {
+    return this.vcfReader.getHeader();
+  }
+
   protected List<VCFFeature> getFeaturesInInterval(String chrom, int from, int to)
       throws IOException, InvalidGenomicCoordsException {
 
-    // Get header if not set yet
-    if (this.getVcfHeader() == null) {
-      if (Utils.urlFileExists(this.getFilename())) {
-        URL url = new URL(this.getFilename());
-        AbstractFeatureReader<VariantContext, LineIterator> reader =
-            AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
-        this.setVcfHeader((VCFHeader) reader.getHeader());
-      } else {
-        VCFFileReader reader = new VCFFileReader(new File(this.getWorkFilename()));
-        this.setVcfHeader(reader.getFileHeader());
-        reader.close();
-      }
-    }
-
     // Collect feature
     List<VCFFeature> xFeatures = new ArrayList<>();
-    TabixBigBedIterator qry = this.getReader().query(chrom, from - 1, to);
-    while (true) {
-      String q = qry.next();
-      if (q == null) {
-        break;
+    List<VariantContext> ctxList = new ArrayList<>();
+
+    try(CloseableIterator<VariantContext> iter= this.vcfReader.query(chrom, from, to)) {
+      while(iter.hasNext()) {
+        ctxList.add(iter.next());
       }
-      VCFFeature vcfFeature = new VCFFeature(q, this.getVCFCodec());
+    }
+    for (String vcfLine : variantsToVcfLines(ctxList, this.getVcfHeader())) {
+      VCFFeature vcfFeature = new VCFFeature(vcfLine, this.getVCFCodec());
       xFeatures.add(vcfFeature);
     }
     this.removeInvisibleFeatures(xFeatures);
     return xFeatures;
+  }
+
+  private List<String> variantsToVcfLines(List<VariantContext> variants, VCFHeader header) {
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+    VariantContextWriter writer =
+            new VariantContextWriterBuilder()
+                    .setOutputVCFStream(baos)
+                    .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
+                    .build();
+    writer.writeHeader(header);
+
+    for (VariantContext vc : variants) {
+      writer.add(vc);
+    }
+
+    writer.close();
+
+    List<String> vcfLinesWithHeader = Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
+    List<String> vcfLines = new ArrayList<>();
+    for (String line : vcfLinesWithHeader) {
+      if (!line.startsWith("#") && !line.trim().isEmpty()) {
+        vcfLines.add(line.trim());
+      }
+    }
+    return vcfLines;
+  }
+
+  private VCFReader prepareVcfReader(String vcfFile) throws IOException {
+    if (Utils.urlFileExists(vcfFile)) {
+        AbstractFeatureReader<VariantContext, LineIterator> reader =
+                AbstractFeatureReader.getFeatureReader(
+                        vcfFile,
+                        new VCFCodec(),
+                        true   // requires index
+                );
+        return new VCFReaderAdapter(reader);
+    }
+    if (isBCF(new File(vcfFile))) {
+      return new BCFFileReader(Path.of(vcfFile), true);
+    } else {
+      VCFFileReader x = new VCFFileReader(new File(vcfFile), true);
+      return new VCFFileReader(new File(vcfFile), true);
+    }
   }
 
   @Override
@@ -207,7 +228,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
           this.getGenotypeMatrix()
               .printToScreen(
                   this.isNoFormat(),
-                  this.vcfFeatureList,
+                  this.getFeatureList(),
                   this.getGc().getUserWindowSize(),
                   this.getVcfHeader());
       printable.add(gtm);
@@ -223,7 +244,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   @Override
   protected List<String> getRecordsAsStrings() {
     List<String> featureList = new ArrayList<>();
-    for (VCFFeature ift : this.vcfFeatureList) {
+    for (VCFFeature ift : this.getFeatureList()) {
       if (this.getPrintNormalizedVcf()) {
         List<String> line =
             this.normalizeVcfRecordBySample(
@@ -260,7 +281,72 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     return tsv;
   }
 
-  protected List<VCFFeature> getIntervalFeatureList() {
-    return this.vcfFeatureList;
+  protected List<VCFFeature> getFeatureList() {
+    return this.featureList;
   }
+
+  @Override
+  TabixBigBedReader getReader() {
+    return new TabixBigBedReader(this.tabixReader);
+  }
+
+  // This is a bad but for now let's get on with it
+  // --->
+  @Override
+  protected Map<String, List<VCFFeature>> groupByGFFAttribute() {
+    return Map.of();
+  }
+
+  @Override
+  protected Map<String, List<VCFFeature>> groupByGTFAttribute() {
+    return Map.of();
+  }
+
+  @Override
+  protected VCFFeature collapseGFFTranscript(List<VCFFeature> features, List<Double> mapToScreen) {
+    return null;
+  }
+  // <----
+
+  private static class VCFReaderAdapter implements VCFReader {
+    private final AbstractFeatureReader<VariantContext, LineIterator> reader;
+
+    public VCFReaderAdapter(AbstractFeatureReader<VariantContext, LineIterator> reader) {
+      this.reader = reader;
+    }
+
+    @Override
+    public VCFHeader getHeader() {
+      return (VCFHeader) reader.getHeader();
+    }
+
+    @Override
+    public CloseableIterator<VariantContext> query(String chrom, int start, int end) {
+      try {
+        return reader.query(chrom, start, end);
+      } catch (IOException e) {
+        throw new RuntimeException("Error querying VCF: " + e.getMessage(), e);
+      }
+    }
+
+    @Override
+    public boolean isQueryable() {
+      return true;
+    }
+
+    @Override
+    public CloseableIterator<VariantContext> iterator() {
+      try {
+        return reader.iterator();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public void close() throws IOException {
+      reader.close();
+    }
+  }
+
 }

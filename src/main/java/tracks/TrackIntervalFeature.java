@@ -77,9 +77,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     this.setGc(gc);
   }
 
-  protected TrackIntervalFeature(GenomicCoords gc) {}
-
-  public TrackIntervalFeature() {}
+  protected TrackIntervalFeature() {}
 
   /* M e t h o d s */
   @Override
@@ -94,7 +92,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
       } else {
         try {
           this.bedFieldForName =
-              Integer.valueOf(nameFieldOrAttribute)
+              Integer.parseInt(nameFieldOrAttribute)
                   - 1; // User's input is 1-based, convert ot 0-based
         } catch (NumberFormatException e) {
           System.err.println("Cannot convert " + nameFieldOrAttribute + " to integer");
@@ -125,13 +123,13 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
   @Override
   public String printToScreen() throws InvalidGenomicCoordsException, InvalidColourException {
-    for (IntervalFeature x : this.getIntervalFeatureList()) {
+    for (IntervalFeature x : this.getFeatureList()) {
       if (this.getTrackFormat().equals(TrackFormat.GFF)
           || this.getTrackFormat().equals(TrackFormat.GTF)) {
         x.setGtfAttributeForName(this.gtfAttributeForName);
       } else if (this.getTrackFormat().equals(TrackFormat.BED)
           || this.getTrackFormat().equals(TrackFormat.BIGBED)) {
-        x.setBedFieldName(Integer.valueOf(this.bedFieldForName));
+        x.setBedFieldName(this.bedFieldForName);
       }
     }
     List<String> printable = new ArrayList<>();
@@ -187,7 +185,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     txIds.put("_na_", new ArrayList<>());
 
     // Now populate the lists of values by assigning to each key the transcript records:
-    for (IntervalFeature x : this.getIntervalFeatureList()) {
+    for (IntervalFeature x : this.getFeatureList()) {
 
       if (FormatGTF.getTxSuperFeatures().contains(x.getFeature().toLowerCase())) {
 
@@ -237,7 +235,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     txIds.put("_na_", new ArrayList<>());
 
     // Now populate the lists of values by assigning to each key the transcript records:
-    for (IntervalFeature x : this.getIntervalFeatureList()) {
+    for (IntervalFeature x : this.getFeatureList()) {
 
       if (FormatGTF.getTxSuperFeatures().contains(x.getFeature().toLowerCase())
           || FormatGTF.getTxSubFeatures().contains(x.getFeature().toLowerCase())) {
@@ -366,7 +364,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     return transcript;
   }
 
-  protected List<IntervalFeature> getIntervalFeatureList() {
-    return this.intervalFeatureList;
+  protected List<IntervalFeature> getFeatureList() {
+    return this.featureList;
   }
 }

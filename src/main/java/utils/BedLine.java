@@ -3,9 +3,12 @@ package utils;
 import htsjdk.tribble.Feature;
 
 public class BedLine implements Feature {
-  private String tokens[];
+  private final String[] tokens;
+  private int chromIdx = 0;
+  private int startIdx = 1;
+  private int endIdx = 2;
 
-  public BedLine(String tokens[]) {
+  public BedLine(String[] tokens) {
     this.tokens = tokens;
   }
 
@@ -17,17 +20,17 @@ public class BedLine implements Feature {
 
   @Override
   public String getContig() {
-    return tokens[0];
+    return tokens[this.chromIdx];
   }
 
   @Override
   public int getStart() {
-    return Integer.parseInt(tokens[1]) + 1; /* +1 because the Feature uses a +1 position */
+    return Integer.parseInt(tokens[this.startIdx]) + 1; /* +1 because the Feature uses a +1 position */
   }
 
   @Override
   public int getEnd() {
-    return (tokens.length < 3 ? getStart() : Integer.parseInt(tokens[2]));
+    return (tokens.length < 3 ? getStart() : Integer.parseInt(tokens[this.endIdx]));
   }
 
   public String get(int index) {

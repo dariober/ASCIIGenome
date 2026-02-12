@@ -33,13 +33,9 @@ public class TrackBedgraph extends TrackIntervalFeature {
 
   /**
    * Get values for bedgraph
-   *
-   * @param intervalFeatureList
-   * @throws InvalidRecordException
-   * @throws InvalidGenomicCoordsException
    */
   private void bedGraphToScores(List<IntervalFeature> intervalFeatureList)
-      throws IOException, InvalidRecordException, InvalidGenomicCoordsException {
+      throws IOException, InvalidGenomicCoordsException {
 
     List<ScreenWiggleLocusInfo> screenWigLocInfoList = new ArrayList<ScreenWiggleLocusInfo>();
     for (int i = 0; i < getGc().getUserWindowSize(); i++) {
@@ -55,10 +51,9 @@ public class TrackBedgraph extends TrackIntervalFeature {
 
     List<Float> screenScores = new ArrayList<Float>();
     for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
-      screenScores.add((float) x.getMeanScore());
+      screenScores.add(x.getMeanScore());
     }
     this.setScreenScores(screenScores);
-    return;
   }
 
   @Override
@@ -69,7 +64,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
           ClassNotFoundException,
           SQLException {
 
-    this.setIntervalFeatureList(
+    this.setFeatureList(
         this.getFeaturesInInterval(
             this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));
 
@@ -80,7 +75,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
       this.scoreColIdx = 4;
       throw new InvalidRecordException();
     }
-    this.bedGraphToScores(this.getIntervalFeatureList());
+    this.bedGraphToScores(this.getFeatureList());
   }
 
   @Override

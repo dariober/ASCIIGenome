@@ -6,8 +6,10 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.readers.TabixReader;
+import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +18,8 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
+
+import htsjdk.variant.vcf.VCFReader;
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
@@ -26,7 +30,8 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
   protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 
   protected BBFileReader bigBedReader;
-  List<T> intervalFeatureList = new ArrayList<>();
+  protected VCFReader vcfReader;
+  List<T> featureList = new ArrayList<>();
   private List<Argument> colourForRegex = null;
 
   protected abstract T createFeature(String line) throws InvalidGenomicCoordsException;
@@ -53,10 +58,10 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
-    this.intervalFeatureList =
+    this.featureList =
         this.getFeaturesInInterval(
             this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
-    for (T ift : this.intervalFeatureList) {
+    for (T ift : this.featureList) {
       ift.mapToScreen(this.getGc().getMapping());
     }
   }
@@ -530,7 +535,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
   private List<T> flatListOfPrintableFeatures()
       throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 
-    for (T x : this.getIntervalFeatureList()) {
+    for (T x : this.getFeatureList()) {
       x.getIdeogram(true, false);
     }
     this.changeFeatureColour(this.getColourForRegex());
@@ -563,7 +568,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
       }
 
     } else {
-      for (T x : this.getIntervalFeatureList()) {
+      for (T x : this.getFeatureList()) {
         flatList.add(x);
       }
     }
@@ -589,7 +594,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
         this.getTrackTag()
             + ";"
             + " N: "
-            + this.getIntervalFeatureList().size() // .intervalFeatureList.size()
+            + this.getFeatureList().size() // .intervalFeatureList.size()
             + sq
             + gapped
             + this.getTitleForActiveFilters();
@@ -705,25 +710,20 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     return chromsStartingAt;
   }
 
-  protected abstract List<T> getIntervalFeatureList();
+  protected abstract List<T> getFeatureList();
 
-  protected void setIntervalFeatureList(List<T> intervalFeatureList) {
-    this.intervalFeatureList = intervalFeatureList;
+  protected void setFeatureList(List<T> featureList) {
+    this.featureList = featureList;
   }
 
   @Override
   public ArrayList<String> getChromosomeNames() {
-    ArrayList<String> x = new ArrayList<String>(this.getReader().getChromosomes());
+    ArrayList<String> x = new ArrayList<>(this.getReader().getChromosomes());
     Collections.sort(x);
     return x;
   }
 
   TabixBigBedReader getReader() {
-
-    if (this.bigBedReader != null && this.tabixReader != null) {
-      throw new RuntimeException("You cannot have both tabix and bigBed readers set!");
-    }
-
     if (this.bigBedReader != null) {
       return new TabixBigBedReader(this.bigBedReader);
     } else if (this.tabixReader != null) {
@@ -742,15 +742,11 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     this.tabixReader = tabixReader;
   }
 
-  protected TabixReader getTabixReader() {
-    return this.tabixReader;
-  }
-
   @Override
   protected List<String> getRecordsAsStrings() {
 
     List<String> featureList = new ArrayList<>();
-    for (T ift : this.getIntervalFeatureList()) {
+    for (T ift : this.getFeatureList()) {
       featureList.add(ift.getRaw());
     }
     return featureList;
@@ -785,9 +781,9 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     for (Argument arg : list) {
       String regex = arg.getKey();
       String colour = arg.getArg();
-      String[] rawrecs = new String[this.getIntervalFeatureList().size()];
-      for (int i = 0; i < this.getIntervalFeatureList().size(); i++) {
-        rawrecs[i] = this.getIntervalFeatureList().get(i).getRaw();
+      String[] rawrecs = new String[this.getFeatureList().size()];
+      for (int i = 0; i < this.getFeatureList().size(); i++) {
+        rawrecs[i] = this.getFeatureList().get(i).getRaw();
       }
       boolean[] matched = Utils.matchByAwkOrRegex(rawrecs, regex);
       for (int i = 0; i < matched.length; i++) {
@@ -796,7 +792,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
           m = !m;
         }
         if (m) {
-          for (FeatureChar f : this.getIntervalFeatureList().get(i).getIdeogram(false, false)) {
+          for (FeatureChar f : this.getFeatureList().get(i).getIdeogram(false, false)) {
             f.setBgColour(colour);
             f.setFgColour(Xterm256.getContrastColour(colour));
           }

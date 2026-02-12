@@ -81,7 +81,7 @@ public abstract class AbstractTrack {
   // private int id= 1;              // A unique identifier for the track. Changed when the track is
   // added to a TrackSet.
   protected List<Float> screenScores = new ArrayList<Float>();
-  private GenomicCoords gc;
+  GenomicCoords gc;
   private boolean noFormat = false;
   private float yLimitMin = Float.NaN; // Same as R ylim()
   private float yLimitMax = Float.NaN;
@@ -1303,14 +1303,6 @@ public abstract class AbstractTrack {
     this.update();
   }
 
-  protected VCFHeader getVcfHeader() {
-    return vcfHeader;
-  }
-
-  protected void setVcfHeader(VCFHeader vcfHeader) {
-    this.vcfHeader = vcfHeader;
-  }
-
   public int getPrintNumDecimals() {
     return printNumDecimals;
   }
@@ -1351,6 +1343,15 @@ public abstract class AbstractTrack {
   public TrackHeader getHeader() {
     return this.header;
   }
+
+  public VCFHeader getVcfHeader() {
+    return this.vcfHeader;
+  }
+
+//  @Override
+//  public VCFHeader getVcfHeader() {
+//    return this.vcfHeader;
+//  }
 
   //  public abstract GenomicCoords coordsOfNextFeature(GenomicCoords currentGc, boolean
   // getPrevious)
