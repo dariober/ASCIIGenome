@@ -34,9 +34,10 @@ public class TrackVCFTest {
     TrackVCF tif = new TrackVCF("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc);
     assertEquals(8, tif.getFeatureList().size());
     assertTrue(tif.getFeatureList().get(0).getRaw().startsWith("chr1\t11994\t.\tT\tC\t.\tAC0;AS_VQSR\tAC=0;AC_XX=0;AC_XY=0;"));
+    assertEquals(24, tif.getReader().getChromosomes().size());
   }
 
-//  @Test
+  //  @Test
 //  public void canReadBcfWithoutIndex() throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
 //    GenomicCoords gc = new GenomicCoords("chr1:1-12160", 80, null, null);
 //    TrackVCF tif = new TrackVCF("test_data/gnomad.exomes.v4.1.sites.chr1.no_index.bcf", gc);
@@ -52,6 +53,7 @@ public class TrackVCFTest {
     GenomicCoords gc = new GenomicCoords("1:1-100000", 80, null, null);
     TrackVCF tif = new TrackVCF("test_data/odd[filename].vcf.gz", gc);
     assertEquals("1", (tif.getGc().getChrom()));
+    assertEquals(22, tif.getReader().getChromosomes().size());
     tif.close();
   }
 

@@ -21,7 +21,6 @@ import htsjdk.variant.vcf.VCFHeader;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -45,6 +44,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   private List<VCFFeature> featureList = new ArrayList<>();
   private VCFCodec vcfCodec;
   private final VCFReader vcfReader;
+  private final boolean isBCF;
 
   public TrackVCF(final String filename, GenomicCoords gc)
       throws IOException,
@@ -52,6 +52,8 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
+
+    this.isBCF = isBCF(Path.of(filename));
 
     this.setFilename(filename);
     this.setTrackFormat(TrackFormat.VCF);
@@ -65,19 +67,20 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
               Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
       new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
       this.setWorkFilename(tmpWorkFile);
-
       new MakeTabixIndex(
               filename,
               new File(this.getWorkFilename()),
               Utils.trackFormatToTabixFormat(this.getTrackFormat()));
-    } if (isBCF(Path.of(filename)) && ! new File(Path.of(filename) + ".csi").exists()) {
+    } else if (isBCF(Path.of(filename)) && ! new File(Path.of(filename) + ".csi").exists()) {
       throw new NotImplementedException("Cannot sort and index bcf files.");
     } else { // This means the input is indexed.
       this.setWorkFilename(filename);
     }
     this.vcfReader = this.prepareVcfReader(this.getWorkFilename());
-    if (!isBCF(Path.of(this.getWorkFilename()))) {
+    if (!isBCF) {
       this.setTabixReader(new TabixReader(this.getWorkFilename()));
+    } else {
+      this.tabixReader = null;
     }
     this.setGc(gc);
   }
@@ -197,10 +200,9 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
                 );
         return new VCFReaderAdapter(reader);
     }
-    if (isBCF(new File(vcfFile))) {
+    if (isBCF) {
       return new BCFFileReader(Path.of(vcfFile), true);
     } else {
-      VCFFileReader x = new VCFFileReader(new File(vcfFile), true);
       return new VCFFileReader(new File(vcfFile), true);
     }
   }
@@ -287,6 +289,11 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
   @Override
   TabixBigBedReader getReader() {
+    if (isBCF) {
+      TabixBigBedReader tbb = new TabixBigBedReader(this.vcfReader);
+      tbb.setVcfHeader(this.getVcfHeader());
+      return tbb;
+    }
     return new TabixBigBedReader(this.tabixReader);
   }
 

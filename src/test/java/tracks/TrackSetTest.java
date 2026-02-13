@@ -37,6 +37,26 @@ public class TrackSetTest {
   }
 
   @Test
+  public void canGoToNextFeatureOnBcfFile()
+          throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          BamIndexNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidCommandLineException {
+
+    int ws = 200;
+    GenomicCoords gc = new GenomicCoords("chr1:11912-12122", 80, null, null);
+    gc.setTerminalWidth(ws);
+    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
+    trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc, null);
+    GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
+    int x = nextGc.getFrom();
+    assertEquals(12138, x); // This is the start of the found feature
+  }
+
+  @Test
   public void canGoToNextFeatureOnFile()
       throws InvalidGenomicCoordsException,
           IOException,
@@ -49,7 +69,7 @@ public class TrackSetTest {
     int ws = 100;
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     gc.setTerminalWidth(ws);
-    TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
+    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
     trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
     GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
     int x = nextGc.getFrom();
@@ -77,7 +97,6 @@ public class TrackSetTest {
         "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig", gc, null);
     // trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
     nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
-    System.err.println(nextGc);
   }
 
   @Test
@@ -156,6 +175,30 @@ public class TrackSetTest {
     assertEquals("chr1", newgc.getChrom());
     assertEquals(67208779, (int) newgc.getFrom());
     assertEquals(67208779 + 1000, (int) newgc.getTo());
+  }
+
+  @Test
+  public void canFindNextMatchOnBcf()
+          throws ClassNotFoundException,
+          IOException,
+          BamIndexNotFoundException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException,
+          InvalidCommandLineException {
+
+    Pattern pattern = Pattern.compile("chr2");
+
+    GenomicCoords gc = new GenomicCoords("chr1:11912-12122", 80, null, null);
+    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
+    trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc, null);
+
+    GenomicCoords newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
+    assertEquals("chr2", newgc.getChrom());
+
+    pattern = Pattern.compile("chr3");
+    newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
+    assertEquals("chr3", newgc.getChrom());
   }
 
   @Test

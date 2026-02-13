@@ -1,5 +1,6 @@
 package samTextViewer;
 
+import com.github.lindenb.jvarkit.variant.bcf.BCFFileReader;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -86,6 +87,8 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.text.StrMatcher;
@@ -104,6 +107,7 @@ import org.broad.igv.tdf.TDFReader;
 import tracks.AbstractTrack;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
+import tracks.TrackVCF;
 import utils.Tokenizer;
 
 /**
@@ -455,20 +459,11 @@ public class Utils {
    * Get the first chrom string from first line of input file. As you add support for more filetypes
    * you should update this function. This method is very dirty and shouldn't be trusted 100%
    *
-   * @throws InvalidGenomicCoordsException
-   * @throws SQLException
-   * @throws InvalidRecordException
-   * @throws InvalidCommandLineException
-   * @throws ClassNotFoundException
    */
   @SuppressWarnings("unused")
   public static String initRegionFromFile(String x, String referenceSequence)
-      throws IOException,
-          InvalidGenomicCoordsException,
-          ClassNotFoundException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          SQLException {
+          throws IOException,
+          InvalidGenomicCoordsException, SQLException, ClassNotFoundException, InvalidRecordException {
     UrlValidator urlValidator = new UrlValidator();
     String region = "";
     TrackFormat fmt = Utils.getFileTypeFromName(x);
@@ -531,7 +526,8 @@ public class Utils {
       }
       System.err.println("Cannot initialize from " + x);
       throw new RuntimeException();
-
+    } else if (fmt.equals(TrackFormat.VCF) && x.toLowerCase().endsWith(".bcf")) {
+      return initRegionFromBcf(x);
     } else {
       // Input file appears to be a generic interval file. We expect chrom to be in column 1
       // VCF files are also included here since they are either gzip or plain ASCII.
@@ -591,6 +587,13 @@ public class Utils {
     }
     System.err.println("Cannot initialize from " + x);
     throw new RuntimeException();
+  }
+
+  private static String initRegionFromBcf(String bcf) throws IOException {
+    BCFFileReader bcfIn = new BCFFileReader(Path.of(bcf), true);
+    VCFHeader h = bcfIn.getHeader();
+    bcfIn.close();
+    return h.getSequenceDictionary().getSequence(0).getSequenceName();
   }
 
   public static String initRegionFromFile(String x)
@@ -747,7 +750,8 @@ public class Utils {
       return TrackFormat.BEDGRAPH;
     } else if (fileName.endsWith(".vcf.gz")
         || fileName.endsWith(".vcf")
-        || fileName.endsWith(".vcf.bgz")) {
+        || fileName.endsWith(".vcf.bgz")
+        || fileName.endsWith(".bcf")) {
       return TrackFormat.VCF;
     } else {
       return TrackFormat.BED;
@@ -2269,13 +2273,17 @@ public class Utils {
   }
 
   /** Get VCFHeader from the given source which could be URL or local file. */
-  public static VCFHeader getVCFHeader(String source) throws MalformedURLException {
+  public static VCFHeader getVCFHeader(String source) throws IOException {
     VCFHeader vcfHeader;
     if (Utils.urlFileExists(source)) {
       URL url = new URL(source);
       AbstractFeatureReader<VariantContext, LineIterator> reader =
           AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
       vcfHeader = (VCFHeader) reader.getHeader();
+    } else if (source.toLowerCase().endsWith(".bcf")) {
+      BCFFileReader bcf = new BCFFileReader(Path.of(source), true);
+      bcf.close();
+      return bcf.getHeader();
     } else {
       VCFFileReader reader = new VCFFileReader(new File(source), false); // Set requiredIndex false!
       vcfHeader = reader.getFileHeader();

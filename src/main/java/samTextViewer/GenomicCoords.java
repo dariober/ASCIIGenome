@@ -1086,7 +1086,7 @@ public class GenomicCoords implements Cloneable {
     return isSet;
   }
 
-  private boolean setSamSeqDictFromVCF(String vcf) throws MalformedURLException {
+  private boolean setSamSeqDictFromVCF(String vcf) throws IOException {
     SAMSequenceDictionary samSeqDict = Utils.getVCFHeader(vcf).getSequenceDictionary();
     if (samSeqDict != null) {
       this.setSamSeqDictSource(new File(vcf).getAbsolutePath());

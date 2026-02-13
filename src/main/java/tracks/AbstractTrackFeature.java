@@ -661,10 +661,12 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
         if (line == null || buffer.size() > 10) {
           this.removeInvisibleFeatures(buffer);
           if (!buffer.isEmpty()) {
+            iter.close();
             return buffer.get(0);
           }
         }
         if (line == null) {
+          iter.close();
           break;
         }
       }
@@ -728,6 +730,8 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
       return new TabixBigBedReader(this.bigBedReader);
     } else if (this.tabixReader != null) {
       return new TabixBigBedReader(this.tabixReader);
+    } else if (this.vcfReader != null) {
+      return new TabixBigBedReader(this.vcfReader);
     } else {
       throw new RuntimeException("Tabix and bigBed reader both null.");
     }
