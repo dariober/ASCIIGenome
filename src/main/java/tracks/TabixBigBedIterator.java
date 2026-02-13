@@ -107,6 +107,8 @@ public class TabixBigBedIterator {
     }
   }
   protected void close() {
-    this.vcfIterator.close();
+    if (this.vcfIterator != null) {
+      this.vcfIterator.close();
+    }
   }
 }
