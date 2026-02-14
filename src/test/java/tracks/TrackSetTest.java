@@ -121,9 +121,7 @@ public class TrackSetTest {
 
     TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
     trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc, null);
-    System.out.println(gc);
     GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, 5, false);
-    System.out.println(nextGc);
     assertEquals(11946, (int) nextGc.getFrom());
     assertEquals(terminalWidth, nextGc.getTo() - nextGc.getFrom() + 1);
 

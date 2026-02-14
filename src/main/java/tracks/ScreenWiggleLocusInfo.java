@@ -17,7 +17,7 @@ public class ScreenWiggleLocusInfo {
   /* M e t h o d s */
   /** Increment attributes by given score */
   public void increment(float score, DataTransformation dataTransformation) {
-    if (dataTransformation == DataTransformation.IDENTITY) {
+    if (dataTransformation == DataTransformation.IDENTITY || dataTransformation == null) {
       //
     } else if (dataTransformation == DataTransformation.LOG10) {
       score = score <= 0 ? 0 : (float) Math.log10(score);

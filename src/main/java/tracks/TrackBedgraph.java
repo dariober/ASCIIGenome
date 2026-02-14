@@ -26,6 +26,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
           InvalidRecordException,
           SQLException {
     super(filename, gc);
+    this.setDataTransformation(this.dataTransformation);
     this.setTrackFormat(TrackFormat.BEDGRAPH);
   }
 
@@ -85,6 +86,8 @@ public class TrackBedgraph extends TrackIntervalFeature {
       this.scoreColIdx = 4;
       throw new InvalidRecordException();
     }
+    this.setDataTransformation(this.dataTransformation);
+
     this.bedGraphToScores(this.getFeatureList());
   }
 

@@ -228,27 +228,22 @@ public class TrackBedgraphTest {
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(yMaxLines);
     String prof = tb.printToScreen();
-    System.out.println(prof);
 
     tb = new TrackBedgraph("test_data/positive.bedGraph.gz", gc);
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(5);
     prof = tb.printToScreen();
-    System.out.println(prof);
 
     tb = new TrackBedgraph("test_data/negative.bedGraph.gz", gc);
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(5);
 
-    System.out.println(prof);
-
     gc = new GenomicCoords("chr1:1-52", 80, null, null);
     tb = new TrackBedgraph("test_data/posNeg.bedGraph.gz", gc);
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(14);
-    System.out.println(tb.printToScreen());
   }
 }
