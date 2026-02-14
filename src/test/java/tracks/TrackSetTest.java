@@ -11,6 +11,9 @@ import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SamReader;
+import htsjdk.samtools.SamReaderFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -18,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.commons.io.FileUtils;
@@ -100,6 +104,36 @@ public class TrackSetTest {
   }
 
   @Test
+  public void canGoToNextFeatureSmallInterval()
+      throws InvalidGenomicCoordsException,
+      IOException,
+      ClassNotFoundException,
+      BamIndexNotFoundException,
+      InvalidRecordException,
+      SQLException,
+      InvalidCommandLineException {
+
+    GenomicCoords gc;
+    SAMSequenceDictionary samSeqDict = Utils.getVCFHeader("test_data/gnomad.exomes.v4.1.sites.chr1.bcf").getSequenceDictionary();;
+
+    int terminalWidth = 100;
+    gc = new GenomicCoords("chr1:1-200", terminalWidth, samSeqDict, null);
+
+    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
+    trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc, null);
+    System.out.println(gc);
+    GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, 5, false);
+    System.out.println(nextGc);
+    assertEquals(11946, (int) nextGc.getFrom());
+    assertEquals(terminalWidth, nextGc.getTo() - nextGc.getFrom() + 1);
+
+    // Check boundaries
+    nextGc = trackSet.goToNextFeatureOnFile("1", gc, 300000000, false);
+    assertEquals(1, (int) nextGc.getFrom());
+    assertEquals(248956422, (int) nextGc.getTo());
+  }
+
+  @Test
   public void canGoToNextFeatureOnNonIntervalFile()
       throws InvalidGenomicCoordsException,
           IOException,
@@ -110,8 +144,8 @@ public class TrackSetTest {
           InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
-    TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet = new TrackSet(new ArrayList<String>(), gc);
+    TrackSet trackSet;
+    trackSet = new TrackSet(new ArrayList<>(), gc);
     trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
     trackSet.addTrackFromSource(
         "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig", gc, null);

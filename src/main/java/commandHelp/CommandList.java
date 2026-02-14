@@ -436,8 +436,9 @@ public class CommandList {
         "The search for `regex` starts from the *end* of the current window (so the current window"
             + " is not searched) and moves forward on the current chromosome. At the end  of the"
             + " current chromosome move to the next chromosomes and then restart at  the start of"
-            + " the initial one. The search stops at the first match found. If `track` is omitted"
-            + " the first interval track found is searched.\n"
+            + " the initial one. The search stops at the first match found. `track` can be omitted"
+            + " if there is only one track loaded otherwise all the tracks matching the `track`"
+            + " pattern will be searched until a valid match is found.\n"
             + "\n"
             + "* :code:`-all`: Return the region containing **all** the regex matches.\n"
             + "\n"
@@ -1354,31 +1355,6 @@ public class CommandList {
             + ":code:`arg` can be just a prefix of the argument name, e.g. :code:`show ge` will be"
             + " recognized as :code:`show genome`.");
     cmdList.add(cmd);
-    //        cmd= new CommandHelp();
-    //        cmd.setName("showGenome"); cmd.setArgs(""); cmd.inSection= Section.GENERAL;
-    //        cmd.setBriefDescription("Print the genome dictionary with a representation of
-    // chromosome sizes. ");
-    //        cmd.setAdditionalDescription("Example output::\n"
-    //                + "\n"
-    //                + "    showGenome\n"
-    //                + "    chrM~~16571\n"
-    //                + "       chr1~~249250621 ||||||||||||||||||||||||||||||\n"
-    //                + "    chr2~~243199373 |||||||||||||||||||||||||||||\n"
-    //                + "    ...\n"
-    //                + "    chr21 48129895~~||||||\n"
-    //                + "    chr22 51304566~~||||||\n"
-    //                + "    chrX~~155270560 |||||||||||||||||||\n"
-    //                + "    chrY~~59373566~~|||||||\n"
-    //                + "\n"
-    //                + "");
-    //        cmdList.add(cmd);
-
-    //        cmd= new CommandHelp();
-    //        cmd.setName("infoTracks"); cmd.setArgs(""); cmd.inSection= Section.GENERAL;
-    //        cmd.setBriefDescription("Print the name of the current tracks along with file name and
-    // format. ");
-    //        cmd.setAdditionalDescription("Hidden tracks are marked by an asterisk.");
-    //        cmdList.add(cmd);
 
     cmd = new CommandHelp();
     cmd.setName("recentlyOpened");

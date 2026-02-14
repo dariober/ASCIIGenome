@@ -21,7 +21,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -265,11 +264,9 @@ public class GenomicCoords implements Cloneable {
     if (samSeqDict == null) {
       ctg = this.makeSequenceDictionaryFromContigs(knownContigs);
     } else {
-      for (SAMSequenceRecord seq : samSeqDict.getSequences()) {
-        ctg.add(seq);
-      }
+      ctg.addAll(samSeqDict.getSequences());
     }
-    if (ctg.size() == 0) {
+    if (ctg.isEmpty()) {
       throw new InvalidGenomicCoordsException("There are no known contigs");
     }
 
@@ -529,11 +526,6 @@ public class GenomicCoords implements Cloneable {
     } else if (reg.size() > 2) {
       region[1] = reg.get(1);
       region[2] = reg.get(reg.size() - 1);
-    } else {
-      InvalidGenomicCoordsException e = new InvalidGenomicCoordsException();
-      System.err.println("\nUnexpected format for region " + x + "\n");
-      e.printStackTrace();
-      throw e;
     }
     return region;
   }
@@ -851,7 +843,7 @@ public class GenomicCoords implements Cloneable {
   public String getChromIdeogram(int nDist, boolean noFormat)
       throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 
-    if (this.samSeqDict == null || this.samSeqDict.size() == 0) {
+    if (this.samSeqDict == null || this.samSeqDict.isEmpty()) {
       return null;
     }
     List<Double> positionMap = null;
@@ -1041,14 +1033,13 @@ public class GenomicCoords implements Cloneable {
     return this.genomicSequence.getPrintableSequence(this.getUserWindowSize());
   }
 
-  private boolean setSamSeqDictFromAnySource(List<String> testfiles, boolean includeGenomeFile)
-      throws IOException {
-    boolean isSet = false;
+  private void setSamSeqDictFromAnySource(List<String> testfiles, boolean includeGenomeFile) {
+    boolean isSet;
     for (String testfile : testfiles) { // Get sequence dict from bam, if any
       try {
         isSet = this.setSamSeqDictFromBam(testfile);
         if (isSet) {
-          return isSet;
+          return;
         }
       } catch (Exception e) {
         //
@@ -1056,7 +1047,7 @@ public class GenomicCoords implements Cloneable {
       try {
         isSet = this.setSamSeqDictFromFasta(testfile);
         if (isSet) {
-          return isSet;
+          return;
         }
       } catch (Exception e) {
         //
@@ -1065,7 +1056,7 @@ public class GenomicCoords implements Cloneable {
         try {
           isSet = this.setSamSeqDictFromGenomeFile(testfile);
           if (isSet) {
-            return isSet;
+            return;
           }
         } catch (Exception e) {
           //
@@ -1077,13 +1068,12 @@ public class GenomicCoords implements Cloneable {
       try {
         isSet = this.setSamSeqDictFromVCF(testfile);
         if (isSet) {
-          return isSet;
+          return;
         }
       } catch (Exception e) {
         //
       }
     }
-    return isSet;
   }
 
   private boolean setSamSeqDictFromVCF(String vcf) throws IOException {
@@ -1103,7 +1093,6 @@ public class GenomicCoords implements Cloneable {
       } else {
         throw new FileNotFoundException();
       }
-      // fa= new IndexedFastaSequenceFile(new File(fasta));
     } catch (FileNotFoundException e) {
       try {
         new Faidx(new File(fasta));
@@ -1224,13 +1213,28 @@ public class GenomicCoords implements Cloneable {
 
     if (slop > 0) {
       double center = (size / 2.0) + gc.getFrom();
-      gc.from = (int) Math.rint(center - (size * slop));
-      gc.to = (int) Math.rint(center + (size * slop));
+      int from = (int) Math.rint(center - (size * slop));
+      int to = (int) Math.rint(center + (size * slop));
+      // If the new coordinates are smaller than the terminal window, extend them to cover the terminal
+      int span = to - from + 1;
+      if (span < gc.getTerminalWidth()) {
+        int border = (int) Math.rint((double) (gc.getTerminalWidth() - span) / 2);
+        int rightSpill = 0;
+        if ((from - border) < 0) {
+          rightSpill = border - from;
+        }
+        from = Math.max(1, from - border);
+        to = to + border + rightSpill;
+      }
+      // Final correction for rounding errors
+      to = (to - from + 1) < this.getTerminalWidth() ? to + (this.getTerminalWidth() - (to - from + 1)) : to;
+      gc.from = from;
+      gc.to = to;
     }
     if (slop == 0) {
       // Decrease gc.from so that the start of the feature is in the middle of the screen
       int newFrom = gc.from - this.getTerminalWidth() / 2;
-      newFrom = newFrom < 1 ? 1 : newFrom;
+      newFrom = Math.max(newFrom, 1);
       int newTo = newFrom + this.getTerminalWidth() - 1;
       gc.from = newFrom;
       gc.to = newTo;

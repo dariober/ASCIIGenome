@@ -94,7 +94,6 @@ public class GenomicCoordsTest {
     assertEquals(5, outList.size());
 
     out = gc.printSequenceDictionary(null, -1, -1, ".", ContigOrder.ALPHANUMERIC_ASC, 30, -1, true);
-    System.err.println(out);
     outList = Splitter.on("\n").splitToList(out);
     assertTrue(outList.get(0).startsWith("Genome size: 3095693983; Number of contigs: 25"));
     assertEquals(outList.size(), 26);
@@ -335,19 +334,15 @@ public class GenomicCoordsTest {
     assertTrue(!gc.equalCoords(other2));
 
     GenomicCoords gc2 = (GenomicCoords) gc.clone();
-    System.out.println(gc);
-    System.out.println(gc2);
     gc.zoomOut();
-    System.out.println(gc);
-    System.out.println(gc2);
-    // assertTrue(gc2.equalCoords(gc));
   }
 
   @Test
-  public void canInitializeSamSeqDictFromVCF() throws IOException, InvalidGenomicCoordsException {
+  public void canInitializeSamSeqDictFromVCF()
+      throws IOException, InvalidGenomicCoordsException {
     GenomicCoords gc = new GenomicCoords("1", 80, null, null);
     gc.setGenome(
-        Arrays.asList(new String[] {"test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"}),
+        List.of("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"),
         true);
     assertEquals(25, gc.getSamSeqDict().size());
 
@@ -371,6 +366,16 @@ public class GenomicCoordsTest {
     gc = new GenomicCoords("1", 80, null, null);
     gc.setGenome(Arrays.asList(new String[] {"CEU.exon.2010_06.genotypes.vcf.gz"}), true);
     assertNull(gc.getSamSeqDict());
+  }
+
+  @Test
+  public void canInitializeSamSeqDictFromBCF()
+      throws IOException, InvalidGenomicCoordsException, InvalidColourException {
+    GenomicCoords gc = new GenomicCoords("1", 80, null, null);
+    gc.setGenome(
+        List.of("test_data/gnomad.exomes.v4.1.sites.chr1.bcf"),
+        true);
+    assertEquals(24, gc.getSamSeqDict().size());
   }
 
   @Test
@@ -645,11 +650,9 @@ public class GenomicCoordsTest {
   @Test
   public void canPutFeatureInMidOfWindow() throws InvalidGenomicCoordsException, IOException {
     GenomicCoords gc = new GenomicCoords("chr1:100-1000", 80, null, null);
-    System.err.println(Utils.getTerminalWidth());
     int size = 1; // not relevant
     double slop = 0;
     gc.centerAndExtendGenomicCoords(gc, size, slop);
-    System.err.println(gc);
     assertEquals(60, (int) gc.getFrom());
     assertEquals(139, (int) gc.getTo());
   }

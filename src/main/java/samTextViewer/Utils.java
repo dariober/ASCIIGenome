@@ -1361,7 +1361,7 @@ public class Utils {
    * @throws IOException
    */
   public static void addSourceName(List<String> inputFileList, List<String> newFileNames, int debug)
-      throws InvalidCommandLineException, IOException {
+      throws InvalidCommandLineException {
 
     List<String> dropMe = new ArrayList<String>();
     List<String> addMe = new ArrayList<String>();

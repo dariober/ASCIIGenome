@@ -55,6 +55,36 @@ public class MainTest {
   }
 
   @Test
+  public void canPrintGenomeFromBcf()
+      throws ClassNotFoundException,
+      IOException,
+      InvalidGenomicCoordsException,
+      InvalidCommandLineException,
+      InvalidRecordException,
+      BamIndexNotFoundException,
+      SQLException,
+      DocumentException,
+      UnindexableFastaFileException,
+      InvalidColourException,
+      InvalidConfigException {
+    String[] args =
+        new String[] {
+            "-ni",
+            "-nf",
+            "--debug",
+            "2",
+            "--exec",
+            "show genome",
+            "test_data/gnomad.exomes.v4.1.sites.chr1.bcf"
+        };
+    // Genotype filter selects for "sample2". "sample1" appears once right at the start before the
+    // filtering is applied.
+    String out = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(out.contains("248956422"));
+    assertTrue(out.contains("*--------"));
+  }
+
+  @Test
   public void canStartFromCram()
       throws ClassNotFoundException,
           IOException,
