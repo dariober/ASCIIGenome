@@ -430,8 +430,7 @@ public class InteractiveInput {
           } else if (proc.getTrackSet().getTrackList().isEmpty()) {
             System.err.println(
                 Utils.padEndMultiLine(
-                    "There is no track to search for pattern",
-                    proc.getWindowSize()));
+                    "There is no track to search for pattern", proc.getWindowSize()));
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
           } else {
@@ -457,9 +456,7 @@ public class InteractiveInput {
             pattern = Pattern.compile(cmdTokens.get(1), flag);
           } catch (PatternSyntaxException e) {
             System.err.println(
-                Utils.padEndMultiLine(
-                    "Invalid regex: " + cmdTokens.get(1),
-                    proc.getWindowSize()));
+                Utils.padEndMultiLine("Invalid regex: " + cmdTokens.get(1), proc.getWindowSize()));
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
           }

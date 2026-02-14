@@ -47,6 +47,7 @@ public class TrackBedgraphTest {
     GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
 
     TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
+    System.out.println(tb.getTrackFormat());
     assertTrue(tb.getChromosomeNames().size() > 0);
     assertEquals("chr1", tb.getChromosomeNames().get(0));
   }

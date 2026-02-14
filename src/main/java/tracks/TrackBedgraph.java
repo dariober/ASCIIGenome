@@ -7,6 +7,9 @@ import com.google.common.base.Joiner;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.util.FileExtensions;
+import htsjdk.tribble.readers.TabixReader;
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -14,6 +17,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import sortBgzipIndex.MakeTabixIndex;
 
 public class TrackBedgraph extends TrackIntervalFeature {
 
@@ -25,9 +29,31 @@ public class TrackBedgraph extends TrackIntervalFeature {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException {
-    super(filename, gc);
+    this.scoreColIdx = 4;
+    this.setFilename(filename);
+    this.setTrackFormat(Utils.getFileTypeFromName(filename));
+
+    if (!Utils.hasTabixIndex(filename)) {
+      String suffix = new File(filename).getName();
+      if (!suffix.endsWith(".gz")) {
+        suffix += ".gz";
+      }
+      String tmpWorkFile =
+          Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
+      new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
+      this.setWorkFilename(tmpWorkFile);
+      new MakeTabixIndex(
+          filename,
+          new File(this.getWorkFilename()),
+          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
+      this.tabixReader = this.getTabixReader(this.getWorkFilename());
+    } else { // This means the input is tabix indexed.
+      this.setWorkFilename(filename);
+      this.tabixReader = new TabixReader(this.getWorkFilename());
+    }
+    this.setGc(gc);
+
     this.setDataTransformation(this.dataTransformation);
-    this.setTrackFormat(TrackFormat.BEDGRAPH);
   }
 
   public TrackBedgraph() {}
@@ -42,9 +68,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
     return this.dataTransformation;
   }
 
-  /**
-   * Get values for bedgraph
-   */
+  /** Get values for bedgraph */
   private void bedGraphToScores(List<IntervalFeature> intervalFeatureList)
       throws IOException, InvalidGenomicCoordsException {
 

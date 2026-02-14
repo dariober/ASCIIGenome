@@ -1,5 +1,7 @@
 package tracks;
 
+import static htsjdk.variant.vcf.VCFFileReader.isBCF;
+
 import com.github.lindenb.jvarkit.variant.bcf.BCFFileReader;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -18,7 +20,7 @@ import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
-
+import htsjdk.variant.vcf.VCFReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -29,15 +31,11 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-
-import htsjdk.variant.vcf.VCFReader;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
-
-import static htsjdk.variant.vcf.VCFFileReader.isBCF;
 
 public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
@@ -64,14 +62,14 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
         suffix += ".gz";
       }
       String tmpWorkFile =
-              Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
+          Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
       new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
       this.setWorkFilename(tmpWorkFile);
       new MakeTabixIndex(
-              filename,
-              new File(this.getWorkFilename()),
-              Utils.trackFormatToTabixFormat(this.getTrackFormat()));
-    } else if (isBCF(Path.of(filename)) && ! new File(Path.of(filename) + ".csi").exists()) {
+          filename,
+          new File(this.getWorkFilename()),
+          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
+    } else if (isBCF(Path.of(filename)) && !new File(Path.of(filename) + ".csi").exists()) {
       throw new NotImplementedException("Cannot sort and index bcf files.");
     } else { // This means the input is indexed.
       this.setWorkFilename(filename);
@@ -97,7 +95,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
   @Override
   public void setGc(GenomicCoords gc)
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
@@ -150,8 +148,8 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     List<VCFFeature> xFeatures = new ArrayList<>();
     List<VariantContext> ctxList = new ArrayList<>();
 
-    try(CloseableIterator<VariantContext> iter= this.vcfReader.query(chrom, from, to)) {
-      while(iter.hasNext()) {
+    try (CloseableIterator<VariantContext> iter = this.vcfReader.query(chrom, from, to)) {
+      while (iter.hasNext()) {
         ctxList.add(iter.next());
       }
     }
@@ -168,10 +166,10 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
     VariantContextWriter writer =
-            new VariantContextWriterBuilder()
-                    .setOutputVCFStream(baos)
-                    .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
-                    .build();
+        new VariantContextWriterBuilder()
+            .setOutputVCFStream(baos)
+            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
+            .build();
     writer.writeHeader(header);
 
     for (VariantContext vc : variants) {
@@ -180,7 +178,8 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
     writer.close();
 
-    List<String> vcfLinesWithHeader = Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
+    List<String> vcfLinesWithHeader =
+        Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
     List<String> vcfLines = new ArrayList<>();
     for (String line : vcfLinesWithHeader) {
       if (!line.startsWith("#") && !line.trim().isEmpty()) {
@@ -192,13 +191,11 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
   private VCFReader prepareVcfReader(String vcfFile) throws IOException {
     if (Utils.urlFileExists(vcfFile)) {
-        AbstractFeatureReader<VariantContext, LineIterator> reader =
-                AbstractFeatureReader.getFeatureReader(
-                        vcfFile,
-                        new VCFCodec(),
-                        true   // requires index
-                );
-        return new VCFReaderAdapter(reader);
+      AbstractFeatureReader<VariantContext, LineIterator> reader =
+          AbstractFeatureReader.getFeatureReader(
+              vcfFile, new VCFCodec(), true // requires index
+              );
+      return new VCFReaderAdapter(reader);
     }
     if (isBCF) {
       return new BCFFileReader(Path.of(vcfFile), true);
@@ -313,6 +310,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   protected VCFFeature collapseGFFTranscript(List<VCFFeature> features, List<Double> mapToScreen) {
     return null;
   }
+
   // <----
 
   private static class VCFReaderAdapter implements VCFReader {
@@ -355,5 +353,4 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
       reader.close();
     }
   }
-
 }

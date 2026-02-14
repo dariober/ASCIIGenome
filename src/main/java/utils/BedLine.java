@@ -25,7 +25,8 @@ public class BedLine implements Feature {
 
   @Override
   public int getStart() {
-    return Integer.parseInt(tokens[this.startIdx]) + 1; /* +1 because the Feature uses a +1 position */
+    return Integer.parseInt(tokens[this.startIdx])
+        + 1; /* +1 because the Feature uses a +1 position */
   }
 
   @Override

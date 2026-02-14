@@ -17,14 +17,15 @@ public class ScreenWiggleLocusInfo {
   /* M e t h o d s */
   /** Increment attributes by given score */
   public void increment(float score, DataTransformation dataTransformation) {
-    if (dataTransformation == DataTransformation.IDENTITY || dataTransformation == null) {
+    if (dataTransformation == DataTransformation.IDENTITY) {
       //
     } else if (dataTransformation == DataTransformation.LOG10) {
       score = score <= 0 ? 0 : (float) Math.log10(score);
     } else if (dataTransformation == DataTransformation.MINUS_LOG10) {
       score = score <= 0 ? 0 : (float) -Math.log10(score);
     } else {
-      throw new NotImplementedException("Transformation " + dataTransformation + " not implemented yet");
+      throw new NotImplementedException(
+          "Transformation " + dataTransformation + " not implemented yet");
     }
     cntGenomicLoci++;
     sumScore += score;

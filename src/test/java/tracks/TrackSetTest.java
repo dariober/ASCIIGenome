@@ -12,8 +12,6 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.SAMSequenceDictionary;
-import htsjdk.samtools.SamReader;
-import htsjdk.samtools.SamReaderFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -21,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.commons.io.FileUtils;
@@ -42,7 +39,7 @@ public class TrackSetTest {
 
   @Test
   public void canGoToNextFeatureOnBcfFile()
-          throws InvalidGenomicCoordsException,
+      throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
           BamIndexNotFoundException,
@@ -106,15 +103,17 @@ public class TrackSetTest {
   @Test
   public void canGoToNextFeatureSmallInterval()
       throws InvalidGenomicCoordsException,
-      IOException,
-      ClassNotFoundException,
-      BamIndexNotFoundException,
-      InvalidRecordException,
-      SQLException,
-      InvalidCommandLineException {
+          IOException,
+          ClassNotFoundException,
+          BamIndexNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidCommandLineException {
 
     GenomicCoords gc;
-    SAMSequenceDictionary samSeqDict = Utils.getVCFHeader("test_data/gnomad.exomes.v4.1.sites.chr1.bcf").getSequenceDictionary();;
+    SAMSequenceDictionary samSeqDict =
+        Utils.getVCFHeader("test_data/gnomad.exomes.v4.1.sites.chr1.bcf").getSequenceDictionary();
+    ;
 
     int terminalWidth = 100;
     gc = new GenomicCoords("chr1:1-200", terminalWidth, samSeqDict, null);
@@ -211,7 +210,7 @@ public class TrackSetTest {
 
   @Test
   public void canFindNextMatchOnBcf()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           BamIndexNotFoundException,
           InvalidGenomicCoordsException,
@@ -347,19 +346,20 @@ public class TrackSetTest {
     TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
 
     trackSet.addTrackFromSource("test_data/CEU.exon.2010_06.genotypes.vcf", gc, null);
-    GenomicCoords newgc = trackSet.findNextMatchOnTrack(Pattern.compile("113054374"), "vcf", gc, false);
+    GenomicCoords newgc =
+        trackSet.findNextMatchOnTrack(Pattern.compile("113054374"), "vcf", gc, false);
     assertEquals(113054374, (int) newgc.getFrom());
   }
 
   @Test
   public void canFindNextMatchOnVCFTrack()
       throws ClassNotFoundException,
-      IOException,
-      BamIndexNotFoundException,
-      InvalidGenomicCoordsException,
-      InvalidRecordException,
-      SQLException,
-      InvalidCommandLineException {
+          IOException,
+          BamIndexNotFoundException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException,
+          InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("chr7:5565052-5571960", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);

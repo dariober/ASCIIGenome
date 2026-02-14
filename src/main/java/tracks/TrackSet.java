@@ -1657,7 +1657,8 @@ public class TrackSet {
       String trackId, GenomicCoords currentGc, double slop, boolean getPrevious)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
-    List<AbstractTrackFeature<? extends IntervalFeature>> tr = this.matchIntervalFeatureTrack(trackId.trim());
+    List<AbstractTrackFeature<? extends IntervalFeature>> tr =
+        this.matchIntervalFeatureTrack(trackId.trim());
 
     if (tr.isEmpty()) {
       return currentGc;
@@ -1684,14 +1685,15 @@ public class TrackSet {
    *
    * @throws InvalidCommandLineException
    */
-  private List<AbstractTrackFeature<? extends IntervalFeature>> matchIntervalFeatureTrack(String trackTag)
-      throws InvalidCommandLineException {
+  private List<AbstractTrackFeature<? extends IntervalFeature>> matchIntervalFeatureTrack(
+      String trackTag) throws InvalidCommandLineException {
 
     if (trackTag.isEmpty()) {
       trackTag = ".*";
     }
 
-    List<AbstractTrackFeature<? extends IntervalFeature>> ifTracks = this.getIntervalFeatureTracks();
+    List<AbstractTrackFeature<? extends IntervalFeature>> ifTracks =
+        this.getIntervalFeatureTracks();
     List<AbstractTrack> matched = matchTracks(List.of(trackTag), true, false);
     List<AbstractTrackFeature<? extends IntervalFeature>> tr = new ArrayList<>();
 
@@ -1760,7 +1762,8 @@ public class TrackSet {
       Pattern pattern, String trackregex, GenomicCoords currentGc, boolean all)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
-    List<AbstractTrackFeature<? extends IntervalFeature>> tif = this.matchIntervalFeatureTrack(trackregex.trim());
+    List<AbstractTrackFeature<? extends IntervalFeature>> tif =
+        this.matchIntervalFeatureTrack(trackregex.trim());
     if (tif.isEmpty()) {
       return currentGc;
     }

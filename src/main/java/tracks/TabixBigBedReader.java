@@ -1,18 +1,12 @@
 package tracks;
 
-import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.tribble.readers.TabixReader;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFReader;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.broad.igv.bbfile.BBFileReader;
 
 /** Adapter to make tabixReader and bigBed behave in the same way. */
@@ -35,6 +29,7 @@ public class TabixBigBedReader {
     this.vcfReader = vcfReader;
   }
   ;
+
   protected TabixBigBedIterator query(String chrom, int start, int end) {
 
     if (this.tabixReader != null) {
@@ -62,7 +57,8 @@ public class TabixBigBedReader {
       return new HashSet<>(this.bigBedReader.getChromosomeNames());
     } else if (this.vcfReader != null) {
       // This is for BCF files which don;t have tabix index but have contigs in the header
-      List<SAMSequenceRecord> seqs = this.vcfReader.getHeader().getSequenceDictionary().getSequences();
+      List<SAMSequenceRecord> seqs =
+          this.vcfReader.getHeader().getSequenceDictionary().getSequences();
       HashSet<String> chroms = new HashSet<>();
       seqs.forEach(x -> chroms.add(x.getSequenceName()));
       return chroms;

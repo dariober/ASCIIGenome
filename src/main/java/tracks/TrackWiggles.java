@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.crypto.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BigWigIterator;
@@ -175,7 +174,9 @@ public class TrackWiggles extends AbstractTrack {
                     Utils.getIndexOfclosestValue(
                         tileStartPos + 1,
                         genomeToScreenMapping); // Where should this position be mapped on screen?
-                screenWiggleLocusInfoList.get(idx).increment(tileValue, DataTransformation.IDENTITY);
+                screenWiggleLocusInfoList
+                    .get(idx)
+                    .increment(tileValue, DataTransformation.IDENTITY);
               }
             } // End process bins in this tile
           }

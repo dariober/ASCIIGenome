@@ -81,12 +81,13 @@ public class InteractiveInputTest {
   @Test
   public void canFindRegex()
       throws IOException,
-      SQLException,
-      InvalidGenomicCoordsException,
-      ClassNotFoundException,
-      InvalidRecordException,
-      InvalidCommandLineException {
-    TrackProcessor proc = gimmeTrackProcessor("chr1:1261482-1269678", 200, "test_data/hg19_genes.gtf.gz");
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
+    TrackProcessor proc =
+        gimmeTrackProcessor("chr1:1261482-1269678", 200, "test_data/hg19_genes.gtf.gz");
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = processInput(ip, "open test_data/hg19_genes.gtf.gz", proc);
@@ -107,7 +108,8 @@ public class InteractiveInputTest {
     pi = processInput(ip, "open test_data/hg19_genes_head.gtf", proc);
     assertTrue(pi.stdout.contains("test_data/hg19_genes_head.gtf"));
     pi = processInput(ip, "find ATAD3B", proc);
-    assertEquals("There are multiple tracks: Select a track name to search for pattern", pi.stderr.trim());
+    assertEquals(
+        "There are multiple tracks: Select a track name to search for pattern", pi.stderr.trim());
 
     pi = processInput(ip, "find ATAD3B #1", proc);
     assertTrue(pi.stdout.contains("chr1:1407164"));

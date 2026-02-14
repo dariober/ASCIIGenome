@@ -8,7 +8,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -53,7 +52,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.HttpURLConnection;
@@ -87,8 +85,6 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
-
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.text.StrMatcher;
@@ -107,7 +103,6 @@ import org.broad.igv.tdf.TDFReader;
 import tracks.AbstractTrack;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
-import tracks.TrackVCF;
 import utils.Tokenizer;
 
 /**
@@ -156,11 +151,11 @@ public class Utils {
       } else {
         gzipStream = new GZIPInputStream(new FileInputStream(fileOrUrl));
       }
-      Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+      Reader decoder = new InputStreamReader(gzipStream, StandardCharsets.UTF_8);
       br = new BufferedReader(decoder);
     } else if (urlValidator.isValid(fileOrUrl)) {
       InputStream instream = new URL(fileOrUrl).openStream();
-      Reader decoder = new InputStreamReader(instream, "UTF-8");
+      Reader decoder = new InputStreamReader(instream, StandardCharsets.UTF_8);
       br = new BufferedReader(decoder);
     } else {
       br = new BufferedReader(new FileReader(fileOrUrl));
@@ -199,8 +194,6 @@ public class Utils {
    * Check if the list of arguments contains "param" and if so return nargs argument after it.
    * Returns null if arglist does not contain the parameter. IMPORTANT SIDE EFFECT: If found, the
    * parameter and its arguments are removed from input list.
-   *
-   * @throws InvalidCommandLineException
    */
   public static List<String> getNArgsForParam(List<String> argList, String param, int nargs)
       throws InvalidCommandLineException {
@@ -241,8 +234,6 @@ public class Utils {
    * Check if the list of arguments contains "param" and if so return the argument. Returns null if
    * arglist does not contain the parameter IMPORTANT SIDE EFFECT: If found, the parameter and its
    * argument are removed from argList.
-   *
-   * @throws InvalidCommandLineException
    */
   public static String getArgForParam(List<String> argList, String param, String defArg)
       throws InvalidCommandLineException {
@@ -389,14 +380,15 @@ public class Utils {
         //        mergedChrom + "\t" + (mergedFrom - 1) + "\t" + mergedTo, TrackFormat.BED, null,
         // -1);
         T x = (T) intervalList.get(0).clone();
-//        try {
-//          x = (T) intervalList.get(i - 1).getClass().getDeclaredConstructor().newInstance();
-//        } catch (InstantiationException
-//            | IllegalAccessException
-//            | InvocationTargetException
-//            | NoSuchMethodException e) {
-//          throw new RuntimeException(e);
-//        }
+        //        try {
+        //          x = (T) intervalList.get(i -
+        // 1).getClass().getDeclaredConstructor().newInstance();
+        //        } catch (InstantiationException
+        //            | IllegalAccessException
+        //            | InvocationTargetException
+        //            | NoSuchMethodException e) {
+        //          throw new RuntimeException(e);
+        //        }
 
         // Set the merged fields
         x.setChrom(mergedChrom);
@@ -458,12 +450,14 @@ public class Utils {
   /**
    * Get the first chrom string from first line of input file. As you add support for more filetypes
    * you should update this function. This method is very dirty and shouldn't be trusted 100%
-   *
    */
   @SuppressWarnings("unused")
   public static String initRegionFromFile(String x, String referenceSequence)
-          throws IOException,
-          InvalidGenomicCoordsException, SQLException, ClassNotFoundException, InvalidRecordException {
+      throws IOException,
+          InvalidGenomicCoordsException,
+          SQLException,
+          ClassNotFoundException,
+          InvalidRecordException {
     UrlValidator urlValidator = new UrlValidator();
     String region = "";
     TrackFormat fmt = Utils.getFileTypeFromName(x);

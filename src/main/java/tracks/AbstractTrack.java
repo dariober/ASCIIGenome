@@ -1348,10 +1348,10 @@ public abstract class AbstractTrack {
     return this.vcfHeader;
   }
 
-//  @Override
-//  public VCFHeader getVcfHeader() {
-//    return this.vcfHeader;
-//  }
+  //  @Override
+  //  public VCFHeader getVcfHeader() {
+  //    return this.vcfHeader;
+  //  }
 
   //  public abstract GenomicCoords coordsOfNextFeature(GenomicCoords currentGc, boolean
   // getPrevious)

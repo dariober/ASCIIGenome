@@ -57,25 +57,25 @@ public class MainTest {
   @Test
   public void canPrintGenomeFromBcf()
       throws ClassNotFoundException,
-      IOException,
-      InvalidGenomicCoordsException,
-      InvalidCommandLineException,
-      InvalidRecordException,
-      BamIndexNotFoundException,
-      SQLException,
-      DocumentException,
-      UnindexableFastaFileException,
-      InvalidColourException,
-      InvalidConfigException {
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
     String[] args =
         new String[] {
-            "-ni",
-            "-nf",
-            "--debug",
-            "2",
-            "--exec",
-            "show genome",
-            "test_data/gnomad.exomes.v4.1.sites.chr1.bcf"
+          "-ni",
+          "-nf",
+          "--debug",
+          "2",
+          "--exec",
+          "show genome",
+          "test_data/gnomad.exomes.v4.1.sites.chr1.bcf"
         };
     // Genotype filter selects for "sample2". "sample1" appears once right at the start before the
     // filtering is applied.
@@ -114,7 +114,7 @@ public class MainTest {
 
   @Test
   public void canStartFromBcf()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -126,13 +126,7 @@ public class MainTest {
           InvalidColourException,
           InvalidConfigException {
     String[] args =
-            new String[] {
-                    "-ni",
-                    "-nf",
-                    "--debug",
-                    "2",
-                    "test_data/gnomad.exomes.v4.1.sites.chr1.bcf"
-            };
+        new String[] {"-ni", "-nf", "--debug", "2", "test_data/gnomad.exomes.v4.1.sites.chr1.bcf"};
     String out = Joiner.on("\n").join(this.runMain(args));
     System.out.println(out);
     assertTrue(out.contains("chr1:1"));

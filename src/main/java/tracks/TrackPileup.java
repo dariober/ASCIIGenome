@@ -42,18 +42,16 @@ public class TrackPileup extends TrackBedgraph {
    * positions are not returned in order. The method(s) getDepth(), etc should return a TreeMap for
    * positions to be sorted. Here we use HashMap because is faster to build.
    */
-  private Map<String, Map<Integer, Locus>> loci = new HashMap<String, Map<Integer, Locus>>();
+  private final Map<String, Map<Integer, Locus>> loci = new HashMap<String, Map<Integer, Locus>>();
 
   @SuppressWarnings("rawtypes")
-  private Map<String, IntervalTree> zeroDepthIntervals = new HashMap<String, IntervalTree>();
+  private final Map<String, IntervalTree> zeroDepthIntervals = new HashMap<String, IntervalTree>();
 
-  private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList =
+  private final List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList =
       new ArrayList<ScreenWiggleLocusInfo>();
   private long alnRecCnt = -1;
 
   /*        C O N S T R U C T O R         */
-
-  public TrackPileup() {}
 
   /**
    * Initialize pileup with a list of empty loci at the region given by chrom:from-to At the start,
@@ -88,7 +86,6 @@ public class TrackPileup extends TrackBedgraph {
     }
     this.setFilename(bam);
     this.setGc(gc);
-    // this.alnRecCnt= Utils.getAlignedReadCount(this.getWorkFilename());
     this.setLastModified();
   }
 
@@ -264,11 +261,6 @@ public class TrackPileup extends TrackBedgraph {
     return chromosomeNames;
   }
 
-  @Override
-  protected List<Float> getScreenScores() {
-    return this.screenScores;
-  }
-
   /**
    * Update the given map of loci with the information in this record. Only consider positions
    * between qryFrom and qryTo.
@@ -381,11 +373,7 @@ public class TrackPileup extends TrackBedgraph {
     return deletedBlocks;
   }
 
-  /**
-   * Depth at each position. Key: reference position. Value: depth.
-   *
-   * @throws IOException
-   */
+  /** Depth at each position. Key: reference position. Value: depth. */
   protected Map<Integer, Integer> getDepth(String chrom, int from, int to) throws IOException {
 
     List<Integer> posInWindow = new ArrayList<Integer>();
@@ -496,11 +484,11 @@ public class TrackPileup extends TrackBedgraph {
         || !this.getHideRegex().pattern().equals(Filter.DEFAULT_HIDE_REGEX.getValue())) {
       title.add("grep");
     }
-    if (this.get_f_flag() != Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue())
-        || this.get_F_flag() != Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue())) {
+    if (this.get_f_flag() != Integer.parseInt(Filter.DEFAULT_f_FLAG.getValue())
+        || this.get_F_flag() != Integer.parseInt(Filter.DEFAULT_F_FLAG.getValue())) {
       title.add("bit-flag");
     }
-    if (this.getMapq() != Integer.valueOf(Filter.DEFAULT_MAPQ.getValue())) {
+    if (this.getMapq() != Integer.parseInt(Filter.DEFAULT_MAPQ.getValue())) {
       title.add("mapq");
     }
     if (!this.getFeatureFilter()
@@ -508,7 +496,7 @@ public class TrackPileup extends TrackBedgraph {
         .equals(Filter.DEFAULT_VARIANT_CHROM.getValue())) {
       title.add("var-read");
     }
-    if (title.size() > 0) {
+    if (!title.isEmpty()) {
       return "; filters: " + title.toString();
     } else {
       return "";

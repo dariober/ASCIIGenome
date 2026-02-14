@@ -1215,7 +1215,8 @@ public class GenomicCoords implements Cloneable {
       double center = (size / 2.0) + gc.getFrom();
       int from = (int) Math.rint(center - (size * slop));
       int to = (int) Math.rint(center + (size * slop));
-      // If the new coordinates are smaller than the terminal window, extend them to cover the terminal
+      // If the new coordinates are smaller than the terminal window, extend them to cover the
+      // terminal
       int span = to - from + 1;
       if (span < gc.getTerminalWidth()) {
         int border = (int) Math.rint((double) (gc.getTerminalWidth() - span) / 2);
@@ -1227,7 +1228,10 @@ public class GenomicCoords implements Cloneable {
         to = to + border + rightSpill;
       }
       // Final correction for rounding errors
-      to = (to - from + 1) < this.getTerminalWidth() ? to + (this.getTerminalWidth() - (to - from + 1)) : to;
+      to =
+          (to - from + 1) < this.getTerminalWidth()
+              ? to + (this.getTerminalWidth() - (to - from + 1))
+              : to;
       gc.from = from;
       gc.to = to;
     }

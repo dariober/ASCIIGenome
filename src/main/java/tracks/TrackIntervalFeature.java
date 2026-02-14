@@ -20,7 +20,6 @@ import sortBgzipIndex.MakeTabixIndex;
 
 public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> {
 
-  /** For GTF/GFF data: Use this attribute to get the feature names */
   protected int scoreColIdx = -1;
 
   private String gtfAttributeForName = null;
@@ -43,8 +42,6 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
       this.scoreColIdx =
           5; // Don't use setScoreColIdx because it call update and the GenomicCoordinates object is
       // null
-    } else if (this.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
-      this.scoreColIdx = 4;
     }
     if (this.getTrackFormat().equals(TrackFormat.BIGBED)) {
       this.bigBedReader = new BBFileReader(filename); // or url for remote access.

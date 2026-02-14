@@ -338,12 +338,9 @@ public class GenomicCoordsTest {
   }
 
   @Test
-  public void canInitializeSamSeqDictFromVCF()
-      throws IOException, InvalidGenomicCoordsException {
+  public void canInitializeSamSeqDictFromVCF() throws IOException, InvalidGenomicCoordsException {
     GenomicCoords gc = new GenomicCoords("1", 80, null, null);
-    gc.setGenome(
-        List.of("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"),
-        true);
+    gc.setGenome(List.of("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"), true);
     assertEquals(25, gc.getSamSeqDict().size());
 
     gc = new GenomicCoords("1", 80, null, null);
@@ -372,9 +369,7 @@ public class GenomicCoordsTest {
   public void canInitializeSamSeqDictFromBCF()
       throws IOException, InvalidGenomicCoordsException, InvalidColourException {
     GenomicCoords gc = new GenomicCoords("1", 80, null, null);
-    gc.setGenome(
-        List.of("test_data/gnomad.exomes.v4.1.sites.chr1.bcf"),
-        true);
+    gc.setGenome(List.of("test_data/gnomad.exomes.v4.1.sites.chr1.bcf"), true);
     assertEquals(24, gc.getSamSeqDict().size());
   }
 
