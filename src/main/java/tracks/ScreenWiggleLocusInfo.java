@@ -1,5 +1,7 @@
 package tracks;
 
+import org.apache.commons.lang3.NotImplementedException;
+
 /** Info about a screen position for wiggle-like data. Somewhat counterpart to ScreenLocusInfo */
 public class ScreenWiggleLocusInfo {
 
@@ -14,7 +16,16 @@ public class ScreenWiggleLocusInfo {
 
   /* M e t h o d s */
   /** Increment attributes by given score */
-  public void increment(float score) {
+  public void increment(float score, DataTransformation dataTransformation) {
+    if (dataTransformation == DataTransformation.IDENTITY) {
+      //
+    } else if (dataTransformation == DataTransformation.LOG10) {
+      score = score <= 0 ? 0 : (float) Math.log10(score);
+    } else if (dataTransformation == DataTransformation.MINUS_LOG10) {
+      score = score <= 0 ? 0 : (float) -Math.log10(score);
+    } else {
+      throw new NotImplementedException("Transformation " + dataTransformation + " not implemented yet");
+    }
     cntGenomicLoci++;
     sumScore += score;
     this.min = Math.min(this.min, score);

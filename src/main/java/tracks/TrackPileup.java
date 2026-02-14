@@ -243,7 +243,7 @@ public class TrackPileup extends TrackBedgraph {
       int screenIdx = Utils.getIndexOfclosestValue(refPos, mapping);
       ScreenWiggleLocusInfo sloc = this.screenWiggleLocusInfoList.get(screenIdx);
       int depth = depthMap.get(refPos);
-      sloc.increment(depth);
+      sloc.increment(depth, DataTransformation.IDENTITY);
     }
 
     List<Float> screenScores = new ArrayList<Float>();

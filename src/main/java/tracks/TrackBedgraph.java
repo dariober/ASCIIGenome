@@ -17,6 +17,8 @@ import samTextViewer.Utils;
 
 public class TrackBedgraph extends TrackIntervalFeature {
 
+  private DataTransformation dataTransformation = DataTransformation.IDENTITY;
+
   public TrackBedgraph(String filename, GenomicCoords gc)
       throws ClassNotFoundException,
           IOException,
@@ -30,6 +32,14 @@ public class TrackBedgraph extends TrackIntervalFeature {
   public TrackBedgraph() {}
 
   /* ----------- METHODS ----------- */
+
+  protected void setDataTransformation(DataTransformation dataTransformation) {
+    this.dataTransformation = dataTransformation;
+  }
+
+  protected DataTransformation getDataTransformation() {
+    return this.dataTransformation;
+  }
 
   /**
    * Get values for bedgraph
@@ -45,7 +55,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
     for (IntervalFeature ift : intervalFeatureList) {
       ift.mapToScreen(this.getGc().getMapping());
       for (int i = ift.getScreenFrom(); i <= ift.getScreenTo(); i++) {
-        screenWigLocInfoList.get(i).increment(ift.getScore());
+        screenWigLocInfoList.get(i).increment(ift.getScore(), this.getDataTransformation());
       }
     }
 
