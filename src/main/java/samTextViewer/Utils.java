@@ -43,6 +43,7 @@ import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderVersion;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -228,6 +229,30 @@ public class Utils {
       nargs--;
     }
     return args;
+  }
+
+  public static String variantToVcfLine(VariantContext ctx, VCFHeader header) {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+    VariantContextWriter writer =
+        new VariantContextWriterBuilder()
+            .setOutputVCFStream(baos)
+            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
+            .build();
+    writer.writeHeader(header);
+    writer.add(ctx);
+    writer.close();
+
+    List<String> vcfLinesWithHeader =
+        Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
+    List<String> vcfLines = new ArrayList<>();
+    for (String line : vcfLinesWithHeader) {
+      if (!line.startsWith("#") && !line.trim().isEmpty()) {
+        vcfLines.add(line.trim());
+      }
+    }
+    assert vcfLines.size() == 1;
+    return vcfLines.get(0);
   }
 
   /**

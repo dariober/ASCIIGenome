@@ -20,6 +20,7 @@ import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -29,8 +30,11 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
@@ -43,6 +47,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   private VCFCodec vcfCodec;
   private final VCFReader vcfReader;
   private final boolean isBCF;
+  private GenotypeMatrix genotypeMatrix = new GenotypeMatrix();
 
   public TrackVCF(final String filename, GenomicCoords gc)
       throws IOException,
@@ -81,6 +86,10 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
       this.tabixReader = null;
     }
     this.setGc(gc);
+  }
+
+  protected GenotypeMatrix getGenotypeMatrix() {
+    return genotypeMatrix;
   }
 
   @Override
@@ -243,17 +252,47 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   @Override
   protected List<String> getRecordsAsStrings() {
     List<String> featureList = new ArrayList<>();
-    for (VCFFeature ift : this.getFeatureList()) {
+
+    LinkedHashSet<String> samplesToKeep;
+    try {
+      samplesToKeep =
+          this.getGenotypeMatrix().selectedSamples(this.getFeatureList(), this.getVcfHeader());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    VCFHeader reHeader = this.copyHeaderWithSamples(samplesToKeep);
+
+    for (VCFFeature vcfFeature : this.getFeatureList()) {
+      VCFFeature reVcfFeature = (VCFFeature) vcfFeature.clone();
+
+      reVcfFeature.stripVariantContext(Set.of(), Set.of(), new LinkedHashSet<>(samplesToKeep));
+      reVcfFeature.setRaw(Utils.variantToVcfLine(reVcfFeature.getVariantContext(), reHeader));
+
       if (this.getPrintNormalizedVcf()) {
         List<String> line =
             this.normalizeVcfRecordBySample(
-                this.getVcfHeader().getSampleNamesInOrder(), ift.getRaw());
+                reHeader.getSampleNamesInOrder(), reVcfFeature.getRaw());
         featureList.addAll(line);
       } else {
-        featureList.add(ift.getRaw());
+        featureList.add(reVcfFeature.getRaw());
       }
     }
     return featureList;
+  }
+
+  private VCFHeader copyHeaderWithSamples(LinkedHashSet<String> samplesToKeep) {
+    Set<VCFHeaderLine> metaData = new HashSet<>(this.getVcfHeader().getMetaDataInInputOrder());
+    Set<String> newSamples;
+
+    if (samplesToKeep == null) {
+      // keep all samples
+      newSamples = new LinkedHashSet<>(this.getVcfHeader().getSampleNamesInOrder());
+    } else {
+      // keep only selected samples
+      newSamples = new LinkedHashSet<>(samplesToKeep);
+    }
+
+    return new VCFHeader(metaData, newSamples);
   }
 
   private List<String> normalizeVcfRecordBySample(List<String> sampleNames, String rawVcfLine) {

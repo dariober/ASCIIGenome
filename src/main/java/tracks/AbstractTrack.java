@@ -6,7 +6,6 @@ import colouring.Xterm256;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
-import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.CigarElement;
@@ -109,7 +108,6 @@ public abstract class AbstractTrack {
   private TrackFormat trackFormat;
 
   private int printRawLineCount = -1; // Number of lines to print. Same as `head -n 10`
-  private GenotypeMatrix genotypeMatrix = new GenotypeMatrix();
 
   /** A file to export track data */
   private String exportFile = null;
@@ -494,17 +492,9 @@ public abstract class AbstractTrack {
    * formatting so it returns a single string. It should be used only for printing and not for any
    * computation. If an output file has been set via this.setExportFile(exportFile), write to file
    * and return empty string.
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidColourException
-   * @throws InvalidCommandLineException
    */
   public String printLines()
-      throws InvalidGenomicCoordsException,
-          IOException,
-          InvalidColourException,
-          InvalidCommandLineException {
+      throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 
     List<String> rawList =
         this.execSystemCommand(this.getRecordsAsStrings(), this.getSystemCommandForPrint());
@@ -1057,8 +1047,16 @@ public abstract class AbstractTrack {
     // boolean[] results= new boolean[(int) this.nRecsInWindow];
     List<Boolean> results = new ArrayList<Boolean>();
 
-    boolean isDefaultShowRegex = this.getFeatureFilter().getShowRegex().toString().equals(Filter.DEFAULT_SHOW_REGEX.getValue());
-    boolean isDefaultHideRegex = this.getFeatureFilter().getHideRegex().toString().equals(Filter.DEFAULT_HIDE_REGEX.getValue());
+    boolean isDefaultShowRegex =
+        this.getFeatureFilter()
+            .getShowRegex()
+            .toString()
+            .equals(Filter.DEFAULT_SHOW_REGEX.getValue());
+    boolean isDefaultHideRegex =
+        this.getFeatureFilter()
+            .getHideRegex()
+            .toString()
+            .equals(Filter.DEFAULT_HIDE_REGEX.getValue());
 
     List<String> awkDataInput = new ArrayList<String>();
     while (filterSam.hasNext()) {
@@ -1087,7 +1085,7 @@ public abstract class AbstractTrack {
 
       String raw = null;
 
-      if (passed&& (!isDefaultShowRegex || !isDefaultHideRegex)) {
+      if (passed && (!isDefaultShowRegex || !isDefaultHideRegex)) {
         // grep
         raw = rec.getSAMString().trim();
         boolean showIt = true;
@@ -1226,10 +1224,6 @@ public abstract class AbstractTrack {
   }
 
   protected void setColourForRegex(List<Argument> xcolourForRegex) {}
-
-  public GenotypeMatrix getGenotypeMatrix() {
-    return genotypeMatrix;
-  }
 
   /**
    * Iterate through the features in this track and set background colour. colourForRegex: Key=

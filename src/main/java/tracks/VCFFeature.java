@@ -1,10 +1,18 @@
 package tracks;
 
 import htsjdk.variant.variantcontext.Allele;
+import htsjdk.variant.variantcontext.Genotype;
+import htsjdk.variant.variantcontext.GenotypeBuilder;
 import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.variantcontext.VariantContextBuilder;
 import htsjdk.variant.vcf.VCFCodec;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import samTextViewer.Utils;
 
 /**
@@ -14,7 +22,7 @@ import samTextViewer.Utils;
  * @author berald01
  */
 public class VCFFeature extends IntervalFeature {
-  private VariantContext variantContext = null;
+  private VariantContext variantContext;
 
   /* C o n s t r u c t o r s */
 
@@ -32,6 +40,94 @@ public class VCFFeature extends IntervalFeature {
   }
 
   /* M e t h o d s */
+
+  /** Replace the existing variant context with a copy having attributes and samples removed */
+  protected void stripVariantContext(
+      Set<String> infoToRemove, Set<String> formatToRemove, Set<String> samplesToKeep) {
+
+    if (this.variantContext == null) {
+      return;
+    }
+
+    VariantContext originalVC = this.variantContext;
+
+    VariantContextBuilder vcb = new VariantContextBuilder(originalVC);
+
+    /*
+     * -------------------------
+     * 1) Strip INFO fields
+     * -------------------------
+     */
+    if (infoToRemove != null && !infoToRemove.isEmpty()) {
+      Map<String, Object> newAttributes =
+          originalVC.getAttributes().entrySet().stream()
+              .filter(e -> !infoToRemove.contains(e.getKey()))
+              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+      vcb.attributes(newAttributes);
+    }
+
+    /*
+     * -------------------------
+     * 2) Filter samples
+     * -------------------------
+     */
+    Collection<Genotype> workingGenotypes;
+
+    if (samplesToKeep == null) {
+      // keep all
+      workingGenotypes = originalVC.getGenotypes();
+    } else if (samplesToKeep.isEmpty()) {
+      // keep none
+      workingGenotypes = Collections.emptyList();
+    } else {
+      // keep only specified samples
+      workingGenotypes = originalVC.getGenotypes(samplesToKeep);
+    }
+
+    /*
+     * -------------------------
+     * 3) Strip FORMAT fields
+     * -------------------------
+     */
+    if (formatToRemove != null && !formatToRemove.isEmpty()) {
+
+      List<Genotype> newGenotypes = new ArrayList<>(workingGenotypes.size());
+
+      for (Genotype g : workingGenotypes) {
+
+        GenotypeBuilder gb = new GenotypeBuilder(g);
+
+        // Handle common FORMAT fields explicitly
+        if (formatToRemove.contains("DP")) gb.noDP();
+        if (formatToRemove.contains("AD")) gb.noAD();
+        if (formatToRemove.contains("PL")) gb.noPL();
+        if (formatToRemove.contains("GQ")) gb.noGQ();
+
+        // Remove custom/extended FORMAT fields
+        Map<String, Object> filteredExtended =
+            g.getExtendedAttributes().entrySet().stream()
+                .filter(e -> !formatToRemove.contains(e.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        gb.attributes(filteredExtended);
+
+        newGenotypes.add(gb.make());
+      }
+
+      vcb.genotypes(newGenotypes);
+
+    } else {
+      vcb.genotypes(workingGenotypes);
+    }
+
+    /*
+     * -------------------------
+     * 4) Build new immutable VariantContext
+     * -------------------------
+     */
+    this.variantContext = vcb.make();
+  }
 
   /**
    * Map interval to screen coordinates using the provided ruler.

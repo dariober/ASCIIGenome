@@ -193,8 +193,7 @@ public class TrackVCFTest {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException,
-          InvalidColourException,
-          InvalidCommandLineException {
+          InvalidColourException {
 
     GenomicCoords gc = new GenomicCoords("1:645709-645975", 80, null, null);
     TrackVCF tif = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
@@ -214,6 +213,25 @@ public class TrackVCFTest {
     tif.setPrintNormalizedVcf(true);
 
     assertEquals(1, tif.printLines().split("\n").length);
+  }
+
+  @Test
+  public void canPrintStrippedRecords()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("1:645709-645975", 80, null, null);
+    TrackVCF tif = new TrackVCF("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", gc);
+    tif.setPrintMode(PrintRawLine.FULL);
+    tif.setNoFormat(true);
+    // tif.setPrintNormalizedVcf(true);
+
+    String out = tif.printLines();
+    System.out.println(out);
   }
 
   @Test

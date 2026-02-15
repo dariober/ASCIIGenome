@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +33,7 @@ import javax.script.ScriptEngine;
 import org.apache.commons.io.FilenameUtils;
 import samTextViewer.Utils;
 
-class GenotypeMatrix {
+public class GenotypeMatrix {
 
   /** Each `List<Genotype>` is a row in the matrix. The String is the sample name */
   private Map<String, List<FeatureChar>> matrix = new LinkedHashMap<String, List<FeatureChar>>();
@@ -43,43 +44,30 @@ class GenotypeMatrix {
   /** Maximum number of samples (rows) to print */
   private Integer nMaxSamples;
 
-  private Map<String, String> subSampleRegex = new HashMap<String, String>();
+  private final Map<String, String> subSampleRegex = Map.of("pattern", "$^", "replacement", "");
 
   private String pyScriptFilter;
 
-  private ScriptEngine engine; // Leave this null. Only if required use the getter to create it.
   // The engine maybe called 1000s of times. So if created only once.
-  private final Set<String> genotypes = new HashSet<String>();
+  private ScriptEngine engine; // Leave this null. Only if required use the getter to create it.
 
-  protected GenotypeMatrix() {
-    this.subSampleRegex.put("pattern", "$^"); // Default pattern-replacement to match nothing
-    this.subSampleRegex.put("replacement", "");
-    this.genotypes.add("{HOM}");
-    this.genotypes.add("{HET}");
-    this.genotypes.add("{HOM_REF}");
-    this.genotypes.add("{HOM_VAR}");
-    this.genotypes.add("{HET_NON_REF}");
-    this.genotypes.add("{CALLED}");
-    this.genotypes.add("{NO_CALL}");
-    this.genotypes.add("{MIXED}");
-  }
+  private final Set<String> genotypes =
+      Set.of(
+          "{HOM}",
+          "{HET}",
+          "{HOM_REF}",
+          "{HOM_VAR}",
+          "{HET_NON_REF}",
+          "{CALLED}",
+          "{NO_CALL}",
+          "{MIXED}");
+
+  protected GenotypeMatrix() {}
 
   // -------------------------------------------------------------------------
 
-  /**
-   * Replace or create the current matrix using the provided input.
-   *
-   * @throws InvalidGenomicCoordsException
-   * @throws IOException
-   */
-  private void makeMatrix(List<VCFFeature> variantList, int terminalWidth, VCFHeader vcfHeader)
+  protected LinkedHashSet<String> selectedSamples(List<VCFFeature> variantList, VCFHeader vcfHeader)
       throws IOException {
-
-    this.matrix = new LinkedHashMap<>();
-
-    if (variantList.isEmpty()) {
-      return;
-    }
 
     Map<VariantContext, String> vcfRecordWithScript = new HashMap<VariantContext, String>();
     if (vcfHeader != null
@@ -94,32 +82,47 @@ class GenotypeMatrix {
         vcfRecordWithScript.put(ctx.getVariantContext(), py);
       }
     }
-    List<String> samples = new ArrayList<String>();
-    if (vcfHeader != null) {
-      samples = vcfHeader.getGenotypeSamples();
-    } else {
-      samples = variantList.get(0).getVariantContext().getSampleNamesOrderedByName();
+
+    assert vcfHeader != null;
+    List<String> allSamples = vcfHeader.getGenotypeSamples();
+
+    LinkedHashSet<String> selectedSamples = new LinkedHashSet<>();
+    for (String sample : allSamples) {
+      boolean matched = Pattern.compile(this.getSelectSampleRegex()).matcher(sample).find();
+      if (!matched) {
+        // Not matched by regex, no point in applying other filters
+        continue;
+      }
+
+      boolean keep = true;
+      if (this.getPyScriptFilter() != null && !this.getPyScriptFilter().trim().isEmpty()) {
+        keep = this.isPassedFilter(vcfRecordWithScript, sample, vcfHeader);
+        if (!keep) {
+          continue;
+        }
+      }
+      selectedSamples.add(sample);
     }
+    return selectedSamples;
+  }
+
+  /** Replace or create the current matrix using the provided input. */
+  private void makeMatrix(List<VCFFeature> variantList, int terminalWidth, VCFHeader vcfHeader)
+      throws IOException {
+
+    this.matrix = new LinkedHashMap<>();
+
+    if (variantList.isEmpty()) {
+      return;
+    }
+
+    LinkedHashSet<String> samples = this.selectedSamples(variantList, vcfHeader);
+
     int n = 0;
     for (String sampleName : samples) {
 
       if (n >= this.getnMaxSamples() && this.getnMaxSamples() >= 0) {
         break;
-      }
-
-      boolean matched = Pattern.compile(this.getSelectSampleRegex()).matcher(sampleName).find();
-      if (!matched) {
-        continue;
-      }
-
-      boolean keep = true;
-      if (vcfHeader != null
-          && this.getPyScriptFilter() != null
-          && !this.getPyScriptFilter().trim().isEmpty()) {
-        keep = this.isPassedFilter(vcfRecordWithScript, sampleName, vcfHeader);
-        if (!keep) {
-          continue;
-        }
       }
 
       List<FeatureChar> genotypeRow = new ArrayList<FeatureChar>();

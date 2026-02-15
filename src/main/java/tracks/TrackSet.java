@@ -841,7 +841,7 @@ public class TrackSet {
 
     // Regex to capture tracks: All positional args left
     List<String> trackNameRegex = new ArrayList<String>();
-    if (argList.size() > 0) {
+    if (!argList.isEmpty()) {
       trackNameRegex = argList;
     } else {
       trackNameRegex.add(".*"); // Default: Capture everything
@@ -850,20 +850,23 @@ public class TrackSet {
     // Set as appropriate
     List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
     for (AbstractTrack tr : tracksToReset) {
+      if (!tr.getTrackFormat().equals(TrackFormat.VCF)) {
+        continue;
+      }
       if (nRows != null) {
-        int n = Integer.valueOf(nRows) >= 0 ? Integer.valueOf(nRows) : Integer.MAX_VALUE;
-        tr.getGenotypeMatrix().setnMaxSamples(n);
+        int n = Integer.parseInt(nRows) >= 0 ? Integer.parseInt(nRows) : Integer.MAX_VALUE;
+        ((TrackVCF) tr).getGenotypeMatrix().setnMaxSamples(n);
       }
       if (selectSampleRegex != null) {
-        tr.getGenotypeMatrix().setSelectSampleRegex(selectSampleRegex);
+        ((TrackVCF) tr).getGenotypeMatrix().setSelectSampleRegex(selectSampleRegex);
       }
       if (subSampleRegex != null) {
         String rplc = subSampleRegex.get(1);
         rplc = !rplc.equals("\"\"") ? rplc : "";
-        tr.getGenotypeMatrix().setSubSampleRegex(subSampleRegex.get(0), rplc);
+        ((TrackVCF) tr).getGenotypeMatrix().setSubSampleRegex(subSampleRegex.get(0), rplc);
       }
       if (jsScriptFilter != null) {
-        tr.getGenotypeMatrix().setPyScriptFilter(jsScriptFilter);
+        ((TrackVCF) tr).getGenotypeMatrix().setPyScriptFilter(jsScriptFilter);
       }
     }
   }

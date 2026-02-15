@@ -276,8 +276,6 @@ public class MakeTabixIndex {
    * @throws SQLException
    */
   private Connection createSQLiteDb(File sqliteFile, String tablename) throws SQLException {
-    // this.sqliteFile= Utils.createTempFile(".asciigenome.", ".tmp.sqlite");
-
     try {
       Class.forName("org.sqlite.JDBC");
     } catch (ClassNotFoundException e) {

@@ -1,25 +1,17 @@
 package tracks;
 
-import com.google.common.base.Splitter;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
 import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.variantcontext.writer.Options;
-import htsjdk.variant.variantcontext.writer.VariantContextWriter;
-import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
 import java.util.NoSuchElementException;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BedFeature;
 import org.broad.igv.bbfile.BigBedIterator;
+import samTextViewer.Utils;
 
 public class TabixBigBedIterator {
 
@@ -38,30 +30,6 @@ public class TabixBigBedIterator {
 
   protected TabixBigBedIterator(VCFReader reader, String chrom, int start, int end) {
     this.vcfIterator = reader.query(chrom, start, end);
-  }
-
-  private String variantToVcfLine(VariantContext ctx, VCFHeader header) {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-    VariantContextWriter writer =
-        new VariantContextWriterBuilder()
-            .setOutputVCFStream(baos)
-            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
-            .build();
-    writer.writeHeader(header);
-    writer.add(ctx);
-    writer.close();
-
-    List<String> vcfLinesWithHeader =
-        Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
-    List<String> vcfLines = new ArrayList<>();
-    for (String line : vcfLinesWithHeader) {
-      if (!line.startsWith("#") && !line.trim().isEmpty()) {
-        vcfLines.add(line.trim());
-      }
-    }
-    assert vcfLines.size() == 1;
-    return vcfLines.get(0);
   }
 
   protected void setVcfHeader(VCFHeader vcfHeader) {
@@ -100,7 +68,7 @@ public class TabixBigBedIterator {
         this.vcfIterator.close();
         return null;
       }
-      return this.variantToVcfLine(ctx, this.vcfHeader);
+      return Utils.variantToVcfLine(ctx, this.vcfHeader);
     } else {
       throw new RuntimeException();
     }

@@ -189,7 +189,7 @@ public class GenotypeMatrixTest {
     gm.setPyScriptFilter("{XB} and {DP} == 100");
     String x = gm.printToScreen(true, linf, 80, vcfHeader);
     assertTrue(x.contains("sample2"));
-    assertTrue(!x.contains("sample1"));
+    assertFalse(x.contains("sample1"));
   }
 
   @Test
@@ -429,14 +429,14 @@ public class GenotypeMatrixTest {
     gm.setSelectSampleRegex("96|99");
     // gm.makeMatrix(linf, 80, null);
 
-    String x = gm.printToScreen(true, linf, 80, null);
+    String x = gm.printToScreen(true, linf, 80, vcf.getVcfHeader());
     String[] rows = x.split("\n");
     assertEquals(2, rows.length);
 
     // Exclude all samples
     gm.setSelectSampleRegex("^$");
     // gm.makeMatrix(linf, 80, null);
-    assertTrue(gm.printToScreen(true, linf, 80, null).isEmpty());
+    assertTrue(gm.printToScreen(true, linf, 80, vcf.getVcfHeader()).isEmpty());
   }
 
   @Test
@@ -464,7 +464,7 @@ public class GenotypeMatrixTest {
 
     GenotypeMatrix gm = new GenotypeMatrix();
     // gm.makeMatrix(linf, 80, null);
-    String x = gm.printToScreen(true, linf, 80, null);
+    String x = gm.printToScreen(true, linf, 80, vcf.getVcfHeader());
     assertTrue(x.isEmpty());
   }
 
@@ -473,11 +473,11 @@ public class GenotypeMatrixTest {
     GenomicCoords gc = new GenomicCoords("1:1-10000000", 80, null, null);
     TrackVCF vcf = new TrackVCF("test_data/CHD.exon.2010_03.sites.vcf.gz", gc);
     List<VCFFeature> linf = vcf.getFeatureList();
-    assertTrue(
-        linf.size() > 0); // Make sure we do have some features otherwise the test is meaningless.
+    assertFalse(
+        linf.isEmpty()); // Make sure we do have some features otherwise the test is meaningless.
 
     GenotypeMatrix gm = new GenotypeMatrix();
-    String x = gm.printToScreen(true, linf, 80, null);
+    String x = gm.printToScreen(true, linf, 80, vcf.getVcfHeader());
     assertTrue(x.isEmpty());
   }
 
