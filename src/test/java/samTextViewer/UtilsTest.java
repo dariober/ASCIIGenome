@@ -390,9 +390,7 @@ public class UtilsTest {
     list.add(inList);
     list.add(inList2);
     list.add(inList3);
-    System.err.println(list);
 
-    // final List<String> outList= new ArrayList<String>();
     ExecutorService exec = Executors.newFixedThreadPool(2);
     try {
       for (final List<String> o : list) {

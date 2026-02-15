@@ -1,6 +1,7 @@
 package tracks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
@@ -48,7 +49,7 @@ public class TrackBedgraphTest {
 
     TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
     System.out.println(tb.getTrackFormat());
-    assertTrue(tb.getChromosomeNames().size() > 0);
+    assertFalse(tb.getChromosomeNames().isEmpty());
     assertEquals("chr1", tb.getChromosomeNames().get(0));
   }
 

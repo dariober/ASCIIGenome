@@ -1057,6 +1057,9 @@ public abstract class AbstractTrack {
     // boolean[] results= new boolean[(int) this.nRecsInWindow];
     List<Boolean> results = new ArrayList<Boolean>();
 
+    boolean isDefaultShowRegex = this.getFeatureFilter().getShowRegex().toString().equals(Filter.DEFAULT_SHOW_REGEX.getValue());
+    boolean isDefaultHideRegex = this.getFeatureFilter().getHideRegex().toString().equals(Filter.DEFAULT_HIDE_REGEX.getValue());
+
     List<String> awkDataInput = new ArrayList<String>();
     while (filterSam.hasNext()) {
       // Record whether a read passes the sam filters. If necessary, we also
@@ -1084,19 +1087,15 @@ public abstract class AbstractTrack {
 
       String raw = null;
 
-      if (passed
-          && (!this.getFeatureFilter().getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue())
-              || !this.getFeatureFilter()
-                  .getHideRegex()
-                  .equals(Filter.DEFAULT_HIDE_REGEX.getValue()))) {
+      if (passed&& (!isDefaultShowRegex || !isDefaultHideRegex)) {
         // grep
         raw = rec.getSAMString().trim();
         boolean showIt = true;
-        if (!this.getFeatureFilter().getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue())) {
+        if (!isDefaultShowRegex) {
           showIt = this.getFeatureFilter().getShowRegex().matcher(raw).find();
         }
         boolean hideIt = false;
-        if (!this.getFeatureFilter().getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())) {
+        if (!isDefaultHideRegex) {
           hideIt = this.getFeatureFilter().getHideRegex().matcher(raw).find();
         }
         if (!showIt || hideIt) {
