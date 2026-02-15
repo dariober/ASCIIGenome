@@ -24,7 +24,7 @@ import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
 /** Process wiggle file formats. Mostly using IGV classes. bigBed, bigWig, */
-public class TrackWiggles extends Track {
+public class TrackWiggles extends AbstractTrack {
 
   private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList;
   private BBFileReader bigWigReader;
@@ -174,7 +174,9 @@ public class TrackWiggles extends Track {
                     Utils.getIndexOfclosestValue(
                         tileStartPos + 1,
                         genomeToScreenMapping); // Where should this position be mapped on screen?
-                screenWiggleLocusInfoList.get(idx).increment(tileValue);
+                screenWiggleLocusInfoList
+                    .get(idx)
+                    .increment(tileValue, DataTransformation.IDENTITY);
               }
             } // End process bins in this tile
           }
@@ -287,7 +289,7 @@ public class TrackWiggles extends Track {
         int idx =
             Utils.getIndexOfclosestValue(
                 i, this.getGc().getMapping()); // Where should this position be mapped on screen?
-        screenWigLocInfoList.get(idx).increment(bw.getWigValue());
+        screenWigLocInfoList.get(idx).increment(bw.getWigValue(), DataTransformation.IDENTITY);
       }
     }
     List<Float> screenScores = new ArrayList<Float>();

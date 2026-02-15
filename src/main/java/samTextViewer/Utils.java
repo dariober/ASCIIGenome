@@ -1,5 +1,6 @@
 package samTextViewer;
 
+import com.github.lindenb.jvarkit.variant.bcf.BCFFileReader;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -7,7 +8,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -100,8 +100,8 @@ import org.broad.igv.bbfile.BigBedIterator;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
+import tracks.AbstractTrack;
 import tracks.IntervalFeature;
-import tracks.Track;
 import tracks.TrackFormat;
 import utils.Tokenizer;
 
@@ -151,11 +151,11 @@ public class Utils {
       } else {
         gzipStream = new GZIPInputStream(new FileInputStream(fileOrUrl));
       }
-      Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+      Reader decoder = new InputStreamReader(gzipStream, StandardCharsets.UTF_8);
       br = new BufferedReader(decoder);
     } else if (urlValidator.isValid(fileOrUrl)) {
       InputStream instream = new URL(fileOrUrl).openStream();
-      Reader decoder = new InputStreamReader(instream, "UTF-8");
+      Reader decoder = new InputStreamReader(instream, StandardCharsets.UTF_8);
       br = new BufferedReader(decoder);
     } else {
       br = new BufferedReader(new FileReader(fileOrUrl));
@@ -194,8 +194,6 @@ public class Utils {
    * Check if the list of arguments contains "param" and if so return nargs argument after it.
    * Returns null if arglist does not contain the parameter. IMPORTANT SIDE EFFECT: If found, the
    * parameter and its arguments are removed from input list.
-   *
-   * @throws InvalidCommandLineException
    */
   public static List<String> getNArgsForParam(List<String> argList, String param, int nargs)
       throws InvalidCommandLineException {
@@ -236,8 +234,6 @@ public class Utils {
    * Check if the list of arguments contains "param" and if so return the argument. Returns null if
    * arglist does not contain the parameter IMPORTANT SIDE EFFECT: If found, the parameter and its
    * argument are removed from argList.
-   *
-   * @throws InvalidCommandLineException
    */
   public static String getArgForParam(List<String> argList, String param, String defArg)
       throws InvalidCommandLineException {
@@ -319,17 +315,10 @@ public class Utils {
     return alnCount;
   }
 
-  /**
-   * Merge overlapping features. If screenCoords is true, merge is based on the screen coordinates.
-   * Otherwise use genomic coordinates.
-   *
-   * @throws InvalidColourException
-   */
-  public static List<IntervalFeature> mergeIntervalFeatures(
-      List<IntervalFeature> intervalList, boolean screenCoords)
-      throws InvalidGenomicCoordsException, InvalidColourException {
-    List<IntervalFeature> mergedList = new ArrayList<IntervalFeature>();
-    if (intervalList.size() == 0) {
+  public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
+      List<T> intervalList, boolean screenCoords) {
+    List<T> mergedList = new ArrayList<>();
+    if (intervalList.isEmpty()) {
       return mergedList;
     }
 
@@ -340,13 +329,12 @@ public class Utils {
     int mergedScreenTo = -1;
     int numMrgIntv = 1; // Number of intervals in the merged one.
     Set<Character> strand =
-        new HashSet<
-            Character>(); // Put here all the different strands found in the merged features.
+        new HashSet<>(); // Put here all the different strands found in the merged features.
 
     for (int i = 0; i < (intervalList.size() + 1); i++) {
       // We do an additional loop to add to the mergedList the last interval.
       // The last loop has interval == null so below you need to account for it
-      IntervalFeature interval = null;
+      T interval = null;
       if (i < intervalList.size()) {
         interval = intervalList.get(i);
       }
@@ -364,8 +352,7 @@ public class Utils {
           && (!mergedChrom.equals(interval.getChrom())
               || mergedFrom > interval.getFrom()
               || mergedFrom > mergedTo)) {
-        System.err.println(mergedChrom + " " + mergedFrom + " " + mergedTo);
-        throw new RuntimeException();
+        throw new RuntimeException(mergedChrom + " " + mergedFrom + " " + mergedTo);
       }
 
       boolean overlap = false;
@@ -386,17 +373,33 @@ public class Utils {
         mergedScreenTo = Math.max(interval.getScreenTo(), mergedScreenTo);
         strand.add(interval.getStrand());
         numMrgIntv++;
-        overlap = false;
       } else {
         // No overlap add merged interval to list and reset new merged interval
-        IntervalFeature x =
-            new IntervalFeature(
-                mergedChrom + "\t" + (mergedFrom - 1) + "\t" + mergedTo, TrackFormat.BED, null, -1);
+        // IntervalFeature x =
+        //    new IntervalFeature(
+        //        mergedChrom + "\t" + (mergedFrom - 1) + "\t" + mergedTo, TrackFormat.BED, null,
+        // -1);
+        T x = (T) intervalList.get(0).clone();
+        //        try {
+        //          x = (T) intervalList.get(i -
+        // 1).getClass().getDeclaredConstructor().newInstance();
+        //        } catch (InstantiationException
+        //            | IllegalAccessException
+        //            | InvocationTargetException
+        //            | NoSuchMethodException e) {
+        //          throw new RuntimeException(e);
+        //        }
+
+        // Set the merged fields
+        x.setChrom(mergedChrom);
+        x.setFrom(mergedFrom);
+        x.setTo(mergedTo);
         x.setScreenFrom(mergedScreenFrom);
         x.setScreenTo(mergedScreenTo);
         if (strand.size() == 1) {
           x.setStrand(strand.iterator().next());
         }
+
         strand.clear();
 
         if (x.equals(intervalList.get(i - 1)) && numMrgIntv == 1) {
@@ -421,49 +424,6 @@ public class Utils {
     }
     return mergedList;
   }
-
-  //	public static LinkedHashMap<String, Integer> xterm256ColourCodes(){
-  //		// See http://misc.flogisoft.com/bash/tip_colours_and_formatting
-  //		// From http://jonasjacek.github.io/colours/
-  //		LinkedHashMap<String, Integer> colourCodes= new LinkedHashMap<String, Integer>();
-  //		colourCodes.put("default", 39);
-  //		colourCodes.put("black", 30);
-  //		colourCodes.put("red", 31);
-  //		colourCodes.put("green", 32);
-  //		colourCodes.put("yellow", 33);
-  //		colourCodes.put("blue", 34);
-  //		colourCodes.put("magenta", 35);
-  //		colourCodes.put("cyan", 36);
-  //		colourCodes.put("light_grey", 37);
-  //		colourCodes.put("grey", 90);
-  //		colourCodes.put("light_red", 91);
-  //		colourCodes.put("light_green", 92);
-  //		colourCodes.put("light_yellow", 93);
-  //		colourCodes.put("light_blue", 94);
-  //		colourCodes.put("light_magenta", 95);
-  //		colourCodes.put("light_cyan", 96);
-  //		colourCodes.put("white", 97);
-  //		// To be continued
-  //		return colourCodes;
-  //	}
-
-  //	public static Colour ansiColourToGraphicsColour(int ansiColour) throws InvalidColourException{
-  //
-  //		if(!xterm256ColourCodes().entrySet().contains(ansiColour)){
-  //			throw new InvalidColourException();
-  //		}
-  //		if(ansiColour == 30){ return Colour.BLACK; }
-  //		if(ansiColour == 31 || ansiColour == 91){ return Colour.RED; }
-  //		if(ansiColour == 32 || ansiColour == 92){ return Colour.GREEN; }
-  //		if(ansiColour == 33 || ansiColour == 93){ return Colour.YELLOW; }
-  //		if(ansiColour == 34 || ansiColour == 94){ return Colour.BLUE; }
-  //		if(ansiColour == 35 || ansiColour == 95){ return Colour.MAGENTA; }
-  //		if(ansiColour == 36 || ansiColour == 96){ return Colour.CYAN; }
-  //		if(ansiColour == 37){ return Colour.LIGHT_GRAY; }
-  //		if(ansiColour == 90){ return Colour.DARK_GRAY; }
-  //		if(ansiColour == 97){ return Colour.WHITE; }
-  //		return Colour.BLACK;
-  //	}
 
   /**
    * Return true if fileName has a valid tabix index.
@@ -490,21 +450,14 @@ public class Utils {
   /**
    * Get the first chrom string from first line of input file. As you add support for more filetypes
    * you should update this function. This method is very dirty and shouldn't be trusted 100%
-   *
-   * @throws InvalidGenomicCoordsException
-   * @throws SQLException
-   * @throws InvalidRecordException
-   * @throws InvalidCommandLineException
-   * @throws ClassNotFoundException
    */
   @SuppressWarnings("unused")
   public static String initRegionFromFile(String x, String referenceSequence)
       throws IOException,
           InvalidGenomicCoordsException,
+          SQLException,
           ClassNotFoundException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          SQLException {
+          InvalidRecordException {
     UrlValidator urlValidator = new UrlValidator();
     String region = "";
     TrackFormat fmt = Utils.getFileTypeFromName(x);
@@ -567,7 +520,8 @@ public class Utils {
       }
       System.err.println("Cannot initialize from " + x);
       throw new RuntimeException();
-
+    } else if (fmt.equals(TrackFormat.VCF) && x.toLowerCase().endsWith(".bcf")) {
+      return initRegionFromBcf(x);
     } else {
       // Input file appears to be a generic interval file. We expect chrom to be in column 1
       // VCF files are also included here since they are either gzip or plain ASCII.
@@ -605,7 +559,7 @@ public class Utils {
           if (!sep.equals("\t")) {
             line = line.replace(sep, "\t");
           }
-          IntervalFeature feature = new IntervalFeature(line, fmt, null, -1);
+          IntervalFeature feature = new IntervalFeature(line, fmt, -1);
           region = feature.getChrom() + ":" + feature.getFrom();
         }
         br.close();
@@ -627,6 +581,13 @@ public class Utils {
     }
     System.err.println("Cannot initialize from " + x);
     throw new RuntimeException();
+  }
+
+  private static String initRegionFromBcf(String bcf) throws IOException {
+    BCFFileReader bcfIn = new BCFFileReader(Path.of(bcf), true);
+    VCFHeader h = bcfIn.getHeader();
+    bcfIn.close();
+    return h.getSequenceDictionary().getSequence(0).getSequenceName();
   }
 
   public static String initRegionFromFile(String x)
@@ -783,7 +744,8 @@ public class Utils {
       return TrackFormat.BEDGRAPH;
     } else if (fileName.endsWith(".vcf.gz")
         || fileName.endsWith(".vcf")
-        || fileName.endsWith(".vcf.bgz")) {
+        || fileName.endsWith(".vcf.bgz")
+        || fileName.endsWith(".bcf")) {
       return TrackFormat.VCF;
     } else {
       return TrackFormat.BED;
@@ -1393,7 +1355,7 @@ public class Utils {
    * @throws IOException
    */
   public static void addSourceName(List<String> inputFileList, List<String> newFileNames, int debug)
-      throws InvalidCommandLineException, IOException {
+      throws InvalidCommandLineException {
 
     List<String> dropMe = new ArrayList<String>();
     List<String> addMe = new ArrayList<String>();
@@ -2025,7 +1987,7 @@ public class Utils {
 
     args.add(0, "awk");
     String script = args.remove(args.size() - 1); // 'remove' returns the element removed
-    script = Track.awkFunc + "\n" + script;
+    script = AbstractTrack.awkFunc + "\n" + script;
     args.add(script);
 
     return args;
@@ -2305,13 +2267,17 @@ public class Utils {
   }
 
   /** Get VCFHeader from the given source which could be URL or local file. */
-  public static VCFHeader getVCFHeader(String source) throws MalformedURLException {
+  public static VCFHeader getVCFHeader(String source) throws IOException {
     VCFHeader vcfHeader;
     if (Utils.urlFileExists(source)) {
       URL url = new URL(source);
       AbstractFeatureReader<VariantContext, LineIterator> reader =
           AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
       vcfHeader = (VCFHeader) reader.getHeader();
+    } else if (source.toLowerCase().endsWith(".bcf")) {
+      BCFFileReader bcf = new BCFFileReader(Path.of(source), true);
+      bcf.close();
+      return bcf.getHeader();
     } else {
       VCFFileReader reader = new VCFFileReader(new File(source), false); // Set requiredIndex false!
       vcfHeader = reader.getFileHeader();

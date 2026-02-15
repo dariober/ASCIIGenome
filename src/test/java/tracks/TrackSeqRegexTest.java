@@ -27,13 +27,13 @@ public class TrackSeqRegexTest {
     TrackSeqRegex trackSeqRegex = new TrackSeqRegex(gc);
     trackSeqRegex.setSeqRegex("(?i)CC");
     trackSeqRegex.setNoFormat(true);
-    assertTrue(trackSeqRegex.getIntervalFeatureList().size() > 30);
-    assertTrue(trackSeqRegex.getIntervalFeatureList().size() < 300);
+    assertTrue(trackSeqRegex.getFeatureList().size() > 30);
+    assertTrue(trackSeqRegex.getFeatureList().size() < 300);
 
     gc = new GenomicCoords("chr7:8000000-8000050", 80, null, "test_data/chr7.fa");
     trackSeqRegex.setGc(gc);
-    assertTrue(trackSeqRegex.getIntervalFeatureList().size() < 30);
-    assertTrue(trackSeqRegex.getIntervalFeatureList().size() > 5);
+    assertTrue(trackSeqRegex.getFeatureList().size() < 30);
+    assertTrue(trackSeqRegex.getFeatureList().size() > 5);
   }
 
   @Test
@@ -108,7 +108,7 @@ public class TrackSeqRegexTest {
     // Case sensitive
     trackSeqRegex.setCaseSensitive(true);
     trackSeqRegex.setSeqRegex("cG");
-    assertTrue(trackSeqRegex.getIntervalFeatureList().size() == 0);
+    assertTrue(trackSeqRegex.getFeatureList().size() == 0);
   }
 
   @Test
@@ -127,8 +127,7 @@ public class TrackSeqRegexTest {
     trackSeqRegex.setSeqRegex("atcKVNMNNNN");
 
     assertTrue(
-        trackSeqRegex.getIntervalFeatureList().size() > 5
-            && trackSeqRegex.getIntervalFeatureList().size() < 100);
+        trackSeqRegex.getFeatureList().size() > 5 && trackSeqRegex.getFeatureList().size() < 100);
 
     assertTrue(trackSeqRegex.printToScreen().contains("ATC"));
   }

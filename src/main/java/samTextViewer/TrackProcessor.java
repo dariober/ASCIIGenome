@@ -20,11 +20,14 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import session.Session;
 import session.SessionGenome;
 import session.SessionTrack;
-import tracks.Track;
+import tracks.AbstractTrack;
 import tracks.TrackSet;
 
 /** Process a TrackSet given the necessary elements */
@@ -41,8 +44,7 @@ public class TrackProcessor {
 
   /* C O N S T R U C T O R S */
 
-  public TrackProcessor(TrackSet trackSet, GenomicCoordsHistory genomicCoordsHistory)
-      throws IOException, InvalidRecordException {
+  public TrackProcessor(TrackSet trackSet, GenomicCoordsHistory genomicCoordsHistory) {
     this.trackSet = trackSet;
     this.genomicCoordsHistory = genomicCoordsHistory;
   }
@@ -69,22 +71,51 @@ public class TrackProcessor {
       outputString.append(currentGC.getChromIdeogram(20, this.noFormat) + "\n");
     }
 
-    // Update tracks to new genomic coords
-    for (Track track : trackSet.getTrackList()) {
-      if (!track.getGc().equalCoordsAndWindowSize(currentGC)
-          && track.getyMaxLines() > 0
-          && !track.isHideTrack()) {
-        track.setGc(currentGC);
+//    // Update tracks to new genomic coords
+    ExecutorService exec = Executors.newFixedThreadPool(3);
+    try {
+      for (AbstractTrack track : trackSet.getTrackList()) {
+        exec.submit(
+            new Runnable() {
+              @Override
+              public void run() {
+                try {
+                  if (!track.getGc().equalCoordsAndWindowSize(currentGC)
+                      && track.getyMaxLines() > 0
+                      && !track.isHideTrack()) {
+                    track.setGc(currentGC);
+                  }
+                } catch (InvalidGenomicCoordsException | IOException | ClassNotFoundException |
+                         InvalidRecordException | SQLException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+            });
       }
+    } finally {
+      exec.shutdown();
     }
+    try {
+      exec.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+
+    // Update tracks to new genomic coords
+//      for (AbstractTrack track : trackSet.getTrackList()) {
+//                  if (!track.getGc().equalCoordsAndWindowSize(currentGC)
+//                      && track.getyMaxLines() > 0
+//                      && !track.isHideTrack()) {
+//                    track.setGc(currentGC);
+//                  }
+//      }
+
     // Set new y limits as required. This step has to come after the positioning to new coordinates
-    // because
-    // we may need to autoscale to global min or max.
+    // because we may need to autoscale to global min or max.
     this.getTrackSet().setAutoYLimits();
 
     // Visualise as required
-    for (Track track : trackSet.getTrackList()) {
-
+    for (AbstractTrack track : trackSet.getTrackList()) {
       track.setNoFormat(this.noFormat);
       if (track.getyMaxLines() > 0 && !track.isHideTrack()) {
         outputString.append(track.concatTitleAndTrack() + "\n");
@@ -261,7 +292,7 @@ public class TrackProcessor {
 
   public Session toSession() throws InvalidGenomicCoordsException, IOException {
     Map<String, SessionTrack> tracks = new LinkedHashMap<>();
-    for (Track tr : this.getTrackSet().getTrackList()) {
+    for (AbstractTrack tr : this.getTrackSet().getTrackList()) {
       File fn = new File(tr.getFilename());
       if (fn.getName().startsWith(".asciigenome.")) {
         continue;

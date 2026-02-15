@@ -1,3 +1,14 @@
+New in 1.21.0
+=============
+
+* Support for **bcf** format, at some conditions: `bcf` files must be already sorted and indexed
+(*e.g.* using `bcftools`) and they must be local (*i.e.* you cannot read from remote URLs). ASCIIGenome 
+may be one of the few, if not the only one, viewer for `bcf` files. Thanks to **@lindenb** for 
+making [bcfparser](https://github.com/lindenb/bcfparser).
+
+* In `find` command the track(s) to search is no longer optional unless only one track is loaded.
+This is to prevent the annoying case where you accidentally start a search on a massive file.
+
 New in 1.20.0
 =============
 

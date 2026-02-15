@@ -3,6 +3,7 @@ package samTextViewer;
 import static org.junit.Assert.*;
 
 import colouring.Config;
+import colouring.Xterm256;
 import com.google.common.base.Splitter;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
@@ -22,13 +23,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import jline.console.ConsoleReader;
+import org.junit.Before;
 import org.junit.Test;
 import session.SessionHandler;
-import tracks.Track;
+import tracks.AbstractTrack;
 import tracks.TrackPileup;
 import tracks.TrackSet;
 
 public class InteractiveInputTest {
+
+  @Before
+  public void config() throws IOException, InvalidConfigException {
+    new Config(null);
+    new Xterm256();
+  }
 
   public static class ProcessInput {
     public String stderr;
@@ -64,9 +72,53 @@ public class InteractiveInputTest {
     gc.setGenome(gf, false);
     GenomicCoordsHistory gch = new GenomicCoordsHistory();
     gch.add(gc);
-    TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
+    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
     TrackProcessor proc = new TrackProcessor(trackSet, gch);
+    proc.setNoFormat(true);
     return proc;
+  }
+
+  @Test
+  public void canFindRegex()
+      throws IOException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
+    TrackProcessor proc =
+        gimmeTrackProcessor("chr1:1261482-1269678", 200, "test_data/hg19_genes.gtf.gz");
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi = processInput(ip, "open test_data/hg19_genes.gtf.gz", proc);
+
+    pi = processInput(ip, "find", proc);
+    assertTrue(pi.stderr.contains("Error"));
+
+    pi = processInput(ip, "find *", proc);
+    assertTrue(pi.stderr.contains("Invalid regex"));
+
+    // Only one track: You need only the pattern
+    pi = processInput(ip, "find MXRA8", proc);
+    assertTrue(pi.stdout.contains("chr1:1288071"));
+
+    pi = processInput(ip, "find CCNL2 #1", proc);
+    assertTrue(pi.stdout.contains("chr1:1321091"));
+
+    pi = processInput(ip, "open test_data/hg19_genes_head.gtf", proc);
+    assertTrue(pi.stdout.contains("test_data/hg19_genes_head.gtf"));
+    pi = processInput(ip, "find ATAD3B", proc);
+    assertEquals(
+        "There are multiple tracks: Select a track name to search for pattern", pi.stderr.trim());
+
+    pi = processInput(ip, "find ATAD3B #1", proc);
+    assertTrue(pi.stdout.contains("chr1:1407164"));
+
+    pi = processInput(ip, "find gene_id #2", proc);
+    assertTrue(pi.stdout.contains("chr1:11874-"));
+
+    pi = processInput(ip, "find ATAD3B #", proc);
+    assertTrue(pi.stdout.contains("chr1:1407164"));
   }
 
   @Test
@@ -356,7 +408,7 @@ public class InteractiveInputTest {
     new Config(null);
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
     GenomicCoords gc = proc.getGenomicCoordsHistory().current();
-    Track tr = new TrackPileup("test_data/ds051.actb.bam", gc);
+    AbstractTrack tr = new TrackPileup("test_data/ds051.actb.bam", gc);
     proc.getTrackSet().addTrack(tr, "tr#1");
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ip.processInput("sessionSave -f tmp.yml tr1", proc);
@@ -682,8 +734,6 @@ public class InteractiveInputTest {
     baos.reset();
     assertTrue(H1.contains("show this help"));
 
-    System.out.println(H1);
-
     ip.processInput("h", proc);
     String H2 = baos.toString();
     baos.reset();
@@ -814,7 +864,6 @@ public class InteractiveInputTest {
     pi = this.processInput(ip, "# goto chr9", proc);
     assertFalse(pi.stdout.contains("chr9"));
     pi = this.processInput(ip, "  # goto chr9", proc);
-    System.out.println(pi.stdout);
     assertFalse(pi.stdout.contains("chr9"));
 
     pi = this.processInput(ip, "  goto chr9", proc);

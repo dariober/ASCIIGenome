@@ -36,8 +36,8 @@ import jline.console.history.History;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.commons.lang3.StringUtils;
+import tracks.AbstractTrack;
 import tracks.IntervalFeature;
-import tracks.Track;
 import tracks.TrackFormat;
 import tracks.TrackPileup;
 import tracks.TrackSet;
@@ -167,7 +167,7 @@ public class Main {
       String line = null;
       while ((line = br.readLine()) != null) {
         // Start processing intervals one by one
-        IntervalFeature target = new IntervalFeature(line, TrackFormat.BED, null, -1);
+        IntervalFeature target = new IntervalFeature(line, TrackFormat.BED, -1);
         String reg = target.getChrom() + ":" + target.getFrom() + "-" + target.getTo();
         String gotoAndExec = ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
         InteractiveInput itr =
@@ -363,7 +363,7 @@ public class Main {
    * @throws ClassNotFoundException
    * @throws MalformedURLException
    */
-  private static void setDefaultTrackHeights(int consoleHeight, List<Track> trackList)
+  private static void setDefaultTrackHeights(int consoleHeight, List<AbstractTrack> trackList)
       throws MalformedURLException,
           ClassNotFoundException,
           IOException,
@@ -390,7 +390,7 @@ public class Main {
     if (trackList.get(0).getGc().isSingleBaseResolution()) {
       consensus = 1;
     }
-    for (Track tr : trackList) {
+    for (AbstractTrack tr : trackList) {
       if (tr instanceof TrackPileup) {
         consoleHeight -= consensus;
       }

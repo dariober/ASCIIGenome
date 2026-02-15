@@ -265,10 +265,8 @@ public class TrackPileupTest {
 
     GenomicCoords gc = new GenomicCoords("chr7:5566776-5566796", 80, null, null);
     TrackPileup tr = new TrackPileup("test_data/ds051.short.bam", gc);
-    System.err.println(tr.getScreenScores());
     assertTrue(tr.getTitle().contains("range[1.0 22.0]"));
     tr.setRpm(true);
-    System.err.println(tr.getScreenScores());
     assertTrue(
         tr.getTitle()
             .contains(

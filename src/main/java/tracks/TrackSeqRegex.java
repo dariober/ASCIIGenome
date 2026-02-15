@@ -31,16 +31,13 @@ public class TrackSeqRegex extends TrackIntervalFeature {
   private boolean isCaseSensitive = false;
   private boolean isIupac = false;
 
-  public TrackSeqRegex() {}
-
   public TrackSeqRegex(GenomicCoords gc)
       throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException {
-    super(gc);
-
+    super();
     this.setGc(gc);
     this.setFilename(new File(gc.getFastaFile()).getAbsolutePath());
     this.setWorkFilename(new File(gc.getFastaFile()).getAbsolutePath());
@@ -65,7 +62,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
           SQLException {
 
     this.findRegex();
-    for (IntervalFeature ift : this.getIntervalFeatureList()) {
+    for (IntervalFeature ift : this.getFeatureList()) {
       ift.mapToScreen(this.getGc().getMapping());
     }
   }
@@ -77,8 +74,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 
     for (String reg : regionListPos) {
       reg = reg + "\t.\t" + strand;
-      IntervalFeature x =
-          new IntervalFeature(reg, this.getTrackFormat(), null, this.getScoreColIdx());
+      IntervalFeature x = new IntervalFeature(reg, this.getTrackFormat(), this.getScoreColIdx());
       iftList.add(x);
     }
     this.removeInvisibleFeatures(iftList);
@@ -202,7 +198,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
     regexMatchBgzip.delete();
     regexMatchIndex.delete();
 
-    this.intervalFeatureList = regexMatchTrack.getIntervalFeatureList();
+    this.setFeatureList(regexMatchTrack.getFeatureList());
   }
 
   /** Trim the String x if longer then x and return it with the trimmed part annotated */
@@ -273,7 +269,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 
     BufferedWriter wr = new BufferedWriter(new FileWriter(filename, append));
 
-    for (IntervalFeature feature : this.getIntervalFeatureList()) {
+    for (IntervalFeature feature : this.getFeatureList()) {
       wr.write(feature.getRaw() + "\n");
     }
     wr.close();

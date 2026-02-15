@@ -39,16 +39,16 @@ import samTextViewer.Utils;
 /** Class to hold tracks to be printed. */
 public class TrackSet {
 
-  private List<Track> trackList = new ArrayList<Track>();
-  private List<Pattern> regexForTrackHeight = new ArrayList<Pattern>();
+  private List<AbstractTrack> trackList = new ArrayList<AbstractTrack>();
+  private final List<Pattern> regexForTrackHeight = new ArrayList<Pattern>();
   private int trackHeightForRegex = -1;
   private String[] yStrLimits = new String[2];
-  private List<Track> tracksForYLimits = new ArrayList<Track>();
+  private List<AbstractTrack> tracksForYLimits = new ArrayList<AbstractTrack>();
   private LinkedHashSet<String> openedFiles = new LinkedHashSet<String>();
 
   /*   C o n s t r u c t o r s  */
 
-  public TrackSet(List<Track> trackList) {
+  public TrackSet(List<AbstractTrack> trackList) {
     this.finalise(trackList);
   }
 
@@ -63,34 +63,25 @@ public class TrackSet {
         if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BAM)) {
           /* Coverage track */
           TrackPileup trackPileup = new TrackPileup(sourceName, gc);
-          // trackPileup.setTrackTag(new File(sourceName).getName() + "#" + this.getNextTrackId());
           trackPileup.setTrackTag(sourceName + "#" + this.getNextTrackId());
           this.trackList.add(trackPileup);
 
           /* Read track */
           TrackReads trackReads = new TrackReads(sourceName, gc);
-          // trackReads.setTrackTag(new File(sourceName).getName() + "@" + this.getNextTrackId());
           trackReads.setTrackTag(sourceName + "@" + this.getNextTrackId());
           this.trackList.add(trackReads);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BED)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GFF)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GTF)
-            || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGBED)) {
-          //
-          // Annotatation
-          //
-          TrackIntervalFeature tif = new TrackIntervalFeature(sourceName, gc);
-          // this.addTrack(tif, new File(sourceName).getName());
-          this.addTrack(tif, sourceName);
+          this.addTrack(new TrackIntervalFeature(sourceName, gc), sourceName);
+        } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.VCF)) {
+          this.addTrack(new TrackVCF(sourceName, gc), sourceName);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)) {
-          TrackBedgraph tw = new TrackBedgraph(sourceName, gc);
-          this.addTrack(tw, sourceName);
+          this.addTrack(new TrackBedgraph(sourceName, gc), sourceName);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.TDF)) {
-          TrackWiggles tw = new TrackWiggles(sourceName, gc);
-          this.addTrack(tw, sourceName);
-
+          this.addTrack(new TrackWiggles(sourceName, gc), sourceName);
         } else {
           // NB: You never get here because Utils.getFileTypeFromName returns
           // BED for any file that cannot be classified.
@@ -116,7 +107,7 @@ public class TrackSet {
 
     @Override
     public void run() {
-      for (Track tr : trackSet.getTrackList()) {
+      for (AbstractTrack tr : trackSet.getTrackList()) {
         tr.close();
       }
     }
@@ -124,13 +115,13 @@ public class TrackSet {
 
   /*   M e t h o d s   */
 
-  private void finalise(List<Track> trackList) {
+  private void finalise(List<AbstractTrack> trackList) {
     this.trackList = trackList;
     this.tracksForYLimits.addAll(this.getTrackList());
     this.yStrLimits[0] = "na";
     this.yStrLimits[1] = "na";
     // TrackWiggles gcProfile= gc.getGCProfile();
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       this.addToOpenedFiles(tr.getFilename());
     }
     Runtime.getRuntime().addShutdownHook(new ShutDownTask(this));
@@ -140,7 +131,7 @@ public class TrackSet {
    * Add this track with given baseTag. The suffix "#id" will be appended to the baseTag string. NB:
    * Adding a track resets the track's ID
    */
-  public void addTrack(Track track, String baseTag) {
+  public void addTrack(AbstractTrack track, String baseTag) {
     int idForTrack = this.getNextTrackId();
     String trackTag = baseTag + "#" + idForTrack;
     track.setTrackTag(trackTag);
@@ -193,7 +184,7 @@ public class TrackSet {
       throw new RuntimeException();
     }
 
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       this.addToOpenedFiles(tr.getFilename());
     }
   }
@@ -270,7 +261,7 @@ public class TrackSet {
     if (seqDict != null && seqDict.getSequence(gc.getChrom()) == null) {
       throw new InvalidGenomicCoordsException();
     }
-    TrackIntervalFeature tif = new TrackIntervalFeature(sourceName, gc);
+    TrackVCF tif = new TrackVCF(sourceName, gc);
     tif.setTrackTag(trackId);
     this.trackList.add(tif);
   }
@@ -312,7 +303,7 @@ public class TrackSet {
   private Integer getNextTrackId() {
 
     Integer id = 1;
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       Integer x = this.getIdOfTrackName(tr.getTrackTag());
       if (x != null && x >= id) {
         id = x + 1;
@@ -335,7 +326,7 @@ public class TrackSet {
   public String showTrackInfo() {
     List<String> trackInfo = new ArrayList<String>();
 
-    for (Track track : this.getTrackList()) {
+    for (AbstractTrack track : this.getTrackList()) {
       String hd = track.getyMaxLines() <= 0 ? "*" : "";
       trackInfo.add(
           "------\n"
@@ -398,17 +389,16 @@ public class TrackSet {
     boolean invertSelection = Utils.argListContainsFlag(tokens, "-v");
 
     if (tokens.size() < 2) {
-      System.err.println("Error in trackHeight subcommand. Expected 2 args got: " + tokens);
-      throw new InvalidCommandLineException();
+      throw new InvalidCommandLineException(
+          "Error in trackHeight subcommand. Expected 2 args got: " + tokens);
     }
 
     // Get height
     try {
       this.trackHeightForRegex = Integer.parseInt(tokens.get(1));
-      this.trackHeightForRegex = this.trackHeightForRegex < 0 ? 0 : this.trackHeightForRegex;
+      this.trackHeightForRegex = Math.max(this.trackHeightForRegex, 0);
     } catch (NumberFormatException e) {
-      System.err.println("Number format exception: " + this.trackHeightForRegex);
-      throw new InvalidCommandLineException();
+      throw new InvalidCommandLineException("Number format exception: " + this.trackHeightForRegex);
     }
 
     // Regex
@@ -433,19 +423,14 @@ public class TrackSet {
     }
 
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       tr.setyMaxLines(this.trackHeightForRegex);
     }
   }
 
   public void setShowSoftClipForRegex(List<String> tokens)
-      throws InvalidCommandLineException,
-          ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidRecordException,
-          SQLException {
+      throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
     List<String> args = new ArrayList<String>(tokens);
     args.remove(0);
 
@@ -470,8 +455,8 @@ public class TrackSet {
     }
 
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (showSoftClip == null) {
         if (tr.isShowSoftClip()) { // Invert setting
           tr.setShowSoftClip(false);
@@ -487,7 +472,7 @@ public class TrackSet {
   public void setFeatureDisplayModeForRegex(List<String> tokens)
       throws InvalidCommandLineException {
 
-    List<String> args = new ArrayList<String>(tokens);
+    List<String> args = new ArrayList<>(tokens);
     args.remove(0); // remove command name
 
     // Display mode
@@ -521,16 +506,16 @@ public class TrackSet {
     boolean invertSelection = Utils.argListContainsFlag(args, "-v");
 
     // Regex to capture tracks: Everything left after removing command name and args:
-    List<String> trackNameRegex = new ArrayList<String>();
-    if (args.size() > 0) {
+    List<String> trackNameRegex = new ArrayList<>();
+    if (!args.isEmpty()) {
       trackNameRegex.addAll(args);
     } else {
       trackNameRegex.add(".*"); // Default: Capture everything
     }
 
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (mode == null) { // Toggle between expanded and collapsed
         if (tr.getFeatureDisplayMode().equals(FeatureDisplayMode.EXPANDED)) {
           tr.setFeatureDisplayMode(FeatureDisplayMode.COLLAPSED);
@@ -554,13 +539,13 @@ public class TrackSet {
 
     // --------------------------------------------------------------------
     // PARSE ARGUMENTS
-    List<String> args = new ArrayList<String>(cmdInput);
+    List<String> args = new ArrayList<>(cmdInput);
     args.remove(0); // Remove cmd name.
 
     // Defaults if no args given
     PrintRawLine printMode = null;
     int count = 10; // opts.getInt("nlines"); // Default number of lines to print
-    List<String> trackNameRegex = new ArrayList<String>(); // opts.getList("track_regex");
+    List<String> trackNameRegex = new ArrayList<>(); // opts.getList("track_regex");
     trackNameRegex.add(".*");
 
     String printToFile = null;
@@ -662,7 +647,7 @@ public class TrackSet {
     // --------------------------------------------------------------------
 
     // Tracks affected by this command:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
 
     // If we print to file just do that.
     if (printToFile != null && !printToFile.isEmpty()) {
@@ -671,7 +656,7 @@ public class TrackSet {
         new File(printToFile).delete();
       }
 
-      for (Track tr : tracksToReset) {
+      for (AbstractTrack tr : tracksToReset) {
         tr.setExportFile(printToFile);
         tr.setHighlightPattern(highlightPattern);
         tr.printLines();
@@ -685,7 +670,7 @@ public class TrackSet {
     }
 
     // Process as required
-    for (Track tr : tracksToReset) {
+    for (AbstractTrack tr : tracksToReset) {
       tr.setExplainSamFlag(esf);
       tr.setPrintFormattedVep(vep);
       tr.setHighlightPattern(highlightPattern);
@@ -741,8 +726,8 @@ public class TrackSet {
     }
 
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (bisulf == null) {
         if (tr.isBisulf()) { // Invert setting
           tr.setBisulf(false);
@@ -781,8 +766,8 @@ public class TrackSet {
     }
 
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (hide == null) {
         if (tr.isHideTitle()) { // Invert setting
           tr.setHideTitle(false);
@@ -828,8 +813,8 @@ public class TrackSet {
     }
 
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (rpm == null) {
         if (tr.isRpm()) { // Invert setting
           tr.setRpm(false);
@@ -863,8 +848,8 @@ public class TrackSet {
     }
 
     // Set as appropriate
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (nRows != null) {
         int n = Integer.valueOf(nRows) >= 0 ? Integer.valueOf(nRows) : Integer.MAX_VALUE;
         tr.getGenotypeMatrix().setnMaxSamples(n);
@@ -930,8 +915,8 @@ public class TrackSet {
     }
 
     // Set as appropriate
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       tr.setColourForRegex(colourForRegex);
     }
   }
@@ -947,7 +932,7 @@ public class TrackSet {
     boolean invertSelection = Utils.argListContainsFlag(tokens, "-v");
 
     // Colour
-    String colour = (new TrackIntervalFeature(null)).getTitleColour();
+    String colour = (new TrackIntervalFeature()).getTitleColour();
     if (tokens.size() >= 2) {
       String xcolour = tokens.get(1).toLowerCase();
 
@@ -964,20 +949,20 @@ public class TrackSet {
       trackNameRegex.add(".*"); // Default: Capture everything
     }
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       tr.setTitleColour(colour);
     }
   }
 
-  private Track bedToBedgraph(Track tr)
+  private AbstractTrack bedToBedgraph(AbstractTrack tr)
       throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException {
 
-    Track trNewFmt = null;
+    AbstractTrack trNewFmt = null;
 
     if (tr.getTrackFormat().equals(TrackFormat.BED)) {
       trNewFmt = new TrackBedgraph(tr.getWorkFilename(), tr.getGc());
@@ -1020,13 +1005,13 @@ public class TrackSet {
       trackNameRegex.add(".*"); // Default: Capture everything
     }
 
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
     for (int i = 0; i < this.getTrackList().size(); i++) {
-      Track tr = this.getTrackList().get(i);
+      AbstractTrack tr = this.getTrackList().get(i);
       if (tracksToReset.contains(tr)) {
         if (tr.getTrackFormat().equals(TrackFormat.BED)
             || tr.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
-          Track trNewFmt = this.bedToBedgraph(tr);
+          AbstractTrack trNewFmt = this.bedToBedgraph(tr);
           this.getTrackList().set(i, trNewFmt);
         } else {
           System.err.println("Cannot switch format of track '" + tr.getTrackTag());
@@ -1060,8 +1045,8 @@ public class TrackSet {
       trackNameRegex.add(".*"); // Default: Capture everything
     }
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       tr.setFeatureName(attributeForName);
     }
   }
@@ -1076,7 +1061,7 @@ public class TrackSet {
     // Tracks to reset.
     // To be depracated. trackToReset should be replaced by the content of field
     // this.tracksForYlimits;
-    List<Track> tracksToReset =
+    List<AbstractTrack> tracksToReset =
         this.getTracksForYLimits(); // this.matchTracks(this.getRegexForYLimits(), true, false);
 
     String yStrMin = this.getYStringLimits()[0];
@@ -1119,7 +1104,7 @@ public class TrackSet {
 
     String[] yy = Utils.roundToSignificantDigits(ymin, ymax, 2);
 
-    for (Track tr : tracksToReset) {
+    for (AbstractTrack tr : tracksToReset) {
       tr.setYLimitMin(Float.valueOf(yy[0]));
       tr.setYLimitMax(Float.valueOf(yy[1]));
     }
@@ -1185,10 +1170,10 @@ public class TrackSet {
   }
 
   /** Get the range of all the screen scores of this list of tracks. I.e. the global min and max. */
-  private Float[] yRangeOfTracks(List<Track> tracks) {
+  private Float[] yRangeOfTracks(List<AbstractTrack> tracks) {
 
     List<Float> yall = new ArrayList<Float>();
-    for (Track tr : tracks) {
+    for (AbstractTrack tr : tracks) {
       yall.addAll(tr.getScreenScores());
     }
     return Utils.range(yall);
@@ -1226,7 +1211,7 @@ public class TrackSet {
     List<String> trackNameRegex = new ArrayList<String>();
     String awk = "";
 
-    if (args.size() == 0) {
+    if (args.isEmpty()) {
       // This will turn off everything
       trackNameRegex.add(".*");
     } else if (args.get(0).equals("-off")) {
@@ -1240,10 +1225,8 @@ public class TrackSet {
       // * Any args after the script are track regex.
       final List<String> awkOpts =
           Arrays.asList(
-              new String[] {
-                "-F", "-f", "-v", "-t", "-c", "-o", "-z", "-Z", "-d", "-S", "-s", "-x", "-y", "-r",
-                "-ext", "-ni"
-              });
+              "-F", "-f", "-v", "-t", "-c", "-o", "-z", "-Z", "-d", "-S", "-s", "-x", "-y", "-r",
+              "-ext", "-ni");
       int idxScript = 0; // Index of the script in the command args.
       boolean skip = false;
       for (String x : args) {
@@ -1252,7 +1235,6 @@ public class TrackSet {
           skip = true;
         } else if (skip) {
           skip = false;
-          continue;
         } else {
           break;
         }
@@ -1272,13 +1254,13 @@ public class TrackSet {
       trackNameRegex.addAll(args.subList(idxScript + 1, args.size()));
     }
 
-    if (trackNameRegex.size() == 0) {
+    if (trackNameRegex.isEmpty()) {
       trackNameRegex.add(".*"); // Track regex list not given: Set to capture all of them.
     }
 
     // Set script
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (awk.contains("getSamTag(") && !tr.getTrackFormat().equals(TrackFormat.BAM)) {
         System.err.println(
             "\nFunction getSamTag() can be applied to BAM tracks only. Got:\n" + tr.getTrackTag());
@@ -1301,14 +1283,12 @@ public class TrackSet {
                 + tr.getTrackTag());
         throw new InvalidCommandLineException();
       }
-      if ((awk.contains("getGtfTag(") || awk.contains("getGtfTag("))
-          && !tr.getTrackFormat().equals(TrackFormat.GTF)) {
+      if (awk.contains("getGtfTag(") && !tr.getTrackFormat().equals(TrackFormat.GTF)) {
         System.err.println(
             "\nFunction getGtfTag() can be applied to GTF tracks only. Got:\n" + tr.getTrackTag());
         throw new InvalidCommandLineException();
       }
-      if ((awk.contains("getGffTag(") || awk.contains("getGffTag("))
-          && !tr.getTrackFormat().equals(TrackFormat.GFF)) {
+      if (awk.contains("getGffTag(") && !tr.getTrackFormat().equals(TrackFormat.GFF)) {
         System.err.println(
             "\nFunction getGffTag() can be applied to GFF tracks only. Got:\n" + tr.getTrackTag());
         throw new InvalidCommandLineException();
@@ -1324,7 +1304,7 @@ public class TrackSet {
    *
    * @throws InvalidCommandLineException
    */
-  private String replaceAwkGetFuncs(String awkScript, Track track)
+  private String replaceAwkGetFuncs(String awkScript, AbstractTrack track)
       throws InvalidCommandLineException {
 
     final String FUNC = "get"; // Function name to be replaced
@@ -1390,8 +1370,7 @@ public class TrackSet {
       }
       args.set(0, '"' + tag + '"');
       func = fname + "(" + Joiner.on(",").join(args) + ")";
-      awkScript =
-          awkScript.substring(0, gapStart) + func + awkScript.substring(gapEnd, awkScript.length());
+      awkScript = awkScript.substring(0, gapStart) + func + awkScript.substring(gapEnd);
     }
     return awkScript;
   }
@@ -1591,8 +1570,8 @@ public class TrackSet {
     }
 
     // Set filter
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       tr.setVariantReadInInterval(chrom, from, to, variantOnly);
     }
   }
@@ -1661,8 +1640,8 @@ public class TrackSet {
     // TRACK REGEXES
     // Regex
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       tr.setShowHideRegex(showRegex, hideRegex);
     }
   }
@@ -1678,13 +1657,14 @@ public class TrackSet {
       String trackId, GenomicCoords currentGc, double slop, boolean getPrevious)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
-    List<TrackIntervalFeature> tr = this.matchIntervalFeatureTrack(trackId.trim());
+    List<AbstractTrackFeature<? extends IntervalFeature>> tr =
+        this.matchIntervalFeatureTrack(trackId.trim());
 
     if (tr.isEmpty()) {
       return currentGc;
     }
 
-    TrackIntervalFeature tif = tr.get(0);
+    AbstractTrackFeature<? extends IntervalFeature> tif = tr.get(0);
     if (slop < 0) {
       return tif.coordsOfNextFeature(currentGc, getPrevious);
     } else {
@@ -1705,26 +1685,28 @@ public class TrackSet {
    *
    * @throws InvalidCommandLineException
    */
-  private List<TrackIntervalFeature> matchIntervalFeatureTrack(String trackTag)
-      throws InvalidCommandLineException {
+  private List<AbstractTrackFeature<? extends IntervalFeature>> matchIntervalFeatureTrack(
+      String trackTag) throws InvalidCommandLineException {
 
     if (trackTag.isEmpty()) {
       trackTag = ".*";
     }
 
-    List<TrackIntervalFeature> ifTracks = this.getIntervalFeatureTracks();
-    List<Track> matched = matchTracks(Arrays.asList(new String[] {trackTag}), true, false);
-    List<TrackIntervalFeature> tr = new ArrayList<TrackIntervalFeature>();
+    List<AbstractTrackFeature<? extends IntervalFeature>> ifTracks =
+        this.getIntervalFeatureTracks();
+    List<AbstractTrack> matched = matchTracks(List.of(trackTag), true, false);
+    List<AbstractTrackFeature<? extends IntervalFeature>> tr = new ArrayList<>();
 
-    for (Track xtr : matched) {
+    for (AbstractTrack xtr : matched) {
       if (ifTracks.contains(xtr)) {
-        tr.add((TrackIntervalFeature) xtr);
+        tr.add((AbstractTrackFeature<? extends IntervalFeature>) xtr);
       }
     }
     return tr;
   }
 
-  private List<Track> matchTracks(List<String> patterns, boolean asRegex, boolean invertSelection)
+  private List<AbstractTrack> matchTracks(
+      List<String> patterns, boolean asRegex, boolean invertSelection)
       throws InvalidCommandLineException {
 
     // Validate regexes
@@ -1739,9 +1721,9 @@ public class TrackSet {
       }
     }
 
-    LinkedHashSet<Track> matchedTracks = new LinkedHashSet<Track>();
+    LinkedHashSet<AbstractTrack> matchedTracks = new LinkedHashSet<AbstractTrack>();
 
-    for (Track track : this.getTrackList()) {
+    for (AbstractTrack track : this.getTrackList()) {
       String trackId = track.getTrackTag();
       for (String pattern : patterns) {
         boolean matched = Pattern.compile(pattern).matcher(trackId).find();
@@ -1751,15 +1733,15 @@ public class TrackSet {
       }
     }
     if (invertSelection) {
-      List<Track> inv = new ArrayList<Track>();
-      for (Track x : this.getTrackList()) {
+      List<AbstractTrack> inv = new ArrayList<AbstractTrack>();
+      for (AbstractTrack x : this.getTrackList()) {
         if (!matchedTracks.contains(x)) {
           inv.add(x);
         }
       }
       return inv;
     } else {
-      return new ArrayList<Track>(matchedTracks);
+      return new ArrayList<>(matchedTracks);
     }
   }
 
@@ -1767,7 +1749,7 @@ public class TrackSet {
    * Simple method to get track from track object. See also this.getTrackFromTag. Return null if
    * track not found.
    */
-  protected Track getTrack(Track track) {
+  protected AbstractTrack getTrack(AbstractTrack track) {
 
     int idx = this.getTrackList().indexOf(track);
     if (idx == -1) {
@@ -1780,11 +1762,12 @@ public class TrackSet {
       Pattern pattern, String trackregex, GenomicCoords currentGc, boolean all)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
 
-    List<TrackIntervalFeature> tif = matchIntervalFeatureTrack(trackregex.trim());
-    if (tif.size() == 0) {
+    List<AbstractTrackFeature<? extends IntervalFeature>> tif =
+        this.matchIntervalFeatureTrack(trackregex.trim());
+    if (tif.isEmpty()) {
       return currentGc;
     }
-    for (TrackIntervalFeature tr : tif) {
+    for (AbstractTrackFeature tr : tif) {
       GenomicCoords gc;
       if (all) {
         gc = tr.genomicCoordsAllChromMatchInGenome(pattern, currentGc);
@@ -1798,14 +1781,12 @@ public class TrackSet {
     return currentGc;
   }
 
-  private List<TrackIntervalFeature> getIntervalFeatureTracks() {
+  private List<AbstractTrackFeature<? extends IntervalFeature>> getIntervalFeatureTracks() {
+    List<AbstractTrackFeature<? extends IntervalFeature>> ifSet = new ArrayList<>();
 
-    // TrackSet ifSet= new TrackSet();
-    List<TrackIntervalFeature> ifSet = new ArrayList<TrackIntervalFeature>();
-
-    for (Track tr : this.getTrackList()) {
-      if ((tr instanceof TrackIntervalFeature) && !(tr instanceof TrackPileup)) {
-        ifSet.add((TrackIntervalFeature) tr);
+    for (AbstractTrack tr : this.getTrackList()) {
+      if ((tr instanceof AbstractTrackFeature) && !(tr instanceof TrackPileup)) {
+        ifSet.add((AbstractTrackFeature) tr);
       }
     }
     return ifSet;
@@ -1840,8 +1821,8 @@ public class TrackSet {
       trackNameRegex.add(".*"); // Default: Capture everything
     }
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (tr.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
         TrackBedgraph bdg = (TrackBedgraph) tr;
         bdg.setScoreColIdx(dataCol);
@@ -1869,13 +1850,13 @@ public class TrackSet {
     }
 
     // Create a new list that will have the new order
-    List<Track> newTrackList = new ArrayList<Track>();
+    List<AbstractTrack> newTrackList = new ArrayList<AbstractTrack>();
 
     for (String query : newOrder) {
       List<String> x = new ArrayList<String>();
       x.add(query);
-      List<Track> trList = this.matchTracks(x, true, false);
-      for (Track xtrack : trList) {
+      List<AbstractTrack> trList = this.matchTracks(x, true, false);
+      for (AbstractTrack xtrack : trList) {
         if (newTrackList.contains(xtrack)) {
           newTrackList.remove(xtrack);
         }
@@ -1884,7 +1865,7 @@ public class TrackSet {
     }
 
     // Append tracks not in newOrder
-    for (Track xtrack : this.getTrackList()) {
+    for (AbstractTrack xtrack : this.getTrackList()) {
       if (!newTrackList.contains(xtrack)) {
         newTrackList.add(xtrack);
       }
@@ -1898,7 +1879,7 @@ public class TrackSet {
               + " tracks. Expected "
               + this.getTrackList().size());
     }
-    for (Track x : this.getTrackList()) {
+    for (AbstractTrack x : this.getTrackList()) {
       if (!newTrackList.contains(x)) {
         throw new RuntimeException("\nReordered track does not contain " + x.getTrackTag());
       }
@@ -1914,9 +1895,9 @@ public class TrackSet {
 
     Collections.sort(
         this.trackList,
-        new Comparator<Track>() {
+        new Comparator<AbstractTrack>() {
           @Override
-          public int compare(Track o1, Track o2) {
+          public int compare(AbstractTrack o1, AbstractTrack o2) {
             return o1.getTrackTag().compareTo(o2.getTrackTag());
           }
         });
@@ -1929,7 +1910,7 @@ public class TrackSet {
   protected List<String> getTrackTags() {
 
     List<String> trackTags = new ArrayList<String>();
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       trackTags.add(tr.getTrackTag());
     }
     return trackTags;
@@ -1939,7 +1920,7 @@ public class TrackSet {
   public List<String> getFilenameList() {
 
     List<String> filenames = new ArrayList<String>();
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       filenames.add(tr.getFilename());
     }
     return filenames;
@@ -2022,7 +2003,7 @@ public class TrackSet {
     }
 
     if (print) {
-      for (Track tr : this.getTrackList()) {
+      for (AbstractTrack tr : this.getTrackList()) {
         if (tr instanceof TrackBookmark) {
           List<String> marks = Utils.tabulateList(((TrackBookmark) tr).asList(), -1, " ");
           messages = Joiner.on("\n").join(marks);
@@ -2033,7 +2014,7 @@ public class TrackSet {
     }
 
     if (file != null) {
-      for (Track tr : this.getTrackList()) {
+      for (AbstractTrack tr : this.getTrackList()) {
         if (tr instanceof TrackBookmark) {
           ((TrackBookmark) tr).save(file, false);
           return messages;
@@ -2043,7 +2024,7 @@ public class TrackSet {
     }
 
     if (delete) {
-      for (Track tr : this.getTrackList()) {
+      for (AbstractTrack tr : this.getTrackList()) {
         if (tr instanceof TrackBookmark) {
           ((TrackBookmark) tr).removeBookmark(bookmarkRegion);
           return messages;
@@ -2068,7 +2049,7 @@ public class TrackSet {
           InvalidGenomicCoordsException {
 
     // Check there isn't a bookmark track already:
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       if (tr instanceof TrackBookmark) { // A Bookmark track exists, add position to it
         tr.addBookmark(gc, nameForBookmark);
         tr.setGc(gc);
@@ -2083,7 +2064,7 @@ public class TrackSet {
 
   /*   S e t t e r s   and   G e t t e r s  */
 
-  public List<Track> getTrackList() {
+  public List<AbstractTrack> getTrackList() {
     return trackList;
   }
 
@@ -2159,13 +2140,13 @@ public class TrackSet {
     }
 
     // Get tracks to reset:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
 
     if (tracksToReset.size() == 0) {
       System.err.println("No track matching regex " + trackNameRegex);
     }
 
-    for (Track tr : tracksToReset) {
+    for (AbstractTrack tr : tracksToReset) {
 
       tr.set_f_flag(f);
       tr.set_F_flag(F);
@@ -2213,13 +2194,13 @@ public class TrackSet {
     }
 
     // Get tracks to reset:
-    List<Track> tracksToReset = this.matchTracks(args, true, invertSelection);
+    List<AbstractTrack> tracksToReset = this.matchTracks(args, true, invertSelection);
 
     // Dry-run: See if it duplicate or empty names are generated:
     // These are the track tags that would be generated. Including the edited ones and the untouched
     // ones.
     List<String> testNames = new ArrayList<String>();
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       if (tracksToReset.contains(tr)) {
         String newTag = tr.getTrackTag().replaceAll(pattern, replacement);
         if (newTag.isEmpty()) {
@@ -2242,7 +2223,7 @@ public class TrackSet {
     if (tracksToReset.size() == 0) {
       messages += "No track matched";
     }
-    for (Track tr : tracksToReset) {
+    for (AbstractTrack tr : tracksToReset) {
       String newTag = tr.getTrackTag().replaceAll(pattern, replacement);
       if (tr.getTrackTag().equals(newTag)) {
         messages += "No change made to '" + tr.getTrackTag() + "'\n";
@@ -2283,8 +2264,8 @@ public class TrackSet {
     }
 
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (readsAsPairs == null) {
         if (tr.getReadsAsPairs()) { // Invert setting
           tr.setReadsAsPairs(false);
@@ -2325,8 +2306,8 @@ public class TrackSet {
     }
 
     // And set as required:
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReset) {
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
       if (gap == null) {
         if (tr.getGap() == 0) { // Invert setting
           tr.setGap(1);
@@ -2345,7 +2326,7 @@ public class TrackSet {
   /** For debugging and convenience only. This method not to be used for seriuous stuff. */
   public String toString() {
     String x = "";
-    for (Track tr : this.trackList) {
+    for (AbstractTrack tr : this.trackList) {
       x += tr.toString() + "\n";
     }
     return x;
@@ -2400,7 +2381,7 @@ public class TrackSet {
       }
     }
 
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       if (tr instanceof TrackSeqRegex) {
         ((TrackSeqRegex) tr).setCaseSensitive(isCaseSensisitive);
         ((TrackSeqRegex) tr).setIupac(isIupac);
@@ -2423,7 +2404,7 @@ public class TrackSet {
           SQLException {
     // See if a TrackSeqRegex exists.
     boolean found = false;
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       if (tr instanceof TrackSeqRegex) {
         found = true;
       }
@@ -2455,11 +2436,11 @@ public class TrackSet {
     List<String> trackNameRegex = new ArrayList<String>(args);
 
     String messages = "";
-    List<Track> tracksToDrop = this.matchTracks(trackNameRegex, true, invertSelection);
+    List<AbstractTrack> tracksToDrop = this.matchTracks(trackNameRegex, true, invertSelection);
     if (tracksToDrop.size() == 0) {
       messages += "No track matched by regex: " + trackNameRegex;
     }
-    for (Track tr : tracksToDrop) {
+    for (AbstractTrack tr : tracksToDrop) {
       messages += "Dropping: " + tr.getTrackTag() + "\n";
       if (!test) {
         this.trackList.remove(tr);
@@ -2480,7 +2461,7 @@ public class TrackSet {
     }
 
     // Get track to trim: We get the first one matching the given tag.
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       if (tr instanceof TrackIntervalFeature && tr.getTrackTag().contains(trackTag)) {
         return trimTrack((TrackIntervalFeature) tr);
       }
@@ -2492,7 +2473,7 @@ public class TrackSet {
       throws InvalidGenomicCoordsException, IOException {
     GenomicCoords current = tr.getGc();
     TrackIntervalFeature itr = (TrackIntervalFeature) tr;
-    List<IntervalFeature> features = itr.getIntervalFeatureList();
+    List<IntervalFeature> features = itr.getFeatureList();
     if (features.size() == 0) {
       return current;
     }
@@ -2524,11 +2505,11 @@ public class TrackSet {
         current.getFastaFile());
   }
 
-  public List<Track> getTracksForYLimits() {
+  public List<AbstractTrack> getTracksForYLimits() {
     return tracksForYLimits;
   }
 
-  public void setTracksForYLimits(List<Track> tracksForYLimits) {
+  public void setTracksForYLimits(List<AbstractTrack> tracksForYLimits) {
     this.tracksForYLimits = tracksForYLimits;
   }
 
@@ -2627,8 +2608,8 @@ public class TrackSet {
     }
     List<String> trackNameRegex = new ArrayList<String>(args);
 
-    List<Track> tracksToReload = this.matchTracks(trackNameRegex, true, invertSelection);
-    for (Track tr : tracksToReload) {
+    List<AbstractTrack> tracksToReload = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReload) {
       try {
         tr.reload();
       } catch (Exception e) {
@@ -2640,7 +2621,7 @@ public class TrackSet {
 
   public ArrayList<String> getKnownContigs() {
     LinkedHashSet<String> chromSet = new LinkedHashSet<String>();
-    for (Track tr : this.getTrackList()) {
+    for (AbstractTrack tr : this.getTrackList()) {
       chromSet.addAll(tr.getChromosomeNames());
     }
     ArrayList<String> chroms = new ArrayList<String>();
@@ -2740,9 +2721,9 @@ public class TrackSet {
       }
     }
 
-    List<Track> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
 
-    for (Track tr : tracksToReset) {
+    for (AbstractTrack tr : tracksToReset) {
       if (turnOff) {
         tr.getHeader().setHeaderText(null);
       } else {

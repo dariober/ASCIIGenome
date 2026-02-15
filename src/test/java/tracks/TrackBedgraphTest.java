@@ -1,6 +1,7 @@
 package tracks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
@@ -47,7 +48,8 @@ public class TrackBedgraphTest {
     GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
 
     TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
-    assertTrue(tb.getChromosomeNames().size() > 0);
+    System.out.println(tb.getTrackFormat());
+    assertFalse(tb.getChromosomeNames().isEmpty());
     assertEquals("chr1", tb.getChromosomeNames().get(0));
   }
 
@@ -228,27 +230,22 @@ public class TrackBedgraphTest {
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(yMaxLines);
     String prof = tb.printToScreen();
-    System.out.println(prof);
 
     tb = new TrackBedgraph("test_data/positive.bedGraph.gz", gc);
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(5);
     prof = tb.printToScreen();
-    System.out.println(prof);
 
     tb = new TrackBedgraph("test_data/negative.bedGraph.gz", gc);
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(5);
 
-    System.out.println(prof);
-
     gc = new GenomicCoords("chr1:1-52", 80, null, null);
     tb = new TrackBedgraph("test_data/posNeg.bedGraph.gz", gc);
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(14);
-    System.out.println(tb.printToScreen());
   }
 }

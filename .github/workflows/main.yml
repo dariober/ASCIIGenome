@@ -14,7 +14,7 @@ jobs:
           java-version: ${{ matrix.version }}
       - name: Build and Test
         run: |
-          ./gradlew build test jacocoTestReport -PexcludeTests=**/TravisExcludedTest*
+          ./gradlew build test jacocoTestReport
           cp ASCIIGenome build/libs/
           cd src/test/java
           chmod a+x integration_test.py

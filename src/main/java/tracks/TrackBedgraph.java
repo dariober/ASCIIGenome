@@ -7,6 +7,9 @@ import com.google.common.base.Joiner;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
+import htsjdk.samtools.util.FileExtensions;
+import htsjdk.tribble.readers.TabixReader;
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -14,8 +17,11 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import sortBgzipIndex.MakeTabixIndex;
 
 public class TrackBedgraph extends TrackIntervalFeature {
+
+  private DataTransformation dataTransformation = DataTransformation.IDENTITY;
 
   public TrackBedgraph(String filename, GenomicCoords gc)
       throws ClassNotFoundException,
@@ -23,23 +29,48 @@ public class TrackBedgraph extends TrackIntervalFeature {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException {
-    super(filename, gc);
-    this.setTrackFormat(TrackFormat.BEDGRAPH);
+    this.scoreColIdx = 4;
+    this.setFilename(filename);
+    this.setTrackFormat(Utils.getFileTypeFromName(filename));
+
+    if (!Utils.hasTabixIndex(filename)) {
+      String suffix = new File(filename).getName();
+      if (!suffix.endsWith(".gz")) {
+        suffix += ".gz";
+      }
+      String tmpWorkFile =
+          Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
+      new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
+      this.setWorkFilename(tmpWorkFile);
+      new MakeTabixIndex(
+          filename,
+          new File(this.getWorkFilename()),
+          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
+      this.tabixReader = this.getTabixReader(this.getWorkFilename());
+    } else { // This means the input is tabix indexed.
+      this.setWorkFilename(filename);
+      this.tabixReader = new TabixReader(this.getWorkFilename());
+    }
+    this.setGc(gc);
+
+    this.setDataTransformation(this.dataTransformation);
   }
 
   public TrackBedgraph() {}
 
   /* ----------- METHODS ----------- */
 
-  /**
-   * Get values for bedgraph
-   *
-   * @param intervalFeatureList
-   * @throws InvalidRecordException
-   * @throws InvalidGenomicCoordsException
-   */
+  protected void setDataTransformation(DataTransformation dataTransformation) {
+    this.dataTransformation = dataTransformation;
+  }
+
+  protected DataTransformation getDataTransformation() {
+    return this.dataTransformation;
+  }
+
+  /** Get values for bedgraph */
   private void bedGraphToScores(List<IntervalFeature> intervalFeatureList)
-      throws IOException, InvalidRecordException, InvalidGenomicCoordsException {
+      throws IOException, InvalidGenomicCoordsException {
 
     List<ScreenWiggleLocusInfo> screenWigLocInfoList = new ArrayList<ScreenWiggleLocusInfo>();
     for (int i = 0; i < getGc().getUserWindowSize(); i++) {
@@ -49,16 +80,15 @@ public class TrackBedgraph extends TrackIntervalFeature {
     for (IntervalFeature ift : intervalFeatureList) {
       ift.mapToScreen(this.getGc().getMapping());
       for (int i = ift.getScreenFrom(); i <= ift.getScreenTo(); i++) {
-        screenWigLocInfoList.get(i).increment(ift.getScore());
+        screenWigLocInfoList.get(i).increment(ift.getScore(), this.getDataTransformation());
       }
     }
 
     List<Float> screenScores = new ArrayList<Float>();
     for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
-      screenScores.add((float) x.getMeanScore());
+      screenScores.add(x.getMeanScore());
     }
     this.setScreenScores(screenScores);
-    return;
   }
 
   @Override
@@ -69,9 +99,9 @@ public class TrackBedgraph extends TrackIntervalFeature {
           ClassNotFoundException,
           SQLException {
 
-    this.intervalFeatureList =
+    this.setFeatureList(
         this.getFeaturesInInterval(
-            this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+            this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));
 
     if (this.getScoreColIdx() < 4) {
       System.err.println(
@@ -80,7 +110,9 @@ public class TrackBedgraph extends TrackIntervalFeature {
       this.scoreColIdx = 4;
       throw new InvalidRecordException();
     }
-    this.bedGraphToScores(this.intervalFeatureList);
+    this.setDataTransformation(this.dataTransformation);
+
+    this.bedGraphToScores(this.getFeatureList());
   }
 
   @Override

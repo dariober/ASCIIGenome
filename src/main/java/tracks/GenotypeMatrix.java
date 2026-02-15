@@ -72,12 +72,12 @@ class GenotypeMatrix {
    * @throws InvalidGenomicCoordsException
    * @throws IOException
    */
-  private void makeMatrix(List<IntervalFeature> variantList, int terminalWidth, VCFHeader vcfHeader)
+  private void makeMatrix(List<VCFFeature> variantList, int terminalWidth, VCFHeader vcfHeader)
       throws IOException {
 
-    this.matrix = new LinkedHashMap<String, List<FeatureChar>>();
+    this.matrix = new LinkedHashMap<>();
 
-    if (variantList.size() == 0) {
+    if (variantList.isEmpty()) {
       return;
     }
 
@@ -87,7 +87,7 @@ class GenotypeMatrix {
         && !this.getPyScriptFilter().trim().isEmpty()) {
       // We assign to each VCF record the py script formatted with the fields that
       // do not change across samples, so we do the formatting only once.
-      for (IntervalFeature ctx : variantList) {
+      for (VCFFeature ctx : variantList) {
         String py =
             this.formatPyScriptWithFixedFields(this.getPyScriptFilter(), ctx.getVariantContext());
         py = this.formatPyScriptWithInfo(py, ctx.getVariantContext(), vcfHeader);
@@ -129,7 +129,7 @@ class GenotypeMatrix {
         genotypeRow.add(na); // Initialise row. Potentially there is one genotype per screen column.
       }
 
-      for (IntervalFeature variant : variantList) {
+      for (VCFFeature variant : variantList) {
         int col = variant.getScreenMid();
         if (col < 0) {
           continue;
@@ -226,7 +226,6 @@ class GenotypeMatrix {
     try {
       return this.evalScript(concat);
     } catch (IOException e) {
-      System.err.println(e.getMessage());
       this.setPyScriptFilter(null);
       return false;
     }
@@ -530,7 +529,7 @@ class GenotypeMatrix {
   }
 
   protected String printToScreen(
-      boolean noFormat, List<IntervalFeature> linf, int terminalWidth, VCFHeader vcfHeader)
+      boolean noFormat, List<VCFFeature> linf, int terminalWidth, VCFHeader vcfHeader)
       throws InvalidColourException, InvalidGenomicCoordsException, IOException {
 
     this.makeMatrix(linf, terminalWidth, vcfHeader);

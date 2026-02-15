@@ -56,10 +56,10 @@ public class TrackBookmarkTest {
     gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     bm.setGc(gc);
 
-    assertTrue(bm.getIntervalFeatureList().size() == 2);
+    assertTrue(bm.getFeatureList().size() == 2);
 
     // Can set name
-    assertEquals("book2", bm.getIntervalFeatureList().get(1).getName());
+    assertEquals("book2", bm.getFeatureList().get(1).getName());
   }
 
   @Test
@@ -81,26 +81,26 @@ public class TrackBookmarkTest {
     gc = new GenomicCoords("chr1:1-1000", 80, null, null); // Zoom out to span both bookmarks.
     bm.setGc(gc);
     // Just check we created a correct test object with two intervals
-    assertEquals(2, bm.getIntervalFeatureList().size());
+    assertEquals(2, bm.getFeatureList().size());
 
     // Partial overlap not touched
     gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     bm.setGc(gc);
     bm.removeBookmark(gc);
-    assertEquals(2, bm.getIntervalFeatureList().size());
+    assertEquals(2, bm.getFeatureList().size());
 
     // Go to first bookmark and remove it:
     gc = new GenomicCoords("chr1:1-100", 80, null, null);
     bm.setGc(gc);
     bm.removeBookmark(gc);
     bm.setGc(new GenomicCoords("chr1:1-1000", 80, null, null));
-    assertEquals(1, bm.getIntervalFeatureList().size());
+    assertEquals(1, bm.getFeatureList().size());
 
     // Go to second bookmark and remove it. No bookmarks left:
     gc = new GenomicCoords("chr1:200-300", 80, null, null);
     bm.setGc(gc);
     bm.removeBookmark(gc);
-    assertTrue(bm.getIntervalFeatureList().size() == 0);
+    assertTrue(bm.getFeatureList().size() == 0);
   }
 
   @Test

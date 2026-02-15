@@ -25,7 +25,7 @@ import org.biojava.nbio.core.sequence.io.IUPACParser;
 import org.biojava.nbio.core.sequence.transcription.Frame;
 import session.Session;
 import session.SessionHandler;
-import tracks.Track;
+import tracks.AbstractTrack;
 import utils.Tokenizer;
 
 /** Class to process input from console */
@@ -411,11 +411,9 @@ public class InteractiveInput {
           this.next(cmdTokens, proc);
 
         } else if (cmdTokens.get(0).equals("find")) {
-
           boolean all = Utils.argListContainsFlag(cmdTokens, "-all");
           boolean fixedPattern = Utils.argListContainsFlag(cmdTokens, "-F");
           boolean caseIns = Utils.argListContainsFlag(cmdTokens, "-c");
-
           if (cmdTokens.size() < 2) {
             System.err.println(
                 Utils.padEndMultiLine(
@@ -424,8 +422,24 @@ public class InteractiveInput {
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
           }
-          if (cmdTokens.size() == 2) {
-            cmdTokens.add(""); // If track arg is missing use this placeholder.
+          String trackToMatch;
+          if (cmdTokens.size() == 3) {
+            trackToMatch = cmdTokens.get(2);
+          } else if (cmdTokens.size() == 2 && proc.getTrackSet().getTrackList().size() == 1) {
+            trackToMatch = proc.getTrackSet().getTrackList().get(0).getTrackTag();
+          } else if (proc.getTrackSet().getTrackList().isEmpty()) {
+            System.err.println(
+                Utils.padEndMultiLine(
+                    "There is no track to search for pattern", proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          } else {
+            System.err.println(
+                Utils.padEndMultiLine(
+                    "There are multiple tracks: Select a track name to search for pattern",
+                    proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
           }
           GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
           gc.setTerminalWidth(terminalWidth);
@@ -441,11 +455,13 @@ public class InteractiveInput {
           try {
             pattern = Pattern.compile(cmdTokens.get(1), flag);
           } catch (PatternSyntaxException e) {
-            System.err.println("Invalid regex");
-            throw new InvalidCommandLineException();
+            System.err.println(
+                Utils.padEndMultiLine("Invalid regex: " + cmdTokens.get(1), proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
           }
           GenomicCoords nextGc =
-              proc.getTrackSet().findNextMatchOnTrack(pattern, cmdTokens.get(2), gc, all);
+              proc.getTrackSet().findNextMatchOnTrack(pattern, trackToMatch, gc, all);
           if (nextGc.equalCoords(gc)) {
             System.err.println(
                 "No match found outside of this window for query '" + cmdTokens.get(1) + "'");
@@ -1171,7 +1187,7 @@ public class InteractiveInput {
               + e.getMessage());
     }
     List<String> passed = new ArrayList<>();
-    for (Track x : proc.getTrackSet().getTrackList()) {
+    for (AbstractTrack x : proc.getTrackSet().getTrackList()) {
       passed.add(x.getTrackTag());
     }
     for (String tag : session.getTracks().keySet()) {

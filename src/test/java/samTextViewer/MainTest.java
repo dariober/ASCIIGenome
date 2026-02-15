@@ -52,7 +52,36 @@ public class MainTest {
     String out = Joiner.on("\n").join(this.runMain(args));
     assertEquals(1, StringUtils.countMatches(out, "sample1"));
     assertEquals(2, StringUtils.countMatches(out, "sample2"));
-    System.out.println(out);
+  }
+
+  @Test
+  public void canPrintGenomeFromBcf()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
+    String[] args =
+        new String[] {
+          "-ni",
+          "-nf",
+          "--debug",
+          "2",
+          "--exec",
+          "show genome",
+          "test_data/gnomad.exomes.v4.1.sites.chr1.bcf"
+        };
+    // Genotype filter selects for "sample2". "sample1" appears once right at the start before the
+    // filtering is applied.
+    String out = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(out.contains("248956422"));
+    assertTrue(out.contains("*--------"));
   }
 
   @Test
@@ -81,6 +110,26 @@ public class MainTest {
         };
     String out = Joiner.on("\n").join(this.runMain(args));
     assertTrue(out.contains("chr7:5567419-5567599") && out.contains("<<<<<"));
+  }
+
+  @Test
+  public void canStartFromBcf()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
+    String[] args =
+        new String[] {"-ni", "-nf", "--debug", "2", "test_data/gnomad.exomes.v4.1.sites.chr1.bcf"};
+    String out = Joiner.on("\n").join(this.runMain(args));
+    System.out.println(out);
+    assertTrue(out.contains("chr1:1"));
   }
 
   @Test
@@ -137,7 +186,6 @@ public class MainTest {
           "test_data/ds051.actb.bam"
         };
     String out = Joiner.on("\n").join(this.runMain(args));
-    System.out.println(out);
     assertTrue(out.contains("Reads: 292"));
 
     args =

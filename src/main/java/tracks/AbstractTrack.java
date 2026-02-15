@@ -51,7 +51,7 @@ import samTextViewer.Main;
 import samTextViewer.Utils;
 import utils.Tokenizer;
 
-public abstract class Track {
+public abstract class AbstractTrack {
 
   public static String awkFunc = "";
 
@@ -81,7 +81,7 @@ public abstract class Track {
   // private int id= 1;              // A unique identifier for the track. Changed when the track is
   // added to a TrackSet.
   protected List<Float> screenScores = new ArrayList<Float>();
-  private GenomicCoords gc;
+  GenomicCoords gc;
   private boolean noFormat = false;
   private float yLimitMin = Float.NaN; // Same as R ylim()
   private float yLimitMax = Float.NaN;
@@ -125,7 +125,7 @@ public abstract class Track {
 
   private TrackHeader header = new TrackHeader(null);
 
-  public Track() {}
+  public AbstractTrack() {}
 
   /**
    * Format the title string to add colour or return title as it is if no format is set.
@@ -219,8 +219,7 @@ public abstract class Track {
 
   /** Set the GenomicCoords object AND update the track by calling the update method. */
   public void setGc(GenomicCoords gc)
-      throws MalformedURLException,
-          ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
@@ -1058,6 +1057,9 @@ public abstract class Track {
     // boolean[] results= new boolean[(int) this.nRecsInWindow];
     List<Boolean> results = new ArrayList<Boolean>();
 
+    boolean isDefaultShowRegex = this.getFeatureFilter().getShowRegex().toString().equals(Filter.DEFAULT_SHOW_REGEX.getValue());
+    boolean isDefaultHideRegex = this.getFeatureFilter().getHideRegex().toString().equals(Filter.DEFAULT_HIDE_REGEX.getValue());
+
     List<String> awkDataInput = new ArrayList<String>();
     while (filterSam.hasNext()) {
       // Record whether a read passes the sam filters. If necessary, we also
@@ -1085,19 +1087,15 @@ public abstract class Track {
 
       String raw = null;
 
-      if (passed
-          && (!this.getFeatureFilter().getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue())
-              || !this.getFeatureFilter()
-                  .getHideRegex()
-                  .equals(Filter.DEFAULT_HIDE_REGEX.getValue()))) {
+      if (passed&& (!isDefaultShowRegex || !isDefaultHideRegex)) {
         // grep
         raw = rec.getSAMString().trim();
         boolean showIt = true;
-        if (!this.getFeatureFilter().getShowRegex().equals(Filter.DEFAULT_SHOW_REGEX.getValue())) {
+        if (!isDefaultShowRegex) {
           showIt = this.getFeatureFilter().getShowRegex().matcher(raw).find();
         }
         boolean hideIt = false;
-        if (!this.getFeatureFilter().getHideRegex().equals(Filter.DEFAULT_HIDE_REGEX.getValue())) {
+        if (!isDefaultHideRegex) {
           hideIt = this.getFeatureFilter().getHideRegex().matcher(raw).find();
         }
         if (!showIt || hideIt) {
@@ -1304,14 +1302,6 @@ public abstract class Track {
     this.update();
   }
 
-  protected VCFHeader getVcfHeader() {
-    return vcfHeader;
-  }
-
-  protected void setVcfHeader(VCFHeader vcfHeader) {
-    this.vcfHeader = vcfHeader;
-  }
-
   public int getPrintNumDecimals() {
     return printNumDecimals;
   }
@@ -1352,6 +1342,15 @@ public abstract class Track {
   public TrackHeader getHeader() {
     return this.header;
   }
+
+  public VCFHeader getVcfHeader() {
+    return this.vcfHeader;
+  }
+
+  //  @Override
+  //  public VCFHeader getVcfHeader() {
+  //    return this.vcfHeader;
+  //  }
 
   //  public abstract GenomicCoords coordsOfNextFeature(GenomicCoords currentGc, boolean
   // getPrevious)

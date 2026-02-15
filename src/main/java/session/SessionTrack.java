@@ -8,7 +8,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import samTextViewer.GenomicCoords;
-import tracks.Track;
+import tracks.AbstractTrack;
 
 public class SessionTrack {
   public String filename;
@@ -19,17 +19,18 @@ public class SessionTrack {
   public SessionTrack() {}
 
   /* Handle Track to make it suitable for serialization */
-  public SessionTrack(Track tr) {
+  public SessionTrack(AbstractTrack tr) {
     this.filename = tr.getFilename();
     this.awk = tr.getAwk();
     this.colour = tr.getTitleColour();
     this.type = tr.getClass().getName();
   }
 
-  public Track toTrack(String trackName, GenomicCoords gc) throws InvalidTrackTypeException {
+  public AbstractTrack toTrack(String trackName, GenomicCoords gc)
+      throws InvalidTrackTypeException {
     try {
       Constructor<?> c = Class.forName(this.type).getConstructor(String.class, GenomicCoords.class);
-      Track tr = (Track) c.newInstance(this.filename, gc);
+      AbstractTrack tr = (AbstractTrack) c.newInstance(this.filename, gc);
       tr.setTrackTag(trackName);
       tr.setTitleColour(this.colour);
       if (this.awk != null) tr.setAwk(this.awk);

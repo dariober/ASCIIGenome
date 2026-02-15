@@ -30,7 +30,7 @@ import samTextViewer.Utils;
  *
  * @author berald01
  */
-public class TrackReads extends Track {
+public class TrackReads extends AbstractTrack {
 
   private List<List<SamSequenceFragment>> readStack;
   // private boolean withReadName= false;

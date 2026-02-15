@@ -36,7 +36,7 @@ public class TrackBookmark extends TrackIntervalFeature {
           InvalidRecordException,
           SQLException,
           InvalidGenomicCoordsException {
-    super(gc);
+    super();
 
     this.setTrackTag(trackName);
 
