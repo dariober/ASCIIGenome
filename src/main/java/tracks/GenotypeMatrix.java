@@ -44,7 +44,7 @@ public class GenotypeMatrix {
   /** Maximum number of samples (rows) to print */
   private Integer nMaxSamples;
 
-  private final Map<String, String> subSampleRegex = Map.of("pattern", "$^", "replacement", "");
+  private final Map<String, String> subSampleRegex = new HashMap<>();
 
   private String pyScriptFilter;
 
@@ -62,7 +62,10 @@ public class GenotypeMatrix {
           "{NO_CALL}",
           "{MIXED}");
 
-  protected GenotypeMatrix() {}
+  protected GenotypeMatrix() {
+    subSampleRegex.put("pattern", "$^");
+    subSampleRegex.put("replacement", "");
+  }
 
   // -------------------------------------------------------------------------
 

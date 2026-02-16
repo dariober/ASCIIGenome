@@ -58,6 +58,26 @@ public class TrackSetTest {
   }
 
   @Test
+  public void canGoToNextFeatureOnBcfFile2()
+      throws InvalidGenomicCoordsException,
+      IOException,
+      ClassNotFoundException,
+      BamIndexNotFoundException,
+      InvalidRecordException,
+      SQLException,
+      InvalidCommandLineException {
+
+    int ws = 200;
+    GenomicCoords gc = new GenomicCoords("chr1:1-80", 80, null, null);
+    gc.setTerminalWidth(ws);
+    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
+    trackSet.addTrackFromSource("test_data/gnomad.genomes.v3.1.2.hgdp_tgp.chr4.bcf", gc, null);
+    GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
+    //int x = nextGc.getFrom();
+    //assertEquals(12138, x); // This is the start of the found feature
+  }
+
+  @Test
   public void canGoToNextFeatureOnFile()
       throws InvalidGenomicCoordsException,
           IOException,
