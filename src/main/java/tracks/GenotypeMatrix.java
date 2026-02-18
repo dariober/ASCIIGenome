@@ -215,7 +215,7 @@ public class GenotypeMatrix {
     // This is important especially for GT where we have few combinations of genotype appearing many
     // times
     // across markers.
-    Set<String> concatPy = new HashSet<String>();
+    Set<String> concatPy = new HashSet<>();
 
     for (VariantContext ctx : vcfRecordWithScript.keySet()) {
       // We format the JS script and apply it to this sample for each record in the

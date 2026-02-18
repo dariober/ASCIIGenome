@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
 public class Tokenizer {
@@ -97,7 +98,7 @@ public class Tokenizer {
       this.quoteChars.put(quote, false);
       // We advance the cursor with the length of the quote itself and possible separators after it.
       // so we place the cursor at the start of the next token
-      String strip = sub.replaceAll("^" + quote + this.SEP + "*", "");
+      String strip = sub.replaceAll("^" + quote + Pattern.quote(String.valueOf(this.SEP)) + "*", "");
       this.cursor += sub.length() - strip.length();
       return true;
     } else {
@@ -158,5 +159,9 @@ public class Tokenizer {
       this.cursor = i;
     }
     return true;
+  }
+
+  public void setSep(char sep) {
+    this.SEP = sep;
   }
 }

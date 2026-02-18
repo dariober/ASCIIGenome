@@ -558,7 +558,7 @@ public class CommandList {
 
     cmd = new CommandHelp();
     cmd.setName("awk");
-    cmd.setArgs("[-off ...] [-F sep_re] [-v VAR=var] [-V] '<script>' [track_regex = .*]...");
+    cmd.setArgs("[-off ...] [-V] '<script>' [track_regex = .*]...");
     cmd.inSection = Section.DISPLAY;
     cmd.setBriefDescription("Advanced feature filtering using awk syntax.");
     cmd.setAdditionalDescription(
@@ -578,13 +578,6 @@ public class CommandList {
             + "\n"
             + "* :code:`-off track_re ...`  Turn off awk filtering for tracks captured by the list"
             + " of regexes.\n"
-            + "\n"
-            + "* :code:`-F <sep_re>` Use regular expression <sep_re> as column separator. Default"
-            + " is '\\t' (tab). To separate on white space use e.g. '\\b' (backspace) or '\\s' (any"
-            + " white space). Do not use ' '. \n"
-            + "\n"
-            + "* :code:`-v VAR=var` Pass to awk script the variable VAR with value var. Can be"
-            + " repeated.\n"
             + "\n"
             + "* :code:`script` The awk script to be executed. Must wrapped in single quotes.\n"
             + "\n"
@@ -719,9 +712,6 @@ public class CommandList {
             + "* Each line is processed independently of the others as a separate awk execution."
             + " This means that you cannot filter one line on the bases of previous or following"
             + " lines.\n"
-            + "\n"
-            + "* This awk is slow, about x5-10 times slower than UNIX awk. For few thousand records"
-            + " the slowdown should be acceptable. Other things being equal, use `grep` instead.\n"
             + "\n"
             + "* The default delimiter is TAB not any white space as in UNIX awk.\n"
             + "\n"
@@ -1260,12 +1250,14 @@ public class CommandList {
             + "\n"
             + "Examples::\n"
             + "\n"
-            + "    print~~~~~~~~~~~~~~~~~~~~~~~~-> Print all tracks, same as `print .*`\n"
-            + "    print -off~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
-            + "    print genes.bed >> genes.txt~-> Append features in track(s) 'genes.bed' to"
-            + " file\n"
+            + "    print~~~~~~~~~~~~~~~~~~~~~~~~~~~-> Print all tracks, same as `print .*`\n"
+            + "    print -off~~~~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
+            + "    print genes.bed >> genes.txt~~~~-> Append features in track(s) 'genes.bed' to file\n"
             + "    print -sys 'cut -f 1-5 | sort'~~-> Select columns with `cut` and then sort\n"
-            + "    print -sys null~~~~~~~~~~~~~~-> Turn off the execution of sysy commands\n");
+            + "    print -sys 'cut -c 1-150'~~~~~~~-> Select first 150 characters\n"
+            + "    print -hl GT vcf~~~~~~~~~~~~~~~~-> Highlight GT values in VCF records (GTX will also match)\n"
+            + "    print -hl '\\bGT\\b' vcf~~~~~~~~~~-> Highlight GT values with word boundaries (GTX will not match)\n"
+            + "    print -sys null~~~~~~~~~~~~~~~~~-> Turn off the execution of sys commands\n");
     cmdList.add(cmd);
 
     cmd = new CommandHelp();

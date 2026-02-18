@@ -8,6 +8,16 @@ import org.junit.Test;
 public class TokenizerTest {
 
   @Test
+  public void canTokenizeAtPipe() {
+    Tokenizer tk = new Tokenizer("there|awk|'with | pipe'|'one\"|\"two'|'three\\|four'");
+    tk.setSep('|');
+    List<String> split = tk.tokenize();
+    assertEquals("with | pipe", split.get(2));
+    assertEquals("one\"|\"two", split.get(3));
+    assertEquals("three\\|four", split.get(4));
+  }
+
+  @Test
   public void canTokenizeNewline() {
 
     List<String> tk = new Tokenizer("foo \nspam eggs").tokenize();

@@ -73,12 +73,11 @@ public abstract class AbstractTrack {
     }
   }
 
+  private String systemCommandFilter;
   protected int yMaxLines = 10;
   private String filename = "N/A"; // File name as given in input
   private String workFilename = "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files
   private String trackTag = "N/A"; // Tag name for title
-  // private int id= 1;              // A unique identifier for the track. Changed when the track is
-  // added to a TrackSet.
   protected List<Float> screenScores = new ArrayList<Float>();
   GenomicCoords gc;
   private boolean noFormat = false;
@@ -279,22 +278,26 @@ public abstract class AbstractTrack {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException {
-
-    if (!awk.trim().isEmpty()) {
-      List<String> arglst = new Tokenizer(awk).tokenize(); // Utils.tokenize(awk, " ");
-
-      // Do we need to set tab as field sep?
-      if (arglst.size() == 1
-          || !arglst.contains("-F")) { // It would be more stringent to check for the script.
-        awk = "-F '\\t' " + awk;
-      }
-    }
     this.getFeatureFilter().setAwk(awk);
     this.update();
   }
 
   public String getAwk() {
     return this.getFeatureFilter().getAwk();
+  }
+
+  public void setSystemCommandFilter(String systemCommandFilter)
+      throws ClassNotFoundException,
+      IOException,
+      InvalidGenomicCoordsException,
+      InvalidRecordException,
+      SQLException {
+    this.getFeatureFilter().setSystemCommandFilter(systemCommandFilter);
+    this.update();
+  }
+
+  public String getSystemCommandFilter() {
+    return this.getFeatureFilter().getSystemCommandFilter();
   }
 
   protected FeatureFilter getFeatureFilter() {
@@ -1059,6 +1062,7 @@ public abstract class AbstractTrack {
             .equals(Filter.DEFAULT_HIDE_REGEX.getValue());
 
     List<String> awkDataInput = new ArrayList<String>();
+    List<String> recDataInput = new ArrayList<String>();
     while (filterSam.hasNext()) {
       // Record whether a read passes the sam filters. If necessary, we also
       // store the raw reads for awk.
@@ -1106,10 +1110,29 @@ public abstract class AbstractTrack {
         raw = prepareSAMRecordForAwk(rec);
         awkDataInput.add(raw);
       }
+      recDataInput.add(rec.getSAMString());
     } // End loop through reads
 
     // Apply the awk filter, if given
     if (this.getAwk() != null && !this.getAwk().equals(Filter.DEFAULT_AWK.getValue())) {
+      String[] rawLines = new String[awkDataInput.size()];
+      rawLines = awkDataInput.toArray(rawLines);
+      boolean[] awkResults = Utils.passAwkFilter(rawLines, this.getAwk());
+      // Compare the results array with awk filtered. Flip as appropriate the results array
+      int awkIdx = 0;
+      int i = 0;
+      for (boolean isPassed : results) {
+        if (isPassed) {
+          if (!awkResults[awkIdx]) {
+            results.set(i, false);
+          }
+          awkIdx++;
+        }
+        i++;
+      }
+    }
+    // Apply the system filter, if given
+    if (this.getSystemCommandFilter() != null && !this.getSystemCommandFilter().equals(Filter.DEFAULT_SYSTEM_COMMAND_FILTER.getValue())) {
       String[] rawLines = new String[awkDataInput.size()];
       rawLines = awkDataInput.toArray(rawLines);
       boolean[] awkResults = Utils.passAwkFilter(rawLines, this.getAwk());
@@ -1140,7 +1163,7 @@ public abstract class AbstractTrack {
     List<String> recList = new ArrayList<String>();
     recList.add(rec.getSAMString().trim());
     // We add a tag for aln end. Name in such way that it cannot collide with valid existing tags
-    recList.add("$alnEnd:i:" + Integer.toString(alnEnd));
+    recList.add("$alnEnd:i:" + alnEnd);
 
     return Joiner.on('\t').join(recList);
   }

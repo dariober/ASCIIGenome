@@ -1226,30 +1226,30 @@ public class TrackSet {
       // * Iterate through the args, if arg starts with - skip this arg and the next one.
       // * The first arg (string) not starting with - is the script
       // * Any args after the script are track regex.
-      final List<String> awkOpts =
-          Arrays.asList(
-              "-F", "-f", "-v", "-t", "-c", "-o", "-z", "-Z", "-d", "-S", "-s", "-x", "-y", "-r",
-              "-ext", "-ni");
+//      final List<String> awkOpts =
+//          Arrays.asList(
+//              "-F", "-f", "-v", "-t", "-c", "-o", "-z", "-Z", "-d", "-S", "-s", "-x", "-y", "-r",
+//              "-ext", "-ni");
       int idxScript = 0; // Index of the script in the command args.
-      boolean skip = false;
-      for (String x : args) {
-        if (awkOpts.contains(x)) {
-          idxScript += 2;
-          skip = true;
-        } else if (skip) {
-          skip = false;
-        } else {
-          break;
-        }
-      }
+//      boolean skip = false;
+//      for (String x : args) {
+//        if (awkOpts.contains(x)) {
+//          idxScript += 2;
+//          skip = true;
+//        } else if (skip) {
+//          skip = false;
+//        } else {
+//          break;
+//        }
+//      }
       // We need to quote the awk script using a quoting string not used inside the script itself.
       // This is a pretty bad hack. You should store the awk command as a list rather than a string
       // split and joined multiple times!
-      args.set(
-          idxScript,
-          Utils.quote(
-              args.get(
-                  idxScript))); // Put back single quotes around the script, exclude cmd line params
+//      args.set(
+//          idxScript,
+//          Utils.quote(
+//              args.get(
+//                  idxScript))); // Put back single quotes around the script, exclude cmd line params
       // like -F
       awk = Joiner.on(" ").join(args.subList(0, idxScript + 1));
 

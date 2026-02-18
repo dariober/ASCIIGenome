@@ -1,6 +1,7 @@
 package samTextViewer;
 
 import com.github.lindenb.jvarkit.variant.bcf.BCFFileReader;
+import com.github.lindenb.jvarkit.variant.bcf.BCFIterator;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -42,6 +43,7 @@ import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderVersion;
+import htsjdk.variant.vcf.VCFIterator;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -81,11 +83,14 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import jline.TerminalFactory;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.text.StrMatcher;
@@ -609,17 +614,23 @@ public class Utils {
   }
 
   private static String initRegionFromBcf(String bcf) throws IOException {
-    BCFFileReader bcfIn = new BCFFileReader(Path.of(bcf), true);
-    VCFHeader h = bcfIn.getHeader();
-    bcfIn.close();
-    return h.getSequenceDictionary().getSequence(0).getSequenceName();
+    try(VCFIterator iter = BCFIterator.open(Path.of(bcf))) {
+      if (iter.hasNext()) {
+        VariantContext ctx = iter.next();
+        return ctx.getContig() + ":" + ctx.getStart();
+      } else {
+        BCFFileReader bcfIn = new BCFFileReader(Path.of(bcf), true);
+        VCFHeader h = bcfIn.getHeader();
+        bcfIn.close();
+        return h.getSequenceDictionary().getSequence(0).getSequenceName();
+      }
+    }
   }
 
   public static String initRegionFromFile(String x)
       throws IOException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
-          InvalidCommandLineException,
           InvalidRecordException,
           SQLException {
     return initRegionFromFile(x, null);
@@ -1687,18 +1698,18 @@ public class Utils {
    * http://stackoverflow.com/questions/109383/sort-a-mapkey-value-by-values-java
    */
   public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
-    List<Map.Entry<K, V>> list = new LinkedList<>(map.entrySet());
+    List<Entry<K, V>> list = new LinkedList<>(map.entrySet());
     Collections.sort(
         list,
-        new Comparator<Map.Entry<K, V>>() {
+        new Comparator<Entry<K, V>>() {
           @Override
-          public int compare(Map.Entry<K, V> o1, Map.Entry<K, V> o2) {
+          public int compare(Entry<K, V> o1, Entry<K, V> o2) {
             return -(o1.getValue()).compareTo(o2.getValue());
           }
         });
 
     Map<K, V> result = new LinkedHashMap<>();
-    for (Map.Entry<K, V> entry : list) {
+    for (Entry<K, V> entry : list) {
       result.put(entry.getKey(), entry.getValue());
     }
     return result;
@@ -2005,17 +2016,11 @@ public class Utils {
    * @param awkScript e.g.: -v=VAR5 '$2 == 0'
    * @return
    */
-  private static ArrayList<String> prepareAwkScript(String awkScript) {
-    awkScript = awkScript.trim();
-    // * Parse command string into arguments and awk script
-    ArrayList<String> args = (ArrayList<String>) new Tokenizer(awkScript).tokenize();
-
-    args.add(0, "awk");
-    String script = args.remove(args.size() - 1); // 'remove' returns the element removed
-    script = AbstractTrack.awkFunc + "\n" + script;
-    args.add(script);
-
-    return args;
+  private static File prepareAwkScript(String awkScript) throws IOException {
+    String script = AbstractTrack.awkFunc + "\n" + awkScript.trim();
+    File tmp = Utils.createTempFile(".asciigenome.", ".awk", true);
+    Files.writeString(Path.of(tmp.getAbsolutePath()), script);
+    return tmp;
   }
 
   /**
@@ -2023,124 +2028,81 @@ public class Utils {
    * line. If awk returns empty output then the line didn't pass the awk filter. If output is not
    * empty and not equal to input, return null. See tests for behaviour. This function uses the
    * operating system's awk
-   *
-   * @throws InterruptedException
    */
   public static boolean[] passAwkFilter(String[] rawLines, String awkScript) throws IOException {
-
-    boolean[] results = new boolean[rawLines.length];
 
     awkScript = awkScript.trim();
 
     if (awkScript.isEmpty()) {
+      boolean[] results = new boolean[rawLines.length];
       for (int i = 0; i < rawLines.length; i++) {
         results[i] = true;
       }
       return results;
     }
 
-    ArrayList<String> args = prepareAwkScript(awkScript);
+    File awkTmpFile = prepareAwkScript(awkScript);
+    String cmd = "awk -F '\t' -f " + awkTmpFile.getAbsolutePath();
 
-    ArrayList<String> output = new ArrayList<String>();
+    ArrayList<String> args = new ArrayList<>();
+    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
+
+    ArrayList<String> output;
     try {
       output = execSystemCommand(rawLines, args);
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      throw new RuntimeException(args + "\n" + e);
+    } finally {
+        Files.deleteIfExists(awkTmpFile.toPath());
     }
 
+    return matchInputToFilteredLines(rawLines, output);
+  }
+
+  public static boolean[] passSystemCommandFilter(String[] rawRecordLines, String cmd, String header) throws IOException {
+
+    cmd = cmd.trim();
+    if (cmd.isEmpty()) {
+      boolean[] results = new boolean[rawRecordLines.length];
+      for (int i = 0; i < rawRecordLines.length; i++) {
+        results[i] = true;
+      }
+      return results;
+    }
+    ArrayList<String> args = new ArrayList<>();
+    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
+
+    ArrayList<String> output;
+    String[] rawLinesWithHeader;
+    if (header == null || header.trim().isEmpty()) {
+      rawLinesWithHeader = rawRecordLines;
+    } else {
+      rawLinesWithHeader = ArrayUtils.addAll(new String[]{header}, rawRecordLines);
+    }
+    try {
+      output = execSystemCommand(rawLinesWithHeader, args);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(args + "\n" + e);
+    }
+    return matchInputToFilteredLines(rawRecordLines, output);
+  }
+
+  private static boolean[] matchInputToFilteredLines(String[] inputLines, List<String> filteredLines) {
     // Check input and output. If an input line is found in output at the
     // same line number where it should be, add True else False.
-    int j = 0;
-    for (int i = 0; i < rawLines.length; i++) {
-      String inLine = rawLines[i];
-      if (output.size() > j) {
-        String outLine = output.get(j);
-        if (inLine.equals(outLine)) {
-          results[i] = true;
-          j++;
-        } else {
-          results[i] = false;
-        }
+    boolean[] results = new boolean[inputLines.length];
+    Set<String> filteredSet = new HashSet<>(filteredLines);
+
+    for (int i = 0; i < inputLines.length; i++) {
+      String inLine = inputLines[i];
+      if (filteredSet.contains(inLine)) {
+        results[i] = true;
       } else {
         results[i] = false;
       }
     }
-
     return results;
   }
-
-  /**
-   * Stream the raw line through awk and return true if the output of awk is the same as the input
-   * line. If awk returns empty output then the line didn't pass the awk filter. If output is not
-   * empty and not equal to input, return null. See tests for behaviour. This function uses built in
-   * Java Jawk
-   */
-  /*
-  public static boolean[] passAwkFilter(String[] rawLines, String awkScript) throws IOException {
-
-      boolean[] results= new boolean[rawLines.length];
-
-      awkScript= awkScript.trim();
-
-      if(awkScript.isEmpty()){
-          for(int i= 0; i < rawLines.length; i++){
-              results[i]= true;
-          }
-          return results;
-      }
-
-      // * Parse command string into arguments and awk script
-      List<String> args= new Tokenizer(awkScript).tokenize();
-
-      String script= args.remove(args.size()-1); // 'remove' returns the element removed
-      File awkFile= Utils.createTempFile(".asciigenome.", ".awk", true);
-
-      BufferedWriter wr= new BufferedWriter(new FileWriter(awkFile));
-      wr.write(Track.awkFunc);
-      wr.write(script);
-      wr.close();
-      args.add("-f");
-      args.add(awkFile.getAbsolutePath());
-
-      ByteArrayOutputStream baosIn = new ByteArrayOutputStream();
-      for (String line : rawLines) {
-          baosIn.write((line+"\n").getBytes());
-      }
-      InputStream is= new ByteArrayInputStream(baosIn.toByteArray());
-      PrintStream stdout = System.out;
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-      try{
-          PrintStream os= new PrintStream(baos);
-          new org.jawk.Main(args.toArray(new String[0]), is, os, System.err);
-      } catch(Exception e){
-          // e.printStackTrace();
-          throw new IOException();
-      } finally{
-          System.setOut(stdout);
-          is.close();
-          awkFile.delete();
-      }
-
-      String output[] = new String(baos.toByteArray(), StandardCharsets.US_ASCII).split("\n");
-      int j= 0;
-      for(int i=0; i < rawLines.length; i++){
-          String inLine= rawLines[i];
-          if(output.length > j){
-              String outLine= output[j];
-              if(inLine.equals(outLine)){
-                  results[i]= true;
-                  j++;
-              } else {
-                  results[i]= false;
-              }
-          } else {
-              results[i]= false;
-          }
-      }
-      return results;
-  }
-  */
 
   /**
    * Right-pad each line in string x with whitespaces. Each line is defined by the newline. Each
@@ -2281,7 +2243,7 @@ public class Utils {
 
   /** Get terminal width. */
   public static int getTerminalWidth() throws IOException {
-    int terminalWidth = jline.TerminalFactory.get().getWidth();
+    int terminalWidth = TerminalFactory.get().getWidth();
     if (terminalWidth <= 0) {
       terminalWidth = 80;
     }
@@ -2585,7 +2547,7 @@ public class Utils {
       }
     }
 
-    java.util.Map.Entry<Integer, List<String>> out = candidates.entrySet().iterator().next();
+    Entry<Integer, List<String>> out = candidates.entrySet().iterator().next();
     return out.getValue();
   }
 
@@ -2657,33 +2619,17 @@ public class Utils {
     return relative.toString();
   }
 
-  /**
-   * rawrecs is an array of raw records and regex is either a regex or an awk script
-   * (autodetermined). Return an array of booleans for whether each record is matched by regex.
-   *
-   * @throws IOException
-   */
-  public static boolean[] matchByAwkOrRegex(String[] rawLines, String regex) throws IOException {
-    boolean isAwk = false;
-    if (Pattern.compile("\\$\\d|\\$[A-Z]").matcher(regex).find()) {
-      // We assume that if regex contains a '$' followed by digit or letter
-      // we have an awk script since that would be a very unlikely regex.
-      // Could we have an awk script not containing '$'? Unlikely but maybe possible
-      isAwk = true;
-    }
-
+  public static boolean[] matchByRegex(String[] rawLines, String regex) throws IOException {
     boolean[] matched = new boolean[rawLines.length];
-    if (isAwk) {
-      regex = quote(regex);
-      //			if(! regex.trim().startsWith("'") && ! regex.trim().endsWith("'")) {
-      //				regex= "'" + regex + "'";
-      //			}
-      matched = Utils.passAwkFilter(rawLines, regex);
-    } else {
-      for (int i = 0; i < matched.length; i++) {
-        matched[i] = Pattern.compile(regex).matcher(rawLines[i]).find();
-      }
+    for (int i = 0; i < matched.length; i++) {
+      matched[i] = Pattern.compile(regex).matcher(rawLines[i]).find();
     }
+    return matched;
+  }
+
+  public static boolean[] matchByAwk(String[] rawLines, String regex) throws IOException {
+    boolean[] matched;
+    matched = Utils.passAwkFilter(rawLines, regex);
     return matched;
   }
 

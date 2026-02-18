@@ -7,7 +7,8 @@ public enum Filter {
   DEFAULT_f_FLAG("0"),
   DEFAULT_F_FLAG("4"),
   DEFAULT_MAPQ("0"),
-  DEFAULT_VARIANT_CHROM("");
+  DEFAULT_VARIANT_CHROM(""),
+  DEFAULT_SYSTEM_COMMAND_FILTER("");
 
   private String value;
 

@@ -14,7 +14,7 @@ public class CommandHelp {
   private String briefDescription;
   private String additionalDescription = "";
   protected Section inSection = Section.GENERAL;
-  private final int LINE_LEN = 70;
+  private final int LINE_LEN = 100;
 
   /* C o n s t r u c t o r */
 
@@ -73,7 +73,7 @@ public class CommandHelp {
       if (line.trim().length() >= maxLen || w.endsWith("\n")) {
         // squiggle is used to mark consecutive spaces that should not be removed. To actually add a
         // squiggle
-        // escape it with \~. Here we temprarrily replace \~ with something.
+        // escape it with \~. Here we temporarily replace \~ with something.
         line =
             line.trim()
                 .replaceAll("\\\\~", "=squiggle=")

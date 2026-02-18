@@ -786,7 +786,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
       for (int i = 0; i < this.getFeatureList().size(); i++) {
         rawrecs[i] = this.getFeatureList().get(i).getRaw();
       }
-      boolean[] matched = Utils.matchByAwkOrRegex(rawrecs, regex);
+      boolean[] matched = Utils.matchByRegex(rawrecs, regex);
       for (int i = 0; i < matched.length; i++) {
         boolean m = matched[i];
         if (arg.isInvert()) {

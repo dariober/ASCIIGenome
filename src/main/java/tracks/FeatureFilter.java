@@ -16,6 +16,7 @@ class FeatureFilter {
   protected Pattern hideRegex = Pattern.compile(Filter.DEFAULT_HIDE_REGEX.getValue());
   protected Pattern showRegex = Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue());
   private String awk = Filter.DEFAULT_AWK.getValue();
+  private String systemCommandFilter = Filter.DEFAULT_SYSTEM_COMMAND_FILTER.getValue();
   private int f_flag = Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue());
   private int F_flag = Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue());
   private int mapq = Integer.valueOf(Filter.DEFAULT_MAPQ.getValue());
@@ -133,7 +134,11 @@ class FeatureFilter {
     this.variantOnly = variantOnly;
   }
 
-  //	public void setFaSeq(byte[] faSeq) {
-  //		this.faSeq = faSeq;
-  //	}
+  public void setSystemCommandFilter(String systemCommandFilter) {
+    this.systemCommandFilter = systemCommandFilter;
+  }
+
+  public String getSystemCommandFilter() {
+    return this.systemCommandFilter;
+  }
 }
