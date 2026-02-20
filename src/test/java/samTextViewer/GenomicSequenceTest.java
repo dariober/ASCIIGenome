@@ -28,6 +28,16 @@ public class GenomicSequenceTest {
   }
 
   @Test
+  public void canTranslateSequenceIupac() throws InvalidColourException, InvalidGenomicCoordsException {
+    String dna = "ATGCRGTAG";
+    GenomicSequence gs = new GenomicSequence(dna.getBytes(), 4, 12);
+    gs.setNoFormat(true);
+    gs.setPrintCodon(PrintCodon.ALL);
+    gs.setFrames(Frame.getAllFrames());
+    assertTrue(gs.getPrintableSequence(dna.length()).contains("\n1M--X--* "));
+  }
+
+  @Test
   public void canTranslateSequence() throws InvalidColourException, InvalidGenomicCoordsException {
     String dna = "ATGCTGTAG";
     GenomicSequence gs = new GenomicSequence(dna.getBytes(), 4, 12);

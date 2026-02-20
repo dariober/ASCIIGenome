@@ -9,6 +9,8 @@ making [bcfparser](https://github.com/lindenb/bcfparser).
 * In `find` command the track(s) to search is no longer optional unless only one track is loaded.
 This is to prevent the annoying case where you accidentally start a search on a massive file.
 
+* Fix bug that made ASCIIGenome crash with IUPAC DNA compounds in reference sequence
+
 New in 1.20.0
 =============
 

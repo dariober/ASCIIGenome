@@ -8,6 +8,7 @@ import java.util.*;
 import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.biojava.nbio.core.exceptions.TranslationException;
 import org.biojava.nbio.core.sequence.DNASequence;
+import org.biojava.nbio.core.sequence.compound.AmbiguityDNACompoundSet;
 import org.biojava.nbio.core.sequence.compound.AminoAcidCompound;
 import org.biojava.nbio.core.sequence.io.IUPACParser;
 import org.biojava.nbio.core.sequence.io.IUPACParser.IUPACTable;
@@ -66,7 +67,7 @@ public class GenomicSequence {
     HashMap<Frame, Sequence<AminoAcidCompound>> sixFrame = new HashMap<>();
     DNASequence dna;
     try {
-      dna = new DNASequence(new String(this.sequence));
+      dna = new DNASequence(new String(this.sequence), AmbiguityDNACompoundSet.getDNACompoundSet());
     } catch (CompoundNotFoundException e) {
       throw new InvalidGenomicCoordsException(e.getMessage());
     }
