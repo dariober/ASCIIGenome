@@ -25,6 +25,12 @@ if(JavaVersion.current() < jversion) {
     throw new GradleException("Java >= " + jversion + " is required but you are running " + JavaVersion.current())
 }
 
+tasks.withType(JavaCompile).configureEach {
+    if (JavaVersion.current() != JavaVersion.VERSION_17) {
+        options.errorprone.enabled = false
+    }
+}
+
 /** Return the MD5 sum of the give File object */
 ext.generateMD5 = { file ->
     def digest = MessageDigest.getInstance("MD5")
