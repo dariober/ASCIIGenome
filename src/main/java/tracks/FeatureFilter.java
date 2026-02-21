@@ -134,11 +134,4 @@ class FeatureFilter {
     this.variantOnly = variantOnly;
   }
 
-  public void setSystemCommandFilter(String systemCommandFilter) {
-    this.systemCommandFilter = systemCommandFilter;
-  }
-
-  public String getSystemCommandFilter() {
-    return this.systemCommandFilter;
-  }
 }

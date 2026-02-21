@@ -1,5 +1,6 @@
 package sortBgzipIndex;
 
+import com.google.common.base.Splitter;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.samtools.util.CloserUtil;
@@ -18,6 +19,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -32,6 +35,8 @@ import utils.BedLine;
 import utils.BedLineCodec;
 import utils.GtfLine;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class MakeTabixIndex {
 
   private File sqliteFile;
@@ -41,11 +46,6 @@ public class MakeTabixIndex {
   /**
    * Sort, block compress and index the input with format fmt to the given output file. Input is
    * either a local file, possibly compressed, or a URL.
-   *
-   * @throws InvalidRecordException
-   * @throws IOException
-   * @throws SQLException
-   * @throws ClassNotFoundException
    */
   public MakeTabixIndex(String intab, File bgzfOut, TabixFormat tabixFormat)
       throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
@@ -86,12 +86,6 @@ public class MakeTabixIndex {
     Files.move(Paths.get(tmpTbi.getAbsolutePath()), Paths.get(bgzfOutTbi.getAbsolutePath()));
   }
 
-  /**
-   * Block compress input file and create associated tabix index.
-   *
-   * @throws IOException
-   * @throws InvalidRecordException
-   */
   private void blockCompressAndIndex(String intab, File bgzfOut)
       throws IOException, InvalidRecordException {
     BlockCompressedOutputStream writer = new BlockCompressedOutputStream(bgzfOut);
@@ -116,7 +110,6 @@ public class MakeTabixIndex {
     }
     // ------------------------------------------------------------
 
-    int nWarnings = 10;
     LineIterator lin = utils.IOUtils.openURIForLineIterator(intab);
     boolean dataLinesFound = false;
     while (lin.hasNext()) {
@@ -126,15 +119,15 @@ public class MakeTabixIndex {
         continue;
       }
       if (line.startsWith("#")) {
-        writer.write((line + "\n").getBytes());
+        writer.write((line + "\n").getBytes(UTF_8));
         filePosition = writer.getFilePointer();
         continue;
       }
       if (line.startsWith("##FASTA") && dataLinesFound) {
         break;
       }
-      addLineToIndex(line, indexCreator, filePosition, vcfHeader, vcfCodec);
-      writer.write(line.getBytes());
+      addLineToIndex(line, indexCreator, filePosition, vcfCodec);
+      writer.write(line.getBytes(UTF_8));
       writer.write('\n');
       filePosition = writer.getFilePointer();
       dataLinesFound = true;
@@ -153,7 +146,6 @@ public class MakeTabixIndex {
       String line,
       TabixIndexCreator indexCreator,
       long filePosition,
-      VCFHeader vcfHeader,
       VCFCodec vcfCodec)
       throws InvalidRecordException {
     if (this.tabixFormat.equals(TabixFormat.BED)) {
@@ -200,17 +192,17 @@ public class MakeTabixIndex {
     Connection conn = null;
     try {
       this.sqliteFile = Utils.createTempFile(".asciigenome.", ".tmp.sqlite", true);
-      conn = this.createSQLiteDb(this.sqliteFile, "data");
+      conn = this.createSQLiteDb("data");
     } catch (SQLiteException e) {
       this.sqliteFile = File.createTempFile(".asciigenome.", ".tmp.sqlite");
       this.sqliteFile.deleteOnExit();
-      conn = this.createSQLiteDb(this.sqliteFile, "data");
+      conn = this.createSQLiteDb("data");
     }
     PreparedStatement stmtInsert =
         conn.prepareStatement("INSERT INTO data (contig, pos, posEnd, line) VALUES (?, ?, ?, ?)");
 
     BufferedReader br = Utils.reader(unsorted);
-    BufferedWriter wr = new BufferedWriter(new FileWriter(sorted));
+    BufferedWriter wr = Files.newBufferedWriter(sorted.toPath(), UTF_8);
     String line;
     int n = 0;
     boolean dataLinesfound = false;
@@ -230,7 +222,7 @@ public class MakeTabixIndex {
       if (this.tabixFormat.equals(TabixFormat.BED) && !this.columnSeparator.equals("\t")) {
         line = line.replace(this.columnSeparator, "\t");
       }
-      String[] tabs = line.split("\t");
+      String[] tabs = Splitter.on('\t').splitToList(line).toArray(new String[0]);;
       if (n == 0 && this.tabixFormat.equals(TabixFormat.BED)) {
         // Allow first uncommented line to fail
         n++;
@@ -270,12 +262,7 @@ public class MakeTabixIndex {
     Files.delete(Paths.get(this.sqliteFile.getAbsolutePath()));
   }
 
-  /**
-   * Create a tmp sqlite db and return the connection to it.
-   *
-   * @throws SQLException
-   */
-  private Connection createSQLiteDb(File sqliteFile, String tablename) throws SQLException {
+  private Connection createSQLiteDb(String tablename) throws SQLException {
     try {
       Class.forName("org.sqlite.JDBC");
     } catch (ClassNotFoundException e) {

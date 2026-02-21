@@ -150,6 +150,11 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     return this.vcfReader.getHeader();
   }
 
+  @Override
+  public void streamFeaturesThroughSystemCommand() throws IOException, InterruptedException, InvalidGenomicCoordsException {
+    throw new NotImplementedException("TODO");
+  }
+
   protected List<VCFFeature> getFeaturesInInterval(String chrom, int from, int to)
       throws IOException, InvalidGenomicCoordsException {
 

@@ -82,6 +82,11 @@ public class Session {
   }
 
   @Override
+  public int hashCode() {
+    return getSessionName() != null ? getSessionName().hashCode() : 0;
+  }
+
+  @Override
   public String toString() {
     return "Session{"
         + "genome="

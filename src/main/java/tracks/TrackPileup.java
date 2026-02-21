@@ -105,11 +105,8 @@ public class TrackPileup extends TrackBedgraph {
 
   @Override
   public void setShowHideRegex(Pattern showRegex, Pattern hideRegex)
-      throws InvalidGenomicCoordsException,
-          IOException,
-          ClassNotFoundException,
-          InvalidRecordException,
-          SQLException {
+          throws InvalidGenomicCoordsException,
+          IOException, SQLException, InvalidRecordException, ClassNotFoundException {
     this.clearCache();
     this.getFeatureFilter().setShowHideRegex(showRegex, hideRegex);
     this.update();
@@ -150,7 +147,7 @@ public class TrackPileup extends TrackBedgraph {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public void update() throws InvalidGenomicCoordsException, IOException {
+  public void update() throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
 
     if (this.getyMaxLines() == 0) {
       return;
@@ -184,23 +181,13 @@ public class TrackPileup extends TrackBedgraph {
       int qryTo = gap.get(1);
 
       SamReader samReader = Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
-      List<Boolean> passFilter = this.filterReads(samReader, chrom, qryFrom, qryTo);
+      List<SAMRecord> passFilter = this.filterReads(samReader, chrom, qryFrom, qryTo);
       samReader.close();
-
-      samReader = Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
-
-      Iterator<SAMRecord> sam = samReader.query(chrom, qryFrom, qryTo, false);
-
-      ListIterator<Boolean> pass = passFilter.listIterator();
-      while (sam.hasNext()) {
-        SAMRecord rec = sam.next();
-        if (pass.next()) {
-          this.add(rec, qryFrom, qryTo, this.loci.get(chrom));
-        }
+      for (SAMRecord rec : passFilter) {
+        this.add(rec, qryFrom, qryTo, this.loci.get(chrom));
       }
-      samReader.close();
       // Now add the loci that have been collected in this last update
-      List<Integer> zeroDepthPos = new ArrayList<Integer>();
+      List<Integer> zeroDepthPos = new ArrayList<>();
       for (int pos = qryFrom; pos <= qryTo; pos++) {
         if (!this.loci.get(chrom).containsKey(pos)) {
           zeroDepthPos.add(pos);

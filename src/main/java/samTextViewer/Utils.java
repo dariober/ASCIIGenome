@@ -5,6 +5,7 @@ import com.github.lindenb.jvarkit.variant.bcf.BCFIterator;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.errorprone.annotations.MustBeClosed;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -44,17 +45,8 @@ import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderVersion;
 import htsjdk.variant.vcf.VCFIterator;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.Reader;
+
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.HttpURLConnection;
@@ -88,6 +80,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import jline.TerminalFactory;
 import org.apache.commons.lang3.ArrayUtils;
@@ -1951,63 +1944,165 @@ public class Utils {
     return Integer.signum(vals1.length - vals2.length);
   }
 
-  public static ArrayList<String> execSystemCommand(String[] inputList, List<String> cmd)
-      throws IOException, InterruptedException {
-
-    ProcessBuilder pb = new ProcessBuilder().command(cmd);
-    Process p = pb.start();
-
-    ArrayList<String> results = new ArrayList<String>();
-
-    Thread readerThread =
-        new Thread(
-            () -> {
-              try {
-                try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                  String line;
-                  while ((line = reader.readLine()) != null) {
-                    results.add(line);
-                  }
-                }
-              } catch (Exception e) {
-                throw new RuntimeException("Unhandled", e);
-              }
-            });
-    readerThread.start();
-
-    OutputStream stdin = p.getOutputStream();
-
-    for (String line : inputList) {
-      stdin.write(line.getBytes(StandardCharsets.UTF_8));
-      stdin.write('\n');
-      try {
-        stdin.flush();
-      } catch (IOException e) {
-        throwCmdException(p);
-      }
+  @SuppressWarnings("MustBeClosedChecker")
+  @MustBeClosed
+  public static Stream<String> streamLinesThroughSystemCommand(Stream<String> rawRecordLines, String header, String cmd) throws IOException {
+    Stream<String> rawLinesWithHeader;
+    if (header == null || header.trim().isEmpty()) {
+      rawLinesWithHeader = rawRecordLines;
+    } else {
+      List<String> l = new ArrayList<>();
+      l.add(header);
+      rawLinesWithHeader = Stream.concat(l.stream(), rawRecordLines);
     }
 
-    stdin.close();
-    readerThread.join();
-    p.waitFor();
-
-    if (p.exitValue() != 0) {
-      throwCmdException(p);
-    }
-    return results;
+    ArrayList<String> args = new ArrayList<>();
+    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
+    return execSystemCommand(rawLinesWithHeader, args);
   }
+
+  @MustBeClosed
+  private static Stream<String> execSystemCommand(
+          Stream<String> input,
+          List<String> cmd) throws IOException {
+
+    ProcessBuilder pb = new ProcessBuilder(cmd);
+    Process process = pb.start();
+
+    // Thread that feeds stdin
+    Thread writerThread = new Thread(() -> {
+      try (BufferedWriter writer =
+                   new BufferedWriter(
+                           new OutputStreamWriter(
+                                   process.getOutputStream(),
+                                   StandardCharsets.UTF_8))) {
+
+        input.forEach(line -> {
+          try {
+            writer.write(line);
+            writer.newLine();
+          } catch (IOException e) {
+            throw new UncheckedIOException(e);
+          }
+        });
+
+      } catch (IOException | UncheckedIOException e) {
+        process.destroyForcibly();
+      }
+    });
+
+    writerThread.setDaemon(true);
+    writerThread.start();
+
+    // Thread that continuously drains stderr to avoid blocking
+    StringBuilder stderrBuffer = new StringBuilder();
+    Thread stderrThread = new Thread(() -> {
+      try (BufferedReader errReader =
+                   new BufferedReader(
+                           new InputStreamReader(
+                                   process.getErrorStream(),
+                                   StandardCharsets.UTF_8))) {
+
+        String line;
+        while ((line = errReader.readLine()) != null) {
+          stderrBuffer.append(line).append(System.lineSeparator());
+        }
+
+      } catch (IOException e) {
+        process.destroyForcibly();
+      }
+    });
+
+    stderrThread.setDaemon(true);
+    stderrThread.start();
+
+    BufferedReader stdoutReader =
+            new BufferedReader(
+                    new InputStreamReader(
+                            process.getInputStream(),
+                            StandardCharsets.UTF_8));
+
+    Stream<String> stdoutStream = stdoutReader.lines();
+
+    return stdoutStream.onClose(() -> {
+      try {
+        stdoutReader.close();
+
+        writerThread.join();
+        stderrThread.join();
+
+        int exit = process.waitFor();
+        if (exit != 0) {
+          throw new RuntimeException(
+                  cmd + "\n" +
+                  "Process exited with code " + exit +
+                          "\nstderr:\n" + stderrBuffer);
+        }
+
+      } catch (Exception e) {
+        process.destroyForcibly();
+        throw new RuntimeException(e);
+      }
+    });
+  }
+
+//  public static ArrayList<String> execSystemCommand(String[] inputList, List<String> cmd)
+//      throws IOException, InterruptedException {
+//
+//    ProcessBuilder pb = new ProcessBuilder().command(cmd);
+//    Process p = pb.start();
+//
+//    ArrayList<String> results = new ArrayList<>();
+//
+//    Thread readerThread =
+//        new Thread(
+//            () -> {
+//              try {
+//                try (BufferedReader reader =
+//                    new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+//                  String line;
+//                  while ((line = reader.readLine()) != null) {
+//                    results.add(line);
+//                  }
+//                }
+//              } catch (Exception e) {
+//                throw new RuntimeException("Unhandled", e);
+//              }
+//            });
+//    readerThread.start();
+//
+//    OutputStream stdin = p.getOutputStream();
+//
+//    for (String line : inputList) {
+//      stdin.write(line.getBytes(StandardCharsets.UTF_8));
+//      stdin.write('\n');
+//      try {
+//        stdin.flush();
+//      } catch (IOException e) {
+//        throwCmdException(p);
+//      }
+//    }
+//
+//    stdin.close();
+//    readerThread.join();
+//    p.waitFor();
+//
+//    if (p.exitValue() != 0) {
+//      throwCmdException(p);
+//    }
+//    return results;
+//  }
 
   private static void throwCmdException(Process p) throws IOException, InterruptedException {
     p.waitFor();
-    System.err.println("Command returned with non-zero exit value " + p.exitValue());
+    String errmsg = "Command returned with non-zero exit value " + p.exitValue() + "\n";
     BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()));
     String errline = "";
     while ((errline = err.readLine()) != null) {
-      System.err.println(errline);
+      errmsg += errline + "\n";
     }
     err.close();
-    throw new IOException();
+    throw new RuntimeException(errmsg);
   }
 
   /**
@@ -2023,69 +2118,51 @@ public class Utils {
     return tmp;
   }
 
-  /**
-   * Stream the raw line through awk and return true if the output of awk is the same as the input
-   * line. If awk returns empty output then the line didn't pass the awk filter. If output is not
-   * empty and not equal to input, return null. See tests for behaviour. This function uses the
-   * operating system's awk
-   */
-  public static boolean[] passAwkFilter(String[] rawLines, String awkScript) throws IOException {
-
+  @SuppressWarnings("MustBeClosedChecker")
+  @MustBeClosed
+  public static Stream<String> streamLinesThroughAwk(Stream<String> inLines, String awkScript) throws IOException {
     awkScript = awkScript.trim();
 
     if (awkScript.isEmpty()) {
-      boolean[] results = new boolean[rawLines.length];
-      for (int i = 0; i < rawLines.length; i++) {
-        results[i] = true;
-      }
-      return results;
+      return inLines;
     }
 
     File awkTmpFile = prepareAwkScript(awkScript);
-    String cmd = "awk -F '\t' -f " + awkTmpFile.getAbsolutePath();
+    String cmd = "awk -v OFS='\t' -F '\t' -f " + awkTmpFile.getAbsolutePath();
 
     ArrayList<String> args = new ArrayList<>();
     args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
 
-    ArrayList<String> output;
-    try {
-      output = execSystemCommand(rawLines, args);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(args + "\n" + e);
-    } finally {
-        Files.deleteIfExists(awkTmpFile.toPath());
-    }
-
-    return matchInputToFilteredLines(rawLines, output);
+    return execSystemCommand(inLines, args);
   }
 
-  public static boolean[] passSystemCommandFilter(String[] rawRecordLines, String cmd, String header) throws IOException {
-
-    cmd = cmd.trim();
-    if (cmd.isEmpty()) {
-      boolean[] results = new boolean[rawRecordLines.length];
-      for (int i = 0; i < rawRecordLines.length; i++) {
-        results[i] = true;
-      }
-      return results;
-    }
-    ArrayList<String> args = new ArrayList<>();
-    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
-
-    ArrayList<String> output;
-    String[] rawLinesWithHeader;
-    if (header == null || header.trim().isEmpty()) {
-      rawLinesWithHeader = rawRecordLines;
-    } else {
-      rawLinesWithHeader = ArrayUtils.addAll(new String[]{header}, rawRecordLines);
-    }
-    try {
-      output = execSystemCommand(rawLinesWithHeader, args);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(args + "\n" + e);
-    }
-    return matchInputToFilteredLines(rawRecordLines, output);
-  }
+//  public static boolean[] passSystemCommandFilter(String[] rawRecordLines, String cmd, String header) throws IOException {
+//
+//    cmd = cmd.trim();
+//    if (cmd.isEmpty()) {
+//      boolean[] results = new boolean[rawRecordLines.length];
+//      for (int i = 0; i < rawRecordLines.length; i++) {
+//        results[i] = true;
+//      }
+//      return results;
+//    }
+//    ArrayList<String> args = new ArrayList<>();
+//    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
+//
+//    ArrayList<String> output;
+//    String[] rawLinesWithHeader;
+//    if (header == null || header.trim().isEmpty()) {
+//      rawLinesWithHeader = rawRecordLines;
+//    } else {
+//      rawLinesWithHeader = ArrayUtils.addAll(new String[]{header}, rawRecordLines);
+//    }
+//    try {
+//      output = execSystemCommand(Arrays.stream(rawLinesWithHeader), args).toList();
+//    } catch (InterruptedException e) {
+//      throw new RuntimeException(args + "\n" + e);
+//    }
+//    return matchInputToFilteredLines(rawRecordLines, output);
+//  }
 
   private static boolean[] matchInputToFilteredLines(String[] inputLines, List<String> filteredLines) {
     // Check input and output. If an input line is found in output at the
@@ -2627,11 +2704,11 @@ public class Utils {
     return matched;
   }
 
-  public static boolean[] matchByAwk(String[] rawLines, String regex) throws IOException {
-    boolean[] matched;
-    matched = Utils.passAwkFilter(rawLines, regex);
-    return matched;
-  }
+//  public static boolean[] matchByAwk(String[] rawLines, String regex) throws IOException {
+//    boolean[] matched;
+//    matched = Utils.passAwkFilter(rawLines, regex);
+//    return matched;
+//  }
 
   /** Add quotes around x, if necessary, so that it gets tokenized in a single string */
   public static String quote(String x) {

@@ -1,5 +1,6 @@
 package samTextViewer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static session.SessionHandler.writeSessions;
 
 import colouring.Config;
@@ -15,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -137,7 +139,7 @@ public class InteractiveInput {
           this.interactiveInputExitCode = this.show(cmdTokens, proc);
 
         } else if (cmdTokens.get(0).equals("explainSamFlag")) {
-          this.interactiveInputExitCode = this.explainSamFlag(cmdTokens, proc);
+          this.interactiveInputExitCode = this.explainSamFlag(cmdTokens);
 
         } else if (cmdTokens.get(0).equals("sys")) {
           this.execSysCmd(cmdString, proc.getWindowSize());
@@ -690,7 +692,7 @@ public class InteractiveInput {
     }
     String geneticCode = Utils.getArgForParam(args, "-geneticCode", currentCode);
 
-    IUPACParser.IUPACTable table = IUPACParser.getInstance().getTable(geneticCode.toUpperCase());
+    IUPACParser.IUPACTable table = IUPACParser.getInstance().getTable(geneticCode.toUpperCase(Locale.ROOT));
     if (table == null) {
       List<String> tables = new ArrayList<>();
       for (IUPACParser.IUPACTable x : IUPACParser.getInstance().getTables()) {
@@ -699,7 +701,7 @@ public class InteractiveInput {
       System.err.println(
           Utils.padEndMultiLine(
               "Invalid translation table: '"
-                  + geneticCode.toUpperCase()
+                  + geneticCode.toUpperCase(Locale.ROOT)
                   + "'\n"
                   + "Valid tables are:\n"
                   + Joiner.on('\n').join(tables),
@@ -709,7 +711,7 @@ public class InteractiveInput {
 
     PrintCodon printCodon;
     try {
-      printCodon = PrintCodon.valueOf(codon.toUpperCase());
+      printCodon = PrintCodon.valueOf(codon.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException ex) {
       System.err.println("Invalid option for codon: '" + codon + "'");
       return ExitCode.ERROR;
@@ -795,14 +797,6 @@ public class InteractiveInput {
     return times;
   }
 
-  /**
-   * Return a string where the current genomic coordinates are moved forward or backwards "times"
-   * screen columns. Move backwards if times is negative.
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidCommandLineException
-   */
   private String moveWindowByColumns(GenomicCoords gc, int times)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
     String x = String.valueOf(Math.round(gc.getBpPerScreenColumn() * times));
@@ -814,7 +808,7 @@ public class InteractiveInput {
     return Utils.parseConsoleInput(tokens, gc);
   }
 
-  private ExitCode explainSamFlag(List<String> cmdTokens, TrackProcessor proc)
+  private ExitCode explainSamFlag(List<String> cmdTokens)
       throws InvalidCommandLineException, IOException {
     List<String> args = new ArrayList<String>(cmdTokens);
     args.remove(0);
@@ -874,7 +868,7 @@ public class InteractiveInput {
 
   /** Get the items (files) corresponding to the indexes. Errors are silently ignored. */
   private List<String> openFilesFromIndexes(
-      LinkedHashSet<String> openedFiles, List<String> indexes) {
+      Set<String> openedFiles, List<String> indexes) {
     List<String> files = new ArrayList<String>();
     List<Integer> idxs = new ArrayList<Integer>();
     for (String x : indexes) {
@@ -1226,12 +1220,6 @@ public class InteractiveInput {
     }
   }
 
-  /**
-   * Execute arbitrary system command and print its output
-   *
-   * @param cmdInput: String, in contrast to other coomands, process the raw string, not the
-   *     tokenized version so you don't mess up with single quotes inside the system command.
-   */
   private void execSysCmd(String cmdInput, int userWindowSize) {
 
     String rawSysCmd = cmdInput.trim().replaceAll("^sys +", ""); // Remove command name
@@ -1260,7 +1248,7 @@ public class InteractiveInput {
 
     try {
       Process p = new ProcessBuilder().inheritIO().command(tokens).start();
-      BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), UTF_8));
 
       String line = "";
       while ((line = reader.readLine()) != null) {
@@ -1362,14 +1350,6 @@ public class InteractiveInput {
     }
   }
 
-  /**
-   * Edit visualization setting in TrackProcessor as appropriate.
-   *
-   * @return
-   * @throws InvalidCommandLineException
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
   private ExitCode show(List<String> cmdTokens, TrackProcessor proc)
       throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException {
     List<String> args = new ArrayList<String>(cmdTokens);

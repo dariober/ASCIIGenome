@@ -5,6 +5,8 @@ import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
 import colouring.Xterm256;
+import com.github.lindenb.jvarkit.variant.bcf.BCFFileReader;
+import com.github.lindenb.jvarkit.variant.bcf.BCFIterator;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -16,10 +18,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import htsjdk.samtools.util.CloseableIterator;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFIterator;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -67,12 +75,28 @@ public class TrackSetTest {
       SQLException,
       InvalidCommandLineException {
 
-    int ws = 200;
-    GenomicCoords gc = new GenomicCoords("chr1:1-80", 80, null, null);
-    gc.setTerminalWidth(ws);
-    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
-    trackSet.addTrackFromSource("test_data/gnomad.genomes.v3.1.2.hgdp_tgp.chr4.bcf", gc, null);
-    GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
+//    try(BCFFileReader r=new  BCFFileReader(Path.of("test_data/gnomad.genomes.v3.1.2.hgdp_tgp.chr4.bcf"),true)) {
+//      VCFHeader h= r.getHeader();
+//      try(CloseableIterator<VariantContext> iter= r.query("chr1",100,200)) {
+//        while(iter.hasNext()) {
+//          VariantContext ctx = iter.next();
+//        }
+//      }
+//    }
+
+    try(VCFIterator iter = BCFIterator.open(Path.of("test_data/gnomad.genomes.v3.1.2.hgdp_tgp.chr4.bcf"))) {
+      VCFHeader h=  iter.getHeader();
+      while(iter.hasNext()) {
+        VariantContext ctx = iter.next();
+      }
+    }
+
+//    int ws = 200;
+//    GenomicCoords gc = new GenomicCoords("chr1:1-80", 80, null, null);
+//    gc.setTerminalWidth(ws);
+//    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
+//    trackSet.addTrackFromSource("test_data/gnomad.genomes.v3.1.2.hgdp_tgp.chr4.bcf", gc, null);
+//    GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
     //int x = nextGc.getFrom();
     //assertEquals(12138, x); // This is the start of the found feature
   }

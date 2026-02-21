@@ -4,13 +4,13 @@ import colouring.Config;
 import colouring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
-import htsjdk.samtools.CigarElement;
-import htsjdk.samtools.CigarOperator;
-import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.*;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
@@ -70,6 +70,7 @@ class TextRead extends IntervalFeature {
 
   protected TextRead(SAMRecord rec, GenomicCoords gc, boolean showSoftClip)
       throws InvalidGenomicCoordsException, IOException {
+
     this.samRecord = rec;
     this.alignmentStart =
         showSoftClip

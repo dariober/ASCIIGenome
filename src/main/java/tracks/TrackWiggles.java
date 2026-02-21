@@ -373,6 +373,10 @@ public class TrackWiggles extends AbstractTrack {
   }
 
   @Override
+  public void streamFeaturesThroughSystemCommand() {
+  }
+
+  @Override
   protected String getTitleForActiveFilters() {
     return "";
   }

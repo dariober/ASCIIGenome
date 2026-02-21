@@ -560,6 +560,7 @@ public class Main {
         .addShutdownHook(
             new Thread(
                 new Runnable() {
+                  @Override
                   public void run() {
                     System.out.print("\033[0m"); // On exit turn off all formatting
                   }

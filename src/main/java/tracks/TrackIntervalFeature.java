@@ -8,10 +8,9 @@ import htsjdk.tribble.readers.TabixReader;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
@@ -168,6 +167,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
    * Group the features in this genomic window by GFF attribute (typically a transcripts). Features
    * that don't have the attribute make each a length=1 list.
    */
+  @Override
   protected Map<String, List<IntervalFeature>> groupByGFFAttribute() {
 
     // * First collect the IDs of the transcripts
@@ -364,4 +364,22 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
   protected List<IntervalFeature> getFeatureList() {
     return this.featureList;
   }
+
+  @Override
+  public void streamFeaturesThroughSystemCommand() throws IOException, InvalidGenomicCoordsException {
+
+    Stream<String> textLines = this.getFeatureList()
+            .stream()
+            .map(IntervalFeature::getRaw);
+
+    List<IntervalFeature> features = new ArrayList<>();
+
+    try (Stream<String> out = Utils.streamLinesThroughSystemCommand(textLines, null, this.getSystemCommand())) {
+      Iterator<String> iter = out.iterator();
+      while (iter.hasNext()) {
+        features.add(new IntervalFeature(iter.next(), this.getTrackFormat(), this.getScoreColIdx()));
+      }
+    }
+    this.setFeatureList(features);
+  };
 }

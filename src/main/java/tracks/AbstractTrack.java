@@ -8,10 +8,7 @@ import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import htsjdk.samtools.CigarElement;
-import htsjdk.samtools.CigarOperator;
-import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SamReader;
+import htsjdk.samtools.*;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
@@ -34,15 +31,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import samTextViewer.GenomicCoords;
@@ -73,7 +66,7 @@ public abstract class AbstractTrack {
     }
   }
 
-  private String systemCommandFilter;
+  private String systemCommand;
   protected int yMaxLines = 10;
   private String filename = "N/A"; // File name as given in input
   private String workFilename = "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files
@@ -286,20 +279,6 @@ public abstract class AbstractTrack {
     return this.getFeatureFilter().getAwk();
   }
 
-  public void setSystemCommandFilter(String systemCommandFilter)
-      throws ClassNotFoundException,
-      IOException,
-      InvalidGenomicCoordsException,
-      InvalidRecordException,
-      SQLException {
-    this.getFeatureFilter().setSystemCommandFilter(systemCommandFilter);
-    this.update();
-  }
-
-  public String getSystemCommandFilter() {
-    return this.getFeatureFilter().getSystemCommandFilter();
-  }
-
   protected FeatureFilter getFeatureFilter() {
     return this.featureFilter;
   }
@@ -374,7 +353,7 @@ public abstract class AbstractTrack {
   }
 
   public void setShowSoftClip(boolean showSoftClip)
-      throws InvalidGenomicCoordsException, IOException {
+          throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
     // Do nothing in tracks that do not override this method
   }
 
@@ -1037,8 +1016,8 @@ public abstract class AbstractTrack {
     return header + title + track;
   }
 
-  public List<Boolean> filterReads(SamReader samReader, String chrom, int from, int to)
-      throws IOException {
+  public List<SAMRecord> filterReads(SamReader samReader, String chrom, int from, int to)
+          throws IOException, SQLException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException {
 
     Iterator<SAMRecord> filterSam = samReader.query(chrom, from, to, false);
 
@@ -1048,7 +1027,7 @@ public abstract class AbstractTrack {
     // This array will contain true/false to indicate whether a record passes the
     // sam filters AND the awk filter (if given).
     // boolean[] results= new boolean[(int) this.nRecsInWindow];
-    List<Boolean> results = new ArrayList<Boolean>();
+    List<SAMRecord> results = new ArrayList<>();
 
     boolean isDefaultShowRegex =
         this.getFeatureFilter()
@@ -1062,7 +1041,6 @@ public abstract class AbstractTrack {
             .equals(Filter.DEFAULT_HIDE_REGEX.getValue());
 
     List<String> awkDataInput = new ArrayList<String>();
-    List<String> recDataInput = new ArrayList<String>();
     while (filterSam.hasNext()) {
       // Record whether a read passes the sam filters. If necessary, we also
       // store the raw reads for awk.
@@ -1104,50 +1082,45 @@ public abstract class AbstractTrack {
           passed = false;
         }
       }
-      results.add(passed);
-      if (passed && this.getAwk() != null && !this.getAwk().isEmpty()) {
-        // We pass to awk only records that have been kept so far.
-        raw = prepareSAMRecordForAwk(rec);
-        awkDataInput.add(raw);
+      if (passed) {
+        results.add(rec);
       }
-      recDataInput.add(rec.getSAMString());
     } // End loop through reads
+
+    SAMLineParser parser = new SAMLineParser(
+            new DefaultSAMRecordFactory(),
+            ValidationStringency.LENIENT,
+            samReader.getFileHeader(),
+            samReader,
+            new File(this.getWorkFilename()));
 
     // Apply the awk filter, if given
     if (this.getAwk() != null && !this.getAwk().equals(Filter.DEFAULT_AWK.getValue())) {
-      String[] rawLines = new String[awkDataInput.size()];
-      rawLines = awkDataInput.toArray(rawLines);
-      boolean[] awkResults = Utils.passAwkFilter(rawLines, this.getAwk());
-      // Compare the results array with awk filtered. Flip as appropriate the results array
-      int awkIdx = 0;
-      int i = 0;
-      for (boolean isPassed : results) {
-        if (isPassed) {
-          if (!awkResults[awkIdx]) {
-            results.set(i, false);
-          }
-          awkIdx++;
-        }
-        i++;
+      String[] rawLines = new String[results.size()];
+      for (int i = 0; i < results.size(); i++) {
+        rawLines[i] = prepareSAMRecordForAwk(results.get(i));
+      }
+      results.clear();
+      try (Stream<String> sam = Utils.streamLinesThroughAwk(Arrays.stream(rawLines), this.getAwk())) {
+        sam.forEach(x -> results.add(parser.parseLine(x)));
+      } catch (RuntimeException e) {
+        this.setAwk("");
+        throw e;
       }
     }
-    // Apply the system filter, if given
-    if (this.getSystemCommandFilter() != null && !this.getSystemCommandFilter().equals(Filter.DEFAULT_SYSTEM_COMMAND_FILTER.getValue())) {
-      String[] rawLines = new String[awkDataInput.size()];
-      rawLines = awkDataInput.toArray(rawLines);
-      boolean[] awkResults = Utils.passAwkFilter(rawLines, this.getAwk());
-      // Compare the results array with awk filtered. Flip as appropriate the results array
-      int awkIdx = 0;
-      int i = 0;
-      for (boolean isPassed : results) {
-        if (isPassed) {
-          if (!awkResults[awkIdx]) {
-            results.set(i, false);
-          }
-          awkIdx++;
-        }
-        i++;
+    // Apply system command filter, if given
+    if (this.getSystemCommand() != null && !this.getSystemCommand().isEmpty()) {
+      SAMFileHeader samHeader = samReader.getFileHeader();
+      Stream<String> samText = results.stream().map(x -> x.getSAMString());
+      List<SAMRecord> out = new ArrayList<>();
+      try (Stream<String> sam = Utils.streamLinesThroughSystemCommand(samText, samHeader.getSAMString(), this.getSystemCommand())) {
+        sam.forEach(x -> out.add(parser.parseLine(x)));
+      } catch (RuntimeException e) {
+        this.setSystemCommand("");
+        throw e;
       }
+      results.clear();
+      results.addAll(out);
     }
     return results;
   }
@@ -1163,7 +1136,7 @@ public abstract class AbstractTrack {
     List<String> recList = new ArrayList<String>();
     recList.add(rec.getSAMString().trim());
     // We add a tag for aln end. Name in such way that it cannot collide with valid existing tags
-    recList.add("$alnEnd:i:" + alnEnd);
+    recList.add("$$:i:" + alnEnd);
 
     return Joiner.on('\t').join(recList);
   }
@@ -1278,7 +1251,7 @@ public abstract class AbstractTrack {
   }
 
   public void setReadsAsPairs(boolean readsAsPairs)
-      throws InvalidGenomicCoordsException, IOException {
+          throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
     this.readsAsPairs = readsAsPairs;
   }
 
@@ -1362,6 +1335,17 @@ public abstract class AbstractTrack {
 
   public VCFHeader getVcfHeader() {
     return this.vcfHeader;
+  }
+
+  public void setSystemCommand(String systemCommand) throws SQLException, InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException {
+    this.systemCommand = systemCommand;
+    this.update();
+  }
+
+  public abstract void streamFeaturesThroughSystemCommand() throws IOException, InterruptedException, InvalidGenomicCoordsException;
+
+  protected String getSystemCommand() {
+    return this.systemCommand;
   }
 
   //  @Override

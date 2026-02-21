@@ -52,8 +52,6 @@ public class TextProfileTest {
     for (List<String> x : tp.getProfile()) {
       System.out.println(x);
     }
-
-    System.out.println(Double.NaN < 0);
   }
 
   @Test

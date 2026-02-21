@@ -63,7 +63,7 @@ function nobitset(intquery,    intqry, samflag, qrybit, sambit){
 }
 
 function getAlnEnd(_alnEnd) {
-	_alnEnd = getSamTag("$alnEnd") # Tag must must match Track.prepareSAMRecordForAwk
+	_alnEnd = getSamTag("$$") # Tag must must match Track.prepareSAMRecordForAwk
 	return _alnEnd
 }
 

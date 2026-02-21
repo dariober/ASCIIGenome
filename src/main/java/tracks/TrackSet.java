@@ -430,7 +430,7 @@ public class TrackSet {
   }
 
   public void setShowSoftClipForRegex(List<String> tokens)
-      throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException {
+          throws InvalidCommandLineException, IOException, InvalidGenomicCoordsException, SQLException, InvalidRecordException, ClassNotFoundException {
     List<String> args = new ArrayList<String>(tokens);
     args.remove(0);
 
@@ -2241,7 +2241,7 @@ public class TrackSet {
   }
 
   public void setReadsAsPairsForRegex(List<String> tokens)
-      throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException {
+          throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
 
     List<String> args = new ArrayList<String>(tokens);
     args.remove(0);

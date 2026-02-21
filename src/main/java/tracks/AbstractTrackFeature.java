@@ -17,6 +17,8 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
@@ -84,7 +86,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
   }
 
   protected void removeInvisibleFeatures(List<T> iftList)
-      throws InvalidGenomicCoordsException, IOException {
+      throws IOException {
 
     for (int i = 0; i < iftList.size(); i++) {
 
@@ -111,32 +113,17 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
 
     if (!this.getAwk().isEmpty()) {
       this.getAwk();
-      String[] rawLines = new String[iftList.size()];
-      for (int i = 0; i < iftList.size(); i++) {
-        rawLines[i] = iftList.get(i).getRaw();
+      Stream<String> rawLines = iftList.stream().map(x -> x.getRaw());
+      try (Stream<String> s = Utils.streamLinesThroughAwk(rawLines, this.getAwk())) {
+        List<T> filteredFeatures = s.map(x -> {
+          try {
+            return this.createFeature(x);
+          } catch (InvalidGenomicCoordsException e) {
+            throw new RuntimeException(e);
+          }
+        }).toList();
+        this.setFeatureList(filteredFeatures);
       }
-      boolean[] passAwk;
-
-      // Awk
-      try {
-        passAwk = Utils.passAwkFilter(rawLines, this.getAwk());
-      } catch (Exception e) {
-        System.err.print(
-            Utils.padEndMultiLine(
-                "Error processing awk script.", this.getGc().getUserWindowSize()));
-        try {
-          this.setAwk("");
-        } catch (ClassNotFoundException | InvalidRecordException | SQLException e1) {
-          e1.printStackTrace();
-        }
-        throw new IOException();
-      }
-      for (int i = 0; i < passAwk.length; i++) {
-        if (!passAwk[i]) {
-          iftList.set(i, null);
-        }
-      }
-      iftList.removeIf(Objects::isNull);
     }
   }
 

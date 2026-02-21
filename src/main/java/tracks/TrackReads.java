@@ -33,6 +33,7 @@ import samTextViewer.Utils;
 public class TrackReads extends AbstractTrack {
 
   private List<List<SamSequenceFragment>> readStack;
+  private List<SAMRecord> readsPassingFilter;
   // private boolean withReadName= false;
   private long nRecsInWindow = -1;
   private int userWindowSize;
@@ -68,9 +69,24 @@ public class TrackReads extends AbstractTrack {
   /* M e t h o d s */
 
   @Override
+  public void streamFeaturesThroughSystemCommand() throws IOException, InterruptedException {
+//    String[] textLines = new String[];
+//    for (int i = 0; i < this.getRecordsAsStrings().size(); i++) {
+//      textLines[i] = this.getRecordsAsStrings().get(i);
+//    }
+//    List<IntervalFeature> features = new ArrayList<>();
+//    for (String line : Utils.streamLinesThroughSystemCommand(textLines, null, this.getSystemCommand())) {
+//      features.add(new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx()));
+//    }
+//    this.setFeatureList(features);
+//    this.setFeatureList(features);
+
+  }
+
+  @Override
   public void close() {}
 
-  public void update() throws InvalidGenomicCoordsException, IOException {
+  public void update() throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
 
     if (this.getyMaxLines() == 0) {
       return;
@@ -82,18 +98,13 @@ public class TrackReads extends AbstractTrack {
     if (this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE) {
 
       SamReader samReader = Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
-      List<Boolean> passFilter =
+      List<SAMRecord> passFilter =
           this.filterReads(
               samReader, this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
       samReader.close();
 
-      this.nRecsInWindow = 0;
-      for (boolean x :
-          passFilter) { // The count of reads in window is the count of reads passing filters
-        if (x) {
-          this.nRecsInWindow++;
-        }
-      }
+      this.nRecsInWindow = passFilter.size();
+
       samReader = Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
       Iterator<SAMRecord> sam =
           samReader.query(
@@ -105,23 +116,19 @@ public class TrackReads extends AbstractTrack {
       // Add this random String to the read name so different screenshot will generate
       // different samples.
       String rndOffset = Integer.toString(new Random().nextInt());
-
-      List<TextRead> textReads = new ArrayList<TextRead>();
-      ListIterator<Boolean> pass = passFilter.listIterator();
-      while (sam.hasNext() && textReads.size() < max_reads) {
-        SAMRecord rec = sam.next();
-        if (pass.next()) {
-          String templ_name = Utils.templateNameFromSamReadName(rec.getReadName());
-          long v = (templ_name + rndOffset).hashCode(); // Hashing.md5().hashBytes((templ_name +
-          // rndOffset).getBytes()).asLong();
-          Random rand = new Random(v);
-          if (rand.nextFloat() < probSample) { // Downsampler
-            TextRead tr = new TextRead(rec, this.getGc(), this.getShowSoftClip());
-            textReads.add(tr);
-          }
+      List<TextRead> textReads = new ArrayList<>();
+      for (SAMRecord rec : passFilter) {
+        if (textReads.size() >  max_reads) {
+          break;
+        }
+        String templ_name = Utils.templateNameFromSamReadName(rec.getReadName());
+        long v = (templ_name + rndOffset).hashCode();
+        Random rand = new Random(v);
+        if (rand.nextFloat() < probSample) { // Downsampler
+          TextRead tr = new TextRead(rec, this.getGc(), this.getShowSoftClip());
+          textReads.add(tr);
         }
       }
-      samReader.close();
       this.readStack = stackReads(textReads);
     } else {
       this.nRecsInWindow = -1;
@@ -366,7 +373,7 @@ public class TrackReads extends AbstractTrack {
       title.add("var-read");
     }
     if (!title.isEmpty()) {
-      return "; filters: " + title.toString();
+      return "; filters: " + title;
     } else {
       return "";
     }
@@ -391,14 +398,14 @@ public class TrackReads extends AbstractTrack {
 
   @Override
   public void setReadsAsPairs(boolean readsAsPairs)
-      throws InvalidGenomicCoordsException, IOException {
+          throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
     this.readsAsPairs = readsAsPairs;
     this.update();
   }
 
   @Override
   public void setShowSoftClip(boolean showSoftClip)
-      throws InvalidGenomicCoordsException, IOException {
+          throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
     this.showSoftClip = showSoftClip;
     this.update();
   }
