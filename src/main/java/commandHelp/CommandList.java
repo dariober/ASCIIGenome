@@ -560,7 +560,7 @@ public class CommandList {
     cmd.setName("awk");
     cmd.setArgs("[-off ...] [-V] '<script>' [track_regex = .*]...");
     cmd.inSection = Section.DISPLAY;
-    cmd.setBriefDescription("Advanced feature filtering using awk syntax.");
+    cmd.setBriefDescription("Advanced feature filtering using awk");
     cmd.setAdditionalDescription(
         "awk offers finer control then :code:`grep` to filter records in tabular format.\n"
             + "\n"
@@ -704,14 +704,9 @@ public class CommandList {
             + "* The :code:`awk` utility must available on the user's :code:`PATH` (this should be "
             + "the case on all \\*nix systems)\n"
             + "\n"
-            + "* Use awk only to filter features, do not use it to edit them. If features are"
-            + " changed by the awk script than nothing will be retained. This is because the awk"
-            + " command first collects the output from awk, then it matches the features in the"
-            + " current window with those collected from awk.\n"
-            + "\n"
-            + "* Each line is processed independently of the others as a separate awk execution."
-            + " This means that you cannot filter one line on the bases of previous or following"
-            + " lines.\n"
+            + "* The output of awk replaces the current list of features (but not on the input files!). "
+            + "Therefore you can use awk also to edit features but take care that the edited feature "
+            + "is compatible with the track format.\n"
             + "\n"
             + "* The default delimiter is TAB not any white space as in UNIX awk.\n"
             + "\n"

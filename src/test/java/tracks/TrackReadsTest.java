@@ -15,6 +15,7 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import filter.FlagToFilter;
+import htsjdk.samtools.SAMFormatException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
@@ -597,13 +598,37 @@ public class TrackReadsTest {
   }
 
   @Test
-  public void canFilterReadsWithGrepAndAwk()
+  public void canEditReadsWithAwk()
       throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
           InvalidRecordException,
           SQLException,
           InvalidColourException {
+    GenomicCoords gc = new GenomicCoords("chr7:5566761-5567042", 300, samSeqDict, null);
+    TrackReads tr = new TrackReads("test_data/ds051.short.bam", gc);
+    tr.setNoFormat(true);
+    tr.setyMaxLines(100);
+    tr.setAwk("{$SEQ ~ \"CTCATTTTTAAGGTGTGCACT\"}; sub(\"CTCA\", \"NNNN\")");
+    assertTrue(tr.printToScreen().contains("NNNNTTTTT"));
+
+    // This is allowed here even if it results in an invalid sequence, but it should fail at the pileup track
+    tr.setAwk("{$SEQ ~ \"CTCATTTTTAAGGTGTGCACT\"}; sub(\"CTCA\", \"~~~~\")");
+    assertTrue(tr.printToScreen().contains("~~~~TTTTT"));
+
+    SAMFormatException e = assertThrows(SAMFormatException.class, () -> tr.setAwk("{print $1, $2}"));
+    assertTrue(e.getMessage().contains("Error parsing text SAM file"));
+    assertTrue(tr.printToScreen().contains("CTCATTTTTAAGGTGTGCACTTTTATTCAACTGGTCTCAAGTCAGTGTACAGGTAAGCCCTGGCTGCCTCCACCC"));
+  }
+
+  @Test
+  public void canFilterReadsWithGrepAndAwk()
+      throws InvalidGenomicCoordsException,
+      IOException,
+      ClassNotFoundException,
+      InvalidRecordException,
+      SQLException,
+      InvalidColourException {
     GenomicCoords gc = new GenomicCoords("chr7:5566000-5567000", 80, samSeqDict, null);
     TrackReads tr = new TrackReads("test_data/ds051.short.bam", gc);
     tr.setNoFormat(true);
@@ -615,9 +640,10 @@ public class TrackReadsTest {
             .length); // N. reads stacked in this interval before filtering
     tr.setShowHideRegex(
         Pattern.compile("NCNNNCCC"), Pattern.compile(Filter.DEFAULT_HIDE_REGEX.getValue()));
-    tr.setAwk("'$4 != 5566779'");
+    tr.setAwk("$4 != 5566779");
     assertEquals(4, tr.printToScreen().split("\n").length);
   }
+
 
   @Test
   public void canShowReadCount() throws Exception {

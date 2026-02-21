@@ -1226,38 +1226,7 @@ public class TrackSet {
       args.remove(0);
       trackNameRegex.addAll(args); // Everything after -off is track re to turn off.
     } else {
-
-      // We need to find the awk script (i.e. '$3 > 10'), everything after it is track regexes.
-      // * Iterate through the args, if arg starts with - skip this arg and the next one.
-      // * The first arg (string) not starting with - is the script
-      // * Any args after the script are track regex.
-      //      final List<String> awkOpts =
-      //          Arrays.asList(
-      //              "-F", "-f", "-v", "-t", "-c", "-o", "-z", "-Z", "-d", "-S", "-s", "-x", "-y",
-      // "-r",
-      //              "-ext", "-ni");
       int idxScript = 0; // Index of the script in the command args.
-      //      boolean skip = false;
-      //      for (String x : args) {
-      //        if (awkOpts.contains(x)) {
-      //          idxScript += 2;
-      //          skip = true;
-      //        } else if (skip) {
-      //          skip = false;
-      //        } else {
-      //          break;
-      //        }
-      //      }
-      // We need to quote the awk script using a quoting string not used inside the script itself.
-      // This is a pretty bad hack. You should store the awk command as a list rather than a string
-      // split and joined multiple times!
-      //      args.set(
-      //          idxScript,
-      //          Utils.quote(
-      //              args.get(
-      //                  idxScript))); // Put back single quotes around the script, exclude cmd
-      // line params
-      // like -F
       awk = Joiner.on(" ").join(args.subList(0, idxScript + 1));
 
       // Everything after the script is track regexes
@@ -1309,11 +1278,6 @@ public class TrackSet {
     }
   }
 
-  /**
-   * Replace in awk script the overloaded function name(s) with the actual names and args
-   *
-   * @throws InvalidCommandLineException
-   */
   private String replaceAwkGetFuncs(String awkScript, AbstractTrack track)
       throws InvalidCommandLineException {
 

@@ -1097,7 +1097,7 @@ public abstract class AbstractTrack {
     SAMLineParser parser =
         new SAMLineParser(
             new DefaultSAMRecordFactory(),
-            ValidationStringency.LENIENT,
+            ValidationStringency.SILENT,
             samReader.getFileHeader(),
             samReader,
             new File(this.getWorkFilename()));

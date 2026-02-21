@@ -393,7 +393,16 @@ public class InteractiveInput {
           proc.getTrackSet().setFilterForTrackIntervalFeature(cmdTokens);
 
         } else if (cmdTokens.get(0).equals("awk")) {
-          proc.getTrackSet().setAwkForTrack(cmdTokens);
+          try {
+            proc.getTrackSet().setAwkForTrack(cmdTokens);
+          } catch (RuntimeException e) {
+            System.err.println(
+                Utils.padEndMultiLine(
+                    e.getMessage(),
+                    proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
 
         } else if (cmdTokens.get(0).equals("filterVariantReads")) {
           proc.getTrackSet().setFilterVariantReads(cmdTokens);

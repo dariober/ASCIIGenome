@@ -1,5 +1,6 @@
 package samTextViewer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.*;
 
 import colouring.Config;
@@ -50,9 +51,9 @@ public class InteractiveInputTest {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     System.setOut(new PrintStream(out));
     ip.processInput(cmd, p);
-    String errStr = err.toString();
+    String errStr = err.toString(UTF_8);
     System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
-    String outStr = out.toString();
+    String outStr = out.toString(UTF_8);
     System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
     ProcessInput pi = new ProcessInput();
     pi.stderr = errStr;
@@ -91,6 +92,7 @@ public class InteractiveInputTest {
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi = processInput(ip, "open test_data/hg19_genes.gtf.gz", proc);
+    assertTrue(pi.stderr.contains("Adding:"));
 
     pi = processInput(ip, "find", proc);
     assertTrue(pi.stderr.contains("Error"));
@@ -127,8 +129,7 @@ public class InteractiveInputTest {
           SQLException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
-          InvalidRecordException,
-          InvalidCommandLineException {
+          InvalidRecordException {
     TrackProcessor proc =
         gimmeTrackProcessor(
             "1:630503-864021", 200, "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz");
@@ -136,6 +137,8 @@ public class InteractiveInputTest {
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi =
         processInput(ip, "open test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", proc);
+    assertTrue(pi.stderr.contains("Adding:"));
+
     pi = processInput(ip, "print -n 100", proc);
     assertTrue(pi.stdout.contains("ALU_umary_ALU_2"));
 
@@ -150,9 +153,8 @@ public class InteractiveInputTest {
     assertTrue(pi.stdout.contains("UW_VH_21763"));
     assertFalse(pi.stdout.contains("ALU_umary_ALU_2"));
 
-    // Pipe
-    pi = processInput(ip, "awk '$0 ~ \"UW_VH\"'|grep '5595'", proc);
-    System.err.println(pi.stderr);
+    pi = processInput(ip, "awk '{print $1, $2}'", proc);
+    assertTrue(pi.stderr.contains("there aren't enough columns for line "));
   }
 
   @Test
@@ -216,6 +218,8 @@ public class InteractiveInputTest {
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
 
     ProcessInput pi = processInput(ip, "sessionDelete", proc);
+    assertTrue(pi.stderr.contains("Please provide the name of the session to delete"));
+
     pi = processInput(ip, "sessionDelete -f test_data/session.yaml", proc);
     assertEquals(ExitCode.ERROR, ip.getInteractiveInputExitCode());
     assertEquals("Please provide the name of the session to delete", pi.stderr.trim());
@@ -294,7 +298,7 @@ public class InteractiveInputTest {
     String fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
     assertEquals("TTATT", fasta.substring(0, 5));
     ip.processInput("sessionOpen -f test_data/session.yaml fastafile-not-found", proc);
-    assertEquals(null, proc.getGenomicCoordsHistory().current().getFastaFile());
+    assertNull(proc.getGenomicCoordsHistory().current().getFastaFile());
     ip.processInput("setGenome test_data/chr7.fa", proc);
     fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
     assertEquals("ACACG", fasta.substring(0, 5));
@@ -446,7 +450,7 @@ public class InteractiveInputTest {
     proc.getTrackSet().addTrack(tr, "tr#1");
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ip.processInput("sessionSave -f tmp.yml tr1", proc);
-    SessionHandler sh = new SessionHandler(new File("tmp.yml"));
+    new SessionHandler(new File("tmp.yml"));
     Files.deleteIfExists(new File("tmp.yml").toPath());
   }
 
