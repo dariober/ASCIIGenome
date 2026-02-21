@@ -1,5 +1,6 @@
 package tracks;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -47,7 +48,7 @@ public class TrackPileupTest {
     GZIPInputStream gzip;
     try {
       gzip = new GZIPInputStream(new FileInputStream(gzipFileName));
-      BufferedReader br = new BufferedReader(new InputStreamReader(gzip));
+      BufferedReader br = new BufferedReader(new InputStreamReader(gzip, UTF_8));
       List<String> lines = new ArrayList<String>();
       String line = "";
       while ((line = br.readLine()) != null) {
@@ -159,7 +160,6 @@ public class TrackPileupTest {
             .length); // N. reads stacked in this interval before filtering
 
     tp.setVariantReadInInterval("chr7", 1000001, 1000001, true);
-    System.err.println(tp.printToScreen());
     assertEquals(1, tp.printToScreen().trim().split("\n").length);
   }
 
@@ -189,40 +189,6 @@ public class TrackPileupTest {
                 .getValue());
   }
 
-  //	@Test
-  //	public void validateSamtoolsDepth() throws InvalidGenomicCoordsException, IOException,
-  // ClassNotFoundException, InvalidRecordException, SQLException, InvalidColourException {
-  //
-  //		GenomicCoords gc= new GenomicCoords("chr7:5565858-5568418", 80, null, null);
-  //		TrackPileup tr= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-  //		tr.setNoFormat(true);
-  //		tr.setyMaxLines(100);
-  //
-  //		TrackPileup trST= new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-  //		trST.setNoFormat(true);
-  //		trST.setyMaxLines(100);
-  //		assertEquals(tr.printToScreen(), trST.printToScreen());
-  //
-  //		// Set MAPQ filter: Java
-  //		ArrayList<SamRecordFilter> samRecordFilter = new ArrayList<SamRecordFilter>();
-  //		samRecordFilter.add(new MappingQualityFilter(80));
-  //		tr.setSamRecordFilter(samRecordFilter);
-  //
-  //		// Set MAPQ filter: samtools (requires update!!)
-  //		trST.getFeatureFilter().setMapq(80);
-  //		trST.update();
-  //		System.err.println(trST.printToScreen());
-  //		//System.err.println(tr.printToScreen());
-  //		assertTrue(trST.printToScreen().equals(tr.printToScreen()) &&
-  // trST.printToScreen().trim().isEmpty());
-  //
-  //		samRecordFilter.clear();
-  //		tr.setSamRecordFilter(samRecordFilter);
-  //		trST.getFeatureFilter().setMapq(0);
-  //		trST.update();
-  //
-  //	}
-
   @Test
   public void canPrintProfile()
       throws ClassNotFoundException,
@@ -230,14 +196,11 @@ public class TrackPileupTest {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException,
-          InvalidColourException,
-          InvalidConfigException {
+          InvalidColourException {
 
     GenomicCoords gc = new GenomicCoords("chr7:5566776-5566796", 80, null, null);
     TrackPileup tr = new TrackPileup("test_data/ds051.short.bam", gc);
-    System.err.println(tr.getScreenScores());
     tr.setNoFormat(true);
-    System.err.println(tr.printToScreen());
     assertTrue(tr.getScreenScores().size() > 1); // Here we only test the method doesn't crash
 
     gc = new GenomicCoords("chr7:5,554,740-5,554,780", 80, null, null);
@@ -246,9 +209,6 @@ public class TrackPileupTest {
 
     assertTrue(tr.printToScreen().length() > 50);
     assertTrue(tr.getTitle().length() > 50);
-    System.err.println(tr.printToScreen());
-    System.err.println(tr.getTitle());
-
     tr.setRpm(true);
     tr.getScreenScores();
   }
@@ -297,12 +257,10 @@ public class TrackPileupTest {
     gc = new GenomicCoords("chr7:5522059-5612125", 80, null, null);
     long t0 = System.currentTimeMillis();
     tr = new TrackPileup("test_data/ear045.oxBS.actb.bam", gc);
-    Map<Integer, Integer> depth = tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo());
+    tr.getDepth(gc.getChrom(), gc.getFrom(), gc.getTo());
     long t1 = System.currentTimeMillis();
     assertTrue(t1 - t0 < 10000); // Processing time (in ms) is acceptably small
     assertTrue(t1 - t0 > 100); // But not suspiciously small
-
-    System.err.println("Time to parse " + depth.size() + " positions: " + (t1 - t0) + " ms");
   }
 
   @Test
@@ -340,9 +298,6 @@ public class TrackPileupTest {
         assertEquals(expPos, obsPos);
         assertEquals(expDepth, obsDepth);
       } catch (AssertionError e) {
-        System.err.println("At iteration: " + i);
-        System.err.println(expList.get(i));
-        System.err.println("Observed depth: " + obsDepth);
         throw e;
       }
       i++;
@@ -404,13 +359,10 @@ public class TrackPileupTest {
     tr.setNoFormat(true);
     tr.setyMaxLines(1000);
     assertTrue(tr.getTitle().contains("22.0")); // N. reads before filtering
-    // assertTrue(tr.getTitle().contains("22/22")); // N. reads before filtering
     tr.setShowHideRegex(
         Pattern.compile("NCNNNCCC"), Pattern.compile(Filter.DEFAULT_HIDE_REGEX.getValue()));
-    tr.setAwk("'$4 != 5566779'");
-    System.err.println(tr.getTitle());
+    tr.setAwk("$4 != 5566779");
     assertTrue(tr.getTitle().contains("4.0"));
-    // assertTrue(tr.getTitle().contains("4/22"));
   }
 
   @Test
@@ -476,7 +428,6 @@ public class TrackPileupTest {
     for (int i = 0; i < 10000000; i++) {
       bigList.add(i);
     }
-    System.err.println(sw);
     sw.reset();
     sw.start();
     TrackPileup.mergePositionsInIntervals(bigList);

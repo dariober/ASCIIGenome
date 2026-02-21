@@ -138,13 +138,13 @@ public class InteractiveInputTest {
     assertTrue(pi.stdout.contains("ALU_umary_ALU_2"));
 
     pi = processInput(ip, "awk '$0 ~ \"UW_VH\"' vcf", proc);
-    //assertEquals("", pi.stderr);
+    assertEquals("", pi.stderr);
     assertTrue(pi.stdout.contains("UW_VH_21763"));
     assertFalse(pi.stdout.contains("ALU_umary_ALU_2"));
 
     // Without specifying track
     pi = processInput(ip, "awk '$0 ~ \"UW_VH\"'", proc);
-    //assertEquals("", pi.stderr);
+    assertEquals("", pi.stderr);
     assertTrue(pi.stdout.contains("UW_VH_21763"));
     assertFalse(pi.stdout.contains("ALU_umary_ALU_2"));
 

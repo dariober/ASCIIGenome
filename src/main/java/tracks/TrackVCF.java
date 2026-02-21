@@ -151,12 +151,12 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   }
 
   @Override
-  public void streamFeaturesThroughSystemCommand() throws IOException, InterruptedException, InvalidGenomicCoordsException {
+  public void streamFeaturesThroughSystemCommand() {
     throw new NotImplementedException("TODO");
   }
 
   protected List<VCFFeature> getFeaturesInInterval(String chrom, int from, int to)
-      throws IOException, InvalidGenomicCoordsException {
+      throws IOException {
 
     // Collect feature
     List<VCFFeature> xFeatures = new ArrayList<>();
@@ -171,7 +171,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
       VCFFeature vcfFeature = new VCFFeature(vcfLine, this.getVCFCodec());
       xFeatures.add(vcfFeature);
     }
-    this.removeInvisibleFeatures(xFeatures);
+    this.filterFeaturesInPlace(xFeatures);
     return xFeatures;
   }
 

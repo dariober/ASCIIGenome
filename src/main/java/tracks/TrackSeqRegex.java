@@ -77,7 +77,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
       IntervalFeature x = new IntervalFeature(reg, this.getTrackFormat(), this.getScoreColIdx());
       iftList.add(x);
     }
-    this.removeInvisibleFeatures(iftList);
+    this.filterFeaturesInPlace(iftList);
     for (int i = 0; i < iftList.size(); i++) {
       wr.write(iftList.get(i).getRaw() + "\n");
     }

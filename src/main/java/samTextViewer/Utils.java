@@ -99,6 +99,7 @@ import org.broad.igv.bbfile.BigBedIterator;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
+import systemCommand.SystemCommand;
 import tracks.AbstractTrack;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
@@ -1944,243 +1945,6 @@ public class Utils {
     return Integer.signum(vals1.length - vals2.length);
   }
 
-  @SuppressWarnings("MustBeClosedChecker")
-  @MustBeClosed
-  public static Stream<String> streamLinesThroughSystemCommand(Stream<String> rawRecordLines, String header, String cmd) throws IOException {
-    Stream<String> rawLinesWithHeader;
-    if (header == null || header.trim().isEmpty()) {
-      rawLinesWithHeader = rawRecordLines;
-    } else {
-      List<String> l = new ArrayList<>();
-      l.add(header);
-      rawLinesWithHeader = Stream.concat(l.stream(), rawRecordLines);
-    }
-
-    ArrayList<String> args = new ArrayList<>();
-    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
-    return execSystemCommand(rawLinesWithHeader, args);
-  }
-
-  @MustBeClosed
-  private static Stream<String> execSystemCommand(
-          Stream<String> input,
-          List<String> cmd) throws IOException {
-
-    ProcessBuilder pb = new ProcessBuilder(cmd);
-    Process process = pb.start();
-
-    // Thread that feeds stdin
-    Thread writerThread = new Thread(() -> {
-      try (BufferedWriter writer =
-                   new BufferedWriter(
-                           new OutputStreamWriter(
-                                   process.getOutputStream(),
-                                   StandardCharsets.UTF_8))) {
-
-        input.forEach(line -> {
-          try {
-            writer.write(line);
-            writer.newLine();
-          } catch (IOException e) {
-            throw new UncheckedIOException(e);
-          }
-        });
-
-      } catch (IOException | UncheckedIOException e) {
-        process.destroyForcibly();
-      }
-    });
-
-    writerThread.setDaemon(true);
-    writerThread.start();
-
-    // Thread that continuously drains stderr to avoid blocking
-    StringBuilder stderrBuffer = new StringBuilder();
-    Thread stderrThread = new Thread(() -> {
-      try (BufferedReader errReader =
-                   new BufferedReader(
-                           new InputStreamReader(
-                                   process.getErrorStream(),
-                                   StandardCharsets.UTF_8))) {
-
-        String line;
-        while ((line = errReader.readLine()) != null) {
-          stderrBuffer.append(line).append(System.lineSeparator());
-        }
-
-      } catch (IOException e) {
-        process.destroyForcibly();
-      }
-    });
-
-    stderrThread.setDaemon(true);
-    stderrThread.start();
-
-    BufferedReader stdoutReader =
-            new BufferedReader(
-                    new InputStreamReader(
-                            process.getInputStream(),
-                            StandardCharsets.UTF_8));
-
-    Stream<String> stdoutStream = stdoutReader.lines();
-
-    return stdoutStream.onClose(() -> {
-      try {
-        stdoutReader.close();
-
-        writerThread.join();
-        stderrThread.join();
-
-        int exit = process.waitFor();
-        if (exit != 0) {
-          throw new RuntimeException(
-                  cmd + "\n" +
-                  "Process exited with code " + exit +
-                          "\nstderr:\n" + stderrBuffer);
-        }
-
-      } catch (Exception e) {
-        process.destroyForcibly();
-        throw new RuntimeException(e);
-      }
-    });
-  }
-
-//  public static ArrayList<String> execSystemCommand(String[] inputList, List<String> cmd)
-//      throws IOException, InterruptedException {
-//
-//    ProcessBuilder pb = new ProcessBuilder().command(cmd);
-//    Process p = pb.start();
-//
-//    ArrayList<String> results = new ArrayList<>();
-//
-//    Thread readerThread =
-//        new Thread(
-//            () -> {
-//              try {
-//                try (BufferedReader reader =
-//                    new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-//                  String line;
-//                  while ((line = reader.readLine()) != null) {
-//                    results.add(line);
-//                  }
-//                }
-//              } catch (Exception e) {
-//                throw new RuntimeException("Unhandled", e);
-//              }
-//            });
-//    readerThread.start();
-//
-//    OutputStream stdin = p.getOutputStream();
-//
-//    for (String line : inputList) {
-//      stdin.write(line.getBytes(StandardCharsets.UTF_8));
-//      stdin.write('\n');
-//      try {
-//        stdin.flush();
-//      } catch (IOException e) {
-//        throwCmdException(p);
-//      }
-//    }
-//
-//    stdin.close();
-//    readerThread.join();
-//    p.waitFor();
-//
-//    if (p.exitValue() != 0) {
-//      throwCmdException(p);
-//    }
-//    return results;
-//  }
-
-  private static void throwCmdException(Process p) throws IOException, InterruptedException {
-    p.waitFor();
-    String errmsg = "Command returned with non-zero exit value " + p.exitValue() + "\n";
-    BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-    String errline = "";
-    while ((errline = err.readLine()) != null) {
-      errmsg += errline + "\n";
-    }
-    err.close();
-    throw new RuntimeException(errmsg);
-  }
-
-  /**
-   * Convert the awk script to a list suitable for processBuilder
-   *
-   * @param awkScript e.g.: -v=VAR5 '$2 == 0'
-   * @return
-   */
-  private static File prepareAwkScript(String awkScript) throws IOException {
-    String script = AbstractTrack.awkFunc + "\n" + awkScript.trim();
-    File tmp = Utils.createTempFile(".asciigenome.", ".awk", true);
-    Files.writeString(Path.of(tmp.getAbsolutePath()), script);
-    return tmp;
-  }
-
-  @SuppressWarnings("MustBeClosedChecker")
-  @MustBeClosed
-  public static Stream<String> streamLinesThroughAwk(Stream<String> inLines, String awkScript) throws IOException {
-    awkScript = awkScript.trim();
-
-    if (awkScript.isEmpty()) {
-      return inLines;
-    }
-
-    File awkTmpFile = prepareAwkScript(awkScript);
-    String cmd = "awk -v OFS='\t' -F '\t' -f " + awkTmpFile.getAbsolutePath();
-
-    ArrayList<String> args = new ArrayList<>();
-    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
-
-    return execSystemCommand(inLines, args);
-  }
-
-//  public static boolean[] passSystemCommandFilter(String[] rawRecordLines, String cmd, String header) throws IOException {
-//
-//    cmd = cmd.trim();
-//    if (cmd.isEmpty()) {
-//      boolean[] results = new boolean[rawRecordLines.length];
-//      for (int i = 0; i < rawRecordLines.length; i++) {
-//        results[i] = true;
-//      }
-//      return results;
-//    }
-//    ArrayList<String> args = new ArrayList<>();
-//    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
-//
-//    ArrayList<String> output;
-//    String[] rawLinesWithHeader;
-//    if (header == null || header.trim().isEmpty()) {
-//      rawLinesWithHeader = rawRecordLines;
-//    } else {
-//      rawLinesWithHeader = ArrayUtils.addAll(new String[]{header}, rawRecordLines);
-//    }
-//    try {
-//      output = execSystemCommand(Arrays.stream(rawLinesWithHeader), args).toList();
-//    } catch (InterruptedException e) {
-//      throw new RuntimeException(args + "\n" + e);
-//    }
-//    return matchInputToFilteredLines(rawRecordLines, output);
-//  }
-
-  private static boolean[] matchInputToFilteredLines(String[] inputLines, List<String> filteredLines) {
-    // Check input and output. If an input line is found in output at the
-    // same line number where it should be, add True else False.
-    boolean[] results = new boolean[inputLines.length];
-    Set<String> filteredSet = new HashSet<>(filteredLines);
-
-    for (int i = 0; i < inputLines.length; i++) {
-      String inLine = inputLines[i];
-      if (filteredSet.contains(inLine)) {
-        results[i] = true;
-      } else {
-        results[i] = false;
-      }
-    }
-    return results;
-  }
-
   /**
    * Right-pad each line in string x with whitespaces. Each line is defined by the newline. Each
    * line is padded to become at least of length size.
@@ -2207,13 +1971,6 @@ public class Utils {
     return parseStringCoordsToList(region, 1, 536870912);
   }
 
-  /**
-   * Parse string region in the form <chrom>:[start[-end]] to a list containing the three elements.
-   * See tests for behavior. <start> and <end> if present are guaranteed to be parsable to positive
-   * int.
-   *
-   * @throws InvalidGenomicCoordsException
-   */
   public static List<String> parseStringCoordsToList(
       String region, Integer defaultFrom, Integer defaultTo) throws InvalidGenomicCoordsException {
 
@@ -2696,7 +2453,7 @@ public class Utils {
     return relative.toString();
   }
 
-  public static boolean[] matchByRegex(String[] rawLines, String regex) throws IOException {
+  private static boolean[] matchByRegex(String[] rawLines, String regex) throws IOException {
     boolean[] matched = new boolean[rawLines.length];
     for (int i = 0; i < matched.length; i++) {
       matched[i] = Pattern.compile(regex).matcher(rawLines[i]).find();
@@ -2704,11 +2461,24 @@ public class Utils {
     return matched;
   }
 
-//  public static boolean[] matchByAwk(String[] rawLines, String regex) throws IOException {
-//    boolean[] matched;
-//    matched = Utils.passAwkFilter(rawLines, regex);
-//    return matched;
-//  }
+  public static boolean[] matchByAwkOrRegex(String[] rawLines, String awkFilterOrRegex) throws IOException {
+    boolean isAwk = false;
+    if (Pattern.compile("\\$\\d|\\$[A-Z]").matcher(awkFilterOrRegex).find()) {
+      // We assume that if awkFilterOrRegex contains a '$' followed by digit or letter
+      // we have an awk script since that would be a very unlikely awkFilterOrRegex.
+      // Could we have an awk script not containing '$'? Unlikely but maybe possible
+      isAwk = true;
+    }
+
+    boolean[] matched;
+    if (isAwk) {
+      SystemCommand sysCmd = new SystemCommand();
+      matched = sysCmd.passAwkFilter(rawLines, awkFilterOrRegex);
+    } else {
+      matched = matchByRegex(rawLines, awkFilterOrRegex);
+    }
+    return matched;
+  }
 
   /** Add quotes around x, if necessary, so that it gets tokenized in a single string */
   public static String quote(String x) {

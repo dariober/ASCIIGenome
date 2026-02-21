@@ -1,6 +1,8 @@
 package tracks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
@@ -56,14 +58,8 @@ public class TrackReadsTest {
     tr.setSystemCommand("");
     assertTrue(Splitter.on("\n").splitToList(tr.printToScreen()).size() > 5);
 
-    boolean pass = false;
-    try {
-      tr.setSystemCommand("foobar");
-    } catch (RuntimeException e) {
-      assertTrue(e.getMessage().contains("foobar: command not found"));
-      pass = true;
-    }
-    assertTrue(pass);
+    RuntimeException e = assertThrows(RuntimeException.class, () -> tr.setSystemCommand("foobar"));
+    assertTrue(e.getMessage().contains("foobar: command not found"));
     assertEquals("", tr.getSystemCommand());
     assertTrue(Splitter.on("\n").splitToList(tr.printToScreen()).size() > 5);
   }
@@ -660,10 +656,10 @@ public class TrackReadsTest {
     GenomicCoords gc = new GenomicCoords("chr7:1-100", 80, null, fastaFile);
     TrackReads tr = new TrackReads(bam, gc);
     tr.setNoFormat(true);
-    assertTrue(!tr.getTitle().contains("filters"));
+    assertFalse(tr.getTitle().contains("filters"));
 
-    tr.setMapq(Integer.valueOf(Filter.DEFAULT_MAPQ.getValue()));
-    assertTrue(!tr.getTitle().contains("filters"));
+    tr.setMapq(Integer.parseInt(Filter.DEFAULT_MAPQ.getValue()));
+    assertFalse(tr.getTitle().contains("filters"));
 
     tr.setMapq(10);
     assertTrue(tr.getTitle().contains("mapq"));
@@ -677,7 +673,7 @@ public class TrackReadsTest {
     tr.setVariantReadInInterval("chr7", 10, 100, true);
     assertTrue(tr.getTitle().contains("var-read"));
 
-    tr.setAwk("'2 > 1'");
+    tr.setAwk("2 > 1");
     assertTrue(tr.getTitle().contains("awk"));
   }
 

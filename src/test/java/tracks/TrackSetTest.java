@@ -1,6 +1,7 @@
 package tracks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
@@ -66,42 +67,6 @@ public class TrackSetTest {
   }
 
   @Test
-  public void canGoToNextFeatureOnBcfFile2()
-      throws InvalidGenomicCoordsException,
-      IOException,
-      ClassNotFoundException,
-      BamIndexNotFoundException,
-      InvalidRecordException,
-      SQLException,
-      InvalidCommandLineException {
-
-//    try(BCFFileReader r=new  BCFFileReader(Path.of("test_data/gnomad.genomes.v3.1.2.hgdp_tgp.chr4.bcf"),true)) {
-//      VCFHeader h= r.getHeader();
-//      try(CloseableIterator<VariantContext> iter= r.query("chr1",100,200)) {
-//        while(iter.hasNext()) {
-//          VariantContext ctx = iter.next();
-//        }
-//      }
-//    }
-
-    try(VCFIterator iter = BCFIterator.open(Path.of("test_data/gnomad.genomes.v3.1.2.hgdp_tgp.chr4.bcf"))) {
-      VCFHeader h=  iter.getHeader();
-      while(iter.hasNext()) {
-        VariantContext ctx = iter.next();
-      }
-    }
-
-//    int ws = 200;
-//    GenomicCoords gc = new GenomicCoords("chr1:1-80", 80, null, null);
-//    gc.setTerminalWidth(ws);
-//    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
-//    trackSet.addTrackFromSource("test_data/gnomad.genomes.v3.1.2.hgdp_tgp.chr4.bcf", gc, null);
-//    GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
-    //int x = nextGc.getFrom();
-    //assertEquals(12138, x); // This is the start of the found feature
-  }
-
-  @Test
   public void canGoToNextFeatureOnFile()
       throws InvalidGenomicCoordsException,
           IOException,
@@ -140,8 +105,7 @@ public class TrackSetTest {
     trackSet = new TrackSet(new ArrayList<String>(), gc);
     trackSet.addTrackFromSource(
         "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig", gc, null);
-    // trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
-    nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
+    trackSet.goToNextFeatureOnFile("1", gc, -1, false);
   }
 
   @Test
@@ -834,20 +798,8 @@ public class TrackSetTest {
     // Set for one track
     String cmdInput = "awk   '$3 == \"exon\"' #1";
     ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
-    assertEquals("-F '\\t' '$3 == \"exon\"'", ts.getTrack(t1).getAwk());
+    assertEquals("$3 == \"exon\"", ts.getTrack(t1).getAwk());
     assertEquals("", ts.getTrack(t3).getAwk()); // As default
-
-    // Use custom delim, some tracks
-    cmdInput = "awk -F _ '$3 == 10' #1 #3";
-    ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
-    assertEquals("-F _ '$3 == 10'", ts.getTrack(t1).getAwk());
-    assertEquals("-F _ '$3 == 10'", ts.getTrack(t3).getAwk());
-
-    // Use custom delim: All tracks
-    cmdInput = "awk -v FOO=foo -F _ '$3 == 20'";
-    ts.setAwkForTrack(Utils.tokenize(cmdInput, " "));
-    assertEquals("-v FOO=foo -F _ '$3 == 20'", ts.getTrack(t1).getAwk());
-    assertEquals("-v FOO=foo -F _ '$3 == 20'", ts.getTrack(t3).getAwk());
 
     // Turn off one track
     cmdInput = "awk -off #2";
@@ -898,7 +850,7 @@ public class TrackSetTest {
     boolean pass = false;
     try {
       ts.setAwkForTrack(Utils.tokenize(awk, " "));
-    } catch (IOException e) {
+    } catch (RuntimeException e) {
       pass = true;
     }
     assertTrue(pass);
@@ -918,7 +870,6 @@ public class TrackSetTest {
     ts.setAwkForTrack(
         Utils.tokenize(
             "awk 'get(AC) > 2 ||get(GT, 2, 1) && get(INFO/FOO) && get(FMT/BAR)' vcf", " "));
-    assertTrue(ts.getTrack(t1).getAwk().endsWith("'"));
     assertTrue(ts.getTrack(t1).getAwk().contains("getInfoTag(\"AC\")"));
     assertTrue(ts.getTrack(t1).getAwk().contains("getFmtTag(\"GT\", 2, 1)"));
     assertTrue(ts.getTrack(t1).getAwk().contains("getInfoTag(\"INFO/FOO\")"));
@@ -974,10 +925,10 @@ public class TrackSetTest {
     String cmdInput = "readsAsPairs foo.*#\\d";
     ts.setReadsAsPairsForRegex(Utils.tokenize(cmdInput, " "));
     assertTrue(ts.getTrack(t1).getReadsAsPairs());
-    assertTrue(!ts.getTrack(t2).getReadsAsPairs());
+    assertFalse(ts.getTrack(t2).getReadsAsPairs());
 
     ts.setReadsAsPairsForRegex(Utils.tokenize(cmdInput, " ")); // Was set true, now becomes false
-    assertTrue(!ts.getTrack(t1).getReadsAsPairs());
+    assertFalse(ts.getTrack(t1).getReadsAsPairs());
   }
 
   @Test
@@ -1003,10 +954,10 @@ public class TrackSetTest {
     String cmdInput = "BSseq foo.*#\\d";
     ts.setBisulfiteModeForRegex(Utils.tokenize(cmdInput, " "));
     assertTrue(ts.getTrack(t1).isBisulf());
-    assertTrue(!ts.getTrack(t2).isBisulf());
+    assertFalse(ts.getTrack(t2).isBisulf());
 
     ts.setBisulfiteModeForRegex(Utils.tokenize(cmdInput, " ")); // Was set true, now becomes false
-    assertTrue(!ts.getTrack(t1).isBisulf());
+    assertFalse(ts.getTrack(t1).isBisulf());
   }
 
   @Test
@@ -1029,10 +980,10 @@ public class TrackSetTest {
     String cmdInput = "rpm #1 #3";
     ts.setRpmForRegex(Utils.tokenize(cmdInput, " "));
     assertTrue(ts.getTrack(t1).isRpm());
-    assertTrue(!ts.getTrack(t2).isRpm());
+    assertFalse(ts.getTrack(t2).isRpm());
 
     ts.setRpmForRegex(Utils.tokenize(cmdInput, " ")); // Was set true, now becomes false
-    assertTrue(!ts.getTrack(t1).isRpm());
+    assertFalse(ts.getTrack(t1).isRpm());
 
     ts.setRpmForRegex(Utils.tokenize("rpm -on", " "));
     for (AbstractTrack tr : ts.getTrackList()) {
@@ -1436,7 +1387,7 @@ public class TrackSetTest {
     t3.setFilename("bla.gz");
     ts.addTrack(t3, "bla.gz");
 
-    String defaultColour = (new TrackIntervalFeature()).getTitleColour();
+    String defaultColour = new TrackIntervalFeature().getTitleColour();
 
     String cmdInput = "trackColour RED gz#\\d$";
     ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));

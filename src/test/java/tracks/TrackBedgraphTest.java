@@ -2,6 +2,7 @@ package tracks;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
@@ -48,7 +49,6 @@ public class TrackBedgraphTest {
     GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
 
     TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
-    System.out.println(tb.getTrackFormat());
     assertFalse(tb.getChromosomeNames().isEmpty());
     assertEquals("chr1", tb.getChromosomeNames().get(0));
   }
@@ -178,15 +178,14 @@ public class TrackBedgraphTest {
 
     String before = tb.printToScreen();
 
-    tb.setAwk("'$4 > 0");
+    tb.setAwk("$4 > 0");
     String after = tb.printToScreen();
 
     List<IntervalFeature> subset = tb.getFeaturesInInterval("chr1", 1, 500000000);
     for (IntervalFeature s : subset) {
       assertTrue(s.getScore() > 0);
     }
-
-    assertTrue(!before.equals(after));
+    assertNotEquals(before, after);
   }
 
   @Test
@@ -200,7 +199,7 @@ public class TrackBedgraphTest {
     String url = "test_data/test.bedGraph.gz";
     GenomicCoords gc = new GenomicCoords("chr1:1-22", 80, null, null);
     TrackBedgraph tb = new TrackBedgraph(url, gc);
-    tb.setAwk("'$1 > 0");
+    tb.setAwk("$1 > 0");
     tb.setYLimitMax(-99);
     tb.setNoFormat(true);
 
@@ -229,13 +228,13 @@ public class TrackBedgraphTest {
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(yMaxLines);
-    String prof = tb.printToScreen();
+    tb.printToScreen();
 
     tb = new TrackBedgraph("test_data/positive.bedGraph.gz", gc);
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(5);
-    prof = tb.printToScreen();
+    tb.printToScreen();
 
     tb = new TrackBedgraph("test_data/negative.bedGraph.gz", gc);
     tb.setYLimitMax(Float.NaN);

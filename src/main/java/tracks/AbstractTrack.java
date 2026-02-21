@@ -41,6 +41,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
+import systemCommand.SystemCommand;
 import utils.Tokenizer;
 
 public abstract class AbstractTrack {
@@ -272,7 +273,12 @@ public abstract class AbstractTrack {
           InvalidRecordException,
           SQLException {
     this.getFeatureFilter().setAwk(awk);
-    this.update();
+    try {
+      this.update();
+    } catch (RuntimeException e) {
+      this.getFeatureFilter().setAwk(Filter.DEFAULT_AWK.getValue());
+      throw e;
+    }
   }
 
   public String getAwk() {
@@ -1101,11 +1107,14 @@ public abstract class AbstractTrack {
         rawLines[i] = prepareSAMRecordForAwk(results.get(i));
       }
       results.clear();
-      try (Stream<String> sam = Utils.streamLinesThroughAwk(Arrays.stream(rawLines), this.getAwk())) {
+      SystemCommand sysCmd = new SystemCommand();
+      try (Stream<String> sam = sysCmd.streamLinesThroughAwk(Arrays.stream(rawLines), this.getAwk())) {
         sam.forEach(x -> results.add(parser.parseLine(x)));
       } catch (RuntimeException e) {
         this.setAwk("");
         throw e;
+      } finally {
+        sysCmd.deleteTempFile();
       }
     }
     // Apply system command filter, if given
@@ -1113,7 +1122,8 @@ public abstract class AbstractTrack {
       SAMFileHeader samHeader = samReader.getFileHeader();
       Stream<String> samText = results.stream().map(x -> x.getSAMString());
       List<SAMRecord> out = new ArrayList<>();
-      try (Stream<String> sam = Utils.streamLinesThroughSystemCommand(samText, samHeader.getSAMString(), this.getSystemCommand())) {
+      SystemCommand sysCmd = new SystemCommand();
+      try (Stream<String> sam = sysCmd.streamLinesThroughSystemCommand(samText, samHeader.getSAMString(), this.getSystemCommand())) {
         sam.forEach(x -> out.add(parser.parseLine(x)));
       } catch (RuntimeException e) {
         this.setSystemCommand("");

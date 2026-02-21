@@ -8,7 +8,6 @@ import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.readers.TabixReader;
-import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFReader;
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import systemCommand.SystemCommand;
 
 public abstract class AbstractTrackFeature<T extends IntervalFeature> extends AbstractTrack {
   /** For GTF/GFF data: Use this attribute to get the feature names */
@@ -65,29 +65,31 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     }
   }
 
-  protected List<T> getFeaturesInInterval(String chrom, int from, int to)
-      throws IOException, InvalidGenomicCoordsException {
-    if (from < 1) {
-      System.err.println("from < 1: " + from + "; resetting to 1.");
-      from = 1;
-    }
-    if (from > to) {
-      throw new InvalidGenomicCoordsException(
-          "Invalid coordinates: from: "
-              + from
-              + "; to: "
-              + to
-              + "; Resetting to initial 1-"
-              + Integer.MAX_VALUE);
-    }
-    List<T> xFeatures = new ArrayList<>();
-    this.removeInvisibleFeatures(xFeatures);
-    return xFeatures;
-  }
+//  protected List<T> getFeaturesInInterval(String chrom, int from, int to)
+//      throws IOException, InvalidGenomicCoordsException {
+//    if (from < 1) {
+//      System.err.println("from < 1: " + from + "; resetting to 1.");
+//      from = 1;
+//    }
+//    if (from > to) {
+//      throw new InvalidGenomicCoordsException(
+//          "Invalid coordinates: from: "
+//              + from
+//              + "; to: "
+//              + to
+//              + "; Resetting to initial 1-"
+//              + Integer.MAX_VALUE);
+//    }
+//    List<T> xFeatures = new ArrayList<>();
+//    this.removeInvisibleFeatures(xFeatures);
+//    return xFeatures;
+//  }
 
-  protected void removeInvisibleFeatures(List<T> iftList)
+  protected abstract List<T> getFeaturesInInterval(String chrom, int from, int to)
+      throws IOException, InvalidGenomicCoordsException;
+
+  protected void filterFeaturesInPlace(List<T> iftList)
       throws IOException {
-
     for (int i = 0; i < iftList.size(); i++) {
 
       T tr = iftList.get(i);
@@ -112,17 +114,26 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     iftList.removeIf(Objects::isNull);
 
     if (!this.getAwk().isEmpty()) {
-      this.getAwk();
       Stream<String> rawLines = iftList.stream().map(x -> x.getRaw());
-      try (Stream<String> s = Utils.streamLinesThroughAwk(rawLines, this.getAwk())) {
+      SystemCommand sysCmd = new SystemCommand();
+      try (Stream<String> s = sysCmd.streamLinesThroughAwk(rawLines, this.getAwk())) {
         List<T> filteredFeatures = s.map(x -> {
           try {
             return this.createFeature(x);
           } catch (InvalidGenomicCoordsException e) {
+            try {
+              this.setAwk(Filter.DEFAULT_AWK.getValue());
+            } catch (ClassNotFoundException | InvalidGenomicCoordsException | IOException |
+                     InvalidRecordException | SQLException ex) {
+              throw new RuntimeException(ex);
+            }
             throw new RuntimeException(e);
           }
         }).toList();
-        this.setFeatureList(filteredFeatures);
+        iftList.clear();
+        iftList.addAll(filteredFeatures);
+      } finally {
+        sysCmd.deleteTempFile();
       }
     }
   }
@@ -210,7 +221,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
         continue;
       }
       if (!buffer.isEmpty()) {
-        this.removeInvisibleFeatures(buffer);
+        this.filterFeaturesInPlace(buffer);
         for (int i = 0; i < buffer.size(); i++) {
           if (buffer.get(i).getFrom() > from) {
             return buffer.get(i);
@@ -271,7 +282,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
           continue;
         }
         if (!buffer.isEmpty()) {
-          this.removeInvisibleFeatures(buffer);
+          this.filterFeaturesInPlace(buffer);
           for (T intervalFeature : buffer) {
             if (intervalFeature.getTo() < pos) {
               last = intervalFeature;
@@ -296,7 +307,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     }
     List<T> xLast = new ArrayList<>();
     xLast.add(last);
-    this.removeInvisibleFeatures(xLast);
+    this.filterFeaturesInPlace(xLast);
     if (last.getTo() > pos || xLast.isEmpty()) {
       return null;
     }
@@ -403,7 +414,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
       }
       // Now you have all the features matching regex on this chromosome. We need to exclude those
       // that are not visible
-      this.removeInvisibleFeatures(matchedFeatures);
+      this.filterFeaturesInPlace(matchedFeatures);
 
       if (!matchedFeatures.isEmpty()) {
         // At least one feature matching regex found on this chrom.
@@ -643,7 +654,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
           }
         }
         if (line == null || buffer.size() > 10) {
-          this.removeInvisibleFeatures(buffer);
+          this.filterFeaturesInPlace(buffer);
           if (!buffer.isEmpty()) {
             iter.close();
             return buffer.get(0);
@@ -744,14 +755,11 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
   protected void setColourForRegex(List<Argument> xcolourForRegex) {
     if (xcolourForRegex == null) {
       this.colourForRegex = null;
-      return;
     } else {
       if (this.colourForRegex == null) {
-        this.colourForRegex = new ArrayList<Argument>();
+        this.colourForRegex = new ArrayList<>();
       }
-      for (Argument p : xcolourForRegex) {
-        this.colourForRegex.add(p);
-      }
+      this.colourForRegex.addAll(xcolourForRegex);
     }
   }
 
@@ -767,13 +775,13 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     }
 
     for (Argument arg : list) {
-      String regex = arg.getKey();
+      String awkFilterOrRegex = arg.getKey();
       String colour = arg.getArg();
       String[] rawrecs = new String[this.getFeatureList().size()];
       for (int i = 0; i < this.getFeatureList().size(); i++) {
         rawrecs[i] = this.getFeatureList().get(i).getRaw();
       }
-      boolean[] matched = Utils.matchByRegex(rawrecs, regex);
+      boolean[] matched = Utils.matchByAwkOrRegex(rawrecs, awkFilterOrRegex);
       for (int i = 0; i < matched.length; i++) {
         boolean m = matched[i];
         if (arg.isInvert()) {
@@ -810,10 +818,6 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     }
     this.tabixReader = this.getTabixReader(this.getWorkFilename());
     this.update();
-  }
-
-  private VCFCodec getVCFCodec() {
-    return null;
   }
 
   @Override

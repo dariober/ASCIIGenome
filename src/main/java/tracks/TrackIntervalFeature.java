@@ -16,6 +16,7 @@ import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
+import systemCommand.SystemCommand;
 
 public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> {
 
@@ -159,7 +160,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
           new IntervalFeature(q, this.getTrackFormat(), this.getScoreColIdx());
       xFeatures.add(intervalFeature);
     }
-    this.removeInvisibleFeatures(xFeatures);
+    this.filterFeaturesInPlace(xFeatures);
     return xFeatures;
   }
 
@@ -374,7 +375,8 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
     List<IntervalFeature> features = new ArrayList<>();
 
-    try (Stream<String> out = Utils.streamLinesThroughSystemCommand(textLines, null, this.getSystemCommand())) {
+    SystemCommand sysCmd = new SystemCommand();
+    try (Stream<String> out = sysCmd.streamLinesThroughSystemCommand(textLines, null, this.getSystemCommand())) {
       Iterator<String> iter = out.iterator();
       while (iter.hasNext()) {
         features.add(new IntervalFeature(iter.next(), this.getTrackFormat(), this.getScoreColIdx()));

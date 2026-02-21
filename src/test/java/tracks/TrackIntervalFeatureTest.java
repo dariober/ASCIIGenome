@@ -1,6 +1,7 @@
 package tracks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
@@ -86,14 +87,14 @@ public class TrackIntervalFeatureTest {
     tif.printToScreen(); // This is to populate the ideograms.
 
     List<Argument> colourForRegex = new ArrayList<Argument>();
-    colourForRegex.add(new Argument("'$5 > 13000'", "216", false));
+    colourForRegex.add(new Argument("$5 > 13000", "216", false));
     tif.setColourForRegex(colourForRegex);
     assertTrue(tif.printToScreen().contains("216"));
 
-    colourForRegex = new ArrayList<Argument>();
+    colourForRegex = new ArrayList<>();
     colourForRegex.add(new Argument("$5 > 0", "100", false));
     tif.setColourForRegex(colourForRegex);
-    assertTrue(!tif.printToScreen().contains("216"));
+    assertFalse(tif.printToScreen().contains("216"));
   }
 
   @Test
@@ -517,10 +518,10 @@ public class TrackIntervalFeatureTest {
 
     String intervalFileName = "test_data/hg19_genes.gtf.gz";
     GenomicCoords gc = new GenomicCoords("chr1:1-13000", 80, null, null);
-    TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
+    new TrackIntervalFeature(intervalFileName, gc);
 
     gc = new GenomicCoords("chr7:5566000-5571000", 80, null, null);
-    tif = new TrackIntervalFeature(intervalFileName, gc);
+    new TrackIntervalFeature(intervalFileName, gc);
   }
 
   @Test
@@ -590,15 +591,15 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("chr1:10000-100000", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
 
-    String awk = "'$3 == \"start_codon\" && $9 !~ \"OR4F\"'";
-    tif.setAwk(awk); // Note use single quotes
+    String awk = "$3 == \"start_codon\" && $9 !~ \"OR4F\"";
+    tif.setAwk(awk);
 
-    assertEquals("-F '\\t' " + awk, tif.getAwk()); // Check -F arg has been prepended.
+    assertEquals(awk, tif.getAwk());
 
     List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
     assertEquals(40, subset.size());
 
-    tif.setAwk("-F \\t '($5 - $4) > 1000'"); // Filter for feature size > x
+    tif.setAwk("($5 - $4) > 1000"); // Filter for feature size > x
     subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
     assertEquals(23, subset.size());
 
@@ -610,7 +611,7 @@ public class TrackIntervalFeatureTest {
     boolean pass = false;
     try {
       tif.setAwk("foo_bar()");
-    } catch (IOException e) {
+    } catch (RuntimeException e) {
       pass = true;
     }
     assertTrue(pass);
@@ -631,7 +632,7 @@ public class TrackIntervalFeatureTest {
     GenomicCoords gc = new GenomicCoords("chr1:10000-100000", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
 
-    tif.setAwk("'$3 == \"start_codon\"");
+    tif.setAwk("$3 == \"start_codon\"");
     tif.setShowHideRegex(
         Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue()), Pattern.compile("OR4F"));
     List<IntervalFeature> subset = tif.getFeaturesInInterval("chr1", 1, 500000000);
@@ -706,9 +707,7 @@ public class TrackIntervalFeatureTest {
   }
 
   @Test
-  /**
-   * This should address issues #50 where a feature starting at the begining of the chrom is ignored
-   */
+  // This should address issues #50 where a feature starting at the begining of the chrom is ignored
   public void nextCanMoveToStartOfChrom()
       throws InvalidGenomicCoordsException,
           IOException,
@@ -878,12 +877,8 @@ public class TrackIntervalFeatureTest {
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
-    List<Double> rulerMap = new ArrayList<Double>();
-    for (int i = 14000; i < 14400; i += 10) {
-      rulerMap.add((double) i);
-    }
     GenomicCoords gc = new GenomicCoords("chr18:1-10000", 80, null, null);
-    TrackIntervalFeature tif = new TrackIntervalFeature("test_data/refSeq.hg19.short.bed", gc);
+    new TrackIntervalFeature("test_data/refSeq.hg19.short.bed", gc);
   }
 
   @Test
