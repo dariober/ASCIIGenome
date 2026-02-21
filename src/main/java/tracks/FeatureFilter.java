@@ -133,5 +133,4 @@ class FeatureFilter {
   protected void setVariantOnly(boolean variantOnly) {
     this.variantOnly = variantOnly;
   }
-
 }

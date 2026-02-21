@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Random;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
@@ -70,23 +69,29 @@ public class TrackReads extends AbstractTrack {
 
   @Override
   public void streamFeaturesThroughSystemCommand() throws IOException, InterruptedException {
-//    String[] textLines = new String[];
-//    for (int i = 0; i < this.getRecordsAsStrings().size(); i++) {
-//      textLines[i] = this.getRecordsAsStrings().get(i);
-//    }
-//    List<IntervalFeature> features = new ArrayList<>();
-//    for (String line : Utils.streamLinesThroughSystemCommand(textLines, null, this.getSystemCommand())) {
-//      features.add(new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx()));
-//    }
-//    this.setFeatureList(features);
-//    this.setFeatureList(features);
+    //    String[] textLines = new String[];
+    //    for (int i = 0; i < this.getRecordsAsStrings().size(); i++) {
+    //      textLines[i] = this.getRecordsAsStrings().get(i);
+    //    }
+    //    List<IntervalFeature> features = new ArrayList<>();
+    //    for (String line : Utils.streamLinesThroughSystemCommand(textLines, null,
+    // this.getSystemCommand())) {
+    //      features.add(new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx()));
+    //    }
+    //    this.setFeatureList(features);
+    //    this.setFeatureList(features);
 
   }
 
   @Override
   public void close() {}
 
-  public void update() throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
+  public void update()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          SQLException,
+          InvalidRecordException,
+          ClassNotFoundException {
 
     if (this.getyMaxLines() == 0) {
       return;
@@ -118,7 +123,7 @@ public class TrackReads extends AbstractTrack {
       String rndOffset = Integer.toString(new Random().nextInt());
       List<TextRead> textReads = new ArrayList<>();
       for (SAMRecord rec : passFilter) {
-        if (textReads.size() >  max_reads) {
+        if (textReads.size() > max_reads) {
           break;
         }
         String templ_name = Utils.templateNameFromSamReadName(rec.getReadName());
@@ -398,14 +403,22 @@ public class TrackReads extends AbstractTrack {
 
   @Override
   public void setReadsAsPairs(boolean readsAsPairs)
-          throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
+      throws InvalidGenomicCoordsException,
+          IOException,
+          SQLException,
+          InvalidRecordException,
+          ClassNotFoundException {
     this.readsAsPairs = readsAsPairs;
     this.update();
   }
 
   @Override
   public void setShowSoftClip(boolean showSoftClip)
-          throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
+      throws InvalidGenomicCoordsException,
+          IOException,
+          SQLException,
+          InvalidRecordException,
+          ClassNotFoundException {
     this.showSoftClip = showSoftClip;
     this.update();
   }

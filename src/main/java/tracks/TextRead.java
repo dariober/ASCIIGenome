@@ -5,12 +5,10 @@ import colouring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.*;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 

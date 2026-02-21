@@ -98,7 +98,8 @@ public class Tokenizer {
       this.quoteChars.put(quote, false);
       // We advance the cursor with the length of the quote itself and possible separators after it.
       // so we place the cursor at the start of the next token
-      String strip = sub.replaceAll("^" + quote + Pattern.quote(String.valueOf(this.SEP)) + "*", "");
+      String strip =
+          sub.replaceAll("^" + quote + Pattern.quote(String.valueOf(this.SEP)) + "*", "");
       this.cursor += sub.length() - strip.length();
       return true;
     } else {

@@ -12,9 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import samTextViewer.Utils;
 import tracks.AbstractTrack;
@@ -23,13 +21,12 @@ public class SystemCommand {
 
   private File tempFile;
 
-  public SystemCommand() {
-
-  }
+  public SystemCommand() {}
 
   @SuppressWarnings("MustBeClosedChecker")
   @MustBeClosed
-  public Stream<String> streamLinesThroughSystemCommand(Stream<String> rawRecordLines, String header, String cmd) throws IOException {
+  public Stream<String> streamLinesThroughSystemCommand(
+      Stream<String> rawRecordLines, String header, String cmd) throws IOException {
     Stream<String> rawLinesWithHeader;
     if (header == null || header.trim().isEmpty()) {
       rawLinesWithHeader = rawRecordLines;
@@ -48,7 +45,7 @@ public class SystemCommand {
     boolean[] matched = new boolean[inLines.length];
     List<String> output = new ArrayList<>();
     try (Stream<String> pass = this.streamLinesThroughAwk(Stream.of(inLines), awkScript)) {
-       output = pass.toList();
+      output = pass.toList();
     } finally {
       this.deleteTempFile();
     }
@@ -74,7 +71,8 @@ public class SystemCommand {
 
   @SuppressWarnings("MustBeClosedChecker")
   @MustBeClosed
-  public Stream<String> streamLinesThroughAwk(Stream<String> inLines, String awkScript) throws IOException {
+  public Stream<String> streamLinesThroughAwk(Stream<String> inLines, String awkScript)
+      throws IOException {
     awkScript = awkScript.trim();
 
     if (awkScript.isEmpty()) {
@@ -99,88 +97,84 @@ public class SystemCommand {
   }
 
   @MustBeClosed
-  private Stream<String> execSystemCommand(
-      Stream<String> input,
-      List<String> cmd) throws IOException {
+  private Stream<String> execSystemCommand(Stream<String> input, List<String> cmd)
+      throws IOException {
 
     ProcessBuilder pb = new ProcessBuilder(cmd);
     Process process = pb.start();
 
     // Thread that feeds stdin
-    Thread writerThread = new Thread(() -> {
-      try (BufferedWriter writer =
-          new BufferedWriter(
-              new OutputStreamWriter(
-                  process.getOutputStream(),
-                  StandardCharsets.UTF_8))) {
+    Thread writerThread =
+        new Thread(
+            () -> {
+              try (BufferedWriter writer =
+                  new BufferedWriter(
+                      new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8))) {
 
-        input.forEach(line -> {
-          try {
-            writer.write(line);
-            writer.newLine();
-          } catch (IOException e) {
-            throw new UncheckedIOException(e);
-          }
-        });
+                input.forEach(
+                    line -> {
+                      try {
+                        writer.write(line);
+                        writer.newLine();
+                      } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                      }
+                    });
 
-      } catch (IOException | UncheckedIOException e) {
-        process.destroyForcibly();
-      }
-    });
+              } catch (IOException | UncheckedIOException e) {
+                process.destroyForcibly();
+              }
+            });
 
     writerThread.setDaemon(true);
     writerThread.start();
 
     // Thread that continuously drains stderr to avoid blocking
     StringBuilder stderrBuffer = new StringBuilder();
-    Thread stderrThread = new Thread(() -> {
-      try (BufferedReader errReader =
-          new BufferedReader(
-              new InputStreamReader(
-                  process.getErrorStream(),
-                  StandardCharsets.UTF_8))) {
+    Thread stderrThread =
+        new Thread(
+            () -> {
+              try (BufferedReader errReader =
+                  new BufferedReader(
+                      new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
 
-        String line;
-        while ((line = errReader.readLine()) != null) {
-          stderrBuffer.append(line).append(System.lineSeparator());
-        }
+                String line;
+                while ((line = errReader.readLine()) != null) {
+                  stderrBuffer.append(line).append(System.lineSeparator());
+                }
 
-      } catch (IOException e) {
-        process.destroyForcibly();
-      }
-    });
+              } catch (IOException e) {
+                process.destroyForcibly();
+              }
+            });
 
     stderrThread.setDaemon(true);
     stderrThread.start();
 
     BufferedReader stdoutReader =
-        new BufferedReader(
-            new InputStreamReader(
-                process.getInputStream(),
-                StandardCharsets.UTF_8));
+        new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
 
     Stream<String> stdoutStream = stdoutReader.lines();
 
-    return stdoutStream.onClose(() -> {
-      try {
-        stdoutReader.close();
+    return stdoutStream.onClose(
+        () -> {
+          try {
+            stdoutReader.close();
 
-        writerThread.join();
-        stderrThread.join();
+            writerThread.join();
+            stderrThread.join();
 
-        int exit = process.waitFor();
-        if (exit != 0) {
-          throw new RuntimeException(
-              cmd + "\n" +
-                  "Process exited with code " + exit +
-                  "\nstderr:\n" + stderrBuffer);
-        }
+            int exit = process.waitFor();
+            if (exit != 0) {
+              throw new RuntimeException(
+                  cmd + "\n" + "Process exited with code " + exit + "\nstderr:\n" + stderrBuffer);
+            }
 
-      } catch (Exception e) {
-        process.destroyForcibly();
-        throw new RuntimeException(e);
-      }
-    });
+          } catch (Exception e) {
+            process.destroyForcibly();
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   private void setTempFile(File tempFile) {

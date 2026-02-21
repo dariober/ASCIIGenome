@@ -1,5 +1,7 @@
 package sortBgzipIndex;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Splitter;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
@@ -17,10 +19,7 @@ import htsjdk.variant.vcf.VCFHeader;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -34,8 +33,6 @@ import samTextViewer.Utils;
 import utils.BedLine;
 import utils.BedLineCodec;
 import utils.GtfLine;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class MakeTabixIndex {
 
@@ -143,10 +140,7 @@ public class MakeTabixIndex {
 
   /** Set vcfHeader and vcfCodec to null if reading non-vcf line. */
   private void addLineToIndex(
-      String line,
-      TabixIndexCreator indexCreator,
-      long filePosition,
-      VCFCodec vcfCodec)
+      String line, TabixIndexCreator indexCreator, long filePosition, VCFCodec vcfCodec)
       throws InvalidRecordException {
     if (this.tabixFormat.equals(TabixFormat.BED)) {
       BedLineCodec bedCodec = new BedLineCodec();
@@ -222,7 +216,8 @@ public class MakeTabixIndex {
       if (this.tabixFormat.equals(TabixFormat.BED) && !this.columnSeparator.equals("\t")) {
         line = line.replace(this.columnSeparator, "\t");
       }
-      String[] tabs = Splitter.on('\t').splitToList(line).toArray(new String[0]);;
+      String[] tabs = Splitter.on('\t').splitToList(line).toArray(new String[0]);
+      ;
       if (n == 0 && this.tabixFormat.equals(TabixFormat.BED)) {
         // Allow first uncommented line to fail
         n++;

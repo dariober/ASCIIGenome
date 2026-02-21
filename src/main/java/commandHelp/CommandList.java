@@ -1252,11 +1252,14 @@ public class CommandList {
             + "\n"
             + "    print~~~~~~~~~~~~~~~~~~~~~~~~~~~-> Print all tracks, same as `print .*`\n"
             + "    print -off~~~~~~~~~~~~~~~~~~~~~~-> Turn off printing for all tracks\n"
-            + "    print genes.bed >> genes.txt~~~~-> Append features in track(s) 'genes.bed' to file\n"
+            + "    print genes.bed >> genes.txt~~~~-> Append features in track(s) 'genes.bed' to"
+            + " file\n"
             + "    print -sys 'cut -f 1-5 | sort'~~-> Select columns with `cut` and then sort\n"
             + "    print -sys 'cut -c 1-150'~~~~~~~-> Select first 150 characters\n"
-            + "    print -hl GT vcf~~~~~~~~~~~~~~~~-> Highlight GT values in VCF records (GTX will also match)\n"
-            + "    print -hl '\\bGT\\b' vcf~~~~~~~~~~-> Highlight GT values with word boundaries (GTX will not match)\n"
+            + "    print -hl GT vcf~~~~~~~~~~~~~~~~-> Highlight GT values in VCF records (GTX will"
+            + " also match)\n"
+            + "    print -hl '\\bGT\\b' vcf~~~~~~~~~~-> Highlight GT values with word boundaries"
+            + " (GTX will not match)\n"
             + "    print -sys null~~~~~~~~~~~~~~~~~-> Turn off the execution of sys commands\n");
     cmdList.add(cmd);
 

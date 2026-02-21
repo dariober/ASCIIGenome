@@ -17,7 +17,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
@@ -65,31 +64,30 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     }
   }
 
-//  protected List<T> getFeaturesInInterval(String chrom, int from, int to)
-//      throws IOException, InvalidGenomicCoordsException {
-//    if (from < 1) {
-//      System.err.println("from < 1: " + from + "; resetting to 1.");
-//      from = 1;
-//    }
-//    if (from > to) {
-//      throw new InvalidGenomicCoordsException(
-//          "Invalid coordinates: from: "
-//              + from
-//              + "; to: "
-//              + to
-//              + "; Resetting to initial 1-"
-//              + Integer.MAX_VALUE);
-//    }
-//    List<T> xFeatures = new ArrayList<>();
-//    this.removeInvisibleFeatures(xFeatures);
-//    return xFeatures;
-//  }
+  //  protected List<T> getFeaturesInInterval(String chrom, int from, int to)
+  //      throws IOException, InvalidGenomicCoordsException {
+  //    if (from < 1) {
+  //      System.err.println("from < 1: " + from + "; resetting to 1.");
+  //      from = 1;
+  //    }
+  //    if (from > to) {
+  //      throw new InvalidGenomicCoordsException(
+  //          "Invalid coordinates: from: "
+  //              + from
+  //              + "; to: "
+  //              + to
+  //              + "; Resetting to initial 1-"
+  //              + Integer.MAX_VALUE);
+  //    }
+  //    List<T> xFeatures = new ArrayList<>();
+  //    this.removeInvisibleFeatures(xFeatures);
+  //    return xFeatures;
+  //  }
 
   protected abstract List<T> getFeaturesInInterval(String chrom, int from, int to)
       throws IOException, InvalidGenomicCoordsException;
 
-  protected void filterFeaturesInPlace(List<T> iftList)
-      throws IOException {
+  protected void filterFeaturesInPlace(List<T> iftList) throws IOException {
     for (int i = 0; i < iftList.size(); i++) {
 
       T tr = iftList.get(i);
@@ -117,19 +115,25 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
       Stream<String> rawLines = iftList.stream().map(x -> x.getRaw());
       SystemCommand sysCmd = new SystemCommand();
       try (Stream<String> s = sysCmd.streamLinesThroughAwk(rawLines, this.getAwk())) {
-        List<T> filteredFeatures = s.map(x -> {
-          try {
-            return this.createFeature(x);
-          } catch (InvalidGenomicCoordsException e) {
-            try {
-              this.setAwk(Filter.DEFAULT_AWK.getValue());
-            } catch (ClassNotFoundException | InvalidGenomicCoordsException | IOException |
-                     InvalidRecordException | SQLException ex) {
-              throw new RuntimeException(ex);
-            }
-            throw new RuntimeException(e);
-          }
-        }).toList();
+        List<T> filteredFeatures =
+            s.map(
+                    x -> {
+                      try {
+                        return this.createFeature(x);
+                      } catch (InvalidGenomicCoordsException e) {
+                        try {
+                          this.setAwk(Filter.DEFAULT_AWK.getValue());
+                        } catch (ClassNotFoundException
+                            | InvalidGenomicCoordsException
+                            | IOException
+                            | InvalidRecordException
+                            | SQLException ex) {
+                          throw new RuntimeException(ex);
+                        }
+                        throw new RuntimeException(e);
+                      }
+                    })
+                .toList();
         iftList.clear();
         iftList.addAll(filteredFeatures);
       } finally {

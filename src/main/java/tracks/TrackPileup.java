@@ -23,10 +23,8 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
@@ -105,8 +103,11 @@ public class TrackPileup extends TrackBedgraph {
 
   @Override
   public void setShowHideRegex(Pattern showRegex, Pattern hideRegex)
-          throws InvalidGenomicCoordsException,
-          IOException, SQLException, InvalidRecordException, ClassNotFoundException {
+      throws InvalidGenomicCoordsException,
+          IOException,
+          SQLException,
+          InvalidRecordException,
+          ClassNotFoundException {
     this.clearCache();
     this.getFeatureFilter().setShowHideRegex(showRegex, hideRegex);
     this.update();
@@ -147,7 +148,12 @@ public class TrackPileup extends TrackBedgraph {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public void update() throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
+  public void update()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          SQLException,
+          InvalidRecordException,
+          ClassNotFoundException {
 
     if (this.getyMaxLines() == 0) {
       return;

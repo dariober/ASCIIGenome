@@ -6,8 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
 import colouring.Xterm256;
-import com.github.lindenb.jvarkit.variant.bcf.BCFFileReader;
-import com.github.lindenb.jvarkit.variant.bcf.BCFIterator;
 import exceptions.BamIndexNotFoundException;
 import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
@@ -19,16 +17,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import htsjdk.samtools.util.CloseableIterator;
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFHeader;
-import htsjdk.variant.vcf.VCFIterator;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;

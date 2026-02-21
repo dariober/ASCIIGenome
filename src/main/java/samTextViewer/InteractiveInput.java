@@ -16,7 +16,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -692,7 +691,8 @@ public class InteractiveInput {
     }
     String geneticCode = Utils.getArgForParam(args, "-geneticCode", currentCode);
 
-    IUPACParser.IUPACTable table = IUPACParser.getInstance().getTable(geneticCode.toUpperCase(Locale.ROOT));
+    IUPACParser.IUPACTable table =
+        IUPACParser.getInstance().getTable(geneticCode.toUpperCase(Locale.ROOT));
     if (table == null) {
       List<String> tables = new ArrayList<>();
       for (IUPACParser.IUPACTable x : IUPACParser.getInstance().getTables()) {
@@ -867,8 +867,7 @@ public class InteractiveInput {
   }
 
   /** Get the items (files) corresponding to the indexes. Errors are silently ignored. */
-  private List<String> openFilesFromIndexes(
-      Set<String> openedFiles, List<String> indexes) {
+  private List<String> openFilesFromIndexes(Set<String> openedFiles, List<String> indexes) {
     List<String> files = new ArrayList<String>();
     List<Integer> idxs = new ArrayList<Integer>();
     for (String x : indexes) {

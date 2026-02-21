@@ -124,16 +124,18 @@ public class InteractiveInputTest {
   @Test
   public void canFilterWithAwk()
       throws IOException,
-      SQLException,
-      InvalidGenomicCoordsException,
-      ClassNotFoundException,
-      InvalidRecordException,
-      InvalidCommandLineException {
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidCommandLineException {
     TrackProcessor proc =
-        gimmeTrackProcessor("1:630503-864021", 200, "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz");
+        gimmeTrackProcessor(
+            "1:630503-864021", 200, "test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz");
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
-    ProcessInput pi = processInput(ip, "open test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", proc);
+    ProcessInput pi =
+        processInput(ip, "open test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz", proc);
     pi = processInput(ip, "print -n 100", proc);
     assertTrue(pi.stdout.contains("ALU_umary_ALU_2"));
 

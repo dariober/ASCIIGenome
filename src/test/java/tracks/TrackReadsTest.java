@@ -44,16 +44,19 @@ public class TrackReadsTest {
 
   @Test
   public void canFilterWithSystemCommand()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
-          SQLException, InvalidColourException {
+          SQLException,
+          InvalidColourException {
     GenomicCoords gc = new GenomicCoords("chr7:5566778", 80, samSeqDict, null);
     TrackReads tr = new TrackReads("test_data/ds051.actb.bam", gc);
     tr.setNoFormat(true);
     tr.setSystemCommand("grep HWI-ST230:1089:4:2315:10346:72557");
-    assertEquals("CTCATTTTTAAGGTGTGCACTTTTATTCAACTGGTCTCAAGTCAGTGTACAGGTAAGCCCTGGCTGCCTCCACCC", tr.printToScreen().trim());
+    assertEquals(
+        "CTCATTTTTAAGGTGTGCACTTTTATTCAACTGGTCTCAAGTCAGTGTACAGGTAAGCCCTGGCTGCCTCCACCC",
+        tr.printToScreen().trim());
 
     tr.setSystemCommand("");
     assertTrue(Splitter.on("\n").splitToList(tr.printToScreen()).size() > 5);
@@ -155,21 +158,21 @@ public class TrackReadsTest {
   }
 
   // @Test // STUB
-//  public void canChangeReadColourOnRegex()
-//      throws InvalidGenomicCoordsException,
-//          IOException,
-//          ClassNotFoundException,
-//          InvalidRecordException,
-//          SQLException,
-//          InvalidColourException {
-//    GenomicCoords gc = new GenomicCoords("chr7:5566778-5566943", 80, null, null);
-//    TrackReads tr = new TrackReads("test_data/ds051.short.bam", gc);
-//    List<Argument> list = new ArrayList<Argument>();
-//    Argument re = new Argument("NCNNNCCC", "red1", false);
-//    list.add(re);
-//    tr.changeFeatureColour(list);
-//    assertTrue(tr.printToScreen().contains("196;"));
-//  }
+  //  public void canChangeReadColourOnRegex()
+  //      throws InvalidGenomicCoordsException,
+  //          IOException,
+  //          ClassNotFoundException,
+  //          InvalidRecordException,
+  //          SQLException,
+  //          InvalidColourException {
+  //    GenomicCoords gc = new GenomicCoords("chr7:5566778-5566943", 80, null, null);
+  //    TrackReads tr = new TrackReads("test_data/ds051.short.bam", gc);
+  //    List<Argument> list = new ArrayList<Argument>();
+  //    Argument re = new Argument("NCNNNCCC", "red1", false);
+  //    list.add(re);
+  //    tr.changeFeatureColour(list);
+  //    assertTrue(tr.printToScreen().contains("196;"));
+  //  }
 
   @Test
   public void canReadReadsWithMissingSequence()

@@ -35,14 +35,12 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
 import systemCommand.SystemCommand;
-import utils.Tokenizer;
 
 public abstract class AbstractTrack {
 
@@ -118,11 +116,6 @@ public abstract class AbstractTrack {
 
   public AbstractTrack() {}
 
-  /**
-   * Format the title string to add colour or return title as it is if no format is set.
-   *
-   * @throws InvalidColourException
-   */
   protected String formatTitle(String title) throws InvalidColourException {
 
     if (this.isNoFormat()) {
@@ -359,7 +352,11 @@ public abstract class AbstractTrack {
   }
 
   public void setShowSoftClip(boolean showSoftClip)
-          throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
+      throws InvalidGenomicCoordsException,
+          IOException,
+          SQLException,
+          InvalidRecordException,
+          ClassNotFoundException {
     // Do nothing in tracks that do not override this method
   }
 
@@ -1023,7 +1020,11 @@ public abstract class AbstractTrack {
   }
 
   public List<SAMRecord> filterReads(SamReader samReader, String chrom, int from, int to)
-          throws IOException, SQLException, InvalidGenomicCoordsException, InvalidRecordException, ClassNotFoundException {
+      throws IOException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          ClassNotFoundException {
 
     Iterator<SAMRecord> filterSam = samReader.query(chrom, from, to, false);
 
@@ -1093,7 +1094,8 @@ public abstract class AbstractTrack {
       }
     } // End loop through reads
 
-    SAMLineParser parser = new SAMLineParser(
+    SAMLineParser parser =
+        new SAMLineParser(
             new DefaultSAMRecordFactory(),
             ValidationStringency.LENIENT,
             samReader.getFileHeader(),
@@ -1108,7 +1110,8 @@ public abstract class AbstractTrack {
       }
       results.clear();
       SystemCommand sysCmd = new SystemCommand();
-      try (Stream<String> sam = sysCmd.streamLinesThroughAwk(Arrays.stream(rawLines), this.getAwk())) {
+      try (Stream<String> sam =
+          sysCmd.streamLinesThroughAwk(Arrays.stream(rawLines), this.getAwk())) {
         sam.forEach(x -> results.add(parser.parseLine(x)));
       } catch (RuntimeException e) {
         this.setAwk("");
@@ -1123,7 +1126,9 @@ public abstract class AbstractTrack {
       Stream<String> samText = results.stream().map(x -> x.getSAMString());
       List<SAMRecord> out = new ArrayList<>();
       SystemCommand sysCmd = new SystemCommand();
-      try (Stream<String> sam = sysCmd.streamLinesThroughSystemCommand(samText, samHeader.getSAMString(), this.getSystemCommand())) {
+      try (Stream<String> sam =
+          sysCmd.streamLinesThroughSystemCommand(
+              samText, samHeader.getSAMString(), this.getSystemCommand())) {
         sam.forEach(x -> out.add(parser.parseLine(x)));
       } catch (RuntimeException e) {
         this.setSystemCommand("");
@@ -1261,7 +1266,11 @@ public abstract class AbstractTrack {
   }
 
   public void setReadsAsPairs(boolean readsAsPairs)
-          throws InvalidGenomicCoordsException, IOException, SQLException, InvalidRecordException, ClassNotFoundException {
+      throws InvalidGenomicCoordsException,
+          IOException,
+          SQLException,
+          InvalidRecordException,
+          ClassNotFoundException {
     this.readsAsPairs = readsAsPairs;
   }
 
@@ -1347,12 +1356,18 @@ public abstract class AbstractTrack {
     return this.vcfHeader;
   }
 
-  public void setSystemCommand(String systemCommand) throws SQLException, InvalidGenomicCoordsException, IOException, InvalidRecordException, ClassNotFoundException {
+  public void setSystemCommand(String systemCommand)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          InvalidRecordException,
+          ClassNotFoundException {
     this.systemCommand = systemCommand;
     this.update();
   }
 
-  public abstract void streamFeaturesThroughSystemCommand() throws IOException, InterruptedException, InvalidGenomicCoordsException;
+  public abstract void streamFeaturesThroughSystemCommand()
+      throws IOException, InterruptedException, InvalidGenomicCoordsException;
 
   protected String getSystemCommand() {
     return this.systemCommand;

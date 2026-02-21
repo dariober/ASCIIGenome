@@ -5,7 +5,6 @@ import com.github.lindenb.jvarkit.variant.bcf.BCFIterator;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.errorprone.annotations.MustBeClosed;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -45,7 +44,6 @@ import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderVersion;
 import htsjdk.variant.vcf.VCFIterator;
-
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -80,10 +78,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import jline.TerminalFactory;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.text.StrMatcher;
@@ -100,10 +96,8 @@ import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
 import systemCommand.SystemCommand;
-import tracks.AbstractTrack;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
-import utils.Tokenizer;
 
 /**
  * @author berald01
@@ -608,7 +602,7 @@ public class Utils {
   }
 
   private static String initRegionFromBcf(String bcf) throws IOException {
-    try(VCFIterator iter = BCFIterator.open(Path.of(bcf))) {
+    try (VCFIterator iter = BCFIterator.open(Path.of(bcf))) {
       if (iter.hasNext()) {
         VariantContext ctx = iter.next();
         return ctx.getContig() + ":" + ctx.getStart();
@@ -2461,7 +2455,8 @@ public class Utils {
     return matched;
   }
 
-  public static boolean[] matchByAwkOrRegex(String[] rawLines, String awkFilterOrRegex) throws IOException {
+  public static boolean[] matchByAwkOrRegex(String[] rawLines, String awkFilterOrRegex)
+      throws IOException {
     boolean isAwk = false;
     if (Pattern.compile("\\$\\d|\\$[A-Z]").matcher(awkFilterOrRegex).find()) {
       // We assume that if awkFilterOrRegex contains a '$' followed by digit or letter

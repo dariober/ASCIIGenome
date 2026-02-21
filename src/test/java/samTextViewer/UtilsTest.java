@@ -6,8 +6,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import colouring.Config;
 import com.google.common.base.Joiner;
@@ -38,18 +38,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
-
 import jline.console.ConsoleReader;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
-import org.apache.commons.lang3.ArrayUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import tracks.IntervalFeature;
@@ -306,16 +302,14 @@ public class UtilsTest {
     assertTrue(new File("sorted.bai").length() > 1000);
     assertTrue(new File("sorted.bam").length() > 1000);
 
-    Throwable e = assertThrows(IOException.class, () ->
-            Utils.sortAndIndexSamOrBam(
-                    "test_data/ds051.noindex.cram",
-                    "sorted.cram",
-                    true,
-                    "test_data/chr7.fa"
-            )
-    );
+    Throwable e =
+        assertThrows(
+            IOException.class,
+            () ->
+                Utils.sortAndIndexSamOrBam(
+                    "test_data/ds051.noindex.cram", "sorted.cram", true, "test_data/chr7.fa"));
     assertTrue(e.getMessage().contains("CRAM output"));
- }
+  }
 
   @Test
   public void canSortAndIndexSamOrBam() throws IOException {
@@ -372,7 +366,8 @@ public class UtilsTest {
     ExecutorService exec = Executors.newFixedThreadPool(2);
     try {
       for (final List<String> o : list) {
-        var ignored = exec.submit(
+        var ignored =
+            exec.submit(
                 new Runnable() {
                   @Override
                   public void run() {
@@ -617,15 +612,14 @@ public class UtilsTest {
     assertEquals("1234567890", p.get(2));
   }
 
-
   @Test
   public void canAwkFilterSamAln()
       throws IOException,
-      InvalidGenomicCoordsException,
-      ClassNotFoundException,
-      InvalidRecordException,
-      SQLException,
-      InvalidColourException {
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
 
     GenomicCoords gc = new GenomicCoords("chr7:1-100", 100, null, null);
     TrackReads tr = new TrackReads("test_data/pairs.sam", gc);
@@ -1071,12 +1065,13 @@ public class UtilsTest {
   @Test
   public void canInitRegionFromBcf()
       throws IOException,
-      InvalidGenomicCoordsException,
-      ClassNotFoundException,
-      InvalidRecordException,
-      SQLException {
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException {
     assertEquals(
-        "chr1:11994", Utils.initRegionFromFile("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", null));
+        "chr1:11994",
+        Utils.initRegionFromFile("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", null));
   }
 
   @Test
