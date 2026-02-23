@@ -23,11 +23,13 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -126,11 +128,22 @@ public class TrackPileup extends TrackBedgraph {
   }
 
   @Override
+  public void setSystemCommand(String systemCommand)
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
+    this.clearCache();
+    this.getFeatureFilter().setSystemCommand(systemCommand);
+    this.update();
+  }
+
+  @Override
   public String getAwk() {
     // MEMO: You need to override TrackWiggles not Tracks!
     return this.getFeatureFilter().getAwk();
   }
-  ;
 
   @Override
   public void setVariantReadInInterval(String chrom, int from, int to, boolean variantOnly)
@@ -161,7 +174,7 @@ public class TrackPileup extends TrackBedgraph {
     String chrom = this.getGc().getChrom();
 
     if (!this.loci.containsKey(chrom)) {
-      this.loci.put(chrom, new HashMap<Integer, Locus>());
+      this.loci.put(chrom, new HashMap<>());
     }
     if (!this.zeroDepthIntervals.containsKey(chrom)) {
       this.zeroDepthIntervals.put(chrom, new IntervalTree());
@@ -174,7 +187,7 @@ public class TrackPileup extends TrackBedgraph {
     }
 
     // Find the positions that we haven't visited before:
-    List<Integer> missingPos = new ArrayList<Integer>();
+    List<Integer> missingPos = new ArrayList<>();
     for (int pos = this.getGc().getFrom(); pos <= this.getGc().getTo(); pos++) {
       if (!this.loci.get(chrom).containsKey(pos)
           && !this.zeroDepthIntervals.get(chrom).overlappers(pos, pos).hasNext()) {
@@ -182,16 +195,24 @@ public class TrackPileup extends TrackBedgraph {
       }
     }
     for (List<Integer> gap : mergePositionsInIntervals(missingPos)) {
-
       int qryFrom = gap.get(0);
       int qryTo = gap.get(1);
 
-      SamReader samReader = Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
-      List<SAMRecord> passFilter = this.filterReads(samReader, chrom, qryFrom, qryTo);
-      samReader.close();
-      for (SAMRecord rec : passFilter) {
-        this.add(rec, qryFrom, qryTo, this.loci.get(chrom));
+      try (SamReader samReader =
+              Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
+          Stream<SAMRecord> passFilter =
+              this.filterReads(
+                  samReader,
+                  this.getGc().getChrom(),
+                  this.getGc().getFrom(),
+                  this.getGc().getTo())) {
+        Iterator<SAMRecord> iter = passFilter.iterator();
+        while (iter.hasNext()) {
+          SAMRecord rec = iter.next();
+          this.add(rec, qryFrom, qryTo, this.loci.get(chrom));
+        }
       }
+
       // Now add the loci that have been collected in this last update
       List<Integer> zeroDepthPos = new ArrayList<>();
       for (int pos = qryFrom; pos <= qryTo; pos++) {
@@ -254,10 +275,6 @@ public class TrackPileup extends TrackBedgraph {
     return chromosomeNames;
   }
 
-  /**
-   * Update the given map of loci with the information in this record. Only consider positions
-   * between qryFrom and qryTo.
-   */
   private void add(SAMRecord samRecord, int qryFrom, int qryTo, Map<Integer, Locus> accumulator) {
     boolean isFirstOFPair;
     if (!samRecord.getReadPairedFlag()) {
@@ -328,10 +345,8 @@ public class TrackPileup extends TrackBedgraph {
     }
   }
 
-  /**
-   * MEMO: Deletion does not consume read bases. It consumes reference bases: ref NNNNNNNN read
-   * NNN---NN
-   */
+  // MEMO: Deletion does not consume read bases. It consumes reference bases: ref NNNNNNNN read
+  // NNN---NN
   private List<int[]> getRefPositionOfDeletedBlocks(SAMRecord samRecord) {
 
     int ndel = StringUtils.countMatches(samRecord.getCigarString().toUpperCase(), 'D');
@@ -472,6 +487,9 @@ public class TrackPileup extends TrackBedgraph {
     List<String> title = new ArrayList<String>();
     if (!this.getAwk().equals(Filter.DEFAULT_AWK.getValue())) {
       title.add("awk");
+    }
+    if (!this.getSystemCommand().equals(Filter.DEFAULT_SYSTEM_COMMAND.getValue())) {
+      title.add("stream");
     }
     if (!this.getShowRegex().pattern().equals(Filter.DEFAULT_SHOW_REGEX.getValue())
         || !this.getHideRegex().pattern().equals(Filter.DEFAULT_HIDE_REGEX.getValue())) {

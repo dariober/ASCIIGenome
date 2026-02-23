@@ -1,5 +1,9 @@
 package tracks;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
+
 import colouring.Config;
 import colouring.ConfigKey;
 import colouring.Xterm256;
@@ -29,12 +33,16 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import samTextViewer.GenomicCoords;
@@ -49,7 +57,7 @@ public abstract class AbstractTrack {
   static {
     try {
       InputStream in = Main.class.getResourceAsStream("/functions.awk");
-      BufferedReader br = new BufferedReader(new InputStreamReader(in));
+      BufferedReader br = new BufferedReader(new InputStreamReader(in, UTF_8));
       String line = null;
       StringBuilder x = new StringBuilder();
       while ((line = br.readLine()) != null) {
@@ -65,12 +73,12 @@ public abstract class AbstractTrack {
     }
   }
 
-  private String systemCommand;
+  // private String systemCommand;
   protected int yMaxLines = 10;
   private String filename = "N/A"; // File name as given in input
   private String workFilename = "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files
   private String trackTag = "N/A"; // Tag name for title
-  protected List<Float> screenScores = new ArrayList<Float>();
+  protected List<Float> screenScores = new ArrayList<>();
   GenomicCoords gc;
   private boolean noFormat = false;
   private float yLimitMin = Float.NaN; // Same as R ylim()
@@ -139,6 +147,7 @@ public abstract class AbstractTrack {
       throws InvalidGenomicCoordsException, IOException, InvalidColourException;
 
   /** Print track info - for debugging and development only. */
+  @Override
   public String toString() {
     return "file name: "
         + this.getFilename()
@@ -270,6 +279,7 @@ public abstract class AbstractTrack {
       this.update();
     } catch (RuntimeException e) {
       this.getFeatureFilter().setAwk(Filter.DEFAULT_AWK.getValue());
+      this.update();
       throw e;
     }
   }
@@ -491,7 +501,7 @@ public abstract class AbstractTrack {
       // If an output file has been set, send output there and return.
       BufferedWriter wr = null;
       try {
-        wr = new BufferedWriter(new FileWriter(this.getExportFile(), true));
+        wr = Files.newBufferedWriter(Paths.get(this.getExportFile()), UTF_8, CREATE, APPEND);
         for (String line : rawList) {
           wr.write(line.replace("\n", "").replace("\r", "") + "\n");
         }
@@ -535,7 +545,7 @@ public abstract class AbstractTrack {
         for (int i = 0; i < lst.size(); i++) {
           String field = lst.get(i);
           if (i == 8) {
-            field = java.net.URLDecoder.decode(field, StandardCharsets.UTF_8.name());
+            field = URLDecoder.decode(field, UTF_8.name());
             field = field.replace("\n", "%0A");
             field = field.replace("\r", "%0D");
           }
@@ -895,7 +905,6 @@ public abstract class AbstractTrack {
     cmd.add("bash");
     cmd.add("-c");
     cmd.add("cat " + tmp.getAbsolutePath() + " | " + sysCmd);
-    // this.setSystemCommandForPrint(null); // Reset after having consumed sys cmd.
 
     ProcessBuilder pb = new ProcessBuilder().command(cmd);
     pb.redirectErrorStream(true);
@@ -1019,22 +1028,16 @@ public abstract class AbstractTrack {
     return header + title + track;
   }
 
-  public List<SAMRecord> filterReads(SamReader samReader, String chrom, int from, int to)
+  @SuppressWarnings("MustBeClosedChecker")
+  public Stream<SAMRecord> filterReads(SamReader samReader, String chrom, int from, int to)
       throws IOException,
           SQLException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
           ClassNotFoundException {
 
-    Iterator<SAMRecord> filterSam = samReader.query(chrom, from, to, false);
-
     AggregateFilter aggregateFilter =
         new AggregateFilter(this.getFeatureFilter().getSamRecordFilter());
-
-    // This array will contain true/false to indicate whether a record passes the
-    // sam filters AND the awk filter (if given).
-    // boolean[] results= new boolean[(int) this.nRecsInWindow];
-    List<SAMRecord> results = new ArrayList<>();
 
     boolean isDefaultShowRegex =
         this.getFeatureFilter()
@@ -1047,54 +1050,14 @@ public abstract class AbstractTrack {
             .toString()
             .equals(Filter.DEFAULT_HIDE_REGEX.getValue());
 
-    List<String> awkDataInput = new ArrayList<String>();
-    while (filterSam.hasNext()) {
-      // Record whether a read passes the sam filters. If necessary, we also
-      // store the raw reads for awk.
-      SAMRecord rec = filterSam.next();
-      boolean passed;
-      if (!rec.getReadUnmappedFlag()
-          && !aggregateFilter.filterOut(rec)
-          && rec.getAlignmentEnd() >= rec.getAlignmentStart()) {
-        passed = true;
-      } else {
-        passed = false;
-      }
+    Stream<SAMRecord> samRecordStream =
+        StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(
+                    samReader.query(chrom, from, to, false), Spliterator.ORDERED),
+                false)
+            .filter(x -> hasPassedBooleanFilters(x, aggregateFilter, isDefaultShowRegex, isDefaultHideRegex));
 
-      // Filter for variant reads: Do it only if there is an intersection between variant interval
-      // and current genomic window
-      if (this.getFeatureFilter()
-          .getVariantChrom()
-          .equals(Filter.DEFAULT_VARIANT_CHROM.getValue())) {
-        // Variant read filter is not set. Nothing to do.
-      } else if (passed) {
-        // Memo: Test filter(s) only if a read is passed==true.
-        passed = this.isSNVRead(rec, this.getFeatureFilter().isVariantOnly());
-      }
-
-      String raw = null;
-
-      if (passed && (!isDefaultShowRegex || !isDefaultHideRegex)) {
-        // grep
-        raw = rec.getSAMString().trim();
-        boolean showIt = true;
-        if (!isDefaultShowRegex) {
-          showIt = this.getFeatureFilter().getShowRegex().matcher(raw).find();
-        }
-        boolean hideIt = false;
-        if (!isDefaultHideRegex) {
-          hideIt = this.getFeatureFilter().getHideRegex().matcher(raw).find();
-        }
-        if (!showIt || hideIt) {
-          passed = false;
-        }
-      }
-      if (passed) {
-        results.add(rec);
-      }
-    } // End loop through reads
-
-    SAMLineParser parser =
+    SAMLineParser makeSAMRecordFromString =
         new SAMLineParser(
             new DefaultSAMRecordFactory(),
             ValidationStringency.SILENT,
@@ -1104,40 +1067,92 @@ public abstract class AbstractTrack {
 
     // Apply the awk filter, if given
     if (this.getAwk() != null && !this.getAwk().equals(Filter.DEFAULT_AWK.getValue())) {
-      String[] rawLines = new String[results.size()];
-      for (int i = 0; i < results.size(); i++) {
-        rawLines[i] = prepareSAMRecordForAwk(results.get(i));
-      }
-      results.clear();
       SystemCommand sysCmd = new SystemCommand();
-      try (Stream<String> sam =
-          sysCmd.streamLinesThroughAwk(Arrays.stream(rawLines), this.getAwk())) {
-        sam.forEach(x -> results.add(parser.parseLine(x)));
+      try {
+        samRecordStream =
+            sysCmd
+                .streamLinesThroughAwk(
+                    samRecordStream.map(this::prepareSAMRecordForAwk), this.getAwk())
+                .map(makeSAMRecordFromString::parseLine)
+                .onClose(
+                    () -> {
+                      try {
+                        sysCmd.deleteTempFile();
+                      } catch (IOException e) {
+                        throw new RuntimeException(e);
+                      }
+                    });
+
       } catch (RuntimeException e) {
         this.setAwk("");
-        throw e;
-      } finally {
         sysCmd.deleteTempFile();
+        throw e;
       }
     }
+
     // Apply system command filter, if given
     if (this.getSystemCommand() != null && !this.getSystemCommand().isEmpty()) {
+
       SAMFileHeader samHeader = samReader.getFileHeader();
-      Stream<String> samText = results.stream().map(x -> x.getSAMString());
-      List<SAMRecord> out = new ArrayList<>();
       SystemCommand sysCmd = new SystemCommand();
-      try (Stream<String> sam =
-          sysCmd.streamLinesThroughSystemCommand(
-              samText, samHeader.getSAMString(), this.getSystemCommand())) {
-        sam.forEach(x -> out.add(parser.parseLine(x)));
+
+      try {
+        samRecordStream =
+            sysCmd
+                .streamLinesThroughSystemCommand(
+                    samRecordStream.map(x -> x.getSAMString().trim()),
+                    samHeader.getSAMString().trim(),
+                    this.getSystemCommand())
+                .map(makeSAMRecordFromString::parseLine)
+                .onClose(
+                    () -> {
+                      try {
+                        sysCmd.deleteTempFile();
+                      } catch (IOException e) {
+                        throw new RuntimeException(e);
+                      }
+                    });
+
       } catch (RuntimeException e) {
         this.setSystemCommand("");
         throw e;
       }
-      results.clear();
-      results.addAll(out);
     }
-    return results;
+    return samRecordStream;
+  }
+
+  private boolean hasPassedBooleanFilters(SAMRecord rec, AggregateFilter aggregateFilter, boolean isDefaultShowRegex, boolean isDefaultHideRegex) {
+
+    boolean passed;
+    passed =
+        !rec.getReadUnmappedFlag()
+            && !aggregateFilter.filterOut(rec)
+            && rec.getAlignmentEnd() >= rec.getAlignmentStart();
+
+    // Filter for variant reads: Do it only if there is an intersection between variant interval
+    // and current genomic window
+    if (this.getFeatureFilter().getVariantChrom().equals(Filter.DEFAULT_VARIANT_CHROM.getValue())) {
+      // Variant read filter is not set. Nothing to do.
+    } else if (passed) {
+      passed = this.isSNVRead(rec, this.getFeatureFilter().isVariantOnly());
+    }
+
+    if (passed && (!isDefaultShowRegex || !isDefaultHideRegex)) {
+      // grep
+      String raw = rec.getSAMString().trim();
+      boolean showIt = true;
+      if (!isDefaultShowRegex) {
+        showIt = this.getFeatureFilter().getShowRegex().matcher(raw).find();
+      }
+      boolean hideIt = false;
+      if (!isDefaultHideRegex) {
+        hideIt = this.getFeatureFilter().getHideRegex().matcher(raw).find();
+      }
+      if (!showIt || hideIt) {
+        passed = false;
+      }
+    }
+    return passed;
   }
 
   /**
@@ -1148,7 +1163,7 @@ public abstract class AbstractTrack {
   private String prepareSAMRecordForAwk(SAMRecord rec) {
     int alnEnd = rec.getAlignmentEnd();
 
-    List<String> recList = new ArrayList<String>();
+    List<String> recList = new ArrayList<>();
     recList.add(rec.getSAMString().trim());
     // We add a tag for aln end. Name in such way that it cannot collide with valid existing tags
     recList.add("$$:i:" + alnEnd);
@@ -1357,32 +1372,22 @@ public abstract class AbstractTrack {
   }
 
   public void setSystemCommand(String systemCommand)
-      throws SQLException,
-          InvalidGenomicCoordsException,
+      throws ClassNotFoundException,
           IOException,
+          InvalidGenomicCoordsException,
           InvalidRecordException,
-          ClassNotFoundException {
-    this.systemCommand = systemCommand;
-    this.update();
+          SQLException {
+    this.getFeatureFilter().setSystemCommand(systemCommand);
+    try {
+      this.update();
+    } catch (RuntimeException e) {
+      this.getFeatureFilter().setSystemCommand(Filter.DEFAULT_SYSTEM_COMMAND.getValue());
+      this.update();
+      throw e;
+    }
   }
-
-  public abstract void streamFeaturesThroughSystemCommand()
-      throws IOException, InterruptedException, InvalidGenomicCoordsException;
 
   protected String getSystemCommand() {
-    return this.systemCommand;
+    return this.getFeatureFilter().getSystemCommand();
   }
-
-  //  @Override
-  //  public VCFHeader getVcfHeader() {
-  //    return this.vcfHeader;
-  //  }
-
-  //  public abstract GenomicCoords coordsOfNextFeature(GenomicCoords currentGc, boolean
-  // getPrevious)
-  //      throws InvalidGenomicCoordsException, IOException;
-  //
-  //  protected abstract GenomicCoords startEndOfNextFeature(GenomicCoords currentGc, boolean
-  // getPrevious)
-  //      throws InvalidGenomicCoordsException, IOException;
 }

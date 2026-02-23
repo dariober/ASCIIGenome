@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.List;
+import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
@@ -24,6 +25,11 @@ public class TrackBedgraphTest {
   @Before
   public void prepareConfig() throws IOException, InvalidConfigException {
     new Config(null);
+  }
+
+  @Test
+  public void canStreamThroughSystemCommand() {
+    throw new NotImplementedException("TODO");
   }
 
   @Test

@@ -20,3 +20,11 @@ jobs:
           chmod a+x integration_test.py
           ./integration_test.py
           bash <(curl -s https://codecov.io/bash)
+
+# wget https://github.com/samtools/samtools/releases/download/1.23/samtools-1.23.tar.bz2
+# bunzip2 samtools-1.23.tar.bz2 
+# tar xfv samtools-1.23.tar 
+# cd samtools-1.23/
+# ./configure --prefix=$HOME/.local
+# make
+# make install

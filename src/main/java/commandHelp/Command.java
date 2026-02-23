@@ -62,7 +62,7 @@ public enum Command {
 
   private final String commandDescription;
 
-  private Command(String value) {
+  Command(String value) {
     commandDescription = value;
   }
 

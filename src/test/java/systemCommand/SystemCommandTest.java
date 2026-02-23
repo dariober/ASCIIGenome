@@ -4,13 +4,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.Test;
 
 public class SystemCommandTest {
   @Test
-  public void canExecSystemCommand() throws IOException, InterruptedException {
+  public void canExecSystemCommand() throws IOException {
     String[] input = {"chr1\t1\t10\tfoo", "chr1\t1\t100\tbar", "chr1\t1\t200\tspam"};
 
     SystemCommand sysCmd = new SystemCommand();
@@ -29,10 +30,72 @@ public class SystemCommandTest {
       pass = true;
     }
     assertTrue(pass);
+
+    // Gotcha: grep fails without match.
+    pass = false;
+    try (Stream<String> s =
+        sysCmd.streamLinesThroughSystemCommand(Stream.of(input), null, "grep foobar")) {
+    } catch (RuntimeException e) {
+      pass = true;
+    }
+    assertEquals(1, sysCmd.getExitCode());
+    assertTrue(pass);
+
+    sysCmd = new SystemCommand();
+    try (Stream<String> s =
+        sysCmd.streamLinesThroughSystemCommand(Stream.of(input), null, "grep FOOBAR | cat")) {
+      List<String> res = s.toList();
+      assertEquals(0, res.size());
+    }
+
+    // Gotcha 2: pipe swallows the error.
+    sysCmd = new SystemCommand();
+    try (Stream<String> s =
+        sysCmd.streamLinesThroughSystemCommand(Stream.of(input), null, "FOOBAR | cat")) {
+      List<String> res = s.toList();
+      assertEquals(0, res.size());
+    }
+    assertTrue(sysCmd.getStderr().contains("FOOBAR: command not found"));
+
+    sysCmd = new SystemCommand();
+    try (Stream<String> s =
+        sysCmd.streamLinesThroughSystemCommand(Stream.of(input), null, "grep chr | head -n 1")) {
+      List<String> res = s.toList();
+      assertEquals(1, res.size());
+    }
   }
 
   @Test
-  public void canStreamLinesThroughSystemCommand() throws IOException, InterruptedException {
+  public void canStreamLinesThroughSystemCommandSamtools() throws IOException {
+    SystemCommand sysCmd = new SystemCommand();
+    String samHeader =
+        "@HD\tVN:1.4\tSO:coordinate\n"
+            + "@SQ\tSN:chr7\tLN:159138663\n"
+            + "@RG\tID:1\tPL:illumina\tPU:flowcell-barcode.lane\tLB:./ds051_mda_pdsa_6h_6"
+            + "\tDS:Tophat output\tSM:./ds051_mda_pdsa_6h_6\tCN:CRUK_CRI";
+    List<String> recs = new ArrayList<>();
+    recs.add(
+        "HWI-ST230:1089:4:2315:10346:72557#GTTTCGGA#NCTNTCCN\t0\tchr7\t5566778\t50\t75M\t*\t0\t0"
+            + "\tCTCATTTTTAAGGTGTGCACTTTTATTCAACTGGTCTCAAGTCAGTGTACAGGTAAGCCCTGGCTGCCTCCACCC"
+            + "\tCCCFFFFFHHGHHGHGHIJJJIJJJJJJJJJJJIHIHJJIJIIJJFIIIIIJJHGHIHIJJIIJIJIIIIJJJIJ"
+            + "\tMD:Z:75\tRG:Z:1\tXG:i:0\tNH:i:1\tNM:i:0\tXM:i:0\tXN:i:0\tXO:i:0\tAS:i:0\tYT:Z:UU");
+    recs.add(
+        "HWI-ST230:1089:4:1308:13455:60680#GTTTCGGA#NCNNNCCC\t0\tchr7\t5566779\t60\t75M\t*\t0\t0"
+            + "\tTTTTTTTTAAGGTGTGCACTTTTATTCAACTGGTCTCAAGTCAGTGTACAGGTAAGCCCTGGCTGCCTCCACCCA"
+            + "\tCCCFFFFFHHHGCFFHIIJIIJJJJJJJJJJJJFHIJJJJJJJJIIGIIIIJHGHIIIJJJJHFHHFFFFDCED="
+            + "\tMD:Z:1C0A72\tRG:Z:1\tXG:i:0\tNH:i:1\tNM:i:2\tXM:i:2\tXN:i:0\tXO:i:0\tAS:i:-10"
+            + "\tXS:A:-\tYT:Z:UU");
+
+    try (Stream<String> stream =
+        sysCmd.streamLinesThroughSystemCommand(
+            recs.stream(), samHeader, "cat | samtools view -q 60")) {
+      List<String> res = stream.toList();
+      assertEquals(recs.get(1), res.get(0));
+    }
+  }
+
+  @Test
+  public void canStreamLinesThroughSystemCommand() throws IOException {
     String[] input = {"chr1\t1\t10\tfoo", "chr1\t1\t100\tbar", "chr1\t1\t200\tspam"};
 
     SystemCommand sysCmd = new SystemCommand();

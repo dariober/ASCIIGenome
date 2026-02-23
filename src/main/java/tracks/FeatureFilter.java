@@ -16,7 +16,7 @@ class FeatureFilter {
   protected Pattern hideRegex = Pattern.compile(Filter.DEFAULT_HIDE_REGEX.getValue());
   protected Pattern showRegex = Pattern.compile(Filter.DEFAULT_SHOW_REGEX.getValue());
   private String awk = Filter.DEFAULT_AWK.getValue();
-  private String systemCommandFilter = Filter.DEFAULT_SYSTEM_COMMAND_FILTER.getValue();
+  private String systemCommand = Filter.DEFAULT_SYSTEM_COMMAND.getValue();
   private int f_flag = Integer.valueOf(Filter.DEFAULT_f_FLAG.getValue());
   private int F_flag = Integer.valueOf(Filter.DEFAULT_F_FLAG.getValue());
   private int mapq = Integer.valueOf(Filter.DEFAULT_MAPQ.getValue());
@@ -60,6 +60,14 @@ class FeatureFilter {
 
   public void setAwk(String awk) {
     this.awk = awk;
+  }
+
+  public void setSystemCommand(String systemCommand) {
+    this.systemCommand = systemCommand;
+  }
+
+  public String getSystemCommand() {
+    return systemCommand;
   }
 
   /** This int is just a setting but is NOT translated to a filter! */

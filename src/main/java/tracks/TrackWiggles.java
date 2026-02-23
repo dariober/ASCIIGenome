@@ -339,7 +339,6 @@ public class TrackWiggles extends AbstractTrack {
         chroms.remove(0);
       }
       return chroms;
-      // chroms.addAll();
     }
     if (this.getTrackFormat().equals(TrackFormat.BIGWIG)) {
       return this.bigWigReader.getChromosomeNames();
@@ -371,9 +370,6 @@ public class TrackWiggles extends AbstractTrack {
   public String getAwk() {
     return "";
   }
-
-  @Override
-  public void streamFeaturesThroughSystemCommand() {}
 
   @Override
   protected String getTitleForActiveFilters() {

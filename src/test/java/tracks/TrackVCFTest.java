@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
@@ -24,6 +25,11 @@ public class TrackVCFTest {
   public void prepareConfig() throws IOException, InvalidConfigException {
     new Config(null);
     new Xterm256();
+  }
+
+  @Test
+  public void canStreamThroughSystemCommand() {
+    throw new NotImplementedException("TODO");
   }
 
   @Test

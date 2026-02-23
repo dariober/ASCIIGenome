@@ -1,5 +1,7 @@
 package samTextViewer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import colouring.Config;
 import colouring.ConfigKey;
 import com.google.common.base.Splitter;
@@ -21,6 +23,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -148,14 +151,6 @@ public class GenomicCoords implements Cloneable {
 
   /* Methods */
 
-  /**
-   * Set genome dictionary and fasta file ref if available. See
-   * GenomicCoords.getSamSeqDictFromAnyFile() for available inputs.
-   *
-   * @param includeGenomeFile: Should the input data be treated as a genome file? Set to true only
-   *     if the input can be a genome file. Other files (bed, vcf, gff) look like valid genome file
-   *     and this can result in wrong dictionary.
-   */
   public void setGenome(List<String> input, boolean includeGenomeFile) throws IOException {
     List<String> cleanList = new ArrayList<String>();
     for (String x : input) {
@@ -181,7 +176,7 @@ public class GenomicCoords implements Cloneable {
       } catch (FileNotFoundException e) {
         try {
           new Faidx(new File(x));
-          (new File(x + ".fai")).deleteOnExit();
+          new File(x + ".fai").deleteOnExit();
           this.setFastaFile(x);
         } catch (Exception e1) {
           done = false;
@@ -193,27 +188,20 @@ public class GenomicCoords implements Cloneable {
     }
   }
 
-  /**
-   * Return the next chromosome in the sequence dictionary whose size is >= minSize, <= maxSize, and
-   * name matches regex
-   *
-   * @throws InvalidGenomicCoordsException
-   * @throws IOException
-   */
   public void nextChrom(
-      ArrayList<String> knownContigs, int minSize, int maxSize, String regex, ContigOrder sortOrder)
+      List<String> knownContigs, int minSize, int maxSize, String regex, ContigOrder sortOrder)
       throws InvalidGenomicCoordsException, IOException {
 
     // Prepare sequence dictionary. It may be the dictionary stored in the object or a list of known
     // contigs
-    ArrayList<SAMSequenceRecord> ctg;
+    List<SAMSequenceRecord> ctg;
     if (this.samSeqDict == null) {
       ctg = this.makeSequenceDictionaryFromContigs(knownContigs);
     } else {
       ctg = new ArrayList<>(samSeqDict.getSequences());
     }
 
-    ArrayList<SAMSequenceRecord> selected =
+    List<SAMSequenceRecord> selected =
         this.sortAndFilterSequenceDictionary(ctg, minSize, maxSize, regex, sortOrder);
     if (selected.isEmpty()) {
       throw new InvalidGenomicCoordsException("There is no contig passing filters");
@@ -246,7 +234,7 @@ public class GenomicCoords implements Cloneable {
   }
 
   public String printSequenceDictionary(
-      ArrayList<String> knownContigs,
+      List<String> knownContigs,
       int minSize,
       int maxSize,
       String regex,
@@ -260,7 +248,7 @@ public class GenomicCoords implements Cloneable {
     }
     // Prepare sequence dictionary. It may be the dictionary stored in the object or a list of known
     // contigs
-    ArrayList<SAMSequenceRecord> ctg = new ArrayList<SAMSequenceRecord>();
+    List<SAMSequenceRecord> ctg = new ArrayList<SAMSequenceRecord>();
     if (samSeqDict == null) {
       ctg = this.makeSequenceDictionaryFromContigs(knownContigs);
     } else {
@@ -279,7 +267,7 @@ public class GenomicCoords implements Cloneable {
       }
     }
 
-    ArrayList<SAMSequenceRecord> chroms =
+    List<SAMSequenceRecord> chroms =
         this.sortAndFilterSequenceDictionary(ctg, minSize, maxSize, regex, sortOrder);
     if (chroms.isEmpty()) {
       throw new InvalidGenomicCoordsException("There are no contigs passing filters");
@@ -355,8 +343,7 @@ public class GenomicCoords implements Cloneable {
     return "Genome size: " + gs + "; Number of contigs: " + samSequenceDictionary.size();
   }
 
-  private ArrayList<SAMSequenceRecord> makeSequenceDictionaryFromContigs(
-      List<String> knownContigs) {
+  private List<SAMSequenceRecord> makeSequenceDictionaryFromContigs(List<String> knownContigs) {
     ArrayList<SAMSequenceRecord> ctg = new ArrayList<SAMSequenceRecord>();
     for (String x : knownContigs) {
       SAMSequenceRecord seq = new SAMSequenceRecord(x, -1);
@@ -365,7 +352,7 @@ public class GenomicCoords implements Cloneable {
     return ctg;
   }
 
-  private ArrayList<SAMSequenceRecord> sortAndFilterSequenceDictionary(
+  private List<SAMSequenceRecord> sortAndFilterSequenceDictionary(
       List<SAMSequenceRecord> ctg, int minSize, int maxSize, String regex, ContigOrder sortOrder)
       throws InvalidGenomicCoordsException, IOException {
 
@@ -439,25 +426,18 @@ public class GenomicCoords implements Cloneable {
                 + "-"
                 + this.to
                 + " for fasta file "
-                + this.fastaFile);
-        e.printStackTrace();
+                + this.fastaFile
+                + "\n"
+                + e.getMessage());
+        ;
       }
       faSeqFile.close();
     } catch (FileNotFoundException e) {
-      e.printStackTrace();
+      System.err.println(e.getMessage());
     }
     return null;
   }
 
-  /**
-   * Parse string to return coordinates. This method simply populates the fields chrom, from, to by
-   * parsing the input string. This object can't be used as such as there is no check for valid
-   * input. It should be used only by the constructor.
-   *
-   * @return
-   * @throws InvalidGenomicCoordsException
-   * @throws IOException
-   */
   private GenomicCoords parseStringToGenomicCoords(String x)
       throws InvalidGenomicCoordsException, IOException {
 
@@ -598,6 +578,7 @@ public class GenomicCoords implements Cloneable {
     }
   }
 
+  @Override
   public String toString() {
     int range = this.to - this.from + 1;
     return this.chrom
@@ -625,12 +606,6 @@ public class GenomicCoords implements Cloneable {
     return midpoint;
   }
 
-  /**
-   * Rescale coords to extend them as in zooming-in/-out
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
   public void zoomOut() throws IOException, InvalidGenomicCoordsException {
     // If window size is 1 you need to extend it otherwise zoom will have no effect!
     if ((this.to - this.from) == 0) {
@@ -679,12 +654,6 @@ public class GenomicCoords implements Cloneable {
     }
   }
 
-  /**
-   * Zoom into range.
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
   public void zoomIn() throws IOException, InvalidGenomicCoordsException {
     float zoom = (float) (1 / 4.0);
     // * Get size of window (to - from + 1)
@@ -719,12 +688,6 @@ public class GenomicCoords implements Cloneable {
     this.update();
   }
 
-  /**
-   * Move coordinates to the left hand side of the current window
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
   public void left() throws InvalidGenomicCoordsException, IOException {
     int w = this.getUserWindowSize();
     this.to = this.getMidpoint();
@@ -734,12 +697,6 @@ public class GenomicCoords implements Cloneable {
     this.update();
   }
 
-  /**
-   * Move coordinates to the right hand side of the current window
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
   public void right() throws InvalidGenomicCoordsException, IOException {
     int w = this.getUserWindowSize();
     this.from = this.getMidpoint();
@@ -749,24 +706,6 @@ public class GenomicCoords implements Cloneable {
     this.update();
   }
 
-  /**
-   * Same as R seq(from to, length.out). See also func in Utils
-   *
-   * @return
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
-  // private List<Double> seqFromToLenOut() throws InvalidGenomicCoordsException, IOException {
-  //	return seqFromToLenOut(this.getUserWindowSize());
-  // }
-
-  /**
-   * Same as R seq(from to, length.out). See also func in Utils
-   *
-   * @return
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
   private List<Double> seqFromToLenOut(int size) throws InvalidGenomicCoordsException, IOException {
 
     if (this.getFrom() == null || this.getTo() == null) {
@@ -822,24 +761,14 @@ public class GenomicCoords implements Cloneable {
     return mapping;
   }
 
-  /**
-   * Take of care you are working with double precision here. Do not use this method to for exact
-   * calculations.
-   */
+  // Take of care you are working with double precision here. Do not use this method to for exact
+  // calculations.
   public double getBpPerScreenColumn() throws InvalidGenomicCoordsException, IOException {
     List<Double> mapping = seqFromToLenOut(this.getUserWindowSize());
     double bpPerScreenColumn = (to - from + 1) / (double) mapping.size();
     return bpPerScreenColumn;
   }
 
-  /**
-   * Produce a string representation of the current position on the chromosome
-   *
-   * @param nDist: Distance between labels
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidColourException
-   */
   public String getChromIdeogram(int nDist, boolean noFormat)
       throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 
@@ -911,12 +840,6 @@ public class GenomicCoords implements Cloneable {
     return ideogram;
   }
 
-  /**
-   * For debugging only
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
   public String toStringVerbose(int windowSize) throws InvalidGenomicCoordsException, IOException {
     List<Double> mapping = seqFromToLenOut(this.getUserWindowSize());
     String str =
@@ -979,7 +902,6 @@ public class GenomicCoords implements Cloneable {
     int i = 0;
     // First round numbers and see if we can round digits
     List<String> rMarks = new ArrayList<String>();
-    markLoop:
     for (int sfx : new int[] {1000000, 100000, 10000, 1000, 100, 10, 5, 1}) {
       rMarks.clear();
       for (Double mark : marks) {
@@ -1020,13 +942,6 @@ public class GenomicCoords implements Cloneable {
     return numberLine.toString();
   }
 
-  /**
-   * Ref sequence usable for print on screen.
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidColourException
-   */
   public String printableRefSeq(boolean noFormat)
       throws InvalidColourException, InvalidGenomicCoordsException, IOException {
     this.genomicSequence.setNoFormat(noFormat);
@@ -1096,13 +1011,13 @@ public class GenomicCoords implements Cloneable {
     } catch (FileNotFoundException e) {
       try {
         new Faidx(new File(fasta));
-        (new File(fasta + ".fai")).deleteOnExit();
+        new File(fasta + ".fai").deleteOnExit();
       } catch (Exception e1) {
         //
       }
     }
 
-    BufferedReader br = new BufferedReader(new FileReader(new File(fasta + ".fai")));
+    BufferedReader br = Files.newBufferedReader(new File(fasta + ".fai").toPath(), UTF_8);
     SAMSequenceDictionary seqDict = new SAMSequenceDictionary(); // null;
     while (true) {
       String line = br.readLine();
@@ -1114,13 +1029,9 @@ public class GenomicCoords implements Cloneable {
       seqDict.addSequence(ssqRec);
     }
     br.close();
-    //			fa.close();
     this.setSamSeqDictSource(new File(fasta).getAbsolutePath());
     this.setSamSeqDict(seqDict);
     return true;
-    //		}
-    //		fa.close();
-    //		return false;
   }
 
   private boolean setSamSeqDictFromBam(String bamfile) {
@@ -1184,12 +1095,7 @@ public class GenomicCoords implements Cloneable {
         && this.to.equals(other.to);
   }
 
-  /**
-   * True if all fileds in this object equla those in the other
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
+  /** True if all fileds in this object equla those in the other */
   public boolean equalCoordsAndWindowSize(GenomicCoords other)
       throws InvalidGenomicCoordsException, IOException {
     return this.equalCoords(other) && this.getUserWindowSize() == other.getUserWindowSize();
@@ -1267,14 +1173,6 @@ public class GenomicCoords implements Cloneable {
     return this.mapping;
   }
 
-  /**
-   * Map using this.getUserWindowSize() as window size. Consider using getMapping(int size) to avoid
-   * computing the terminal width for each call.
-   */
-  // public List<Double> getMapping() throws InvalidGenomicCoordsException, IOException {
-  //	return seqFromToLenOut(this.getUserWindowSize());
-  // }
-
   public String getChrom() {
     return this.chrom;
   }
@@ -1314,9 +1212,6 @@ public class GenomicCoords implements Cloneable {
   /**
    * Width of the terminal screen window in number of characters. Not to be confused with the
    * genomic window size (as in bp)
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
    */
   public int getUserWindowSize() throws InvalidGenomicCoordsException, IOException {
     int userWindowSize = this.getTerminalWidth();
@@ -1330,9 +1225,6 @@ public class GenomicCoords implements Cloneable {
   /**
    * Size of genomic interval. Can be smaller than windowSize set by user. Not to be confused with
    * userWindowSize.
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
    */
   public Integer getGenomicWindowSize() {
     if (this.getTo() == null || this.getFrom() == null) {
@@ -1405,13 +1297,7 @@ public class GenomicCoords implements Cloneable {
     this.update();
   }
 
-  /**
-   * Apply this.extend() after having parsed cmd line args.
-   *
-   * @throws InvalidCommandLineException
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   */
+  /** Apply this.extend() after having parsed cmd line args. */
   public void cmdInputExtend(List<String> cmdInput)
       throws InvalidCommandLineException, InvalidGenomicCoordsException, IOException {
     List<String> args = new ArrayList<String>(cmdInput);

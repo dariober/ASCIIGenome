@@ -396,10 +396,16 @@ public class InteractiveInput {
           try {
             proc.getTrackSet().setAwkForTrack(cmdTokens);
           } catch (RuntimeException e) {
-            System.err.println(
-                Utils.padEndMultiLine(
-                    e.getMessage(),
-                    proc.getWindowSize()));
+            System.err.println(Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
+
+        } else if (cmdTokens.get(0).equals("stream")) {
+          try {
+            proc.getTrackSet().setSystemCommandForTrack(cmdTokens);
+          } catch (RuntimeException e) {
+            System.err.println(Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize()));
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
           }

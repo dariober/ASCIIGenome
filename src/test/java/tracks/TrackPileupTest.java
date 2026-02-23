@@ -57,9 +57,8 @@ public class TrackPileupTest {
       br.close();
       return lines;
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException();
     }
-    return null;
   }
 
   @Test
@@ -340,10 +339,27 @@ public class TrackPileupTest {
 
     assertEquals("", tr.printToScreen().trim());
 
-    samRecordFilter = new ArrayList<SamRecordFilter>();
+    samRecordFilter = new ArrayList<>();
     samRecordFilter.add(new MappingQualityFilter(11));
     tr.setSamRecordFilter(samRecordFilter);
     assertTrue(tr.getTitle().contains("17.0"));
+  }
+
+  @Test
+  public void canStreamReads()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr7:5566778", 80, null, null);
+    TrackPileup tr = new TrackPileup("test_data/ds051.short.bam", gc);
+    tr.setNoFormat(true);
+    assertTrue(tr.getTitle().contains("22.0")); // Before filtering
+    tr.setSystemCommand("samtools view -f 16");
+    assertTrue(tr.getTitle().contains("3.0"));
   }
 
   @Test

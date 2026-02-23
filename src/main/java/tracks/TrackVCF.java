@@ -150,11 +150,6 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     return this.vcfReader.getHeader();
   }
 
-  @Override
-  public void streamFeaturesThroughSystemCommand() {
-    throw new NotImplementedException("TODO");
-  }
-
   protected List<VCFFeature> getFeaturesInInterval(String chrom, int from, int to)
       throws IOException {
 
@@ -173,6 +168,12 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     }
     this.filterFeaturesInPlace(xFeatures);
     return xFeatures;
+  }
+
+  @Override
+  protected void filterFeaturesInPlace(List<VCFFeature> iftList) throws IOException {
+    this.filterFeaturesInPlaceGeneric(iftList);
+    throw new NotImplementedException("TODO stream");
   }
 
   private List<String> variantsToVcfLines(List<VariantContext> variants, VCFHeader header) {

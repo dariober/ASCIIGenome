@@ -69,6 +69,33 @@ public class TrackReadsTest {
   }
 
   @Test
+  public void canFilterWithSystemCommandSamtools()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
+    GenomicCoords gc = new GenomicCoords("chr7:5566778-5566891", 200, samSeqDict, null);
+    TrackReads tr = new TrackReads("test_data/ds051.short.bam", gc);
+    tr.setNoFormat(true);
+    tr.setyMaxLines(100);
+    tr.setSystemCommand(
+        "cat | samtools view -f 16 | head -n 100"); // cat is useless here, just for testing pipes.
+    List<String> out =
+        Splitter.on("\n").splitToList(tr.printToScreen()).stream().map(x -> x.trim()).toList();
+    assertEquals(3, out.size());
+    assertEquals(
+        "ttttttttaaggtgtgcacttttattcaactggtctcaagtcagtgtacaggtaagccctggctgcctccaccca", out.get(0));
+
+    // Read order need not to be sorted by coordinate
+    tr.setSystemCommand("samtools view -b -F 16 | samtools sort -n | samtools view");
+    out = Splitter.on("\n").splitToList(tr.printToScreen()).stream().map(x -> x.trim()).toList();
+    assertEquals(
+        "CTCATTTTTAAGGTGTGCACTTTTATTCAACTGGTCTCAAGTCAGTGTACAGGTAAGCCCTGGCTGCCTCCACCC", out.get(0));
+  }
+
+  @Test
   public void canReturnChromosomeNames()
       throws ClassNotFoundException,
           IOException,
@@ -612,23 +639,28 @@ public class TrackReadsTest {
     tr.setAwk("{$SEQ ~ \"CTCATTTTTAAGGTGTGCACT\"}; sub(\"CTCA\", \"NNNN\")");
     assertTrue(tr.printToScreen().contains("NNNNTTTTT"));
 
-    // This is allowed here even if it results in an invalid sequence, but it should fail at the pileup track
+    // This is allowed here even if it results in an invalid sequence, but it should fail at the
+    // pileup track
     tr.setAwk("{$SEQ ~ \"CTCATTTTTAAGGTGTGCACT\"}; sub(\"CTCA\", \"~~~~\")");
     assertTrue(tr.printToScreen().contains("~~~~TTTTT"));
 
-    SAMFormatException e = assertThrows(SAMFormatException.class, () -> tr.setAwk("{print $1, $2}"));
+    SAMFormatException e =
+        assertThrows(SAMFormatException.class, () -> tr.setAwk("{print $1, $2}"));
     assertTrue(e.getMessage().contains("Error parsing text SAM file"));
-    assertTrue(tr.printToScreen().contains("CTCATTTTTAAGGTGTGCACTTTTATTCAACTGGTCTCAAGTCAGTGTACAGGTAAGCCCTGGCTGCCTCCACCC"));
+    assertTrue(
+        tr.printToScreen()
+            .contains(
+                "CTCATTTTTAAGGTGTGCACTTTTATTCAACTGGTCTCAAGTCAGTGTACAGGTAAGCCCTGGCTGCCTCCACCC"));
   }
 
   @Test
   public void canFilterReadsWithGrepAndAwk()
       throws InvalidGenomicCoordsException,
-      IOException,
-      ClassNotFoundException,
-      InvalidRecordException,
-      SQLException,
-      InvalidColourException {
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
     GenomicCoords gc = new GenomicCoords("chr7:5566000-5567000", 80, samSeqDict, null);
     TrackReads tr = new TrackReads("test_data/ds051.short.bam", gc);
     tr.setNoFormat(true);
@@ -643,7 +675,6 @@ public class TrackReadsTest {
     tr.setAwk("$4 != 5566779");
     assertEquals(4, tr.printToScreen().split("\n").length);
   }
-
 
   @Test
   public void canShowReadCount() throws Exception {

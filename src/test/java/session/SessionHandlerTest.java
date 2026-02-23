@@ -1,5 +1,6 @@
 package session;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.*;
 
 import colouring.Config;
@@ -11,7 +12,6 @@ import exceptions.InvalidTrackTypeException;
 import exceptions.SessionException;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
@@ -27,7 +27,7 @@ public class SessionHandlerTest {
 
   @Test
   public void canDeleteSession() throws IOException, SessionException {
-    InputStream yaml = Files.newInputStream(Paths.get("test_data/session.yaml"));
+    Files.newInputStream(Paths.get("test_data/session.yaml"));
     SessionHandler sh = new SessionHandler(new File("test_data/session.yaml"));
     sh.get("newSession");
     boolean deleted = sh.deleteSession("newSession");
@@ -39,7 +39,7 @@ public class SessionHandlerTest {
 
   @Test
   public void testGetSessionByNameOrIndex() throws IOException, SessionException {
-    InputStream yaml = Files.newInputStream(Paths.get("test_data/session.yaml"));
+    Files.newInputStream(Paths.get("test_data/session.yaml"));
     SessionHandler sh = new SessionHandler(new File("test_data/session.yaml"));
     assertEquals("no-fastafile", sh.get("1").getSessionName());
   }
@@ -84,7 +84,7 @@ public class SessionHandlerTest {
     Session session = sh.get("newSession");
     GenomicCoords gc = session.getGenome().toGenomicCoords();
     assertEquals(5566800, (long) gc.getFrom());
-    assertTrue(new String(gc.getSequenceFromFasta()).startsWith("TTATTCAACTGGT"));
+    assertTrue(new String(gc.getSequenceFromFasta(), UTF_8).startsWith("TTATTCAACTGGT"));
     assertTrue(gc.getChromIdeogram(10, true).startsWith("1"));
     assertEquals(1, gc.getSamSeqDict().size());
 

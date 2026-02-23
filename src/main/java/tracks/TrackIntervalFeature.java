@@ -9,13 +9,12 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Stream;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
-import systemCommand.SystemCommand;
 
 public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> {
 
@@ -161,6 +160,12 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     }
     this.filterFeaturesInPlace(xFeatures);
     return xFeatures;
+  }
+
+  @Override
+  protected void filterFeaturesInPlace(List<IntervalFeature> iftList) throws IOException {
+    this.filterFeaturesInPlaceGeneric(iftList);
+    throw new NotImplementedException("TODO stream");
   }
 
   /**
@@ -364,25 +369,4 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
   protected List<IntervalFeature> getFeatureList() {
     return this.featureList;
   }
-
-  @Override
-  public void streamFeaturesThroughSystemCommand()
-      throws IOException, InvalidGenomicCoordsException {
-
-    Stream<String> textLines = this.getFeatureList().stream().map(IntervalFeature::getRaw);
-
-    List<IntervalFeature> features = new ArrayList<>();
-
-    SystemCommand sysCmd = new SystemCommand();
-    try (Stream<String> out =
-        sysCmd.streamLinesThroughSystemCommand(textLines, null, this.getSystemCommand())) {
-      Iterator<String> iter = out.iterator();
-      while (iter.hasNext()) {
-        features.add(
-            new IntervalFeature(iter.next(), this.getTrackFormat(), this.getScoreColIdx()));
-      }
-    }
-    this.setFeatureList(features);
-  }
-  ;
 }

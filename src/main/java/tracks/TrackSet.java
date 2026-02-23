@@ -1187,18 +1187,45 @@ public class TrackSet {
     return Utils.range(yall);
   }
 
-  /**
-   * Parse awk command and set awk script for the captured tracks. The tokens in cmdInput maybe in
-   * the form: [awk, $3 > 10] [awk, $3 > 10, track1] [awk, $3 > 10, track_re1, track_re2] [awk, -F,
-   * sep, -v, n=10, $3 > n, track1, track2]
-   *
-   * @throws InvalidCommandLineException
-   * @throws SQLException
-   * @throws InvalidRecordException
-   * @throws InvalidGenomicCoordsException
-   * @throws IOException
-   * @throws ClassNotFoundException
-   */
+  public void setSystemCommandForTrack(List<String> cmdInput)
+      throws InvalidCommandLineException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          InvalidRecordException,
+          ClassNotFoundException {
+    List<String> args = new ArrayList<String>(cmdInput);
+    args.remove(0); // Remove command name
+
+    boolean invertSelection = Utils.argListContainsFlag(args, "-v");
+
+    List<String> trackNameRegex = new ArrayList<String>();
+    String systemCommand = "";
+
+    if (args.isEmpty()) {
+      // This will turn off everything
+      trackNameRegex.add(".*");
+    } else if (args.get(0).equals("-off")) {
+      args.remove(0);
+      trackNameRegex.addAll(args); // Everything after -off is track re to turn off.
+    } else {
+      systemCommand = args.remove(0);
+
+      // Everything after the script is track regexes
+      trackNameRegex.addAll(args);
+    }
+
+    if (trackNameRegex.isEmpty()) {
+      trackNameRegex.add(".*"); // Track regex list not given: Set to capture all of them.
+    }
+
+    // Set script
+    List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
+    for (AbstractTrack tr : tracksToReset) {
+      tr.setSystemCommand(systemCommand);
+    }
+  }
+
   public void setAwkForTrack(List<String> cmdInput)
       throws InvalidCommandLineException,
           ClassNotFoundException,
@@ -1207,14 +1234,11 @@ public class TrackSet {
           InvalidRecordException,
           SQLException {
 
-    List<String> args = new ArrayList<String>();
-    for (String x : cmdInput) {
-      args.add(x);
-    }
+    List<String> args = new ArrayList<String>(cmdInput);
 
     args.remove(0); // Remove command name
 
-    boolean invertSelection = Utils.argListContainsFlag(args, "-V");
+    boolean invertSelection = Utils.argListContainsFlag(args, "-v");
 
     List<String> trackNameRegex = new ArrayList<String>();
     String awk = "";

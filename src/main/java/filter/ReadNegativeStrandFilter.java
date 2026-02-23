@@ -7,20 +7,11 @@ public class ReadNegativeStrandFilter implements SamRecordFilter {
 
   private boolean include = false;
 
-  /**
-   * @param record the SAMRecord to evaluate
-   * @return true if the SAMRecord matches the filter, otherwise false
-   */
   public ReadNegativeStrandFilter(final boolean include) {
     this.include = include;
   }
 
-  /**
-   * Determines whether a SAMRecord matches this filter
-   *
-   * @param record the SAMRecord to evaluate
-   * @return true if the SAMRecord matches the filter, otherwise false
-   */
+  @Override
   public boolean filterOut(final SAMRecord record) {
     if (include) {
       if (record.getReadNegativeStrandFlag()) {
@@ -36,13 +27,7 @@ public class ReadNegativeStrandFilter implements SamRecordFilter {
     return true;
   }
 
-  /**
-   * Determines whether a pair of SAMRecord matches this filter
-   *
-   * @param first the first SAMRecord to evaluate
-   * @param second the second SAMRecord to evaluate
-   * @return true if the SAMRecords matches the filter, otherwise false
-   */
+  @Override
   public boolean filterOut(final SAMRecord first, final SAMRecord second) {
     throw new UnsupportedOperationException("Paired *Filter not implemented!");
   }

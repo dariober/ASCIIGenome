@@ -20,6 +20,8 @@ import tracks.AbstractTrack;
 public class SystemCommand {
 
   private File tempFile;
+  private int exitCode;
+  private String stderr;
 
   public SystemCommand() {}
 
@@ -37,13 +39,13 @@ public class SystemCommand {
     }
 
     ArrayList<String> args = new ArrayList<>();
-    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
+    args.addAll(List.of("bash", "-c", cmd));
     return this.execSystemCommand(rawLinesWithHeader, args);
   }
 
   public boolean[] passAwkFilter(String[] inLines, String awkScript) throws IOException {
     boolean[] matched = new boolean[inLines.length];
-    List<String> output = new ArrayList<>();
+    List<String> output;
     try (Stream<String> pass = this.streamLinesThroughAwk(Stream.of(inLines), awkScript)) {
       output = pass.toList();
     } finally {
@@ -83,7 +85,7 @@ public class SystemCommand {
     String cmd = "awk -v OFS='\t' -F '\t' -f " + awkTmpFile.getAbsolutePath();
 
     ArrayList<String> args = new ArrayList<>();
-    args.addAll(List.of("bash", "-euo", "pipefail", "-c", cmd));
+    args.addAll(List.of("bash", "-c", cmd));
 
     return this.execSystemCommand(inLines, args);
   }
@@ -165,6 +167,8 @@ public class SystemCommand {
             stderrThread.join();
 
             int exit = process.waitFor();
+            this.exitCode = exit;
+            this.stderr = stderrBuffer.toString();
             if (exit != 0) {
               throw new RuntimeException(
                   cmd + "\n" + "Process exited with code " + exit + "\nstderr:\n" + stderrBuffer);
@@ -175,6 +179,14 @@ public class SystemCommand {
             throw new RuntimeException(e);
           }
         });
+  }
+
+  public int getExitCode() {
+    return this.exitCode;
+  }
+
+  public String getStderr() {
+    return this.stderr;
   }
 
   private void setTempFile(File tempFile) {

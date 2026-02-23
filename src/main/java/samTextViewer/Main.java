@@ -42,9 +42,6 @@ import tracks.TrackFormat;
 import tracks.TrackPileup;
 import tracks.TrackSet;
 
-/**
- * @author berald01
- */
 public class Main {
 
   static Stopwatch stopWatch = Stopwatch.createUnstarted();
@@ -248,12 +245,6 @@ public class Main {
     }
   }
 
-  /**
-   * Return a suitable region to start. If a region is already given, do nothing. This method is a
-   * mess and should be cleaned up together with GenomicCoords class.
-   *
-   * @throws InvalidGenomicCoordsException
-   */
   public static String initRegion(
       List<String> inputFileList, String fasta, String genome, int debug)
       throws IOException, InvalidGenomicCoordsException {
@@ -313,11 +304,6 @@ public class Main {
     return "";
   }
 
-  /**
-   * If exec is a file, parse it to return a string suitable for execution.
-   *
-   * @throws IOException
-   */
   private static String parseExec(String exec) throws IOException {
 
     if (exec == null) {

@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jline.console.ConsoleReader;
 import org.junit.Before;
@@ -158,6 +159,48 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canStreamFeatures()
+      throws IOException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    TrackProcessor proc =
+        gimmeTrackProcessor("chr7:5566778-5566988", 200, "test_data/ds051.actb.bam");
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi = processInput(ip, "open test_data/ds051.actb.bam", proc);
+    assertTrue(pi.stderr.contains("Adding:"));
+
+    pi = processInput(ip, "stream '''grep HWI-ST230:1089:4: | awk '$2 == 16' | head -n 5'''", proc);
+    assertEquals("", pi.stderr);
+    pi = processInput(ip, "print -n 10", proc);
+    Matcher matcher = Pattern.compile("HWI-ST230:1089:4:").matcher(pi.stdout);
+    assertEquals(5, matcher.results().count());
+  }
+
+  @Test
+  public void canStreamSamtools()
+      throws IOException,
+          SQLException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    TrackProcessor proc =
+        gimmeTrackProcessor("chr7:5566778-5566891", 200, "test_data/ds051.short.bam");
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi = processInput(ip, "open test_data/ds051.short.bam", proc);
+    assertTrue(pi.stderr.contains("Adding:"));
+
+    pi = processInput(ip, "stream 'samtools view -f 16'", proc);
+    assertEquals("", pi.stderr);
+    assertTrue(
+        pi.stdout.contains(
+            "ttttttttaaggtgtgcacttttattcaactggtctcaagtcagtgtacaggtaagccctggctgcctccaccca"));
+  }
+
+  @Test
   public void canListSessions()
       throws IOException,
           SQLException,
@@ -234,7 +277,7 @@ public class InteractiveInputTest {
 
     processInput(ip, "sessionDelete -f tmp.yml newSession", proc);
     assertEquals(ExitCode.CLEAN_NO_FLUSH, ip.getInteractiveInputExitCode());
-    String txt = new String(Files.readAllBytes(Paths.get("tmp.yml")));
+    String txt = new String(Files.readAllBytes(Paths.get("tmp.yml")), UTF_8);
     assertTrue(!txt.contains("newSession"));
 
     processInput(ip, "sessionDelete -f tmp.yml newSession", proc);
@@ -258,19 +301,19 @@ public class InteractiveInputTest {
     new File("tmp2.yml").delete();
 
     ip.processInput("sessionSave -f tmp.yml foo1", proc);
-    String yml = new String(Files.readAllBytes(Paths.get("tmp.yml")));
+    String yml = new String(Files.readAllBytes(Paths.get("tmp.yml")), UTF_8);
     assertTrue(yml.contains("foo1"));
 
     ip.processInput("sessionSave -f tmp.yml foo2", proc);
-    yml = new String(Files.readAllBytes(Paths.get("tmp.yml")));
+    yml = new String(Files.readAllBytes(Paths.get("tmp.yml")), UTF_8);
     assertTrue(yml.contains("foo1") && yml.contains("foo2"));
 
     ip.processInput("sessionSave foo3", proc);
-    yml = new String(Files.readAllBytes(Paths.get("tmp.yml")));
+    yml = new String(Files.readAllBytes(Paths.get("tmp.yml")), UTF_8);
     assertTrue(yml.contains("foo1") && yml.contains("foo2") && yml.contains("foo3"));
 
     ip.processInput("sessionSave -f tmp2.yml foo4", proc);
-    yml = new String(Files.readAllBytes(Paths.get("tmp2.yml")));
+    yml = new String(Files.readAllBytes(Paths.get("tmp2.yml")), UTF_8);
     assertTrue(yml.contains("foo4") && !yml.contains("foo3"));
 
     proc.getGenomicCoordsHistory().current().setTo(100000);
@@ -295,12 +338,13 @@ public class InteractiveInputTest {
     TrackProcessor proc = gimmeTrackProcessor("chr7:1001-1800", 80, "test_data/ds051.actb.bam");
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ip.processInput("sessionOpen -f test_data/session.yaml newSession", proc);
-    String fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
+    String fasta =
+        new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta(), UTF_8);
     assertEquals("TTATT", fasta.substring(0, 5));
     ip.processInput("sessionOpen -f test_data/session.yaml fastafile-not-found", proc);
     assertNull(proc.getGenomicCoordsHistory().current().getFastaFile());
     ip.processInput("setGenome test_data/chr7.fa", proc);
-    fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta());
+    fasta = new String(proc.getGenomicCoordsHistory().current().getSequenceFromFasta(), UTF_8);
     assertEquals("ACACG", fasta.substring(0, 5));
   }
 
@@ -320,7 +364,7 @@ public class InteractiveInputTest {
     ByteArrayOutputStream err = new ByteArrayOutputStream();
     System.setErr(new PrintStream(err));
     ip.processInput("sessionOpen -f test_data/session.yaml file-not-found", proc);
-    String errStr = err.toString();
+    String errStr = err.toString(UTF_8);
     assertTrue(errStr.contains("Sequence dictionary"));
     assertTrue(errStr.contains("xs#2"));
     System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
@@ -345,7 +389,7 @@ public class InteractiveInputTest {
     ByteArrayOutputStream err = new ByteArrayOutputStream();
     System.setErr(new PrintStream(err));
     ip.processInput("sessionOpen -f test_data/session.yaml fastafile-not-found", proc);
-    String errStr = err.toString();
+    String errStr = err.toString(UTF_8);
     assertTrue(errStr.contains("missing.fa"));
     System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
     assertNull(proc.getGenomicCoordsHistory().current().getFastaFile());
@@ -768,20 +812,20 @@ public class InteractiveInputTest {
 
     // Various ways of getting general help
     ip.processInput("-h", proc);
-    String H1 = baos.toString();
+    String H1 = baos.toString(UTF_8);
     baos.reset();
     assertTrue(H1.contains("show this help"));
 
     ip.processInput("h", proc);
-    String H2 = baos.toString();
+    String H2 = baos.toString(UTF_8);
     baos.reset();
 
     ip.processInput("help", proc);
-    String H3 = baos.toString();
+    String H3 = baos.toString(UTF_8);
     baos.reset();
 
     ip.processInput("  ?", proc);
-    String H4 = baos.toString();
+    String H4 = baos.toString(UTF_8);
     baos.reset();
 
     assertEquals(H1, H2);
@@ -790,16 +834,16 @@ public class InteractiveInputTest {
 
     // Various way of getting command help
     ip.processInput("next -h", proc);
-    String h1 = baos.toString();
+    String h1 = baos.toString(UTF_8);
     baos.reset();
     assertTrue(h1.contains("Move to the next"));
 
     ip.processInput("?next", proc);
-    String h2 = baos.toString();
+    String h2 = baos.toString(UTF_8);
     baos.reset();
 
     ip.processInput("  help  next ", proc);
-    String h3 = baos.toString();
+    String h3 = baos.toString(UTF_8);
     baos.reset();
 
     assertEquals(h1, h2);

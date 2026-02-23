@@ -17,18 +17,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
-/**
- * Prepare track for printing aligned reads
- *
- * @author berald01
- */
 public class TrackReads extends AbstractTrack {
 
   private List<List<SamSequenceFragment>> readStack;
@@ -68,22 +67,6 @@ public class TrackReads extends AbstractTrack {
   /* M e t h o d s */
 
   @Override
-  public void streamFeaturesThroughSystemCommand() throws IOException, InterruptedException {
-    //    String[] textLines = new String[];
-    //    for (int i = 0; i < this.getRecordsAsStrings().size(); i++) {
-    //      textLines[i] = this.getRecordsAsStrings().get(i);
-    //    }
-    //    List<IntervalFeature> features = new ArrayList<>();
-    //    for (String line : Utils.streamLinesThroughSystemCommand(textLines, null,
-    // this.getSystemCommand())) {
-    //      features.add(new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx()));
-    //    }
-    //    this.setFeatureList(features);
-    //    this.setFeatureList(features);
-
-  }
-
-  @Override
   public void close() {}
 
   public void update()
@@ -99,62 +82,72 @@ public class TrackReads extends AbstractTrack {
 
     this.userWindowSize = this.getGc().getUserWindowSize();
 
-    this.readStack = new ArrayList<>();
     if (this.getGc().getGenomicWindowSize() < this.MAX_REGION_SIZE) {
-
-      SamReader samReader = Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
-      List<SAMRecord> passFilter =
-          this.filterReads(
-              samReader, this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
-      samReader.close();
-
-      this.nRecsInWindow = passFilter.size();
-
-      samReader = Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
-      Iterator<SAMRecord> sam =
-          samReader.query(
-              this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo(), false);
-
-      float max_reads = Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack));
-      float probSample = max_reads / this.nRecsInWindow;
-
-      // Add this random String to the read name so different screenshot will generate
-      // different samples.
-      String rndOffset = Integer.toString(new Random().nextInt());
-      List<TextRead> textReads = new ArrayList<>();
-      for (SAMRecord rec : passFilter) {
-        if (textReads.size() > max_reads) {
-          break;
-        }
-        String templ_name = Utils.templateNameFromSamReadName(rec.getReadName());
-        long v = (templ_name + rndOffset).hashCode();
-        Random rand = new Random(v);
-        if (rand.nextFloat() < probSample) { // Downsampler
-          TextRead tr = new TextRead(rec, this.getGc(), this.getShowSoftClip());
-          textReads.add(tr);
-        }
+      try (SamReader samReader =
+              Utils.getSamReader(this.getWorkFilename(), this.getGc().getFastaFile());
+          Stream<SAMRecord> passFilter =
+              this.filterReads(
+                  samReader,
+                  this.getGc().getChrom(),
+                  this.getGc().getFrom(),
+                  this.getGc().getTo())) {
+        List<TextRead> textReads = this.reservoirSampling(passFilter);
+        this.readStack = stackReads(textReads);
       }
-      this.readStack = stackReads(textReads);
     } else {
+      this.readStack = new ArrayList<>();
       this.nRecsInWindow = -1;
     }
   }
 
-  /**
-   * Printable track on screen. This is what should be called by Main
-   *
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidColourException
-   */
+  private List<TextRead> reservoirSampling(Stream<SAMRecord> passFilter)
+      throws InvalidGenomicCoordsException, IOException {
+    float max_reads = Float.parseFloat(Config.get(ConfigKey.max_reads_in_stack));
+    IndexedLinkedHashMap<String, List<TextRead>> selectedReads = new IndexedLinkedHashMap<>();
+
+    Random rnd = new Random();
+    Iterator<SAMRecord> iter = passFilter.iterator();
+    this.nRecsInWindow = 0;
+    int nTemplates = 0;
+    while (iter.hasNext()) {
+      this.nRecsInWindow += 1;
+      SAMRecord rec = iter.next();
+      String name = Utils.templateNameFromSamReadName(rec.getReadName());
+      if (selectedReads.containsKey(name)) {
+        // Already selected, just add the read
+        selectedReads.get(name).add(new TextRead(rec, getGc(), getShowSoftClip()));
+        continue;
+      }
+      nTemplates += 1;
+      if (selectedReads.size() < max_reads) {
+        // Fill up reservoir
+        selectedReads.put(name, new ArrayList<>());
+        selectedReads.get(name).add(new TextRead(rec, getGc(), getShowSoftClip()));
+      } else {
+        int j = rnd.nextInt(nTemplates + 1);
+        if (j < max_reads) {
+          String templateToRemove = selectedReads.getKeyAtIndex(j);
+          selectedReads.remove(templateToRemove);
+          selectedReads.put(name, new ArrayList<>());
+          selectedReads.get(name).add(new TextRead(rec, getGc(), getShowSoftClip()));
+        }
+      }
+    }
+    List<TextRead> textReads = new ArrayList<>();
+    for (List<TextRead> x : selectedReads.values()) {
+      textReads.addAll(x);
+    }
+    return textReads;
+  }
+
   @Override
   public String printToScreen() throws InvalidGenomicCoordsException, InvalidColourException {
 
     int yMaxLines = (this.getyMaxLines() < 0) ? Integer.MAX_VALUE : this.getyMaxLines();
-    ;
 
     // If there are more lines (inner lists) than desired lines of output (yMaxLines), get a
     // representative sample
-    List<Double> keep = new ArrayList<Double>();
+    List<Double> keep;
     if (this.readStack.isEmpty()) {
       return "";
     } else if (this.readStack.size() > yMaxLines) {
@@ -361,6 +354,9 @@ public class TrackReads extends AbstractTrack {
     if (!this.getAwk().equals(Filter.DEFAULT_AWK.getValue())) {
       title.add("awk");
     }
+    if (!this.getSystemCommand().equals(Filter.DEFAULT_SYSTEM_COMMAND.getValue())) {
+      title.add("stream");
+    }
     if (!this.getShowRegex().pattern().equals(Filter.DEFAULT_SHOW_REGEX.getValue())
         || !this.getHideRegex().pattern().equals(Filter.DEFAULT_HIDE_REGEX.getValue())) {
       title.add("grep");
@@ -504,5 +500,53 @@ public class TrackReads extends AbstractTrack {
       chromosomeNames.add(x.getContig());
     }
     return chromosomeNames;
+  }
+
+  /**
+   * A LinkedHashMap that can be queried by the index position of a key credit:
+   * https://stackoverflow.com/a/57550038/1114453
+   */
+  class IndexedLinkedHashMap<K, V> extends LinkedHashMap<K, V> {
+
+    private static final long serialVersionUID = 1L;
+
+    ArrayList<K> al_Index = new ArrayList<K>();
+
+    @Override
+    public V put(K key, V val) {
+      if (!super.containsKey(key)) al_Index.add(key);
+      V returnValue = super.put(key, val);
+      return returnValue;
+    }
+
+    public V getValueAtIndex(int i) {
+      return (V) super.get(al_Index.get(i));
+    }
+
+    public K getKeyAtIndex(int i) {
+      return (K) al_Index.get(i);
+    }
+
+    public int getIndexOf(K key) {
+      return al_Index.indexOf(key);
+    }
+
+    @Override
+    public V remove(Object key) {
+      V v = super.remove(key);
+      al_Index.remove(key);
+      return v;
+    }
+
+    @Override
+    public void clear() {
+      super.clear();
+      al_Index.clear();
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+      throw new NotImplementedException("");
+    }
   }
 }

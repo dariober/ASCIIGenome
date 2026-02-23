@@ -64,30 +64,10 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     }
   }
 
-  //  protected List<T> getFeaturesInInterval(String chrom, int from, int to)
-  //      throws IOException, InvalidGenomicCoordsException {
-  //    if (from < 1) {
-  //      System.err.println("from < 1: " + from + "; resetting to 1.");
-  //      from = 1;
-  //    }
-  //    if (from > to) {
-  //      throw new InvalidGenomicCoordsException(
-  //          "Invalid coordinates: from: "
-  //              + from
-  //              + "; to: "
-  //              + to
-  //              + "; Resetting to initial 1-"
-  //              + Integer.MAX_VALUE);
-  //    }
-  //    List<T> xFeatures = new ArrayList<>();
-  //    this.removeInvisibleFeatures(xFeatures);
-  //    return xFeatures;
-  //  }
-
   protected abstract List<T> getFeaturesInInterval(String chrom, int from, int to)
       throws IOException, InvalidGenomicCoordsException;
 
-  protected void filterFeaturesInPlace(List<T> iftList) throws IOException {
+  void filterFeaturesInPlaceGeneric(List<T> iftList) throws IOException {
     for (int i = 0; i < iftList.size(); i++) {
 
       T tr = iftList.get(i);
@@ -141,6 +121,8 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
       }
     }
   }
+
+  protected abstract void filterFeaturesInPlace(List<T> iftList) throws IOException;
 
   /**
    * Return the coordinates of the next feature so that the start coincide with the start of the
@@ -606,12 +588,15 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     if (!this.getAwk().equals(Filter.DEFAULT_AWK.getValue())) {
       title.add("awk");
     }
+    if (!this.getSystemCommand().equals(Filter.DEFAULT_SYSTEM_COMMAND.getValue())) {
+      title.add("stream");
+    }
     if (!this.getShowRegex().pattern().equals(Filter.DEFAULT_SHOW_REGEX.getValue())
         || !this.getHideRegex().pattern().equals(Filter.DEFAULT_HIDE_REGEX.getValue())) {
       title.add("grep");
     }
     if (!title.isEmpty()) {
-      return "; filters: " + title.toString();
+      return "; filters: " + title;
     } else {
       return "";
     }

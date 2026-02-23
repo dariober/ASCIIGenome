@@ -557,8 +557,37 @@ public class CommandList {
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
+    cmd.setName("stream");
+    cmd.setArgs("<system command> [-off ...] [-v] [track_regex = .*]...");
+    cmd.inSection = Section.DISPLAY;
+    cmd.setBriefDescription("Filter or edit features by streaming them through system command");
+    cmd.setAdditionalDescription(
+        "The system command, which may includes pipes, must be able read from stdin and write to"
+            + " stdout in plain text. For bam and vcf files, the file header is prepended to the"
+            + " stream of features so tools like samtools and bcftools can process them. The output"
+            + " may or may not contain the header, if it does it will be ignored when features are"
+            + " read back.\n"
+            + "Options:\n"
+            + "\n"
+            + "* :code:`-off track_re ...`  Turn off awk filtering for tracks captured by the list"
+            + " of regexes.\n"
+            + "\n"
+            + "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of"
+            + " track_regex\n"
+            + "\n"
+            + "* :code:`track_regex` Apply to tracks matched by `track_regex`.\n"
+            + "\n"
+            + "Examples::\n"
+            + "\n"
+            + "    stream 'samtools view --min-qlen 50' bam~~->Stream features through samtools\n"
+            + "    stream 'samtools view -b ...' bam~~~~~~~~~->Not ok: output must be SAM (plain"
+            + " text)\n"
+            + "\n");
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
     cmd.setName("awk");
-    cmd.setArgs("[-off ...] [-V] '<script>' [track_regex = .*]...");
+    cmd.setArgs("[-off ...] [-v] '<script>' [track_regex = .*]...");
     cmd.inSection = Section.DISPLAY;
     cmd.setBriefDescription("Advanced feature filtering using awk");
     cmd.setAdditionalDescription(
@@ -581,7 +610,7 @@ public class CommandList {
             + "\n"
             + "* :code:`script` The awk script to be executed. Must wrapped in single quotes.\n"
             + "\n"
-            + "* :code:`-V` Invert selection: apply changes to the tracks not selected by list of"
+            + "* :code:`-v` Invert selection: apply changes to the tracks not selected by list of"
             + " track_regex\n"
             + "\n"
             + "**ADDITIONAL FEATURES**\n"
@@ -701,12 +730,12 @@ public class CommandList {
             + "\n"
             + "*NOTES & LIMITATIONS*\n"
             + "\n"
-            + "* The :code:`awk` utility must available on the user's :code:`PATH` (this should be "
-            + "the case on all \\*nix systems)\n"
+            + "* The :code:`awk` utility must available on the user's :code:`PATH` (this should be"
+            + " the case on all \\*nix systems)\n"
             + "\n"
-            + "* The output of awk replaces the current list of features (but not on the input files!). "
-            + "Therefore you can use awk also to edit features but take care that the edited feature "
-            + "is compatible with the track format.\n"
+            + "* The output of awk replaces the current list of features (but not on the input"
+            + " files!). Therefore you can use awk also to edit features but take care that the"
+            + " edited feature is compatible with the track format.\n"
             + "\n"
             + "* The default delimiter is TAB not any white space as in UNIX awk.\n"
             + "\n"
@@ -1754,6 +1783,7 @@ public class CommandList {
     paramList.add("bookmark");
     paramList.add("grep");
     paramList.add("awk");
+    paramList.add("stream");
     paramList.add("filterVariantReads");
     paramList.add("nameForFeatures");
     paramList.add("gap");
