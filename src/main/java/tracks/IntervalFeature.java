@@ -32,7 +32,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
   private String feature = "."; // Gtf specific
 
   private String raw; // Raw input string exactly as read from source.
-  private TrackFormat trackFormat = TrackFormat.BED;
+  public TrackFormat trackFormat = TrackFormat.BED;
 
   /** Name to be displayed to the user */
   protected String name = ".";

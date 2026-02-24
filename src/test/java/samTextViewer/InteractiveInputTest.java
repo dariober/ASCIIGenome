@@ -79,6 +79,45 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canSetDataColumn()
+      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+    TrackProcessor proc =
+        gimmeTrackProcessor("chr7:5563603-5596627", 100, "test_data/ds051.actb.bedgraph.gz");
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi = processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
+    assertTrue(pi.stdout.contains("[401.")); // Min of bins with data
+    assertTrue(pi.stdout.contains(" 718."));
+
+    pi = processInput(ip, "dataCol -aggfun max", proc);
+    assertTrue(pi.stdout.contains("[596.")); // Min of bins with data
+    assertTrue(pi.stdout.contains(" 933.0"));
+
+    pi = processInput(ip, "dataCol -datacol 5", proc);
+    assertTrue(pi.stdout.contains(" 93.3"));
+    pi = processInput(ip, "dataCol -datacol 4 -aggfun Mean ds051", proc);
+    assertTrue(pi.stdout.contains(" 718."));
+
+    // Region with no data
+    pi = processInput(ip, "goto chr7:5571859-5588371", proc);
+    assertTrue(pi.stdout.contains("range[NaN NaN]"));
+
+    processInput(ip, "goto chr7:5563603-5596627", proc);
+
+    // This should fail!!
+    pi = processInput(ip, "dataCol -datacol 10", proc);
+
+    pi = processInput(ip, "dataCol -datacol x", proc);
+    assertEquals("Invalid index for data column: x", pi.stderr.trim());
+
+    pi = processInput(ip, "dataCol -datacol 4 -aggfun foo", proc);
+    assertTrue(pi.stderr.contains("Invalid data aggregation method:"));
+
+    // Also this should fail!!
+    pi = processInput(ip, "dataCol -datacol 6", proc);
+  }
+
+  @Test
   public void canFindRegex()
       throws IOException,
           SQLException,

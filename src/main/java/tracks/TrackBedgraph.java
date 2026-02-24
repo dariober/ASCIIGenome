@@ -4,6 +4,8 @@ import colouring.Config;
 import colouring.ConfigKey;
 import colouring.Xterm256;
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -14,7 +16,9 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -22,6 +26,7 @@ import sortBgzipIndex.MakeTabixIndex;
 public class TrackBedgraph extends TrackIntervalFeature {
 
   private DataTransformation dataTransformation = DataTransformation.IDENTITY;
+  private DataAggregationMethod dataAggregationMethod = DataAggregationMethod.MEAN;
 
   public TrackBedgraph(String filename, GenomicCoords gc)
       throws ClassNotFoundException,
@@ -60,6 +65,34 @@ public class TrackBedgraph extends TrackIntervalFeature {
 
   /* ----------- METHODS ----------- */
 
+  protected void setScoreColIdx(int scoreColIdx)
+      throws ClassNotFoundException,
+      IOException,
+      InvalidGenomicCoordsException,
+      InvalidRecordException,
+      SQLException {
+    if (this.scoreColIdx != scoreColIdx) {
+      this.scoreColIdx = scoreColIdx;
+      this.update();
+    }
+  }
+
+  protected void setDataAggregationMethod(DataAggregationMethod dataAggregationMethod)
+      throws ClassNotFoundException,
+      IOException,
+      InvalidGenomicCoordsException,
+      InvalidRecordException,
+      SQLException {
+    if (this.dataAggregationMethod != dataAggregationMethod) {
+      this.dataAggregationMethod = dataAggregationMethod;
+      this.update();
+    }
+  }
+
+  protected DataAggregationMethod getDataAggregationMethod() {
+    return this.dataAggregationMethod;
+  }
+
   protected void setDataTransformation(DataTransformation dataTransformation) {
     this.dataTransformation = dataTransformation;
   }
@@ -84,11 +117,24 @@ public class TrackBedgraph extends TrackIntervalFeature {
       }
     }
 
-    List<Float> screenScores = new ArrayList<Float>();
-    for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
-      screenScores.add(x.getMeanScore());
-    }
+    List<Float> screenScores = this.aggregateScreenScores(screenWigLocInfoList);
     this.setScreenScores(screenScores);
+  }
+
+  private List<Float> aggregateScreenScores(List<ScreenWiggleLocusInfo> screenWigLocInfoList) {
+    List<Float> screenScores = new ArrayList<>();
+    for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
+      if (this.getDataAggregationMethod() == DataAggregationMethod.MEAN) {
+        screenScores.add(x.getMeanScore());
+      } else if (this.getDataAggregationMethod() == DataAggregationMethod.MAX) {
+        screenScores.add(x.getMax());
+      } else if (this.getDataAggregationMethod() == DataAggregationMethod.MIN) {
+        screenScores.add(x.getMin());
+      } else {
+        throw new NotImplementedException("Data '" + this.getDataAggregationMethod() + "' aggregation method not implemented");
+      }
+    }
+    return screenScores;
   }
 
   @Override
@@ -111,7 +157,6 @@ public class TrackBedgraph extends TrackIntervalFeature {
       throw new InvalidRecordException();
     }
     this.setDataTransformation(this.dataTransformation);
-
     this.bedGraphToScores(this.getFeatureList());
   }
 

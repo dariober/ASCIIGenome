@@ -40,14 +40,22 @@ public class ScreenWiggleLocusInfo {
 
   /*   G e t t e r s   */
   protected float getMeanScore() {
-    return (float) this.sumScore / this.cntGenomicLoci;
+    return this.sumScore / this.cntGenomicLoci;
   }
 
   public float getMax() {
-    return max;
+    if (this.cntGenomicLoci > 0) {
+      return max;
+    } else {
+      return Float.NaN;
+    }
   }
 
   public float getMin() {
-    return min;
+    if (this.cntGenomicLoci > 0) {
+      return min;
+    } else {
+      return Float.NaN;
+    }
   }
 }

@@ -306,11 +306,7 @@ public class InteractiveInput {
             proc.getTrackSet().setDataColForRegex(cmdTokens);
           } catch (Exception e) {
             String msg =
-                Utils.padEndMultiLine(
-                    "Error processing "
-                        + cmdTokens
-                        + ". Perhaps a non-numeric column was selected?",
-                    proc.getWindowSize());
+                Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize());
             System.err.println(msg);
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;

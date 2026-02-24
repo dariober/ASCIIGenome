@@ -1194,9 +1194,9 @@ public class CommandList {
 
     cmd = new CommandHelp();
     cmd.setName("dataCol");
-    cmd.setArgs("[-v] [index = 4] [track_regex = .*]...");
+    cmd.setArgs("[-aggfun] [-datacol] [-v] [track_regex = .*]...");
     cmd.inSection = Section.DISPLAY;
-    cmd.setBriefDescription("Select data column for bedgraph tracks containing regex. ");
+    cmd.setBriefDescription("Select data column and data aggregation method for bedgraph tracks");
     cmd.setAdditionalDescription(
         "First column has index 1. This command applies only to tracks of type bedgraph.\n"
             + "\n"
@@ -1205,7 +1205,7 @@ public class CommandList {
             + "\n"
             + "For example, use column 5 on tracks containing #1 and #3::\n"
             + " \n"
-            + "    dataCol 5 #1 #3\n"
+            + "    dataCol -aggfun max -datacol 5 #1 #3\n"
             + "\n");
     cmdList.add(cmd);
 

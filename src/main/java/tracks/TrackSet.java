@@ -1800,32 +1800,46 @@ public class TrackSet {
           InvalidGenomicCoordsException,
           SQLException {
 
+    String ignoredCmdName = tokens.remove(0);
     boolean invertSelection = Utils.argListContainsFlag(tokens, "-v");
 
-    int dataCol = 0; // Null will follow default
-    if (tokens.size() >= 2) {
+    String aggFun = Utils.getArgForParam(tokens, "-aggfun", null);
+    DataAggregationMethod dataAggregationMethod = null;
+    if (aggFun != null) {
       try {
-        dataCol = Integer.parseInt(tokens.get(1));
-      } catch (NumberFormatException e) {
-        System.err.println("Number format exception: " + tokens.get(1));
+        dataAggregationMethod = DataAggregationMethod.valueOf(aggFun.toUpperCase());
+      } catch (Exception e) {
+        throw new RuntimeException("Invalid data aggregation method: '" + aggFun + "'. Valid methods are: " + Arrays.stream(DataAggregationMethod.values()).toList());
       }
-    } else {
-      dataCol = 4;
+    }
+
+
+    int dataColIdx;
+    String strIdx = Utils.getArgForParam(tokens, "-datacol", "0");
+    try {
+      dataColIdx = Integer.parseInt(strIdx);
+    } catch (NumberFormatException e) {
+      throw new RuntimeException("Invalid index for data column: " + strIdx);
     }
 
     // Regex
     List<String> trackNameRegex = new ArrayList<String>();
-    if (tokens.size() >= 3) {
-      trackNameRegex = tokens.subList(2, tokens.size());
-    } else {
+    if (tokens.isEmpty()) {
       trackNameRegex.add(".*"); // Default: Capture everything
+    } else {
+      trackNameRegex.addAll(tokens);
     }
     // And set as required:
     List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
     for (AbstractTrack tr : tracksToReset) {
       if (tr.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
         TrackBedgraph bdg = (TrackBedgraph) tr;
-        bdg.setScoreColIdx(dataCol);
+        if (dataColIdx != 0) {
+          bdg.setScoreColIdx(dataColIdx);
+        }
+        if (dataAggregationMethod != null) {
+          bdg.setDataAggregationMethod(dataAggregationMethod);
+        }
       }
     }
   }
