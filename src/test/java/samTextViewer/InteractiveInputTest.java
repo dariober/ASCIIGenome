@@ -80,7 +80,11 @@ public class InteractiveInputTest {
 
   @Test
   public void canSetDataColumn()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
     TrackProcessor proc =
         gimmeTrackProcessor("chr7:5563603-5596627", 100, "test_data/ds051.actb.bedgraph.gz");
 
@@ -98,6 +102,19 @@ public class InteractiveInputTest {
     pi = processInput(ip, "dataCol -datacol 4 -aggfun Mean ds051", proc);
     assertTrue(pi.stdout.contains(" 718."));
 
+    pi = processInput(ip, "dataCol -datacol 4 -aggfun max -transf log10 ds051", proc);
+    assertTrue(pi.stdout.contains(" 2.9"));
+
+    pi = processInput(ip, "dataCol -datacol 4 -aggfun max -transf foo ds051", proc);
+    assertTrue(pi.stderr.contains("Invalid data transformation method"));
+
+    pi = processInput(ip, "dataCol -datacol 4 -aggfun min -transf minus_log10 ds051", proc);
+    assertTrue(pi.stdout.contains("[-2.9"));
+
+    // Zero and negatives are silently removed
+    pi = processInput(ip, "dataCol -datacol 7 -aggfun min -transf log10 ds051", proc);
+    assertEquals("", pi.stderr);
+
     // Region with no data
     pi = processInput(ip, "goto chr7:5571859-5588371", proc);
     assertTrue(pi.stdout.contains("range[NaN NaN]"));
@@ -105,7 +122,9 @@ public class InteractiveInputTest {
     processInput(ip, "goto chr7:5563603-5596627", proc);
 
     // This should fail!!
-    pi = processInput(ip, "dataCol -datacol 10", proc);
+    pi = processInput(ip, "dataCol -datacol 100", proc);
+    assertEquals("", pi.stderr);
+    assertTrue(pi.stdout.contains("range[NaN NaN]"));
 
     pi = processInput(ip, "dataCol -datacol x", proc);
     assertEquals("Invalid index for data column: x", pi.stderr.trim());
@@ -113,8 +132,42 @@ public class InteractiveInputTest {
     pi = processInput(ip, "dataCol -datacol 4 -aggfun foo", proc);
     assertTrue(pi.stderr.contains("Invalid data aggregation method:"));
 
-    // Also this should fail!!
+    // Non-numeric ignored
     pi = processInput(ip, "dataCol -datacol 6", proc);
+    assertEquals("", pi.stderr);
+    assertTrue(pi.stdout.contains("range[NaN NaN]"));
+  }
+
+  @Test
+  public void canSetDataColumnMultipleTracks()
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    TrackProcessor proc =
+        gimmeTrackProcessor("chr7:5567243-5567342", 110, "test_data/ds051.actb.bedgraph.gz");
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi = processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
+    processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
+    processInput(ip, "open test_data/ds051.actb.bam", proc);
+
+    pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1", proc);
+    assertTrue(pi.stdout.contains("82.3]"));
+    assertTrue(pi.stdout.contains("823"));
+    assertTrue(pi.stdout.contains("825"));
+
+    pi = processInput(ip, "dataCol -datacol 4 -aggfun Mean", proc);
+    assertFalse(pi.stdout.contains("82.3]"));
+    assertTrue(pi.stdout.contains("823"));
+    assertTrue(pi.stdout.contains("825"));
+    System.out.println(pi.stdout);
+
+    pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1 #2", proc);
+    assertTrue(pi.stdout.contains("82.3]"));
+    assertFalse(pi.stdout.contains("823"));
+    assertTrue(pi.stdout.contains("825"));
   }
 
   @Test

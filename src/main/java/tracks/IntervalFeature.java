@@ -26,7 +26,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
 
   private int scoreColIdx =
       -1; // Column index for score value **1-based**. Typically 5 for BED and 4 for BEDGRAPH
-  private float score = Float.NaN;
+  private double score = Double.NaN;
   private char strand = '.';
   private String source = "."; // Gtf specific
   private String feature = "."; // Gtf specific
@@ -162,7 +162,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
       if (NumberUtils.isCreatable(
           bedList.get(
               scoreColIdx))) { // NB: Returns false if leading or trailing spaces are present.
-        this.score = Float.valueOf(bedList.get(scoreColIdx));
+        this.score = Double.parseDouble(bedList.get(scoreColIdx));
       }
     }
     if (bedList.size() > 5) {
@@ -188,9 +188,9 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
     this.from = Integer.parseInt(gtfList.get(3));
     this.to = Integer.parseInt(gtfList.get(4));
     try {
-      this.score = Float.parseFloat(gtfList.get(5));
+      this.score = Double.parseDouble(gtfList.get(5));
     } catch (NumberFormatException e) {
-      this.score = Float.NaN;
+      this.score = Double.NaN;
     }
 
     // Strand
@@ -557,7 +557,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
     this.name = name;
   }
 
-  public float getScore() {
+  public double getScore() {
     return score;
   }
 

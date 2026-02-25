@@ -211,11 +211,11 @@ public class TrackPileup extends TrackBedgraph {
         this.zeroDepthIntervals.get(chrom).put(z.get(0), z.get(1), null);
       }
     }
-    List<Float> screenScores = this.prepareScreenScores();
+    List<Double> screenScores = this.prepareScreenScores();
     this.setScreenScores(screenScores);
   }
 
-  private List<Float> prepareScreenScores() throws InvalidGenomicCoordsException, IOException {
+  private List<Double> prepareScreenScores() throws InvalidGenomicCoordsException, IOException {
     // We need to walk along the genomic window spanned by the current coordinates and
     // collect depth. Depth as to be binned into screen scores.
     int userWindowSize = this.getGc().getUserWindowSize();
@@ -228,13 +228,6 @@ public class TrackPileup extends TrackBedgraph {
     List<Double> mapping = this.getGc().getMapping();
     Map<Integer, Integer> depthMap =
         this.getDepth(this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
-    // Winsorise here:
-    //		if(this.getWinsorizeMultiple() > 0){
-    //			Map<Integer, Float> depthMapWins= depthMap;
-    //			List<Float> xwin= Utils.winsorise(depthMap.entrySet(), this.getWinsorizeMultiple());
-    //			for x in depthMapWins:
-    //				//
-    //		}
 
     for (int refPos : depthMap.keySet()) {
       int screenIdx = Utils.getIndexOfclosestValue(refPos, mapping);
@@ -243,9 +236,9 @@ public class TrackPileup extends TrackBedgraph {
       sloc.increment(depth, DataTransformation.IDENTITY);
     }
 
-    List<Float> screenScores = new ArrayList<Float>();
+    List<Double> screenScores = new ArrayList<>();
     for (ScreenWiggleLocusInfo screenLocusInfo : this.screenWiggleLocusInfoList) {
-      float score = screenLocusInfo.getMeanScore();
+      double score = screenLocusInfo.getMeanScore();
       screenScores.add(score);
     }
     return screenScores;
@@ -511,15 +504,15 @@ public class TrackPileup extends TrackBedgraph {
       return "";
     }
 
-    Float[] range = Utils.range(this.getScreenScores());
+    Double[] range = Utils.range(this.getScreenScores());
 
     String rpmTag = "";
     if (this.isRpm()) {
       if (this.alnRecCnt == -1) {
         this.alnRecCnt = Utils.getAlignedReadCount(this.getWorkFilename());
       }
-      range[0] = (float) ((range[0] / this.alnRecCnt) * 1000000.0);
-      range[1] = (float) ((range[1] / this.alnRecCnt) * 1000000.0);
+      range[0] = (range[0] / this.alnRecCnt) * 1000000.0;
+      range[1] = (range[1] / this.alnRecCnt) * 1000000.0;
       rpmTag = "; rpm";
     }
     String[] rounded = Utils.roundToSignificantDigits(range[0], range[1], 2);

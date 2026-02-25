@@ -80,11 +80,11 @@ public abstract class AbstractTrack {
   private String trackTag = "N/A"; // Tag name for title
   // private int id= 1;              // A unique identifier for the track. Changed when the track is
   // added to a TrackSet.
-  protected List<Float> screenScores = new ArrayList<Float>();
+  protected List<Double> screenScores = new ArrayList<>();
   GenomicCoords gc;
   private boolean noFormat = false;
-  private float yLimitMin = Float.NaN; // Same as R ylim()
-  private float yLimitMax = Float.NaN;
+  private double yLimitMin = Float.NaN; // Same as R ylim()
+  private double yLimitMax = Float.NaN;
 
   /** Max size of genomic region before the track shuts down to prevent excessive slow down */
   protected final int MAX_REGION_SIZE = 1000001;
@@ -205,11 +205,11 @@ public abstract class AbstractTrack {
     this.trackTag = trackTag;
   }
 
-  protected List<Float> getScreenScores() {
+  protected List<Double> getScreenScores() {
     return screenScores;
   }
 
-  protected void setScreenScores(List<Float> screenScores) {
+  protected void setScreenScores(List<Double> screenScores) {
     this.screenScores = screenScores;
   }
 
@@ -240,19 +240,19 @@ public abstract class AbstractTrack {
     return this.noFormat;
   }
 
-  public Float getYLimitMin() {
+  public Double getYLimitMin() {
     return yLimitMin;
   }
 
-  public void setYLimitMin(float ymin) {
+  public void setYLimitMin(double ymin) {
     this.yLimitMin = ymin;
   }
 
-  public Float getYLimitMax() {
+  public Double getYLimitMax() {
     return yLimitMax;
   }
 
-  public void setYLimitMax(float ymax) {
+  public void setYLimitMax(double ymax) {
     this.yLimitMax = ymax;
   }
 
@@ -1057,8 +1057,16 @@ public abstract class AbstractTrack {
     // boolean[] results= new boolean[(int) this.nRecsInWindow];
     List<Boolean> results = new ArrayList<Boolean>();
 
-    boolean isDefaultShowRegex = this.getFeatureFilter().getShowRegex().toString().equals(Filter.DEFAULT_SHOW_REGEX.getValue());
-    boolean isDefaultHideRegex = this.getFeatureFilter().getHideRegex().toString().equals(Filter.DEFAULT_HIDE_REGEX.getValue());
+    boolean isDefaultShowRegex =
+        this.getFeatureFilter()
+            .getShowRegex()
+            .toString()
+            .equals(Filter.DEFAULT_SHOW_REGEX.getValue());
+    boolean isDefaultHideRegex =
+        this.getFeatureFilter()
+            .getHideRegex()
+            .toString()
+            .equals(Filter.DEFAULT_HIDE_REGEX.getValue());
 
     List<String> awkDataInput = new ArrayList<String>();
     while (filterSam.hasNext()) {
@@ -1087,7 +1095,7 @@ public abstract class AbstractTrack {
 
       String raw = null;
 
-      if (passed&& (!isDefaultShowRegex || !isDefaultHideRegex)) {
+      if (passed && (!isDefaultShowRegex || !isDefaultHideRegex)) {
         // grep
         raw = rec.getSAMString().trim();
         boolean showIt = true;

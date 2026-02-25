@@ -305,8 +305,7 @@ public class InteractiveInput {
           try {
             proc.getTrackSet().setDataColForRegex(cmdTokens);
           } catch (Exception e) {
-            String msg =
-                Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize());
+            String msg = Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize());
             System.err.println(msg);
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
@@ -1103,7 +1102,7 @@ public class InteractiveInput {
     } else {
       sh = this.sessionHandler;
     }
-    if (args.size() == 0) {
+    if (args.isEmpty()) {
       this.messages.add("Please provide the name of the session to delete");
       return ExitCode.ERROR;
     }

@@ -1130,30 +1130,30 @@ public class UtilsTest {
 
   @Test
   public void canGetRangeOfListOfValues() {
-    List<Float> y = new ArrayList<Float>();
-    y.add((float) 1.0);
-    y.add((float) 10.0);
-    y.add((float) 3.0);
-    y.add(Float.NaN);
+    List<Double> y = new ArrayList<>();
+    y.add(1.0);
+    y.add(10.0);
+    y.add(3.0);
+    y.add(Double.NaN);
     assertEquals(1.0, Utils.range(y)[0], 0.0001); // Min
     assertEquals(10.0, Utils.range(y)[1], 0.0001); // Max
 
     // Only NaN
-    List<Float> nan = new ArrayList<Float>();
-    nan.add(Float.NaN);
-    nan.add(Float.NaN);
-    nan.add(Float.NaN);
+    List<Double> nan = new ArrayList<>();
+    nan.add(Double.NaN);
+    nan.add(Double.NaN);
+    nan.add(Double.NaN);
     assertTrue(Utils.range(nan)[0].isNaN());
     assertTrue(Utils.range(nan)[1].isNaN());
 
     // Length of one
-    List<Float> y1 = new ArrayList<Float>();
-    y1.add((float) 1.0);
+    List<Double> y1 = new ArrayList<>();
+    y1.add(1.0);
     assertEquals(1.0, Utils.range(y1)[0], 0.0001);
     assertEquals(1.0, Utils.range(y1)[1], 0.0001);
 
     // Zero length
-    List<Float> y0 = new ArrayList<Float>();
+    List<Double> y0 = new ArrayList<>();
     assertTrue(Utils.range(y0)[0].isNaN());
     assertTrue(Utils.range(y0)[1].isNaN());
   }

@@ -4,8 +4,6 @@ import colouring.Config;
 import colouring.ConfigKey;
 import colouring.Xterm256;
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
@@ -18,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -57,8 +54,6 @@ public class TrackBedgraph extends TrackIntervalFeature {
       this.tabixReader = new TabixReader(this.getWorkFilename());
     }
     this.setGc(gc);
-
-    this.setDataTransformation(this.dataTransformation);
   }
 
   public TrackBedgraph() {}
@@ -67,10 +62,10 @@ public class TrackBedgraph extends TrackIntervalFeature {
 
   protected void setScoreColIdx(int scoreColIdx)
       throws ClassNotFoundException,
-      IOException,
-      InvalidGenomicCoordsException,
-      InvalidRecordException,
-      SQLException {
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
     if (this.scoreColIdx != scoreColIdx) {
       this.scoreColIdx = scoreColIdx;
       this.update();
@@ -79,10 +74,10 @@ public class TrackBedgraph extends TrackIntervalFeature {
 
   protected void setDataAggregationMethod(DataAggregationMethod dataAggregationMethod)
       throws ClassNotFoundException,
-      IOException,
-      InvalidGenomicCoordsException,
-      InvalidRecordException,
-      SQLException {
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
     if (this.dataAggregationMethod != dataAggregationMethod) {
       this.dataAggregationMethod = dataAggregationMethod;
       this.update();
@@ -93,8 +88,16 @@ public class TrackBedgraph extends TrackIntervalFeature {
     return this.dataAggregationMethod;
   }
 
-  protected void setDataTransformation(DataTransformation dataTransformation) {
-    this.dataTransformation = dataTransformation;
+  protected void setDataTransformation(DataTransformation dataTransformation)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          InvalidRecordException,
+          ClassNotFoundException {
+    if (this.dataTransformation != dataTransformation) {
+      this.dataTransformation = dataTransformation;
+      this.update();
+    }
   }
 
   protected DataTransformation getDataTransformation() {
@@ -117,12 +120,12 @@ public class TrackBedgraph extends TrackIntervalFeature {
       }
     }
 
-    List<Float> screenScores = this.aggregateScreenScores(screenWigLocInfoList);
+    List<Double> screenScores = this.aggregateScreenScores(screenWigLocInfoList);
     this.setScreenScores(screenScores);
   }
 
-  private List<Float> aggregateScreenScores(List<ScreenWiggleLocusInfo> screenWigLocInfoList) {
-    List<Float> screenScores = new ArrayList<>();
+  private List<Double> aggregateScreenScores(List<ScreenWiggleLocusInfo> screenWigLocInfoList) {
+    List<Double> screenScores = new ArrayList<>();
     for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
       if (this.getDataAggregationMethod() == DataAggregationMethod.MEAN) {
         screenScores.add(x.getMeanScore());
@@ -131,7 +134,8 @@ public class TrackBedgraph extends TrackIntervalFeature {
       } else if (this.getDataAggregationMethod() == DataAggregationMethod.MIN) {
         screenScores.add(x.getMin());
       } else {
-        throw new NotImplementedException("Data '" + this.getDataAggregationMethod() + "' aggregation method not implemented");
+        throw new NotImplementedException(
+            "Data '" + this.getDataAggregationMethod() + "' aggregation method not implemented");
       }
     }
     return screenScores;
@@ -199,7 +203,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
       return "";
     }
 
-    Float[] range = Utils.range(this.getScreenScores());
+    Double[] range = Utils.range(this.getScreenScores());
     String[] rounded = Utils.roundToSignificantDigits(range[0], range[1], 2);
 
     String ymin = this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();

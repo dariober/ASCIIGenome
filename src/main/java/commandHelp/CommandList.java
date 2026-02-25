@@ -9,8 +9,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import tracks.DataAggregationMethod;
+import tracks.DataTransformation;
 
 public class CommandList {
 
@@ -1194,18 +1197,34 @@ public class CommandList {
 
     cmd = new CommandHelp();
     cmd.setName("dataCol");
-    cmd.setArgs("[-aggfun] [-datacol] [-v] [track_regex = .*]...");
+    cmd.setArgs("[-datacol i ] [-transf identity] [-aggfun mean] [-v] [track_regex = .*]...");
     cmd.inSection = Section.DISPLAY;
-    cmd.setBriefDescription("Select data column and data aggregation method for bedgraph tracks");
+    cmd.setBriefDescription("Set data column for bedgraph tracks");
     cmd.setAdditionalDescription(
-        "First column has index 1. This command applies only to tracks of type bedgraph.\n"
+        "\n\n"
+            + "Set which column to plot, what transformation to apply, and how to aggregate values"
+            + " when multiple values fall in the same screen column. Non-numeric data, including"
+            + " any generated NaN, are ignored.\n"
+            + "\n"
+            + ":code:`-datacol` Column index (1-based) of data to plot.\n"
+            + "\n"
+            + ":code:`-transf` Apply this transformation to the data. This happens before"
+            + " aggregation. Options: "
+            + Arrays.asList(DataTransformation.values())
+            + "\n"
+            + "\n"
+            + ":code:`-aggfun` Aggregate function to summarise data falling in the same screen"
+            + " column. Options: "
+            + Arrays.asList(DataAggregationMethod.values())
+            + "\n"
             + "\n"
             + ":code:`-v` Invert selection: apply changes to the tracks not selected by list of"
             + " track_regex\n"
             + "\n"
-            + "For example, use column 5 on tracks containing #1 and #3::\n"
+            + "Argument to -transf and -aggfun are case-insensitive. Examples::\n"
             + " \n"
-            + "    dataCol -aggfun max -datacol 5 #1 #3\n"
+            + "    dataCol -aggfun max -datacol 5 #1 #3~~~~->Use column 5 for track #1 and #3\n"
+            + "    dataCol -aggfun max -transf minus_log10~->Useful for plotting p-values\n"
             + "\n");
     cmdList.add(cmd);
 

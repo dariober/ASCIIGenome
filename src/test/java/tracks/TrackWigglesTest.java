@@ -54,9 +54,9 @@ public class TrackWigglesTest {
           SQLException {
     GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
     TrackWiggles tw = new TrackWiggles("test_data/ear045.oxBS.actb.tdf", gc);
-    Float raw = tw.getScreenScores().get(0);
+    Double raw = tw.getScreenScores().get(0);
     tw.setRpm(true);
-    Float rpm = tw.getScreenScores().get(0);
+    Double rpm = tw.getScreenScores().get(0);
     assertTrue(rpm > raw);
   }
 }
