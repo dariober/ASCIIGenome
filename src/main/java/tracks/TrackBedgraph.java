@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -22,6 +23,7 @@ import sortBgzipIndex.MakeTabixIndex;
 public class TrackBedgraph extends TrackIntervalFeature {
 
   private DataTransformation dataTransformation = DataTransformation.IDENTITY;
+  private DataAggregationMethod dataAggregationMethod = DataAggregationMethod.MEAN;
 
   public TrackBedgraph(String filename, GenomicCoords gc)
       throws ClassNotFoundException,
@@ -52,16 +54,50 @@ public class TrackBedgraph extends TrackIntervalFeature {
       this.tabixReader = new TabixReader(this.getWorkFilename());
     }
     this.setGc(gc);
-
-    this.setDataTransformation(this.dataTransformation);
   }
 
   public TrackBedgraph() {}
 
   /* ----------- METHODS ----------- */
 
-  protected void setDataTransformation(DataTransformation dataTransformation) {
-    this.dataTransformation = dataTransformation;
+  protected void setScoreColIdx(int scoreColIdx)
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
+    if (this.scoreColIdx != scoreColIdx) {
+      this.scoreColIdx = scoreColIdx;
+      this.update();
+    }
+  }
+
+  protected void setDataAggregationMethod(DataAggregationMethod dataAggregationMethod)
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
+    if (this.dataAggregationMethod != dataAggregationMethod) {
+      this.dataAggregationMethod = dataAggregationMethod;
+      this.update();
+    }
+  }
+
+  protected DataAggregationMethod getDataAggregationMethod() {
+    return this.dataAggregationMethod;
+  }
+
+  protected void setDataTransformation(DataTransformation dataTransformation)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          InvalidRecordException,
+          ClassNotFoundException {
+    if (this.dataTransformation != dataTransformation) {
+      this.dataTransformation = dataTransformation;
+      this.update();
+    }
   }
 
   protected DataTransformation getDataTransformation() {
@@ -84,11 +120,25 @@ public class TrackBedgraph extends TrackIntervalFeature {
       }
     }
 
-    List<Float> screenScores = new ArrayList<Float>();
-    for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
-      screenScores.add(x.getMeanScore());
-    }
+    List<Double> screenScores = this.aggregateScreenScores(screenWigLocInfoList);
     this.setScreenScores(screenScores);
+  }
+
+  private List<Double> aggregateScreenScores(List<ScreenWiggleLocusInfo> screenWigLocInfoList) {
+    List<Double> screenScores = new ArrayList<>();
+    for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
+      if (this.getDataAggregationMethod() == DataAggregationMethod.MEAN) {
+        screenScores.add(x.getMeanScore());
+      } else if (this.getDataAggregationMethod() == DataAggregationMethod.MAX) {
+        screenScores.add(x.getMax());
+      } else if (this.getDataAggregationMethod() == DataAggregationMethod.MIN) {
+        screenScores.add(x.getMin());
+      } else {
+        throw new NotImplementedException(
+            "Data '" + this.getDataAggregationMethod() + "' aggregation method not implemented");
+      }
+    }
+    return screenScores;
   }
 
   @Override
@@ -111,7 +161,6 @@ public class TrackBedgraph extends TrackIntervalFeature {
       throw new InvalidRecordException();
     }
     this.setDataTransformation(this.dataTransformation);
-
     this.bedGraphToScores(this.getFeatureList());
   }
 
@@ -154,7 +203,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
       return "";
     }
 
-    Float[] range = Utils.range(this.getScreenScores());
+    Double[] range = Utils.range(this.getScreenScores());
     String[] rounded = Utils.roundToSignificantDigits(range[0], range[1], 2);
 
     String ymin = this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();

@@ -6,23 +6,27 @@ import org.apache.commons.lang3.NotImplementedException;
 public class ScreenWiggleLocusInfo {
 
   private int cntGenomicLoci = 0; // Count of genomic loci mapped to this screen position
-  private float sumScore =
+  private double sumScore =
       0; // Sum of scores accumulated from wiggle sites mapped to this screen locus
-  private float min = Float.MAX_VALUE;
-  private float max = Float.MIN_VALUE;
+  private double min = Double.MAX_VALUE;
+  private double max = Double.MIN_VALUE;
 
   /* C o n s t r u c t o r */
   public ScreenWiggleLocusInfo() {}
 
   /* M e t h o d s */
   /** Increment attributes by given score */
-  public void increment(float score, DataTransformation dataTransformation) {
+  public void increment(double score, DataTransformation dataTransformation) {
+    //    if (score <= 0 && (dataTransformation == DataTransformation.LOG10 || dataTransformation ==
+    // DataTransformation.MINUS_LOG10)) {
+    //      throw  new RuntimeException("Invalid transformation for value: " + score);
+    //    }
     if (dataTransformation == DataTransformation.IDENTITY) {
       //
     } else if (dataTransformation == DataTransformation.LOG10) {
-      score = score <= 0 ? 0 : (float) Math.log10(score);
+      score = Math.log10(score);
     } else if (dataTransformation == DataTransformation.MINUS_LOG10) {
-      score = score <= 0 ? 0 : (float) -Math.log10(score);
+      score = -Math.log10(score);
     } else {
       throw new NotImplementedException(
           "Transformation " + dataTransformation + " not implemented yet");
@@ -39,15 +43,23 @@ public class ScreenWiggleLocusInfo {
   }
 
   /*   G e t t e r s   */
-  protected float getMeanScore() {
-    return (float) this.sumScore / this.cntGenomicLoci;
+  protected double getMeanScore() {
+    return this.sumScore / this.cntGenomicLoci;
   }
 
-  public float getMax() {
-    return max;
+  public double getMax() {
+    if (this.cntGenomicLoci > 0) {
+      return max;
+    } else {
+      return Double.NaN;
+    }
   }
 
-  public float getMin() {
-    return min;
+  public double getMin() {
+    if (this.cntGenomicLoci > 0) {
+      return min;
+    } else {
+      return Double.NaN;
+    }
   }
 }

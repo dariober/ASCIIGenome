@@ -20,10 +20,9 @@ import sortBgzipIndex.MakeTabixIndex;
 
 public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> {
 
-  protected int scoreColIdx = -1;
-
   private String gtfAttributeForName = null;
   private int bedFieldForName = 3; // 0-based!
+  protected int scoreColIdx = -1;
 
   /* C o n s t r u c t o r */
 
@@ -37,12 +36,6 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     this.setFilename(filename);
     this.setTrackFormat(Utils.getFileTypeFromName(filename));
 
-    if (this.getTrackFormat().equals(TrackFormat.BIGBED)
-        || this.getTrackFormat().equals(TrackFormat.BED)) {
-      this.scoreColIdx =
-          5; // Don't use setScoreColIdx because it call update and the GenomicCoordinates object is
-      // null
-    }
     if (this.getTrackFormat().equals(TrackFormat.BIGBED)) {
       this.bigBedReader = new BBFileReader(filename); // or url for remote access.
       if (!this.bigBedReader.getBBFileHeader().isBigBed()) {
@@ -101,16 +94,6 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
   protected int getScoreColIdx() {
     return scoreColIdx;
-  }
-
-  protected void setScoreColIdx(int scoreColIdx)
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidRecordException,
-          SQLException {
-    this.scoreColIdx = scoreColIdx;
-    this.update();
   }
 
   @Override

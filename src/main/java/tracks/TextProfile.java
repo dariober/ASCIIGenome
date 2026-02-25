@@ -7,8 +7,8 @@ import samTextViewer.Utils;
 /** Text representation of a continuous profile along the screen positions */
 class TextProfile {
 
-  private Float yMaxLimit = Float.NaN; // Store the max depth of the track
-  private Float yMinLimit = Float.NaN;
+  private Double yMaxLimit; // Store the max depth of the track
+  private Double yMinLimit;
   private double scorePerDot; // Store the scaling factor: Each dot in the profile cooresponds to
   // this many units of yValues.
   // Text representation of yValues scled by yMaxLines. Each inner list is a line on screen.
@@ -25,30 +25,11 @@ class TextProfile {
   private String strForNaN = " ";
 
   /* C o n s t r u c t o r */
-  /**
-   * @param yValues Values on the y-axis. Should be of the same length as the windowSize
-   * @param yMaxLines The yValues will be rescaled to fit this many lines of text.
-   * @param yMimUser, yMaxUser Min and max values for y-axis as set by user. If NaN use min and max
-   *     from yValues
-   */
-  public TextProfile(List<Float> yValues, int yMaxLines, Float num1, Float num2) {
+  public TextProfile(List<Double> yValues, int yMaxLines, Double num1, Double num2) {
 
     // * Get ymin and ymax of input yValues
-    Float ymin = Utils.range(yValues)[0];
-    Float ymax = Utils.range(yValues)[1];
-
-    //		Double ymin= Double.NaN;
-    //		Double ymax= Double.NaN;
-    //		for(Double x : yValues){
-    //			if(!x.isNaN()){
-    //				if(x > ymax || ymax.isNaN()){
-    //					ymax= x;
-    //				}
-    //				if(x < ymin || ymin.isNaN()){
-    //					ymin= x;
-    //				}
-    //			}
-    //		}
+    Double ymin = Utils.range(yValues)[0];
+    Double ymax = Utils.range(yValues)[1];
 
     if (num1.isNaN()) {
       num1 = ymin;
@@ -100,15 +81,6 @@ class TextProfile {
     this.profile = Utils.transpose(profile);
   }
 
-  /**
-   * Prepare a list of strings representing vertical bar. Bar height is yValue, rescaled to fit a y
-   * span of yMaxLines of text.
-   *
-   * @param yValue
-   * @param y0 index position of 0.
-   * @param scorePerDot
-   * @return
-   */
   private List<String> prepareYColumn(Double yValue, int yMaxLines, int y0) {
 
     Double yPosDotU =

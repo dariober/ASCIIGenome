@@ -71,7 +71,7 @@ public class TrackProcessor {
       outputString.append(currentGC.getChromIdeogram(20, this.noFormat) + "\n");
     }
 
-//    // Update tracks to new genomic coords
+    //    // Update tracks to new genomic coords
     ExecutorService exec = Executors.newFixedThreadPool(3);
     try {
       for (AbstractTrack track : trackSet.getTrackList()) {
@@ -85,8 +85,11 @@ public class TrackProcessor {
                       && !track.isHideTrack()) {
                     track.setGc(currentGC);
                   }
-                } catch (InvalidGenomicCoordsException | IOException | ClassNotFoundException |
-                         InvalidRecordException | SQLException e) {
+                } catch (InvalidGenomicCoordsException
+                    | IOException
+                    | ClassNotFoundException
+                    | InvalidRecordException
+                    | SQLException e) {
                   throw new RuntimeException(e);
                 }
               }
@@ -102,13 +105,13 @@ public class TrackProcessor {
     }
 
     // Update tracks to new genomic coords
-//      for (AbstractTrack track : trackSet.getTrackList()) {
-//                  if (!track.getGc().equalCoordsAndWindowSize(currentGC)
-//                      && track.getyMaxLines() > 0
-//                      && !track.isHideTrack()) {
-//                    track.setGc(currentGC);
-//                  }
-//      }
+    //      for (AbstractTrack track : trackSet.getTrackList()) {
+    //                  if (!track.getGc().equalCoordsAndWindowSize(currentGC)
+    //                      && track.getyMaxLines() > 0
+    //                      && !track.isHideTrack()) {
+    //                    track.setGc(currentGC);
+    //                  }
+    //      }
 
     // Set new y limits as required. This step has to come after the positioning to new coordinates
     // because we may need to autoscale to global min or max.

@@ -1067,7 +1067,7 @@ public class TrackSet {
     String yStrMin = this.getYStringLimits()[0];
     String yStrMax = this.getYStringLimits()[1];
 
-    Float[] yrange = {Float.NaN, Float.NaN};
+    Double[] yrange = {Double.NaN, Double.NaN};
     if (yStrMin.equals("min") || yStrMax.equals("max")) {
       yrange = this.yRangeOfTracks(tracksToReset);
     }
@@ -1097,7 +1097,7 @@ public class TrackSet {
     }
     // Swap
     if (ymin > ymax) {
-      Double newMax = ymin;
+      double newMax = ymin;
       ymin = ymax;
       ymax = newMax;
     }
@@ -1105,8 +1105,8 @@ public class TrackSet {
     String[] yy = Utils.roundToSignificantDigits(ymin, ymax, 2);
 
     for (AbstractTrack tr : tracksToReset) {
-      tr.setYLimitMin(Float.valueOf(yy[0]));
-      tr.setYLimitMax(Float.valueOf(yy[1]));
+      tr.setYLimitMin(Double.parseDouble(yy[0]));
+      tr.setYLimitMax(Double.parseDouble(yy[1]));
     }
   }
 
@@ -1170,27 +1170,15 @@ public class TrackSet {
   }
 
   /** Get the range of all the screen scores of this list of tracks. I.e. the global min and max. */
-  private Float[] yRangeOfTracks(List<AbstractTrack> tracks) {
+  private Double[] yRangeOfTracks(List<AbstractTrack> tracks) {
 
-    List<Float> yall = new ArrayList<Float>();
+    List<Double> yall = new ArrayList<>();
     for (AbstractTrack tr : tracks) {
       yall.addAll(tr.getScreenScores());
     }
     return Utils.range(yall);
   }
 
-  /**
-   * Parse awk command and set awk script for the captured tracks. The tokens in cmdInput maybe in
-   * the form: [awk, $3 > 10] [awk, $3 > 10, track1] [awk, $3 > 10, track_re1, track_re2] [awk, -F,
-   * sep, -v, n=10, $3 > n, track1, track2]
-   *
-   * @throws InvalidCommandLineException
-   * @throws SQLException
-   * @throws InvalidRecordException
-   * @throws InvalidGenomicCoordsException
-   * @throws IOException
-   * @throws ClassNotFoundException
-   */
   public void setAwkForTrack(List<String> cmdInput)
       throws InvalidCommandLineException,
           ClassNotFoundException,
@@ -1800,32 +1788,66 @@ public class TrackSet {
           InvalidGenomicCoordsException,
           SQLException {
 
+    String ignoredCmdName = tokens.remove(0);
     boolean invertSelection = Utils.argListContainsFlag(tokens, "-v");
 
-    int dataCol = 0; // Null will follow default
-    if (tokens.size() >= 2) {
+    String aggFun = Utils.getArgForParam(tokens, "-aggfun", null);
+    DataAggregationMethod dataAggregationMethod = null;
+    if (aggFun != null) {
       try {
-        dataCol = Integer.parseInt(tokens.get(1));
-      } catch (NumberFormatException e) {
-        System.err.println("Number format exception: " + tokens.get(1));
+        dataAggregationMethod = DataAggregationMethod.valueOf(aggFun.toUpperCase());
+      } catch (Exception e) {
+        throw new RuntimeException(
+            "Invalid data aggregation method: '"
+                + aggFun
+                + "'. Valid methods are: "
+                + Arrays.stream(DataAggregationMethod.values()).toList());
       }
-    } else {
-      dataCol = 4;
+    }
+
+    String transf = Utils.getArgForParam(tokens, "-transf", null);
+    DataTransformation dataTransformation = null;
+    if (transf != null) {
+      try {
+        dataTransformation = DataTransformation.valueOf(transf.toUpperCase());
+      } catch (Exception e) {
+        throw new RuntimeException(
+            "Invalid data transformation method: '"
+                + transf
+                + "'. Valid methods are: "
+                + Arrays.stream(DataTransformation.values()).toList());
+      }
+    }
+
+    int dataColIdx;
+    String strIdx = Utils.getArgForParam(tokens, "-datacol", "0");
+    try {
+      dataColIdx = Integer.parseInt(strIdx);
+    } catch (NumberFormatException e) {
+      throw new RuntimeException("Invalid index for data column: " + strIdx);
     }
 
     // Regex
     List<String> trackNameRegex = new ArrayList<String>();
-    if (tokens.size() >= 3) {
-      trackNameRegex = tokens.subList(2, tokens.size());
-    } else {
+    if (tokens.isEmpty()) {
       trackNameRegex.add(".*"); // Default: Capture everything
+    } else {
+      trackNameRegex.addAll(tokens);
     }
     // And set as required:
     List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
     for (AbstractTrack tr : tracksToReset) {
       if (tr.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
         TrackBedgraph bdg = (TrackBedgraph) tr;
-        bdg.setScoreColIdx(dataCol);
+        if (dataColIdx != 0) {
+          bdg.setScoreColIdx(dataColIdx);
+        }
+        if (dataAggregationMethod != null) {
+          bdg.setDataAggregationMethod(dataAggregationMethod);
+        }
+        if (dataTransformation != null) {
+          bdg.setDataTransformation(dataTransformation);
+        }
       }
     }
   }
@@ -2220,7 +2242,7 @@ public class TrackSet {
 
     // Now change for real
     String messages = "";
-    if (tracksToReset.size() == 0) {
+    if (tracksToReset.isEmpty()) {
       messages += "No track matched";
     }
     for (AbstractTrack tr : tracksToReset) {
@@ -2257,7 +2279,7 @@ public class TrackSet {
 
     // Regex
     List<String> trackNameRegex = new ArrayList<String>();
-    if (args.size() > 0) {
+    if (!args.isEmpty()) {
       trackNameRegex = args;
     } else {
       trackNameRegex.add(".*"); // Default: Capture everything
@@ -2640,7 +2662,7 @@ public class TrackSet {
 
     boolean invertSelection = Utils.argListContainsFlag(args, "-v");
 
-    Float headerAlignmentPct = null;
+    Float headerAlignmentPct;
     String aln = Utils.getArgForParam(args, "-a", "");
 
     try {

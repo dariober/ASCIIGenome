@@ -95,7 +95,7 @@ public class TrackWiggles extends AbstractTrack {
     }
   }
 
-  private void updateTDF() throws InvalidGenomicCoordsException, IOException {
+  private void updateTDF() {
 
     this.screenWiggleLocusInfoList =
         this.tdfRangeToScreen(
@@ -105,9 +105,9 @@ public class TrackWiggles extends AbstractTrack {
             this.getGc().getTo(),
             this.getGc().getMapping());
 
-    List<Float> screenScores = new ArrayList<Float>();
+    List<Double> screenScores = new ArrayList<>();
     for (ScreenWiggleLocusInfo x : screenWiggleLocusInfoList) {
-      screenScores.add((float) x.getMeanScore());
+      screenScores.add(x.getMeanScore());
     }
     if (this.isRpm()) {
       screenScores = this.normalizeToRpm(screenScores);
@@ -242,7 +242,7 @@ public class TrackWiggles extends AbstractTrack {
       return "";
     }
 
-    Float[] range = Utils.range(this.getScreenScores());
+    Double[] range = Utils.range(this.getScreenScores());
     String[] rounded = Utils.roundToSignificantDigits(range[0], range[1], 2);
 
     String ymin = this.getYLimitMin().isNaN() ? "auto" : this.getYLimitMin().toString();
@@ -292,15 +292,15 @@ public class TrackWiggles extends AbstractTrack {
         screenWigLocInfoList.get(idx).increment(bw.getWigValue(), DataTransformation.IDENTITY);
       }
     }
-    List<Float> screenScores = new ArrayList<Float>();
+    List<Double> screenScores = new ArrayList<>();
     for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
-      screenScores.add((float) x.getMeanScore());
+      screenScores.add(x.getMeanScore());
     }
     this.setScreenScores(screenScores);
   }
 
-  private List<Float> normalizeToRpm(List<Float> screenScores) {
-    ArrayList<Float> rpmed = new ArrayList<Float>();
+  private List<Double> normalizeToRpm(List<Double> screenScores) {
+    ArrayList<Double> rpmed = new ArrayList<>();
     String x = this.getAttributesFromTDF("totalCount");
     if (x == null) {
       System.err.println("Warning: Cannot get total counts for " + this.getFilename());
@@ -308,7 +308,7 @@ public class TrackWiggles extends AbstractTrack {
     }
     Integer totalCount = Integer.parseInt(x);
     for (int i = 0; i < screenScores.size(); i++) {
-      rpmed.add((float) (screenScores.get(i) / totalCount * 1000000.0));
+      rpmed.add((screenScores.get(i) / totalCount * 1000000.0));
     }
     return rpmed;
   }

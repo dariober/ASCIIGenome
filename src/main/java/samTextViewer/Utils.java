@@ -1713,12 +1713,12 @@ public class Utils {
   /**
    * Same as R range(..., na.rm= TRUE) function: Return min and max of list of values ignoring NaNs.
    */
-  public static Float[] range(List<Float> y) {
-    Float[] range = new Float[2];
+  public static Double[] range(List<Double> y) {
+    Double[] range = new Double[2];
 
-    Float ymin = Float.NaN;
-    Float ymax = Float.NaN;
-    for (Float x : y) {
+    Double ymin = Double.NaN;
+    Double ymax = Double.NaN;
+    for (Double x : y) {
       if (!x.isNaN()) {
         if (x > ymax || ymax.isNaN()) {
           ymax = x;

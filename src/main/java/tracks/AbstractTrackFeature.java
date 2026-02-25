@@ -488,13 +488,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     return listOfLines;
   }
 
-  /**
-   * Return a string of a single line of (typically de-stacked) reads
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidColourException
-   */
+  /** Return a string of a single line of (typically de-stacked) reads */
   protected String printToScreenOneLine(List<T> listToPrint) throws InvalidColourException {
 
     List<String> printable =

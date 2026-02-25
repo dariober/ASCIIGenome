@@ -189,11 +189,11 @@ class Locus {
     char consensus;
     if (grpCounts.get(allele1) == 0) {
       consensus = ' ';
-    } else if ((float) (grpCounts.get(allele1) + grpCounts.get(allele2)) / this.getDepth()
+    } else if ((double) (grpCounts.get(allele1) + grpCounts.get(allele2)) / this.getDepth()
         < MIN_PCT_TOT) {
       consensus = 'N';
     } else if (grpCounts.get(allele2) >= MIN_DEPTH_ALT
-        && (float) grpCounts.get(allele2) / this.getDepth() >= MIN_PCT_ALT) {
+        && (double) grpCounts.get(allele2) / this.getDepth() >= MIN_PCT_ALT) {
       consensus = this.iupacAmbiguity(allele1, allele2);
     } else {
       consensus = allele1;
