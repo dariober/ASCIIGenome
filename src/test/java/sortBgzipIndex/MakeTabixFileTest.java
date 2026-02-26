@@ -34,6 +34,18 @@ public class MakeTabixFileTest {
   }
 
   @Test
+  public void canIndexGtf()
+          throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+    String infile = "test_data/hg19_genes.gtf.gz";
+    File outfile = new File("test_data/hg19_genes.gtf.tmp.gz");
+    outfile.deleteOnExit();
+
+    File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+    expectedTbi.deleteOnExit();
+    new MakeTabixIndex(infile, outfile, TabixFormat.GFF, '\t');
+  }
+
+  @Test
   public void canIndexCustomSep()
       throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
     String infile = "test_data/generic.csv";

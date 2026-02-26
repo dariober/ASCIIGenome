@@ -23,6 +23,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
   private String gtfAttributeForName = null;
   private int bedFieldForName = 3; // 0-based!
   protected int scoreColIdx = -1;
+  private final char columnSeparator = '\t';
 
   /* C o n s t r u c t o r */
 
@@ -68,7 +69,8 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     this.setGc(gc);
   }
 
-  protected TrackIntervalFeature() {}
+  protected TrackIntervalFeature() {
+  }
 
   /* M e t h o d s */
   @Override
@@ -95,7 +97,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
   @Override
   public char getColumnSeparator() {
-    return 0;
+    return this.columnSeparator;
   }
 
   protected int getScoreColIdx() {
