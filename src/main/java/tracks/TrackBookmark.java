@@ -57,7 +57,8 @@ public class TrackBookmark extends TrackIntervalFeature {
     this.setFilename(bookmark.getAbsolutePath());
     this.setWorkFilename(bookmark.getAbsolutePath());
 
-    new MakeTabixIndex(bookmarkPlain.getAbsolutePath(), bookmark, TabixFormat.GFF);
+    new MakeTabixIndex(
+        bookmarkPlain.getAbsolutePath(), bookmark, TabixFormat.GFF, this.getColumnSeparator());
     bookmarkPlain.delete();
 
     this.setTabixReader(new TabixReader(bookmark.getAbsolutePath()));
@@ -108,7 +109,10 @@ public class TrackBookmark extends TrackIntervalFeature {
 
     // Recompress and index replacing the original bgzip file
     new MakeTabixIndex(
-        plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.GFF);
+        plainNew.getAbsolutePath(),
+        new File(this.getWorkFilename()),
+        TabixFormat.GFF,
+        this.getColumnSeparator());
     plainNew.delete();
     this.tabixReader = new TabixReader(this.getWorkFilename());
     // Update track.
@@ -179,7 +183,10 @@ public class TrackBookmark extends TrackIntervalFeature {
 
     // Recompress and index replacing the original bgzip file
     new MakeTabixIndex(
-        plainNew.getAbsolutePath(), new File(this.getWorkFilename()), TabixFormat.GFF);
+        plainNew.getAbsolutePath(),
+        new File(this.getWorkFilename()),
+        TabixFormat.GFF,
+        this.getColumnSeparator());
     plainNew.delete();
     this.tabixReader = new TabixReader(this.getWorkFilename());
     // Update track.

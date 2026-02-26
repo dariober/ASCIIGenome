@@ -1,6 +1,10 @@
 New in 1.21.0
 =============
 
+* `dataCol` enabled to apply data transformations and aggregations. E.g. for
+  plotting p-values from gwas it is useful to use `dataCol -aggfun max -transf
+  minus_log10`
+
 * Support for **bcf** format, at some conditions: `bcf` files must be already sorted and indexed
 (*e.g.* using `bcftools`) and they must be local (*i.e.* you cannot read from remote URLs). ASCIIGenome 
 may be one of the few, if not the only one, viewer for `bcf` files. Thanks to **@lindenb** for 

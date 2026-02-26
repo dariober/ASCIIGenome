@@ -56,7 +56,8 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
       new MakeTabixIndex(
           filename,
           new File(this.getWorkFilename()),
-          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
+          Utils.trackFormatToTabixFormat(this.getTrackFormat()),
+          this.getColumnSeparator());
 
       this.tabixReader = this.getTabixReader(this.getWorkFilename());
 
@@ -90,6 +91,11 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
         }
       }
     }
+  }
+
+  @Override
+  public char getColumnSeparator() {
+    return 0;
   }
 
   protected int getScoreColIdx() {

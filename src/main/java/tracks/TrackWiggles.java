@@ -28,6 +28,7 @@ public class TrackWiggles extends AbstractTrack {
 
   private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList;
   private BBFileReader bigWigReader;
+  private final char columnSeparator = '\t';
 
   /* C o n s t r u c t o r s */
   public TrackWiggles() {}
@@ -68,6 +69,11 @@ public class TrackWiggles extends AbstractTrack {
     if (this.bigWigReader != null) {
       this.bigWigReader.close();
     }
+  }
+
+  @Override
+  public char getColumnSeparator() {
+    return this.columnSeparator;
   }
 
   @Override

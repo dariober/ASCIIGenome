@@ -322,23 +322,6 @@ class TextRead extends IntervalFeature {
     }
   }
 
-  //  private Character convertNucleotideToSoftClipChar(char nt) {
-  //    if(nt == 'A') {
-  //      return "A̶".charAt(0);
-  //    }
-  //    if(nt == 'C') {
-  //      return "C̶".charAt(0);
-  //    }
-  //    if(nt == 'G') {
-  //      return "G̶".charAt(0);
-  //    }
-  //    if(nt == 'T') {
-  //      return "T̶".charAt(0);
-  //    }
-  //    return 'S';
-  //    //"̶C̶T̶G̶N̶ ̶a̶c̶t̶g̶n̶"
-  //  }
-  //
   /**
    * Get a representation of the read as it appears aligned to the reference. I.e. clipped ends
    * omitted and deletions appearing as gaps (empty byte). Only the portion contained between the

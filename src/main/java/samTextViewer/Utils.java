@@ -555,7 +555,7 @@ public class Utils {
           region = line.split("\t")[0] + ":" + line.split("\t")[1];
         } else {
           // If this is space separated bed file
-          String sep = String.valueOf(Utils.guessSeparator(Path.of(x))); // Utils.getColumnSeparator(x);
+          String sep = Utils.getBedColumnSeparator(x);
           if (!sep.equals("\t")) {
             line = line.replace(sep, "\t");
           }
@@ -2742,116 +2742,38 @@ public class Utils {
     return sourceName.toLowerCase().endsWith(".cram");
   }
 
-
-
-  public static Character guessSeparator(Path path) throws IOException {
-
-    final int MAX_LINES = 10_000;
-    final char[] CANDIDATES = { ',', '\t', ';', '|', ':', ' ' };
-
-    // Read up to MAX_LINES non-empty lines
-    List<String> sample = new ArrayList<>(MAX_LINES);
-
-    try (BufferedReader reader = Files.newBufferedReader(path)) {
-      String line;
-      while ((line = reader.readLine()) != null && sample.size() < MAX_LINES) {
-        if (!line.trim().isEmpty()) {
-          sample.add(line);
+  public static String getBedColumnSeparator(String infile) throws IOException {
+    BufferedReader br = Utils.reader(infile);
+    String line;
+    String[] seps = {"\t", " "};
+    String sep = "\t";
+    for (int i = 0; i < seps.length; i++) {
+      sep = seps[i];
+      int n = 0;
+      while ((line = br.readLine()) != null) {
+        if (line.trim().startsWith("#") || line.trim().isEmpty()) {
+          continue;
         }
-      }
-    }
-
-    if (sample.isEmpty()) {
-      return null;
-    }
-
-    Character bestSeparator = null;
-    int bestScore = -1;
-
-    for (char sep : CANDIDATES) {
-
-      int expectedColumns = -1;
-      int totalOccurrences = 0;
-      boolean valid = true;
-
-      for (String line : sample) {
-
-        String[] parts;
-
-//        if (sep == ' ') {
-//          // Treat consecutive whitespace as one separator
-//          parts = line.trim().split("\\s+");
-//        } else {
-//          parts = line.split(Pattern.quote(String.valueOf(sep)), -1);
-//        }
-
-        parts = line.split(Pattern.quote(String.valueOf(sep)), -1);
-
-        if (expectedColumns == -1) {
-          expectedColumns = parts.length;
-        } else if (parts.length != expectedColumns) {
-          valid = false;
+        List<String> fields = Splitter.on(sep).splitToList(line);
+        if (fields.size() < 3) {
           break;
         }
-
-        totalOccurrences += countOccurrences(line, sep);
-      }
-
-      if (valid && expectedColumns > 1) {
-        int score = expectedColumns * 10 + totalOccurrences;
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestSeparator = sep;
+        try {
+          Integer.parseInt(fields.get(1));
+          Integer.parseInt(fields.get(2));
+        } catch (NumberFormatException e) {
+          break;
         }
+        if (n > 0) {
+          br.close();
+          return sep;
+        }
+        n++;
       }
     }
-
-    return bestSeparator;
+    br.close();
+    return sep;
   }
-
-  private static int countOccurrences(String line, char sep) {
-    int count = 0;
-    for (int i = 0; i < line.length(); i++) {
-      if (line.charAt(i) == sep) {
-        count++;
-      }
-    }
-    return count;
-  }
-
-//  public static String getColumnSeparator(String infile) throws IOException {
-//    BufferedReader br = Utils.reader(infile);
-//    String line;
-//    String[] seps = {"\t", " "};
-//    String sep = "\t";
-//    for (int i = 0; i < seps.length; i++) {
-//      sep = seps[i];
-//      int n = 0;
-//      while ((line = br.readLine()) != null) {
-//        if (line.trim().startsWith("#") || line.trim().isEmpty()) {
-//          continue;
-//        }
-//        List<String> fields = Splitter.on(sep).splitToList(line);
-//        if (fields.size() < 3) {
-//          break;
-//        }
-//        try {
-//          Integer.parseInt(fields.get(1));
-//          Integer.parseInt(fields.get(2));
-//        } catch (NumberFormatException e) {
-//          break;
-//        }
-//        if (n > 0) {
-//          br.close();
-//          return sep;
-//        }
-//        n++;
-//      }
-//    }
-//    br.close();
-//    return sep;
-//  }
 
   public static String findFastaInInputFileList(List<String> fileList) {
     for (String fa : fileList) {

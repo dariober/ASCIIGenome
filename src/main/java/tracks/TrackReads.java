@@ -38,6 +38,7 @@ public class TrackReads extends AbstractTrack {
   private int userWindowSize;
   private List<Argument> colourForRegex = null;
   private long alnRecCnt = -1;
+  private final char columnSeparator = '\t';
 
   /* C o n s t r u c t o r s */
 
@@ -69,6 +70,11 @@ public class TrackReads extends AbstractTrack {
 
   @Override
   public void close() {}
+
+  @Override
+  public char getColumnSeparator() {
+    return this.columnSeparator;
+  }
 
   public void update() throws InvalidGenomicCoordsException, IOException {
 

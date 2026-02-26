@@ -74,6 +74,7 @@ public abstract class AbstractTrack {
     }
   }
 
+  private char columnSeparator;
   protected int yMaxLines = 10;
   private String filename = "N/A"; // File name as given in input
   private String workFilename = "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files
@@ -1354,6 +1355,8 @@ public abstract class AbstractTrack {
   public VCFHeader getVcfHeader() {
     return this.vcfHeader;
   }
+
+  public abstract char getColumnSeparator();
 
   //  @Override
   //  public VCFHeader getVcfHeader() {

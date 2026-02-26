@@ -3,7 +3,6 @@ package tracks;
 import colouring.Xterm256;
 import com.google.common.collect.Lists;
 import exceptions.InvalidColourException;
-import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.FileExtensions;
@@ -513,16 +512,6 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     return StringUtils.join(printable, "");
   }
 
-  /**
-   * List where the original records have been grouped into transcripts. If there are no
-   * transcripts, just return the input feature(s) as it is. TODO: Process here also squash, merge
-   * and gap?
-   *
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidColourException
-   * @throws InvalidCommandLineException
-   */
   private List<T> flatListOfPrintableFeatures()
       throws InvalidGenomicCoordsException, IOException, InvalidColourException {
 

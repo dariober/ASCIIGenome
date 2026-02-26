@@ -34,20 +34,46 @@ public class MakeTabixFileTest {
   }
 
   @Test
-  public void canIndexGenericTsv()
+  public void canIndexCustomSep()
       throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
-    String infile = "test_data/generic.tsv";
-    File outfile = new File("test_data/generic.tsv.gz");
+    String infile = "test_data/generic.csv";
+    File outfile = new File("test_data/generic.csv.gz");
     outfile.deleteOnExit();
 
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
     TabixFormat tabixFormat = new TabixFormat(TabixFormat.GENERIC_FLAGS, 5, 1, 2, '#', 1);
-    new MakeTabixIndex(infile, outfile, tabixFormat, ",");
-    BufferedReader br = Utils.reader(outfile.getAbsolutePath());
-    assertEquals("# header", br.readLine());
-    assertEquals("start,end,V1,V2,chrom,V3", br.readLine());
-    assertEquals("5566777,5566778,1,0.1,chr7,-99", br.readLine());
+    new MakeTabixIndex(infile, outfile, tabixFormat, ',');
+    try (BufferedReader br = Utils.reader(outfile.getAbsolutePath())) {
+      assertEquals("# header", br.readLine());
+      assertEquals("start,end,V1,V2,chrom,V3", br.readLine());
+      assertEquals("5566777,5566778,1,0.1,chr7,-99", br.readLine());
+    }
+
+    infile = "test_data/generic.tsv";
+    outfile = new File("test_data/generic.tsv.gz");
+    outfile.deleteOnExit();
+    expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+    expectedTbi.deleteOnExit();
+    tabixFormat = new TabixFormat(TabixFormat.GENERIC_FLAGS, 5, 1, 2, '#', 1);
+    new MakeTabixIndex(infile, outfile, tabixFormat, '\t');
+    try (BufferedReader br = Utils.reader(outfile.getAbsolutePath())) {
+      assertEquals("# header", br.readLine());
+      assertEquals("start\tend\tV1\tV2\tchrom\tV3", br.readLine());
+      assertEquals("5566777\t5566778\t1\t0.1\tchr7\t-99", br.readLine());
+    }
+
+    infile = "test_data/generic.txt";
+    outfile = new File("test_data/generic.txt.gz");
+    expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+    expectedTbi.deleteOnExit();
+    tabixFormat = new TabixFormat(TabixFormat.GENERIC_FLAGS, 5, 1, 2, '#', 1);
+    new MakeTabixIndex(infile, outfile, tabixFormat, ' ');
+    try (BufferedReader br = Utils.reader(outfile.getAbsolutePath())) {
+      assertEquals("# header", br.readLine());
+      assertEquals("start end V1 V2 chrom V3", br.readLine());
+      assertEquals("5566777 5566778 1 0.1 chr7 -99", br.readLine());
+    }
   }
 
   @Test
@@ -60,10 +86,13 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED, " ");
-    BufferedReader br = Utils.reader(outfile.getAbsolutePath());
-    assertTrue(br.readLine().startsWith("# comment line"));
-    assertTrue(br.readLine().startsWith("chr1\t0\t10"));
+    TabixFormat tabixFormat = new TabixFormat(TabixFormat.GENERIC_FLAGS, 1, 2, 3, '#', 0);
+    new MakeTabixIndex(infile, outfile, tabixFormat, ' ');
+
+    try (BufferedReader br = Utils.reader(outfile.getAbsolutePath())) {
+      assertEquals("# comment line", br.readLine());
+      assertEquals("chr1 0 10 1", br.readLine());
+    }
   }
 
   @Test
@@ -76,9 +105,9 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, ' ');
     BufferedReader br = Utils.reader(outfile.getAbsolutePath());
-    assertTrue(br.readLine().startsWith("chr1\t0\t10"));
+    assertEquals("chr1 0 10 1", br.readLine());
   }
 
   @Test
@@ -91,9 +120,9 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED, " ");
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, ' ');
     BufferedReader br = Utils.reader(outfile.getAbsolutePath());
-    assertTrue(br.readLine().startsWith("chr1 0 10"));
+    assertEquals("chr1 0 10 1", br.readLine());
   }
 
   @Test
@@ -106,7 +135,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.GFF);
+    new MakeTabixIndex(infile, outfile, TabixFormat.GFF, '\t');
     BufferedReader br = Utils.reader(outfile.getAbsolutePath());
     assertEquals("##FASTA", br.readLine());
     assertEquals("# bla bla", br.readLine());
@@ -123,7 +152,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+    new MakeTabixIndex(infile, outfile, TabixFormat.VCF, '\t');
     vcfTester(outfile.getCanonicalPath());
   }
 
@@ -138,7 +167,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+    new MakeTabixIndex(infile, outfile, TabixFormat.VCF, '\t');
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 200);
@@ -165,7 +194,7 @@ public class MakeTabixFileTest {
     expectedTbi.deleteOnExit();
 
     long t0 = System.currentTimeMillis();
-    new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+    new MakeTabixIndex(infile, outfile, TabixFormat.VCF, '\t');
     long t1 = System.currentTimeMillis();
 
     assertTrue(outfile.exists());
@@ -187,7 +216,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+    new MakeTabixIndex(infile, outfile, TabixFormat.VCF, '\t');
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 1000);
@@ -206,7 +235,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, '\t');
   }
 
   @Test
@@ -222,7 +251,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, '\t');
 
     assertTrue(outfile.exists());
     assertTrue(expectedTbi.exists());
@@ -241,7 +270,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, '\t');
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 80);
@@ -264,7 +293,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.GFF);
+    new MakeTabixIndex(infile, outfile, TabixFormat.GFF, '\t');
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 7000000);
@@ -287,7 +316,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, '\t');
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 200000);
@@ -307,7 +336,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, '\t');
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 1000);
@@ -327,7 +356,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, '\t');
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 1000);
@@ -346,7 +375,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
+    new MakeTabixIndex(infile, outfile, TabixFormat.VCF, '\t');
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 1000);
@@ -373,7 +402,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(testFile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(testFile.getAbsolutePath(), testFile, TabixFormat.BED);
+    new MakeTabixIndex(testFile.getAbsolutePath(), testFile, TabixFormat.BED, '\t');
 
     assertTrue(testFile.exists());
     assertTrue(testFile.length() > 200000);
@@ -392,7 +421,7 @@ public class MakeTabixFileTest {
     new File(outfile).deleteOnExit();
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(testFile, new File(outfile), TabixFormat.BED);
+    new MakeTabixIndex(testFile, new File(outfile), TabixFormat.BED, '\t');
     assertTrue(expectedTbi.exists());
     assertTrue(expectedTbi.length() > 50);
   }

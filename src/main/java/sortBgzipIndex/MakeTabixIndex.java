@@ -1,5 +1,6 @@
 package sortBgzipIndex;
 
+import com.google.common.base.Splitter;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.samtools.util.CloserUtil;
@@ -19,7 +20,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -27,28 +27,21 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
+import java.util.List;
 import org.sqlite.SQLiteException;
 import samTextViewer.Utils;
-import utils.BedLine;
-import utils.BedLineCodec;
 
 public class MakeTabixIndex {
 
   private File sqliteFile;
-  private String columnSeparator;
-  private TabixFormat tabixFormat;
-
-  public MakeTabixIndex(String intab, File bgzfOut, TabixFormat tabixFormat)
-      throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
-      new MakeTabixIndex(intab, bgzfOut, tabixFormat, Utils.guessSeparator(Path.of(intab)).toString());
-  }
+  private final char columnSeparator;
+  private final TabixFormat tabixFormat;
 
   /**
    * Sort, block compress and index the input with format fmt to the given output file. Input is
    * either a local file, possibly compressed, or a URL.
    */
-  public MakeTabixIndex(String intab, File bgzfOut, TabixFormat tabixFormat, String columnSeparator)
+  public MakeTabixIndex(String intab, File bgzfOut, TabixFormat tabixFormat, char columnSeparator)
       throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
 
     this.tabixFormat = tabixFormat;
@@ -59,9 +52,6 @@ public class MakeTabixIndex {
     tmpTbi.deleteOnExit();
 
     try {
-      if (!this.columnSeparator.equals("\t")) {
-        throw new InvalidRecordException();
-      }
       // Try to block compress and create index assuming the file is sorted
       blockCompressAndIndex(intab, tmp);
     } catch (Exception e) {
@@ -87,12 +77,6 @@ public class MakeTabixIndex {
     Files.move(Paths.get(tmpTbi.getAbsolutePath()), Paths.get(bgzfOutTbi.getAbsolutePath()));
   }
 
-  /**
-   * Block compress input file and create associated tabix index.
-   *
-   * @throws IOException
-   * @throws InvalidRecordException
-   */
   private void blockCompressAndIndex(String intab, File bgzfOut)
       throws IOException, InvalidRecordException {
     BlockCompressedOutputStream writer = new BlockCompressedOutputStream(bgzfOut);
@@ -101,10 +85,9 @@ public class MakeTabixIndex {
     TabixIndexCreator indexCreator = new TabixIndexCreator(this.tabixFormat);
 
     // This is relevant to vcf files only: Prepare header and codec
-    // ------------------------------------------------------------
-    VCFHeader vcfHeader;
-    VCFCodec vcfCodec = null;
+    VCFCodec vcfCodec = new VCFCodec();
     if (this.tabixFormat.equals(TabixFormat.VCF)) {
+      VCFHeader vcfHeader;
       try {
         VCFFileReader vcfr = new VCFFileReader(new File(intab), false);
         vcfHeader = vcfr.getFileHeader();
@@ -112,13 +95,13 @@ public class MakeTabixIndex {
       } catch (MalformedFeatureFile e) {
         vcfHeader = new VCFHeader();
       }
-      vcfCodec = new VCFCodec();
       vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
     }
     // ------------------------------------------------------------
 
     LineIterator lin = utils.IOUtils.openURIForLineIterator(intab);
     boolean dataLinesFound = false;
+    int numHeaderLinesToSkip = tabixFormat.numHeaderLinesToSkip;
     while (lin.hasNext()) {
 
       String line = lin.next().trim();
@@ -133,7 +116,17 @@ public class MakeTabixIndex {
       if (line.startsWith("##FASTA") && dataLinesFound) {
         break;
       }
-      addLineToIndex(line, indexCreator, filePosition, vcfCodec);
+      if (numHeaderLinesToSkip > 0) {
+        writer.write((line + "\n").getBytes());
+        filePosition = writer.getFilePointer();
+        numHeaderLinesToSkip -= 1;
+        continue;
+      }
+      if (this.tabixFormat.equals(TabixFormat.VCF)) {
+        addVcfLineToIndex(line, indexCreator, filePosition, vcfCodec);
+      } else {
+        addLineToIndex(line, indexCreator, filePosition);
+      }
       writer.write(line.getBytes());
       writer.write('\n');
       filePosition = writer.getFilePointer();
@@ -149,48 +142,32 @@ public class MakeTabixIndex {
   }
 
   /** Set vcfHeader and vcfCodec to null if reading non-vcf line. */
-  private void addLineToIndex(
-      String line,
-      TabixIndexCreator indexCreator,
-      long filePosition,
-      VCFCodec vcfCodec)
+  private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition)
       throws InvalidRecordException {
-    if (this.tabixFormat.equals(TabixFormat.BED)) {
-      BedLineCodec bedCodec = new BedLineCodec();
-      BedLine bed = bedCodec.decode(line);
-      indexCreator.addFeature(bed, filePosition);
-    } else if (this.tabixFormat.equals(TabixFormat.GFF)) {
-      GtfLine gtf = new GtfLine(line.split("\t"));
-      indexCreator.addFeature(gtf, filePosition);
-    } else if (this.tabixFormat.equals(TabixFormat.VCF)) {
+    List<String> parts = Splitter.on(this.columnSeparator).splitToList(line);
+    GenericFeature feature =
+            new GenericFeature(
+                    parts.get(tabixFormat.sequenceColumn - 1),
+                    Integer.parseInt(parts.get(tabixFormat.startPositionColumn - 1)),
+                    Integer.parseInt(parts.get(tabixFormat.endPositionColumn - 1)));
+    indexCreator.addFeature(feature, filePosition);
+  }
+
+  private void addVcfLineToIndex(
+      String line, TabixIndexCreator indexCreator, long filePosition, VCFCodec vcfCodec)
+      throws InvalidRecordException {
+    if (this.tabixFormat.equals(TabixFormat.VCF)) {
       VariantContext vcf = vcfCodec.decode(line);
       indexCreator.addFeature(vcf, filePosition);
-    } else if (this.tabixFormat.flags == TabixFormat.GENERIC_FLAGS) {
-      String[] parts = line.split(this.columnSeparator);
-      GenericFeature feature = new GenericFeature(parts[tabixFormat.sequenceColumn - 1], tabixFormat.startPositionColumn, tabixFormat.endPositionColumn);
-      indexCreator.addFeature(feature, filePosition);
     } else {
-      System.err.println(
-          "Unexpected TabixFormat: "
-              + this.tabixFormat.sequenceColumn
-              + " "
-              + this.tabixFormat.startPositionColumn);
       throw new InvalidRecordException();
     }
   }
 
-  /**
-   * Sort file by columns chrom (text) and pos (int). chromIdx and posIdx are 1-based indexes for
-   * the chrom and pos column. For bed use 1 and 2 respectively. For use GTF/GFF 1 and 4. Comment
-   * lines, starting with #, are returned as they are. Reading stops if the line ##FASTA is found.
-   */
   private void sortByChromThenPos(String unsorted, File sorted)
-      throws SQLException, InvalidRecordException, IOException, ClassNotFoundException {
+      throws SQLException, IOException, ClassNotFoundException {
 
-    //int chromIdx = this.tabixFormat.sequenceColumn;
-    //int posIdx = this.tabixFormat.startPositionColumn;
-
-    Connection conn = null;
+    Connection conn;
     try {
       this.sqliteFile = Utils.createTempFile(".asciigenome.", ".tmp.sqlite", true);
       conn = this.createSQLiteDb("data");
@@ -200,7 +177,7 @@ public class MakeTabixIndex {
       conn = this.createSQLiteDb("data");
     }
     PreparedStatement stmtInsert =
-        conn.prepareStatement("INSERT INTO data (contig, pos, posEnd, line) VALUES (?, ?, ?, ?)");
+        conn.prepareStatement("INSERT INTO data (contig, pos, line) VALUES (?, ?, ?)");
 
     BufferedReader br = Utils.reader(unsorted);
     BufferedWriter wr = new BufferedWriter(new FileWriter(sorted));
@@ -226,36 +203,18 @@ public class MakeTabixIndex {
       if (line.trim().isEmpty()) {
         continue;
       }
-//      if ((this.tabixFormat.equals(TabixFormat.BED) || this.tabixFormat.flags == TabixFormat.GENERIC_FLAGS) && !this.columnSeparator.equals("\t")) {
-//        line = line.replace(this.columnSeparator, "\t");
-//      }
-      String[] tabs = line.split(this.columnSeparator);
-      if (n == 0 && this.tabixFormat.equals(TabixFormat.BED)) {
-        // Allow first uncommented line to fail
-        n++;
-        try {
-          Integer.parseInt(tabs[tabixFormat.startPositionColumn - 1]);
-          Integer.parseInt(tabs[tabixFormat.endPositionColumn - 1]);
-        } catch (NumberFormatException e) {
-          continue;
-        }
-      }
-      stmtInsert.setString(1, tabs[tabixFormat.sequenceColumn - 1]);
-      stmtInsert.setInt(2, Integer.parseInt(tabs[tabixFormat.startPositionColumn - 1]));
-      if (this.tabixFormat.equals(TabixFormat.VCF)) {
-        stmtInsert.setInt(3, 0);
-      } else {
-        stmtInsert.setInt(3, Integer.parseInt(tabs[tabixFormat.startPositionColumn - 1]));
-      }
-      stmtInsert.setString(4, line.replaceAll("\n$", ""));
+
+      List<String> tabs = Splitter.on(this.columnSeparator).splitToList(line);
+      stmtInsert.setString(1, tabs.get(tabixFormat.sequenceColumn - 1));
+      stmtInsert.setInt(2, Integer.parseInt(tabs.get(tabixFormat.startPositionColumn - 1)));
+      stmtInsert.setString(3, line.replaceAll("\n$", ""));
       stmtInsert.executeUpdate();
       dataLinesfound = true;
     }
     stmtInsert.close();
     br.close();
 
-    PreparedStatement stmtSelect =
-        conn.prepareStatement("SELECT * FROM data ORDER BY contig, pos, posEnd");
+    PreparedStatement stmtSelect = conn.prepareStatement("SELECT * FROM data ORDER BY contig, pos");
 
     ResultSet rs = stmtSelect.executeQuery();
 
@@ -269,12 +228,8 @@ public class MakeTabixIndex {
     Files.delete(Paths.get(this.sqliteFile.getAbsolutePath()));
   }
 
-  private Connection createSQLiteDb(String tablename) throws SQLException {
-    try {
-      Class.forName("org.sqlite.JDBC");
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
+  private Connection createSQLiteDb(String tablename) throws SQLException, ClassNotFoundException {
+    Class.forName("org.sqlite.JDBC");
     Connection conn = DriverManager.getConnection("jdbc:sqlite:" + this.sqliteFile);
     Statement stmt = conn.createStatement();
     String sql =
@@ -283,7 +238,6 @@ public class MakeTabixIndex {
             + " ("
             + "contig text, "
             + "pos int,"
-            + "posEnd int,"
             + "line text"
             + // This is the row line as read from input file
             ")";
@@ -297,5 +251,4 @@ public class MakeTabixIndex {
     stmt.close();
     return conn;
   }
-
 }

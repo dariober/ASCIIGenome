@@ -43,6 +43,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   private VCFCodec vcfCodec;
   private final VCFReader vcfReader;
   private final boolean isBCF;
+  private final char columnSeparator = '\t';
 
   public TrackVCF(final String filename, GenomicCoords gc)
       throws IOException,
@@ -68,7 +69,8 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
       new MakeTabixIndex(
           filename,
           new File(this.getWorkFilename()),
-          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
+          Utils.trackFormatToTabixFormat(this.getTrackFormat()),
+          this.getColumnSeparator());
     } else if (isBCF(Path.of(filename)) && !new File(Path.of(filename) + ".csi").exists()) {
       throw new NotImplementedException("Cannot sort and index bcf files.");
     } else { // This means the input is indexed.
@@ -309,6 +311,11 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   @Override
   protected VCFFeature collapseGFFTranscript(List<VCFFeature> features, List<Double> mapToScreen) {
     return null;
+  }
+
+  @Override
+  public char getColumnSeparator() {
+    return columnSeparator;
   }
 
   // <----

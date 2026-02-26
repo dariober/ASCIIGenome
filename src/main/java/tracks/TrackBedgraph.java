@@ -47,7 +47,8 @@ public class TrackBedgraph extends TrackIntervalFeature {
       new MakeTabixIndex(
           filename,
           new File(this.getWorkFilename()),
-          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
+          Utils.trackFormatToTabixFormat(this.getTrackFormat()),
+          this.getColumnSeparator());
       this.tabixReader = this.getTabixReader(this.getWorkFilename());
     } else { // This means the input is tabix indexed.
       this.setWorkFilename(filename);

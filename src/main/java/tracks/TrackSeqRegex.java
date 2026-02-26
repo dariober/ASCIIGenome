@@ -190,7 +190,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
     regexMatchBgzip.deleteOnExit();
     regexMatchIndex.deleteOnExit();
 
-    new MakeTabixIndex(regexMatchFile, regexMatchBgzip, TabixFormat.BED);
+    new MakeTabixIndex(regexMatchFile, regexMatchBgzip, TabixFormat.BED, this.getColumnSeparator());
     new File(regexMatchFile).delete();
 
     TrackIntervalFeature regexMatchTrack =
