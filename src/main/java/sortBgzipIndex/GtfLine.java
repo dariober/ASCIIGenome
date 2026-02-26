@@ -1,4 +1,4 @@
-package utils;
+package sortBgzipIndex;
 
 import htsjdk.tribble.Feature;
 

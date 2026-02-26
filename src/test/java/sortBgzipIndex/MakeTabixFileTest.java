@@ -34,6 +34,23 @@ public class MakeTabixFileTest {
   }
 
   @Test
+  public void canIndexGenericTsv()
+      throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+    String infile = "test_data/generic.tsv";
+    File outfile = new File("test_data/generic.tsv.gz");
+    outfile.deleteOnExit();
+
+    File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+    expectedTbi.deleteOnExit();
+    TabixFormat tabixFormat = new TabixFormat(TabixFormat.GENERIC_FLAGS, 5, 1, 2, '#', 1);
+    new MakeTabixIndex(infile, outfile, tabixFormat, ",");
+    BufferedReader br = Utils.reader(outfile.getAbsolutePath());
+    assertEquals("# header", br.readLine());
+    assertEquals("start,end,V1,V2,chrom,V3", br.readLine());
+    assertEquals("5566777,5566778,1,0.1,chr7,-99", br.readLine());
+  }
+
+  @Test
   public void canReadSpaceSeparatedBed()
       throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
     String infile = "test_data/space_sep.bedgraph";
@@ -43,7 +60,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, " ");
     BufferedReader br = Utils.reader(outfile.getAbsolutePath());
     assertTrue(br.readLine().startsWith("# comment line"));
     assertTrue(br.readLine().startsWith("chr1\t0\t10"));
@@ -74,9 +91,9 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED);
+    new MakeTabixIndex(infile, outfile, TabixFormat.BED, " ");
     BufferedReader br = Utils.reader(outfile.getAbsolutePath());
-    assertTrue(br.readLine().startsWith("chr1\t0\t10"));
+    assertTrue(br.readLine().startsWith("chr1 0 10"));
   }
 
   @Test
