@@ -142,8 +142,7 @@ public class MakeTabixIndex {
   }
 
   /** Set vcfHeader and vcfCodec to null if reading non-vcf line. */
-  private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition)
-      throws InvalidRecordException {
+  private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition) {
     List<String> parts = Splitter.on(this.columnSeparator).splitToList(line);
     GenericFeature feature =
             new GenericFeature(
