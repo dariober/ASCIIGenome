@@ -558,10 +558,9 @@ public class GenomicCoords implements Cloneable {
     return region;
   }
 
-  public void correctCoordsAgainstSeqDict(SAMSequenceDictionary samSeqDict)
-      throws InvalidGenomicCoordsException, IOException {
+  public void correctCoordsAgainstSeqDict(SAMSequenceDictionary samSeqDict) {
 
-    if (samSeqDict == null || samSeqDict.size() == 0) {
+    if (samSeqDict == null || samSeqDict.isEmpty()) {
       // Just check start pos
       if (this.from <= 0) {
         this.from = 1;

@@ -801,11 +801,11 @@ public class InteractiveInput {
   private String moveWindowByColumns(GenomicCoords gc, int times)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
     String x = String.valueOf(Math.round(gc.getBpPerScreenColumn() * times));
-    if (Integer.valueOf(x) >= 0) {
+    if (Integer.parseInt(x) >= 0) {
       x = "+" + x;
     }
-    List<String> tokens = new ArrayList<String>();
-    tokens.add(String.valueOf(x));
+    List<String> tokens = new ArrayList<>();
+    tokens.add(x);
     return Utils.parseConsoleInput(tokens, gc);
   }
 

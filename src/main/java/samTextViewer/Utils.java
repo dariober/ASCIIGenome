@@ -883,33 +883,25 @@ public class Utils {
   }
 
   public static String parseConsoleInput(List<String> tokens, GenomicCoords gc)
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+      throws InvalidCommandLineException {
 
-    //		String region= "";
     String chrom = gc.getChrom();
     Integer from = gc.getFrom();
     Integer to = gc.getTo();
+    int chromLen = Integer.MAX_VALUE;
+    if (gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()) {
+      chromLen = gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
+    }
 
     int windowSize = to - from + 1;
     int halfWindow = (int) Math.rint(windowSize / 2d);
     if (tokens.get(0).equals("ff")) {
-      from += halfWindow;
-      to += halfWindow;
-      if (gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()) {
-        int chromLen = gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
-        if (to > chromLen) {
-          to = chromLen;
-          from = to - gc.getUserWindowSize() + 1;
-        }
-      }
+      to = Math.min(to + halfWindow, chromLen);
+      from = to - gc.getGenomicWindowSize() + 1;
       return chrom + ":" + from + "-" + to;
     } else if (tokens.get(0).equals("bb")) {
-      from -= halfWindow;
-      to -= halfWindow;
-      if (from < 1) {
-        from = 1;
-        to = from + gc.getUserWindowSize() - 1;
-      }
+      from = Math.max(1, from - halfWindow);
+      to = from + gc.getGenomicWindowSize() - 1;
       return chrom + ":" + from + "-" + to;
     } else if (tokens.get(0).equals("f")) {
       int step = (int) Math.rint(windowSize / 10d);
@@ -921,15 +913,8 @@ public class Utils {
           throw new InvalidCommandLineException();
         }
       }
-      from += step;
-      to += step;
-      if (gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()) {
-        int chromLen = gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
-        if (to > chromLen) {
-          to = chromLen;
-          from = to - gc.getUserWindowSize() + 1;
-        }
-      }
+      to = Math.min(to + step, chromLen);
+      from = to - gc.getGenomicWindowSize() + 1;
       return chrom + ":" + from + "-" + to;
 
     } else if (tokens.get(0).equals("b")) {
@@ -942,12 +927,8 @@ public class Utils {
           throw new InvalidCommandLineException();
         }
       }
-      from -= step;
-      to -= step;
-      if (from < 1) {
-        from = 1;
-        to = from + gc.getUserWindowSize() - 1;
-      }
+      from = Math.max(1, from - step);
+      to = from + gc.getGenomicWindowSize() - 1;
       return chrom + ":" + from + "-" + to;
 
     } else if (tokens.get(0).startsWith("+") || tokens.get(0).startsWith("-")) {
@@ -957,17 +938,14 @@ public class Utils {
         from = 1;
         to = gc.getGenomicWindowSize();
       } else {
-        to += offset;
+        to = Math.min(to + offset, chromLen);
+        from = to - gc.getGenomicWindowSize() + 1;
       }
       return chrom + ":" + from + "-" + to;
     }
-    //		else if (tokens.get(0).equals("q")) {
-    //			System.exit(0);
-    //		}
     else {
       throw new RuntimeException("Invalid input for " + tokens);
     }
-    //		return region;
   }
 
   /**
@@ -995,15 +973,10 @@ public class Utils {
 
     if (fromTo.size() == 1) {
       return String.valueOf(Utils.parseStringToIntWithUnits(fromTo.get(0)));
-      // Integer.parseInt(fromTo[0].trim()); // Check you actually got an int.
-      // return fromTo[0].trim();
     } else {
       String xfrom = String.valueOf(Utils.parseStringToIntWithUnits(fromTo.get(0)));
       String xto = String.valueOf(Utils.parseStringToIntWithUnits(fromTo.get(fromTo.size() - 1)));
       return xfrom + "-" + xto;
-      // Integer.parseInt(fromTo[0].trim()); // Check you actually got an int.
-      // Integer.parseInt(fromTo[fromTo.length - 1].trim());
-      // return fromTo[0].trim() + "-" + fromTo[fromTo.length - 1].trim();
     }
   }
 
@@ -1024,7 +997,7 @@ public class Utils {
 
   /**
    * Average of ints in array x. Adapted from:
-   * http://stackoverflow.com/questions/10791568/calculating-average-of-an-array-list null values
+   * <a href="http://stackoverflow.com/questions/10791568/calculating-average-of-an-array-list">...</a> null values
    * are ignored, like R mean(..., na.rm= TRUE). Returns Float.NaN if input list is empty or only
    * nulls. You can check for Float.NaN with Float.isNaN(x);
    */
@@ -1046,10 +1019,6 @@ public class Utils {
   /**
    * Binary search to get the index position of the value in list closest to a given value. The
    * searched list is expected to be sorted, there is no check whether this is the case.
-   *
-   * @param genomePos
-   * @param mapping
-   * @return
    */
   public static int getIndexOfclosestValue(double genomePos, List<Double> mapping) {
 

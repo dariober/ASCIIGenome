@@ -1618,7 +1618,7 @@ public class UtilsTest {
     tokens.set(0, "f");
     tokens.add(1, "1");
     String fregion = Utils.parseConsoleInput(tokens, gc);
-    assertTrue(!region.equals(fregion));
+    assertFalse(region.equals(fregion));
 
     boolean pass = false;
     try {
@@ -1641,6 +1641,66 @@ public class UtilsTest {
       pass = true;
     }
     assertTrue(pass);
+  }
+
+  @Test
+  public void keepZoomLevelWhenMovingToEdge()
+      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+    GenomicCoords gc = new GenomicCoords("chr7:100-1099", 80, samSeqDict, fastaFile);
+    List<String> tokens = new ArrayList<String>();
+    tokens.add("-1000");
+    String region = Utils.parseConsoleInput(tokens, gc);
+    assertEquals("chr7:1-1000", region);
+
+    gc = new GenomicCoords("chr7:100-1099", 80, samSeqDict, fastaFile);
+    tokens = new ArrayList<>();
+    tokens.add("bb");
+    region = Utils.parseConsoleInput(tokens, gc);
+    assertEquals("chr7:1-1000", region);
+
+    gc = new GenomicCoords("chr7:100-1099", 80, samSeqDict, fastaFile);
+    tokens = new ArrayList<>();
+    tokens.add("b");
+    tokens.add("2");
+    region = Utils.parseConsoleInput(tokens, gc);
+    assertEquals("chr7:1-1000", region);
+
+    gc = new GenomicCoords("chr7:159137564-159138563", 80, samSeqDict, fastaFile);
+    tokens = new ArrayList<>();
+    tokens.add("ff");
+    region = Utils.parseConsoleInput(tokens, gc);
+    assertEquals("chr7:159137664-159138663", region);
+
+    gc = new GenomicCoords("chr7:159137564-159138563", 80, samSeqDict, fastaFile);
+    tokens = new ArrayList<>();
+    tokens.add("f");
+    tokens.add("2");
+    region = Utils.parseConsoleInput(tokens, gc);
+    assertEquals("chr7:159137664-159138663", region);
+
+    gc = new GenomicCoords("chr7:159137564-159138563", 80, samSeqDict, fastaFile);
+    tokens = new ArrayList<>();
+    tokens.add("+10000");
+    region = Utils.parseConsoleInput(tokens, gc);
+    assertEquals("chr7:159137664-159138663", region);
+
+    gc = new GenomicCoords("chr7:100-1099", 80, samSeqDict, fastaFile);
+    tokens = new ArrayList<>();
+    tokens.add("-10000");
+    region = Utils.parseConsoleInput(tokens, gc);
+    assertEquals("chr7:1-1000", region);
+
+    gc = new GenomicCoords("chr7:100-1099", 80, samSeqDict, fastaFile);
+    tokens = new ArrayList<>();
+    tokens.add("-10");
+    region = Utils.parseConsoleInput(tokens, gc);
+    assertEquals("chr7:90-1089", region);
+
+    gc = new GenomicCoords("chr7:100-1099", 80, samSeqDict, fastaFile);
+    tokens = new ArrayList<>();
+    tokens.add("+10");
+    region = Utils.parseConsoleInput(tokens, gc);
+    assertEquals("chr7:110-1109", region);
   }
 
   @Test
