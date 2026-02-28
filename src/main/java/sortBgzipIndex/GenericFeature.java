@@ -13,6 +13,12 @@ class GenericFeature implements Feature {
     this.end = end;
   }
 
+  public GenericFeature(String contig, int start) {
+    this.contig = contig;
+    this.start = start;
+    this.end = -1;
+  }
+
   @Override
   public String getContig() {
     return contig;

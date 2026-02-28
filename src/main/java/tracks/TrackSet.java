@@ -1860,10 +1860,8 @@ public class TrackSet {
    */
   public void orderTracks(List<String> tokens) throws InvalidCommandLineException {
 
-    // List<String> args= new ArrayList<String>(tokens);
-    // boolean invertSelection= Utils.argListContainsFlag(args, "-v");
-    boolean reverse = tokens.contains("-v");
-    tokens.remove("-v");
+    boolean reverse = tokens.contains("-r");
+    tokens.remove("-r");
     List<String> newOrder = new ArrayList<String>(tokens);
 
     if (newOrder.isEmpty()) {

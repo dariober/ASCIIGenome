@@ -10,7 +10,6 @@ import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndexCreator;
 import htsjdk.tribble.readers.LineIterator;
-import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
@@ -78,26 +77,11 @@ public class MakeTabixIndex {
   }
 
   private void blockCompressAndIndex(String intab, File bgzfOut)
-      throws IOException, InvalidRecordException {
+      throws IOException {
     BlockCompressedOutputStream writer = new BlockCompressedOutputStream(bgzfOut);
     long filePosition = writer.getFilePointer();
 
     TabixIndexCreator indexCreator = new TabixIndexCreator(this.tabixFormat);
-
-    // This is relevant to vcf files only: Prepare header and codec
-    VCFCodec vcfCodec = new VCFCodec();
-    if (this.tabixFormat.equals(TabixFormat.VCF)) {
-      VCFHeader vcfHeader;
-      try {
-        VCFFileReader vcfr = new VCFFileReader(new File(intab), false);
-        vcfHeader = vcfr.getFileHeader();
-        vcfr.close();
-      } catch (MalformedFeatureFile e) {
-        vcfHeader = new VCFHeader();
-      }
-      vcfCodec.setVCFHeader(vcfHeader, Utils.getVCFHeaderVersion(vcfHeader));
-    }
-    // ------------------------------------------------------------
 
     LineIterator lin = utils.IOUtils.openURIForLineIterator(intab);
     boolean dataLinesFound = false;
@@ -122,11 +106,7 @@ public class MakeTabixIndex {
         numHeaderLinesToSkip -= 1;
         continue;
       }
-      if (this.tabixFormat.equals(TabixFormat.VCF)) {
-        addVcfLineToIndex(line, indexCreator, filePosition, vcfCodec);
-      } else {
-        addLineToIndex(line, indexCreator, filePosition);
-      }
+      addLineToIndex(line, indexCreator, filePosition);
       writer.write(line.getBytes());
       writer.write('\n');
       filePosition = writer.getFilePointer();
@@ -147,20 +127,8 @@ public class MakeTabixIndex {
     GenericFeature feature =
             new GenericFeature(
                     parts.get(tabixFormat.sequenceColumn - 1),
-                    Integer.parseInt(parts.get(tabixFormat.startPositionColumn - 1)),
-                    Integer.parseInt(parts.get(tabixFormat.endPositionColumn - 1)));
+                    Integer.parseInt(parts.get(tabixFormat.startPositionColumn - 1)));
     indexCreator.addFeature(feature, filePosition);
-  }
-
-  private void addVcfLineToIndex(
-      String line, TabixIndexCreator indexCreator, long filePosition, VCFCodec vcfCodec)
-      throws InvalidRecordException {
-    if (this.tabixFormat.equals(TabixFormat.VCF)) {
-      VariantContext vcf = vcfCodec.decode(line);
-      indexCreator.addFeature(vcf, filePosition);
-    } else {
-      throw new InvalidRecordException();
-    }
   }
 
   private void sortByChromThenPos(String unsorted, File sorted)
@@ -181,7 +149,6 @@ public class MakeTabixIndex {
     BufferedReader br = Utils.reader(unsorted);
     BufferedWriter wr = new BufferedWriter(new FileWriter(sorted));
     String line;
-    int n = 0;
     int headerLinesToSkip = this.tabixFormat.numHeaderLinesToSkip;
     boolean dataLinesfound = false;
     while ((line = br.readLine()) != null) {

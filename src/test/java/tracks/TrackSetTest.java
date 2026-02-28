@@ -688,7 +688,7 @@ public class TrackSetTest {
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
-    TrackSet ts = new TrackSet(new ArrayList<String>(), null);
+    TrackSet ts = new TrackSet(new ArrayList<>(), null);
 
     AbstractTrack t1 = new TrackIntervalFeature();
     t1.setFilename("foo.gz");
@@ -720,7 +720,7 @@ public class TrackSetTest {
     // Default ascending order
     assertEquals("bla.gz#3", ts.getTrackTags().get(0));
     // Reverse order
-    reverseOrder.add("-v");
+    reverseOrder.add("-r");
     ts.orderTracks(reverseOrder);
     assertEquals("bla.gz#3", ts.getTrackTags().get(ts.getTrackTags().size() - 1));
     assertEquals(3, ts.getTrackTags().size());

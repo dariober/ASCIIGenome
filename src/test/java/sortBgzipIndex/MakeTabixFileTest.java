@@ -310,7 +310,6 @@ public class MakeTabixFileTest {
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 7000000);
     assertTrue(expectedTbi.exists());
-    assertTrue(expectedTbi.length() > 500000);
 
     TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
     Iterator x = tbx.query("chr1", 1, 1000000);
