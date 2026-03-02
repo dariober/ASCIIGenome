@@ -15,6 +15,7 @@ import java.util.List;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.junit.Before;
 import org.junit.Test;
+import utils.CsvFormat;
 
 public class IntervalFeatureTest {
 
@@ -288,19 +289,19 @@ public class IntervalFeatureTest {
     IntervalFeature minus =
         new IntervalFeature("chr1 0 10 y . -".replaceAll(" ", "\t"), TrackFormat.BED, -1);
 
-    assertTrue(plus.equals(minus)); // Strand not matters
-    assertTrue(!plus.equalStranded(minus)); // Strand matters
+    assertTrue(plus.equalCoordsUnstranded(minus)); // Strand not matters
+    assertTrue(!plus.equalCoordsStranded(minus)); // Strand matters
 
     // Strand NA
     IntervalFeature na1 =
         new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, -1);
     IntervalFeature na2 =
         new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, -1);
-    assertTrue(na1.equals(na2));
-    assertTrue(na1.equalStranded(na2));
+    assertTrue(na1.equalCoordsUnstranded(na2));
+    assertTrue(na1.equalCoordsStranded(na2));
 
-    assertTrue(plus.equals(na2));
-    assertTrue(!plus.equalStranded(na2));
+    assertTrue(plus.equalCoordsUnstranded(na2));
+    assertTrue(!plus.equalCoordsStranded(na2));
   }
 
   @Test
@@ -424,5 +425,31 @@ public class IntervalFeatureTest {
     assertEquals(Float.NaN, ift.getScore(), 0.001);
     ift = new IntervalFeature(line, TrackFormat.BEDGRAPH, 20);
     assertEquals(Float.NaN, ift.getScore(), 0.001);
+  }
+
+  @Test
+  public void canConstructFromCsv() throws InvalidGenomicCoordsException {
+    String line = "10,chr1,9.9";
+    CsvFormat csv = new CsvFormat(1, 0, -1, 2, false, 0, '#', ',');
+    IntervalFeature x = new IntervalFeature(line, csv);
+    assertEquals("chr1", x.getChrom());
+    assertEquals(10, x.getFrom());
+    assertEquals(10, x.getTo());
+    assertEquals(9.9, x.getScore(), 0.0001);
+
+    line = "9|chr1|20|foo";
+    csv = new CsvFormat(1, 0, 2, -1, true, 0, '#', '|');
+    x = new IntervalFeature(line, csv);
+    assertEquals("chr1", x.getChrom());
+    assertEquals(10, x.getFrom());
+    assertEquals(20, x.getTo());
+    assertEquals(Double.NaN, x.getScore(), 0.0001);
+
+    line = "chr1\t0\t1";
+    IntervalFeature asBed = new IntervalFeature(line, TrackFormat.BED, -1);
+    csv = new CsvFormat(0, 1, 2, -1, true, 0, '#', '\t');
+    IntervalFeature asCsv = new IntervalFeature(line, csv);
+    assertTrue(asCsv.equalCoordsUnstranded(asBed));
+    System.err.println(asCsv.equalCoordsUnstranded(asBed));
   }
 }

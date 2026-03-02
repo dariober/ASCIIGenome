@@ -10,6 +10,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.biojava.nbio.genome.parsers.gff.Feature;
 import org.biojava.nbio.genome.parsers.gff.Location;
 import samTextViewer.Utils;
+import utils.CsvFormat;
 
 /**
  * Class to hold bed or gtf features. Behaviour should be similar to pybedtools Interval. Feature
@@ -92,6 +93,25 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
     }
   }
 
+  public IntervalFeature(String line, CsvFormat csv) {
+    this.setRaw(line);
+    List<String> row = Splitter.on(csv.getColumnSeparator()).splitToList(line);
+    if (row.size() < 2) {
+      throw new RuntimeException("Invalid line:\n" + row);
+    }
+
+    this.chrom = row.get(csv.getChromColIndex()).trim();
+    this.from = Integer.parseInt(row.get(csv.getStartColIndex()));
+    this.from += csv.isZeroBased() ? 1 : 0;
+    this.to = csv.getEndColIndex() > 0 ? Integer.parseInt(row.get(csv.getEndColIndex())) : this.from;
+    if (csv.getScoreColIndex() > 0) {
+      this.score = Double.parseDouble(row.get(csv.getScoreColIndex()));
+      this.trackFormat = TrackFormat.BEDGRAPH;
+    } else {
+      this.trackFormat = TrackFormat.BED;
+    }
+  }
+
   @Override
   public IntervalFeature clone() {
     try {
@@ -144,7 +164,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
       throws InvalidGenomicCoordsException {
     this.setRaw(bedLine);
 
-    List<String> bedList = Lists.newArrayList(Splitter.on("\t").split(bedLine));
+    List<String> bedList = Splitter.on("\t").splitToList(bedLine);
     if (bedList.size() < 3) {
       throw new RuntimeException("intervalFeatureFromBedLine: Invalid bed line:\n" + bedList);
     }
@@ -286,7 +306,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
   }
 
   /** Return true if x has the same coordinates of this object. Strand *not* taken into account */
-  public boolean equals(IntervalFeature x) {
+  public boolean equalCoordsUnstranded(IntervalFeature x) {
     if (x == null) {
       return false;
     }
@@ -294,7 +314,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
   }
 
   /** Return true if x has the same coordinates of this object. Strand *is* taken into account */
-  public boolean equalStranded(IntervalFeature x) {
+  public boolean equalCoordsStranded(IntervalFeature x) {
     if (x == null) {
       return false;
     }

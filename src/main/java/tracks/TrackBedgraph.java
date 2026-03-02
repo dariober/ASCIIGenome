@@ -47,8 +47,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
       new MakeTabixIndex(
           filename,
           new File(this.getWorkFilename()),
-          Utils.trackFormatToTabixFormat(this.getTrackFormat()),
-          this.getColumnSeparator());
+          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
       this.tabixReader = this.getTabixReader(this.getWorkFilename());
     } else { // This means the input is tabix indexed.
       this.setWorkFilename(filename);
@@ -153,14 +152,6 @@ public class TrackBedgraph extends TrackIntervalFeature {
     this.setFeatureList(
         this.getFeaturesInInterval(
             this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));
-
-    if (this.getScoreColIdx() < 4) {
-      System.err.println(
-          "Invalid index for bedgraph column of data value. Expected >=4. Got "
-              + this.getScoreColIdx());
-      this.scoreColIdx = 4;
-      throw new InvalidRecordException();
-    }
     this.setDataTransformation(this.dataTransformation);
     this.bedGraphToScores(this.getFeatureList());
   }

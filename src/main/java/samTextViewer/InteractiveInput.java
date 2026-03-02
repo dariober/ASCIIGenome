@@ -21,11 +21,14 @@ import java.util.regex.PatternSyntaxException;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.biojava.nbio.core.sequence.io.IUPACParser;
 import org.biojava.nbio.core.sequence.transcription.Frame;
 import session.Session;
 import session.SessionHandler;
 import tracks.AbstractTrack;
+import tracks.TrackFormat;
+import utils.CsvFormat;
 import utils.Tokenizer;
 
 /** Class to process input from console */
@@ -1473,8 +1476,88 @@ public class InteractiveInput {
     return tab.trim();
   }
 
+  private boolean allColumnIndexes(List<String> columns) {
+    for (String x : columns) {
+      try {
+        int i = Integer.parseInt(x);
+        if (i <= 0) {
+          return false;
+        }
+      } catch(NumberFormatException e) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private CsvFormat prepareCsvParser(String fn, List<String> cmdTokens)
+      throws InvalidCommandLineException {
+
+    TrackFormat trackFormat = Utils.getFileTypeFromName(fn);
+
+    Map<String, String> columns = new HashMap<>();
+    columns.put("chromColNameOrIndex", Utils.getArgForParam(cmdTokens, "-c", null));
+    columns.put("startColNameOrIndex", Utils.getArgForParam(cmdTokens, "-s", null));
+    columns.put("endColNameOrIndex", Utils.getArgForParam(cmdTokens, "-e", null));
+    columns.put("scoreColNameOrIndex", Utils.getArgForParam(cmdTokens, "-score", null));
+    Boolean isZeroBased = Utils.argListContainsFlag(cmdTokens, "-z");
+    int numHeaderLinesToSkip = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-n", "0"));
+    String meta = Utils.getArgForParam(cmdTokens, "-m", "#");
+    char metaCharacter;
+    if (meta.isEmpty()) {
+      metaCharacter = '\0';
+    } else if (meta.length() == 1) {
+      metaCharacter = meta.charAt(0);
+    } else {
+      throw new RuntimeException("Comment character must be a single character or an empty string. Got: '" + meta + "'");
+    }
+    String sep = Utils.getArgForParam(cmdTokens, "-sep", "\0");
+    char columnSeparator;
+    if (sep.isEmpty()) {
+      columnSeparator = '\0';
+    } else if (sep.length() == 1) {
+      columnSeparator = meta.charAt(0);
+    } else {
+      throw new RuntimeException("Column separator must be a single character or, for automatic detection, an empty string. Got: '" + meta + "'");
+    }
+
+    if (!this.allColumnIndexes(columns.values().stream().toList())) {
+      // At least one of the columns is not an integer. So we assume it is a column name and files have a header line.
+      // Get the header then
+      try(BufferedReader br = Utils.reader(fn)) {
+        int toSkip = numHeaderLinesToSkip;
+        while(toSkip > 0) {
+          String line = br.readLine();
+          if (line.startsWith(metaCharacter + "")) {
+            continue;
+          }
+          toSkip -= 1;
+        }
+        String headerLine = br.readLine();
+        if (headerLine == null) {
+          throw new RuntimeException("No header (and no data) in " + fn);
+        }
+        List<String> header = Splitter.on(columnSeparator).splitToList(headerLine);
+        // TODO
+      } catch (Exception e) {
+        throw new RuntimeException("Error reading '" + fn + "'. " + e.getMessage());
+      }
+      throw new NotImplementedException("Column names not supported yet");
+    }
+    return new CsvFormat(
+        Integer.parseInt(columns.get("chromColNameOrIndex")) - 1,
+        Integer.parseInt(columns.get("startColNameOrIndex")) - 1,
+        Integer.parseInt(columns.get("endColNameOrIndex")) - 1,
+        Integer.parseInt(columns.get("scoreNameOrIndex")) - 1,
+        isZeroBased,
+        numHeaderLinesToSkip,
+        metaCharacter,
+        columnSeparator);
+  }
+
   private void addTracks(List<String> cmdTokens, TrackProcessor proc)
       throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException {
+
     List<String> globbed = Utils.globFiles(cmdTokens);
     if (globbed.isEmpty()) {
       globbed = this.openFilesFromIndexes(proc.getTrackSet().getOpenedFiles(), cmdTokens);
@@ -1484,48 +1567,47 @@ public class InteractiveInput {
       String msg = Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
       System.err.println(msg);
       this.interactiveInputExitCode = ExitCode.ERROR;
+      return;
+    }
 
-    } else {
-
-      for (String sourceName : globbed) {
-        String msg = Utils.padEndMultiLine("Adding: " + sourceName, proc.getWindowSize());
-        System.err.println(msg);
+    for (String sourceName : globbed) {
+      String msg = Utils.padEndMultiLine("Adding: " + sourceName, proc.getWindowSize());
+      System.err.println(msg);
+      try {
+        proc.getTrackSet()
+            .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
+      } catch (Exception e) {
         try {
+          // It may be that you are in position that doesn't exist in the sequence
+          // dictionary that
+          // came with this new file. To recover, find an existing position, move there and
+          // try to reload the
+          // file. This fixes issue#23
+          String region = Main.initRegion(globbed, null, null, debug);
+
+          GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
+          this.repositionGenomicCoords(gc, region, Utils.getTerminalWidth());
+          proc.getGenomicCoordsHistory().add(gc);
           proc.getTrackSet()
               .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
-        } catch (Exception e) {
-          try {
-            // It may be that you are in position that doesn't exist in the sequence
-            // dictionary that
-            // came with this new file. To recover, find an existing position, move there and
-            // try to reload the
-            // file. This fixes issue#23
-            String region = Main.initRegion(globbed, null, null, debug);
-
-            GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
-            this.repositionGenomicCoords(gc, region, Utils.getTerminalWidth());
-            proc.getGenomicCoordsHistory().add(gc);
-            proc.getTrackSet()
-                .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
-          } catch (Exception x) {
-            x.printStackTrace();
-            msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
-            System.err.println(msg);
-            this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
-          }
+        } catch (Exception x) {
+          x.printStackTrace();
+          msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
+          System.err.println(msg);
+          this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
         }
+      }
 
-        if (proc.getGenomicCoordsHistory().current().getSamSeqDict() == null
-            || proc.getGenomicCoordsHistory().current().getSamSeqDict().isEmpty()) {
-          GenomicCoords testSeqDict =
-              new GenomicCoords("default", Utils.getTerminalWidth(), null, null);
-          List<String> candidateSourceGenome = new ArrayList<String>();
-          candidateSourceGenome.add(sourceName);
-          testSeqDict.setGenome(candidateSourceGenome, false);
-          if (testSeqDict.getSamSeqDict() != null) {
-            candidateSourceGenome.add(0, "cmd");
-            proc.getGenomicCoordsHistory().setGenome(candidateSourceGenome);
-          }
+      if (proc.getGenomicCoordsHistory().current().getSamSeqDict() == null
+          || proc.getGenomicCoordsHistory().current().getSamSeqDict().isEmpty()) {
+        GenomicCoords testSeqDict =
+            new GenomicCoords("default", Utils.getTerminalWidth(), null, null);
+        List<String> candidateSourceGenome = new ArrayList<String>();
+        candidateSourceGenome.add(sourceName);
+        testSeqDict.setGenome(candidateSourceGenome, false);
+        if (testSeqDict.getSamSeqDict() != null) {
+          candidateSourceGenome.add(0, "cmd");
+          proc.getGenomicCoordsHistory().setGenome(candidateSourceGenome);
         }
       }
     }

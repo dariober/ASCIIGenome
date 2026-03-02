@@ -1,6 +1,7 @@
 package sortBgzipIndex;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.io.Files;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import org.junit.Test;
 import samTextViewer.Utils;
+import utils.FlexibleTabixReader;
 
 public class MakeTabixFileTest {
 
@@ -77,6 +79,7 @@ public class MakeTabixFileTest {
 
     infile = "test_data/generic.txt";
     outfile = new File("test_data/generic.txt.gz");
+    outfile.deleteOnExit();
     expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
     tabixFormat = new TabixFormat(TabixFormat.GENERIC_FLAGS, 5, 1, 2, '#', 1);
@@ -86,6 +89,39 @@ public class MakeTabixFileTest {
       assertEquals("start end V1 V2 chrom V3", br.readLine());
       assertEquals("5566777 5566778 1 0.1 chr7 -99", br.readLine());
     }
+
+    infile = "test_data/test.bedGraph";
+    outfile = new File("test_data/test.bedGraph.tmp.gz");
+    outfile.deleteOnExit();
+    expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+    expectedTbi.deleteOnExit();
+    tabixFormat = new TabixFormat(TabixFormat.ZERO_BASED, 1, 2, 3, '#', 0);
+    new MakeTabixIndex(infile, outfile, tabixFormat, '\t');
+    TabixReader tr = new TabixReader(outfile.getAbsolutePath());
+    Iterator qry = tr.query("chr1:1-20");
+    assertEquals("chr1\t0\t1\t1\t0", qry.next());
+    assertEquals("chr1\t5\t10\t-1\t1", qry.next());
+    assertEquals("chr1\t15\t20\t5\t2", qry.next());
+    assertNull(qry.next());
+  }
+
+  @Test
+  public void canQueryCustomSepZeroBased()
+      throws ClassNotFoundException, IOException, SQLException {
+    String infile = "test_data/generic2.csv";
+    File outfile = new File("test_data/generic2.csv.tmp.gz");
+    outfile.deleteOnExit();
+    File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+    expectedTbi.deleteOnExit();
+    TabixFormat tabixFormat = new TabixFormat(TabixFormat.ZERO_BASED, 3, 1, 2, '#', 1);
+    new MakeTabixIndex(infile, outfile, tabixFormat, ',');
+    FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath());
+    tr.setColumnSeparator(',');
+    Iterator qry = tr.query("chr1:1-20");
+    assertEquals("0,1,chr1,1,0", qry.next());
+    assertEquals("5,10,chr1,-1,1", qry.next());
+    assertEquals("15,20,chr1,5,2", qry.next());
+    assertNull(qry.next());
   }
 
   @Test
@@ -215,6 +251,29 @@ public class MakeTabixFileTest {
 
     // Check you can read ok
     this.vcfTester(outfile.getAbsolutePath());
+
+    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+      Iterator qry = tr.query("1:69270-69270");
+      assertEquals("1\t69270\t.\tA\tG\t.\tFAIL\tCalledBy=WCMC,BCM,BC", qry.next());
+      assertNull(qry.next());
+    }
+    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+      Iterator qry = tr.query("1:69270-69428");
+      assertEquals("1\t69270\t.\tA\tG\t.\tFAIL\tCalledBy=WCMC,BCM,BC", qry.next());
+      assertEquals("1\t69428\t.\tT\tG\t.\tFAIL\tCalledBy=BCM", qry.next());
+      assertNull(qry.next());
+    }
+    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+      Iterator qry = tr.query("1:69270-69428");
+      assertEquals("1\t69270\t.\tA\tG\t.\tFAIL\tCalledBy=WCMC,BCM,BC", qry.next());
+      assertEquals("1\t69428\t.\tT\tG\t.\tFAIL\tCalledBy=BCM", qry.next());
+      assertNull(qry.next());
+    }
+    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+      Iterator qry = tr.query("Y:22942929");
+      assertEquals("Y\t22942929\t.\tT\tG\t.\tFAIL\tCalledBy=BI", qry.next());
+      assertNull(qry.next());
+    }
   }
 
   @Test
@@ -228,13 +287,19 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.VCF, '\t');
+    new MakeTabixIndex(infile, outfile, TabixFormat.VCF, ',');
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 1000);
 
     // Check you can read ok
     this.vcfTester(outfile.getAbsolutePath());
+
+    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+      Iterator qry = tr.query("1:113054374-113054374");
+      assertTrue(qry.next().startsWith("1\t113054374\t.\tCTTG\tC\t23\tPASS"));
+      assertNull(qry.next());
+    }
   }
 
   // @Test

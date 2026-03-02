@@ -56,7 +56,6 @@ public class TrackBedgraphTest {
   @Test
   public void canGetDataColumnIndexForBedGraph()
       throws IOException,
-          NoSuchAlgorithmException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
           ClassNotFoundException,

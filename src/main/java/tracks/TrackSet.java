@@ -138,16 +138,6 @@ public class TrackSet {
     this.trackList.add(track);
   }
 
-  /**
-   * Add track from given file or URL.
-   *
-   * @throws BamIndexNotFoundException
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidRecordException
-   * @throws SQLException
-   * @throws ClassNotFoundException
-   */
   public void addTrackFromSource(String sourceName, GenomicCoords gc, String trackTag)
       throws IOException,
           BamIndexNotFoundException,

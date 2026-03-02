@@ -143,12 +143,12 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     List<IntervalFeature> xFeatures = new ArrayList<>();
     TabixBigBedIterator qry = this.getReader().query(chrom, from - 1, to);
     while (true) {
-      String q = qry.next();
-      if (q == null) {
+      String line = qry.next();
+      if (line == null) {
         break;
       }
       IntervalFeature intervalFeature =
-          new IntervalFeature(q, this.getTrackFormat(), this.getScoreColIdx());
+          new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx());
       xFeatures.add(intervalFeature);
     }
     this.removeInvisibleFeatures(xFeatures);

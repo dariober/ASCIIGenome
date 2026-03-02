@@ -16,7 +16,7 @@ class GenericFeature implements Feature {
   public GenericFeature(String contig, int start) {
     this.contig = contig;
     this.start = start;
-    this.end = -1;
+    this.end = start + 1;
   }
 
   @Override

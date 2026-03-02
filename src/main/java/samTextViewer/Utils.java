@@ -402,7 +402,7 @@ public class Utils {
 
         strand.clear();
 
-        if (x.equals(intervalList.get(i - 1)) && numMrgIntv == 1) {
+        if (x.equalCoordsUnstranded(intervalList.get(i - 1)) && numMrgIntv == 1) {
           mergedList.add(intervalList.get(i - 1));
         } else {
           mergedList.add(x);
@@ -678,7 +678,7 @@ public class Utils {
       } else {
           // Try to match file perfectly as it was added from cli, including path if any
           for(String fn : intervalFiles.keySet()){
-              if(fn.equals(filename)){
+              if(fn.equalCoordsUnstranded(filename)){
                   chosenFn = fn;
               }
           }
@@ -686,7 +686,7 @@ public class Utils {
               // Or try to match only file name.
               for(String fn : intervalFiles.keySet()){ // Do not look for a perfect match since the original input might contain path.
                   String onlyName= new File(fn).getName();
-                  if(onlyName.equals(filename)){
+                  if(onlyName.equalCoordsUnstranded(filename)){
                       chosenFn = fn;
                   }
               }
@@ -759,8 +759,8 @@ public class Utils {
   // IntervalFeatureSet>();
   //		for(String x : fileNames){
   //			String f= x;
-  //			if(getFileTypeFromName(x).equals(TrackFormat.BED) ||
-  // getFileTypeFromName(x).equals(TrackFormat.GFF)){
+  //			if(getFileTypeFromName(x).equalCoordsUnstranded(TrackFormat.BED) ||
+  // getFileTypeFromName(x).equalCoordsUnstranded(TrackFormat.GFF)){
   //				if(!ifsets.containsKey(x)){ // If the input has duplicates, do not reload duplicates!
   //					IntervalFeatureSet ifs= new IntervalFeatureSet(f);
   //					ifsets.put(x, ifs);
@@ -1648,20 +1648,6 @@ public class Utils {
     return result;
   }
 
-  //	public static List<SamRecordFilter> cleanInappropriateCallIfNotPairedRead(List<SamRecordFilter>
-  // filter){
-  //		List<SamRecordFilter> cleanfilter= new ArrayList<SamRecordFilter>();
-  //		for(SamRecordFilter x : filter){
-  //			if(x.equals(new FirstOfPairFilter(true)) ||
-  //			   x.equals(new FirstOfPairFilter(false))){
-  //			   //
-  //			} else {
-  //				cleanfilter.add(x);
-  //			}
-  //		}
-  //		return cleanfilter;
-  //	}
-
   public static TabixFormat trackFormatToTabixFormat(TrackFormat fmt) {
 
     TabixFormat tbx = null;
@@ -2072,7 +2058,7 @@ public class Utils {
           String inLine= rawLines[i];
           if(output.length > j){
               String outLine= output[j];
-              if(inLine.equals(outLine)){
+              if(inLine.equalCoordsUnstranded(outLine)){
                   results[i]= true;
                   j++;
               } else {

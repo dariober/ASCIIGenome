@@ -684,7 +684,7 @@ public class UtilsTest {
 
     assertTrue(
         Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "")[
-            0]); // Empty script equals to no filter.
+            0]); // Empty script equalCoordsUnstranded to no filter.
     assertTrue(Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "  ")[0]);
 
     // Valid awk script but output is not empty and not equal to input.
@@ -1238,7 +1238,7 @@ public class UtilsTest {
         new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, -1);
 
     assertEquals(expected.getFrom(), Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
-    assertTrue(expected.equals(Utils.mergeIntervalFeatures(intv, false).get(0)));
+    assertTrue(expected.equalCoordsUnstranded(Utils.mergeIntervalFeatures(intv, false).get(0)));
 
     intv.add(new IntervalFeature("chr1 20 100".replaceAll(" ", "\t"), TrackFormat.BED, -1));
     assertEquals(2, Utils.mergeIntervalFeatures(intv, false).size());

@@ -1430,7 +1430,7 @@ public class TrackSetTest {
     // Invert selection
     cmdInput = "trackColour -v blue #1";
     ts.setTrackColourForRegex(Utils.tokenize(cmdInput, " "));
-    //         assertTrue( ! ts.getTrack(t1).getTitleColour().equals("blue"));
+    //         assertTrue( ! ts.getTrack(t1).getTitleColour().equalCoordsUnstranded("blue"));
     //         assertEquals("blue", ts.getTrack(t2).getTitleColour());
     //         assertEquals("blue", ts.getTrack(t3).getTitleColour());
 

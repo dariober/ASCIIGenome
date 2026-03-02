@@ -1,23 +1,19 @@
 package sortBgzipIndex;
 
 import com.google.common.base.Splitter;
-import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.samtools.util.CloserUtil;
 import htsjdk.samtools.util.FileExtensions;
-import htsjdk.tribble.TribbleException.MalformedFeatureFile;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndexCreator;
 import htsjdk.tribble.readers.LineIterator;
-import htsjdk.variant.vcf.VCFCodec;
-import htsjdk.variant.vcf.VCFFileReader;
-import htsjdk.variant.vcf.VCFHeader;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -36,15 +32,22 @@ public class MakeTabixIndex {
   private final char columnSeparator;
   private final TabixFormat tabixFormat;
 
-  /**
-   * Sort, block compress and index the input with format fmt to the given output file. Input is
-   * either a local file, possibly compressed, or a URL.
-   */
+  public MakeTabixIndex(String intab, File bgzfOut, TabixFormat tabixFormat)
+      throws SQLException, IOException, ClassNotFoundException {
+    this.columnSeparator = '\t';
+    this.tabixFormat = tabixFormat;
+    new MakeTabixIndex(intab, bgzfOut, tabixFormat, '\t');
+  }
+
   public MakeTabixIndex(String intab, File bgzfOut, TabixFormat tabixFormat, char columnSeparator)
-      throws IOException, InvalidRecordException, ClassNotFoundException, SQLException {
+      throws IOException, ClassNotFoundException, SQLException {
 
     this.tabixFormat = tabixFormat;
     this.columnSeparator = columnSeparator;
+
+    if (columnSeparator != '\t' && (tabixFormat == TabixFormat.BED || tabixFormat == TabixFormat.GFF || tabixFormat == TabixFormat.SAM || tabixFormat == TabixFormat.VCF)) {
+      throw new IOException("This tabix format must have tab delimter. Got:'" + this.columnSeparator + "'");
+    }
 
     File tmp = Utils.createTempFile(".asciigenome", "makeTabixIndex.tmp.gz", true);
     File tmpTbi = new File(tmp.getAbsolutePath() + FileExtensions.TABIX_INDEX);
@@ -55,6 +58,8 @@ public class MakeTabixIndex {
       blockCompressAndIndex(intab, tmp);
     } catch (Exception e) {
       // If intab is not sorted, sort it first.
+      PrintWriter pw = new PrintWriter(tmp);
+      pw.close();
       File sorted = Utils.createTempFile(".asciigenome.", ".sorted.tmp", true);
       sortByChromThenPos(intab, sorted);
       blockCompressAndIndex(sorted.getAbsolutePath(), tmp);
@@ -124,10 +129,10 @@ public class MakeTabixIndex {
   /** Set vcfHeader and vcfCodec to null if reading non-vcf line. */
   private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition) {
     List<String> parts = Splitter.on(this.columnSeparator).splitToList(line);
+    int start = Integer.parseInt(parts.get(tabixFormat.startPositionColumn - 1));
     GenericFeature feature =
             new GenericFeature(
-                    parts.get(tabixFormat.sequenceColumn - 1),
-                    Integer.parseInt(parts.get(tabixFormat.startPositionColumn - 1)));
+                    parts.get(tabixFormat.sequenceColumn - 1), start, start + 1);
     indexCreator.addFeature(feature, filePosition);
   }
 
