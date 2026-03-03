@@ -12,7 +12,6 @@ import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.readers.LineIterator;
-import htsjdk.tribble.readers.TabixReader;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.Options;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
@@ -36,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
+import utils.FlexibleTabixReader;
 
 public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
@@ -78,7 +78,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     }
     this.vcfReader = this.prepareVcfReader(this.getWorkFilename());
     if (!isBCF) {
-      this.setTabixReader(new TabixReader(this.getWorkFilename()));
+      this.setTabixReader(new FlexibleTabixReader(this.getWorkFilename()));
     } else {
       this.tabixReader = null;
     }

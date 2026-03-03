@@ -17,6 +17,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
+import utils.CsvFormat;
 
 public class TrackBedgraphTest {
 
@@ -38,6 +39,22 @@ public class TrackBedgraphTest {
   }
 
   @Test
+  public void canReproduceTrackBedgraphWithCsv()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidRecordException,
+          InvalidGenomicCoordsException,
+          SQLException {
+
+    GenomicCoords gc = new GenomicCoords("chr1:1-20", 80, null, null);
+    TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
+
+    CsvFormat csv = new CsvFormat(0, 1, 2, 3, true, 0, '#', '\t');
+    TrackBedgraph tcsv = new TrackBedgraph("test_data/test.bedGraph", gc, csv);
+    assertEquals(tb.getFeatureList().toString(), tcsv.getFeatureList().toString());
+  }
+
+  @Test
   public void canPrintChromosomeNames()
       throws InvalidGenomicCoordsException,
           IOException,
@@ -51,6 +68,47 @@ public class TrackBedgraphTest {
     System.out.println(tb.getTrackFormat());
     assertFalse(tb.getChromosomeNames().isEmpty());
     assertEquals("chr1", tb.getChromosomeNames().get(0));
+
+    // With csv
+    CsvFormat csv = new CsvFormat(0, 1, 2, 3, true, 0, '#', '\t');
+    tb = new TrackBedgraph("test_data/test.bedGraph", gc, csv);
+    assertEquals(TrackFormat.BEDGRAPH, tb.getTrackFormat());
+    assertFalse(tb.getChromosomeNames().isEmpty());
+    assertEquals("chr1", tb.getChromosomeNames().get(0));
+  }
+
+  @Test
+  public void canReadCsvAndPlotProfile()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr7:5566777-5566786", 80, null, null);
+
+    CsvFormat csv = new CsvFormat(4, 0, 1, 2, true, 1, '#', ',');
+    TrackBedgraph tb = new TrackBedgraph("test_data/generic.csv", gc, csv);
+    tb.setNoFormat(true);
+    assertTrue(tb.printToScreen().contains("_::::::::"));
+  }
+
+  @Test
+  public void canReadCsvAndPlotProfileStartPosOnly()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr7:5566777-5566786", 80, null, null);
+
+    CsvFormat csv = new CsvFormat(4, 0, -1, 2, true, 1, '#', ',');
+    TrackBedgraph tb = new TrackBedgraph("test_data/generic.csv", gc, csv);
+    tb.setNoFormat(true);
+    assertTrue(tb.printToScreen().contains("_::::::::"));
   }
 
   @Test

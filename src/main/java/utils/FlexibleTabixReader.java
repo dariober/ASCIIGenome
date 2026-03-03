@@ -7,7 +7,6 @@ import htsjdk.samtools.util.BlockCompressedInputStream;
 import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.util.ParsingUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -19,7 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-
 
 public class FlexibleTabixReader implements AutoCloseable {
   private final String mFilePath;
@@ -33,16 +31,18 @@ public class FlexibleTabixReader implements AutoCloseable {
   private int mEc;
   private int mMeta;
 
-  //private int mSkip; (not used)
+  // private int mSkip; (not used)
   private String[] mSeq;
 
   private Map<String, Integer> mChr2tid;
 
   private static int MAX_BIN = 37450;
-  //private static int TAD_MIN_CHUNK_GAP = 32768; (not used)
+  // private static int TAD_MIN_CHUNK_GAP = 32768; (not used)
   private static int TAD_LIDX_SHIFT = 14;
+
   /** default buffer size for <code>readLine()</code> */
   private static final int DEFAULT_BUFFER_SIZE = 1000;
+
   private char columnSeparator = '\t';
 
   protected static class TPair64 implements Comparable<TPair64> {
@@ -60,7 +60,9 @@ public class FlexibleTabixReader implements AutoCloseable {
 
     @Override
     public int compareTo(final TPair64 p) {
-      return u == p.u ? 0 : ((u < p.u) ^ (u < 0) ^ (p.u < 0)) ? -1 : 1; // unsigned 64-bit comparison
+      return u == p.u
+          ? 0
+          : ((u < p.u) ^ (u < 0) ^ (p.u < 0)) ? -1 : 1; // unsigned 64-bit comparison
     }
   }
 
@@ -83,7 +85,11 @@ public class FlexibleTabixReader implements AutoCloseable {
    * @param filePath path to the data file/uri
    */
   public FlexibleTabixReader(final String filePath) throws IOException {
-    this(filePath, null, SeekableStreamFactory.getInstance().getBufferedStream(SeekableStreamFactory.getInstance().getStreamFor(filePath)));
+    this(
+        filePath,
+        null,
+        SeekableStreamFactory.getInstance()
+            .getBufferedStream(SeekableStreamFactory.getInstance().getStreamFor(filePath)));
   }
 
   /**
@@ -91,24 +97,37 @@ public class FlexibleTabixReader implements AutoCloseable {
    * @param indexPath Full path to the index file. Auto-generated if null
    */
   public FlexibleTabixReader(final String filePath, final String indexPath) throws IOException {
-    this(filePath, indexPath, SeekableStreamFactory.getInstance().getBufferedStream(SeekableStreamFactory.getInstance().getStreamFor(filePath)));
+    this(
+        filePath,
+        indexPath,
+        SeekableStreamFactory.getInstance()
+            .getBufferedStream(SeekableStreamFactory.getInstance().getStreamFor(filePath)));
   }
 
   /**
    * @param filePath path to the data file/uri
    * @param indexPath Full path to the index file. Auto-generated if null
-   * @param wrapper a wrapper to apply to the raw byte stream of the data file if is a uri representing a {@link java.nio.file.Path}
-   * @param indexWrapper a wrapper to apply to the raw byte stream of the index file if it is a uri representing a {@link java.nio.file.Path}
+   * @param wrapper a wrapper to apply to the raw byte stream of the data file if is a uri
+   *     representing a {@link java.nio.file.Path}
+   * @param indexWrapper a wrapper to apply to the raw byte stream of the index file if it is a uri
+   *     representing a {@link java.nio.file.Path}
    */
-  public FlexibleTabixReader(final String filePath, final String indexPath,
+  public FlexibleTabixReader(
+      final String filePath,
+      final String indexPath,
       final Function<SeekableByteChannel, SeekableByteChannel> wrapper,
-      final Function<SeekableByteChannel, SeekableByteChannel> indexWrapper) throws IOException {
-    this(filePath, indexPath, SeekableStreamFactory.getInstance().getBufferedStream(SeekableStreamFactory.getInstance().getStreamFor(filePath, wrapper)), indexWrapper);
+      final Function<SeekableByteChannel, SeekableByteChannel> indexWrapper)
+      throws IOException {
+    this(
+        filePath,
+        indexPath,
+        SeekableStreamFactory.getInstance()
+            .getBufferedStream(SeekableStreamFactory.getInstance().getStreamFor(filePath, wrapper)),
+        indexWrapper);
   }
 
-
   /**
-   * @param filePath Path to the data file  (used for error messages only)
+   * @param filePath Path to the data file (used for error messages only)
    * @param stream Seekable stream from which the data is read
    */
   public FlexibleTabixReader(final String filePath, SeekableStream stream) throws IOException {
@@ -116,25 +135,32 @@ public class FlexibleTabixReader implements AutoCloseable {
   }
 
   /**
-   * @param filePath Path to the data file  (used for error messages only)
+   * @param filePath Path to the data file (used for error messages only)
    * @param indexPath Full path to the index file. Auto-generated if null
    * @param stream Seekable stream from which the data is read
    */
-  public FlexibleTabixReader(final String filePath, final String indexPath, SeekableStream stream) throws IOException {
+  public FlexibleTabixReader(final String filePath, final String indexPath, SeekableStream stream)
+      throws IOException {
     this(filePath, indexPath, stream, null);
   }
 
   /**
    * @param filePath Path to the data file (used for error messages only)
    * @param indexPath Full path to the index file. Auto-generated if null
-   * @param indexWrapper a wrapper to apply to the raw byte stream of the index file if it is a uri representing a {@link java.nio.file.Path}
+   * @param indexWrapper a wrapper to apply to the raw byte stream of the index file if it is a uri
+   *     representing a {@link java.nio.file.Path}
    * @param stream Seekable stream from which the data is read
    */
-  public FlexibleTabixReader(final String filePath, final String indexPath, SeekableStream stream, Function<SeekableByteChannel, SeekableByteChannel> indexWrapper) throws IOException {
+  public FlexibleTabixReader(
+      final String filePath,
+      final String indexPath,
+      SeekableStream stream,
+      Function<SeekableByteChannel, SeekableByteChannel> indexWrapper)
+      throws IOException {
     mFilePath = filePath;
     mFp = new BlockCompressedInputStream(stream);
     mIndexWrapper = indexWrapper;
-    if(indexPath == null){
+    if (indexPath == null) {
       mIndexPath = ParsingUtils.appendToPath(filePath, FileExtensions.TABIX_INDEX);
     } else {
       mIndexPath = indexPath;
@@ -143,8 +169,7 @@ public class FlexibleTabixReader implements AutoCloseable {
   }
 
   /** return the source (filename/URL) of that reader */
-  public String getSource()
-  {
+  public String getSource() {
     return this.mFilePath;
   }
 
@@ -186,16 +211,14 @@ public class FlexibleTabixReader implements AutoCloseable {
    * @return the line or null if there is no more input
    * @throws IOException
    */
-  private static String readLine(final InputStream is, final int bufferCapacity) throws IOException {
+  private static String readLine(final InputStream is, final int bufferCapacity)
+      throws IOException {
     final StringBuffer buf = new StringBuffer(bufferCapacity);
     int c;
-    while ((c = is.read()) >= 0 && c != '\n')
-      buf.append((char) c);
+    while ((c = is.read()) >= 0 && c != '\n') buf.append((char) c);
     if (c < 0) return null;
     return buf.toString();
   }
-
-
 
   /**
    * Read the Tabix index from a file
@@ -204,18 +227,18 @@ public class FlexibleTabixReader implements AutoCloseable {
    */
   private void readIndex(final SeekableStream fp) throws IOException {
     if (fp == null) return;
-    final  BlockCompressedInputStream is = new BlockCompressedInputStream(fp);
+    final BlockCompressedInputStream is = new BlockCompressedInputStream(fp);
     byte[] buf = new byte[4];
 
     is.read(buf, 0, 4); // read "TBI\1"
     mSeq = new String[readInt(is)]; // # sequences
-    mChr2tid = new HashMap<String, Integer>( this.mSeq.length );
+    mChr2tid = new HashMap<String, Integer>(this.mSeq.length);
     mPreset = readInt(is);
     mSc = readInt(is);
     mBc = readInt(is);
     mEc = readInt(is);
     mMeta = readInt(is);
-    readInt(is);//unused
+    readInt(is); // unused
     // read sequence dictionary
     int i, j, k, l = readInt(is);
     buf = new byte[l];
@@ -249,24 +272,19 @@ public class FlexibleTabixReader implements AutoCloseable {
       }
       // the linear index
       mIndex[i].l = new long[readInt(is)];
-      for (k = 0; k < mIndex[i].l.length; ++k)
-        mIndex[i].l[k] = readLong(is);
+      for (k = 0; k < mIndex[i].l.length; ++k) mIndex[i].l[k] = readLong(is);
     }
     // close
     is.close();
   }
 
-  /**
-   * Read the Tabix index from the default file.
-   */
+  /** Read the Tabix index from the default file. */
   private void readIndex() throws IOException {
     final ISeekableStreamFactory ssf = SeekableStreamFactory.getInstance();
     readIndex(ssf.getBufferedStream(ssf.getStreamFor(mIndexPath, mIndexWrapper), 128000));
   }
 
-  /**
-   * Read one line from the data file.
-   */
+  /** Read one line from the data file. */
   public String readLine() throws IOException {
     return readLine(mFp, DEFAULT_BUFFER_SIZE);
   }
@@ -274,12 +292,11 @@ public class FlexibleTabixReader implements AutoCloseable {
   /** return chromosome ID or -1 if it is unknown */
   public int chr2tid(final String chr) {
     final Integer tid = this.mChr2tid.get(chr);
-    return tid==null?-1:tid;
+    return tid == null ? -1 : tid;
   }
 
   /** return the chromosomes in that tabix file */
-  public Set<String> getChromosomes()
-  {
+  public Set<String> getChromosomes() {
     return Collections.unmodifiableSet(this.mChr2tid.keySet());
   }
 
@@ -287,17 +304,21 @@ public class FlexibleTabixReader implements AutoCloseable {
    * Parse a region in the format of "chr1", "chr1:100" or "chr1:100-1000"
    *
    * @param reg Region string
-   * @return An array where the three elements are sequence_id,
-   *         region_begin and region_end. On failure, sequence_id==-1.
+   * @return An array where the three elements are sequence_id, region_begin and region_end. On
+   *     failure, sequence_id==-1.
    */
-  public int[] parseReg(final String reg) { // FIXME: NOT working when the sequence name contains : or -.
+  public int[] parseReg(
+      final String reg) { // FIXME: NOT working when the sequence name contains : or -.
     String chr;
     int colon, hyphen;
     int[] ret = new int[3];
     colon = reg.indexOf(':');
     hyphen = reg.indexOf('-');
     chr = colon >= 0 ? reg.substring(0, colon) : reg;
-    ret[1] = colon >= 0 ? Integer.parseInt(reg.substring(colon + 1, hyphen >= 0 ? hyphen : reg.length())) - 1 : 0;
+    ret[1] =
+        colon >= 0
+            ? Integer.parseInt(reg.substring(colon + 1, hyphen >= 0 ? hyphen : reg.length())) - 1
+            : 0;
     ret[2] = hyphen >= 0 ? Integer.parseInt(reg.substring(hyphen + 1)) : 0x7fffffff;
     ret[0] = this.chr2tid(chr);
     return ret;
@@ -311,7 +332,8 @@ public class FlexibleTabixReader implements AutoCloseable {
       if (col == mSc) {
         intv.tid = chr2tid(end != -1 ? s.substring(beg, end) : s.substring(beg));
       } else if (col == mBc) {
-        intv.beg = intv.end = Integer.parseInt(end != -1 ? s.substring(beg, end) : s.substring(beg));
+        intv.beg =
+            intv.end = Integer.parseInt(end != -1 ? s.substring(beg, end) : s.substring(beg));
         if ((mPreset & 0x10000) != 0) ++intv.end;
         else --intv.beg;
         if (intv.beg < 0) intv.beg = 0;
@@ -348,7 +370,8 @@ public class FlexibleTabixReader implements AutoCloseable {
             }
             if (e_off > 0) {
               i = alt.indexOf(';', e_off);
-              intv.end = Integer.parseInt(i > e_off ? alt.substring(e_off, i) : alt.substring(e_off));
+              intv.end =
+                  Integer.parseInt(i > e_off ? alt.substring(e_off, i) : alt.substring(e_off));
             }
           }
         }
@@ -370,7 +393,7 @@ public class FlexibleTabixReader implements AutoCloseable {
   /** default implementation of Iterator */
   private class IteratorImpl implements TabixReader.Iterator {
     private int i;
-    //private int n_seeks;
+    // private int n_seeks;
     private int tid, beg, end;
     private TPair64[] off;
     private long curr_off;
@@ -378,7 +401,7 @@ public class FlexibleTabixReader implements AutoCloseable {
 
     private IteratorImpl(final int _tid, final int _beg, final int _end, final TPair64[] _off) {
       i = -1;
-      //n_seeks = 0;
+      // n_seeks = 0;
       curr_off = 0;
       iseof = false;
       off = _off;
@@ -390,14 +413,14 @@ public class FlexibleTabixReader implements AutoCloseable {
     @Override
     public String next() throws IOException {
       if (iseof) return null;
-      for (; ;) {
+      for (; ; ) {
         if (curr_off == 0 || !less64(curr_off, off[i].v)) { // then jump to the next chunk
           if (i == off.length - 1) break; // no more chunks
           if (i >= 0) assert (curr_off == off[i].v); // otherwise bug
           if (i < 0 || off[i].v != off[i + 1].u) { // not adjacent chunks; then seek
             mFp.seek(off[i + 1].u);
             curr_off = mFp.getFilePointer();
-            //++n_seeks;
+            // ++n_seeks;
           }
           ++i;
         }
@@ -418,6 +441,7 @@ public class FlexibleTabixReader implements AutoCloseable {
 
   /**
    * Get an iterator for an interval specified by the sequence id and begin and end coordinates
+   *
    * @param tid Sequence id, if non-existent returns EOF_ITERATOR
    * @param beg beginning of interval, genomic coords (0-based, closed-open)
    * @param end end of interval, genomic coords (0-based, closed-open)
@@ -431,19 +455,20 @@ public class FlexibleTabixReader implements AutoCloseable {
     int[] bins = new int[MAX_BIN];
     int i, l, n_off, n_bins = reg2bins(beg, end, bins);
     if (idx.l.length > 0)
-      min_off = (beg >> TAD_LIDX_SHIFT >= idx.l.length) ? idx.l[idx.l.length - 1] : idx.l[beg >> TAD_LIDX_SHIFT];
+      min_off =
+          (beg >> TAD_LIDX_SHIFT >= idx.l.length)
+              ? idx.l[idx.l.length - 1]
+              : idx.l[beg >> TAD_LIDX_SHIFT];
     else min_off = 0;
     for (i = n_off = 0; i < n_bins; ++i) {
-      if ((chunks = idx.b.get(bins[i])) != null)
-        n_off += chunks.length;
+      if ((chunks = idx.b.get(bins[i])) != null) n_off += chunks.length;
     }
     if (n_off == 0) return EOF_ITERATOR;
     off = new TPair64[n_off];
     for (i = n_off = 0; i < n_bins; ++i)
       if ((chunks = idx.b.get(bins[i])) != null)
         for (int j = 0; j < chunks.length; ++j)
-          if (less64(min_off, chunks[j].v))
-            off[n_off++] = new TPair64(chunks[j]);
+          if (less64(min_off, chunks[j].v)) off[n_off++] = new TPair64(chunks[j]);
     Arrays.sort(off, 0, n_off);
     // resolve completely contained adjacent blocks
     for (i = 1, l = 0; i < n_off; ++i) {
@@ -455,8 +480,7 @@ public class FlexibleTabixReader implements AutoCloseable {
     }
     n_off = l + 1;
     // resolve overlaps between adjacent blocks; this may happen due to the merge in indexing
-    for (i = 1; i < n_off; ++i)
-      if (!less64(off[i - 1].v, off[i].u)) off[i - 1].v = off[i].u;
+    for (i = 1; i < n_off; ++i) if (!less64(off[i - 1].v, off[i].u)) off[i - 1].v = off[i].u;
     // merge adjacent blocks
     for (i = 1, l = 0; i < n_off; ++i) {
       if (off[l].v >> 16 == off[i].u >> 16) off[l].v = off[i].v;
@@ -472,13 +496,11 @@ public class FlexibleTabixReader implements AutoCloseable {
     for (i = 0; i < n_off; ++i) {
       if (off[i] != null) ret[i] = new TPair64(off[i].u, off[i].v); // in C, this is inefficient
     }
-    if (ret.length == 0 || (ret.length == 1 && ret[0] == null))
-      return EOF_ITERATOR;
+    if (ret.length == 0 || (ret.length == 1 && ret[0] == null)) return EOF_ITERATOR;
     return new FlexibleTabixReader.IteratorImpl(tid, beg, end, ret);
   }
 
   /**
-   *
    * @see #parseReg(String)
    * @param reg A region string of the form acceptable by {@link #parseReg(String)}
    * @return an iterator over the specified interval
@@ -490,6 +512,7 @@ public class FlexibleTabixReader implements AutoCloseable {
 
   /**
    * Get an iterator for an interval specified by the sequence id and begin and end coordinates
+   *
    * @see #parseReg(String)
    * @param reg a chromosome
    * @param start start interval
@@ -504,7 +527,7 @@ public class FlexibleTabixReader implements AutoCloseable {
   // ADDED BY JTR
   @Override
   public void close() {
-    if(mFp != null) {
+    if (mFp != null) {
       try {
         mFp.close();
       } catch (IOException e) {
@@ -515,10 +538,14 @@ public class FlexibleTabixReader implements AutoCloseable {
 
   @Override
   public String toString() {
-    return "TabixReader: filename:"+getSource();
+    return "TabixReader: filename:" + getSource();
   }
 
   public void setColumnSeparator(char columnSeparator) {
     this.columnSeparator = columnSeparator;
+  }
+
+  public char getColumnSeparator() {
+    return this.columnSeparator;
   }
 }

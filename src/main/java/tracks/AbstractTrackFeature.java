@@ -6,7 +6,6 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.FileExtensions;
-import htsjdk.tribble.readers.TabixReader;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFReader;
 import java.io.File;
@@ -20,10 +19,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import utils.FlexibleTabixReader;
 
 public abstract class AbstractTrackFeature<T extends IntervalFeature> extends AbstractTrack {
   /** For GTF/GFF data: Use this attribute to get the feature names */
-  protected TabixReader tabixReader; // Leave *protected* for TrackBookmark to work
+  protected FlexibleTabixReader tabixReader; // Leave *protected* for TrackBookmark to work
 
   protected BBFileReader bigBedReader;
   protected VCFReader vcfReader;
@@ -709,6 +709,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     if (this.bigBedReader != null) {
       return new TabixBigBedReader(this.bigBedReader);
     } else if (this.tabixReader != null) {
+      this.tabixReader.setColumnSeparator(this.getColumnSeparator());
       return new TabixBigBedReader(this.tabixReader);
     } else if (this.vcfReader != null) {
       return new TabixBigBedReader(this.vcfReader);
@@ -717,12 +718,14 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     }
   }
 
-  protected TabixReader getTabixReader(String tabixFile) throws IOException {
-    return new TabixReader(new File(tabixFile).getAbsolutePath());
+  protected FlexibleTabixReader getTabixReader(String tabixFile) throws IOException {
+    FlexibleTabixReader reader = new FlexibleTabixReader(new File(tabixFile).getAbsolutePath());
+    reader.setColumnSeparator(this.getColumnSeparator());
+    return reader;
   }
 
   /** This setter is for TrackBookmark to work. */
-  protected void setTabixReader(TabixReader tabixReader) {
+  protected void setTabixReader(FlexibleTabixReader tabixReader) {
     this.tabixReader = tabixReader;
   }
 

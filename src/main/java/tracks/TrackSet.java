@@ -31,10 +31,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringEscapeUtils;
 import samTextViewer.ExitCode;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import utils.CsvFormat;
 
 /** Class to hold tracks to be printed. */
 public class TrackSet {
@@ -136,6 +138,34 @@ public class TrackSet {
     String trackTag = baseTag + "#" + idForTrack;
     track.setTrackTag(trackTag);
     this.trackList.add(track);
+  }
+
+  public void addTrackFromSource(
+      String sourceName, GenomicCoords gc, String trackTag, CsvFormat csvFormat)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          BamIndexNotFoundException,
+          InvalidRecordException,
+          ClassNotFoundException {
+    if (csvFormat == null) {
+      addTrackFromSource(sourceName, gc, trackTag);
+      return;
+    }
+
+    int idForTrack = this.getNextTrackId();
+    String trackId = sourceName + "#" + idForTrack;
+    if (csvFormat.getScoreColIndex() >= 0) {
+      TrackBedgraph bdg = new TrackBedgraph(sourceName, gc, csvFormat);
+      bdg.setTrackTag(trackId);
+      this.trackList.add(bdg);
+    } else {
+      throw new NotImplementedException("TODO: Csv for intervals");
+    }
+
+    for (AbstractTrack tr : this.getTrackList()) {
+      this.addToOpenedFiles(tr.getFilename());
+    }
   }
 
   public void addTrackFromSource(String sourceName, GenomicCoords gc, String trackTag)

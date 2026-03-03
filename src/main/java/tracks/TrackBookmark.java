@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.readers.TabixReader;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,6 +22,7 @@ import java.util.zip.GZIPInputStream;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
+import utils.FlexibleTabixReader;
 
 public class TrackBookmark extends TrackIntervalFeature {
 
@@ -61,7 +61,7 @@ public class TrackBookmark extends TrackIntervalFeature {
         bookmarkPlain.getAbsolutePath(), bookmark, TabixFormat.GFF, this.getColumnSeparator());
     bookmarkPlain.delete();
 
-    this.setTabixReader(new TabixReader(bookmark.getAbsolutePath()));
+    this.setTabixReader(new FlexibleTabixReader(bookmark.getAbsolutePath()));
     this.setTrackFormat(TrackFormat.GTF);
     this.setGc(gc);
   }
@@ -114,7 +114,7 @@ public class TrackBookmark extends TrackIntervalFeature {
         TabixFormat.GFF,
         this.getColumnSeparator());
     plainNew.delete();
-    this.tabixReader = new TabixReader(this.getWorkFilename());
+    this.tabixReader = new FlexibleTabixReader(this.getWorkFilename());
     // Update track.
     this.update();
   }
@@ -188,7 +188,7 @@ public class TrackBookmark extends TrackIntervalFeature {
         TabixFormat.GFF,
         this.getColumnSeparator());
     plainNew.delete();
-    this.tabixReader = new TabixReader(this.getWorkFilename());
+    this.tabixReader = new FlexibleTabixReader(this.getWorkFilename());
     // Update track.
     this.update();
   }

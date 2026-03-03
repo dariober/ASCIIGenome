@@ -103,7 +103,8 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
     this.chrom = row.get(csv.getChromColIndex()).trim();
     this.from = Integer.parseInt(row.get(csv.getStartColIndex()));
     this.from += csv.isZeroBased() ? 1 : 0;
-    this.to = csv.getEndColIndex() > 0 ? Integer.parseInt(row.get(csv.getEndColIndex())) : this.from;
+    this.to =
+        csv.getEndColIndex() > 0 ? Integer.parseInt(row.get(csv.getEndColIndex())) : this.from;
     if (csv.getScoreColIndex() > 0) {
       this.score = Double.parseDouble(row.get(csv.getScoreColIndex()));
       this.trackFormat = TrackFormat.BEDGRAPH;

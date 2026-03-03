@@ -8,7 +8,7 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.FileExtensions;
-import htsjdk.tribble.readers.TabixReader;
+import htsjdk.tribble.index.tabix.TabixFormat;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
+import utils.CsvFormat;
 
 public class TrackBedgraph extends TrackIntervalFeature {
 
@@ -26,12 +27,23 @@ public class TrackBedgraph extends TrackIntervalFeature {
   private DataAggregationMethod dataAggregationMethod = DataAggregationMethod.MEAN;
 
   public TrackBedgraph(String filename, GenomicCoords gc)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    this(filename, gc, null);
+  }
+
+  public TrackBedgraph(String filename, GenomicCoords gc, CsvFormat csvFormat)
       throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException {
-    this.scoreColIdx = 4;
+    this.csvFormat = csvFormat;
+    this.scoreColIdx = csvFormat == null ? 4 : csvFormat.getScoreColIndex();
+    this.columnSeparator = csvFormat == null ? '\t' : csvFormat.getColumnSeparator();
     this.setFilename(filename);
     this.setTrackFormat(Utils.getFileTypeFromName(filename));
 
@@ -44,15 +56,29 @@ public class TrackBedgraph extends TrackIntervalFeature {
           Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
       new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
       this.setWorkFilename(tmpWorkFile);
+
+      TabixFormat tabixFormat;
+      if (csvFormat == null) {
+        tabixFormat = TabixFormat.BED;
+      } else {
+        tabixFormat =
+            new TabixFormat(
+                csvFormat.isZeroBased() ? TabixFormat.ZERO_BASED : TabixFormat.GENERIC_FLAGS,
+                csvFormat.getChromColIndex() + 1,
+                csvFormat.getStartColIndex() + 1,
+                csvFormat.getEndColIndex() + 1,
+                csvFormat.getMetaCharacter(),
+                csvFormat.getNumHeaderLinesToSkip());
+      }
+
       new MakeTabixIndex(
-          filename,
-          new File(this.getWorkFilename()),
-          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
-      this.tabixReader = this.getTabixReader(this.getWorkFilename());
+          filename, new File(this.getWorkFilename()), tabixFormat, this.getColumnSeparator());
+
     } else { // This means the input is tabix indexed.
       this.setWorkFilename(filename);
-      this.tabixReader = new TabixReader(this.getWorkFilename());
     }
+    this.tabixReader = this.getTabixReader(this.getWorkFilename());
+    this.tabixReader.setColumnSeparator(this.getColumnSeparator());
     this.setGc(gc);
   }
 

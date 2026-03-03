@@ -32,7 +32,6 @@ import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.LineIterator;
-import htsjdk.tribble.readers.TabixReader;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.Options;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
@@ -103,6 +102,7 @@ import org.broad.igv.tdf.TDFReader;
 import tracks.AbstractTrack;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
+import utils.FlexibleTabixReader;
 import utils.Tokenizer;
 
 /**
@@ -438,7 +438,7 @@ public class Utils {
     }
 
     try {
-      TabixReader tabixReader = new TabixReader(fileName);
+      FlexibleTabixReader tabixReader = new FlexibleTabixReader(fileName);
       tabixReader.readLine();
       tabixReader.close();
       return true;
@@ -942,8 +942,7 @@ public class Utils {
         from = to - gc.getGenomicWindowSize() + 1;
       }
       return chrom + ":" + from + "-" + to;
-    }
-    else {
+    } else {
       throw new RuntimeException("Invalid input for " + tokens);
     }
   }
@@ -996,10 +995,10 @@ public class Utils {
   }
 
   /**
-   * Average of ints in array x. Adapted from:
-   * <a href="http://stackoverflow.com/questions/10791568/calculating-average-of-an-array-list">...</a> null values
-   * are ignored, like R mean(..., na.rm= TRUE). Returns Float.NaN if input list is empty or only
-   * nulls. You can check for Float.NaN with Float.isNaN(x);
+   * Average of ints in array x. Adapted from: <a
+   * href="http://stackoverflow.com/questions/10791568/calculating-average-of-an-array-list">...</a>
+   * null values are ignored, like R mean(..., na.rm= TRUE). Returns Float.NaN if input list is
+   * empty or only nulls. You can check for Float.NaN with Float.isNaN(x);
    */
   public static Double calculateAverage(List<Double> list) {
     double sum = 0;

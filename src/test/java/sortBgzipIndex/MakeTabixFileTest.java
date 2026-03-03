@@ -9,7 +9,6 @@ import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
 import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
@@ -37,7 +36,7 @@ public class MakeTabixFileTest {
 
   @Test
   public void canIndexGtf()
-          throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+      throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
     String infile = "test_data/hg19_genes.gtf.gz";
     File outfile = new File("test_data/hg19_genes.gtf.tmp.gz");
     outfile.deleteOnExit();
@@ -97,7 +96,7 @@ public class MakeTabixFileTest {
     expectedTbi.deleteOnExit();
     tabixFormat = new TabixFormat(TabixFormat.ZERO_BASED, 1, 2, 3, '#', 0);
     new MakeTabixIndex(infile, outfile, tabixFormat, '\t');
-    TabixReader tr = new TabixReader(outfile.getAbsolutePath());
+    FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath());
     Iterator qry = tr.query("chr1:1-20");
     assertEquals("chr1\t0\t1\t1\t0", qry.next());
     assertEquals("chr1\t5\t10\t-1\t1", qry.next());
@@ -153,24 +152,35 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED, ' ');
-    BufferedReader br = Utils.reader(outfile.getAbsolutePath());
-    assertEquals("chr1 0 10 1", br.readLine());
+    TabixFormat tabixFormat = new TabixFormat(TabixFormat.ZERO_BASED, 1, 2, 3, '#', 0);
+    new MakeTabixIndex(infile, outfile, tabixFormat, ' ');
+
+    try (FlexibleTabixReader reader = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+      reader.setColumnSeparator(' ');
+      Iterator iter = reader.query("chr1:1-21");
+      assertEquals("chr1 0 10 1", iter.next());
+      assertEquals("chr1 20 30 2", iter.next());
+      assertNull(iter.next());
+    }
   }
 
   @Test
   public void canReadSpaceSeparatedOnelineInput()
-      throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+      throws ClassNotFoundException, IOException, SQLException {
     String infile = "test_data/space_oneline.bedgraph";
     File outfile = new File("test_data/tmp.bedgraph.gz");
     outfile.deleteOnExit();
 
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
-
-    new MakeTabixIndex(infile, outfile, TabixFormat.BED, ' ');
-    BufferedReader br = Utils.reader(outfile.getAbsolutePath());
-    assertEquals("chr1 0 10 1", br.readLine());
+    TabixFormat tabixFormat = new TabixFormat(TabixFormat.ZERO_BASED, 1, 2, 3, '#', 0);
+    new MakeTabixIndex(infile, outfile, tabixFormat, ' ');
+    try (FlexibleTabixReader reader = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+      reader.setColumnSeparator(' ');
+      Iterator iter = reader.query("chr1");
+      assertEquals("chr1 0 10 1", iter.next());
+      assertNull(iter.next());
+    }
   }
 
   @Test
@@ -222,7 +232,7 @@ public class MakeTabixFileTest {
     assertTrue(expectedTbi.exists());
     assertTrue(expectedTbi.length() > 100);
 
-    TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
+    FlexibleTabixReader tbx = new FlexibleTabixReader(outfile.getAbsolutePath());
     Iterator x = tbx.query("1", 1, 10000000);
     assertTrue(x.next().startsWith("1"));
   }
@@ -252,24 +262,24 @@ public class MakeTabixFileTest {
     // Check you can read ok
     this.vcfTester(outfile.getAbsolutePath());
 
-    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+    try (FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
       Iterator qry = tr.query("1:69270-69270");
       assertEquals("1\t69270\t.\tA\tG\t.\tFAIL\tCalledBy=WCMC,BCM,BC", qry.next());
       assertNull(qry.next());
     }
-    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+    try (FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
       Iterator qry = tr.query("1:69270-69428");
       assertEquals("1\t69270\t.\tA\tG\t.\tFAIL\tCalledBy=WCMC,BCM,BC", qry.next());
       assertEquals("1\t69428\t.\tT\tG\t.\tFAIL\tCalledBy=BCM", qry.next());
       assertNull(qry.next());
     }
-    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+    try (FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
       Iterator qry = tr.query("1:69270-69428");
       assertEquals("1\t69270\t.\tA\tG\t.\tFAIL\tCalledBy=WCMC,BCM,BC", qry.next());
       assertEquals("1\t69428\t.\tT\tG\t.\tFAIL\tCalledBy=BCM", qry.next());
       assertNull(qry.next());
     }
-    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+    try (FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
       Iterator qry = tr.query("Y:22942929");
       assertEquals("Y\t22942929\t.\tT\tG\t.\tFAIL\tCalledBy=BI", qry.next());
       assertNull(qry.next());
@@ -287,7 +297,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    new MakeTabixIndex(infile, outfile, TabixFormat.VCF, ',');
+    new MakeTabixIndex(infile, outfile, TabixFormat.VCF);
 
     assertTrue(outfile.exists());
     assertTrue(outfile.length() > 1000);
@@ -295,7 +305,7 @@ public class MakeTabixFileTest {
     // Check you can read ok
     this.vcfTester(outfile.getAbsolutePath());
 
-    try(FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
+    try (FlexibleTabixReader tr = new FlexibleTabixReader(outfile.getAbsolutePath())) {
       Iterator qry = tr.query("1:113054374-113054374");
       assertTrue(qry.next().startsWith("1\t113054374\t.\tCTTG\tC\t23\tPASS"));
       assertNull(qry.next());
@@ -354,7 +364,7 @@ public class MakeTabixFileTest {
     assertTrue(expectedTbi.exists());
     assertTrue(expectedTbi.length() > 80);
 
-    TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
+    FlexibleTabixReader tbx = new FlexibleTabixReader(outfile.getAbsolutePath());
     Iterator x = tbx.query("chr1", 1, 1000000);
     assertTrue(x.next().startsWith("chr1"));
   }
@@ -376,7 +386,7 @@ public class MakeTabixFileTest {
     assertTrue(outfile.length() > 7000000);
     assertTrue(expectedTbi.exists());
 
-    TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
+    FlexibleTabixReader tbx = new FlexibleTabixReader(outfile.getAbsolutePath());
     Iterator x = tbx.query("chr1", 1, 1000000);
     assertTrue(x.next().startsWith("chr1"));
   }
@@ -458,7 +468,7 @@ public class MakeTabixFileTest {
     assertTrue(expectedTbi.exists());
     assertTrue(expectedTbi.length() > 1000);
 
-    TabixReader tbx = new TabixReader(outfile.getAbsolutePath());
+    FlexibleTabixReader tbx = new FlexibleTabixReader(outfile.getAbsolutePath());
     Iterator x = tbx.query("1", 20000000, 30000000);
     assertTrue(x.next().startsWith("1"));
 

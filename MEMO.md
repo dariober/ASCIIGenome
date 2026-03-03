@@ -4,12 +4,12 @@
     * [Code style](#code-style)
     * [Release new version](#release-new-version)
         * [Upload release to github](#upload-release-to-github)
-        * [Upload ASCIIGenome-x.y.z.zip to github](#upload-asciigenome-xyzzip-to-github)
+        * [Upload ASCIIGenome-x.y.z.zip to github](#upload-asciigenome-x.y.z.zip-to-github)
         * [Update brew formula](#update-brew-formula)
     * [Test brew installation](#test-brew-installation)
         * [Update bioconda](#update-bioconda)
     * [Start new development branch](#start-new-development-branch)
-        * [Create a new branch:](#create-a-new-branch)
+        * [Create a new branch:](#create-a-new-branch:)
 * [Install or update gradle](#install-or-update-gradle)
 
 <!-- vim-markdown-toc -->
@@ -27,8 +27,9 @@ Code style
 Reformat code *in place*:
 
 ```
-curl -O -L https://github.com/google/google-java-format/releases/download/v1.22.0/google-java-format-1.22.0-all-deps.jar
-java -jar google-java-format-1.22.0-all-deps.jar -i `find src/ -name '*.java'`
+v=1.34.1
+curl -O -L https://github.com/google/google-java-format/releases/download/v$v/google-java-format-$v-all-deps.jar
+java -jar google-java-format-$v-all-deps.jar -i `find src/ -name '*.java'`
 ```
 
 Release new version

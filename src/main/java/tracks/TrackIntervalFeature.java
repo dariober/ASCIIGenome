@@ -4,7 +4,6 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.FileExtensions;
-import htsjdk.tribble.readers.TabixReader;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -17,13 +16,16 @@ import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
+import utils.CsvFormat;
+import utils.FlexibleTabixReader;
 
 public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> {
 
   private String gtfAttributeForName = null;
   private int bedFieldForName = 3; // 0-based!
   protected int scoreColIdx = -1;
-  private final char columnSeparator = '\t';
+  protected char columnSeparator = '\t';
+  protected CsvFormat csvFormat;
 
   /* C o n s t r u c t o r */
 
@@ -64,13 +66,12 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
     } else { // This means the input is tabix indexed.
       this.setWorkFilename(filename);
-      this.tabixReader = new TabixReader(this.getWorkFilename());
+      this.tabixReader = new FlexibleTabixReader(this.getWorkFilename());
     }
     this.setGc(gc);
   }
 
-  protected TrackIntervalFeature() {
-  }
+  protected TrackIntervalFeature() {}
 
   /* M e t h o d s */
   @Override
@@ -147,8 +148,12 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
       if (line == null) {
         break;
       }
-      IntervalFeature intervalFeature =
-          new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx());
+      IntervalFeature intervalFeature;
+      if (this.csvFormat == null) {
+        intervalFeature = new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx());
+      } else {
+        intervalFeature = new IntervalFeature(line, this.csvFormat);
+      }
       xFeatures.add(intervalFeature);
     }
     this.removeInvisibleFeatures(xFeatures);

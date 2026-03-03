@@ -1,7 +1,5 @@
 package utils;
 
-import tracks.TrackFormat;
-
 public class CsvFormat {
 
   private final int chromColIndex;
@@ -13,6 +11,7 @@ public class CsvFormat {
   private final char metaCharacter;
   private final char columnSeparator;
 
+  /** NB: Column indexes are 0-based! */
   public CsvFormat(
       int chromColIndex,
       int startColIndex,
@@ -67,5 +66,4 @@ public class CsvFormat {
   public char getColumnSeparator() {
     return columnSeparator;
   }
-
 }

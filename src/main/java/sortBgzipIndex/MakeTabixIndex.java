@@ -45,8 +45,13 @@ public class MakeTabixIndex {
     this.tabixFormat = tabixFormat;
     this.columnSeparator = columnSeparator;
 
-    if (columnSeparator != '\t' && (tabixFormat == TabixFormat.BED || tabixFormat == TabixFormat.GFF || tabixFormat == TabixFormat.SAM || tabixFormat == TabixFormat.VCF)) {
-      throw new IOException("This tabix format must have tab delimter. Got:'" + this.columnSeparator + "'");
+    if (columnSeparator != '\t'
+        && (tabixFormat == TabixFormat.BED
+            || tabixFormat == TabixFormat.GFF
+            || tabixFormat == TabixFormat.SAM
+            || tabixFormat == TabixFormat.VCF)) {
+      throw new IOException(
+          "This tabix format must have tab delimter. Got:'" + this.columnSeparator + "'");
     }
 
     File tmp = Utils.createTempFile(".asciigenome", "makeTabixIndex.tmp.gz", true);
@@ -81,8 +86,7 @@ public class MakeTabixIndex {
     Files.move(Paths.get(tmpTbi.getAbsolutePath()), Paths.get(bgzfOutTbi.getAbsolutePath()));
   }
 
-  private void blockCompressAndIndex(String intab, File bgzfOut)
-      throws IOException {
+  private void blockCompressAndIndex(String intab, File bgzfOut) throws IOException {
     BlockCompressedOutputStream writer = new BlockCompressedOutputStream(bgzfOut);
     long filePosition = writer.getFilePointer();
 
@@ -131,8 +135,7 @@ public class MakeTabixIndex {
     List<String> parts = Splitter.on(this.columnSeparator).splitToList(line);
     int start = Integer.parseInt(parts.get(tabixFormat.startPositionColumn - 1));
     GenericFeature feature =
-            new GenericFeature(
-                    parts.get(tabixFormat.sequenceColumn - 1), start, start + 1);
+        new GenericFeature(parts.get(tabixFormat.sequenceColumn - 1), start, start + 1);
     indexCreator.addFeature(feature, filePosition);
   }
 

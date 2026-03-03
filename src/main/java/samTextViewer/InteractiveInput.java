@@ -27,7 +27,6 @@ import org.biojava.nbio.core.sequence.transcription.Frame;
 import session.Session;
 import session.SessionHandler;
 import tracks.AbstractTrack;
-import tracks.TrackFormat;
 import utils.CsvFormat;
 import utils.Tokenizer;
 
@@ -362,7 +361,13 @@ public class InteractiveInput {
           proc.getTrackSet().setNameAttribute(cmdTokens);
         } else if (cmdTokens.get(0).equals("open") || cmdTokens.get(0).equals("addTracks")) {
           cmdTokens.remove(0);
-          this.addTracks(cmdTokens, proc);
+          try {
+            this.addTracks(cmdTokens, proc);
+          } catch (Exception e) {
+            System.err.println(Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
         } else if (cmdTokens.get(0).equals("reload")) {
           proc.getTrackSet().reload(cmdTokens);
         } else if (cmdTokens.get(0).equals("dropTracks")) {
@@ -1483,23 +1488,40 @@ public class InteractiveInput {
         if (i <= 0) {
           return false;
         }
-      } catch(NumberFormatException e) {
+      } catch (NumberFormatException e) {
         return false;
       }
     }
     return true;
   }
 
-  private CsvFormat prepareCsvParser(String fn, List<String> cmdTokens)
+  private CsvFormat prepareCsvFormat(String fn, List<String> cmdTokens)
       throws InvalidCommandLineException {
 
-    TrackFormat trackFormat = Utils.getFileTypeFromName(fn);
+    String chromColNameOrIndex = Utils.getArgForParam(cmdTokens, "-c", null);
+    String startColNameOrIndex = Utils.getArgForParam(cmdTokens, "-s", null);
+    String endColNameOrIndex = Utils.getArgForParam(cmdTokens, "-e", null);
+    String scoreColNameOrIndex = Utils.getArgForParam(cmdTokens, "-score", null);
 
-    Map<String, String> columns = new HashMap<>();
-    columns.put("chromColNameOrIndex", Utils.getArgForParam(cmdTokens, "-c", null));
-    columns.put("startColNameOrIndex", Utils.getArgForParam(cmdTokens, "-s", null));
-    columns.put("endColNameOrIndex", Utils.getArgForParam(cmdTokens, "-e", null));
-    columns.put("scoreColNameOrIndex", Utils.getArgForParam(cmdTokens, "-score", null));
+    String[] indexes = {
+      chromColNameOrIndex, startColNameOrIndex, endColNameOrIndex, scoreColNameOrIndex
+    };
+
+    if (Arrays.stream(indexes).allMatch(x -> x == null)
+        && !cmdTokens.contains("-z")
+        && !cmdTokens.contains("-n")
+        && !cmdTokens.contains("-m")) {
+      // There are no options related to csv
+      return null;
+    }
+
+    if (chromColNameOrIndex == null || startColNameOrIndex == null) {
+      throw new RuntimeException(
+          "\n"
+              + "For reading generic files, please set at least the column names or indexes for"
+              + " chromosome (-c) and start position (-s)");
+    }
+
     Boolean isZeroBased = Utils.argListContainsFlag(cmdTokens, "-z");
     int numHeaderLinesToSkip = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-n", "0"));
     String meta = Utils.getArgForParam(cmdTokens, "-m", "#");
@@ -1509,7 +1531,8 @@ public class InteractiveInput {
     } else if (meta.length() == 1) {
       metaCharacter = meta.charAt(0);
     } else {
-      throw new RuntimeException("Comment character must be a single character or an empty string. Got: '" + meta + "'");
+      throw new RuntimeException(
+          "Comment character must be a single character or an empty string. Got: '" + meta + "'");
     }
     String sep = Utils.getArgForParam(cmdTokens, "-sep", "\0");
     char columnSeparator;
@@ -1518,15 +1541,20 @@ public class InteractiveInput {
     } else if (sep.length() == 1) {
       columnSeparator = meta.charAt(0);
     } else {
-      throw new RuntimeException("Column separator must be a single character or, for automatic detection, an empty string. Got: '" + meta + "'");
+      throw new RuntimeException(
+          "Column separator must be a single character or, for automatic detection, an empty"
+              + " string. Got: '"
+              + meta
+              + "'");
     }
 
-    if (!this.allColumnIndexes(columns.values().stream().toList())) {
-      // At least one of the columns is not an integer. So we assume it is a column name and files have a header line.
+    if (!this.allColumnIndexes(Arrays.asList(indexes))) {
+      // At least one of the columns is not an integer. So we assume it is a column name and files
+      // have a header line.
       // Get the header then
-      try(BufferedReader br = Utils.reader(fn)) {
+      try (BufferedReader br = Utils.reader(fn)) {
         int toSkip = numHeaderLinesToSkip;
-        while(toSkip > 0) {
+        while (toSkip > 0) {
           String line = br.readLine();
           if (line.startsWith(metaCharacter + "")) {
             continue;
@@ -1545,10 +1573,10 @@ public class InteractiveInput {
       throw new NotImplementedException("Column names not supported yet");
     }
     return new CsvFormat(
-        Integer.parseInt(columns.get("chromColNameOrIndex")) - 1,
-        Integer.parseInt(columns.get("startColNameOrIndex")) - 1,
-        Integer.parseInt(columns.get("endColNameOrIndex")) - 1,
-        Integer.parseInt(columns.get("scoreNameOrIndex")) - 1,
+        Integer.parseInt(chromColNameOrIndex) - 1,
+        Integer.parseInt(startColNameOrIndex) - 1,
+        Integer.parseInt(endColNameOrIndex) - 1,
+        Integer.parseInt(scoreColNameOrIndex) - 1,
         isZeroBased,
         numHeaderLinesToSkip,
         metaCharacter,
@@ -1564,18 +1592,18 @@ public class InteractiveInput {
     }
 
     if (globbed.isEmpty()) {
-      String msg = Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
-      System.err.println(msg);
-      this.interactiveInputExitCode = ExitCode.ERROR;
-      return;
+      throw new RuntimeException(cmdTokens + ": No file found.");
     }
+
+    CsvFormat csvFormat = this.prepareCsvFormat(globbed.get(0), cmdTokens);
 
     for (String sourceName : globbed) {
       String msg = Utils.padEndMultiLine("Adding: " + sourceName, proc.getWindowSize());
       System.err.println(msg);
       try {
         proc.getTrackSet()
-            .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
+            .addTrackFromSource(
+                sourceName, proc.getGenomicCoordsHistory().current(), null, csvFormat);
       } catch (Exception e) {
         try {
           // It may be that you are in position that doesn't exist in the sequence
