@@ -35,6 +35,20 @@ public class MakeTabixFileTest {
   }
 
   @Test
+  public void testSpeed() throws SQLException, IOException, ClassNotFoundException {
+    String infile = "/home/dario/Downloads/schistosoma_mansoni.PRJEA36577.WBPS16.annotations.gff3";
+    File outfile = new File("tmp.gff.gz");
+    // outfile.deleteOnExit();
+
+    File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
+    // expectedTbi.deleteOnExit();
+    long t0 = System.currentTimeMillis();
+    new MakeTabixIndex(infile, outfile, TabixFormat.GFF, '\t');
+    long t1 = System.currentTimeMillis();
+    System.out.println("DONE " + (t1 -t0)/1000.0);
+  }
+
+  @Test
   public void canIndexGtf()
       throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
     String infile = "test_data/hg19_genes.gtf.gz";

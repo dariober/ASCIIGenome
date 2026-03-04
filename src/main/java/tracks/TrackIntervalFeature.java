@@ -392,8 +392,4 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     transcript.setIdeogram(ideogram, false);
     return transcript;
   }
-
-  protected List<IntervalFeature> getFeatureList() {
-    return this.featureList;
-  }
 }

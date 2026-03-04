@@ -121,9 +121,10 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
-    this.featureList =
-        this.getFeaturesInInterval(
-            this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+
+    List<VCFFeature> newFeatures = this.getFeaturesInInterval(
+        this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+    this.setFeatureList(newFeatures);
     for (VCFFeature ift : this.getFeatureList()) {
       ift.mapToScreen(this.getGc().getMapping());
     }
@@ -239,8 +240,8 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     return StringUtils.join(printable, "\n").replaceAll("\n$", "");
   }
 
-  @Override
-  public void setFeatureName(String gtfAttributeForName) {}
+//  @Override
+//  public void setFeatureName(String gtfAttributeForName) {}
 
   @Override
   protected List<String> getRecordsAsStrings() {
@@ -280,10 +281,6 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
       tsv.add(tabLine);
     }
     return tsv;
-  }
-
-  protected List<VCFFeature> getFeatureList() {
-    return this.featureList;
   }
 
   @Override

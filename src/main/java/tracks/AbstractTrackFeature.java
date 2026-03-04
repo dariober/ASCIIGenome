@@ -6,6 +6,7 @@ import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.FileExtensions;
+import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFReader;
 import java.io.File;
@@ -19,11 +20,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import sortBgzipIndex.MakeTabixIndex;
+import utils.CsvFormat;
 import utils.FlexibleTabixReader;
 
 public abstract class AbstractTrackFeature<T extends IntervalFeature> extends AbstractTrack {
   /** For GTF/GFF data: Use this attribute to get the feature names */
   protected FlexibleTabixReader tabixReader; // Leave *protected* for TrackBookmark to work
+  protected CsvFormat csvFormat;
 
   protected BBFileReader bigBedReader;
   protected VCFReader vcfReader;
@@ -33,9 +37,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
   protected abstract T createFeature(String line) throws InvalidGenomicCoordsException;
 
   protected abstract Map<String, List<T>> groupByGFFAttribute();
-
   protected abstract Map<String, List<T>> groupByGTFAttribute();
-
   protected abstract T collapseGFFTranscript(List<T> features, List<Double> mapToScreen)
       throws InvalidGenomicCoordsException, InvalidColourException;
 
@@ -60,6 +62,39 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     for (T ift : this.featureList) {
       ift.mapToScreen(this.getGc().getMapping());
     }
+  }
+
+  @Override
+  public CsvFormat getCsvFormat() {
+    return this.csvFormat;
+  }
+
+  protected void sortAndIndex(String filename)
+      throws SQLException, IOException, ClassNotFoundException {
+    String suffix = new File(filename).getName();
+    if (!suffix.endsWith(".gz")) {
+      suffix += ".gz";
+    }
+    String tmpWorkFile =
+        Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
+    new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
+    this.setWorkFilename(tmpWorkFile);
+
+    TabixFormat tabixFormat;
+    if (csvFormat == null) {
+      tabixFormat = Utils.trackFormatToTabixFormat(this.getTrackFormat());
+    } else {
+      tabixFormat =
+          new TabixFormat(
+              csvFormat.isZeroBased() ? TabixFormat.ZERO_BASED : TabixFormat.GENERIC_FLAGS,
+              csvFormat.getChromColIndex() + 1,
+              csvFormat.getStartColIndex() + 1,
+              csvFormat.getEndColIndex() + 1,
+              csvFormat.getMetaCharacter(),
+              csvFormat.getNumHeaderLinesToSkip());
+    }
+    new MakeTabixIndex(
+        filename, new File(this.getWorkFilename()), tabixFormat, this.getColumnSeparator());
   }
 
   protected List<T> getFeaturesInInterval(String chrom, int from, int to)
@@ -692,7 +727,9 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     return chromsStartingAt;
   }
 
-  protected abstract List<T> getFeatureList();
+  protected List<T> getFeatureList() {
+    return this.featureList;
+  };
 
   protected void setFeatureList(List<T> featureList) {
     this.featureList = featureList;

@@ -67,7 +67,6 @@ public class TrackBedgraphTest {
     GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
 
     TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
-    System.out.println(tb.getTrackFormat());
     assertFalse(tb.getChromosomeNames().isEmpty());
     assertEquals("chr1", tb.getChromosomeNames().get(0));
 
@@ -139,8 +138,14 @@ public class TrackBedgraphTest {
     tb = new TrackBedgraph(url, gc);
     assertEquals(1, tb.getScreenScores().get(0), 0.0001);
 
-    tb.setScoreColIdx(20);
-    assertEquals(Float.NaN, tb.getScreenScores().get(0), 0.0001);
+    boolean pass = false;
+    try {
+      tb.setScoreColIdx(20);
+    } catch (RuntimeException e) {
+      assertTrue(e.getMessage().contains("Invalid index"));
+      pass= true;
+    }
+    assertTrue(pass);
   }
 
   @Test
@@ -250,8 +255,8 @@ public class TrackBedgraphTest {
     tb.setAwk("'$4 > 0");
     String after = tb.printToScreen();
 
-    List<IntervalFeature> subset = tb.getFeaturesInInterval("chr1", 1, 500000000);
-    for (IntervalFeature s : subset) {
+    List<QuantitativeFeature> subset = tb.getFeaturesInInterval("chr1", 1, 500000000);
+    for (QuantitativeFeature s : subset) {
       assertTrue(s.getScore() > 0);
     }
 

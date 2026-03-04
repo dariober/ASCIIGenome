@@ -341,10 +341,13 @@ public abstract class AbstractTrack {
 
   //	public abstract String getFeatureName();
 
-  public abstract void setFeatureName(String gtfAttributeForName);
-
   public PrintRawLine getPrintMode() {
     return printMode;
+  }
+
+
+  public void setFeatureName(String nameFieldOrAttribute) {
+    //
   }
 
   public void setPrintMode(PrintRawLine printMode) {

@@ -22,7 +22,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.sqlite.SQLiteException;
 import samTextViewer.Utils;
 
@@ -159,6 +164,7 @@ public class MakeTabixIndex {
     String line;
     int headerLinesToSkip = this.tabixFormat.numHeaderLinesToSkip;
     boolean dataLinesfound = false;
+    int n = 0;
     while ((line = br.readLine()) != null) {
       if (line.trim().startsWith("##FASTA")
           && dataLinesfound
@@ -182,13 +188,18 @@ public class MakeTabixIndex {
       stmtInsert.setString(1, tabs.get(tabixFormat.sequenceColumn - 1));
       stmtInsert.setInt(2, Integer.parseInt(tabs.get(tabixFormat.startPositionColumn - 1)));
       stmtInsert.setString(3, line.replaceAll("\n$", ""));
-      stmtInsert.executeUpdate();
+      stmtInsert.addBatch();
+      if (n % 10000 == 0) {
+        stmtInsert.executeBatch();
+      }
+      n += 1;
       dataLinesfound = true;
     }
+    stmtInsert.executeBatch();
     stmtInsert.close();
     br.close();
 
-    PreparedStatement stmtSelect = conn.prepareStatement("SELECT * FROM data ORDER BY contig, pos");
+    PreparedStatement stmtSelect = conn.prepareStatement("SELECT line FROM data ORDER BY contig, pos");
 
     ResultSet rs = stmtSelect.executeQuery();
 
@@ -202,10 +213,107 @@ public class MakeTabixIndex {
     Files.delete(Paths.get(this.sqliteFile.getAbsolutePath()));
   }
 
+  private Stream<String> sortByChromThenPos(String unsorted, String sorted)
+      throws SQLException, IOException, ClassNotFoundException {
+
+    Connection conn;
+    try {
+      this.sqliteFile = Utils.createTempFile(".asciigenome.", ".tmp.sqlite", true);
+      conn = this.createSQLiteDb("data");
+    } catch (SQLiteException e) {
+      this.sqliteFile = File.createTempFile(".asciigenome.", ".tmp.sqlite");
+      this.sqliteFile.deleteOnExit();
+      conn = this.createSQLiteDb("data");
+    }
+    PreparedStatement stmtInsert =
+        conn.prepareStatement("INSERT INTO data (contig, pos, line) VALUES (?, ?, ?)");
+
+    BufferedReader br = Utils.reader(unsorted);
+    BufferedWriter wr = new BufferedWriter(new FileWriter(sorted));
+    String line;
+    int headerLinesToSkip = this.tabixFormat.numHeaderLinesToSkip;
+    boolean dataLinesfound = false;
+    int n = 0;
+    while ((line = br.readLine()) != null) {
+      if (line.trim().startsWith("##FASTA")
+          && dataLinesfound
+          && this.tabixFormat.equals(TabixFormat.GFF)) {
+        break;
+      }
+      if (line.trim().startsWith(String.valueOf(this.tabixFormat.metaCharacter))) {
+        wr.write(line + "\n");
+        continue;
+      }
+      if (headerLinesToSkip > 0) {
+        wr.write(line + "\n");
+        headerLinesToSkip -= 1;
+        continue;
+      }
+      if (line.trim().isEmpty()) {
+        continue;
+      }
+
+      List<String> tabs = Splitter.on(this.columnSeparator).splitToList(line);
+      stmtInsert.setString(1, tabs.get(tabixFormat.sequenceColumn - 1));
+      stmtInsert.setInt(2, Integer.parseInt(tabs.get(tabixFormat.startPositionColumn - 1)));
+      stmtInsert.setString(3, line.replaceAll("\n$", ""));
+      stmtInsert.addBatch();
+      if (n % 10000 == 0) {
+        stmtInsert.executeBatch();
+      }
+      n += 1;
+      dataLinesfound = true;
+    }
+    stmtInsert.executeBatch();
+    stmtInsert.close();
+    br.close();
+
+    PreparedStatement stmtSelect = conn.prepareStatement("SELECT line FROM data ORDER BY contig, pos");
+
+    ResultSet rs = stmtSelect.executeQuery();
+    Iterator<String> iterator = new Iterator<>() {
+      @Override
+      public boolean hasNext() {
+        try {
+          return rs.next();
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
+        }
+      }
+
+      @Override
+      public String next() {
+        try {
+          return rs.getString("line");
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
+
+    Spliterator<String> spliterator =
+        Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
+
+    Stream<String> stream = StreamSupport.stream(spliterator, false);
+    Connection finalConn = conn;
+    return stream.onClose(() -> {
+      try {
+        rs.close();
+        stmtSelect.close();
+        finalConn.commit();
+        finalConn.close();
+        Files.delete(Paths.get(this.sqliteFile.getAbsolutePath()));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    });
+  }
+
   private Connection createSQLiteDb(String tablename) throws SQLException, ClassNotFoundException {
     Class.forName("org.sqlite.JDBC");
     Connection conn = DriverManager.getConnection("jdbc:sqlite:" + this.sqliteFile);
     Statement stmt = conn.createStatement();
+
     String sql =
         "CREATE TABLE "
             + tablename
@@ -220,6 +328,10 @@ public class MakeTabixIndex {
 
     // http://stackoverflow.com/questions/1711631/improve-insert-per-second-performance-of-sqlite
     stmt.execute("PRAGMA journal_mode = OFF"); // This is not to leave tmp journal file o disk
+    stmt.execute("PRAGMA synchronous = OFF");
+    stmt.execute("PRAGMA temp_store = MEMORY");
+    stmt.execute("PRAGMA locking_mode = EXCLUSIVE");
+    stmt.execute("PRAGMA cache_size = -200000");  // negative means KB of ram
     conn.setAutoCommit(false); // This is important: By default each insert is committed
     // as it is executed, which is slow. Let's commit in bulk at the end instead.
     stmt.close();

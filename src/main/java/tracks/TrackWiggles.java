@@ -392,7 +392,4 @@ public class TrackWiggles extends AbstractTrack {
           SQLException {
     this.update();
   }
-
-  @Override
-  public void setFeatureName(String gtfAttributeForName) {}
 }

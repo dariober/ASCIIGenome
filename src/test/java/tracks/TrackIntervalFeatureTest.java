@@ -43,6 +43,19 @@ public class TrackIntervalFeatureTest {
   }
 
   @Test
+  public void tmp()
+      throws ClassNotFoundException,
+      IOException,
+      InvalidRecordException,
+      InvalidGenomicCoordsException,
+      SQLException,
+      InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
+    TrackIntervalFeature tb = new TrackIntervalFeature("test_data/test.bedGraph", gc);
+  }
+
+    @Test
   public void canReproduceTrackIntervalFeatureWithCsv()
       throws ClassNotFoundException,
           IOException,

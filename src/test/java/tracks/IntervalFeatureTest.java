@@ -37,8 +37,8 @@ public class IntervalFeatureTest {
   public void behaviourOfIsNumber() {
     // NB: NumberUtils.isCreatable comes from samtools even if it is imported via apache commons
     Package pkg = NumberUtils.class.getPackage();
-    System.out.println(pkg.getImplementationVersion() + " | " + pkg.getImplementationVendor());
-    System.out.println(NumberUtils.class.getProtectionDomain().getCodeSource().getLocation());
+    // System.out.println(pkg.getImplementationVersion() + " | " + pkg.getImplementationVendor());
+    // System.out.println(NumberUtils.class.getProtectionDomain().getCodeSource().getLocation());
 
     // Valid numbers
     assertTrue(NumberUtils.isCreatable("1.1"));
@@ -450,6 +450,5 @@ public class IntervalFeatureTest {
     csv = new CsvFormat(0, 1, 2, -1, true, 0, '#', '\t');
     IntervalFeature asCsv = new IntervalFeature(line, csv);
     assertTrue(asCsv.equalCoordsUnstranded(asBed));
-    System.err.println(asCsv.equalCoordsUnstranded(asBed));
   }
 }

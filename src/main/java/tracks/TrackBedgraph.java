@@ -11,16 +11,18 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import utils.CsvFormat;
 
-public class TrackBedgraph extends TrackIntervalFeature {
+public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
 
   private DataTransformation dataTransformation = DataTransformation.IDENTITY;
   private DataAggregationMethod dataAggregationMethod = DataAggregationMethod.MEAN;
+  protected int scoreColIdx = -1;
 
   public TrackBedgraph(String filename, GenomicCoords gc)
       throws SQLException,
@@ -37,8 +39,12 @@ public class TrackBedgraph extends TrackIntervalFeature {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException {
-    this.csvFormat = csvFormat;
-    this.scoreColIdx = csvFormat == null ? 4 : csvFormat.getScoreColIndex() + 1;
+    if (csvFormat == null) {
+      this.csvFormat = new CsvFormat(0, 1, 2, 3, true, 0, '#', '\t');
+    } else {
+      this.csvFormat = csvFormat;
+    }
+    this.scoreColIdx = this.csvFormat.getScoreColIndex() + 1;
 
     this.setFilename(filename);
     this.setTrackFormat(TrackFormat.BEDGRAPH);
@@ -49,13 +55,38 @@ public class TrackBedgraph extends TrackIntervalFeature {
       this.sortAndIndex(filename);
     }
     this.tabixReader = this.getTabixReader(this.getWorkFilename());
-    this.tabixReader.setColumnSeparator(csvFormat == null ? '\t' : csvFormat.getColumnSeparator());
+    this.tabixReader.setColumnSeparator(this.csvFormat.getColumnSeparator());
     this.setGc(gc);
   }
 
   public TrackBedgraph() {}
 
   /* ----------- METHODS ----------- */
+
+  @Override
+  protected List<QuantitativeFeature> getFeaturesInInterval(String chrom, int from, int to)
+      throws IOException, InvalidGenomicCoordsException {
+    List<QuantitativeFeature> xFeatures = new ArrayList<>();
+    TabixBigBedIterator qry = this.getReader().query(chrom, from - 1, to);
+    while (true) {
+      String line = qry.next();
+      if (line == null) {
+        break;
+      }
+      xFeatures.add(new QuantitativeFeature(line, this.csvFormat));
+    }
+    this.removeInvisibleFeatures(xFeatures);
+    return xFeatures;
+  }
+
+  protected int getScoreColIdx() {
+    return this.scoreColIdx;
+  }
+
+  @Override
+  protected QuantitativeFeature createFeature(String line) throws InvalidGenomicCoordsException {
+    return new QuantitativeFeature(line, this.getCsvFormat());
+  }
 
   /** NB: index here is 1-based
    * */
@@ -107,7 +138,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
   }
 
   /** Get values for bedgraph */
-  private void bedGraphToScores(List<IntervalFeature> intervalFeatureList)
+  private void bedGraphToScores(List<QuantitativeFeature> quantitativeFeatureList)
       throws IOException, InvalidGenomicCoordsException {
 
     List<ScreenWiggleLocusInfo> screenWigLocInfoList = new ArrayList<ScreenWiggleLocusInfo>();
@@ -115,7 +146,7 @@ public class TrackBedgraph extends TrackIntervalFeature {
       screenWigLocInfoList.add(new ScreenWiggleLocusInfo());
     }
 
-    for (IntervalFeature ift : intervalFeatureList) {
+    for (QuantitativeFeature ift : quantitativeFeatureList) {
       ift.mapToScreen(this.getGc().getMapping());
       for (int i = ift.getScreenFrom(); i <= ift.getScreenTo(); i++) {
         screenWigLocInfoList.get(i).increment(ift.getScore(), this.getDataTransformation());
@@ -151,9 +182,9 @@ public class TrackBedgraph extends TrackIntervalFeature {
           ClassNotFoundException,
           SQLException {
 
-    this.setFeatureList(
-        this.getFeaturesInInterval(
-            this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo()));
+    List<QuantitativeFeature> newFeatures = this.getFeaturesInInterval(
+        this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+    this.setFeatureList(newFeatures);
     this.setDataTransformation(this.dataTransformation);
     this.bedGraphToScores(this.getFeatureList());
   }
@@ -221,4 +252,22 @@ public class TrackBedgraph extends TrackIntervalFeature {
 
     return this.formatTitle(xtitle) + "\n";
   }
+
+  // This is a bad but for now let's get on with it
+  // >---->
+  @Override
+  protected Map<String, List<QuantitativeFeature>> groupByGFFAttribute() {
+    return Map.of();
+  }
+
+  @Override
+  protected Map<String, List<QuantitativeFeature>> groupByGTFAttribute() {
+    return Map.of();
+  }
+
+  @Override
+  protected QuantitativeFeature collapseGFFTranscript(List<QuantitativeFeature> features, List<Double> mapToScreen) {
+    return null;
+  }
+  // <----<
 }
