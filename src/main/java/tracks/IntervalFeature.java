@@ -105,7 +105,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
     this.from += csv.isZeroBased() ? 1 : 0;
     this.to =
         csv.getEndColIndex() > 0 ? Integer.parseInt(row.get(csv.getEndColIndex())) : this.from;
-    if (csv.getScoreColIndex() > 0) {
+    if (csv.getScoreColIndex() >= 0) {
       this.score = Double.parseDouble(row.get(csv.getScoreColIndex()));
       this.trackFormat = TrackFormat.BEDGRAPH;
     } else {
@@ -679,10 +679,10 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
     }
   }
 
-  protected void setBedFieldName(int i) throws InvalidGenomicCoordsException {
-    this.bedFieldName = i;
-    this.intervalFeatureFromBedLine(this.getRaw(), this.scoreColIdx);
-  }
+  //  protected void setBedFieldName(int i) throws InvalidGenomicCoordsException {
+  //    this.bedFieldName = i;
+  //    this.intervalFeatureFromBedLine(this.getRaw(), this.scoreColIdx);
+  //  }
 
   public void setChrom(String chrom) {
     this.chrom = chrom;

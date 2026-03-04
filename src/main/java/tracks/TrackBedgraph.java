@@ -7,9 +7,6 @@ import com.google.common.base.Joiner;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import htsjdk.samtools.util.FileExtensions;
-import htsjdk.tribble.index.tabix.TabixFormat;
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -18,7 +15,6 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
-import sortBgzipIndex.MakeTabixIndex;
 import utils.CsvFormat;
 
 public class TrackBedgraph extends TrackIntervalFeature {
@@ -42,43 +38,18 @@ public class TrackBedgraph extends TrackIntervalFeature {
           InvalidRecordException,
           SQLException {
     this.csvFormat = csvFormat;
-    this.scoreColIdx = csvFormat == null ? 4 : csvFormat.getScoreColIndex();
-    this.columnSeparator = csvFormat == null ? '\t' : csvFormat.getColumnSeparator();
+    this.scoreColIdx = csvFormat == null ? 4 : csvFormat.getScoreColIndex() + 1;
+
     this.setFilename(filename);
-    this.setTrackFormat(Utils.getFileTypeFromName(filename));
+    this.setTrackFormat(TrackFormat.BEDGRAPH);
 
-    if (!Utils.hasTabixIndex(filename)) {
-      String suffix = new File(filename).getName();
-      if (!suffix.endsWith(".gz")) {
-        suffix += ".gz";
-      }
-      String tmpWorkFile =
-          Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
-      new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
-      this.setWorkFilename(tmpWorkFile);
-
-      TabixFormat tabixFormat;
-      if (csvFormat == null) {
-        tabixFormat = TabixFormat.BED;
-      } else {
-        tabixFormat =
-            new TabixFormat(
-                csvFormat.isZeroBased() ? TabixFormat.ZERO_BASED : TabixFormat.GENERIC_FLAGS,
-                csvFormat.getChromColIndex() + 1,
-                csvFormat.getStartColIndex() + 1,
-                csvFormat.getEndColIndex() + 1,
-                csvFormat.getMetaCharacter(),
-                csvFormat.getNumHeaderLinesToSkip());
-      }
-
-      new MakeTabixIndex(
-          filename, new File(this.getWorkFilename()), tabixFormat, this.getColumnSeparator());
-
-    } else { // This means the input is tabix indexed.
+    if (Utils.hasTabixIndex(filename)) {
       this.setWorkFilename(filename);
+    } else {
+      this.sortAndIndex(filename);
     }
     this.tabixReader = this.getTabixReader(this.getWorkFilename());
-    this.tabixReader.setColumnSeparator(this.getColumnSeparator());
+    this.tabixReader.setColumnSeparator(csvFormat == null ? '\t' : csvFormat.getColumnSeparator());
     this.setGc(gc);
   }
 
@@ -86,6 +57,8 @@ public class TrackBedgraph extends TrackIntervalFeature {
 
   /* ----------- METHODS ----------- */
 
+  /** NB: index here is 1-based
+   * */
   protected void setScoreColIdx(int scoreColIdx)
       throws ClassNotFoundException,
           IOException,
@@ -94,6 +67,9 @@ public class TrackBedgraph extends TrackIntervalFeature {
           SQLException {
     if (this.scoreColIdx != scoreColIdx) {
       this.scoreColIdx = scoreColIdx;
+      if (this.csvFormat != null) {
+        this.csvFormat.setScoreColIndex(scoreColIdx - 1); // CsvFormat is 0-based
+      }
       this.update();
     }
   }

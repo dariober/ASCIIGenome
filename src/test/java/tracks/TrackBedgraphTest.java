@@ -44,14 +44,16 @@ public class TrackBedgraphTest {
           IOException,
           InvalidRecordException,
           InvalidGenomicCoordsException,
-          SQLException {
+          SQLException,
+          InvalidColourException {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-20", 80, null, null);
     TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
 
-    CsvFormat csv = new CsvFormat(0, 1, 2, 3, true, 0, '#', '\t');
-    TrackBedgraph tcsv = new TrackBedgraph("test_data/test.bedGraph", gc, csv);
+    CsvFormat csv = new CsvFormat(2, 0, 1, 3, true, 0, '#', ',');
+    TrackBedgraph tcsv = new TrackBedgraph("test_data/test.bedGraph.csv", gc, csv);
     assertEquals(tb.getFeatureList().toString(), tcsv.getFeatureList().toString());
+    assertEquals(tb.printToScreen(), tcsv.printToScreen());
   }
 
   @Test
@@ -88,10 +90,20 @@ public class TrackBedgraphTest {
 
     GenomicCoords gc = new GenomicCoords("chr7:5566777-5566786", 80, null, null);
 
+    // MEMO: Indexes here are 0-based
     CsvFormat csv = new CsvFormat(4, 0, 1, 2, true, 1, '#', ',');
     TrackBedgraph tb = new TrackBedgraph("test_data/generic.csv", gc, csv);
     tb.setNoFormat(true);
+
     assertTrue(tb.printToScreen().contains("_::::::::"));
+    assertTrue(tb.getTitle().contains("[1.0 9.0]"));
+    assertEquals(TrackFormat.BEDGRAPH, tb.getTrackFormat());
+
+    tb.setScoreColIdx(6);
+    assertTrue(tb.getTitle().contains("[-99.0 -91.0]"));
+
+    tb.setScoreColIdx(1);
+    assertTrue(tb.getTitle().contains("[5566777.0 5566785.0]"));
   }
 
   @Test
@@ -112,7 +124,7 @@ public class TrackBedgraphTest {
   }
 
   @Test
-  public void canGetDataColumnIndexForBedGraph()
+  public void canSetDataColumnForBedGraph()
       throws IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,

@@ -1,9 +1,11 @@
 package tracks;
 
+import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.FileExtensions;
+import htsjdk.tribble.index.tabix.TabixFormat;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -24,12 +26,20 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
   private String gtfAttributeForName = null;
   private int bedFieldForName = 3; // 0-based!
   protected int scoreColIdx = -1;
-  protected char columnSeparator = '\t';
   protected CsvFormat csvFormat;
 
   /* C o n s t r u c t o r */
 
   public TrackIntervalFeature(final String filename, GenomicCoords gc)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    this(filename, gc, null);
+  }
+
+  public TrackIntervalFeature(final String filename, GenomicCoords gc, CsvFormat csvFormat)
       throws IOException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
@@ -38,6 +48,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
     this.setFilename(filename);
     this.setTrackFormat(Utils.getFileTypeFromName(filename));
+    this.csvFormat = csvFormat;
 
     if (this.getTrackFormat().equals(TrackFormat.BIGBED)) {
       this.bigBedReader = new BBFileReader(filename); // or url for remote access.
@@ -45,35 +56,52 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
         throw new RuntimeException("File " + filename + " is not bigBed.");
       }
       this.setWorkFilename(filename);
-    } else if (!Utils.hasTabixIndex(filename)) {
-      // Tabix index not found for this file. Sort and index input to tmp.
-      String suffix = new File(filename).getName();
-      if (!suffix.endsWith(".gz")) {
-        suffix += ".gz";
-      }
-      String tmpWorkFile =
-          Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
-      new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
-      this.setWorkFilename(tmpWorkFile);
-
-      new MakeTabixIndex(
-          filename,
-          new File(this.getWorkFilename()),
-          Utils.trackFormatToTabixFormat(this.getTrackFormat()),
-          this.getColumnSeparator());
-
-      this.tabixReader = this.getTabixReader(this.getWorkFilename());
-
-    } else { // This means the input is tabix indexed.
-      this.setWorkFilename(filename);
-      this.tabixReader = new FlexibleTabixReader(this.getWorkFilename());
+      this.setGc(gc);
+      return;
     }
+
+    if (Utils.hasTabixIndex(filename)) {
+      this.setWorkFilename(filename);
+    } else {
+      this.sortAndIndex(filename);
+    }
+    this.tabixReader = new FlexibleTabixReader(this.getWorkFilename());
+    this.tabixReader.setColumnSeparator(csvFormat == null ? '\t' : csvFormat.getColumnSeparator());
     this.setGc(gc);
   }
 
   protected TrackIntervalFeature() {}
 
   /* M e t h o d s */
+
+  protected void sortAndIndex(String filename)
+      throws SQLException, IOException, ClassNotFoundException {
+    String suffix = new File(filename).getName();
+    if (!suffix.endsWith(".gz")) {
+      suffix += ".gz";
+    }
+    String tmpWorkFile =
+        Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
+    new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
+    this.setWorkFilename(tmpWorkFile);
+
+    TabixFormat tabixFormat;
+    if (csvFormat == null) {
+      tabixFormat = Utils.trackFormatToTabixFormat(this.getTrackFormat());
+    } else {
+      tabixFormat =
+          new TabixFormat(
+              csvFormat.isZeroBased() ? TabixFormat.ZERO_BASED : TabixFormat.GENERIC_FLAGS,
+              csvFormat.getChromColIndex() + 1,
+              csvFormat.getStartColIndex() + 1,
+              csvFormat.getEndColIndex() + 1,
+              csvFormat.getMetaCharacter(),
+              csvFormat.getNumHeaderLinesToSkip());
+    }
+    new MakeTabixIndex(
+        filename, new File(this.getWorkFilename()), tabixFormat, this.getColumnSeparator());
+  }
+
   @Override
   public void setFeatureName(String nameFieldOrAttribute) {
     if (this.getTrackFormat().equals(TrackFormat.GFF)
@@ -97,8 +125,8 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
   }
 
   @Override
-  public char getColumnSeparator() {
-    return this.columnSeparator;
+  public CsvFormat getCsvFormat() {
+    return this.csvFormat;
   }
 
   protected int getScoreColIdx() {
@@ -118,7 +146,15 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
         x.setGtfAttributeForName(this.gtfAttributeForName);
       } else if (this.getTrackFormat().equals(TrackFormat.BED)
           || this.getTrackFormat().equals(TrackFormat.BIGBED)) {
-        x.setBedFieldName(this.bedFieldForName);
+        if (this.bedFieldForName >= 0) {
+          String name =
+              Splitter.on(this.getColumnSeparator())
+                  .splitToList(x.getRaw())
+                  .get(this.bedFieldForName);
+          x.setName(name);
+        } else {
+          x.setName("");
+        }
       }
     }
     List<String> printable = new ArrayList<>();

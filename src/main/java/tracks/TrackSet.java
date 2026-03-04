@@ -31,7 +31,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringEscapeUtils;
 import samTextViewer.ExitCode;
 import samTextViewer.GenomicCoords;
@@ -155,16 +154,17 @@ public class TrackSet {
 
     int idForTrack = this.getNextTrackId();
     String trackId = sourceName + "#" + idForTrack;
+    AbstractTrack tr;
     if (csvFormat.getScoreColIndex() >= 0) {
-      TrackBedgraph bdg = new TrackBedgraph(sourceName, gc, csvFormat);
-      bdg.setTrackTag(trackId);
-      this.trackList.add(bdg);
+      tr = new TrackBedgraph(sourceName, gc, csvFormat);
     } else {
-      throw new NotImplementedException("TODO: Csv for intervals");
+      tr = new TrackIntervalFeature(sourceName, gc, csvFormat);
     }
+    tr.setTrackTag(trackId);
+    this.trackList.add(tr);
 
-    for (AbstractTrack tr : this.getTrackList()) {
-      this.addToOpenedFiles(tr.getFilename());
+    for (AbstractTrack x : this.getTrackList()) {
+      this.addToOpenedFiles(x.getFilename());
     }
   }
 
@@ -985,10 +985,10 @@ public class TrackSet {
     AbstractTrack trNewFmt = null;
 
     if (tr.getTrackFormat().equals(TrackFormat.BED)) {
-      trNewFmt = new TrackBedgraph(tr.getWorkFilename(), tr.getGc());
+      trNewFmt = new TrackBedgraph(tr.getWorkFilename(), tr.getGc(), tr.getCsvFormat());
       trNewFmt.setTrackFormat(TrackFormat.BEDGRAPH);
     } else if (tr.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
-      trNewFmt = new TrackIntervalFeature(tr.getWorkFilename(), tr.getGc());
+      trNewFmt = new TrackIntervalFeature(tr.getWorkFilename(), tr.getGc(), tr.getCsvFormat());
       trNewFmt.setTrackFormat(TrackFormat.BED);
     } else {
       //
@@ -1002,7 +1002,6 @@ public class TrackSet {
     trNewFmt.setyMaxLines(tr.getyMaxLines());
     trNewFmt.setYLimitMax(tr.getYLimitMax());
     trNewFmt.setYLimitMin(tr.getYLimitMin());
-
     return trNewFmt;
   }
 

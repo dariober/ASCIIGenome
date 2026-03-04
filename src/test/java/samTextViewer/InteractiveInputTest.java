@@ -79,6 +79,26 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canOpenCsvFile() throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException {
+    TrackProcessor proc =
+            gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi = processInput(ip, "open -c 5 -s 1 -sep ',' -score 3 -n 1 test_data/generic.csv", proc);
+    assertTrue(pi.stdout.contains("_:::: "));
+    pi = processInput(ip, "extend 30 30 && print", proc);
+    assertTrue(pi.stdout.contains("5566777,5566778,1,0.1,chr7,-99"));
+    pi = processInput(ip, "bedToBedgraph", proc);
+    assertTrue(pi.stdout.contains(" | "));
+    pi = processInput(ip, "bedToBedgraph", proc);
+    assertTrue(pi.stdout.contains("::::"));
+    assertTrue(pi.stdout.contains("range[1.0 9.0]"));
+
+    pi = processInput(ip, "dataCol -datacol 6", proc);
+    assertTrue(pi.stdout.contains("range[-99.0 -91.0]"));
+  }
+
+  @Test
   public void canSetDataColumn()
       throws SQLException,
           InvalidGenomicCoordsException,
@@ -99,6 +119,7 @@ public class InteractiveInputTest {
 
     pi = processInput(ip, "dataCol -datacol 5", proc);
     assertTrue(pi.stdout.contains(" 93.3"));
+
     pi = processInput(ip, "dataCol -datacol 4 -aggfun Mean ds051", proc);
     assertTrue(pi.stdout.contains(" 718."));
 

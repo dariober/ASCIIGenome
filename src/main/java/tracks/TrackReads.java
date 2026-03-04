@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import utils.CsvFormat;
 
 /**
  * Prepare track for printing aligned reads
@@ -72,8 +73,8 @@ public class TrackReads extends AbstractTrack {
   public void close() {}
 
   @Override
-  public char getColumnSeparator() {
-    return this.columnSeparator;
+  public CsvFormat getCsvFormat() {
+    return null;
   }
 
   public void update() throws InvalidGenomicCoordsException, IOException {

@@ -63,6 +63,10 @@ public class CsvFormat {
     return scoreColIndex;
   }
 
+  public void setScoreColIndex(int scoreColIndex) {
+    this.scoreColIndex = scoreColIndex;
+  }
+
   public char getColumnSeparator() {
     return columnSeparator;
   }

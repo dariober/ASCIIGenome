@@ -49,6 +49,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
+import utils.CsvFormat;
 import utils.Tokenizer;
 
 public abstract class AbstractTrack {
@@ -1356,7 +1357,15 @@ public abstract class AbstractTrack {
     return this.vcfHeader;
   }
 
-  public abstract char getColumnSeparator();
+  public char getColumnSeparator() {
+    if (this.getCsvFormat() == null) {
+      return '\t';
+    } else {
+      return this.getCsvFormat().getColumnSeparator();
+    }
+  }
+
+  public abstract CsvFormat getCsvFormat();
 
   //  @Override
   //  public VCFHeader getVcfHeader() {

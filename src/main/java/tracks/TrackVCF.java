@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
+import utils.CsvFormat;
 import utils.FlexibleTabixReader;
 
 public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
@@ -43,7 +44,6 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   private VCFCodec vcfCodec;
   private final VCFReader vcfReader;
   private final boolean isBCF;
-  private final char columnSeparator = '\t';
 
   public TrackVCF(final String filename, GenomicCoords gc)
       throws IOException,
@@ -314,8 +314,8 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   }
 
   @Override
-  public char getColumnSeparator() {
-    return columnSeparator;
+  public CsvFormat getCsvFormat() {
+    return null;
   }
 
   // <----

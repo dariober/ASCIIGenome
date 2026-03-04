@@ -25,6 +25,33 @@ import org.junit.Test;
 public class MainTest {
 
   @Test
+  public void canStartFromCsv()
+          throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
+    String[] args =
+            new String[] {
+                    "-ni",
+                    "-nf",
+                    "--debug",
+                    "2",
+                    "--exec",
+                    "open -c 5 -s 1 -sep ',' -score 3 -m '#' -n 1 test_data/generic.csv && goto chr7:5566781-5566786"
+            };
+    String out = Joiner.on("\n").join(this.runMain(args));
+    System.out.println(out);
+    assertTrue(out.contains("_:::: "));
+  }
+
+  @Test
   public void canFilterGenotype()
       throws ClassNotFoundException,
           IOException,

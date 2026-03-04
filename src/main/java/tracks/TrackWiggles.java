@@ -22,13 +22,13 @@ import org.broad.igv.tdf.TDFTile;
 import org.broad.igv.util.ResourceLocator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import utils.CsvFormat;
 
 /** Process wiggle file formats. Mostly using IGV classes. bigBed, bigWig, */
 public class TrackWiggles extends AbstractTrack {
 
   private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList;
   private BBFileReader bigWigReader;
-  private final char columnSeparator = '\t';
 
   /* C o n s t r u c t o r s */
   public TrackWiggles() {}
@@ -72,8 +72,8 @@ public class TrackWiggles extends AbstractTrack {
   }
 
   @Override
-  public char getColumnSeparator() {
-    return this.columnSeparator;
+  public CsvFormat getCsvFormat() {
+    return null;
   }
 
   @Override

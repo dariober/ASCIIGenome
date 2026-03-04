@@ -411,7 +411,13 @@ public class InteractiveInput {
 
           // * These commands change both the Tracks and the GenomicCoordinates
         } else if (cmdTokens.get(0).equals("next")) {
-          this.next(cmdTokens, proc);
+          try {
+            this.next(cmdTokens, proc);
+          } catch (Exception e) {
+            System.err.println(Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
 
         } else if (cmdTokens.get(0).equals("find")) {
           boolean all = Utils.argListContainsFlag(cmdTokens, "-all");
@@ -1483,6 +1489,9 @@ public class InteractiveInput {
 
   private boolean allColumnIndexes(List<String> columns) {
     for (String x : columns) {
+      if (x == null) {
+        continue;
+      }
       try {
         int i = Integer.parseInt(x);
         if (i <= 0) {
@@ -1539,19 +1548,18 @@ public class InteractiveInput {
     if (sep.isEmpty()) {
       columnSeparator = '\0';
     } else if (sep.length() == 1) {
-      columnSeparator = meta.charAt(0);
+      columnSeparator = sep.charAt(0);
     } else {
       throw new RuntimeException(
           "Column separator must be a single character or, for automatic detection, an empty"
               + " string. Got: '"
-              + meta
+              + sep
               + "'");
     }
 
     if (!this.allColumnIndexes(Arrays.asList(indexes))) {
       // At least one of the columns is not an integer. So we assume it is a column name and files
-      // have a header line.
-      // Get the header then
+      // have a header line. Get the header then
       try (BufferedReader br = Utils.reader(fn)) {
         int toSkip = numHeaderLinesToSkip;
         while (toSkip > 0) {
@@ -1570,8 +1578,11 @@ public class InteractiveInput {
       } catch (Exception e) {
         throw new RuntimeException("Error reading '" + fn + "'. " + e.getMessage());
       }
-      throw new NotImplementedException("Column names not supported yet");
+      throw new NotImplementedException("Column names not supported yet" + Arrays.asList(indexes));
     }
+
+    endColNameOrIndex = endColNameOrIndex == null ? "0" : endColNameOrIndex;
+    scoreColNameOrIndex = scoreColNameOrIndex == null ? "0" : scoreColNameOrIndex;
     return new CsvFormat(
         Integer.parseInt(chromColNameOrIndex) - 1,
         Integer.parseInt(startColNameOrIndex) - 1,
@@ -1612,7 +1623,6 @@ public class InteractiveInput {
           // try to reload the
           // file. This fixes issue#23
           String region = Main.initRegion(globbed, null, null, debug);
-
           GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
           this.repositionGenomicCoords(gc, region, Utils.getTerminalWidth());
           proc.getGenomicCoordsHistory().add(gc);

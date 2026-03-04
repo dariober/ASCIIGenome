@@ -1391,7 +1391,7 @@ public class CommandList {
 
     cmd = new CommandHelp();
     cmd.setName("open");
-    cmd.setArgs("[files | URLs | indexes]...");
+    cmd.setArgs("[-c int|name] [-s int|name] [-e int|name] [-score int|name] [-z] [-n 0] [-m #] [-sep auto] [files | URLs | indexes]...");
     cmd.inSection = Section.GENERAL;
     cmd.setBriefDescription("Add tracks from local or remote files. ");
     cmd.setAdditionalDescription(
@@ -1402,6 +1402,26 @@ public class CommandList {
             + "Alternatively, the files to open can be given as numeric indexes of recently opened "
             + "files (see command :code:`recentlyOpened`). The last opened file has index 1, "
             + "the second last 2, etc.\n"
+            + "\n"
+            + "In addition to standard genomic data files (bam, vcf, gff, etc), it is possible to load generic tabular files\n"
+            + "\n"
+            + "These options are relevant only for generic tabular files. Indexes are 1-based (i.e. first column has index 1):\n"
+            + "\n"
+            + "* :code:`-c int|name` Column index or name of chromosome\n"
+            + "\n"
+            + "* :code:`-s int|name` Column index or name of start position\n"
+            + "\n"
+            + "* :code:`-e int|name` Column index or name of end position (if unset, assume features are 1 bp long)\n"
+            + "\n"
+            + "* :code:`-score int|name` Column index or name of score to plot (if unset, assume features are intervals, not quantitative)\n"
+            + "\n"
+            + "* :code:`-z` Start position is zero-based (like bed files)\n"
+            + "\n"
+            + "* :code:`-n int` Skip these many lines before reading data\n"
+            + "\n"
+            + "* :code:`-m char` Comment characters: Skip lines starting with this character\n"
+            + "\n"
+            + "* :code:`-sep char` Column separator character. Autodetected if unset\n"
             + "\n"
             + "Examples::\n"
             + "\n"
