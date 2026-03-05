@@ -26,7 +26,7 @@ public class MainTest {
 
   @Test
   public void canStartFromCsv()
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidCommandLineException,
@@ -38,14 +38,15 @@ public class MainTest {
           InvalidColourException,
           InvalidConfigException {
     String[] args =
-            new String[] {
-                    "-ni",
-                    "-nf",
-                    "--debug",
-                    "2",
-                    "--exec",
-                    "open -c 5 -s 1 -sep ',' -score 3 -m '#' -n 1 test_data/generic.csv && goto chr7:5566781-5566786"
-            };
+        new String[] {
+          "-ni",
+          "-nf",
+          "--debug",
+          "2",
+          "--exec",
+          "open -c 5 -s 1 -sep ',' -score 3 -m '#' -n 1 test_data/generic.csv && goto"
+              + " chr7:5566781-5566786"
+        };
     String out = Joiner.on("\n").join(this.runMain(args));
     System.out.println(out);
     assertTrue(out.contains("_:::: "));

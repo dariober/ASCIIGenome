@@ -88,8 +88,7 @@ public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
     return new QuantitativeFeature(line, this.getCsvFormat());
   }
 
-  /** NB: index here is 1-based
-   * */
+  /** NB: index here is 1-based */
   protected void setScoreColIdx(int scoreColIdx)
       throws ClassNotFoundException,
           IOException,
@@ -182,8 +181,9 @@ public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
           ClassNotFoundException,
           SQLException {
 
-    List<QuantitativeFeature> newFeatures = this.getFeaturesInInterval(
-        this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+    List<QuantitativeFeature> newFeatures =
+        this.getFeaturesInInterval(
+            this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
     this.setFeatureList(newFeatures);
     this.setDataTransformation(this.dataTransformation);
     this.bedGraphToScores(this.getFeatureList());
@@ -266,7 +266,8 @@ public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
   }
 
   @Override
-  protected QuantitativeFeature collapseGFFTranscript(List<QuantitativeFeature> features, List<Double> mapToScreen) {
+  protected QuantitativeFeature collapseGFFTranscript(
+      List<QuantitativeFeature> features, List<Double> mapToScreen) {
     return null;
   }
   // <----<

@@ -27,6 +27,7 @@ import utils.FlexibleTabixReader;
 public abstract class AbstractTrackFeature<T extends IntervalFeature> extends AbstractTrack {
   /** For GTF/GFF data: Use this attribute to get the feature names */
   protected FlexibleTabixReader tabixReader; // Leave *protected* for TrackBookmark to work
+
   protected CsvFormat csvFormat;
 
   protected BBFileReader bigBedReader;
@@ -37,7 +38,9 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
   protected abstract T createFeature(String line) throws InvalidGenomicCoordsException;
 
   protected abstract Map<String, List<T>> groupByGFFAttribute();
+
   protected abstract Map<String, List<T>> groupByGTFAttribute();
+
   protected abstract T collapseGFFTranscript(List<T> features, List<Double> mapToScreen)
       throws InvalidGenomicCoordsException, InvalidColourException;
 
@@ -729,7 +732,8 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
 
   protected List<T> getFeatureList() {
     return this.featureList;
-  };
+  }
+  ;
 
   protected void setFeatureList(List<T> featureList) {
     this.featureList = featureList;

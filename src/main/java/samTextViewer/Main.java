@@ -167,7 +167,7 @@ public class Main {
       String line = null;
       while ((line = br.readLine()) != null) {
         // Start processing intervals one by one
-        IntervalFeature target = new IntervalFeature(line, TrackFormat.BED, -1);
+        IntervalFeature target = new IntervalFeature(line, TrackFormat.BED);
         String reg = target.getChrom() + ":" + target.getFrom() + "-" + target.getTo();
         String gotoAndExec = ("goto " + reg + " && " + exec).trim().replaceAll("&&$", "");
         InteractiveInput itr =

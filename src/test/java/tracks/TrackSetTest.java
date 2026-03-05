@@ -27,7 +27,6 @@ import org.junit.Test;
 import samTextViewer.ExitCode;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
-import utils.CsvFormat;
 import utils.Tokenizer;
 
 public class TrackSetTest {

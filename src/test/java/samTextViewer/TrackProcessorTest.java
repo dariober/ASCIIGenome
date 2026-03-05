@@ -20,13 +20,16 @@ public class TrackProcessorTest {
 
   @Test
   public void canProcessCsvFile()
-          throws InvalidGenomicCoordsException,
+      throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
           BamIndexNotFoundException,
           InvalidRecordException,
           SQLException,
-          InvalidConfigException, DocumentException, InvalidCommandLineException, InvalidColourException {
+          InvalidConfigException,
+          DocumentException,
+          InvalidCommandLineException,
+          InvalidColourException {
 
     new Config(null);
 

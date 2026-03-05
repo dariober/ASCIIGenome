@@ -143,7 +143,7 @@ public class TrackBedgraphTest {
       tb.setScoreColIdx(20);
     } catch (RuntimeException e) {
       assertTrue(e.getMessage().contains("Invalid index"));
-      pass= true;
+      pass = true;
     }
     assertTrue(pass);
   }

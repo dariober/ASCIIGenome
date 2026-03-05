@@ -27,13 +27,16 @@ public class QuantitativeFeature extends IntervalFeature {
     from += csvFormat.isZeroBased() ? 1 : 0;
     this.setFrom(from);
     this.setTo(
-        csvFormat.getEndColIndex() > 0 ? Integer.parseInt(row.get(csvFormat.getEndColIndex())) : this.getFrom());
+        csvFormat.getEndColIndex() > 0
+            ? Integer.parseInt(row.get(csvFormat.getEndColIndex()))
+            : this.getFrom());
     try {
       this.score = Double.parseDouble(row.get(csvFormat.getScoreColIndex()));
     } catch (NumberFormatException e) {
       this.score = Double.NaN;
     } catch (IndexOutOfBoundsException e) {
-      throw new RuntimeException("Invalid index for score column: " + (csvFormat.getScoreColIndex() + 1));
+      throw new RuntimeException(
+          "Invalid index for score column: " + (csvFormat.getScoreColIndex() + 1));
     }
   }
 
@@ -42,5 +45,4 @@ public class QuantitativeFeature extends IntervalFeature {
   public double getScore() {
     return score;
   }
-
 }

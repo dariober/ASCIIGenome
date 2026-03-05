@@ -8,28 +8,24 @@ import org.junit.Test;
 import utils.CsvFormat;
 
 public class QuantitativeFeatureTest {
+
   @Test
   public void canParseScorecolumn() throws InvalidGenomicCoordsException {
 
     String line = "chr1 0 1 9 8 FOO 10".replaceAll(" ", "\t");
 
+    CsvFormat csv = new CsvFormat(0, 1, 2, 4, true, 0, '#', '\t');
+
     // Default column indexes for scores
-    QuantitativeFeature ift = new QuantitativeFeature(line, null);
-    assertEquals(9, ift.getScore(), 0.001);
+    QuantitativeFeature ift = new QuantitativeFeature(line, csv);
+    assertEquals(8, ift.getScore(), 0.001);
 
-    ift = new QuantitativeFeature(line, TrackFormat.BEDGRAPH, 7);
+    csv.setScoreColIndex(6);
+    ift = new QuantitativeFeature(line, csv);
     assertEquals(10, ift.getScore(), 0.001);
-    ift = new QuantitativeFeature(line, TrackFormat.BED, 7);
-    assertEquals(10, ift.getScore(), 0.001);
 
-    ift = new QuantitativeFeature(line, TrackFormat.BED, 6);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
-    ift = new QuantitativeFeature(line, TrackFormat.BEDGRAPH, 6);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
-
-    ift = new QuantitativeFeature(line, TrackFormat.BED, 20);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
-    ift = new QuantitativeFeature(line, TrackFormat.BEDGRAPH, 20);
+    csv.setScoreColIndex(5);
+    ift = new QuantitativeFeature(line, csv);
     assertEquals(Float.NaN, ift.getScore(), 0.001);
   }
 
@@ -44,7 +40,7 @@ public class QuantitativeFeatureTest {
     assertEquals(9.9, x.getScore(), 0.0001);
 
     line = "9|chr1|20|foo";
-    csv = new CsvFormat(1, 0, 2, -1, true, 0, '#', '|');
+    csv = new CsvFormat(1, 0, 2, 3, true, 0, '#', '|');
     x = new QuantitativeFeature(line, csv);
     assertEquals("chr1", x.getChrom());
     assertEquals(10, x.getFrom());
@@ -52,9 +48,14 @@ public class QuantitativeFeatureTest {
     assertEquals(Double.NaN, x.getScore(), 0.0001);
 
     line = "chr1\t0\t1";
-    IntervalFeature asBed = new IntervalFeature(line, TrackFormat.BED, -1);
     csv = new CsvFormat(0, 1, 2, -1, true, 0, '#', '\t');
-    IntervalFeature asCsv = new IntervalFeature(line, csv);
-    assertTrue(asCsv.equalCoordsUnstranded(asBed));
+    boolean pass = false;
+    try {
+      new QuantitativeFeature(line, csv);
+    } catch (RuntimeException e) {
+      assertEquals("Invalid index for score column: 0", e.getMessage().trim());
+      pass = true;
+    }
+    assertTrue(pass);
   }
 }

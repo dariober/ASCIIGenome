@@ -135,7 +135,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
   @Override
   protected IntervalFeature createFeature(String line) throws InvalidGenomicCoordsException {
-    return new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx());
+    return new IntervalFeature(line, this.getTrackFormat());
   }
 
   @Override
@@ -186,7 +186,7 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
       }
       IntervalFeature intervalFeature;
       if (this.csvFormat == null) {
-        intervalFeature = new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx());
+        intervalFeature = new IntervalFeature(line, this.getTrackFormat());
       } else {
         intervalFeature = new IntervalFeature(line, this.csvFormat);
       }

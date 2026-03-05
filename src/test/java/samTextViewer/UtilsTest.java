@@ -1203,22 +1203,17 @@ public class UtilsTest {
 
     // Fully contained feature
     intv.clear();
-    intv.add(
-        new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
-    intv.add(
-        new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
+    intv.add(new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+    intv.add(new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
     assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
     assertEquals(100, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
     assertEquals(1000, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
 
     // Partial overlap contained feature
     intv.clear();
-    intv.add(
-        new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
-    intv.add(
-        new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
-    intv.add(
-        new IntervalFeature("chr1 . . 500 5000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
+    intv.add(new IntervalFeature("chr1 . . 100 1000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+    intv.add(new IntervalFeature("chr1 . . 200 300 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+    intv.add(new IntervalFeature("chr1 . . 500 5000 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
     assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
     assertEquals(100, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
     assertEquals(5000, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
@@ -1226,59 +1221,55 @@ public class UtilsTest {
     /* MEMO: Start of bed features must be augmented by 1 */
     // One feature
     intv.clear();
-    intv.add(new IntervalFeature("chr1 0 10 x1".replaceAll(" ", "\t"), TrackFormat.BED, -1));
+    intv.add(new IntervalFeature("chr1 0 10 x1".replaceAll(" ", "\t"), TrackFormat.BED));
     assertEquals(1, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
     // Test the name is taken from the original feature since only one interval is merged (i.e. no
     // merging at all)
     assertEquals(intv.get(0).getName(), Utils.mergeIntervalFeatures(intv, false).get(0).getName());
 
     // One feature overalapping
-    intv.add(new IntervalFeature("chr1 5 10".replaceAll(" ", "\t"), TrackFormat.BED, -1));
+    intv.add(new IntervalFeature("chr1 5 10".replaceAll(" ", "\t"), TrackFormat.BED));
     IntervalFeature expected =
-        new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, -1);
+        new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED);
 
     assertEquals(expected.getFrom(), Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
     assertTrue(expected.equalCoordsUnstranded(Utils.mergeIntervalFeatures(intv, false).get(0)));
 
-    intv.add(new IntervalFeature("chr1 20 100".replaceAll(" ", "\t"), TrackFormat.BED, -1));
+    intv.add(new IntervalFeature("chr1 20 100".replaceAll(" ", "\t"), TrackFormat.BED));
     assertEquals(2, Utils.mergeIntervalFeatures(intv, false).size());
     assertEquals(21, Utils.mergeIntervalFeatures(intv, false).get(1).getFrom());
     assertEquals(100, Utils.mergeIntervalFeatures(intv, false).get(1).getTo());
 
-    intv.add(new IntervalFeature("chr1 30 110".replaceAll(" ", "\t"), TrackFormat.BED, -1));
-    intv.add(new IntervalFeature("chr1 50 110".replaceAll(" ", "\t"), TrackFormat.BED, -1));
+    intv.add(new IntervalFeature("chr1 30 110".replaceAll(" ", "\t"), TrackFormat.BED));
+    intv.add(new IntervalFeature("chr1 50 110".replaceAll(" ", "\t"), TrackFormat.BED));
     assertEquals(2, Utils.mergeIntervalFeatures(intv, false).size());
     assertEquals(21, Utils.mergeIntervalFeatures(intv, false).get(1).getFrom());
     assertEquals(110, Utils.mergeIntervalFeatures(intv, false).get(1).getTo());
 
     // Touching features get merged into a single one
     intv.clear();
-    intv.add(new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, -1));
-    intv.add(new IntervalFeature("chr1 10 20".replaceAll(" ", "\t"), TrackFormat.BED, -1));
+    intv.add(new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED));
+    intv.add(new IntervalFeature("chr1 10 20".replaceAll(" ", "\t"), TrackFormat.BED));
     assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
     assertEquals(1, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
     assertEquals(20, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
 
     // Touching GFF feature
     intv.clear();
-    intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
-    intv.add(
-        new IntervalFeature("chr1 . . 11 20 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
+    intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+    intv.add(new IntervalFeature("chr1 . . 11 20 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
     assertEquals(1, Utils.mergeIntervalFeatures(intv, false).size());
     assertEquals(1, Utils.mergeIntervalFeatures(intv, false).get(0).getFrom());
     assertEquals(20, Utils.mergeIntervalFeatures(intv, false).get(0).getTo());
 
     // Nothing to merge
     intv.clear();
-    intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
-    intv.add(
-        new IntervalFeature("chr1 . . 20 30 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
-    intv.add(
-        new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
+    intv.add(new IntervalFeature("chr1 . . 1 10 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+    intv.add(new IntervalFeature("chr1 . . 20 30 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
+    intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
     assertEquals(3, Utils.mergeIntervalFeatures(intv, false).size());
 
-    intv.add(
-        new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF, -1));
+    intv.add(new IntervalFeature("chr1 . . 40 50 . . .".replaceAll(" ", "\t"), TrackFormat.GTF));
     assertEquals(3, Utils.mergeIntervalFeatures(intv, false).size());
   }
 

@@ -199,7 +199,8 @@ public class MakeTabixIndex {
     stmtInsert.close();
     br.close();
 
-    PreparedStatement stmtSelect = conn.prepareStatement("SELECT line FROM data ORDER BY contig, pos");
+    PreparedStatement stmtSelect =
+        conn.prepareStatement("SELECT line FROM data ORDER BY contig, pos");
 
     ResultSet rs = stmtSelect.executeQuery();
 
@@ -268,45 +269,48 @@ public class MakeTabixIndex {
     stmtInsert.close();
     br.close();
 
-    PreparedStatement stmtSelect = conn.prepareStatement("SELECT line FROM data ORDER BY contig, pos");
+    PreparedStatement stmtSelect =
+        conn.prepareStatement("SELECT line FROM data ORDER BY contig, pos");
 
     ResultSet rs = stmtSelect.executeQuery();
-    Iterator<String> iterator = new Iterator<>() {
-      @Override
-      public boolean hasNext() {
-        try {
-          return rs.next();
-        } catch (SQLException e) {
-          throw new RuntimeException(e);
-        }
-      }
+    Iterator<String> iterator =
+        new Iterator<>() {
+          @Override
+          public boolean hasNext() {
+            try {
+              return rs.next();
+            } catch (SQLException e) {
+              throw new RuntimeException(e);
+            }
+          }
 
-      @Override
-      public String next() {
-        try {
-          return rs.getString("line");
-        } catch (SQLException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    };
+          @Override
+          public String next() {
+            try {
+              return rs.getString("line");
+            } catch (SQLException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        };
 
     Spliterator<String> spliterator =
         Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
 
     Stream<String> stream = StreamSupport.stream(spliterator, false);
     Connection finalConn = conn;
-    return stream.onClose(() -> {
-      try {
-        rs.close();
-        stmtSelect.close();
-        finalConn.commit();
-        finalConn.close();
-        Files.delete(Paths.get(this.sqliteFile.getAbsolutePath()));
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    });
+    return stream.onClose(
+        () -> {
+          try {
+            rs.close();
+            stmtSelect.close();
+            finalConn.commit();
+            finalConn.close();
+            Files.delete(Paths.get(this.sqliteFile.getAbsolutePath()));
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   private Connection createSQLiteDb(String tablename) throws SQLException, ClassNotFoundException {
@@ -331,7 +335,7 @@ public class MakeTabixIndex {
     stmt.execute("PRAGMA synchronous = OFF");
     stmt.execute("PRAGMA temp_store = MEMORY");
     stmt.execute("PRAGMA locking_mode = EXCLUSIVE");
-    stmt.execute("PRAGMA cache_size = -200000");  // negative means KB of ram
+    stmt.execute("PRAGMA cache_size = -200000"); // negative means KB of ram
     conn.setAutoCommit(false); // This is important: By default each insert is committed
     // as it is executed, which is slow. Let's commit in bulk at the end instead.
     stmt.close();

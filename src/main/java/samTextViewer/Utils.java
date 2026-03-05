@@ -559,7 +559,7 @@ public class Utils {
           if (!sep.equals("\t")) {
             line = line.replace(sep, "\t");
           }
-          IntervalFeature feature = new IntervalFeature(line, fmt, -1);
+          IntervalFeature feature = new IntervalFeature(line, fmt);
           region = feature.getChrom() + ":" + feature.getFrom();
         }
         br.close();

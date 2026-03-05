@@ -345,7 +345,6 @@ public abstract class AbstractTrack {
     return printMode;
   }
 
-
   public void setFeatureName(String nameFieldOrAttribute) {
     //
   }
