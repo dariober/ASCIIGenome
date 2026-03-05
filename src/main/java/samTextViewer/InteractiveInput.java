@@ -1504,6 +1504,51 @@ public class InteractiveInput {
     return true;
   }
 
+//  private CsvFormat guessCvsParams(String fn, int startColIndex, char commentChar) throws IOException {
+//    List<Character> delims = List.of('\t', ',', ' ', ';', '|');
+//    int upto = 1000;
+//    List<String> lines =new ArrayList<>();
+//    try(BufferedReader br = Utils.reader(fn)) {
+//      while (lines.size() < upto) {
+//        String line = br.readLine();
+//        if (line == null) {
+//          break;
+//        }
+//        if (line.startsWith(commentChar + "")) {
+//          continue;
+//        }
+//        lines.add(line.strip());
+//      }
+//    }
+//    List<String> rev = lines.reversed();
+//    char delimFound;
+//    for (char delim : delims) {
+//      for (String line : rev) {
+//        List<String> lst = Splitter.on(delim).splitToList(line);
+//        if (lst.size() <= startColIndex) {
+//          break;
+//        }
+//        try {
+//          int n = Integer.parseInt(lst.get(startColIndex));
+//          if (n < 0) {
+//            break;
+//          }
+//        } catch ( NumberFormatException e) {
+//          break;
+//        }
+//      }
+//      // If we are here we found a delimiter that splits the sample of reads at the index for the start column and finds
+//      // a non-negative integer. This is very likely the right delimiter so we stop searching (even if other delims could work!).
+//      delimFound = delim;
+//      break;
+//    }
+//
+//    // Go to the bottom of the list (most likely this is data)
+//    // Split according to delim.
+//    // If at startColIndex you have an int, check the other lines until you hit the candidate header or the end of
+//    // list.
+//  }
+
   private CsvFormat prepareCsvFormat(String fn, List<String> cmdTokens)
       throws InvalidCommandLineException {
 
@@ -1627,7 +1672,7 @@ public class InteractiveInput {
           this.repositionGenomicCoords(gc, region, Utils.getTerminalWidth());
           proc.getGenomicCoordsHistory().add(gc);
           proc.getTrackSet()
-              .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
+              .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null, csvFormat);
         } catch (Exception x) {
           x.printStackTrace();
           msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());

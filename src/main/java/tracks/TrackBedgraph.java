@@ -79,12 +79,8 @@ public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
     return xFeatures;
   }
 
-  protected int getScoreColIdx() {
-    return this.scoreColIdx;
-  }
-
   @Override
-  protected QuantitativeFeature createFeature(String line) throws InvalidGenomicCoordsException {
+  protected QuantitativeFeature createFeature(String line) {
     return new QuantitativeFeature(line, this.getCsvFormat());
   }
 

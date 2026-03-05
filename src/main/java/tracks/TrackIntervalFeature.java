@@ -47,7 +47,11 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
           SQLException {
 
     this.setFilename(filename);
-    this.setTrackFormat(Utils.getFileTypeFromName(filename));
+    TrackFormat tf = Utils.getFileTypeFromName(filename);
+    if (tf.equals(TrackFormat.BEDGRAPH)){
+     tf = TrackFormat.BED;
+    }
+    this.setTrackFormat(tf);
     this.csvFormat = csvFormat;
 
     if (this.getTrackFormat().equals(TrackFormat.BIGBED)) {

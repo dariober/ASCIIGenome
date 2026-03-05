@@ -14,6 +14,7 @@ if(JavaVersion.current() < jversion) {
     throw new GradleException("Java >= " + jversion + " is required but you are running " + JavaVersion.current())
 }
 
+
 /** Return the MD5 sum of the give File object */
 ext.generateMD5 = { file ->
     def digest = MessageDigest.getInstance("MD5")
@@ -32,37 +33,44 @@ ext.gunzip = { filename ->
       }
 }
 
-String testDir = Paths.get(System.getProperty("user.dir"), 'test_data')
+task prepareTestData {
+    doLast {
+        String testDir = Paths.get(System.getProperty("user.dir"), 'test_data')
 
-/* Prepare test data */
-File targetFile= new File(testDir, 'chr7.fa')
-String targetMD5= "30c3693ead968844a769a90a801a900f"
+        File targetFile = new File(testDir, 'chr7.fa')
+        String targetMD5 = "30c3693ead968844a769a90a801a900f"
 
-if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
-    File fgz= new File(testDir, targetFile.name + ".gz")
-    ext.gunzip(fgz.absolutePath)
-    if(ext.generateMD5(targetFile) != targetMD5){
-        throw new GradleException("Corrupted file " + targetFile)
+        if (!targetFile.exists() || generateMD5(targetFile) != targetMD5) {
+            File fgz = new File(testDir, targetFile.name + ".gz")
+            gunzip(fgz.absolutePath)
+            if(generateMD5(targetFile) != targetMD5){
+                throw new GradleException("Corrupted file " + targetFile)
+            }
+        }
+
+        targetFile = new File(testDir, 'ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf')
+        targetMD5 = "6783ca5e6df2ce1075e1e0c924ad7d37"
+
+        if (!targetFile.exists() || generateMD5(targetFile) != targetMD5) {
+            File fgz = new File(testDir, targetFile.name + ".gz")
+            gunzip(fgz.absolutePath)
+            if(generateMD5(targetFile) != targetMD5){
+                throw new GradleException("Corrupted file " + targetFile)
+            }
+        }
+
+        gunzip(Paths.get(testDir, "CEU.exon.2010_06.genotypes.vcf.gz").toString())
+        gunzip(Paths.get(testDir, "ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toString())
     }
 }
-
-targetFile= new File(testDir, 'ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf')
-targetMD5= "6783ca5e6df2ce1075e1e0c924ad7d37"
-
-if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
-    File fgz= new File(testDir, targetFile.name + ".gz")
-    ext.gunzip(fgz.absolutePath)
-    if(ext.generateMD5(targetFile) != targetMD5){
-        throw new GradleException("Corrupted file " + targetFile)
-    }
-}
-
-ext.gunzip(Paths.get(testDir, "CEU.exon.2010_06.genotypes.vcf.gz").toString())
-ext.gunzip(Paths.get(testDir, "ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toString())
 
 // ---------------------------
 
 test {
+    dependsOn prepareTestData
+    useJUnit()
+    finalizedBy jacocoTestReport
+
     testLogging {
         events "passed", "skipped", "failed"
         exceptionFormat "full"
@@ -113,10 +121,14 @@ dependencies {
     testImplementation 'junit:junit:4.12'
 }
 
-jacocoTestReport {jacocoTestReport
+jacocoTestReport {
+    dependsOn test
+    classDirectories.setFrom(
+        fileTree(dir: "$buildDir/classes/java/main")
+    )
     reports {
         xml.required = true
-        html.required = false
+        html.required = true
     }
 }
 

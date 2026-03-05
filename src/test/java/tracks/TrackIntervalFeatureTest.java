@@ -69,15 +69,13 @@ public class TrackIntervalFeatureTest {
     CsvFormat csv = new CsvFormat(0, 1, 2, -1, true, 0, '#', '\t');
     TrackIntervalFeature tb = new TrackIntervalFeature("test_data/test.bedGraph", gc, csv);
     tb.setNoFormat(true);
-    assertEquals("|    |||||     |||||", tb.printToScreen().trim());
-    // FIXME: We autodect format as BEDGRAPH from filename but TrackIntervalFeature should not
-    // support that.
-    // assertEquals(TrackFormat.BED, tb.getTrackFormat());
+    assertEquals("|    |_-_|     |_5_|", tb.printToScreen().trim());
+    assertEquals(TrackFormat.BED, tb.getTrackFormat());
 
     csv = new CsvFormat(2, 0, 1, -1, true, 0, '#', ',');
     TrackIntervalFeature tcsv = new TrackIntervalFeature("test_data/test.bedGraph.csv", gc, csv);
     tcsv.setNoFormat(true);
-    assertEquals("|    |_-_|     |_5_|", tb.printToScreen().trim());
+    assertEquals(tb.printToScreen(), tcsv.printToScreen());
   }
 
   @Test

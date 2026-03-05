@@ -39,6 +39,28 @@ public class TrackBedgraphTest {
   }
 
   @Test
+  public void canCreateFeature() throws InvalidGenomicCoordsException, SQLException, IOException, ClassNotFoundException, InvalidRecordException {
+
+    String line = "chr1 0 2 9 8 FOO 10".replaceAll(" ", "\t");
+    GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
+    TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
+
+    QuantitativeFeature out = tb.createFeature(line);
+    assertEquals("chr1", out.getChrom());
+    assertEquals(1, out.getFrom());
+    assertEquals(2, out.getTo());
+    assertEquals(9, out.getScore(), 0.0001);
+
+    CsvFormat csv = new CsvFormat(0, 1, 2, 3, true, 0, '#', '\t');
+    tb = new TrackBedgraph("test_data/test.bedGraph", gc, csv);
+    out = tb.createFeature(line);
+    assertEquals("chr1", out.getChrom());
+    assertEquals(1, out.getFrom());
+    assertEquals(2, out.getTo());
+    assertEquals(9, out.getScore(), 0.0001);
+  }
+
+    @Test
   public void canReproduceTrackBedgraphWithCsv()
       throws ClassNotFoundException,
           IOException,
@@ -321,5 +343,27 @@ public class TrackBedgraphTest {
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(14);
+  }
+
+  @Test
+  public void canIgnoreIrrelevantMethods()
+          throws InvalidGenomicCoordsException,
+          IOException,
+          InvalidRecordException,
+          ClassNotFoundException,
+          SQLException,
+          InvalidConfigException, InvalidColourException {
+
+    new Config(null);
+
+    String url = "test_data/test.bedGraph.gz";
+    GenomicCoords gc = new GenomicCoords("chr1:1-22", 80, null, null);
+    TrackBedgraph tb = new TrackBedgraph(url, gc);
+    String out = tb.printToScreen();
+    tb.groupByGFFAttribute();
+    tb.groupByGTFAttribute();
+    tb.collapseGFFTranscript(null, null);
+    String out2 = tb.printToScreen();
+    assertEquals(out, out2);
   }
 }
