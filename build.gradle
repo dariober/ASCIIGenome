@@ -64,8 +64,6 @@ task prepareTestData {
     }
 }
 
-// ---------------------------
-
 test {
     dependsOn prepareTestData
     useJUnit()
