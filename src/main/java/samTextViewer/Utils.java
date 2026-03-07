@@ -101,6 +101,7 @@ import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
 import tracks.AbstractTrack;
 import tracks.IntervalFeature;
+import tracks.QuantitativeFeature;
 import tracks.TrackFormat;
 import utils.FlexibleTabixReader;
 import utils.Tokenizer;
@@ -454,10 +455,7 @@ public class Utils {
   @SuppressWarnings("unused")
   public static String initRegionFromFile(String x, String referenceSequence)
       throws IOException,
-          InvalidGenomicCoordsException,
-          SQLException,
-          ClassNotFoundException,
-          InvalidRecordException {
+          InvalidGenomicCoordsException {
     UrlValidator urlValidator = new UrlValidator();
     String region = "";
     TrackFormat fmt = Utils.getFileTypeFromName(x);
@@ -559,8 +557,13 @@ public class Utils {
           if (!sep.equals("\t")) {
             line = line.replace(sep, "\t");
           }
-          IntervalFeature feature = new IntervalFeature(line, fmt);
-          region = feature.getChrom() + ":" + feature.getFrom();
+          if (fmt.equals(TrackFormat.BEDGRAPH)) {
+            QuantitativeFeature feature = new QuantitativeFeature(line, null);
+            region = feature.getChrom() + ":" + feature.getFrom();
+          } else {
+            IntervalFeature feature = new IntervalFeature(line, fmt);
+            region = feature.getChrom() + ":" + feature.getFrom();
+          }
         }
         br.close();
         return region;
@@ -579,8 +582,7 @@ public class Utils {
         return region;
       }
     }
-    System.err.println("Cannot initialize from " + x);
-    throw new RuntimeException();
+    throw new RuntimeException("Cannot initialize from " + x);
   }
 
   private static String initRegionFromBcf(String bcf) throws IOException {

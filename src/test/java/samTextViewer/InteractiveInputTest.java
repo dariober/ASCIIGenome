@@ -175,11 +175,11 @@ public class InteractiveInputTest {
         gimmeTrackProcessor("chr7:5567243-5567342", 110, "test_data/ds051.actb.bedgraph.gz");
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
-    ProcessInput pi = processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
+    processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
     processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
     processInput(ip, "open test_data/ds051.actb.bam", proc);
 
-    pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1", proc);
+    ProcessInput pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1", proc);
     assertTrue(pi.stdout.contains("82.3]"));
     assertTrue(pi.stdout.contains("823"));
     assertTrue(pi.stdout.contains("825"));
@@ -208,9 +208,9 @@ public class InteractiveInputTest {
         gimmeTrackProcessor("chr1:1261482-1269678", 200, "test_data/hg19_genes.gtf.gz");
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
-    ProcessInput pi = processInput(ip, "open test_data/hg19_genes.gtf.gz", proc);
+    processInput(ip, "open test_data/hg19_genes.gtf.gz", proc);
 
-    pi = processInput(ip, "find", proc);
+    ProcessInput pi = processInput(ip, "find", proc);
     assertTrue(pi.stderr.contains("Error"));
 
     pi = processInput(ip, "find *", proc);

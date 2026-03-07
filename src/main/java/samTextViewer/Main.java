@@ -215,8 +215,7 @@ public class Main {
         memTime = "[" + getMemoryStat() + "; " + stopWatch.toString() + "] ";
       }
 
-      while (!interactiveInput.getInteractiveInputExitCode().equals(ExitCode.ERROR)
-          || interactiveInput.getInteractiveInputExitCode().equals(ExitCode.NULL)) {
+      while (!interactiveInput.getInteractiveInputExitCode().equals(ExitCode.ERROR)) {
         console.setPrompt(
             StringUtils.repeat(' ', proc.getWindowSize()) + '\r' + memTime + "Enter h for help: ");
         cmdConcatInput = console.readLine().trim();
@@ -291,7 +290,7 @@ public class Main {
     // Try genome file
     if (genome != null && !genome.trim().isEmpty()) {
       GenomicCoords gc = new GenomicCoords(Utils.getTerminalWidth());
-      gc.setGenome(Arrays.asList(new String[] {genome}), false);
+      gc.setGenome(List.of(genome), false);
       SAMSequenceDictionary samSeqDict = gc.getSamSeqDict();
       String region = samSeqDict.getSequence(0).getSequenceName();
       return region;

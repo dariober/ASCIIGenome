@@ -1456,13 +1456,17 @@ public class UtilsTest {
   @Test
   public void canInitRegionFromCram()
       throws IOException,
-          InvalidGenomicCoordsException,
-          ClassNotFoundException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          SQLException {
+          InvalidGenomicCoordsException {
     assertEquals(
         "chr7:5566778", Utils.initRegionFromFile("test_data/ds051.actb.cram", "test_data/chr7.fa"));
+  }
+
+  @Test
+  public void canInitRegionFromBedgraph()
+          throws IOException,
+          InvalidGenomicCoordsException {
+    assertEquals(
+            "chr1:1", Utils.initRegionFromFile("test_data/test.bedGraph", null));
   }
 
   @Test

@@ -48,8 +48,36 @@ public class MainTest {
               + " chr7:5566781-5566786"
         };
     String out = Joiner.on("\n").join(this.runMain(args));
-    System.out.println(out);
     assertTrue(out.contains("_:::: "));
+
+    args = new String[] {
+            "-ni",
+            "-nf",
+            "--debug",
+            "2",
+            "--exec",
+            "open test_data/test.bedGraph && goto chr1:1"
+    };
+    String bdg = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(bdg.contains(":    ,,,,,     ::::::,"));
+
+    args = new String[] {
+                    "-ni",
+                    "-nf",
+                    "--debug",
+                    "2",
+                    "--exec",
+                    "open -c 1 -s 2 -e 3 -score 4 -sep '\t' -z test_data/test.bedGraph && goto chr1:1"
+            };
+
+    String tsv = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(tsv.contains(":    ,,,,,     ::::::,"));
+  }
+
+  @Test
+  public void canInitRegion() throws InvalidGenomicCoordsException, IOException {
+    String reg = Main.initRegion(List.of("test_data/test.bedGraph"), null, null, 2);
+    assertEquals("chr1:1", reg);
   }
 
   @Test

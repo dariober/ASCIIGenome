@@ -22,6 +22,7 @@ import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.text.StringEscapeUtils;
 import org.biojava.nbio.core.sequence.io.IUPACParser;
 import org.biojava.nbio.core.sequence.transcription.Frame;
 import session.Session;
@@ -1504,7 +1505,7 @@ public class InteractiveInput {
     return true;
   }
 
-//  private CsvFormat guessCvsParams(String fn, int startColIndex, char commentChar) throws IOException {
+//  private CsvFormat guessCsvDelim(String fn, int startColIndex, char commentChar) throws IOException {
 //    List<Character> delims = List.of('\t', ',', ' ', ';', '|');
 //    int upto = 1000;
 //    List<String> lines =new ArrayList<>();
@@ -1589,6 +1590,7 @@ public class InteractiveInput {
           "Comment character must be a single character or an empty string. Got: '" + meta + "'");
     }
     String sep = Utils.getArgForParam(cmdTokens, "-sep", "\0");
+    sep = StringEscapeUtils.unescapeJava(sep);
     char columnSeparator;
     if (sep.isEmpty()) {
       columnSeparator = '\0';
