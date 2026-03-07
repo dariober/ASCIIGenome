@@ -19,6 +19,7 @@ import utils.CsvFormat;
  */
 public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
 
+  // private final char columnSeparator;
   // When reading bed files, we expect fields to be in this order.
   private String chrom; // Required
   private int from; // Required. NB 1 based also for bed files.
@@ -90,6 +91,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
     this.to =
         csv.getEndColIndex() > 0 ? Integer.parseInt(row.get(csv.getEndColIndex())) : this.from;
     this.trackFormat = TrackFormat.BED;
+    // this.columnSeparator = csv.getColumnSeparator();
   }
 
   @Override

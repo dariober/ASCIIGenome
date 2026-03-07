@@ -1,5 +1,7 @@
 package utils;
 
+import java.lang.reflect.Field;
+
 public class CsvFormat {
 
   private final int chromColIndex;
@@ -7,9 +9,9 @@ public class CsvFormat {
   private final int endColIndex;
   private int scoreColIndex;
   private final Boolean isZeroBased;
-  private final int numHeaderLinesToSkip;
+  private int numHeaderLinesToSkip;
   private final char metaCharacter;
-  private final char columnSeparator;
+  private char columnSeparator;
 
   /** NB: Column indexes are 0-based! */
   public CsvFormat(
@@ -58,6 +60,9 @@ public class CsvFormat {
   public int getNumHeaderLinesToSkip() {
     return numHeaderLinesToSkip;
   }
+  public void setNumHeaderLinesToSkip(int numHeaderLinesToSkip) {
+    this.numHeaderLinesToSkip = numHeaderLinesToSkip;
+  }
 
   public int getScoreColIndex() {
     return scoreColIndex;
@@ -69,5 +74,34 @@ public class CsvFormat {
 
   public char getColumnSeparator() {
     return columnSeparator;
+  }
+  public void setColumnSeparator(char columnSeparator) {
+    this.columnSeparator = columnSeparator;
+  }
+
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(getClass().getSimpleName()).append(" {");
+
+    Field[] fields = getClass().getDeclaredFields();  // Get all fields, including private
+    for (Field field : fields) {
+      try {
+        field.setAccessible(true);  // To access private fields
+        sb.append(field.getName())    // Field name
+            .append("=")
+            .append(field.get(this))   // Field value
+            .append(", ");
+      } catch (IllegalAccessException e) {
+        e.printStackTrace();  // Handle the exception if a field is not accessible
+      }
+    }
+    // Remove the trailing comma and space, if there are any fields
+    if (fields.length > 0) {
+      sb.setLength(sb.length() - 2);
+    }
+    sb.append("}");
+    return sb.toString();
   }
 }

@@ -73,6 +73,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -99,10 +100,12 @@ import org.broad.igv.bbfile.BigBedIterator;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
+import org.checkerframework.checker.units.qual.C;
 import tracks.AbstractTrack;
 import tracks.IntervalFeature;
 import tracks.QuantitativeFeature;
 import tracks.TrackFormat;
+import utils.CsvFormat;
 import utils.FlexibleTabixReader;
 import utils.Tokenizer;
 
@@ -110,6 +113,87 @@ import utils.Tokenizer;
  * @author berald01
  */
 public class Utils {
+
+  public static CsvFormat guessCsvDelim(List<String> lines, int startColIndex) {
+    List<Character> delims = List.of('\t', ',', ' ', ';', '|');
+    return Utils.guessCsvDelim(lines, startColIndex, delims);
+  }
+
+  public static CsvFormat guessCsvDelim(List<String> lines, int startColIndex, List<Character> delims) {
+    class Candidate {
+      final char delim;
+      List<Integer> nFields = new ArrayList<>();
+
+      Candidate(char delim) {
+        this.delim = delim;
+      }
+      @Override
+      public String toString() {
+        return "'" + this.delim + "': " + this.nFields + "\n";
+      }
+    }
+    Collections.reverse(lines);
+    List<Candidate> candidates = new ArrayList<>();
+    for (char d : delims) {
+      Candidate candidate = new Candidate(d);
+      for (String line : lines) {
+        List<String> lst = Splitter.on(candidate.delim).splitToList(line);
+        if (lst.size() <= startColIndex - 1){
+          break;
+        }
+        try {
+          int n = Integer.parseInt(lst.get(startColIndex - 1).trim());
+          if (n < 0) {
+            break;
+          }
+        } catch ( NumberFormatException e) {
+          break;
+        }
+        candidate.nFields.add(lst.size());
+      }
+      candidates.add(candidate);
+    }
+    candidates.sort(Comparator.comparingInt(c -> c.nFields.size()));
+    Collections.reverse(candidates);
+
+    Candidate best = candidates.get(0);
+    Candidate secondBest = candidates.get(1);
+    if (best.nFields.size() == secondBest.nFields.size()) {
+      // Cannot determine delimiter
+      return null;
+    }
+    int numHeaderLinesToSkip = lines.size() - best.nFields.size();
+    CsvFormat csvFormat = new CsvFormat(-1, startColIndex, -1, -1, false, numHeaderLinesToSkip, '\0', best.delim);
+    return csvFormat;
+
+//    Collections.reverse(lines);
+//    char delimFound;
+//    for (char delim : delims) {
+//      for (String line : lines) {
+//        List<String> lst = Splitter.on(delim).splitToList(line);
+//        if (lst.size() <= startColIndex) {
+//          break;
+//        }
+//        try {
+//          int n = Integer.parseInt(lst.get(startColIndex));
+//          if (n < 0) {
+//            break;
+//          }
+//        } catch ( NumberFormatException e) {
+//          break;
+//        }
+//      }
+//      // If we are here we found a delimiter that splits the sample of reads at the index for the start column and finds
+//      // a non-negative integer. This is very likely the right delimiter so we stop searching (even if other delims could work!).
+//      delimFound = delim;
+//      break;
+//    }
+
+    // Go to the bottom of the list (most likely this is data)
+    // Split according to delim.
+    // If at startColIndex you have an int, check the other lines until you hit the candidate header or the end of
+    // list.
+  }
 
   public static double round(double value, int places) {
     if (places < 0) throw new IllegalArgumentException();

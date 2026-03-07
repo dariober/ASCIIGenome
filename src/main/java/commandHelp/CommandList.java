@@ -1392,12 +1392,12 @@ public class CommandList {
     cmd = new CommandHelp();
     cmd.setName("open");
     cmd.setArgs(
-        "[-c int|name] [-s int|name] [-e int|name] [-score int|name] [-z] [-n 0] [-m #] [-sep auto]"
+        "[-c int] [-s int] [-e int] [-score int] [-z] [-sep auto] [-n auto] [-m #]"
             + " [files | URLs | indexes]...");
     cmd.inSection = Section.GENERAL;
     cmd.setBriefDescription("Add tracks from local or remote files. ");
     cmd.setAdditionalDescription(
-        "The list of files to open can be a list of file names or URLs. For local files, glob"
+        "The list of files can be a list of file names or URLs. For local files, glob"
             + " characters (wildcard) are expanded as in Bash (but note that currently globs in"
             + " directory names are not expanded.)\n"
             + "\n"
@@ -1411,23 +1411,23 @@ public class CommandList {
             + "These options are relevant only for generic tabular files. Indexes are 1-based (i.e."
             + " first column has index 1):\n"
             + "\n"
-            + "* :code:`-c int|name` Column index or name of chromosome\n"
+            + "* :code:`-c int` Column index of chromosome\n"
             + "\n"
-            + "* :code:`-s int|name` Column index or name of start position\n"
+            + "* :code:`-s int` Column index of start position\n"
             + "\n"
-            + "* :code:`-e int|name` Column index or name of end position (if unset, assume"
+            + "* :code:`-e int` Column index of end position (if unset, assume"
             + " features are 1 bp long)\n"
             + "\n"
-            + "* :code:`-score int|name` Column index or name of score to plot (if unset, assume"
+            + "* :code:`-score int` Column index of score to plot (if unset, assume"
             + " features are intervals, not quantitative)\n"
             + "\n"
             + "* :code:`-z` Start position is zero-based (like bed files)\n"
             + "\n"
-            + "* :code:`-n int` Skip these many lines before reading data\n"
+            + "* :code:`-sep char` Column character separator. Auto-detected if unset\n"
+            + "\n"
+            + "* :code:`-n int` Skip these many lines before reading data. Auto-detected if unset.\n"
             + "\n"
             + "* :code:`-m char` Comment characters: Skip lines starting with this character\n"
-            + "\n"
-            + "* :code:`-sep char` Column separator character. Autodetected if unset\n"
             + "\n"
             + "Examples::\n"
             + "\n"

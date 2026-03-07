@@ -50,6 +50,7 @@ import org.junit.Test;
 import tracks.IntervalFeature;
 import tracks.TrackFormat;
 import tracks.TrackReads;
+import utils.CsvFormat;
 import utils.Tokenizer;
 
 public class UtilsTest {
@@ -65,6 +66,51 @@ public class UtilsTest {
       samReader.getFileHeader().getSequenceDictionary();
 
   public static String fastaFile = "test_data/chr7.fa";
+
+  @Test
+  public void canGuessCsvFormat() {
+    List<String> data = new ArrayList<>();
+    data.add("header line 1");
+    data.add("header line 2");
+    data.add("V1,V2,V3,V4");
+    data.add("chr1,0,1,2");
+    data.add("chr1,0,1,3");
+    data.add("chr1,0,1,4");
+    data.add("chr 1 ,0,1,5");
+    CsvFormat csvFormat = Utils.guessCsvDelim(data, 2);
+    assertEquals(",", csvFormat.getColumnSeparator() + "");
+    assertEquals(3, csvFormat.getNumHeaderLinesToSkip());
+
+    data = new ArrayList<>();
+    data.add("V1\tV2\tV3\tV4");
+    data.add("chr1\t0\t1\t2");
+    data.add("chr1\t0\t1\t3");
+    data.add("chr1\t0\t1\t4");
+    data.add("chr 1 \t0\t1\t5");
+
+    csvFormat = Utils.guessCsvDelim(data, 2);
+    assertEquals("\t", csvFormat.getColumnSeparator() + "");
+    assertEquals(1, csvFormat.getNumHeaderLinesToSkip());
+
+    data = new ArrayList<>();
+    data.add("chr1 0 1 2");
+    data.add("chr1 0 1 3");
+    data.add("chr1 0 1 4");
+    data.add("chr 1 0 1 5");
+
+    csvFormat = Utils.guessCsvDelim(data, 2);
+    assertEquals(" ", csvFormat.getColumnSeparator() + "");
+    assertEquals(0, csvFormat.getNumHeaderLinesToSkip());
+
+    data = new ArrayList<>();
+    data.add("V1\tV2\tV3\tV4");
+    csvFormat = Utils.guessCsvDelim(data, 2);
+    assertNull(csvFormat);
+
+    data = new ArrayList<>();
+    csvFormat = Utils.guessCsvDelim(data, 2);
+    assertNull(csvFormat);
+  }
 
   @Test
   public void test() throws IOException, InterruptedException {

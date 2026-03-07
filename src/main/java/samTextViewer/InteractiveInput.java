@@ -1505,64 +1505,36 @@ public class InteractiveInput {
     return true;
   }
 
-//  private CsvFormat guessCsvDelim(String fn, int startColIndex, char commentChar) throws IOException {
-//    List<Character> delims = List.of('\t', ',', ' ', ';', '|');
-//    int upto = 1000;
-//    List<String> lines =new ArrayList<>();
-//    try(BufferedReader br = Utils.reader(fn)) {
-//      while (lines.size() < upto) {
-//        String line = br.readLine();
-//        if (line == null) {
-//          break;
-//        }
-//        if (line.startsWith(commentChar + "")) {
-//          continue;
-//        }
-//        lines.add(line.strip());
-//      }
-//    }
-//    List<String> rev = lines.reversed();
-//    char delimFound;
-//    for (char delim : delims) {
-//      for (String line : rev) {
-//        List<String> lst = Splitter.on(delim).splitToList(line);
-//        if (lst.size() <= startColIndex) {
-//          break;
-//        }
-//        try {
-//          int n = Integer.parseInt(lst.get(startColIndex));
-//          if (n < 0) {
-//            break;
-//          }
-//        } catch ( NumberFormatException e) {
-//          break;
-//        }
-//      }
-//      // If we are here we found a delimiter that splits the sample of reads at the index for the start column and finds
-//      // a non-negative integer. This is very likely the right delimiter so we stop searching (even if other delims could work!).
-//      delimFound = delim;
-//      break;
-//    }
-//
-//    // Go to the bottom of the list (most likely this is data)
-//    // Split according to delim.
-//    // If at startColIndex you have an int, check the other lines until you hit the candidate header or the end of
-//    // list.
-//  }
+  private CsvFormat guessCsvFormat(String fn, int upto, int startColIndex, char commentChar) throws IOException {
+    List<String> lines =new ArrayList<>();
+    try(BufferedReader br = Utils.reader(fn)) {
+      while (lines.size() < upto) {
+        String line = br.readLine();
+        if (line == null) {
+          break;
+        }
+        if (line.trim().startsWith(commentChar + "")) {
+          continue;
+        }
+        lines.add(line.strip());
+      }
+    }
+    return Utils.guessCsvDelim(lines, startColIndex);
+  }
 
   private CsvFormat prepareCsvFormat(String fn, List<String> cmdTokens)
-      throws InvalidCommandLineException {
+      throws InvalidCommandLineException, IOException {
 
-    String chromColNameOrIndex = Utils.getArgForParam(cmdTokens, "-c", null);
-    String startColNameOrIndex = Utils.getArgForParam(cmdTokens, "-s", null);
-    String endColNameOrIndex = Utils.getArgForParam(cmdTokens, "-e", null);
-    String scoreColNameOrIndex = Utils.getArgForParam(cmdTokens, "-score", null);
+    int chromColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-c", "0"));
+    int startColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-s", "0"));
+    int endColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-e", "0"));
+    int scoreColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-score", "0"));
 
-    String[] indexes = {
-      chromColNameOrIndex, startColNameOrIndex, endColNameOrIndex, scoreColNameOrIndex
+    int[] indexes = {
+      chromColIndex, startColIndex, endColIndex, scoreColIndex
     };
 
-    if (Arrays.stream(indexes).allMatch(x -> x == null)
+    if (Arrays.stream(indexes).allMatch(x -> x == 0)
         && !cmdTokens.contains("-z")
         && !cmdTokens.contains("-n")
         && !cmdTokens.contains("-m")) {
@@ -1570,7 +1542,7 @@ public class InteractiveInput {
       return null;
     }
 
-    if (chromColNameOrIndex == null || startColNameOrIndex == null) {
+    if (chromColIndex == 0 || startColIndex == 0) {
       throw new RuntimeException(
           "\n"
               + "For reading generic files, please set at least the column names or indexes for"
@@ -1578,7 +1550,7 @@ public class InteractiveInput {
     }
 
     Boolean isZeroBased = Utils.argListContainsFlag(cmdTokens, "-z");
-    int numHeaderLinesToSkip = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-n", "0"));
+    int numHeaderLinesToSkip = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-n", "-1"));
     String meta = Utils.getArgForParam(cmdTokens, "-m", "#");
     char metaCharacter;
     if (meta.isEmpty()) {
@@ -1589,56 +1561,31 @@ public class InteractiveInput {
       throw new RuntimeException(
           "Comment character must be a single character or an empty string. Got: '" + meta + "'");
     }
-    String sep = Utils.getArgForParam(cmdTokens, "-sep", "\0");
+    String sep = Utils.getArgForParam(cmdTokens, "-sep", null);
     sep = StringEscapeUtils.unescapeJava(sep);
-    char columnSeparator;
-    if (sep.isEmpty()) {
-      columnSeparator = '\0';
-    } else if (sep.length() == 1) {
-      columnSeparator = sep.charAt(0);
-    } else {
+    if (sep != null && sep.length() > 1) {
       throw new RuntimeException(
           "Column separator must be a single character or, for automatic detection, an empty"
               + " string. Got: '"
               + sep
               + "'");
     }
+    char columnSeparator = sep == null ? '\0' : sep.charAt(0);
 
-    if (!this.allColumnIndexes(Arrays.asList(indexes))) {
-      // At least one of the columns is not an integer. So we assume it is a column name and files
-      // have a header line. Get the header then
-      try (BufferedReader br = Utils.reader(fn)) {
-        int toSkip = numHeaderLinesToSkip;
-        while (toSkip > 0) {
-          String line = br.readLine();
-          if (line.startsWith(metaCharacter + "")) {
-            continue;
-          }
-          toSkip -= 1;
-        }
-        String headerLine = br.readLine();
-        if (headerLine == null) {
-          throw new RuntimeException("No header (and no data) in " + fn);
-        }
-        List<String> header = Splitter.on(columnSeparator).splitToList(headerLine);
-        // TODO
-      } catch (Exception e) {
-        throw new RuntimeException("Error reading '" + fn + "'. " + e.getMessage());
+    CsvFormat csvFormat = new CsvFormat(chromColIndex - 1, startColIndex - 1, endColIndex - 1, scoreColIndex - 1, isZeroBased, numHeaderLinesToSkip, metaCharacter, columnSeparator);
+    if (columnSeparator == '\0' || numHeaderLinesToSkip == -1) {
+      CsvFormat csvGuess = this.guessCsvFormat(fn, 1000, startColIndex, csvFormat.getMetaCharacter());
+      if (csvGuess == null) {
+        throw new RuntimeException("Unable to guess the delimiter and/or number of header lines to skip for file '" + fn + "'\nPlease specify them with options `-sep` and `-n`.\nIt may also be that the input has no data lines.");
       }
-      throw new NotImplementedException("Column names not supported yet" + Arrays.asList(indexes));
+      if (columnSeparator == '\0') {
+        csvFormat.setColumnSeparator(csvGuess.getColumnSeparator());
+      }
+      if (numHeaderLinesToSkip == -1) {
+        csvFormat.setNumHeaderLinesToSkip(csvGuess.getNumHeaderLinesToSkip());
+      }
     }
-
-    endColNameOrIndex = endColNameOrIndex == null ? "0" : endColNameOrIndex;
-    scoreColNameOrIndex = scoreColNameOrIndex == null ? "0" : scoreColNameOrIndex;
-    return new CsvFormat(
-        Integer.parseInt(chromColNameOrIndex) - 1,
-        Integer.parseInt(startColNameOrIndex) - 1,
-        Integer.parseInt(endColNameOrIndex) - 1,
-        Integer.parseInt(scoreColNameOrIndex) - 1,
-        isZeroBased,
-        numHeaderLinesToSkip,
-        metaCharacter,
-        columnSeparator);
+    return csvFormat;
   }
 
   private void addTracks(List<String> cmdTokens, TrackProcessor proc)

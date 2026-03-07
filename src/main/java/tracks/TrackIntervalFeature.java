@@ -139,6 +139,9 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
   @Override
   protected IntervalFeature createFeature(String line) throws InvalidGenomicCoordsException {
+    if (csvFormat != null) {
+      return new IntervalFeature(line, this.csvFormat);
+    }
     return new IntervalFeature(line, this.getTrackFormat());
   }
 

@@ -91,6 +91,7 @@ public class InteractiveInputTest {
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
     ProcessInput pi =
         processInput(ip, "open -c 5 -s 1 -sep ',' -score 3 -n 1 test_data/generic.csv", proc);
+    String out1 = pi.stdout;
     assertTrue(pi.stdout.contains("_:::: "));
     pi = processInput(ip, "extend 30 30 && print", proc);
     assertTrue(pi.stdout.contains("5566777,5566778,1,0.1,chr7,-99"));
@@ -102,6 +103,22 @@ public class InteractiveInputTest {
 
     pi = processInput(ip, "dataCol -datacol 6", proc);
     assertTrue(pi.stdout.contains("range[-99.0 -91.0]"));
+
+    // Audodect format
+    proc =
+        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    pi = processInput(ip, "open -c 5 -s 1 -score 3 test_data/generic.csv", proc);
+    assertEquals(out1, pi.stdout);
+
+    proc =
+        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    pi = processInput(ip, "open -c 5 -s 1 -score 3 -n 1 test_data/generic.csv", proc);
+    assertEquals(out1, pi.stdout);
+
+    proc =
+        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    pi = processInput(ip, "open -c 5 -s 1 -score 3 -sep ',' test_data/generic.csv", proc);
+    assertEquals(out1, pi.stdout);
   }
 
   @Test
