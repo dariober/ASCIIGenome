@@ -19,6 +19,7 @@ import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
 import utils.CsvFormat;
+import utils.CsvPresets;
 import utils.FlexibleTabixReader;
 
 public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> {
@@ -139,10 +140,10 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
   @Override
   protected IntervalFeature createFeature(String line) throws InvalidGenomicCoordsException {
-    if (csvFormat != null) {
-      return new IntervalFeature(line, this.csvFormat);
+    if (this.csvFormat == null) {
+      return new IntervalFeature(line, this.getTrackFormat());
     }
-    return new IntervalFeature(line, this.getTrackFormat());
+    return new IntervalFeature(line, this.csvFormat);
   }
 
   @Override

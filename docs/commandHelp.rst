@@ -502,9 +502,9 @@ List recently opened files.  Files are listed with their absolute path.
 open
 ++++
 
-:code:`open [-c int|name] [-s int|name] [-e int|name] [-score int|name] [-z] [-n 0] [-m #] [-sep auto] [files | URLs | indexes]...`
+:code:`open [-c int] [-s int] [-e int] [-score int] [-z] [-sep auto] [-n auto] [-m #] [files | URLs | indexes]...`
 
-Add tracks from local or remote files.  The list of files to open can be a list of file names or URLs. For local files, glob characters (wildcard) are expanded as in Bash (but note that currently globs in directory names are not expanded.)
+Add tracks from local or remote files.  The list of files can be a list of file names or URLs. For local files, glob characters (wildcard) are expanded as in Bash (but note that currently globs in directory names are not expanded.)
 
 Alternatively, the files to open can be given as numeric indexes of recently opened files (see command :code:`recentlyOpened`). The last opened file has index 1, the second last 2, etc.
 
@@ -512,21 +512,21 @@ In addition to standard genomic data files (bam, vcf, gff, etc), it is possible 
 
 These options are relevant only for generic tabular files. Indexes are 1-based (i.e. first column has index 1):
 
-* :code:`-c int|name` Column index or name of chromosome
+* :code:`-c int` Column index of chromosome
 
-* :code:`-s int|name` Column index or name of start position
+* :code:`-s int` Column index of start position
 
-* :code:`-e int|name` Column index or name of end position (if unset, assume features are 1 bp long)
+* :code:`-e int` Column index of end position (if unset, assume features are 1 bp long)
 
-* :code:`-score int|name` Column index or name of score to plot (if unset, assume features are intervals, not quantitative)
+* :code:`-score int` Column index of score to plot (if unset, assume features are intervals, not quantitative)
 
 * :code:`-z` Start position is zero-based (like bed files)
 
-* :code:`-n int` Skip these many lines before reading data
+* :code:`-sep char` Column character separator. Auto-detected if unset
+
+* :code:`-n int` Skip these many lines before reading data. Auto-detected if unset.
 
 * :code:`-m char` Comment characters: Skip lines starting with this character
-
-* :code:`-sep char` Column separator character. Autodetected if unset
 
 Examples::
 
