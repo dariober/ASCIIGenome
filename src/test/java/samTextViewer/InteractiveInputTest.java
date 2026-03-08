@@ -79,6 +79,49 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canOpenCsvFile()
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    TrackProcessor proc =
+        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    ProcessInput pi =
+        processInput(ip, "open -c 5 -s 1 -sep ',' -score 3 -n 1 test_data/generic.csv", proc);
+    String out1 = pi.stdout;
+    assertTrue(pi.stdout.contains("_:::: "));
+    pi = processInput(ip, "extend 30 30 && print", proc);
+    assertTrue(pi.stdout.contains("5566777,5566778,1,0.1,chr7,-99"));
+    pi = processInput(ip, "bedToBedgraph", proc);
+    assertTrue(pi.stdout.contains(" | "));
+    pi = processInput(ip, "bedToBedgraph", proc);
+    assertTrue(pi.stdout.contains("::::"));
+    assertTrue(pi.stdout.contains("range[1.0 9.0]"));
+
+    pi = processInput(ip, "dataCol -datacol 6", proc);
+    assertTrue(pi.stdout.contains("range[-99.0 -91.0]"));
+
+    // Audodect format
+    proc =
+        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    pi = processInput(ip, "open -c 5 -s 1 -score 3 test_data/generic.csv", proc);
+    assertEquals(out1, pi.stdout);
+
+    proc =
+        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    pi = processInput(ip, "open -c 5 -s 1 -score 3 -n 1 test_data/generic.csv", proc);
+    assertEquals(out1, pi.stdout);
+
+    proc =
+        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    pi = processInput(ip, "open -c 5 -s 1 -score 3 -sep ',' test_data/generic.csv", proc);
+    assertEquals(out1, pi.stdout);
+  }
+
+  @Test
   public void canSetDataColumn()
       throws SQLException,
           InvalidGenomicCoordsException,
@@ -99,6 +142,7 @@ public class InteractiveInputTest {
 
     pi = processInput(ip, "dataCol -datacol 5", proc);
     assertTrue(pi.stdout.contains(" 93.3"));
+
     pi = processInput(ip, "dataCol -datacol 4 -aggfun Mean ds051", proc);
     assertTrue(pi.stdout.contains(" 718."));
 
@@ -123,8 +167,7 @@ public class InteractiveInputTest {
 
     // This should fail!!
     pi = processInput(ip, "dataCol -datacol 100", proc);
-    assertEquals("", pi.stderr);
-    assertTrue(pi.stdout.contains("range[NaN NaN]"));
+    assertEquals("Invalid index for score column: 100", pi.stderr.trim());
 
     pi = processInput(ip, "dataCol -datacol x", proc);
     assertEquals("Invalid index for data column: x", pi.stderr.trim());
@@ -149,11 +192,11 @@ public class InteractiveInputTest {
         gimmeTrackProcessor("chr7:5567243-5567342", 110, "test_data/ds051.actb.bedgraph.gz");
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
-    ProcessInput pi = processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
+    processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
     processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
     processInput(ip, "open test_data/ds051.actb.bam", proc);
 
-    pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1", proc);
+    ProcessInput pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1", proc);
     assertTrue(pi.stdout.contains("82.3]"));
     assertTrue(pi.stdout.contains("823"));
     assertTrue(pi.stdout.contains("825"));
@@ -182,9 +225,9 @@ public class InteractiveInputTest {
         gimmeTrackProcessor("chr1:1261482-1269678", 200, "test_data/hg19_genes.gtf.gz");
 
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
-    ProcessInput pi = processInput(ip, "open test_data/hg19_genes.gtf.gz", proc);
+    processInput(ip, "open test_data/hg19_genes.gtf.gz", proc);
 
-    pi = processInput(ip, "find", proc);
+    ProcessInput pi = processInput(ip, "find", proc);
     assertTrue(pi.stderr.contains("Error"));
 
     pi = processInput(ip, "find *", proc);

@@ -1391,17 +1391,43 @@ public class CommandList {
 
     cmd = new CommandHelp();
     cmd.setName("open");
-    cmd.setArgs("[files | URLs | indexes]...");
+    cmd.setArgs(
+        "[-c int] [-s int] [-e int] [-score int] [-z] [-sep auto] [-n auto] [-m #]"
+            + " [files | URLs | indexes]...");
     cmd.inSection = Section.GENERAL;
     cmd.setBriefDescription("Add tracks from local or remote files. ");
     cmd.setAdditionalDescription(
-        "The list of files to open can be a list of file names or URLs. "
-            + "For local files, glob characters (wildcard) are expanded as in Bash "
-            + "(but note that currently globs in directory names are not expanded.)\n"
+        "The list of files can be a list of file names or URLs. For local files, glob"
+            + " characters (wildcard) are expanded as in Bash (but note that currently globs in"
+            + " directory names are not expanded.)\n"
             + "\n"
-            + "Alternatively, the files to open can be given as numeric indexes of recently opened "
-            + "files (see command :code:`recentlyOpened`). The last opened file has index 1, "
-            + "the second last 2, etc.\n"
+            + "Alternatively, the files to open can be given as numeric indexes of recently opened"
+            + " files (see command :code:`recentlyOpened`). The last opened file has index 1, the"
+            + " second last 2, etc.\n"
+            + "\n"
+            + "In addition to standard genomic data files (bam, vcf, gff, etc), it is possible to"
+            + " load generic tabular files\n"
+            + "\n"
+            + "These options are relevant only for generic tabular files. Indexes are 1-based (i.e."
+            + " first column has index 1):\n"
+            + "\n"
+            + "* :code:`-c int` Column index of chromosome\n"
+            + "\n"
+            + "* :code:`-s int` Column index of start position\n"
+            + "\n"
+            + "* :code:`-e int` Column index of end position (if unset, assume"
+            + " features are 1 bp long)\n"
+            + "\n"
+            + "* :code:`-score int` Column index of score to plot (if unset, assume"
+            + " features are intervals, not quantitative)\n"
+            + "\n"
+            + "* :code:`-z` Start position is zero-based (like bed files)\n"
+            + "\n"
+            + "* :code:`-sep char` Column character separator. Auto-detected if unset\n"
+            + "\n"
+            + "* :code:`-n int` Skip these many lines before reading data. Auto-detected if unset.\n"
+            + "\n"
+            + "* :code:`-m char` Comment characters: Skip lines starting with this character\n"
             + "\n"
             + "Examples::\n"
             + "\n"

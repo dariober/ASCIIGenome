@@ -213,7 +213,7 @@ public class TrackPileupTest {
   //		trST.update();
   //		System.err.println(trST.printToScreen());
   //		//System.err.println(tr.printToScreen());
-  //		assertTrue(trST.printToScreen().equals(tr.printToScreen()) &&
+  //		assertTrue(trST.printToScreen().equalCoordsUnstranded(tr.printToScreen()) &&
   // trST.printToScreen().trim().isEmpty());
   //
   //		samRecordFilter.clear();

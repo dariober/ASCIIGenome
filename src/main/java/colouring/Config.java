@@ -139,17 +139,6 @@ public class Config {
   /** Get value associated to this configuration key */
   public static String get(ConfigKey key) {
     return config.get(key);
-    //    if (key.equals(ConfigKey.soft_clip_colour)) {
-    //      if (value.equalsIgnoreCase("false")) {
-    //        value = value.toLowerCase();
-    //      } else {
-    //        try {
-    //          value = Integer.toString(Xterm256.colourNameToXterm256(value));
-    //        } catch (InvalidColourException e) {
-    //          throw new InvalidColourException();
-    //        }
-    //      }
-    //    }
   }
 
   public static void set(ConfigKey key, String value) throws InvalidColourException {

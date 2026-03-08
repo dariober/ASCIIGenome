@@ -17,6 +17,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
+import utils.CsvFormat;
 
 public class TrackBedgraphTest {
 
@@ -38,6 +39,46 @@ public class TrackBedgraphTest {
   }
 
   @Test
+  public void canCreateFeature() throws InvalidGenomicCoordsException, SQLException, IOException, ClassNotFoundException, InvalidRecordException {
+
+    String line = "chr1 0 2 9 8 FOO 10".replaceAll(" ", "\t");
+    GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
+    TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
+
+    QuantitativeFeature out = tb.createFeature(line);
+    assertEquals("chr1", out.getChrom());
+    assertEquals(1, out.getFrom());
+    assertEquals(2, out.getTo());
+    assertEquals(9, out.getScore(), 0.0001);
+
+    CsvFormat csv = new CsvFormat(0, 1, 2, 3, true, 0, '#', '\t');
+    tb = new TrackBedgraph("test_data/test.bedGraph", gc, csv);
+    out = tb.createFeature(line);
+    assertEquals("chr1", out.getChrom());
+    assertEquals(1, out.getFrom());
+    assertEquals(2, out.getTo());
+    assertEquals(9, out.getScore(), 0.0001);
+  }
+
+    @Test
+  public void canReproduceTrackBedgraphWithCsv()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidRecordException,
+          InvalidGenomicCoordsException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr1:1-20", 80, null, null);
+    TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
+
+    CsvFormat csv = new CsvFormat(2, 0, 1, 3, true, 0, '#', ',');
+    TrackBedgraph tcsv = new TrackBedgraph("test_data/test.bedGraph.csv", gc, csv);
+    assertEquals(tb.getFeatureList().toString(), tcsv.getFeatureList().toString());
+    assertEquals(tb.printToScreen(), tcsv.printToScreen());
+  }
+
+  @Test
   public void canPrintChromosomeNames()
       throws InvalidGenomicCoordsException,
           IOException,
@@ -48,15 +89,64 @@ public class TrackBedgraphTest {
     GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
 
     TrackBedgraph tb = new TrackBedgraph("test_data/test.bedGraph", gc);
-    System.out.println(tb.getTrackFormat());
+    assertFalse(tb.getChromosomeNames().isEmpty());
+    assertEquals("chr1", tb.getChromosomeNames().get(0));
+
+    // With csv
+    CsvFormat csv = new CsvFormat(0, 1, 2, 3, true, 0, '#', '\t');
+    tb = new TrackBedgraph("test_data/test.bedGraph", gc, csv);
+    assertEquals(TrackFormat.BEDGRAPH, tb.getTrackFormat());
     assertFalse(tb.getChromosomeNames().isEmpty());
     assertEquals("chr1", tb.getChromosomeNames().get(0));
   }
 
   @Test
-  public void canGetDataColumnIndexForBedGraph()
+  public void canReadCsvAndPlotProfile()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr7:5566777-5566786", 80, null, null);
+
+    // MEMO: Indexes here are 0-based
+    CsvFormat csv = new CsvFormat(4, 0, 1, 2, true, 1, '#', ',');
+    TrackBedgraph tb = new TrackBedgraph("test_data/generic.csv", gc, csv);
+    tb.setNoFormat(true);
+
+    assertTrue(tb.printToScreen().contains("_::::::::"));
+    assertTrue(tb.getTitle().contains("[1.0 9.0]"));
+    assertEquals(TrackFormat.BEDGRAPH, tb.getTrackFormat());
+
+    tb.setScoreColIdx(6);
+    assertTrue(tb.getTitle().contains("[-99.0 -91.0]"));
+
+    tb.setScoreColIdx(1);
+    assertTrue(tb.getTitle().contains("[5566777.0 5566785.0]"));
+  }
+
+  @Test
+  public void canReadCsvAndPlotProfileStartPosOnly()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr7:5566777-5566786", 80, null, null);
+
+    CsvFormat csv = new CsvFormat(4, 0, -1, 2, true, 1, '#', ',');
+    TrackBedgraph tb = new TrackBedgraph("test_data/generic.csv", gc, csv);
+    tb.setNoFormat(true);
+    assertTrue(tb.printToScreen().contains("_::::::::"));
+  }
+
+  @Test
+  public void canSetDataColumnForBedGraph()
       throws IOException,
-          NoSuchAlgorithmException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
           ClassNotFoundException,
@@ -70,8 +160,14 @@ public class TrackBedgraphTest {
     tb = new TrackBedgraph(url, gc);
     assertEquals(1, tb.getScreenScores().get(0), 0.0001);
 
-    tb.setScoreColIdx(20);
-    assertEquals(Float.NaN, tb.getScreenScores().get(0), 0.0001);
+    boolean pass = false;
+    try {
+      tb.setScoreColIdx(20);
+    } catch (RuntimeException e) {
+      assertTrue(e.getMessage().contains("Invalid index"));
+      pass = true;
+    }
+    assertTrue(pass);
   }
 
   @Test
@@ -181,8 +277,8 @@ public class TrackBedgraphTest {
     tb.setAwk("'$4 > 0");
     String after = tb.printToScreen();
 
-    List<IntervalFeature> subset = tb.getFeaturesInInterval("chr1", 1, 500000000);
-    for (IntervalFeature s : subset) {
+    List<QuantitativeFeature> subset = tb.getFeaturesInInterval("chr1", 1, 500000000);
+    for (QuantitativeFeature s : subset) {
       assertTrue(s.getScore() > 0);
     }
 
@@ -247,5 +343,27 @@ public class TrackBedgraphTest {
     tb.setYLimitMax(Float.NaN);
     tb.setYLimitMin(Float.NaN);
     tb.setyMaxLines(14);
+  }
+
+  @Test
+  public void canIgnoreIrrelevantMethods()
+          throws InvalidGenomicCoordsException,
+          IOException,
+          InvalidRecordException,
+          ClassNotFoundException,
+          SQLException,
+          InvalidConfigException, InvalidColourException {
+
+    new Config(null);
+
+    String url = "test_data/test.bedGraph.gz";
+    GenomicCoords gc = new GenomicCoords("chr1:1-22", 80, null, null);
+    TrackBedgraph tb = new TrackBedgraph(url, gc);
+    String out = tb.printToScreen();
+    tb.groupByGFFAttribute();
+    tb.groupByGTFAttribute();
+    tb.collapseGFFTranscript(null, null);
+    String out2 = tb.printToScreen();
+    assertEquals(out, out2);
   }
 }

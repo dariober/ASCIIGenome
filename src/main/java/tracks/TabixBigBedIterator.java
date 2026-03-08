@@ -2,7 +2,6 @@ package tracks;
 
 import com.google.common.base.Splitter;
 import htsjdk.samtools.util.CloseableIterator;
-import htsjdk.tribble.readers.TabixReader;
 import htsjdk.tribble.readers.TabixReader.Iterator;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.Options;
@@ -20,6 +19,7 @@ import java.util.NoSuchElementException;
 import org.broad.igv.bbfile.BBFileReader;
 import org.broad.igv.bbfile.BedFeature;
 import org.broad.igv.bbfile.BigBedIterator;
+import utils.FlexibleTabixReader;
 
 public class TabixBigBedIterator {
 
@@ -28,7 +28,7 @@ public class TabixBigBedIterator {
   CloseableIterator<VariantContext> vcfIterator;
   private VCFHeader vcfHeader;
 
-  protected TabixBigBedIterator(TabixReader reader, String chrom, int start, int end) {
+  protected TabixBigBedIterator(FlexibleTabixReader reader, String chrom, int start, int end) {
     this.tabixIterator = reader.query(chrom, start, end);
   }
 

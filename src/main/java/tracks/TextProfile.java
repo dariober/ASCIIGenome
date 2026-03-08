@@ -204,13 +204,6 @@ class TextProfile {
       for (int i = 0; i <= y0; i++) {
         String x = strDepth.get(i);
         if (i == y0) {
-          // if(!x.equals(this.strForZero) && !x.equals(this.strFor1u) && !x.equals(this.strFor2u)
-          // && !x.equals(this.strForFill)){
-          //	String msg= "y0= " + y0 + "; yValue= " + yValue
-          //			+ "; Unexpected char in column bar. Got \"" + x + "\""
-          //			+ "; Bar:\n" + strDepth;
-          //	throw new RuntimeException(msg);
-          // }
         } else if (!x.equals(this.strForFill)) {
           String msg =
               "y0= "

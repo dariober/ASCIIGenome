@@ -1,23 +1,23 @@
 package tracks;
 
 import htsjdk.samtools.SAMSequenceRecord;
-import htsjdk.tribble.readers.TabixReader;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFReader;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.broad.igv.bbfile.BBFileReader;
+import utils.FlexibleTabixReader;
 
 /** Adapter to make tabixReader and bigBed behave in the same way. */
 public class TabixBigBedReader {
 
-  private TabixReader tabixReader;
+  private FlexibleTabixReader tabixReader;
   private BBFileReader bigBedReader;
   private VCFReader vcfReader;
   private VCFHeader vcfHeader;
 
-  protected TabixBigBedReader(TabixReader tabixReader) {
+  protected TabixBigBedReader(FlexibleTabixReader tabixReader) {
     this.tabixReader = tabixReader;
   }
 

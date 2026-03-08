@@ -25,6 +25,74 @@ import org.junit.Test;
 public class MainTest {
 
   @Test
+  public void canStartFromCsv()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
+    String[] args =
+        new String[] {
+          "-ni",
+          "-nf",
+          "--debug",
+          "2",
+          "--exec",
+          "open -c 5 -s 1 -sep ',' -score 3 -m '#' -n 1 test_data/generic.csv && goto"
+              + " chr7:5566781-5566786"
+        };
+    String out = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(out.contains("_:::: "));
+
+    args = new String[] {
+            "-ni",
+            "-nf",
+            "--debug",
+            "2",
+            "--exec",
+            "open test_data/test.bedGraph && goto chr1:1"
+    };
+    String bdg = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(bdg.contains(":    ,,,,,     ::::::,"));
+
+    args = new String[] {
+                    "-ni",
+                    "-nf",
+                    "--debug",
+                    "2",
+                    "--exec",
+                    "open -c 1 -s 2 -e 3 -score 4 -z test_data/test.bedGraph && goto chr1:1"
+            };
+
+    String tsv = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(tsv.contains(":    ,,,,,     ::::::,"));
+
+    args =
+        new String[] {
+            "-ni",
+            "-nf",
+            "--debug",
+            "2",
+            "--exec",
+            "open -c 5 -s 1 test_data/generic.csv && next"
+        };
+    out = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(out.contains("| | | | |"));
+  }
+
+  @Test
+  public void canInitRegion() throws InvalidGenomicCoordsException, IOException {
+    String reg = Main.initRegion(List.of("test_data/test.bedGraph"), null, null, 2);
+    assertEquals("chr1:1", reg);
+  }
+
+  @Test
   public void canFilterGenotype()
       throws ClassNotFoundException,
           IOException,
@@ -109,7 +177,9 @@ public class MainTest {
           "test_data/ds051.actb.cram"
         };
     String out = Joiner.on("\n").join(this.runMain(args));
-    assertTrue(out.contains("chr7:5567419-5567599") && out.contains("<<<<<"));
+    System.out.println(out);
+    assertTrue(out.contains("chr7:5567419-5567599"));
+    assertTrue(out.contains("<<<<<"));
   }
 
   @Test

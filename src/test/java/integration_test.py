@@ -32,6 +32,13 @@ class TestCLI(unittest.TestCase):
         if os.path.exists("test_out"):
             shutil.rmtree("test_out")
 
+    def testReadCsv(self):
+        cmd = f"{ASCIIGenome}" + """ -nf -x 'open -c 1 -s 2 -e 3 -score 4 -sep "\\t" -z ../../../test_data/test.bedGraph && goto chr1:1-80'"""
+        print(cmd)
+        p = shell(cmd)
+        self.assertEqual(p.returncode, 0)
+        self.assertTrue(':    ,,,,,     ::::::,' in p.stdout)
+
     def testCanPrintVersion(self):
         cmd = f"{ASCIIGenome} -v"
         print(cmd)

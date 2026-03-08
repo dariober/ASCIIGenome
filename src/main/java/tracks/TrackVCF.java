@@ -12,7 +12,6 @@ import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.readers.LineIterator;
-import htsjdk.tribble.readers.TabixReader;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.Options;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
@@ -36,6 +35,8 @@ import org.apache.commons.lang3.StringUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
+import utils.CsvFormat;
+import utils.FlexibleTabixReader;
 
 public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
@@ -68,7 +69,8 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
       new MakeTabixIndex(
           filename,
           new File(this.getWorkFilename()),
-          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
+          Utils.trackFormatToTabixFormat(this.getTrackFormat()),
+          this.getColumnSeparator());
     } else if (isBCF(Path.of(filename)) && !new File(Path.of(filename) + ".csi").exists()) {
       throw new NotImplementedException("Cannot sort and index bcf files.");
     } else { // This means the input is indexed.
@@ -76,7 +78,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     }
     this.vcfReader = this.prepareVcfReader(this.getWorkFilename());
     if (!isBCF) {
-      this.setTabixReader(new TabixReader(this.getWorkFilename()));
+      this.setTabixReader(new FlexibleTabixReader(this.getWorkFilename()));
     } else {
       this.tabixReader = null;
     }
@@ -119,9 +121,11 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
-    this.featureList =
+
+    List<VCFFeature> newFeatures =
         this.getFeaturesInInterval(
             this.getGc().getChrom(), this.getGc().getFrom(), this.getGc().getTo());
+    this.setFeatureList(newFeatures);
     for (VCFFeature ift : this.getFeatureList()) {
       ift.mapToScreen(this.getGc().getMapping());
     }
@@ -237,8 +241,8 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     return StringUtils.join(printable, "\n").replaceAll("\n$", "");
   }
 
-  @Override
-  public void setFeatureName(String gtfAttributeForName) {}
+  //  @Override
+  //  public void setFeatureName(String gtfAttributeForName) {}
 
   @Override
   protected List<String> getRecordsAsStrings() {
@@ -280,10 +284,6 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     return tsv;
   }
 
-  protected List<VCFFeature> getFeatureList() {
-    return this.featureList;
-  }
-
   @Override
   TabixBigBedReader getReader() {
     if (isBCF) {
@@ -308,6 +308,11 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
   @Override
   protected VCFFeature collapseGFFTranscript(List<VCFFeature> features, List<Double> mapToScreen) {
+    return null;
+  }
+
+  @Override
+  public CsvFormat getCsvFormat() {
     return null;
   }
 

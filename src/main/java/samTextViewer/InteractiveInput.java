@@ -21,11 +21,14 @@ import java.util.regex.PatternSyntaxException;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.text.StringEscapeUtils;
 import org.biojava.nbio.core.sequence.io.IUPACParser;
 import org.biojava.nbio.core.sequence.transcription.Frame;
 import session.Session;
 import session.SessionHandler;
 import tracks.AbstractTrack;
+import utils.CsvFormat;
 import utils.Tokenizer;
 
 /** Class to process input from console */
@@ -359,7 +362,13 @@ public class InteractiveInput {
           proc.getTrackSet().setNameAttribute(cmdTokens);
         } else if (cmdTokens.get(0).equals("open") || cmdTokens.get(0).equals("addTracks")) {
           cmdTokens.remove(0);
-          this.addTracks(cmdTokens, proc);
+          try {
+            this.addTracks(cmdTokens, proc);
+          } catch (Exception e) {
+            System.err.println(Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
         } else if (cmdTokens.get(0).equals("reload")) {
           proc.getTrackSet().reload(cmdTokens);
         } else if (cmdTokens.get(0).equals("dropTracks")) {
@@ -403,7 +412,13 @@ public class InteractiveInput {
 
           // * These commands change both the Tracks and the GenomicCoordinates
         } else if (cmdTokens.get(0).equals("next")) {
-          this.next(cmdTokens, proc);
+          try {
+            this.next(cmdTokens, proc);
+          } catch (Exception e) {
+            System.err.println(Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
 
         } else if (cmdTokens.get(0).equals("find")) {
           boolean all = Utils.argListContainsFlag(cmdTokens, "-all");
@@ -801,11 +816,11 @@ public class InteractiveInput {
   private String moveWindowByColumns(GenomicCoords gc, int times)
       throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
     String x = String.valueOf(Math.round(gc.getBpPerScreenColumn() * times));
-    if (Integer.valueOf(x) >= 0) {
+    if (Integer.parseInt(x) >= 0) {
       x = "+" + x;
     }
-    List<String> tokens = new ArrayList<String>();
-    tokens.add(String.valueOf(x));
+    List<String> tokens = new ArrayList<>();
+    tokens.add(x);
     return Utils.parseConsoleInput(tokens, gc);
   }
 
@@ -1473,59 +1488,158 @@ public class InteractiveInput {
     return tab.trim();
   }
 
+  private boolean allColumnIndexes(List<String> columns) {
+    for (String x : columns) {
+      if (x == null) {
+        continue;
+      }
+      try {
+        int i = Integer.parseInt(x);
+        if (i <= 0) {
+          return false;
+        }
+      } catch (NumberFormatException e) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private CsvFormat guessCsvFormat(String fn, int upto, int startColIndex, char commentChar) throws IOException {
+    List<String> lines =new ArrayList<>();
+    try(BufferedReader br = Utils.reader(fn)) {
+      while (lines.size() < upto) {
+        String line = br.readLine();
+        if (line == null) {
+          break;
+        }
+        if (line.trim().startsWith(commentChar + "")) {
+          continue;
+        }
+        lines.add(line.strip());
+      }
+    }
+    return Utils.guessCsvDelim(lines, startColIndex);
+  }
+
+  private CsvFormat prepareCsvFormat(String fn, List<String> cmdTokens)
+      throws InvalidCommandLineException, IOException {
+
+    int chromColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-c", "0"));
+    int startColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-s", "0"));
+    int endColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-e", "0"));
+    int scoreColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-score", "0"));
+
+    int[] indexes = {
+      chromColIndex, startColIndex, endColIndex, scoreColIndex
+    };
+
+    if (Arrays.stream(indexes).allMatch(x -> x == 0)
+        && !cmdTokens.contains("-z")
+        && !cmdTokens.contains("-n")
+        && !cmdTokens.contains("-m")) {
+      // There are no options related to csv
+      return null;
+    }
+
+    if (chromColIndex == 0 || startColIndex == 0) {
+      throw new RuntimeException(
+          "\n"
+              + "For reading generic files, please set at least the column names or indexes for"
+              + " chromosome (-c) and start position (-s)");
+    }
+
+    Boolean isZeroBased = Utils.argListContainsFlag(cmdTokens, "-z");
+    int numHeaderLinesToSkip = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-n", "-1"));
+    String meta = Utils.getArgForParam(cmdTokens, "-m", "#");
+    char metaCharacter;
+    if (meta.isEmpty()) {
+      metaCharacter = '\0';
+    } else if (meta.length() == 1) {
+      metaCharacter = meta.charAt(0);
+    } else {
+      throw new RuntimeException(
+          "Comment character must be a single character or an empty string. Got: '" + meta + "'");
+    }
+    String sep = Utils.getArgForParam(cmdTokens, "-sep", null);
+    sep = StringEscapeUtils.unescapeJava(sep);
+    if (sep != null && sep.length() > 1) {
+      throw new RuntimeException(
+          "Column separator must be a single character or, for automatic detection, an empty"
+              + " string. Got: '"
+              + sep
+              + "'");
+    }
+    char columnSeparator = sep == null ? '\0' : sep.charAt(0);
+
+    CsvFormat csvFormat = new CsvFormat(chromColIndex - 1, startColIndex - 1, endColIndex - 1, scoreColIndex - 1, isZeroBased, numHeaderLinesToSkip, metaCharacter, columnSeparator);
+    if (columnSeparator == '\0' || numHeaderLinesToSkip == -1) {
+      CsvFormat csvGuess = this.guessCsvFormat(fn, 1000, startColIndex, csvFormat.getMetaCharacter());
+      if (csvGuess == null) {
+        throw new RuntimeException("Unable to guess the delimiter and/or number of header lines to skip for file '" + fn + "'\nPlease specify them with options `-sep` and `-n`.\nIt may also be that the input has no data lines.");
+      }
+      if (columnSeparator == '\0') {
+        csvFormat.setColumnSeparator(csvGuess.getColumnSeparator());
+      }
+      if (numHeaderLinesToSkip == -1) {
+        csvFormat.setNumHeaderLinesToSkip(csvGuess.getNumHeaderLinesToSkip());
+      }
+    }
+    return csvFormat;
+  }
+
   private void addTracks(List<String> cmdTokens, TrackProcessor proc)
       throws IOException, InvalidGenomicCoordsException, InvalidCommandLineException {
+
     List<String> globbed = Utils.globFiles(cmdTokens);
     if (globbed.isEmpty()) {
       globbed = this.openFilesFromIndexes(proc.getTrackSet().getOpenedFiles(), cmdTokens);
     }
 
     if (globbed.isEmpty()) {
-      String msg = Utils.padEndMultiLine(cmdTokens + ": No file found.", proc.getWindowSize());
+      throw new RuntimeException(cmdTokens + ": No file found.");
+    }
+
+    CsvFormat csvFormat = this.prepareCsvFormat(globbed.get(0), cmdTokens);
+
+    for (String sourceName : globbed) {
+      String msg = Utils.padEndMultiLine("Adding: " + sourceName, proc.getWindowSize());
       System.err.println(msg);
-      this.interactiveInputExitCode = ExitCode.ERROR;
-
-    } else {
-
-      for (String sourceName : globbed) {
-        String msg = Utils.padEndMultiLine("Adding: " + sourceName, proc.getWindowSize());
-        System.err.println(msg);
+      try {
+        proc.getTrackSet()
+            .addTrackFromSource(
+                sourceName, proc.getGenomicCoordsHistory().current(), null, csvFormat);
+      } catch (Exception e) {
         try {
+          // It may be that you are in position that doesn't exist in the sequence
+          // dictionary that
+          // came with this new file. To recover, find an existing position, move there and
+          // try to reload the
+          // file. This fixes issue#23
+          String region = Main.initRegion(globbed, null, null, debug);
+          GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
+          this.repositionGenomicCoords(gc, region, Utils.getTerminalWidth());
+          proc.getGenomicCoordsHistory().add(gc);
           proc.getTrackSet()
-              .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
-        } catch (Exception e) {
-          try {
-            // It may be that you are in position that doesn't exist in the sequence
-            // dictionary that
-            // came with this new file. To recover, find an existing position, move there and
-            // try to reload the
-            // file. This fixes issue#23
-            String region = Main.initRegion(globbed, null, null, debug);
-
-            GenomicCoords gc = (GenomicCoords) proc.getGenomicCoordsHistory().current().clone();
-            this.repositionGenomicCoords(gc, region, Utils.getTerminalWidth());
-            proc.getGenomicCoordsHistory().add(gc);
-            proc.getTrackSet()
-                .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null);
-          } catch (Exception x) {
-            x.printStackTrace();
-            msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
-            System.err.println(msg);
-            this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
-          }
+              .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null, csvFormat);
+        } catch (Exception x) {
+          x.printStackTrace();
+          msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());
+          System.err.println(msg);
+          this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
         }
+      }
 
-        if (proc.getGenomicCoordsHistory().current().getSamSeqDict() == null
-            || proc.getGenomicCoordsHistory().current().getSamSeqDict().isEmpty()) {
-          GenomicCoords testSeqDict =
-              new GenomicCoords("default", Utils.getTerminalWidth(), null, null);
-          List<String> candidateSourceGenome = new ArrayList<String>();
-          candidateSourceGenome.add(sourceName);
-          testSeqDict.setGenome(candidateSourceGenome, false);
-          if (testSeqDict.getSamSeqDict() != null) {
-            candidateSourceGenome.add(0, "cmd");
-            proc.getGenomicCoordsHistory().setGenome(candidateSourceGenome);
-          }
+      if (proc.getGenomicCoordsHistory().current().getSamSeqDict() == null
+          || proc.getGenomicCoordsHistory().current().getSamSeqDict().isEmpty()) {
+        GenomicCoords testSeqDict =
+            new GenomicCoords("default", Utils.getTerminalWidth(), null, null);
+        List<String> candidateSourceGenome = new ArrayList<String>();
+        candidateSourceGenome.add(sourceName);
+        testSeqDict.setGenome(candidateSourceGenome, false);
+        if (testSeqDict.getSamSeqDict() != null) {
+          candidateSourceGenome.add(0, "cmd");
+          proc.getGenomicCoordsHistory().setGenome(candidateSourceGenome);
         }
       }
     }

@@ -14,6 +14,7 @@ if(JavaVersion.current() < jversion) {
     throw new GradleException("Java >= " + jversion + " is required but you are running " + JavaVersion.current())
 }
 
+
 /** Return the MD5 sum of the give File object */
 ext.generateMD5 = { file ->
     def digest = MessageDigest.getInstance("MD5")
@@ -32,40 +33,45 @@ ext.gunzip = { filename ->
       }
 }
 
-String testDir = Paths.get(System.getProperty("user.dir"), 'test_data')
+tasks.register('prepareTestData') {
+    doLast {
+        String testDir = Paths.get(System.getProperty("user.dir"), 'test_data')
 
-/* Prepare test data */
-File targetFile= new File(testDir, 'chr7.fa')
-String targetMD5= "30c3693ead968844a769a90a801a900f"
+        File targetFile = new File(testDir, 'chr7.fa')
+        String targetMD5 = "30c3693ead968844a769a90a801a900f"
 
-if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
-    File fgz= new File(testDir, targetFile.name + ".gz")
-    ext.gunzip(fgz.absolutePath)
-    if(ext.generateMD5(targetFile) != targetMD5){
-        throw new GradleException("Corrupted file " + targetFile)
+        if (!targetFile.exists() || generateMD5(targetFile) != targetMD5) {
+            File fgz = new File(testDir, targetFile.name + ".gz")
+            gunzip(fgz.absolutePath)
+            if (generateMD5(targetFile) != targetMD5) {
+                throw new GradleException("Corrupted file " + targetFile)
+            }
+        }
+
+        targetFile = new File(testDir, 'ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf')
+        targetMD5 = "6783ca5e6df2ce1075e1e0c924ad7d37"
+
+        if (!targetFile.exists() || generateMD5(targetFile) != targetMD5) {
+            File fgz = new File(testDir, targetFile.name + ".gz")
+            gunzip(fgz.absolutePath)
+            if (generateMD5(targetFile) != targetMD5) {
+                throw new GradleException("Corrupted file " + targetFile)
+            }
+        }
+
+        gunzip(Paths.get(testDir, "CEU.exon.2010_06.genotypes.vcf.gz").toString())
+        gunzip(Paths.get(testDir, "ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toString())
     }
 }
-
-targetFile= new File(testDir, 'ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf')
-targetMD5= "6783ca5e6df2ce1075e1e0c924ad7d37"
-
-if (!targetFile.exists() || ext.generateMD5(targetFile) != targetMD5) {
-    File fgz= new File(testDir, targetFile.name + ".gz")
-    ext.gunzip(fgz.absolutePath)
-    if(ext.generateMD5(targetFile) != targetMD5){
-        throw new GradleException("Corrupted file " + targetFile)
-    }
-}
-
-ext.gunzip(Paths.get(testDir, "CEU.exon.2010_06.genotypes.vcf.gz").toString())
-ext.gunzip(Paths.get(testDir, "ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toString())
-
-// ---------------------------
 
 test {
+    dependsOn prepareTestData
+    useJUnit()
+    finalizedBy jacocoTestReport
+
     testLogging {
         events "passed", "skipped", "failed"
-        exceptionFormat "full"
+        exceptionFormat = "full"
     }
     if (project.hasProperty('excludeTests')) {
         exclude project.property('excludeTests')
@@ -74,8 +80,8 @@ test {
 
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
-    maven { url "https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/" }
+    maven { url = 'https://jitpack.io' }
+    maven { url = "https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/" }
 }
 
 jar {
@@ -90,33 +96,39 @@ jar {
 }
 
 dependencies {
-    implementation group: 'net.sourceforge.argparse4j', name: 'argparse4j', version: '0.8.1'
-    implementation group: 'jline', name: 'jline', version: '2.14.5'
-    implementation group: 'com.github.igvteam', name: 'igv', version: 'v2.6.3'
-    implementation group: 'log4j', name: 'log4j', version: '1.2.17'
-    implementation group: 'com.github.samtools', name: 'htsjdk', version: '4.3.0'
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
-    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
-    implementation group: 'commons-validator', name: 'commons-validator', version: '1.6'
-    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
-    implementation group: 'com.esotericsoftware.yamlbeans', name: 'yamlbeans', version: '1.13'
-    implementation group: 'com.itextpdf', name: 'itextpdf', version: '5.5.13'
-    implementation group: 'com.google.guava', name: 'guava', version: '24.0-android'
-    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.2'
-    implementation group: 'org.biojava', name: 'biojava-genome', version: '7.2.4'
-    implementation group: 'org.biojava', name: 'biojava-core', version: '7.2.4'
-    implementation group: 'openchart', name: 'openchart', version: '1.4.2'
-    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.51.1.0'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.17.1'
-    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.17.1'
+    implementation "net.sourceforge.argparse4j:argparse4j:0.8.1"
+    implementation "jline:jline:2.14.5"
+    implementation "com.github.igvteam:igv:v2.6.3"
+    implementation "log4j:log4j:1.2.17"
+    implementation "com.github.samtools:htsjdk:4.3.0"
+    implementation "org.apache.commons:commons-text:1.15.0"
+    implementation "org.apache.commons:commons-lang3:3.5"
+    implementation "org.apache.commons:commons-math3:3.6.1"
+    implementation "commons-validator:commons-validator:1.6"
+    implementation "commons-io:commons-io:2.6"
+    implementation "com.esotericsoftware.yamlbeans:yamlbeans:1.13"
+    implementation "com.itextpdf:itextpdf:5.5.13"
+    implementation "com.google.guava:guava:24.0-android"
+    implementation "com.google.code.gson:gson:2.8.2"
+    implementation "org.biojava:biojava-genome:7.2.4"
+    implementation "org.biojava:biojava-core:7.2.4"
+    // implementation "openchart:openchart:1.4.2"
+    implementation "org.xerial:sqlite-jdbc:3.51.1.0"
+    implementation "com.fasterxml.jackson.core:jackson-core:2.17.1"
+    implementation  "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.1"
     implementation files('libs/bcf.jar')
     testImplementation 'junit:junit:4.12'
 }
 
-jacocoTestReport {jacocoTestReport
+jacocoTestReport {
+    dependsOn test
+    dependsOn compileJava
+    classDirectories.setFrom(
+        fileTree(dir: "$rootProject.layout.buildDirectory/classes/java/main")
+    )
     reports {
         xml.required = true
-        html.required = false
+        html.required = true
     }
 }
 

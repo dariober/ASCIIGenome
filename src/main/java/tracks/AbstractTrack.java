@@ -49,6 +49,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Main;
 import samTextViewer.Utils;
+import utils.CsvFormat;
 import utils.Tokenizer;
 
 public abstract class AbstractTrack {
@@ -74,6 +75,7 @@ public abstract class AbstractTrack {
     }
   }
 
+  private char columnSeparator;
   protected int yMaxLines = 10;
   private String filename = "N/A"; // File name as given in input
   private String workFilename = "N/A"; // File actually used by ASCIIGenome. E.g. tmp tabix files
@@ -339,10 +341,12 @@ public abstract class AbstractTrack {
 
   //	public abstract String getFeatureName();
 
-  public abstract void setFeatureName(String gtfAttributeForName);
-
   public PrintRawLine getPrintMode() {
     return printMode;
+  }
+
+  public void setFeatureName(String nameFieldOrAttribute) {
+    //
   }
 
   public void setPrintMode(PrintRawLine printMode) {
@@ -1354,6 +1358,16 @@ public abstract class AbstractTrack {
   public VCFHeader getVcfHeader() {
     return this.vcfHeader;
   }
+
+  public char getColumnSeparator() {
+    if (this.getCsvFormat() == null) {
+      return '\t';
+    } else {
+      return this.getCsvFormat().getColumnSeparator();
+    }
+  }
+
+  public abstract CsvFormat getCsvFormat();
 
   //  @Override
   //  public VCFHeader getVcfHeader() {

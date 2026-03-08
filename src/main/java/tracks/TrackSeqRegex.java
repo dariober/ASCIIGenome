@@ -74,7 +74,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
 
     for (String reg : regionListPos) {
       reg = reg + "\t.\t" + strand;
-      IntervalFeature x = new IntervalFeature(reg, this.getTrackFormat(), this.getScoreColIdx());
+      IntervalFeature x = new IntervalFeature(reg, this.getTrackFormat());
       iftList.add(x);
     }
     this.removeInvisibleFeatures(iftList);
@@ -190,7 +190,7 @@ public class TrackSeqRegex extends TrackIntervalFeature {
     regexMatchBgzip.deleteOnExit();
     regexMatchIndex.deleteOnExit();
 
-    new MakeTabixIndex(regexMatchFile, regexMatchBgzip, TabixFormat.BED);
+    new MakeTabixIndex(regexMatchFile, regexMatchBgzip, TabixFormat.BED, this.getColumnSeparator());
     new File(regexMatchFile).delete();
 
     TrackIntervalFeature regexMatchTrack =

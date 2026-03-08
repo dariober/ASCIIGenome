@@ -15,6 +15,7 @@ import java.util.List;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.junit.Before;
 import org.junit.Test;
+import utils.CsvFormat;
 
 public class IntervalFeatureTest {
 
@@ -36,8 +37,8 @@ public class IntervalFeatureTest {
   public void behaviourOfIsNumber() {
     // NB: NumberUtils.isCreatable comes from samtools even if it is imported via apache commons
     Package pkg = NumberUtils.class.getPackage();
-    System.out.println(pkg.getImplementationVersion() + " | " + pkg.getImplementationVendor());
-    System.out.println(NumberUtils.class.getProtectionDomain().getCodeSource().getLocation());
+    // System.out.println(pkg.getImplementationVersion() + " | " + pkg.getImplementationVendor());
+    // System.out.println(NumberUtils.class.getProtectionDomain().getCodeSource().getLocation());
 
     // Valid numbers
     assertTrue(NumberUtils.isCreatable("1.1"));
@@ -55,7 +56,7 @@ public class IntervalFeatureTest {
   public void canGetMidPointOfFeature() throws InvalidGenomicCoordsException {
 
     String line = "chr1 0 100".replaceAll(" ", "\t"); // Genomic coords are irrelavant to this test
-    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED, -1);
+    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED);
     f.setScreenFrom(0);
     f.setScreenTo(0);
     assertEquals(0, f.getScreenMid());
@@ -85,7 +86,7 @@ public class IntervalFeatureTest {
   public void canMakeIdeogram() throws InvalidGenomicCoordsException, InvalidColourException {
 
     String line = "chr1 0 10".replaceAll(" ", "\t");
-    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED, -1);
+    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED);
     f.setScreenFrom(0);
     f.setScreenTo(9);
 
@@ -104,7 +105,7 @@ public class IntervalFeatureTest {
 
     // With GTF feature
     line = "chr1 na exon 1 100 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF, -1);
+    f = new IntervalFeature(line, TrackFormat.GTF);
     f.setScreenFrom(0);
     f.setScreenTo(9);
     f.setGtfAttributeForName("foo");
@@ -126,7 +127,7 @@ public class IntervalFeatureTest {
   public void canSetIdeogram() throws InvalidGenomicCoordsException, InvalidColourException {
 
     String line = "chr1 0 10".replaceAll(" ", "\t");
-    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED, -1);
+    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED);
     f.setScreenFrom(0);
     f.setScreenTo(9);
 
@@ -149,62 +150,62 @@ public class IntervalFeatureTest {
     assertTrue(ideogram.contains("|_foo_|"));
   }
 
-  @Test
-  public void canSetFeatureNameFromBedField()
-      throws InvalidGenomicCoordsException, InvalidColourException {
-
-    String line = "chr1 0 10 foo bar baz".replaceAll(" ", "\t");
-    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED, -1);
-    f.setScreenFrom(0);
-    f.setScreenTo(9);
-
-    // Default: 4th field for name
-    String ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
-    assertTrue(ideogram.contains("foo"));
-
-    f.setBedFieldName(4);
-    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
-    assertTrue(ideogram.contains("bar"));
-
-    f.setBedFieldName(5);
-    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
-    assertTrue(ideogram.contains("baz"));
-
-    // Invalid index: No change
-    f.setBedFieldName(99);
-    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
-    assertTrue(ideogram.contains("baz"));
-
-    // Column index not available
-    line = "chr1 0 10".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED, -1);
-    f.setScreenFrom(0);
-    f.setScreenTo(9);
-    f.setBedFieldName(4);
-    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
-    assertTrue(ideogram.replaceAll("\\|", "").isEmpty());
-
-    // Name missing
-    line = "chr1 0 10 .".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED, -1);
-    f.setScreenFrom(0);
-    f.setScreenTo(9);
-    f.setBedFieldName(3);
-    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
-    assertTrue(ideogram.replaceAll("\\|", "").isEmpty());
-
-    // Name not wanted
-    line = "chr1 0 10 foo".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED, -1);
-    f.setScreenFrom(0);
-    f.setScreenTo(9);
-    f.setBedFieldName(3);
-    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
-    assertTrue(ideogram.contains("foo"));
-    f.setBedFieldName(-1);
-    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
-    assertFalse(ideogram.contains("foo"));
-  }
+  //  @Test
+  //  public void canSetFeatureNameFromBedField()
+  //      throws InvalidGenomicCoordsException, InvalidColourException {
+  //
+  //    String line = "chr1 0 10 foo bar baz".replaceAll(" ", "\t");
+  //    IntervalFeature f = new IntervalFeature(line, TrackFormat.BED);
+  //    f.setScreenFrom(0);
+  //    f.setScreenTo(9);
+  //
+  //    // Default: 4th field for name
+  //    String ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
+  //    assertTrue(ideogram.contains("foo"));
+  //
+  //    f.setBedFieldName(4);
+  //    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
+  //    assertTrue(ideogram.contains("bar"));
+  //
+  //    f.setBedFieldName(5);
+  //    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
+  //    assertTrue(ideogram.contains("baz"));
+  //
+  //    // Invalid index: No change
+  //    f.setBedFieldName(99);
+  //    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
+  //    assertTrue(ideogram.contains("baz"));
+  //
+  //    // Column index not available
+  //    line = "chr1 0 10".replaceAll(" ", "\t");
+  //    f = new IntervalFeature(line, TrackFormat.BED);
+  //    f.setScreenFrom(0);
+  //    f.setScreenTo(9);
+  //    f.setBedFieldName(4);
+  //    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
+  //    assertTrue(ideogram.replaceAll("\\|", "").isEmpty());
+  //
+  //    // Name missing
+  //    line = "chr1 0 10 .".replaceAll(" ", "\t");
+  //    f = new IntervalFeature(line, TrackFormat.BED);
+  //    f.setScreenFrom(0);
+  //    f.setScreenTo(9);
+  //    f.setBedFieldName(3);
+  //    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
+  //    assertTrue(ideogram.replaceAll("\\|", "").isEmpty());
+  //
+  //    // Name not wanted
+  //    line = "chr1 0 10 foo".replaceAll(" ", "\t");
+  //    f = new IntervalFeature(line, TrackFormat.BED);
+  //    f.setScreenFrom(0);
+  //    f.setScreenTo(9);
+  //    f.setBedFieldName(3);
+  //    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
+  //    assertTrue(ideogram.contains("foo"));
+  //    f.setBedFieldName(-1);
+  //    ideogram = this.ideogramToString(f.getIdeogram(true, true), true);
+  //    assertFalse(ideogram.contains("foo"));
+  //  }
 
   @Test
   public void canAssignNameToFeature() throws InvalidGenomicCoordsException {
@@ -214,93 +215,91 @@ public class IntervalFeatureTest {
 
     // Name not wanted to display:
     line = "chr1 0 10 myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED, -1);
+    f = new IntervalFeature(line, TrackFormat.BED);
     f.setGtfAttributeForName("-na");
     assertEquals(".", f.getName());
 
     // Do not use a name
     line = "chr1 0 10 myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED, -1);
+    f = new IntervalFeature(line, TrackFormat.BED);
     f.setGtfAttributeForName(null);
     assertEquals("myname", f.getName());
 
     // Custom name from BED: Has no effect
     line = "chr1 0 10 myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED, -1);
+    f = new IntervalFeature(line, TrackFormat.BED);
     f.setGtfAttributeForName("ID");
     assertEquals("myname", f.getName());
 
     // Custom name from GTF
     line = "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF, -1);
+    f = new IntervalFeature(line, TrackFormat.GTF);
     f.setGtfAttributeForName("foo");
     assertEquals("myname", f.getName());
 
     // Custom name from GTF, with attribute not found
     line = "chr1 na exon 1 10 . + . ID=mrna0001;Name=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF, -1);
+    f = new IntervalFeature(line, TrackFormat.GTF);
     f.setGtfAttributeForName("foo");
     assertEquals(".", f.getName());
 
     // BED with and without name
     line = "chr1 0 10".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED, -1);
+    f = new IntervalFeature(line, TrackFormat.BED);
     assertEquals(".", f.getName());
 
     line = "chr1 0 10 myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.BED, -1);
+    f = new IntervalFeature(line, TrackFormat.BED);
     assertEquals("myname", f.getName());
 
     // GTF/GFF without attributes or without any valid filed to get name from
     line = "chr1 na exon 1 10 . + .".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF, -1);
+    f = new IntervalFeature(line, TrackFormat.GTF);
     assertEquals(".", f.getName());
 
     line = "chr1 na exon 1 10 . + . foo=mrna0001;bar=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF, -1);
+    f = new IntervalFeature(line, TrackFormat.GTF);
     assertEquals(".", f.getName());
 
     // GFF with Name
     line = "chr1 na exon 1 10 . + . ID=mrna0001;Name=myname".replaceAll(" ", "\t");
-    f = new IntervalFeature(line, TrackFormat.GTF, -1);
+    f = new IntervalFeature(line, TrackFormat.GTF);
     assertEquals("myname", f.getName());
 
     // GFF use ID
     line = "chr1 na exon 1 10 . + . ID=mrna0001;foo=myname".replaceAll(" ", "\t");
     ;
-    f = new IntervalFeature(line, TrackFormat.GTF, -1);
+    f = new IntervalFeature(line, TrackFormat.GTF);
     assertEquals("mrna0001", f.getName());
 
     // GTF
     line = "chr1\tna\texon\t1\t10\t.\t+\t.\tgene_id \"mygene\"; transcript_id \"mytranx\";";
-    f = new IntervalFeature(line, TrackFormat.GTF, -1);
+    f = new IntervalFeature(line, TrackFormat.GTF);
     assertEquals("mytranx", f.getName());
 
     line = "chr1\tna\texon\t1\t10\t.\t+\t.\tgene_id \"mygene\";";
-    f = new IntervalFeature(line, TrackFormat.GTF, -1);
+    f = new IntervalFeature(line, TrackFormat.GTF);
     assertEquals("mygene", f.getName());
   }
 
   @Test
   public void canTestForEqualCoords() throws InvalidGenomicCoordsException {
     IntervalFeature plus =
-        new IntervalFeature("chr1 0 10 x . +".replaceAll(" ", "\t"), TrackFormat.BED, -1);
+        new IntervalFeature("chr1 0 10 x . +".replaceAll(" ", "\t"), TrackFormat.BED);
     IntervalFeature minus =
-        new IntervalFeature("chr1 0 10 y . -".replaceAll(" ", "\t"), TrackFormat.BED, -1);
+        new IntervalFeature("chr1 0 10 y . -".replaceAll(" ", "\t"), TrackFormat.BED);
 
-    assertTrue(plus.equals(minus)); // Strand not matters
-    assertTrue(!plus.equalStranded(minus)); // Strand matters
+    assertTrue(plus.equalCoordsUnstranded(minus)); // Strand not matters
+    assertTrue(!plus.equalCoordsStranded(minus)); // Strand matters
 
     // Strand NA
-    IntervalFeature na1 =
-        new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, -1);
-    IntervalFeature na2 =
-        new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED, -1);
-    assertTrue(na1.equals(na2));
-    assertTrue(na1.equalStranded(na2));
+    IntervalFeature na1 = new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED);
+    IntervalFeature na2 = new IntervalFeature("chr1 0 10".replaceAll(" ", "\t"), TrackFormat.BED);
+    assertTrue(na1.equalCoordsUnstranded(na2));
+    assertTrue(na1.equalCoordsStranded(na2));
 
-    assertTrue(plus.equals(na2));
-    assertTrue(!plus.equalStranded(na2));
+    assertTrue(plus.equalCoordsUnstranded(na2));
+    assertTrue(!plus.equalCoordsStranded(na2));
   }
 
   @Test
@@ -308,7 +307,7 @@ public class IntervalFeatureTest {
     String gtfLine =
         "chr1\tunknown\texon\t11874\t12227\t.\t+\t.\tgene_id \"DDX11L1\"; transcript_id"
             + " \"NR_046018_1\"; gene_name \"DDX11L1\"; tss_id \"TSS14523\";";
-    IntervalFeature f = new IntervalFeature(gtfLine, TrackFormat.GTF, -1);
+    IntervalFeature f = new IntervalFeature(gtfLine, TrackFormat.GTF);
     assertEquals(11874, f.getFrom());
     assertEquals(12227, f.getTo());
     assertEquals("exon", f.getFeature());
@@ -323,7 +322,7 @@ public class IntervalFeatureTest {
         "chr1\tunknown\texon\t11874\t12227\t.\t+\t.\tgene_id \"DDX11L1\"; transcript_id"
             + " \"NR_046018_1\"; gene_name \"DDX11L1\"; tss_id \"TSS14523\";";
 
-    IntervalFeature f = new IntervalFeature(gtfLine, TrackFormat.GTF, -1);
+    IntervalFeature f = new IntervalFeature(gtfLine, TrackFormat.GTF);
     String x = f.getGFFValueFromKey("transcript_id");
     assertEquals("NR_046018_1", x);
   }
@@ -331,28 +330,28 @@ public class IntervalFeatureTest {
   @Test
   public void canCreateIntervalFromString() throws InvalidGenomicCoordsException {
     String bedLine = "chr1\t0\t1";
-    IntervalFeature f = new IntervalFeature(bedLine, TrackFormat.BED, -1);
+    IntervalFeature f = new IntervalFeature(bedLine, TrackFormat.BED);
     assertEquals("chr1", f.getChrom());
     assertEquals(1, f.getFrom()); // Note start augmented by 1.
 
     bedLine = "chr1\t0\t1\tgene\t0.1\t+";
-    f = new IntervalFeature(bedLine, TrackFormat.BED, -1);
+    f = new IntervalFeature(bedLine, TrackFormat.BED);
     assertEquals("gene", f.getName());
     assertEquals('+', f.getStrand());
 
     bedLine = " chr1\t0\t1";
-    f = new IntervalFeature(bedLine, TrackFormat.BED, -1);
+    f = new IntervalFeature(bedLine, TrackFormat.BED);
     assertEquals("chr1", f.getChrom()); // NB: spaces in chrom stripped.
   }
 
   @Test
   public void canSortByChromPos() throws InvalidGenomicCoordsException {
     List<IntervalFeature> flist = new ArrayList<IntervalFeature>();
-    flist.add(new IntervalFeature("chrM\t10\t100\tg5", TrackFormat.BED, -1));
-    flist.add(new IntervalFeature("chrM\t1\t100\tg4", TrackFormat.BED, -1));
-    flist.add(new IntervalFeature("chrM\t1\t90\tg3", TrackFormat.BED, -1));
-    flist.add(new IntervalFeature("chr1\t10\t90\tg2", TrackFormat.BED, -1));
-    flist.add(new IntervalFeature("chr1\t1\t90\tg1", TrackFormat.BED, -1));
+    flist.add(new IntervalFeature("chrM\t10\t100\tg5", TrackFormat.BED));
+    flist.add(new IntervalFeature("chrM\t1\t100\tg4", TrackFormat.BED));
+    flist.add(new IntervalFeature("chrM\t1\t90\tg3", TrackFormat.BED));
+    flist.add(new IntervalFeature("chr1\t10\t90\tg2", TrackFormat.BED));
+    flist.add(new IntervalFeature("chr1\t1\t90\tg1", TrackFormat.BED));
     Collections.sort(flist);
     assertEquals("g1", flist.get(0).getName());
     assertEquals("g5", flist.get(4).getName());
@@ -364,65 +363,61 @@ public class IntervalFeatureTest {
     for (int i = 10; i < 20; i += 2) {
       rulerMap.add((double) (i + 0.3));
     } // [10.3, 12.3, 14.3, 16.3, 18.3]
-    IntervalFeature f = new IntervalFeature("chrM\t10\t15", TrackFormat.BED, -1);
+    IntervalFeature f = new IntervalFeature("chrM\t10\t15", TrackFormat.BED);
     f.mapToScreen(rulerMap);
     assertEquals(0, f.getScreenFrom());
     assertEquals(2, f.getScreenTo());
 
     // Feature is fully contained in just one text char on screen
-    f = new IntervalFeature("chrM\t10\t11", TrackFormat.BED, -1);
+    f = new IntervalFeature("chrM\t10\t11", TrackFormat.BED);
     f.mapToScreen(rulerMap);
     assertEquals(0, f.getScreenFrom());
     assertEquals(0, f.getScreenTo());
 
     // Feature is not part of ruler:
-    f = new IntervalFeature("chrM\t100\t500", TrackFormat.BED, -1);
+    f = new IntervalFeature("chrM\t100\t500", TrackFormat.BED);
     f.mapToScreen(rulerMap);
     assertEquals(-1, f.getScreenFrom());
     assertEquals(-1, f.getScreenTo());
 
     // NB: Feature is not part of ruler because start coord 18 is augmented by 1 to become 1-based.
-    f = new IntervalFeature("chrM\t18\t30", TrackFormat.BED, -1);
+    f = new IntervalFeature("chrM\t18\t30", TrackFormat.BED);
     f.mapToScreen(rulerMap);
     assertEquals(-1, f.getScreenFrom());
     assertEquals(-1, f.getScreenTo());
 
     // Partial overlap:
-    f = new IntervalFeature("chrM\t1\t16", TrackFormat.BED, -1);
+    f = new IntervalFeature("chrM\t1\t16", TrackFormat.BED);
     f.mapToScreen(rulerMap);
     assertEquals(0, f.getScreenFrom());
     assertEquals(3, f.getScreenTo());
 
-    f = new IntervalFeature("chrM\t17\t30", TrackFormat.BED, -1);
+    f = new IntervalFeature("chrM\t17\t30", TrackFormat.BED);
     f.mapToScreen(rulerMap);
     assertEquals(4, f.getScreenFrom());
     assertEquals(4, f.getScreenTo());
   }
 
   @Test
-  public void canParseScorecolumn() throws InvalidGenomicCoordsException {
+  public void canConstructFromCsv() throws InvalidGenomicCoordsException {
+    String line = "10,chr1,9.9";
+    CsvFormat csv = new CsvFormat(1, 0, 0, -1, false, 0, '#', ',');
+    IntervalFeature x = new IntervalFeature(line, csv);
+    assertEquals("chr1", x.getChrom());
+    assertEquals(10, x.getFrom());
+    assertEquals(10, x.getTo());
 
-    String line = "chr1 0 1 9 8 FOO 10".replaceAll(" ", "\t");
+    line = "9|chr1|20|foo";
+    csv = new CsvFormat(1, 0, 2, -1, true, 0, '#', '|');
+    x = new IntervalFeature(line, csv);
+    assertEquals("chr1", x.getChrom());
+    assertEquals(10, x.getFrom());
+    assertEquals(20, x.getTo());
 
-    // Default column indexes for scores
-    IntervalFeature ift = new IntervalFeature(line, TrackFormat.BED, -1);
-    assertEquals(8, ift.getScore(), 0.001);
-    ift = new IntervalFeature(line, TrackFormat.BEDGRAPH, -1);
-    assertEquals(9, ift.getScore(), 0.001);
-
-    ift = new IntervalFeature(line, TrackFormat.BEDGRAPH, 7);
-    assertEquals(10, ift.getScore(), 0.001);
-    ift = new IntervalFeature(line, TrackFormat.BED, 7);
-    assertEquals(10, ift.getScore(), 0.001);
-
-    ift = new IntervalFeature(line, TrackFormat.BED, 6);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
-    ift = new IntervalFeature(line, TrackFormat.BEDGRAPH, 6);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
-
-    ift = new IntervalFeature(line, TrackFormat.BED, 20);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
-    ift = new IntervalFeature(line, TrackFormat.BEDGRAPH, 20);
-    assertEquals(Float.NaN, ift.getScore(), 0.001);
+    line = "chr1\t0\t1";
+    IntervalFeature asBed = new IntervalFeature(line, TrackFormat.BED);
+    csv = new CsvFormat(0, 1, 2, -1, true, 0, '#', '\t');
+    IntervalFeature asCsv = new IntervalFeature(line, csv);
+    assertTrue(asCsv.equalCoordsUnstranded(asBed));
   }
 }

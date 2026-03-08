@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import samTextViewer.ExitCode;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import utils.CsvFormat;
 
 /** Class to hold tracks to be printed. */
 public class TrackSet {
@@ -138,16 +139,35 @@ public class TrackSet {
     this.trackList.add(track);
   }
 
-  /**
-   * Add track from given file or URL.
-   *
-   * @throws BamIndexNotFoundException
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
-   * @throws InvalidRecordException
-   * @throws SQLException
-   * @throws ClassNotFoundException
-   */
+  public void addTrackFromSource(
+      String sourceName, GenomicCoords gc, String trackTag, CsvFormat csvFormat)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          BamIndexNotFoundException,
+          InvalidRecordException,
+          ClassNotFoundException {
+    if (csvFormat == null) {
+      addTrackFromSource(sourceName, gc, trackTag);
+      return;
+    }
+
+    int idForTrack = this.getNextTrackId();
+    String trackId = sourceName + "#" + idForTrack;
+    AbstractTrack tr;
+    if (csvFormat.getScoreColIndex() >= 0) {
+      tr = new TrackBedgraph(sourceName, gc, csvFormat);
+    } else {
+      tr = new TrackIntervalFeature(sourceName, gc, csvFormat);
+    }
+    tr.setTrackTag(trackId);
+    this.trackList.add(tr);
+
+    for (AbstractTrack x : this.getTrackList()) {
+      this.addToOpenedFiles(x.getFilename());
+    }
+  }
+
   public void addTrackFromSource(String sourceName, GenomicCoords gc, String trackTag)
       throws IOException,
           BamIndexNotFoundException,
@@ -965,10 +985,10 @@ public class TrackSet {
     AbstractTrack trNewFmt = null;
 
     if (tr.getTrackFormat().equals(TrackFormat.BED)) {
-      trNewFmt = new TrackBedgraph(tr.getWorkFilename(), tr.getGc());
+      trNewFmt = new TrackBedgraph(tr.getWorkFilename(), tr.getGc(), tr.getCsvFormat());
       trNewFmt.setTrackFormat(TrackFormat.BEDGRAPH);
     } else if (tr.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
-      trNewFmt = new TrackIntervalFeature(tr.getWorkFilename(), tr.getGc());
+      trNewFmt = new TrackIntervalFeature(tr.getWorkFilename(), tr.getGc(), tr.getCsvFormat());
       trNewFmt.setTrackFormat(TrackFormat.BED);
     } else {
       //
@@ -982,7 +1002,6 @@ public class TrackSet {
     trNewFmt.setyMaxLines(tr.getyMaxLines());
     trNewFmt.setYLimitMax(tr.getYLimitMax());
     trNewFmt.setYLimitMin(tr.getYLimitMin());
-
     return trNewFmt;
   }
 
@@ -1860,10 +1879,8 @@ public class TrackSet {
    */
   public void orderTracks(List<String> tokens) throws InvalidCommandLineException {
 
-    // List<String> args= new ArrayList<String>(tokens);
-    // boolean invertSelection= Utils.argListContainsFlag(args, "-v");
-    boolean reverse = tokens.contains("-v");
-    tokens.remove("-v");
+    boolean reverse = tokens.contains("-r");
+    tokens.remove("-r");
     List<String> newOrder = new ArrayList<String>(tokens);
 
     if (newOrder.isEmpty()) {

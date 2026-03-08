@@ -14,8 +14,40 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
 import tracks.TrackSet;
+import utils.CsvFormat;
 
 public class TrackProcessorTest {
+
+  @Test
+  public void canProcessCsvFile()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          BamIndexNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidConfigException,
+          DocumentException,
+          InvalidCommandLineException,
+          InvalidColourException {
+
+    new Config(null);
+
+    GenomicCoords gc = new GenomicCoords("chr7:5566781-5566786", 80, null, null);
+    List<String> genome = new ArrayList<String>();
+    genome.add("test_data/ear045.oxBS.actb.bam");
+    gc.setGenome(genome, true);
+
+    GenomicCoordsHistory gch = new GenomicCoordsHistory();
+    gch.add(gc);
+
+    TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
+    CsvFormat csv = new CsvFormat(4, 0, 1, 2, true, 1, '#', ',');
+    trackSet.addTrackFromSource("test_data/generic.csv", gc, null, csv);
+    TrackProcessor proc = new TrackProcessor(trackSet, gch);
+    proc.setNoFormat(true);
+    proc.iterateTracks();
+  }
 
   @Test
   public void canProcessTracks()

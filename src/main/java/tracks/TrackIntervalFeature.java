@@ -1,10 +1,11 @@
 package tracks;
 
+import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.FileExtensions;
-import htsjdk.tribble.readers.TabixReader;
+import htsjdk.tribble.index.tabix.TabixFormat;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -17,16 +18,29 @@ import org.broad.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
+import utils.CsvFormat;
+import utils.CsvPresets;
+import utils.FlexibleTabixReader;
 
 public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> {
 
   private String gtfAttributeForName = null;
   private int bedFieldForName = 3; // 0-based!
   protected int scoreColIdx = -1;
+  protected CsvFormat csvFormat;
 
   /* C o n s t r u c t o r */
 
   public TrackIntervalFeature(final String filename, GenomicCoords gc)
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    this(filename, gc, null);
+  }
+
+  public TrackIntervalFeature(final String filename, GenomicCoords gc, CsvFormat csvFormat)
       throws IOException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
@@ -34,7 +48,12 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
           SQLException {
 
     this.setFilename(filename);
-    this.setTrackFormat(Utils.getFileTypeFromName(filename));
+    TrackFormat tf = Utils.getFileTypeFromName(filename);
+    if (tf.equals(TrackFormat.BEDGRAPH)){
+     tf = TrackFormat.BED;
+    }
+    this.setTrackFormat(tf);
+    this.csvFormat = csvFormat;
 
     if (this.getTrackFormat().equals(TrackFormat.BIGBED)) {
       this.bigBedReader = new BBFileReader(filename); // or url for remote access.
@@ -42,34 +61,52 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
         throw new RuntimeException("File " + filename + " is not bigBed.");
       }
       this.setWorkFilename(filename);
-    } else if (!Utils.hasTabixIndex(filename)) {
-      // Tabix index not found for this file. Sort and index input to tmp.
-      String suffix = new File(filename).getName();
-      if (!suffix.endsWith(".gz")) {
-        suffix += ".gz";
-      }
-      String tmpWorkFile =
-          Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
-      new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
-      this.setWorkFilename(tmpWorkFile);
-
-      new MakeTabixIndex(
-          filename,
-          new File(this.getWorkFilename()),
-          Utils.trackFormatToTabixFormat(this.getTrackFormat()));
-
-      this.tabixReader = this.getTabixReader(this.getWorkFilename());
-
-    } else { // This means the input is tabix indexed.
-      this.setWorkFilename(filename);
-      this.tabixReader = new TabixReader(this.getWorkFilename());
+      this.setGc(gc);
+      return;
     }
+
+    if (Utils.hasTabixIndex(filename)) {
+      this.setWorkFilename(filename);
+    } else {
+      this.sortAndIndex(filename);
+    }
+    this.tabixReader = new FlexibleTabixReader(this.getWorkFilename());
+    this.tabixReader.setColumnSeparator(csvFormat == null ? '\t' : csvFormat.getColumnSeparator());
     this.setGc(gc);
   }
 
   protected TrackIntervalFeature() {}
 
   /* M e t h o d s */
+
+  protected void sortAndIndex(String filename)
+      throws SQLException, IOException, ClassNotFoundException {
+    String suffix = new File(filename).getName();
+    if (!suffix.endsWith(".gz")) {
+      suffix += ".gz";
+    }
+    String tmpWorkFile =
+        Utils.createTempFile(".asciigenome.", "." + suffix, true).getAbsolutePath();
+    new File(tmpWorkFile + FileExtensions.TABIX_INDEX).deleteOnExit();
+    this.setWorkFilename(tmpWorkFile);
+
+    TabixFormat tabixFormat;
+    if (csvFormat == null) {
+      tabixFormat = Utils.trackFormatToTabixFormat(this.getTrackFormat());
+    } else {
+      tabixFormat =
+          new TabixFormat(
+              csvFormat.isZeroBased() ? TabixFormat.ZERO_BASED : TabixFormat.GENERIC_FLAGS,
+              csvFormat.getChromColIndex() + 1,
+              csvFormat.getStartColIndex() + 1,
+              csvFormat.getEndColIndex() + 1,
+              csvFormat.getMetaCharacter(),
+              csvFormat.getNumHeaderLinesToSkip());
+    }
+    new MakeTabixIndex(
+        filename, new File(this.getWorkFilename()), tabixFormat, this.getColumnSeparator());
+  }
+
   @Override
   public void setFeatureName(String nameFieldOrAttribute) {
     if (this.getTrackFormat().equals(TrackFormat.GFF)
@@ -92,13 +129,21 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     }
   }
 
+  @Override
+  public CsvFormat getCsvFormat() {
+    return this.csvFormat;
+  }
+
   protected int getScoreColIdx() {
     return scoreColIdx;
   }
 
   @Override
   protected IntervalFeature createFeature(String line) throws InvalidGenomicCoordsException {
-    return new IntervalFeature(line, this.getTrackFormat(), this.getScoreColIdx());
+    if (this.csvFormat == null) {
+      return new IntervalFeature(line, this.getTrackFormat());
+    }
+    return new IntervalFeature(line, this.csvFormat);
   }
 
   @Override
@@ -109,7 +154,15 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
         x.setGtfAttributeForName(this.gtfAttributeForName);
       } else if (this.getTrackFormat().equals(TrackFormat.BED)
           || this.getTrackFormat().equals(TrackFormat.BIGBED)) {
-        x.setBedFieldName(this.bedFieldForName);
+        if (this.bedFieldForName >= 0) {
+          String name =
+              Splitter.on(this.getColumnSeparator())
+                  .splitToList(x.getRaw())
+                  .get(this.bedFieldForName);
+          x.setName(name);
+        } else {
+          x.setName("");
+        }
       }
     }
     List<String> printable = new ArrayList<>();
@@ -135,12 +188,16 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     List<IntervalFeature> xFeatures = new ArrayList<>();
     TabixBigBedIterator qry = this.getReader().query(chrom, from - 1, to);
     while (true) {
-      String q = qry.next();
-      if (q == null) {
+      String line = qry.next();
+      if (line == null) {
         break;
       }
-      IntervalFeature intervalFeature =
-          new IntervalFeature(q, this.getTrackFormat(), this.getScoreColIdx());
+      IntervalFeature intervalFeature;
+      if (this.csvFormat == null) {
+        intervalFeature = new IntervalFeature(line, this.getTrackFormat());
+      } else {
+        intervalFeature = new IntervalFeature(line, this.csvFormat);
+      }
       xFeatures.add(intervalFeature);
     }
     this.removeInvisibleFeatures(xFeatures);
@@ -342,9 +399,5 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     transcript.setName(txName);
     transcript.setIdeogram(ideogram, false);
     return transcript;
-  }
-
-  protected List<IntervalFeature> getFeatureList() {
-    return this.featureList;
   }
 }

@@ -1,7 +1,6 @@
 package tracks;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import colouring.Config;
 import colouring.Xterm256;
@@ -18,6 +17,7 @@ import java.util.regex.Pattern;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
+import utils.CsvFormat;
 
 public class TrackIntervalFeatureTest {
 
@@ -40,6 +40,84 @@ public class TrackIntervalFeatureTest {
 
     tif = new TrackIntervalFeature("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb", gc);
     tif.close();
+  }
+
+  @Test
+  public void tmp()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidRecordException,
+          InvalidGenomicCoordsException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
+    TrackIntervalFeature tb = new TrackIntervalFeature("test_data/test.bedGraph", gc);
+  }
+
+  @Test
+  public void canReproduceTrackIntervalFeatureWithCsv()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidRecordException,
+          InvalidGenomicCoordsException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr1:1-20", 80, null, null);
+
+    CsvFormat csv = new CsvFormat(0, 1, 2, -1, true, 0, '#', '\t');
+    TrackIntervalFeature tb = new TrackIntervalFeature("test_data/test.bedGraph", gc, csv);
+    tb.setNoFormat(true);
+    assertEquals("|    |_-_|     |_5_|", tb.printToScreen().trim());
+    assertEquals(TrackFormat.BED, tb.getTrackFormat());
+
+    csv = new CsvFormat(2, 0, 1, -1, true, 0, '#', ',');
+    TrackIntervalFeature tcsv = new TrackIntervalFeature("test_data/test.bedGraph.csv", gc, csv);
+    tcsv.setNoFormat(true);
+    assertEquals(tb.printToScreen(), tcsv.printToScreen());
+  }
+
+  @Test
+  public void canPlotCsvGivenStartOnly()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidRecordException,
+          InvalidGenomicCoordsException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr1:1-20", 80, null, null);
+    CsvFormat csv = new CsvFormat(2, 0, -1, -1, true, 0, '#', ',');
+    TrackIntervalFeature tcsv = new TrackIntervalFeature("test_data/test.bedGraph.csv", gc, csv);
+    tcsv.setNoFormat(true);
+    assertEquals(1, tcsv.getFeatureList().get(0).getFrom());
+    assertEquals(1, tcsv.getFeatureList().get(0).getTo());
+    assertEquals(6, tcsv.getFeatureList().get(1).getFrom());
+    assertEquals(6, tcsv.getFeatureList().get(1).getTo());
+    assertEquals("|    |         |", tcsv.printToScreen().trim());
+  }
+
+  @Test
+  public void canReadVcfAsCsv()
+      throws ClassNotFoundException,
+          IOException,
+          InvalidRecordException,
+          InvalidGenomicCoordsException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("1:69270-70000", 80, null, null);
+    CsvFormat csv = new CsvFormat(0, 1, -1, -1, false, 0, '#', '\t');
+    TrackIntervalFeature tcsv =
+        new TrackIntervalFeature(
+            "test_data/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf",
+            gc,
+            csv);
+    tcsv.setNoFormat(true);
+    assertEquals(
+        "|                |      | |                                         |",
+        tcsv.printToScreen().trim());
   }
 
   @Test
@@ -69,7 +147,7 @@ public class TrackIntervalFeatureTest {
 
     // Reset default
     tif.setColourForRegex(null);
-    assertTrue(!tif.printToScreen().contains("216"));
+    assertFalse(tif.printToScreen().contains("216"));
   }
 
   @Test

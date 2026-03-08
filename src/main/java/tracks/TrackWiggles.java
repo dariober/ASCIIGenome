@@ -22,6 +22,7 @@ import org.broad.igv.tdf.TDFTile;
 import org.broad.igv.util.ResourceLocator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
+import utils.CsvFormat;
 
 /** Process wiggle file formats. Mostly using IGV classes. bigBed, bigWig, */
 public class TrackWiggles extends AbstractTrack {
@@ -68,6 +69,11 @@ public class TrackWiggles extends AbstractTrack {
     if (this.bigWigReader != null) {
       this.bigWigReader.close();
     }
+  }
+
+  @Override
+  public CsvFormat getCsvFormat() {
+    return null;
   }
 
   @Override
@@ -386,7 +392,4 @@ public class TrackWiggles extends AbstractTrack {
           SQLException {
     this.update();
   }
-
-  @Override
-  public void setFeatureName(String gtfAttributeForName) {}
 }

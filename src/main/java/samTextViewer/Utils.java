@@ -32,7 +32,6 @@ import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.LineIterator;
-import htsjdk.tribble.readers.TabixReader;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.Options;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
@@ -74,6 +73,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -100,15 +100,100 @@ import org.broad.igv.bbfile.BigBedIterator;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
+import org.checkerframework.checker.units.qual.C;
 import tracks.AbstractTrack;
 import tracks.IntervalFeature;
+import tracks.QuantitativeFeature;
 import tracks.TrackFormat;
+import utils.CsvFormat;
+import utils.FlexibleTabixReader;
 import utils.Tokenizer;
 
 /**
  * @author berald01
  */
 public class Utils {
+
+  public static CsvFormat guessCsvDelim(List<String> lines, int startColIndex) {
+    List<Character> delims = List.of('\t', ',', ' ', ';', '|');
+    return Utils.guessCsvDelim(lines, startColIndex, delims);
+  }
+
+  public static CsvFormat guessCsvDelim(List<String> lines, int startColIndex, List<Character> delims) {
+    class Candidate {
+      final char delim;
+      List<Integer> nFields = new ArrayList<>();
+
+      Candidate(char delim) {
+        this.delim = delim;
+      }
+      @Override
+      public String toString() {
+        return "'" + this.delim + "': " + this.nFields + "\n";
+      }
+    }
+    Collections.reverse(lines);
+    List<Candidate> candidates = new ArrayList<>();
+    for (char d : delims) {
+      Candidate candidate = new Candidate(d);
+      for (String line : lines) {
+        List<String> lst = Splitter.on(candidate.delim).splitToList(line);
+        if (lst.size() <= startColIndex - 1){
+          break;
+        }
+        try {
+          int n = Integer.parseInt(lst.get(startColIndex - 1).trim());
+          if (n < 0) {
+            break;
+          }
+        } catch ( NumberFormatException e) {
+          break;
+        }
+        candidate.nFields.add(lst.size());
+      }
+      candidates.add(candidate);
+    }
+    candidates.sort(Comparator.comparingInt(c -> c.nFields.size()));
+    Collections.reverse(candidates);
+
+    Candidate best = candidates.get(0);
+    Candidate secondBest = candidates.get(1);
+    if (best.nFields.size() == secondBest.nFields.size()) {
+      // Cannot determine delimiter
+      return null;
+    }
+    int numHeaderLinesToSkip = lines.size() - best.nFields.size();
+    CsvFormat csvFormat = new CsvFormat(-1, startColIndex, -1, -1, false, numHeaderLinesToSkip, '\0', best.delim);
+    return csvFormat;
+
+//    Collections.reverse(lines);
+//    char delimFound;
+//    for (char delim : delims) {
+//      for (String line : lines) {
+//        List<String> lst = Splitter.on(delim).splitToList(line);
+//        if (lst.size() <= startColIndex) {
+//          break;
+//        }
+//        try {
+//          int n = Integer.parseInt(lst.get(startColIndex));
+//          if (n < 0) {
+//            break;
+//          }
+//        } catch ( NumberFormatException e) {
+//          break;
+//        }
+//      }
+//      // If we are here we found a delimiter that splits the sample of reads at the index for the start column and finds
+//      // a non-negative integer. This is very likely the right delimiter so we stop searching (even if other delims could work!).
+//      delimFound = delim;
+//      break;
+//    }
+
+    // Go to the bottom of the list (most likely this is data)
+    // Split according to delim.
+    // If at startColIndex you have an int, check the other lines until you hit the candidate header or the end of
+    // list.
+  }
 
   public static double round(double value, int places) {
     if (places < 0) throw new IllegalArgumentException();
@@ -402,7 +487,7 @@ public class Utils {
 
         strand.clear();
 
-        if (x.equals(intervalList.get(i - 1)) && numMrgIntv == 1) {
+        if (x.equalCoordsUnstranded(intervalList.get(i - 1)) && numMrgIntv == 1) {
           mergedList.add(intervalList.get(i - 1));
         } else {
           mergedList.add(x);
@@ -438,7 +523,7 @@ public class Utils {
     }
 
     try {
-      TabixReader tabixReader = new TabixReader(fileName);
+      FlexibleTabixReader tabixReader = new FlexibleTabixReader(fileName);
       tabixReader.readLine();
       tabixReader.close();
       return true;
@@ -454,10 +539,7 @@ public class Utils {
   @SuppressWarnings("unused")
   public static String initRegionFromFile(String x, String referenceSequence)
       throws IOException,
-          InvalidGenomicCoordsException,
-          SQLException,
-          ClassNotFoundException,
-          InvalidRecordException {
+          InvalidGenomicCoordsException {
     UrlValidator urlValidator = new UrlValidator();
     String region = "";
     TrackFormat fmt = Utils.getFileTypeFromName(x);
@@ -555,12 +637,17 @@ public class Utils {
           region = line.split("\t")[0] + ":" + line.split("\t")[1];
         } else {
           // If this is space separated bed file
-          String sep = Utils.getColumnSeparator(x);
+          String sep = Utils.getBedColumnSeparator(x);
           if (!sep.equals("\t")) {
             line = line.replace(sep, "\t");
           }
-          IntervalFeature feature = new IntervalFeature(line, fmt, -1);
-          region = feature.getChrom() + ":" + feature.getFrom();
+          if (fmt.equals(TrackFormat.BEDGRAPH)) {
+            QuantitativeFeature feature = new QuantitativeFeature(line, null);
+            region = feature.getChrom() + ":" + feature.getFrom();
+          } else {
+            IntervalFeature feature = new IntervalFeature(line, fmt);
+            region = feature.getChrom() + ":" + feature.getFrom();
+          }
         }
         br.close();
         return region;
@@ -579,8 +666,7 @@ public class Utils {
         return region;
       }
     }
-    System.err.println("Cannot initialize from " + x);
-    throw new RuntimeException();
+    throw new RuntimeException("Cannot initialize from " + x);
   }
 
   private static String initRegionFromBcf(String bcf) throws IOException {
@@ -678,7 +764,7 @@ public class Utils {
       } else {
           // Try to match file perfectly as it was added from cli, including path if any
           for(String fn : intervalFiles.keySet()){
-              if(fn.equals(filename)){
+              if(fn.equalCoordsUnstranded(filename)){
                   chosenFn = fn;
               }
           }
@@ -686,7 +772,7 @@ public class Utils {
               // Or try to match only file name.
               for(String fn : intervalFiles.keySet()){ // Do not look for a perfect match since the original input might contain path.
                   String onlyName= new File(fn).getName();
-                  if(onlyName.equals(filename)){
+                  if(onlyName.equalCoordsUnstranded(filename)){
                       chosenFn = fn;
                   }
               }
@@ -759,8 +845,8 @@ public class Utils {
   // IntervalFeatureSet>();
   //		for(String x : fileNames){
   //			String f= x;
-  //			if(getFileTypeFromName(x).equals(TrackFormat.BED) ||
-  // getFileTypeFromName(x).equals(TrackFormat.GFF)){
+  //			if(getFileTypeFromName(x).equalCoordsUnstranded(TrackFormat.BED) ||
+  // getFileTypeFromName(x).equalCoordsUnstranded(TrackFormat.GFF)){
   //				if(!ifsets.containsKey(x)){ // If the input has duplicates, do not reload duplicates!
   //					IntervalFeatureSet ifs= new IntervalFeatureSet(f);
   //					ifsets.put(x, ifs);
@@ -883,33 +969,25 @@ public class Utils {
   }
 
   public static String parseConsoleInput(List<String> tokens, GenomicCoords gc)
-      throws InvalidGenomicCoordsException, IOException, InvalidCommandLineException {
+      throws InvalidCommandLineException {
 
-    //		String region= "";
     String chrom = gc.getChrom();
     Integer from = gc.getFrom();
     Integer to = gc.getTo();
+    int chromLen = Integer.MAX_VALUE;
+    if (gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()) {
+      chromLen = gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
+    }
 
     int windowSize = to - from + 1;
     int halfWindow = (int) Math.rint(windowSize / 2d);
     if (tokens.get(0).equals("ff")) {
-      from += halfWindow;
-      to += halfWindow;
-      if (gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()) {
-        int chromLen = gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
-        if (to > chromLen) {
-          to = chromLen;
-          from = to - gc.getUserWindowSize() + 1;
-        }
-      }
+      to = Math.min(to + halfWindow, chromLen);
+      from = to - gc.getGenomicWindowSize() + 1;
       return chrom + ":" + from + "-" + to;
     } else if (tokens.get(0).equals("bb")) {
-      from -= halfWindow;
-      to -= halfWindow;
-      if (from < 1) {
-        from = 1;
-        to = from + gc.getUserWindowSize() - 1;
-      }
+      from = Math.max(1, from - halfWindow);
+      to = from + gc.getGenomicWindowSize() - 1;
       return chrom + ":" + from + "-" + to;
     } else if (tokens.get(0).equals("f")) {
       int step = (int) Math.rint(windowSize / 10d);
@@ -921,15 +999,8 @@ public class Utils {
           throw new InvalidCommandLineException();
         }
       }
-      from += step;
-      to += step;
-      if (gc.getSamSeqDict() != null && !gc.getSamSeqDict().isEmpty()) {
-        int chromLen = gc.getSamSeqDict().getSequence(chrom).getSequenceLength();
-        if (to > chromLen) {
-          to = chromLen;
-          from = to - gc.getUserWindowSize() + 1;
-        }
-      }
+      to = Math.min(to + step, chromLen);
+      from = to - gc.getGenomicWindowSize() + 1;
       return chrom + ":" + from + "-" + to;
 
     } else if (tokens.get(0).equals("b")) {
@@ -942,12 +1013,8 @@ public class Utils {
           throw new InvalidCommandLineException();
         }
       }
-      from -= step;
-      to -= step;
-      if (from < 1) {
-        from = 1;
-        to = from + gc.getUserWindowSize() - 1;
-      }
+      from = Math.max(1, from - step);
+      to = from + gc.getGenomicWindowSize() - 1;
       return chrom + ":" + from + "-" + to;
 
     } else if (tokens.get(0).startsWith("+") || tokens.get(0).startsWith("-")) {
@@ -957,17 +1024,13 @@ public class Utils {
         from = 1;
         to = gc.getGenomicWindowSize();
       } else {
-        to += offset;
+        to = Math.min(to + offset, chromLen);
+        from = to - gc.getGenomicWindowSize() + 1;
       }
       return chrom + ":" + from + "-" + to;
-    }
-    //		else if (tokens.get(0).equals("q")) {
-    //			System.exit(0);
-    //		}
-    else {
+    } else {
       throw new RuntimeException("Invalid input for " + tokens);
     }
-    //		return region;
   }
 
   /**
@@ -995,15 +1058,10 @@ public class Utils {
 
     if (fromTo.size() == 1) {
       return String.valueOf(Utils.parseStringToIntWithUnits(fromTo.get(0)));
-      // Integer.parseInt(fromTo[0].trim()); // Check you actually got an int.
-      // return fromTo[0].trim();
     } else {
       String xfrom = String.valueOf(Utils.parseStringToIntWithUnits(fromTo.get(0)));
       String xto = String.valueOf(Utils.parseStringToIntWithUnits(fromTo.get(fromTo.size() - 1)));
       return xfrom + "-" + xto;
-      // Integer.parseInt(fromTo[0].trim()); // Check you actually got an int.
-      // Integer.parseInt(fromTo[fromTo.length - 1].trim());
-      // return fromTo[0].trim() + "-" + fromTo[fromTo.length - 1].trim();
     }
   }
 
@@ -1023,10 +1081,10 @@ public class Utils {
   }
 
   /**
-   * Average of ints in array x. Adapted from:
-   * http://stackoverflow.com/questions/10791568/calculating-average-of-an-array-list null values
-   * are ignored, like R mean(..., na.rm= TRUE). Returns Float.NaN if input list is empty or only
-   * nulls. You can check for Float.NaN with Float.isNaN(x);
+   * Average of ints in array x. Adapted from: <a
+   * href="http://stackoverflow.com/questions/10791568/calculating-average-of-an-array-list">...</a>
+   * null values are ignored, like R mean(..., na.rm= TRUE). Returns Float.NaN if input list is
+   * empty or only nulls. You can check for Float.NaN with Float.isNaN(x);
    */
   public static Double calculateAverage(List<Double> list) {
     double sum = 0;
@@ -1046,10 +1104,6 @@ public class Utils {
   /**
    * Binary search to get the index position of the value in list closest to a given value. The
    * searched list is expected to be sorted, there is no check whether this is the case.
-   *
-   * @param genomePos
-   * @param mapping
-   * @return
    */
   public static int getIndexOfclosestValue(double genomePos, List<Double> mapping) {
 
@@ -1679,20 +1733,6 @@ public class Utils {
     return result;
   }
 
-  //	public static List<SamRecordFilter> cleanInappropriateCallIfNotPairedRead(List<SamRecordFilter>
-  // filter){
-  //		List<SamRecordFilter> cleanfilter= new ArrayList<SamRecordFilter>();
-  //		for(SamRecordFilter x : filter){
-  //			if(x.equals(new FirstOfPairFilter(true)) ||
-  //			   x.equals(new FirstOfPairFilter(false))){
-  //			   //
-  //			} else {
-  //				cleanfilter.add(x);
-  //			}
-  //		}
-  //		return cleanfilter;
-  //	}
-
   public static TabixFormat trackFormatToTabixFormat(TrackFormat fmt) {
 
     TabixFormat tbx = null;
@@ -2103,7 +2143,7 @@ public class Utils {
           String inLine= rawLines[i];
           if(output.length > j){
               String outLine= output[j];
-              if(inLine.equals(outLine)){
+              if(inLine.equalCoordsUnstranded(outLine)){
                   results[i]= true;
                   j++;
               } else {
@@ -2742,7 +2782,7 @@ public class Utils {
     return sourceName.toLowerCase().endsWith(".cram");
   }
 
-  public static String getColumnSeparator(String infile) throws MalformedURLException, IOException {
+  public static String getBedColumnSeparator(String infile) throws IOException {
     BufferedReader br = Utils.reader(infile);
     String line;
     String[] seps = {"\t", " "};
