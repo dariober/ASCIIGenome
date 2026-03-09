@@ -100,7 +100,7 @@ import org.broad.igv.bbfile.BigBedIterator;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
-import org.checkerframework.checker.units.qual.C;
+import org.broad.igv.util.FileUtils;
 import tracks.AbstractTrack;
 import tracks.IntervalFeature;
 import tracks.QuantitativeFeature;
@@ -222,6 +222,25 @@ public class Utils {
       tmp.deleteOnExit();
     }
     return tmp;
+  }
+
+  public static Path createTempDir(String prefix, boolean deleteOnExit)
+      throws IOException {
+    Path tmpdir;
+    try {
+      tmpdir = Files.createTempDirectory(
+          Paths.get(System.getProperty("user.dir")), prefix);
+    } catch (IOException e) {
+      tmpdir = Files.createTempDirectory(prefix);
+    }
+
+    if (deleteOnExit) {
+      Path finalTmpdir = tmpdir;
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        FileUtils.deleteDir(finalTmpdir.toFile());
+      }));
+    }
+    return tmpdir;
   }
 
   /** Return a buffered reader which iterate through the file or URL. Input may be compressed. */
