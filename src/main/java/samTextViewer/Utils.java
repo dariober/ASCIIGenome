@@ -2007,7 +2007,7 @@ public class Utils {
       try {
         stdin.flush();
       } catch (IOException e) {
-        throwCmdException(p);
+        throwCmdException(p, Joiner.on(" ").join(cmd));
       }
     }
 
@@ -2016,12 +2016,13 @@ public class Utils {
     p.waitFor();
 
     if (p.exitValue() != 0) {
-      throwCmdException(p);
+      throwCmdException(p, Joiner.on(" ").join(cmd));
     }
     return results;
   }
 
-  private static void throwCmdException(Process p) throws IOException, InterruptedException {
+  private static void throwCmdException(Process p, String cmd) throws IOException, InterruptedException {
+    System.err.println(cmd);
     p.waitFor();
     System.err.println("Command returned with non-zero exit value " + p.exitValue());
     BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()));
