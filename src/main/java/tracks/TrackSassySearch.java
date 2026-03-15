@@ -20,11 +20,9 @@ public class TrackSassySearch extends TrackReads {
   private final Path tempWorkDir;
 
   public TrackSassySearch(List<String> sassyCliOpts, GenomicCoords gc)
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidRecordException,
-          SQLException {
+      throws IOException,
+          InvalidGenomicCoordsException {
+    this.downsampleUsingTemplateName = false;
     this.MAX_REGION_SIZE = Integer.MAX_VALUE;
     this.sassyCliOpts = sassyCliOpts;
     this.tempWorkDir = Utils.createTempDir(".asciigenome.sassy.", true);

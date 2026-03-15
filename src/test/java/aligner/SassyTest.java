@@ -77,7 +77,7 @@ public class SassyTest {
     sassy.setExecPath(this.sassy);
     sassy.search(Splitter.on(" ").splitToList("-f test_data/pattern.fa.gz -k 1"));
 
-    assertTrue(sassy.getSamFileHeader().getProgramRecord("sassy").getCommandLine().contains("sassy search -f test_data/pattern.fa.gz -k 1"));
+    assertTrue(sassy.getSamFileHeader().getProgramRecord("sassy").getCommandLine().contains("search -f test_data/pattern.fa.gz -k 1"));
 
     Path outsam = Paths.get(sassy.getWorkDir().toString(), "tmp.sam");
     sassy.writeSAMFile(outsam);

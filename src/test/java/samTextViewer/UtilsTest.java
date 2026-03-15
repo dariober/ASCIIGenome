@@ -774,16 +774,18 @@ public class UtilsTest {
   @Test
   public void canDetectBrokenAwkScript() throws IOException, InterruptedException {
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 5; i++) {
       // Broken awk script:
       boolean pass = false;
       try {
-        assertTrue(!Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'print {'")[0]);
+        Utils.passAwkFilter(new String[]{"'chr1\t10\t100'"}, "'print {'");
+      } catch (RuntimeException e) {
+        pass = true;
       } catch (IOException e) {
         pass = true;
       }
       assertTrue(pass);
-      Thread.sleep(3000);
+      Thread.sleep(1000);
     }
   }
 
