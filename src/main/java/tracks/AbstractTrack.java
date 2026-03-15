@@ -89,7 +89,7 @@ public abstract class AbstractTrack {
   private double yLimitMax = Float.NaN;
 
   /** Max size of genomic region before the track shuts down to prevent excessive slow down */
-  protected final int MAX_REGION_SIZE = 1000001;
+  protected int MAX_REGION_SIZE = 1000001;
 
   protected String titleColour = null;
   protected boolean bisulf = false;

@@ -2371,17 +2371,6 @@ public class TrackSet {
     return x;
   }
 
-  /**
-   * Iterate through track list and set regex to the track TrackSeqRegex.
-   *
-   * @param genomicCoords
-   * @throws SQLException
-   * @throws InvalidRecordException
-   * @throws InvalidGenomicCoordsException
-   * @throws IOException
-   * @throws ClassNotFoundException
-   * @throws InvalidCommandLineException
-   */
   public void setRegexForTrackSeqRegex(List<String> cmdInput, GenomicCoords genomicCoords)
       throws ClassNotFoundException,
           IOException,
@@ -2429,6 +2418,26 @@ public class TrackSet {
     }
   }
 
+  public void setCliOptsForTrackSassySearch(List<String> cmdInput, GenomicCoords genomicCoords)
+      throws ClassNotFoundException,
+      IOException,
+      InvalidGenomicCoordsException,
+      InvalidRecordException,
+      SQLException,
+      InvalidCommandLineException {
+
+    List<String> args = new ArrayList<String>(cmdInput);
+    args.remove(0); // Remove command name
+
+    initTrackSassySearch(args, genomicCoords);
+
+    for (AbstractTrack tr : this.getTrackList()) {
+      if (tr instanceof TrackSassySearch) {
+        ((TrackSassySearch) tr).setSassyCliOpts(args);
+      }
+    }
+  }
+
   /**
    * Initialize TrackSeqRegex for regex matches in fasta. Do nothing if track already exists. Throw
    * exception if cannot set it. This method only initializes the track. It doesn't set the regex or
@@ -2453,6 +2462,33 @@ public class TrackSet {
       if (genomicCoords.getFastaFile() != null) {
         TrackSeqRegex re = new TrackSeqRegex(genomicCoords);
         this.addTrack(re, "seqRegex");
+        found = true;
+      }
+    }
+    if (!found) {
+      throw new InvalidCommandLineException();
+    }
+  }
+
+  private void initTrackSassySearch(List<String> sassyCliOpts, GenomicCoords genomicCoords)
+      throws InvalidCommandLineException,
+      ClassNotFoundException,
+      IOException,
+      InvalidGenomicCoordsException,
+      InvalidRecordException,
+      SQLException {
+    // See if a TrackSeqRegex exists.
+    boolean found = false;
+    for (AbstractTrack tr : this.getTrackList()) {
+      if (tr instanceof TrackSassySearch) {
+        found = true;
+      }
+    }
+    if (!found) {
+      // Not found: Try to create a new TrackSeqRegex
+      if (genomicCoords.getFastaFile() != null) {
+        TrackSassySearch ss = new TrackSassySearch(sassyCliOpts, genomicCoords);
+        this.addTrack(ss, "SassySearch");
         found = true;
       }
     }

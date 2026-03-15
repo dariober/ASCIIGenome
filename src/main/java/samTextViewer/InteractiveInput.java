@@ -492,6 +492,18 @@ public class InteractiveInput {
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
           }
+        } else if (cmdTokens.get(0).equals("search")) {
+          try {
+            proc.getTrackSet()
+                .setCliOptsForTrackSassySearch(cmdTokens, proc.getGenomicCoordsHistory().current());
+          } catch (Exception e) {
+            System.err.println(
+                Utils.padEndMultiLine(
+                    e.getMessage(),
+                    proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
         } else if (cmdTokens.get(0).equals("translate")) {
           List<String> args = new ArrayList<>(cmdTokens);
           args.remove(0);

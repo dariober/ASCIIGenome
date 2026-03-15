@@ -483,7 +483,51 @@ public class CommandList {
             + "    seqRegex~~~~~~~~~~~~~-> Disable regex matching track\n"
             + "\n"
             + "To save matches to file, see the `print` command. This command is ignored if the"
-            + " reference fasta sequence is missing.");
+            + " reference fasta sequence is missing.\n"
+            + "\n"
+            + "See also: :code:`search` for searching an aligning patterns with mismatches.");
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
+    cmd.setName("search");
+    cmd.setArgs("[-p|-f|-l pattern] [-k int]");
+    cmd.inSection = Section.FIND;
+    cmd.setBriefDescription(
+        "Search for *all* occurrences of *pattern* allowing up to *k* mismatches. ");
+    cmd.setAdditionalDescription(
+        "\n"
+            + "Search the sequence of the current genomic window and return matches as aligned reads as an additional BAM track.\n"
+        + "\n"
+            + "This command requires sassy <https://github.com/RagnarGrootKoerkamp/sassy>. :code:`sassy` "
+            + "should be either on the user's PATH or the path to the sassy executable should be set as "
+            + "a configuration variable\n"
+            + "\n"
+            + "Options:\n"
+            + "\n"
+            + "* :code:`-p` Pattern to search for (cannot be used with -f).\n"
+            + "\n"
+            + "* :code:`-l` Search each line of the file (cannot be used with -p)\n"
+            + "\n"
+            + "* :code:`-f` Search each record in the FASTA file (cannot be used with -p)\n"
+            + "\n"
+            + "* :code:`-k` Report matches up to (and including) this distance threshold [REQUIRED]\n"
+            + "\n"
+            + "* :code:`-a` The alphabet to use. DNA=ACTG, or default IUPAC=ACTG+NYR.... [default: iupac] [possible values: dna, iupac]\n"
+            + "\n"
+            + "* :code:`--overhang` Enable overhang alignment\n"
+            + "\n"
+            + "* :code:`--no-rc` Disable reverse complement search\n"
+            + "\n"
+            + "* :code:`--max-n-frac` Allow at most max_n_frac of N bases in the target sequence. Values must be in the range [0, 1].  A value of 0 will allow only hits where the target sequence contains no Ns. A value of 0.1-0.2 will allow for matches that include a small number of Ns [default: 0.2]\n"
+            + "\n"
+            + "* :code:`-j` Number of threads to use. All CPUs by default\n"
+            + "\n"
+            + "Examples::\n"
+            + "\n"
+            + "    search -p GCGGCCGC -k 1~~~~-> NotI restriction site, 1 mismatch allowed\n"
+            + "    search -f patterns.fa -k 1~-> Get patterns from fasta file\n"
+            + "\n"
+            + "See also seqRegex for searching patterns as regex.");
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
@@ -1805,6 +1849,7 @@ public class CommandList {
     paramList.add("nextChrom");
     paramList.add("find");
     paramList.add("seqRegex");
+    paramList.add("search");
     paramList.add("translate");
     paramList.add("bookmark");
     paramList.add("grep");

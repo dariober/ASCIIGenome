@@ -84,6 +84,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -1974,30 +1975,11 @@ public class Utils {
     return Integer.signum(vals1.length - vals2.length);
   }
 
-  public static ArrayList<String> execSystemCommand(String[] inputList, List<String> cmd)
+  public static Stream<String> execSystemCommandStream(String[] inputList, List<String> cmd)
       throws IOException, InterruptedException {
 
     ProcessBuilder pb = new ProcessBuilder().command(cmd);
     Process p = pb.start();
-
-    ArrayList<String> results = new ArrayList<String>();
-
-    Thread readerThread =
-        new Thread(
-            () -> {
-              try {
-                try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                  String line;
-                  while ((line = reader.readLine()) != null) {
-                    results.add(line);
-                  }
-                }
-              } catch (Exception e) {
-                throw new RuntimeException("Unhandled", e);
-              }
-            });
-    readerThread.start();
 
     OutputStream stdin = p.getOutputStream();
 
@@ -2010,13 +1992,32 @@ public class Utils {
         throwCmdException(p, Joiner.on(" ").join(cmd));
       }
     }
-
     stdin.close();
-    readerThread.join();
-    p.waitFor();
 
-    if (p.exitValue() != 0) {
-      throwCmdException(p, Joiner.on(" ").join(cmd));
+    BufferedReader reader =
+        new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
+
+    Stream<String> stream = reader.lines();
+
+    return stream.onClose(() -> {
+      try {
+        int exit = p.waitFor();
+        reader.close();
+        if (exit != 0) {
+          throwCmdException(p, Joiner.on(" ").join(cmd));
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    });
+  }
+
+  public static ArrayList<String> execSystemCommand(String[] inputList, List<String> cmd)
+      throws IOException, InterruptedException {
+
+    ArrayList<String> results = new ArrayList<String>();
+    try (Stream<String> lines = execSystemCommandStream(inputList, cmd)) {
+      lines.forEach(results::add);
     }
     return results;
   }

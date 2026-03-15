@@ -3,8 +3,10 @@ package samTextViewer;
 import static org.junit.Assert.*;
 
 import colouring.Config;
+import colouring.ConfigKey;
 import colouring.Xterm256;
 import com.google.common.base.Splitter;
+import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
@@ -76,6 +78,44 @@ public class InteractiveInputTest {
     TrackProcessor proc = new TrackProcessor(trackSet, gch);
     proc.setNoFormat(true);
     return proc;
+  }
+
+  @Test
+  public void canSearchPattern()
+      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, InvalidColourException {
+
+    Config.set(ConfigKey.sassy, "test_data/sassy/sassy-x86_64-unknown-linux-gnu");
+    TrackProcessor proc =
+        gimmeTrackProcessor("chr7:11001-11200", 200, "test_data/ds051.actb.bam");
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
+    processInput(ip, "setGenome test_data/chr7.fa", proc);
+    ProcessInput pi = processInput(ip, "search -p gggaggGtgagg -k 1", proc);
+    assertTrue(pi.stdout.contains("......G..... "));
+
+    pi = processInput(ip, "goto chr7:31700-31770", proc);
+    assertTrue(pi.stdout.contains(" .......T.... "));
+
+    pi = processInput(ip, "print", proc);
+    assertTrue(pi.stdout.contains("31709"));
+    assertTrue(pi.stdout.contains("7=1X4="));
+    assertTrue(pi.stdout.contains("GGGAGGGTGAGG"));
+
+    pi = processInput(ip, "search --pattern gggaggGtgagg", proc);
+    assertTrue(pi.stderr.contains("the following required arguments were not provided"));
+  }
+
+  @Test
+  public void canSearchPatternLargeRegion()
+      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, InvalidColourException {
+
+    Config.set(ConfigKey.sassy, "test_data/sassy/sassy-x86_64-unknown-linux-gnu");
+    TrackProcessor proc =
+        gimmeTrackProcessor("chr7:1-10000000", 200, "test_data/ds051.actb.bam");
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
+    processInput(ip, "setGenome test_data/chr7.fa", proc);
+    ProcessInput pi = processInput(ip, "search -p TTCTGCAGGCAGGATGGGCACTGTGGCTGGAGGAA -k 10", proc);
+    assertTrue(pi.stdout.contains("Reads: 234"));
+    assertTrue(pi.stdout.contains("<<<<"));
   }
 
   @Test

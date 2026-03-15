@@ -1,0 +1,212 @@
+package aligner;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.SAMFileWriter;
+import htsjdk.samtools.SAMFileWriterFactory;
+import htsjdk.samtools.SAMProgramRecord;
+import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMSequenceRecord;
+import htsjdk.samtools.reference.IndexedFastaSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequence;
+import htsjdk.samtools.reference.ReferenceSequenceFile;
+import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import jdk.jshell.spi.ExecutionControl.NotImplementedException;
+import org.apache.commons.io.FileUtils;
+import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
+
+public class Sassy {
+  private final Path referenceFasta;
+  Path execPath = Paths.get("sassy");
+  private final SAMFileHeader samFileHeader;
+  private final Path workDir;
+  private final int chromOffset;
+  private Stream<SAMRecord> samRecords;
+
+  public Sassy(GenomicCoords gc, Path workDir) throws IOException {
+    this.workDir = workDir;
+    this.referenceFasta = Paths.get(workDir.toString(), gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".fa");
+    this.chromOffset = gc.getFrom() - 1;
+    this.writeFasta(Paths.get(gc.getFastaFile()), gc.getChrom(), gc.getFrom(), gc.getTo(), this.referenceFasta);
+    this.samFileHeader = new SAMFileHeader();
+    this.samFileHeader.addSequence(gc.getSamSeqDict().getSequence(gc.getChrom()));
+  }
+
+  public void search(List<String> opts) throws IOException, InterruptedException {
+    String sassy = this.getExecPath().toString();
+    List<String> cmd = new ArrayList<>();
+    cmd.add(sassy);
+    cmd.add("search");
+    cmd.addAll(opts);
+    cmd.add(this.referenceFasta.toString());
+    SAMProgramRecord pr = new SAMProgramRecord("sassy");
+    pr.setCommandLine(Joiner.on(" ").join(cmd));
+    this.samFileHeader.addProgramRecord(pr);
+
+    Map<String, byte[]> querySequence;
+    if (opts.contains("-p") || opts.contains("--pattern")) {
+      int i = opts.contains("-p") ? opts.indexOf("-p") + 1 : opts.indexOf("--pattern") + 1;
+      querySequence = Map.of("pattern", opts.get(i).getBytes());
+    } else if (opts.contains("-f") || opts.contains("--pattern-fasta")) {
+      int i = opts.contains("-f") ? opts.indexOf("-f") + 1 : opts.indexOf("--pattern-fasta") + 1;
+      querySequence = this.fastaFileToMap(Path.of(opts.get(i)));
+    } else if (opts.contains("-l") || opts.contains("--pattern-file")) {
+      int i = opts.contains("-l") ? opts.indexOf("-l") + 1 : opts.indexOf("--pattern-file") + 1;
+      querySequence = this.patternFileToMap(Path.of(opts.get(i)));
+    } else {
+      throw new RuntimeException("No input detected");
+    }
+
+    Stream<String> lines = Utils.execSystemCommandStream(new String[]{}, cmd);
+    Iterator<String> iter = lines.iterator();
+
+    if (!iter.hasNext()) {
+      lines.close();
+      throw new RuntimeException("No output from command");
+    }
+
+    String colnames = iter.next();
+    if (!colnames.contains("cigar")) {
+      lines.close();
+      throw new RuntimeException("Unexpected column names: " + colnames);
+    }
+
+    this.samRecords = StreamSupport.stream(
+            Spliterators.spliteratorUnknownSize(iter, Spliterator.ORDERED),
+            false)
+        .map(l -> searchToSAMRecord(l, querySequence))
+        .onClose(lines::close);
+  }
+
+  public long writeSAMFile(Path samfile) {
+    try (SAMFileWriter writer = new SAMFileWriterFactory()
+        .makeSAMWriter(this.samFileHeader, false, samfile)) {
+      return this.samRecords.peek(writer::addAlignment).count();
+    }
+  }
+
+  private void writeFasta(Path inFasta, String chrom, int from, int to, Path outFasta) throws IOException {
+    int lineWidth = 60;
+    int chunkSize = lineWidth * 50;
+    try (IndexedFastaSequenceFile fastaReader = new IndexedFastaSequenceFile(inFasta);
+        BufferedWriter writer = Files.newBufferedWriter(outFasta)) {
+
+      writer.write(">" + chrom);
+      writer.newLine();
+
+      int pos = from;
+
+      while (pos <= to) {
+        int end = Math.min(pos + chunkSize - 1, to);
+
+        ReferenceSequence chunkSeq = fastaReader.getSubsequenceAt(chrom, pos, end);
+        byte[] bases = chunkSeq.getBases();
+
+        for (int i = 0; i < bases.length; i += lineWidth) {
+          int lineEnd = Math.min(i + lineWidth, bases.length);
+          writer.write(new String(bases, i, lineEnd - i));
+          writer.newLine();
+        }
+
+        pos += chunkSize;
+      }
+    }
+  }
+
+  private Map<String, byte[]> patternFileToMap(Path patternFile) {
+    Map<String, byte[]> map = new HashMap<>();
+    try (BufferedReader br = new BufferedReader(new FileReader(String.valueOf(patternFile)))) {
+      String line;
+      int n = 1;
+      while ((line = br.readLine()) != null) {
+        map.put(String.valueOf(n), line.trim().getBytes());
+        n++;
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return map;
+  }
+
+  private Map<String, byte[]> fastaFileToMap(Path fasta) throws IOException {
+
+    Map<String, byte[]> map = new HashMap<>();
+
+    try (ReferenceSequenceFile fastaReader =
+        ReferenceSequenceFileFactory.getReferenceSequenceFile(fasta)) {
+
+      ReferenceSequence seq;
+
+      while ((seq = fastaReader.nextSequence()) != null) {
+        String header = seq.getName();
+        String name = header.split("\\s+", 2)[0];
+
+        if (map.containsKey(name)) {
+          throw new IllegalArgumentException(
+              "Duplicate FASTA sequence name: " + name);
+        }
+        map.put(name, seq.getBases());
+      }
+    }
+
+    return map;
+  }
+
+  private SAMRecord searchToSAMRecord(String line, Map<String, byte[]> querySequence) {
+    List<String> lst = Splitter.on("\t").splitToList(line.trim());
+
+    String patternName = lst.get(0).split("\\s+", 2)[0];
+
+    SAMRecord rec = new SAMRecord(this.samFileHeader);
+    rec.setReadString(new String(querySequence.get(patternName)));
+    rec.setReadName(patternName);
+    rec.setReferenceName(lst.get(1));
+    rec.setAttribute("NM", Integer.parseInt(lst.get(2)));
+    rec.setReadNegativeStrandFlag(lst.get(3).equals("-"));
+    rec.setAlignmentStart(Integer.parseInt(lst.get(4)) + 1 + this.chromOffset);
+    rec.setCigarString(lst.get(7));
+    rec.setMappingQuality(255);
+    return rec;
+  }
+
+  public Path getWorkDir() {
+    return this.workDir;
+  }
+
+  public void setExecPath(Path execPath) {
+    this.execPath = execPath;
+  }
+
+  public Path getExecPath() {
+    return this.execPath;
+  }
+
+  public SAMFileHeader getSamFileHeader() {
+    return this.samFileHeader;
+  }
+
+  public Stream<SAMRecord> getSamRecords() {
+    return this.samRecords;
+  }
+}

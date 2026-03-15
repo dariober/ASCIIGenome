@@ -42,6 +42,9 @@ public class TrackReads extends AbstractTrack {
   private final char columnSeparator = '\t';
 
   /* C o n s t r u c t o r s */
+  public TrackReads() {
+
+  }
 
   public TrackReads(String bam, GenomicCoords gc)
       throws IOException,
@@ -119,8 +122,7 @@ public class TrackReads extends AbstractTrack {
         SAMRecord rec = sam.next();
         if (pass.next()) {
           String templ_name = Utils.templateNameFromSamReadName(rec.getReadName());
-          long v = (templ_name + rndOffset).hashCode(); // Hashing.md5().hashBytes((templ_name +
-          // rndOffset).getBytes()).asLong();
+          long v = (templ_name + rndOffset).hashCode();
           Random rand = new Random(v);
           if (rand.nextFloat() < probSample) { // Downsampler
             TextRead tr = new TextRead(rec, this.getGc(), this.getShowSoftClip());

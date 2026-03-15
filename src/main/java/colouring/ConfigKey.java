@@ -45,7 +45,8 @@ public enum ConfigKey {
   stop_codon("Colour for stop codon"),
   start_codon("Colour for start codon"),
   codon("Colour for codons other than start and stop"),
-  python("Python executable. Use full path if there is no python on PATH");
+  python("Python executable. Use full path if there is no python on PATH"),
+  sassy("Directory of sassy executable");
 
   private String value;
 
@@ -86,6 +87,7 @@ public enum ConfigKey {
   public static Set<ConfigKey> stringKeys() {
     Set<ConfigKey> stringKeys = new HashSet<ConfigKey>();
     stringKeys.add(ConfigKey.python);
+    stringKeys.add(ConfigKey.sassy);
     stringKeys.add(ConfigKey.soft_clip_colour);
     return stringKeys;
   }
