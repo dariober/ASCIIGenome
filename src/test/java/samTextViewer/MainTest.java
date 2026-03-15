@@ -179,7 +179,7 @@ public class MainTest {
     String out = Joiner.on("\n").join(this.runMain(args));
     System.out.println(out);
     assertTrue(out.contains("chr7:5567419-5567599"));
-    assertTrue(out.contains("<<<<<"));
+    assertTrue(out.contains("::::::::::::::::::::::"));
   }
 
   @Test

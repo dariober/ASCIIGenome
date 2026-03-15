@@ -39,8 +39,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import jline.console.ConsoleReader;
 import jline.console.history.History;
@@ -418,7 +421,7 @@ public class UtilsTest {
   }
 
   @Test
-  public void testParallel() {
+  public void testParallel() throws InterruptedException, ExecutionException {
     List<List<String>> list = new ArrayList<List<String>>();
     List<String> inList = new ArrayList<String>();
     inList.add("foo");
@@ -437,21 +440,17 @@ public class UtilsTest {
     list.add(inList2);
     list.add(inList3);
 
+    List<Future<?>> futures = new ArrayList<>();
+
     ExecutorService exec = Executors.newFixedThreadPool(2);
-    try {
-      for (final List<String> o : list) {
-        exec.submit(
-            new Runnable() {
-              @Override
-              public void run() {
-                o.add("X");
-              }
-            });
-      }
-    } finally {
-      exec.shutdown();
+    for (List<String> o : list) {
+      futures.add(exec.submit(() -> o.add("X")));
     }
-    System.err.println(list);
+
+    for (Future<?> f : futures) {
+      f.get();
+    }
+    assertEquals("[[foo, bar, baz, X], [foo2, bar2, baz2, X], [foo3, bar3, baz3, X]]", list.toString());
   }
 
   @Test

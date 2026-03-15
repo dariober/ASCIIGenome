@@ -32,6 +32,14 @@ class TestCLI(unittest.TestCase):
         if os.path.exists("test_out"):
             shutil.rmtree("test_out")
 
+    def testInitFromCram(self):
+        cmd = f"{ASCIIGenome} ../../../test_data/chr7.fa -x 'goto chr7:5567419-5567599 && open ../../../test_data/ds051.actb.cram'"
+        print(cmd)
+        p = shell(cmd)
+        self.assertEqual(p.returncode, 0)
+        self.assertTrue('chr7:5567419-5567599' in p.stdout)
+        self.assertTrue('::::::::::::::::::::::' in p.stdout)
+
     def testReadCsv(self):
         cmd = f"{ASCIIGenome}" + """ -nf -x 'open -c 1 -s 2 -e 3 -score 4 -sep "\\t" -z ../../../test_data/test.bedGraph && goto chr1:1-80'"""
         print(cmd)
