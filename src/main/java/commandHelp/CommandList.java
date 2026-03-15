@@ -496,7 +496,7 @@ public class CommandList {
         "Search for *all* occurrences of *pattern* allowing up to *k* mismatches. ");
     cmd.setAdditionalDescription(
         "\n"
-            + "Search the sequence of the current genomic window and return matches as aligned reads as an additional BAM track.\n"
+            + "Search the sequence of the current genomic window and return matches in an alignment track.\n"
         + "\n"
             + "This command requires sassy <https://github.com/RagnarGrootKoerkamp/sassy>. :code:`sassy` "
             + "should be either on the user's PATH or the path to the sassy executable should be set as "

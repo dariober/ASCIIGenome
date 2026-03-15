@@ -12,6 +12,7 @@ import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequence;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
+import htsjdk.samtools.util.SequenceUtil;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -179,7 +180,7 @@ public class Sassy {
     String patternName = lst.get(0).split("\\s+", 2)[0];
 
     SAMRecord rec = new SAMRecord(this.samFileHeader);
-    rec.setReadString(new String(querySequence.get(patternName)));
+
     rec.setReadName(patternName);
     rec.setReferenceName(lst.get(1));
     rec.setAttribute("NM", Integer.parseInt(lst.get(2)));
@@ -187,6 +188,13 @@ public class Sassy {
     rec.setAlignmentStart(Integer.parseInt(lst.get(4)) + 1 + this.chromOffset);
     rec.setCigarString(lst.get(7));
     rec.setMappingQuality(255);
+
+    byte[] readBytes = querySequence.get(patternName).clone();
+    if (rec.getReadNegativeStrandFlag()) {
+      SequenceUtil.reverseComplement(readBytes);
+    }
+    rec.setReadBases(readBytes);
+
     return rec;
   }
 

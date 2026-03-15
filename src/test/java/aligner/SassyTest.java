@@ -12,6 +12,7 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import java.io.File;
@@ -40,7 +41,13 @@ public class SassyTest {
     Sassy sassy = new Sassy(gc, tempWorkDir);
     sassy.setExecPath(this.sassy);
     sassy.search(Splitter.on(" ").splitToList("-p AGRTGA -k 1"));
-    sassy.writeSAMFile(Paths.get(sassy.getWorkDir().toString(), "tmp.sam"));
+    for(SAMRecord rec : sassy.getSamRecords().toList()) {
+      if (rec.getReadNegativeStrandFlag()) {
+        assertEquals("TCARCT", new String(rec.getReadBases()));
+      } else {
+        assertEquals("AGRTGA", new String(rec.getReadBases()));
+      }
+    }
 
     // Test fasta reference is correct
     String fastaRef = sassy.getSamFileHeader().getProgramRecord("sassy").getCommandLine().replaceAll(".* ", "");

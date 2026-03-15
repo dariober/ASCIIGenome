@@ -46,7 +46,7 @@ public enum ConfigKey {
   start_codon("Colour for start codon"),
   codon("Colour for codons other than start and stop"),
   python("Python executable. Use full path if there is no python on PATH"),
-  sassy("Directory of sassy executable");
+  sassy("Path of sassy executable");
 
   private String value;
 
