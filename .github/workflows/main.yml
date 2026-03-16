@@ -14,10 +14,18 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.version }}
-      - name: Install samtools
+
+      - name: Install samtools (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y samtools
+
+      - name: Install samtools (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install samtools
+
       - name: Build and Test
         run: |
           ./gradlew build test jacocoTestReport
@@ -25,6 +33,7 @@ jobs:
           cd src/test/java
           chmod a+x integration_test.py
           ./integration_test.py
+
       - name: Upload coverage to Codecov
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
