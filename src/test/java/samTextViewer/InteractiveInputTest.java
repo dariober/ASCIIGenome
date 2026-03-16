@@ -2,6 +2,7 @@ package samTextViewer;
 
 import static org.junit.Assert.*;
 
+import aligner.SassyTest;
 import colouring.Config;
 import colouring.ConfigKey;
 import colouring.Xterm256;
@@ -82,11 +83,15 @@ public class InteractiveInputTest {
 
   @Test
   public void canSearchPattern()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, InvalidColourException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidColourException {
 
-    Config.set(ConfigKey.sassy, "test_data/sassy/sassy-x86_64-unknown-linux-gnu");
-    TrackProcessor proc =
-        gimmeTrackProcessor("chr7:11001-11200", 200, "test_data/ds051.actb.bam");
+    Config.set(ConfigKey.sassy, SassyTest.sassyExec().toString());
+    TrackProcessor proc = gimmeTrackProcessor("chr7:11001-11200", 200, "test_data/ds051.actb.bam");
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
     processInput(ip, "setGenome test_data/chr7.fa", proc);
     ProcessInput pi = processInput(ip, "search -p gggaggGtgagg -k 1", proc);
@@ -106,11 +111,15 @@ public class InteractiveInputTest {
 
   @Test
   public void canSearchPatternLargeRegion()
-      throws SQLException, InvalidGenomicCoordsException, IOException, ClassNotFoundException, InvalidRecordException, InvalidColourException {
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          InvalidColourException {
 
-    Config.set(ConfigKey.sassy, "test_data/sassy/sassy-x86_64-unknown-linux-gnu");
-    TrackProcessor proc =
-        gimmeTrackProcessor("chr7:1-10000000", 200, "test_data/ds051.actb.bam");
+    Config.set(ConfigKey.sassy, SassyTest.sassyExec().toString());
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1-10000000", 200, "test_data/ds051.actb.bam");
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
     processInput(ip, "setGenome test_data/chr7.fa", proc);
     ProcessInput pi = processInput(ip, "search -p TTCTGCAGGCAGGATGGGCACTGTGGCTGGAGGAA -k 10", proc);
@@ -145,18 +154,15 @@ public class InteractiveInputTest {
     assertTrue(pi.stdout.contains("range[-99.0 -91.0]"));
 
     // Audodect format
-    proc =
-        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    proc = gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
     pi = processInput(ip, "open -c 5 -s 1 -score 3 test_data/generic.csv", proc);
     assertEquals(out1, pi.stdout);
 
-    proc =
-        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    proc = gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
     pi = processInput(ip, "open -c 5 -s 1 -score 3 -n 1 test_data/generic.csv", proc);
     assertEquals(out1, pi.stdout);
 
-    proc =
-        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    proc = gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
     pi = processInput(ip, "open -c 5 -s 1 -score 3 -sep ',' test_data/generic.csv", proc);
     assertEquals(out1, pi.stdout);
   }

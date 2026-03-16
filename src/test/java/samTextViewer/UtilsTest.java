@@ -43,7 +43,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import jline.console.ConsoleReader;
 import jline.console.history.History;
@@ -450,7 +449,8 @@ public class UtilsTest {
     for (Future<?> f : futures) {
       f.get();
     }
-    assertEquals("[[foo, bar, baz, X], [foo2, bar2, baz2, X], [foo3, bar3, baz3, X]]", list.toString());
+    assertEquals(
+        "[[foo, bar, baz, X], [foo2, bar2, baz2, X], [foo3, bar3, baz3, X]]", list.toString());
   }
 
   @Test
@@ -777,7 +777,7 @@ public class UtilsTest {
       // Broken awk script:
       boolean pass = false;
       try {
-        Utils.passAwkFilter(new String[]{"'chr1\t10\t100'"}, "'print {'");
+        Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'print {'");
       } catch (RuntimeException e) {
         pass = true;
       } catch (IOException e) {
@@ -1501,19 +1501,14 @@ public class UtilsTest {
   }
 
   @Test
-  public void canInitRegionFromCram()
-      throws IOException,
-          InvalidGenomicCoordsException {
+  public void canInitRegionFromCram() throws IOException, InvalidGenomicCoordsException {
     assertEquals(
         "chr7:5566778", Utils.initRegionFromFile("test_data/ds051.actb.cram", "test_data/chr7.fa"));
   }
 
   @Test
-  public void canInitRegionFromBedgraph()
-          throws IOException,
-          InvalidGenomicCoordsException {
-    assertEquals(
-            "chr1:1", Utils.initRegionFromFile("test_data/test.bedGraph", null));
+  public void canInitRegionFromBedgraph() throws IOException, InvalidGenomicCoordsException {
+    assertEquals("chr1:1", Utils.initRegionFromFile("test_data/test.bedGraph", null));
   }
 
   @Test

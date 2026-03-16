@@ -7,7 +7,6 @@ import htsjdk.samtools.SAMFileWriter;
 import htsjdk.samtools.SAMFileWriterFactory;
 import htsjdk.samtools.SAMProgramRecord;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequence;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
@@ -15,11 +14,9 @@ import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.samtools.util.SequenceUtil;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,7 +29,6 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 import org.apache.commons.io.FileUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
@@ -47,9 +43,12 @@ public class Sassy {
 
   public Sassy(GenomicCoords gc, Path workDir) throws IOException {
     this.workDir = workDir;
-    this.referenceFasta = Paths.get(workDir.toString(), gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".fa");
+    this.referenceFasta =
+        Paths.get(
+            workDir.toString(), gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".fa");
     this.chromOffset = gc.getFrom() - 1;
-    this.writeFasta(Paths.get(gc.getFastaFile()), gc.getChrom(), gc.getFrom(), gc.getTo(), this.referenceFasta);
+    this.writeFasta(
+        Paths.get(gc.getFastaFile()), gc.getChrom(), gc.getFrom(), gc.getTo(), this.referenceFasta);
     this.samFileHeader = new SAMFileHeader();
     this.samFileHeader.addSequence(gc.getSamSeqDict().getSequence(gc.getChrom()));
   }
@@ -61,25 +60,24 @@ public class Sassy {
     cmd.add("search");
     cmd.addAll(opts);
     cmd.add(this.referenceFasta.toString());
+    this.replacePatternOptWithPatternFileOpt(cmd);
+
     SAMProgramRecord pr = new SAMProgramRecord("sassy");
     pr.setCommandLine(Joiner.on(" ").join(cmd));
     this.samFileHeader.addProgramRecord(pr);
 
     Map<String, byte[]> querySequence;
-    if (opts.contains("-p") || opts.contains("--pattern")) {
-      int i = opts.contains("-p") ? opts.indexOf("-p") + 1 : opts.indexOf("--pattern") + 1;
-      querySequence = Map.of("pattern", opts.get(i).getBytes());
-    } else if (opts.contains("-f") || opts.contains("--pattern-fasta")) {
-      int i = opts.contains("-f") ? opts.indexOf("-f") + 1 : opts.indexOf("--pattern-fasta") + 1;
-      querySequence = this.fastaFileToMap(Path.of(opts.get(i)));
-    } else if (opts.contains("-l") || opts.contains("--pattern-file")) {
-      int i = opts.contains("-l") ? opts.indexOf("-l") + 1 : opts.indexOf("--pattern-file") + 1;
-      querySequence = this.patternFileToMap(Path.of(opts.get(i)));
+    if (cmd.contains("-f") || cmd.contains("--pattern-fasta")) {
+      int i = cmd.contains("-f") ? cmd.indexOf("-f") + 1 : cmd.indexOf("--pattern-fasta") + 1;
+      querySequence = this.fastaFileToMap(Path.of(cmd.get(i)));
+    } else if (cmd.contains("-l") || cmd.contains("--pattern-file")) {
+      int i = cmd.contains("-l") ? cmd.indexOf("-l") + 1 : cmd.indexOf("--pattern-file") + 1;
+      querySequence = this.patternFileToMap(Path.of(cmd.get(i)));
     } else {
       throw new RuntimeException("No input detected");
     }
 
-    Stream<String> lines = Utils.execSystemCommandStream(new String[]{}, cmd);
+    Stream<String> lines = Utils.execSystemCommandStream(new String[] {}, cmd);
     Iterator<String> iter = lines.iterator();
 
     if (!iter.hasNext()) {
@@ -93,21 +91,38 @@ public class Sassy {
       throw new RuntimeException("Unexpected column names: " + colnames);
     }
 
-    this.samRecords = StreamSupport.stream(
-            Spliterators.spliteratorUnknownSize(iter, Spliterator.ORDERED),
-            false)
-        .map(l -> searchToSAMRecord(l, querySequence))
-        .onClose(lines::close);
+    this.samRecords =
+        StreamSupport.stream(Spliterators.spliteratorUnknownSize(iter, Spliterator.ORDERED), false)
+            .map(l -> searchToSAMRecord(l, querySequence))
+            .onClose(lines::close);
+  }
+
+  /** Replace -p/--pattern option with --pattern-file */
+  private void replacePatternOptWithPatternFileOpt(List<String> opts) throws IOException {
+    if (opts.contains("-p") || opts.contains("--pattern")) {
+      // Replace the -p/--pattern option with --pattern-file
+      int pidx = opts.contains("-p") ? opts.indexOf("-p") : opts.indexOf("--pattern");
+      opts.set(pidx, "--pattern-file");
+
+      // Get patterns
+      String patterns = opts.get(pidx + 1).replaceAll(",", "\n");
+      // Write patterns to temp file:
+      Path patternFile = Paths.get(this.workDir.toString(), "query.txt");
+      FileUtils.write(patternFile.toFile(), patterns + "\n", Charset.defaultCharset());
+      // Replace pattern arg with pattern file
+      opts.set(pidx + 1, patternFile.toString());
+    }
   }
 
   public long writeSAMFile(Path samfile) {
-    try (SAMFileWriter writer = new SAMFileWriterFactory()
-        .makeSAMWriter(this.samFileHeader, false, samfile)) {
+    try (SAMFileWriter writer =
+        new SAMFileWriterFactory().makeSAMWriter(this.samFileHeader, false, samfile)) {
       return this.samRecords.peek(writer::addAlignment).count();
     }
   }
 
-  private void writeFasta(Path inFasta, String chrom, int from, int to, Path outFasta) throws IOException {
+  private void writeFasta(Path inFasta, String chrom, int from, int to, Path outFasta)
+      throws IOException {
     int lineWidth = 60;
     int chunkSize = lineWidth * 50;
     try (IndexedFastaSequenceFile fastaReader = new IndexedFastaSequenceFile(inFasta);
@@ -164,8 +179,7 @@ public class Sassy {
         String name = header.split("\\s+", 2)[0];
 
         if (map.containsKey(name)) {
-          throw new IllegalArgumentException(
-              "Duplicate FASTA sequence name: " + name);
+          throw new IllegalArgumentException("Duplicate FASTA sequence name: " + name);
         }
         map.put(name, seq.getBases());
       }

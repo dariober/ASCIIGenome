@@ -2420,11 +2420,11 @@ public class TrackSet {
 
   public void setCliOptsForTrackSassySearch(List<String> cmdInput, GenomicCoords genomicCoords)
       throws ClassNotFoundException,
-      IOException,
-      InvalidGenomicCoordsException,
-      InvalidRecordException,
-      SQLException,
-      InvalidCommandLineException {
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException,
+          InvalidCommandLineException {
 
     List<String> args = new ArrayList<String>(cmdInput);
     args.remove(0); // Remove command name
@@ -2472,11 +2472,11 @@ public class TrackSet {
 
   private void initTrackSassySearch(List<String> sassyCliOpts, GenomicCoords genomicCoords)
       throws InvalidCommandLineException,
-      ClassNotFoundException,
-      IOException,
-      InvalidGenomicCoordsException,
-      InvalidRecordException,
-      SQLException {
+          ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
     // See if a TrackSeqRegex exists.
     boolean found = false;
     for (AbstractTrack tr : this.getTrackList()) {

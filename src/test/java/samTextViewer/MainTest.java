@@ -50,37 +50,29 @@ public class MainTest {
     String out = Joiner.on("\n").join(this.runMain(args));
     assertTrue(out.contains("_:::: "));
 
-    args = new String[] {
-            "-ni",
-            "-nf",
-            "--debug",
-            "2",
-            "--exec",
-            "open test_data/test.bedGraph && goto chr1:1"
-    };
+    args =
+        new String[] {
+          "-ni", "-nf", "--debug", "2", "--exec", "open test_data/test.bedGraph && goto chr1:1"
+        };
     String bdg = Joiner.on("\n").join(this.runMain(args));
     assertTrue(bdg.contains(":    ,,,,,     ::::::,"));
 
-    args = new String[] {
-                    "-ni",
-                    "-nf",
-                    "--debug",
-                    "2",
-                    "--exec",
-                    "open -c 1 -s 2 -e 3 -score 4 -z test_data/test.bedGraph && goto chr1:1"
-            };
+    args =
+        new String[] {
+          "-ni",
+          "-nf",
+          "--debug",
+          "2",
+          "--exec",
+          "open -c 1 -s 2 -e 3 -score 4 -z test_data/test.bedGraph && goto chr1:1"
+        };
 
     String tsv = Joiner.on("\n").join(this.runMain(args));
     assertTrue(tsv.contains(":    ,,,,,     ::::::,"));
 
     args =
         new String[] {
-            "-ni",
-            "-nf",
-            "--debug",
-            "2",
-            "--exec",
-            "open -c 5 -s 1 test_data/generic.csv && next"
+          "-ni", "-nf", "--debug", "2", "--exec", "open -c 5 -s 1 test_data/generic.csv && next"
         };
     out = Joiner.on("\n").join(this.runMain(args));
     assertTrue(out.contains("| | | | |"));

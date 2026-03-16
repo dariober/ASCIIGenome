@@ -4,11 +4,9 @@ import aligner.Sassy;
 import colouring.Config;
 import colouring.ConfigKey;
 import exceptions.InvalidGenomicCoordsException;
-import exceptions.InvalidRecordException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import samTextViewer.GenomicCoords;
@@ -20,8 +18,7 @@ public class TrackSassySearch extends TrackReads {
   private final Path tempWorkDir;
 
   public TrackSassySearch(List<String> sassyCliOpts, GenomicCoords gc)
-      throws IOException,
-          InvalidGenomicCoordsException {
+      throws IOException, InvalidGenomicCoordsException {
     this.downsampleUsingTemplateName = false;
     this.MAX_REGION_SIZE = Integer.MAX_VALUE;
     this.sassyCliOpts = sassyCliOpts;

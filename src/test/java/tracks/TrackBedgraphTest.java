@@ -39,7 +39,12 @@ public class TrackBedgraphTest {
   }
 
   @Test
-  public void canCreateFeature() throws InvalidGenomicCoordsException, SQLException, IOException, ClassNotFoundException, InvalidRecordException {
+  public void canCreateFeature()
+      throws InvalidGenomicCoordsException,
+          SQLException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
 
     String line = "chr1 0 2 9 8 FOO 10".replaceAll(" ", "\t");
     GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
@@ -60,7 +65,7 @@ public class TrackBedgraphTest {
     assertEquals(9, out.getScore(), 0.0001);
   }
 
-    @Test
+  @Test
   public void canReproduceTrackBedgraphWithCsv()
       throws ClassNotFoundException,
           IOException,
@@ -347,12 +352,13 @@ public class TrackBedgraphTest {
 
   @Test
   public void canIgnoreIrrelevantMethods()
-          throws InvalidGenomicCoordsException,
+      throws InvalidGenomicCoordsException,
           IOException,
           InvalidRecordException,
           ClassNotFoundException,
           SQLException,
-          InvalidConfigException, InvalidColourException {
+          InvalidConfigException,
+          InvalidColourException {
 
     new Config(null);
 
