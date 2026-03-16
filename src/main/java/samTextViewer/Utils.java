@@ -1994,7 +1994,7 @@ public class Utils {
       try {
         stdin.flush();
       } catch (IOException e) {
-        throwCmdException(p, Joiner.on(" ").join(cmd));
+        throwCmdException(p);
       }
     }
     stdin.close();
@@ -2010,7 +2010,7 @@ public class Utils {
             int exit = p.waitFor();
             reader.close();
             if (exit != 0) {
-              throwCmdException(p, Joiner.on(" ").join(cmd));
+              throwCmdException(p);
             }
           } catch (Exception e) {
             throw new RuntimeException(e);
@@ -2028,9 +2028,7 @@ public class Utils {
     return results;
   }
 
-  private static void throwCmdException(Process p, String cmd)
-      throws IOException, InterruptedException {
-    System.err.println(cmd);
+  private static void throwCmdException(Process p) throws IOException, InterruptedException {
     p.waitFor();
     System.err.println("Command returned with non-zero exit value " + p.exitValue());
     BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()));

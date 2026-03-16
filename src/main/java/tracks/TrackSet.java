@@ -2428,6 +2428,10 @@ public class TrackSet {
 
     List<String> args = new ArrayList<String>(cmdInput);
     args.remove(0); // Remove command name
+    if (!args.contains("-k")) {
+      args.add("-k");
+      args.add("1");
+    }
 
     initTrackSassySearch(args, genomicCoords);
 

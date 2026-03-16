@@ -103,12 +103,12 @@ public class InteractiveInput {
           System.err.println(Utils.padEndMultiLine(CommandList.briefHelp(), proc.getWindowSize()));
           this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
 
-        } else if ((cmdTokens.size() >= 2 && cmdTokens.get(1).equals("-h"))
-            || (cmdTokens.size() >= 2 && cmdTokens.get(0).equals("help"))
+        } else if ((cmdTokens.size() >= 2 && cmdTokens.contains("-h"))
+            || (cmdTokens.size() >= 2 && cmdTokens.contains("help"))
             || cmdTokens.get(0).startsWith("?")) {
           // Help on this command
           String cmd;
-          if (cmdTokens.size() >= 2 && cmdTokens.get(0).equals("-h")) {
+          if (cmdTokens.size() >= 2 && cmdTokens.contains("-h")) {
             cmd = cmdTokens.get(0);
           } else if (cmdTokens.size() >= 2 && cmdTokens.get(0).equals("help")) {
             cmd = cmdTokens.get(1);

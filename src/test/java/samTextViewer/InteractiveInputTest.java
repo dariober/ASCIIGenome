@@ -95,7 +95,12 @@ public class InteractiveInputTest {
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
     processInput(ip, "setGenome test_data/chr7.fa", proc);
     ProcessInput pi = processInput(ip, "search -p gggaggGtgagg -k 1", proc);
-    assertTrue(pi.stdout.contains("......G..... "));
+    String k1 = pi.stdout;
+    assertTrue(k1.contains("......G..... "));
+
+    // Default k=1
+    pi = processInput(ip, "search -p gggaggGtgagg", proc);
+    assertEquals(pi.stdout, k1);
 
     pi = processInput(ip, "goto chr7:31700-31770", proc);
     assertTrue(pi.stdout.contains(" .......T.... "));
@@ -105,8 +110,8 @@ public class InteractiveInputTest {
     assertTrue(pi.stdout.contains("7=1X4="));
     assertTrue(pi.stdout.contains("GGGAGGGTGAGG"));
 
-    pi = processInput(ip, "search --pattern gggaggGtgagg", proc);
-    assertTrue(pi.stderr.contains("the following required arguments were not provided"));
+    pi = processInput(ip, "search -k 1", proc);
+    assertTrue(pi.stderr.contains("Please provide one of"));
   }
 
   @Test

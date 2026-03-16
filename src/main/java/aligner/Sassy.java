@@ -74,7 +74,11 @@ public class Sassy {
       int i = cmd.contains("-l") ? cmd.indexOf("-l") + 1 : cmd.indexOf("--pattern-file") + 1;
       querySequence = this.patternFileToMap(Path.of(cmd.get(i)));
     } else {
-      throw new RuntimeException("No input detected");
+      throw new RuntimeException(
+          "Please provide one of:\n"
+              + "  -p [comma separated patterns]\n"
+              + "  -l [file with one pattern per line]\n"
+              + "  -f [fasta file of patterns]");
     }
 
     Stream<String> lines = Utils.execSystemCommandStream(new String[] {}, cmd);
