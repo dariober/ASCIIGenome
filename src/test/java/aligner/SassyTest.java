@@ -62,6 +62,19 @@ public class SassyTest {
   }
 
   @Test
+  public void testCigar() throws IOException, InterruptedException, InvalidGenomicCoordsException {
+    Path tempWorkDir = Utils.createTempDir("tmp.sassy.", false);
+
+    GenomicCoords gc = new GenomicCoords("chr7:20001-25000", 80, null, "test_data/chr7.fa");
+
+    Sassy sassy = new Sassy(gc, tempWorkDir);
+    sassy.setExecPath(this.sassy);
+    sassy.search(Splitter.on(" ").splitToList("-p gagctgatagtcaatcagtgactgtcAtggg -k 3"));
+    List<SAMRecord> recs = sassy.getSamRecords().toList();
+    assertEquals("3=1X9=1D13=1I4=", recs.get(0).getCigarString());
+
+  }
+  @Test
   public void testMultiplePatterns() throws Exception {
     Path tempWorkDir = Utils.createTempDir("tmp.sassy.", false);
 

@@ -493,12 +493,11 @@ public class CommandList {
     cmd.setArgs("[-p|-f|-l pattern] [-k int]");
     cmd.inSection = Section.FIND;
     cmd.setBriefDescription(
-        "Search for *all* occurrences of *pattern* allowing up to *k* mismatches. ");
+        "Search sequence for *pattern* allowing up to *k* mismatches. ");
     cmd.setAdditionalDescription(
-        "\n"
-            + "Search the sequence of the current genomic window and return matches in an alignment"
-            + " track.\n"
-            + "\n"
+        "\n" +
+                "`search` is useful for locating short sequences such as PCR primers, restriction sites, crispr targets.\n" +
+                "\n"
             + "This command requires sassy <https://github.com/RagnarGrootKoerkamp/sassy>."
             + " :code:`sassy` should be either on the user's PATH or the path to the sassy"
             + " executable should be set as a configuration variable\n"
