@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+
+import htsjdk.samtools.util.SequenceUtil;
 import org.broad.igv.util.FileUtils;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
@@ -24,7 +26,6 @@ public class SassyTest {
     GenomicCoords gc = new GenomicCoords("chr7:20001-25000", 80, null, "test_data/chr7.fa");
 
     Sassy sassy = new Sassy(gc, tempWorkDir, null);
-    // sassy.setExecPath(this.sassy);
     sassy.search(Splitter.on(" ").splitToList("-p AGRTGA -k 1"));
     for (SAMRecord rec : sassy.getSamRecords().toList()) {
       if (rec.getReadNegativeStrandFlag()) {
@@ -43,6 +44,8 @@ public class SassyTest {
     assertTrue(fastaSeq.endsWith("agacagccatcaaggaggtg\n"));
   }
 
+
+
   @Test
   public void testCigar() throws IOException, InterruptedException, InvalidGenomicCoordsException {
     Path tempWorkDir = Utils.createTempDir("tmp.sassy.", true);
@@ -50,10 +53,18 @@ public class SassyTest {
     GenomicCoords gc = new GenomicCoords("chr7:20001-25000", 80, null, "test_data/chr7.fa");
 
     Sassy sassy = new Sassy(gc, tempWorkDir, null);
-    // sassy.setExecPath(this.sassy);
     sassy.search(Splitter.on(" ").splitToList("-p gagctgatagtcaatcagtgactgtcAtggg -k 3"));
     List<SAMRecord> recs = sassy.getSamRecords().toList();
     assertEquals("3=1X9=1D13=1I4=", recs.get(0).getCigarString());
+
+    // Revcomp
+    sassy = new Sassy(gc, tempWorkDir, null);
+    sassy.search(Splitter.on(" ").splitToList("-p cccaTgacagtcactgattgactatcagctc -k 3"));
+    recs = sassy.getSamRecords().toList();
+    System.out.println(recs);
+    assertEquals("3=1X9=1D13=1I4=", recs.get(0).getCigarString());
+
+
   }
 
   @Test
@@ -63,7 +74,6 @@ public class SassyTest {
     GenomicCoords gc = new GenomicCoords("chr7:20001-25000", 80, null, "test_data/chr7.fa");
 
     Sassy sassy = new Sassy(gc, tempWorkDir, null);
-    // sassy.setExecPath(this.sassy);
     sassy.search(
         Splitter.on(" ")
             .splitToList(

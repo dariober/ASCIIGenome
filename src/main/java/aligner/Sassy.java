@@ -4,26 +4,17 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import htsjdk.samtools.SAMFileHeader;
-import htsjdk.samtools.SAMFileWriter;
-import htsjdk.samtools.SAMFileWriterFactory;
-import htsjdk.samtools.SAMProgramRecord;
-import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.*;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequence;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
+import htsjdk.samtools.util.CigarUtil;
 import htsjdk.samtools.util.SequenceUtil;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.commons.io.FileUtils;
@@ -238,7 +229,14 @@ public class Sassy {
     rec.setAttribute("NM", Integer.parseInt(lst.get(2)));
     rec.setReadNegativeStrandFlag(lst.get(3).equals("-"));
     rec.setAlignmentStart(Integer.parseInt(lst.get(4)) + 1 + this.chromOffset);
-    rec.setCigarString(lst.get(7));
+    if (rec.getReadNegativeStrandFlag()) {
+      Cigar cigar = TextCigarCodec.decode(lst.get(7));
+      List<CigarElement> elements = new ArrayList<>(cigar.getCigarElements());
+      Collections.reverse(elements);
+      rec.setCigar(new Cigar(elements));
+    } else {
+      rec.setCigarString(lst.get(7));
+    }
     rec.setMappingQuality(255);
 
     byte[] readBytes = querySequence.get(patternName).clone();
