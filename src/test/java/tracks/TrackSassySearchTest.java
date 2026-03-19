@@ -2,9 +2,7 @@ package tracks;
 
 import static org.junit.Assert.assertTrue;
 
-import aligner.SassyTest;
 import colouring.Config;
-import colouring.ConfigKey;
 import exceptions.InvalidColourException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
@@ -25,7 +23,6 @@ public class TrackSassySearchTest {
           InvalidConfigException {
 
     new Config(null);
-    Config.set(ConfigKey.sassy, SassyTest.sassyExec().toString());
     GenomicCoords gc = new GenomicCoords("chr7:11001-11200", 200, null, "test_data/chr7.fa");
     List<String> sassyCliOpts = Arrays.stream("-p gggaggc -k 2".split(" ")).toList();
     TrackSassySearch ss = new TrackSassySearch(sassyCliOpts, gc);
@@ -42,7 +39,6 @@ public class TrackSassySearchTest {
           InvalidConfigException {
 
     new Config(null);
-    Config.set(ConfigKey.sassy, SassyTest.sassyExec().toString());
     GenomicCoords gc = new GenomicCoords("chr7:1-14557334", 200, null, "test_data/chr7.fa");
     List<String> sassyCliOpts = Arrays.stream("-p GCGGCCGC -k 1".split(" ")).toList();
     TrackSassySearch ss = new TrackSassySearch(sassyCliOpts, gc);

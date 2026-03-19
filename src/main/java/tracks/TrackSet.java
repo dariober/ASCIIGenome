@@ -2397,7 +2397,7 @@ public class TrackSet {
     }
 
     String seqRegex = null;
-    if (args.size() == 0) {
+    if (args.isEmpty()) {
       seqRegex = "";
     } else {
       seqRegex = args.get(0);

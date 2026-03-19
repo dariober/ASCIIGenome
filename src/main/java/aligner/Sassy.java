@@ -1,5 +1,7 @@
 package aligner;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import htsjdk.samtools.SAMFileHeader;
@@ -12,14 +14,9 @@ import htsjdk.samtools.reference.ReferenceSequence;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.samtools.util.SequenceUtil;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,16 +30,23 @@ import org.apache.commons.io.FileUtils;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 
+// import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 public class Sassy {
   private final Path referenceFasta;
-  Path execPath = Paths.get("sassy");
+  private final Path execPath;
   private final SAMFileHeader samFileHeader;
   private final Path workDir;
   private final int chromOffset;
   private Stream<SAMRecord> samRecords;
 
-  public Sassy(GenomicCoords gc, Path workDir) throws IOException {
+  public Sassy(GenomicCoords gc, Path workDir, Path execPath) throws IOException {
     this.workDir = workDir;
+    if (execPath != null) {
+      this.execPath = execPath;
+    } else {
+      this.execPath = this.findExecPath();
+    }
     this.referenceFasta =
         Paths.get(
             workDir.toString(), gc.getChrom() + "_" + gc.getFrom() + "-" + gc.getTo() + ".fa");
@@ -51,6 +55,36 @@ public class Sassy {
         Paths.get(gc.getFastaFile()), gc.getChrom(), gc.getFrom(), gc.getTo(), this.referenceFasta);
     this.samFileHeader = new SAMFileHeader();
     this.samFileHeader.addSequence(gc.getSamSeqDict().getSequence(gc.getChrom()));
+  }
+
+  private Path findExecPath() throws IOException {
+
+    try {
+      Utils.execSystemCommand(new String[] {}, List.of("sassy", "--version"));
+      return Paths.get("sassy");
+    } catch (Exception e) {
+      //
+    }
+
+    String os = System.getProperty("os.name").toLowerCase();
+    String sassy;
+    if (os.contains("mac")) {
+      sassy = "sassy-aarch64-apple-darwin";
+    } else if (os.contains("linux")) {
+      sassy = "sassy-x86_64-unknown-linux-gnu";
+    } else {
+      throw new RuntimeException("Unable to find sassy executable");
+    }
+    try (InputStream instream =
+        Sassy.class.getResourceAsStream(Paths.get("/sassy/v0.2.0", sassy).toString())) {
+      if (instream == null) {
+        throw new RuntimeException("Null resource");
+      }
+      Path out = Paths.get(this.workDir.toString(), "sassy");
+      Files.copy(instream, out, REPLACE_EXISTING);
+      out.toFile().setExecutable(true);
+      return out;
+    }
   }
 
   public void search(List<String> opts) throws IOException, InterruptedException {
@@ -218,10 +252,6 @@ public class Sassy {
 
   public Path getWorkDir() {
     return this.workDir;
-  }
-
-  public void setExecPath(Path execPath) {
-    this.execPath = execPath;
   }
 
   public Path getExecPath() {

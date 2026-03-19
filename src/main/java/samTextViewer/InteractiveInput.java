@@ -480,18 +480,29 @@ public class InteractiveInput {
           }
 
         } else if (cmdTokens.get(0).equals("seqRegex")) {
+          if (proc.getGenomicCoordsHistory().current().getFastaFile() == null) {
+            System.err.println(
+                Utils.padEndMultiLine(
+                    "Cannot search for regex without reference sequence.", proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
           try {
             proc.getTrackSet()
                 .setRegexForTrackSeqRegex(cmdTokens, proc.getGenomicCoordsHistory().current());
           } catch (InvalidCommandLineException e) {
-            System.err.println(
-                Utils.padEndMultiLine(
-                    "Cannot find regex in sequence without fasta reference!",
-                    proc.getWindowSize()));
+            System.err.println(Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize()));
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
           }
         } else if (cmdTokens.get(0).equals("search")) {
+          if (proc.getGenomicCoordsHistory().current().getFastaFile() == null) {
+            System.err.println(
+                Utils.padEndMultiLine(
+                    "Cannot search for patters without reference sequence.", proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
           try {
             proc.getTrackSet()
                 .setCliOptsForTrackSassySearch(cmdTokens, proc.getGenomicCoordsHistory().current());

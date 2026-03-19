@@ -492,15 +492,15 @@ public class CommandList {
     cmd.setName("search");
     cmd.setArgs("[-p|-f|-l pattern] [-k int]");
     cmd.inSection = Section.FIND;
-    cmd.setBriefDescription(
-        "Search sequence for *pattern* allowing up to *k* mismatches. ");
+    cmd.setBriefDescription("Search sequence for *pattern* allowing up to *k* mismatches. ");
     cmd.setAdditionalDescription(
-        "\n" +
-                "`search` is useful for locating short sequences such as PCR primers, restriction sites, crispr targets.\n" +
-                "\n"
-            + "This command requires sassy <https://github.com/RagnarGrootKoerkamp/sassy>."
-            + " :code:`sassy` should be either on the user's PATH or the path to the sassy"
-            + " executable should be set as a configuration variable\n"
+        "\n"
+            + "`search` is useful for locating short sequences such as PCR primers, restriction"
+            + " sites, crispr targets.\n"
+            + "\n"
+            + "This command runs sassy <https://github.com/RagnarGrootKoerkamp/sassy> under the"
+            + " hood. :code:`search` will try first to use :code:`sassy` on the  user's search PATH"
+            + " and, if not found, use the sassy executable that ships with ASCIIGenome.\n"
             + "\n"
             + "Options:\n"
             + "\n"
@@ -510,8 +510,8 @@ public class CommandList {
             + "\n"
             + "* :code:`-f` Search each record in the FASTA file (cannot be used with -p)\n"
             + "\n"
-            + "* :code:`-k` Report matches up to (and including) this distance threshold"
-            + " [default = 1]\n"
+            + "* :code:`-k` Report matches up to (and including) this distance threshold [default ="
+            + " 1]\n"
             + "\n"
             + "* :code:`-a` The alphabet to use. DNA=ACTG, or default IUPAC=ACTG+NYR.... [default:"
             + " iupac] [possible values: dna, iupac]\n"

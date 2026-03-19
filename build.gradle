@@ -123,14 +123,14 @@ dependencies {
 
 jacocoTestReport {
     dependsOn test
-    dependsOn compileJava
+
     classDirectories.setFrom(
-        fileTree(dir: "$rootProject.layout.buildDirectory/classes/java/main")
+        sourceSets.main.output
     )
+
     reports {
         xml.required = true
         html.required = true
     }
 }
-
 check.dependsOn jacocoTestReport

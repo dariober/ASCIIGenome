@@ -2,12 +2,9 @@ package samTextViewer;
 
 import static org.junit.Assert.*;
 
-import aligner.SassyTest;
 import colouring.Config;
-import colouring.ConfigKey;
 import colouring.Xterm256;
 import com.google.common.base.Splitter;
-import exceptions.InvalidColourException;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
@@ -45,6 +42,35 @@ public class InteractiveInputTest {
     public String stderr;
     public String stdout;
   }
+
+  //  public ProcessInput processInput(InteractiveInput ip, String cmd, TrackProcessor p)
+  //          throws InvalidGenomicCoordsException, IOException {
+  //
+  //    PrintStream originalOut = System.out;
+  //    PrintStream originalErr = System.err;
+  //
+  //    ByteArrayOutputStream err = new ByteArrayOutputStream();
+  //    ByteArrayOutputStream out = new ByteArrayOutputStream();
+  //
+  //    try {
+  //      System.setErr(new PrintStream(err));
+  //      System.setOut(new PrintStream(out));
+  //
+  //      ip.processInput(cmd, p);
+  //      ip.processInput(cmd, p);
+  //      System.out.flush();
+  //      System.err.flush();
+  //
+  //    } finally {
+  //      System.setOut(originalOut);
+  //      System.setErr(originalErr);
+  //    }
+  //
+  //    ProcessInput pi = new ProcessInput();
+  //    pi.stderr = err.toString();
+  //    pi.stdout = out.toString();
+  //    return pi;
+  //  }
 
   public ProcessInput processInput(InteractiveInput ip, String cmd, TrackProcessor p)
       throws InvalidGenomicCoordsException, IOException {
@@ -87,10 +113,8 @@ public class InteractiveInputTest {
           InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
-          InvalidRecordException,
-          InvalidColourException {
+          InvalidRecordException {
 
-    Config.set(ConfigKey.sassy, SassyTest.sassyExec().toString());
     TrackProcessor proc = gimmeTrackProcessor("chr7:11001-11200", 200, "test_data/ds051.actb.bam");
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
     processInput(ip, "setGenome test_data/chr7.fa", proc);
@@ -120,16 +144,29 @@ public class InteractiveInputTest {
           InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
-          InvalidRecordException,
-          InvalidColourException {
+          InvalidRecordException {
 
-    Config.set(ConfigKey.sassy, SassyTest.sassyExec().toString());
     TrackProcessor proc = gimmeTrackProcessor("chr7:1-10000000", 200, "test_data/ds051.actb.bam");
     InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
     processInput(ip, "setGenome test_data/chr7.fa", proc);
     ProcessInput pi = processInput(ip, "search -p TTCTGCAGGCAGGATGGGCACTGTGGCTGGAGGAA -k 10", proc);
+    System.err.println(pi.stderr);
     assertTrue(pi.stdout.contains("Reads: 234"));
     assertTrue(pi.stdout.contains("<<<<"));
+  }
+
+  @Test
+  public void canFailSearchGracefullyIfNoReferenceSequence()
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1-10000000", 200, "test_data/ds051.actb.bam");
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
+    ProcessInput pi = processInput(ip, "search -p TTCTGCAGGCAGGATGGGCACTGTGGCTGGAGGAA", proc);
+    assertEquals("Cannot search for patters without reference sequence.", pi.stderr.trim());
   }
 
   @Test
@@ -256,7 +293,6 @@ public class InteractiveInputTest {
     assertFalse(pi.stdout.contains("82.3]"));
     assertTrue(pi.stdout.contains("823"));
     assertTrue(pi.stdout.contains("825"));
-    System.out.println(pi.stdout);
 
     pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1 #2", proc);
     assertTrue(pi.stdout.contains("82.3]"));

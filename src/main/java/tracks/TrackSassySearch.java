@@ -1,8 +1,6 @@
 package tracks;
 
 import aligner.Sassy;
-import colouring.Config;
-import colouring.ConfigKey;
 import exceptions.InvalidGenomicCoordsException;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -37,9 +35,8 @@ public class TrackSassySearch extends TrackReads {
     super.update();
   }
 
-  private void sassySearch() throws IOException {
-    Sassy sassy = new Sassy(this.getGc(), this.tempWorkDir);
-    sassy.setExecPath(Path.of(Config.get(ConfigKey.sassy)));
+  private void sassySearch() throws IOException, InvalidGenomicCoordsException {
+    Sassy sassy = new Sassy(this.getGc(), this.tempWorkDir, null);
     try {
       sassy.search(this.getSassyCliOpts());
     } catch (InterruptedException e) {

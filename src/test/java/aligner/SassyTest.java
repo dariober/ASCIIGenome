@@ -3,11 +3,7 @@ package aligner;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import colouring.Config;
-import colouring.ConfigKey;
 import com.google.common.base.Splitter;
-import exceptions.InvalidColourException;
-import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import htsjdk.samtools.SAMRecord;
 import java.io.IOException;
@@ -21,28 +17,14 @@ import samTextViewer.Utils;
 
 public class SassyTest {
 
-  public static Path sassyExec() {
-    String os = System.getProperty("os.name").toLowerCase();
-    String base = "test_data/sassy/v0.2.0";
-    if (os.contains("mac")) {
-      return Paths.get(base, "sassy-aarch64-apple-darwin");
-    }
-    if (os.contains("linux")) {
-      return Paths.get(base, "sassy-x86_64-unknown-linux-gnu");
-    }
-    throw new RuntimeException("Unsupported platform: " + os);
-  }
-
-  private final Path sassy = sassyExec();
-
   @Test
   public void testPattern() throws Exception {
-    Path tempWorkDir = Utils.createTempDir("tmp.sassy.", false);
+    Path tempWorkDir = Utils.createTempDir("tmp.sassy.", true);
 
     GenomicCoords gc = new GenomicCoords("chr7:20001-25000", 80, null, "test_data/chr7.fa");
 
-    Sassy sassy = new Sassy(gc, tempWorkDir);
-    sassy.setExecPath(this.sassy);
+    Sassy sassy = new Sassy(gc, tempWorkDir, null);
+    // sassy.setExecPath(this.sassy);
     sassy.search(Splitter.on(" ").splitToList("-p AGRTGA -k 1"));
     for (SAMRecord rec : sassy.getSamRecords().toList()) {
       if (rec.getReadNegativeStrandFlag()) {
@@ -63,25 +45,25 @@ public class SassyTest {
 
   @Test
   public void testCigar() throws IOException, InterruptedException, InvalidGenomicCoordsException {
-    Path tempWorkDir = Utils.createTempDir("tmp.sassy.", false);
+    Path tempWorkDir = Utils.createTempDir("tmp.sassy.", true);
 
     GenomicCoords gc = new GenomicCoords("chr7:20001-25000", 80, null, "test_data/chr7.fa");
 
-    Sassy sassy = new Sassy(gc, tempWorkDir);
-    sassy.setExecPath(this.sassy);
+    Sassy sassy = new Sassy(gc, tempWorkDir, null);
+    // sassy.setExecPath(this.sassy);
     sassy.search(Splitter.on(" ").splitToList("-p gagctgatagtcaatcagtgactgtcAtggg -k 3"));
     List<SAMRecord> recs = sassy.getSamRecords().toList();
     assertEquals("3=1X9=1D13=1I4=", recs.get(0).getCigarString());
-
   }
+
   @Test
   public void testMultiplePatterns() throws Exception {
-    Path tempWorkDir = Utils.createTempDir("tmp.sassy.", false);
+    Path tempWorkDir = Utils.createTempDir("tmp.sassy.", true);
 
     GenomicCoords gc = new GenomicCoords("chr7:20001-25000", 80, null, "test_data/chr7.fa");
 
-    Sassy sassy = new Sassy(gc, tempWorkDir);
-    sassy.setExecPath(this.sassy);
+    Sassy sassy = new Sassy(gc, tempWorkDir, null);
+    // sassy.setExecPath(this.sassy);
     sassy.search(
         Splitter.on(" ")
             .splitToList(
@@ -101,8 +83,8 @@ public class SassyTest {
 
     GenomicCoords gc = new GenomicCoords("chr7:10000-20000", 80, null, "test_data/chr7.fa");
 
-    Sassy sassy = new Sassy(gc, tempWorkDir);
-    sassy.setExecPath(this.sassy);
+    Sassy sassy = new Sassy(gc, tempWorkDir, null);
+    // sassy.setExecPath(this.sassy);
     boolean pass = false;
     try {
       sassy.search(Splitter.on(" ").splitToList("-f test_data/pattern_dups.fa.gz -k 1"));
@@ -119,8 +101,8 @@ public class SassyTest {
 
     GenomicCoords gc = new GenomicCoords("chr7:10000-20000", 80, null, "test_data/chr7.fa");
 
-    Sassy sassy = new Sassy(gc, tempWorkDir);
-    sassy.setExecPath(this.sassy);
+    Sassy sassy = new Sassy(gc, tempWorkDir, null);
+    // sassy.setExecPath(this.sassy);
     sassy.search(Splitter.on(" ").splitToList("-f test_data/pattern.fa.gz -k 1"));
 
     assertTrue(
@@ -145,8 +127,8 @@ public class SassyTest {
 
     GenomicCoords gc = new GenomicCoords("chr7:10000-20000", 80, null, "test_data/chr7.fa");
 
-    Sassy sassy = new Sassy(gc, tempWorkDir);
-    sassy.setExecPath(this.sassy);
+    Sassy sassy = new Sassy(gc, tempWorkDir, null);
+    // sassy.setExecPath(this.sassy);
     sassy.search(Splitter.on(" ").splitToList("-l test_data/pattern.txt -k 1"));
 
     Path outsam = Paths.get(sassy.getWorkDir().toString(), "tmp.sam");
@@ -158,21 +140,21 @@ public class SassyTest {
                 + "\tAAGAGGGCTACATTATTTATGAAACAGATACTGTTAACTCAGTCACCAGA\t*\tNM:i:0"));
   }
 
-  @Test
-  public void testConfigPath()
-      throws IOException,
-          InvalidConfigException,
-          InvalidColourException,
-          InvalidGenomicCoordsException,
-          InterruptedException {
-    new Config(null);
-    Config.set(ConfigKey.sassy, this.sassy.toString());
-
-    Path tempWorkDir = Utils.createTempDir("tmp.sassy.", true);
-    GenomicCoords gc = new GenomicCoords("chr7:10000-20000", 80, null, "test_data/chr7.fa");
-
-    Sassy sassy = new Sassy(gc, tempWorkDir);
-    sassy.setExecPath(Paths.get(Config.get(ConfigKey.sassy)));
-    sassy.search(Splitter.on(" ").splitToList("-p AAGRTGAG -k 1"));
-  }
+  //  @Test
+  //  public void testConfigPath()
+  //      throws IOException,
+  //          InvalidConfigException,
+  //          InvalidColourException,
+  //          InvalidGenomicCoordsException,
+  //          InterruptedException {
+  //    new Config(null);
+  //    Config.set(ConfigKey.sassy, this.sassy.toString());
+  //
+  //    Path tempWorkDir = Utils.createTempDir("tmp.sassy.", true);
+  //    GenomicCoords gc = new GenomicCoords("chr7:10000-20000", 80, null, "test_data/chr7.fa");
+  //
+  //    Sassy sassy = new Sassy(gc, tempWorkDir);
+  //    sassy.setExecPath(Paths.get(Config.get(ConfigKey.sassy)));
+  //    sassy.search(Splitter.on(" ").splitToList("-p AAGRTGAG -k 1"));
+  //  }
 }
