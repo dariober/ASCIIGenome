@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-
-import htsjdk.samtools.util.SequenceUtil;
 import org.broad.igv.util.FileUtils;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
@@ -44,8 +42,6 @@ public class SassyTest {
     assertTrue(fastaSeq.endsWith("agacagccatcaaggaggtg\n"));
   }
 
-
-
   @Test
   public void testCigar() throws IOException, InterruptedException, InvalidGenomicCoordsException {
     Path tempWorkDir = Utils.createTempDir("tmp.sassy.", true);
@@ -63,8 +59,6 @@ public class SassyTest {
     recs = sassy.getSamRecords().toList();
     System.out.println(recs);
     assertEquals("3=1X9=1D13=1I4=", recs.get(0).getCigarString());
-
-
   }
 
   @Test

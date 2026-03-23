@@ -35,7 +35,7 @@ public class TrackSassySearch extends TrackReads {
     super.update();
   }
 
-  private void sassySearch() throws IOException, InvalidGenomicCoordsException {
+  private void sassySearch() throws IOException {
     Sassy sassy = new Sassy(this.getGc(), this.tempWorkDir, null);
     try {
       sassy.search(this.getSassyCliOpts());

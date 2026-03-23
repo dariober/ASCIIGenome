@@ -9,7 +9,6 @@ import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequence;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
-import htsjdk.samtools.util.CigarUtil;
 import htsjdk.samtools.util.SequenceUtil;
 import java.io.*;
 import java.nio.charset.Charset;
