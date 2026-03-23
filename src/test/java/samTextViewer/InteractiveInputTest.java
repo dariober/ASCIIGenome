@@ -43,6 +43,35 @@ public class InteractiveInputTest {
     public String stdout;
   }
 
+  //  public ProcessInput processInput(InteractiveInput ip, String cmd, TrackProcessor p)
+  //          throws InvalidGenomicCoordsException, IOException {
+  //
+  //    PrintStream originalOut = System.out;
+  //    PrintStream originalErr = System.err;
+  //
+  //    ByteArrayOutputStream err = new ByteArrayOutputStream();
+  //    ByteArrayOutputStream out = new ByteArrayOutputStream();
+  //
+  //    try {
+  //      System.setErr(new PrintStream(err));
+  //      System.setOut(new PrintStream(out));
+  //
+  //      ip.processInput(cmd, p);
+  //      ip.processInput(cmd, p);
+  //      System.out.flush();
+  //      System.err.flush();
+  //
+  //    } finally {
+  //      System.setOut(originalOut);
+  //      System.setErr(originalErr);
+  //    }
+  //
+  //    ProcessInput pi = new ProcessInput();
+  //    pi.stderr = err.toString();
+  //    pi.stdout = out.toString();
+  //    return pi;
+  //  }
+
   public ProcessInput processInput(InteractiveInput ip, String cmd, TrackProcessor p)
       throws InvalidGenomicCoordsException, IOException {
     ByteArrayOutputStream err = new ByteArrayOutputStream();
@@ -79,6 +108,68 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canSearchPattern()
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+
+    TrackProcessor proc = gimmeTrackProcessor("chr7:11001-11200", 200, "test_data/ds051.actb.bam");
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
+    processInput(ip, "setGenome test_data/chr7.fa", proc);
+    ProcessInput pi = processInput(ip, "search -p gggaggGtgagg -k 1", proc);
+    String k1 = pi.stdout;
+    assertTrue(k1.contains("......G..... "));
+
+    // Default k=1
+    pi = processInput(ip, "search -p gggaggGtgagg", proc);
+    assertEquals(pi.stdout, k1);
+
+    pi = processInput(ip, "goto chr7:31700-31770", proc);
+    assertTrue(pi.stdout.contains(" .......T.... "));
+
+    pi = processInput(ip, "print", proc);
+    assertTrue(pi.stdout.contains("31709"));
+    assertTrue(pi.stdout.contains("7=1X4="));
+    assertTrue(pi.stdout.contains("GGGAGGGTGAGG"));
+
+    pi = processInput(ip, "search -k 1", proc);
+    assertTrue(pi.stderr.contains("Please provide one of"));
+  }
+
+  @Test
+  public void canSearchPatternLargeRegion()
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1-10000000", 200, "test_data/ds051.actb.bam");
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
+    processInput(ip, "setGenome test_data/chr7.fa", proc);
+    ProcessInput pi = processInput(ip, "search -p TTCTGCAGGCAGGATGGGCACTGTGGCTGGAGGAA -k 10", proc);
+    System.err.println(pi.stderr);
+    assertTrue(pi.stdout.contains("Reads: 234"));
+    assertTrue(pi.stdout.contains("<<<<"));
+  }
+
+  @Test
+  public void canFailSearchGracefullyIfNoReferenceSequence()
+      throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+
+    TrackProcessor proc = gimmeTrackProcessor("chr7:1-10000000", 200, "test_data/ds051.actb.bam");
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 0, false);
+    ProcessInput pi = processInput(ip, "search -p TTCTGCAGGCAGGATGGGCACTGTGGCTGGAGGAA", proc);
+    assertEquals("Cannot search for patters without reference sequence.", pi.stderr.trim());
+  }
+
+  @Test
   public void canOpenCsvFile()
       throws SQLException,
           InvalidGenomicCoordsException,
@@ -105,18 +196,15 @@ public class InteractiveInputTest {
     assertTrue(pi.stdout.contains("range[-99.0 -91.0]"));
 
     // Audodect format
-    proc =
-        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    proc = gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
     pi = processInput(ip, "open -c 5 -s 1 -score 3 test_data/generic.csv", proc);
     assertEquals(out1, pi.stdout);
 
-    proc =
-        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    proc = gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
     pi = processInput(ip, "open -c 5 -s 1 -score 3 -n 1 test_data/generic.csv", proc);
     assertEquals(out1, pi.stdout);
 
-    proc =
-        gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
+    proc = gimmeTrackProcessor("chr7:5566781-5566786", 100, "test_data/ds051.actb.bam");
     pi = processInput(ip, "open -c 5 -s 1 -score 3 -sep ',' test_data/generic.csv", proc);
     assertEquals(out1, pi.stdout);
   }
@@ -205,7 +293,6 @@ public class InteractiveInputTest {
     assertFalse(pi.stdout.contains("82.3]"));
     assertTrue(pi.stdout.contains("823"));
     assertTrue(pi.stdout.contains("825"));
-    System.out.println(pi.stdout);
 
     pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1 #2", proc);
     assertTrue(pi.stdout.contains("82.3]"));

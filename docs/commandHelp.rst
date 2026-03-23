@@ -310,6 +310,46 @@ Examples::
 
 To save matches to file, see the `print` command. This command is ignored if the reference fasta sequence is missing.
 
+See also: :code:`search` for searching an aligning patterns with mismatches.
+
+search
+++++++
+
+:code:`search [-p|-f|-l pattern] [-k int]`
+
+Search sequence for *pattern* allowing up to *k* mismatches.  
+`search` is useful for locating short sequences such as PCR primers, restriction sites, crispr targets.
+
+This command runs sassy <https://github.com/RagnarGrootKoerkamp/sassy> under the hood. :code:`search` will try first to use :code:`sassy` on the  user's search PATH and, if not found, use the sassy executable that ships with ASCIIGenome.
+
+Options:
+
+* :code:`-p` Comma separated patterns to search for (cannot be used with -f)
+
+* :code:`-l` Search each line of the file (cannot be used with -p)
+
+* :code:`-f` Search each record in the FASTA file (cannot be used with -p)
+
+* :code:`-k` Report matches up to (and including) this distance threshold [default = 1]
+
+* :code:`-a` The alphabet to use. DNA=ACTG, or default IUPAC=ACTG+NYR.... [default: iupac] [possible values: dna, iupac]
+
+* :code:`--overhang` Enable overhang alignment
+
+* :code:`--no-rc` Disable reverse complement search
+
+* :code:`--max-n-frac` Allow at most max_n_frac of N bases in the target sequence. Values must be in the range [0, 1].  A value of 0 will allow only hits where the target sequence contains no Ns. A value of 0.1-0.2 will allow for matches that include a small number of Ns [default: 0.2]
+
+* :code:`-j` Number of threads to use. All CPUs by default
+
+Examples::
+
+    search -p GCGGCCGC -k 1    -> NotI restriction site, 1 mismatch allowed
+    search -p ACTG,AACC,GGCCTT -k 0 -> Search these patterns
+    search -f patterns.fa -k 1 -> Get patterns from fasta file
+
+See also seqRegex for searching patterns as regex.
+
 bookmark
 ++++++++
 

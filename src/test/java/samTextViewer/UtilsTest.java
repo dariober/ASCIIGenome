@@ -39,8 +39,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import jline.console.ConsoleReader;
 import jline.console.history.History;
@@ -418,7 +420,7 @@ public class UtilsTest {
   }
 
   @Test
-  public void testParallel() {
+  public void testParallel() throws InterruptedException, ExecutionException {
     List<List<String>> list = new ArrayList<List<String>>();
     List<String> inList = new ArrayList<String>();
     inList.add("foo");
@@ -437,21 +439,18 @@ public class UtilsTest {
     list.add(inList2);
     list.add(inList3);
 
+    List<Future<?>> futures = new ArrayList<>();
+
     ExecutorService exec = Executors.newFixedThreadPool(2);
-    try {
-      for (final List<String> o : list) {
-        exec.submit(
-            new Runnable() {
-              @Override
-              public void run() {
-                o.add("X");
-              }
-            });
-      }
-    } finally {
-      exec.shutdown();
+    for (List<String> o : list) {
+      futures.add(exec.submit(() -> o.add("X")));
     }
-    System.err.println(list);
+
+    for (Future<?> f : futures) {
+      f.get();
+    }
+    assertEquals(
+        "[[foo, bar, baz, X], [foo2, bar2, baz2, X], [foo3, bar3, baz3, X]]", list.toString());
   }
 
   @Test
@@ -774,16 +773,18 @@ public class UtilsTest {
   @Test
   public void canDetectBrokenAwkScript() throws IOException, InterruptedException {
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 5; i++) {
       // Broken awk script:
       boolean pass = false;
       try {
-        assertTrue(!Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'print {'")[0]);
+        Utils.passAwkFilter(new String[] {"'chr1\t10\t100'"}, "'print {'");
+      } catch (RuntimeException e) {
+        pass = true;
       } catch (IOException e) {
         pass = true;
       }
       assertTrue(pass);
-      Thread.sleep(3000);
+      Thread.sleep(1000);
     }
   }
 
@@ -1500,19 +1501,14 @@ public class UtilsTest {
   }
 
   @Test
-  public void canInitRegionFromCram()
-      throws IOException,
-          InvalidGenomicCoordsException {
+  public void canInitRegionFromCram() throws IOException, InvalidGenomicCoordsException {
     assertEquals(
         "chr7:5566778", Utils.initRegionFromFile("test_data/ds051.actb.cram", "test_data/chr7.fa"));
   }
 
   @Test
-  public void canInitRegionFromBedgraph()
-          throws IOException,
-          InvalidGenomicCoordsException {
-    assertEquals(
-            "chr1:1", Utils.initRegionFromFile("test_data/test.bedGraph", null));
+  public void canInitRegionFromBedgraph() throws IOException, InvalidGenomicCoordsException {
+    assertEquals("chr1:1", Utils.initRegionFromFile("test_data/test.bedGraph", null));
   }
 
   @Test

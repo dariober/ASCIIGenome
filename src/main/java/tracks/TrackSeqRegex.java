@@ -164,25 +164,6 @@ public class TrackSeqRegex extends TrackIntervalFeature {
     this.writeRegionsToFile(wr, regionListPalind, ".");
     wr.close();
 
-    //		for(String reg : regionListPos){
-    //			reg += "\t.\t+\n";
-    //			if(this.featureIsVisible(reg)){
-    //				wr.write(reg);
-    //			}
-    //		}
-    //		for(String reg : regionListNeg){
-    //			reg += "\t.\t-\n";
-    //			if(this.featureIsVisible(reg)){
-    //				wr.write(reg);
-    //			}
-    //		}
-    //		for(String reg : regionListPalind){
-    //			reg += "\t.\t.\n";
-    //			if(this.featureIsVisible(reg)){
-    //				wr.write(reg);
-    //			}
-    //		}
-
     // Compress, index, read back as list of IntervalFeatures
     // ======================================================
     File regexMatchBgzip = new File(regexMatchFile + ".gz");

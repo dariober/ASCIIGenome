@@ -2,16 +2,30 @@ name: CI
 on: [push]
 jobs:
   build-and-test:
+    runs-on: 
+      ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest]
         version: [17, 25]
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.version }}
+
+      - name: Install samtools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y samtools
+
+      - name: Install samtools (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install samtools
+
       - name: Build and Test
         run: |
           ./gradlew build test jacocoTestReport
@@ -19,6 +33,7 @@ jobs:
           cd src/test/java
           chmod a+x integration_test.py
           ./integration_test.py
+
       - name: Upload coverage to Codecov
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

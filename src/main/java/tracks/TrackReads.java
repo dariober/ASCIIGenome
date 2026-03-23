@@ -40,8 +40,10 @@ public class TrackReads extends AbstractTrack {
   private List<Argument> colourForRegex = null;
   private long alnRecCnt = -1;
   private final char columnSeparator = '\t';
+  protected boolean downsampleUsingTemplateName;
 
   /* C o n s t r u c t o r s */
+  public TrackReads() {}
 
   public TrackReads(String bam, GenomicCoords gc)
       throws IOException,
@@ -49,7 +51,7 @@ public class TrackReads extends AbstractTrack {
           ClassNotFoundException,
           InvalidRecordException,
           SQLException {
-
+    this.downsampleUsingTemplateName = true;
     this.setTrackFormat(TrackFormat.BAM);
 
     if (!Utils.bamHasIndex(bam)) {
@@ -113,16 +115,20 @@ public class TrackReads extends AbstractTrack {
       // different samples.
       String rndOffset = Integer.toString(new Random().nextInt());
 
-      List<TextRead> textReads = new ArrayList<TextRead>();
+      List<TextRead> textReads = new ArrayList<>();
       ListIterator<Boolean> pass = passFilter.listIterator();
       while (sam.hasNext() && textReads.size() < max_reads) {
         SAMRecord rec = sam.next();
         if (pass.next()) {
           String templ_name = Utils.templateNameFromSamReadName(rec.getReadName());
-          long v = (templ_name + rndOffset).hashCode(); // Hashing.md5().hashBytes((templ_name +
-          // rndOffset).getBytes()).asLong();
-          Random rand = new Random(v);
-          if (rand.nextFloat() < probSample) { // Downsampler
+          Random rand;
+          if (this.downsampleUsingTemplateName) {
+            long v = (templ_name + rndOffset).hashCode();
+            rand = new Random(v);
+          } else {
+            rand = new Random();
+          }
+          if (rand.nextFloat() < probSample) {
             TextRead tr = new TextRead(rec, this.getGc(), this.getShowSoftClip());
             textReads.add(tr);
           }

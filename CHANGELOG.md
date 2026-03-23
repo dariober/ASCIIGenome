@@ -1,7 +1,21 @@
 New in 1.21.0
 =============
 
-* `dataCol` enabled to apply data transformations and aggregations. E.g. for
+* New command
+  [search](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#search):
+  Search the sequence in the current window for matches to one or more patterns
+  and return results as an alignment track. The pattern is allowed to have
+  mismatches. `search` is useful for locating short sequences such as PCR
+  primers, restriction sites, crispr targets. The search engine, is
+  [sassy](https://github.com/RagnarGrootKoerkamp/sassy), the user must download
+  and put it on PATH (*e.g.* using conda).
+
+* Support for generic tabular files, *i.e.* input does not need to comply with
+  bed or bedgraph format. The
+  [open](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#open)
+  command has additional options for input settings.
+
+* [dataCol](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#dataCol) enabled to apply data transformations and aggregations. E.g. for
   plotting p-values from gwas it is useful to use `dataCol -aggfun max -transf
   minus_log10`
 

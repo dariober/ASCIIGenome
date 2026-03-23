@@ -21,7 +21,6 @@ import java.util.regex.PatternSyntaxException;
 import jline.console.ConsoleReader;
 import jline.console.history.History.Entry;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.text.StringEscapeUtils;
 import org.biojava.nbio.core.sequence.io.IUPACParser;
 import org.biojava.nbio.core.sequence.transcription.Frame;
@@ -104,12 +103,12 @@ public class InteractiveInput {
           System.err.println(Utils.padEndMultiLine(CommandList.briefHelp(), proc.getWindowSize()));
           this.interactiveInputExitCode = ExitCode.CLEAN_NO_FLUSH;
 
-        } else if ((cmdTokens.size() >= 2 && cmdTokens.get(1).equals("-h"))
-            || (cmdTokens.size() >= 2 && cmdTokens.get(0).equals("help"))
+        } else if ((cmdTokens.size() >= 2 && cmdTokens.contains("-h"))
+            || (cmdTokens.size() >= 2 && cmdTokens.contains("help"))
             || cmdTokens.get(0).startsWith("?")) {
           // Help on this command
           String cmd;
-          if (cmdTokens.size() >= 2 && cmdTokens.get(0).equals("-h")) {
+          if (cmdTokens.size() >= 2 && cmdTokens.contains("-h")) {
             cmd = cmdTokens.get(0);
           } else if (cmdTokens.size() >= 2 && cmdTokens.get(0).equals("help")) {
             cmd = cmdTokens.get(1);
@@ -481,14 +480,34 @@ public class InteractiveInput {
           }
 
         } else if (cmdTokens.get(0).equals("seqRegex")) {
+          if (proc.getGenomicCoordsHistory().current().getFastaFile() == null) {
+            System.err.println(
+                Utils.padEndMultiLine(
+                    "Cannot search for regex without reference sequence.", proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
           try {
             proc.getTrackSet()
                 .setRegexForTrackSeqRegex(cmdTokens, proc.getGenomicCoordsHistory().current());
           } catch (InvalidCommandLineException e) {
+            System.err.println(Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
+        } else if (cmdTokens.get(0).equals("search")) {
+          if (proc.getGenomicCoordsHistory().current().getFastaFile() == null) {
             System.err.println(
                 Utils.padEndMultiLine(
-                    "Cannot find regex in sequence without fasta reference!",
-                    proc.getWindowSize()));
+                    "Cannot search for patters without reference sequence.", proc.getWindowSize()));
+            this.interactiveInputExitCode = ExitCode.ERROR;
+            continue;
+          }
+          try {
+            proc.getTrackSet()
+                .setCliOptsForTrackSassySearch(cmdTokens, proc.getGenomicCoordsHistory().current());
+          } catch (Exception e) {
+            System.err.println(Utils.padEndMultiLine(e.getMessage(), proc.getWindowSize()));
             this.interactiveInputExitCode = ExitCode.ERROR;
             continue;
           }
@@ -1505,9 +1524,10 @@ public class InteractiveInput {
     return true;
   }
 
-  private CsvFormat guessCsvFormat(String fn, int upto, int startColIndex, char commentChar) throws IOException {
-    List<String> lines =new ArrayList<>();
-    try(BufferedReader br = Utils.reader(fn)) {
+  private CsvFormat guessCsvFormat(String fn, int upto, int startColIndex, char commentChar)
+      throws IOException {
+    List<String> lines = new ArrayList<>();
+    try (BufferedReader br = Utils.reader(fn)) {
       while (lines.size() < upto) {
         String line = br.readLine();
         if (line == null) {
@@ -1530,9 +1550,7 @@ public class InteractiveInput {
     int endColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-e", "0"));
     int scoreColIndex = Integer.parseInt(Utils.getArgForParam(cmdTokens, "-score", "0"));
 
-    int[] indexes = {
-      chromColIndex, startColIndex, endColIndex, scoreColIndex
-    };
+    int[] indexes = {chromColIndex, startColIndex, endColIndex, scoreColIndex};
 
     if (Arrays.stream(indexes).allMatch(x -> x == 0)
         && !cmdTokens.contains("-z")
@@ -1572,11 +1590,26 @@ public class InteractiveInput {
     }
     char columnSeparator = sep == null ? '\0' : sep.charAt(0);
 
-    CsvFormat csvFormat = new CsvFormat(chromColIndex - 1, startColIndex - 1, endColIndex - 1, scoreColIndex - 1, isZeroBased, numHeaderLinesToSkip, metaCharacter, columnSeparator);
+    CsvFormat csvFormat =
+        new CsvFormat(
+            chromColIndex - 1,
+            startColIndex - 1,
+            endColIndex - 1,
+            scoreColIndex - 1,
+            isZeroBased,
+            numHeaderLinesToSkip,
+            metaCharacter,
+            columnSeparator);
     if (columnSeparator == '\0' || numHeaderLinesToSkip == -1) {
-      CsvFormat csvGuess = this.guessCsvFormat(fn, 1000, startColIndex, csvFormat.getMetaCharacter());
+      CsvFormat csvGuess =
+          this.guessCsvFormat(fn, 1000, startColIndex, csvFormat.getMetaCharacter());
       if (csvGuess == null) {
-        throw new RuntimeException("Unable to guess the delimiter and/or number of header lines to skip for file '" + fn + "'\nPlease specify them with options `-sep` and `-n`.\nIt may also be that the input has no data lines.");
+        throw new RuntimeException(
+            "Unable to guess the delimiter and/or number of header lines to skip for file '"
+                + fn
+                + "'\n"
+                + "Please specify them with options `-sep` and `-n`.\n"
+                + "It may also be that the input has no data lines.");
       }
       if (columnSeparator == '\0') {
         csvFormat.setColumnSeparator(csvGuess.getColumnSeparator());
@@ -1621,7 +1654,8 @@ public class InteractiveInput {
           this.repositionGenomicCoords(gc, region, Utils.getTerminalWidth());
           proc.getGenomicCoordsHistory().add(gc);
           proc.getTrackSet()
-              .addTrackFromSource(sourceName, proc.getGenomicCoordsHistory().current(), null, csvFormat);
+              .addTrackFromSource(
+                  sourceName, proc.getGenomicCoordsHistory().current(), null, csvFormat);
         } catch (Exception x) {
           x.printStackTrace();
           msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());

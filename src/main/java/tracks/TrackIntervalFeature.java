@@ -19,7 +19,6 @@ import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
 import utils.CsvFormat;
-import utils.CsvPresets;
 import utils.FlexibleTabixReader;
 
 public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> {
@@ -49,8 +48,8 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
 
     this.setFilename(filename);
     TrackFormat tf = Utils.getFileTypeFromName(filename);
-    if (tf.equals(TrackFormat.BEDGRAPH)){
-     tf = TrackFormat.BED;
+    if (tf.equals(TrackFormat.BEDGRAPH)) {
+      tf = TrackFormat.BED;
     }
     this.setTrackFormat(tf);
     this.csvFormat = csvFormat;

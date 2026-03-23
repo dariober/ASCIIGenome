@@ -73,7 +73,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -84,6 +83,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -100,7 +100,7 @@ import org.broad.igv.bbfile.BigBedIterator;
 import org.broad.igv.bbfile.BigWigIterator;
 import org.broad.igv.bbfile.WigItem;
 import org.broad.igv.tdf.TDFReader;
-import org.checkerframework.checker.units.qual.C;
+import org.broad.igv.util.FileUtils;
 import tracks.AbstractTrack;
 import tracks.IntervalFeature;
 import tracks.QuantitativeFeature;
@@ -119,7 +119,8 @@ public class Utils {
     return Utils.guessCsvDelim(lines, startColIndex, delims);
   }
 
-  public static CsvFormat guessCsvDelim(List<String> lines, int startColIndex, List<Character> delims) {
+  public static CsvFormat guessCsvDelim(
+      List<String> lines, int startColIndex, List<Character> delims) {
     class Candidate {
       final char delim;
       List<Integer> nFields = new ArrayList<>();
@@ -127,6 +128,7 @@ public class Utils {
       Candidate(char delim) {
         this.delim = delim;
       }
+
       @Override
       public String toString() {
         return "'" + this.delim + "': " + this.nFields + "\n";
@@ -138,7 +140,7 @@ public class Utils {
       Candidate candidate = new Candidate(d);
       for (String line : lines) {
         List<String> lst = Splitter.on(candidate.delim).splitToList(line);
-        if (lst.size() <= startColIndex - 1){
+        if (lst.size() <= startColIndex - 1) {
           break;
         }
         try {
@@ -146,7 +148,7 @@ public class Utils {
           if (n < 0) {
             break;
           }
-        } catch ( NumberFormatException e) {
+        } catch (NumberFormatException e) {
           break;
         }
         candidate.nFields.add(lst.size());
@@ -163,35 +165,39 @@ public class Utils {
       return null;
     }
     int numHeaderLinesToSkip = lines.size() - best.nFields.size();
-    CsvFormat csvFormat = new CsvFormat(-1, startColIndex, -1, -1, false, numHeaderLinesToSkip, '\0', best.delim);
+    CsvFormat csvFormat =
+        new CsvFormat(-1, startColIndex, -1, -1, false, numHeaderLinesToSkip, '\0', best.delim);
     return csvFormat;
 
-//    Collections.reverse(lines);
-//    char delimFound;
-//    for (char delim : delims) {
-//      for (String line : lines) {
-//        List<String> lst = Splitter.on(delim).splitToList(line);
-//        if (lst.size() <= startColIndex) {
-//          break;
-//        }
-//        try {
-//          int n = Integer.parseInt(lst.get(startColIndex));
-//          if (n < 0) {
-//            break;
-//          }
-//        } catch ( NumberFormatException e) {
-//          break;
-//        }
-//      }
-//      // If we are here we found a delimiter that splits the sample of reads at the index for the start column and finds
-//      // a non-negative integer. This is very likely the right delimiter so we stop searching (even if other delims could work!).
-//      delimFound = delim;
-//      break;
-//    }
+    //    Collections.reverse(lines);
+    //    char delimFound;
+    //    for (char delim : delims) {
+    //      for (String line : lines) {
+    //        List<String> lst = Splitter.on(delim).splitToList(line);
+    //        if (lst.size() <= startColIndex) {
+    //          break;
+    //        }
+    //        try {
+    //          int n = Integer.parseInt(lst.get(startColIndex));
+    //          if (n < 0) {
+    //            break;
+    //          }
+    //        } catch ( NumberFormatException e) {
+    //          break;
+    //        }
+    //      }
+    //      // If we are here we found a delimiter that splits the sample of reads at the index for
+    // the start column and finds
+    //      // a non-negative integer. This is very likely the right delimiter so we stop searching
+    // (even if other delims could work!).
+    //      delimFound = delim;
+    //      break;
+    //    }
 
     // Go to the bottom of the list (most likely this is data)
     // Split according to delim.
-    // If at startColIndex you have an int, check the other lines until you hit the candidate header or the end of
+    // If at startColIndex you have an int, check the other lines until you hit the candidate header
+    // or the end of
     // list.
   }
 
@@ -222,6 +228,26 @@ public class Utils {
       tmp.deleteOnExit();
     }
     return tmp;
+  }
+
+  public static Path createTempDir(String prefix, boolean deleteOnExit) throws IOException {
+    Path tmpdir;
+    try {
+      tmpdir = Files.createTempDirectory(Paths.get(System.getProperty("user.dir")), prefix);
+    } catch (IOException e) {
+      tmpdir = Files.createTempDirectory(prefix);
+    }
+
+    if (deleteOnExit) {
+      Path finalTmpdir = tmpdir;
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    FileUtils.deleteDir(finalTmpdir.toFile());
+                  }));
+    }
+    return tmpdir;
   }
 
   /** Return a buffered reader which iterate through the file or URL. Input may be compressed. */
@@ -538,8 +564,7 @@ public class Utils {
    */
   @SuppressWarnings("unused")
   public static String initRegionFromFile(String x, String referenceSequence)
-      throws IOException,
-          InvalidGenomicCoordsException {
+      throws IOException, InvalidGenomicCoordsException {
     UrlValidator urlValidator = new UrlValidator();
     String region = "";
     TrackFormat fmt = Utils.getFileTypeFromName(x);
@@ -1955,30 +1980,11 @@ public class Utils {
     return Integer.signum(vals1.length - vals2.length);
   }
 
-  public static ArrayList<String> execSystemCommand(String[] inputList, List<String> cmd)
+  public static Stream<String> execSystemCommandStream(String[] inputList, List<String> cmd)
       throws IOException, InterruptedException {
 
     ProcessBuilder pb = new ProcessBuilder().command(cmd);
     Process p = pb.start();
-
-    ArrayList<String> results = new ArrayList<String>();
-
-    Thread readerThread =
-        new Thread(
-            () -> {
-              try {
-                try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                  String line;
-                  while ((line = reader.readLine()) != null) {
-                    results.add(line);
-                  }
-                }
-              } catch (Exception e) {
-                throw new RuntimeException("Unhandled", e);
-              }
-            });
-    readerThread.start();
 
     OutputStream stdin = p.getOutputStream();
 
@@ -1991,13 +1997,33 @@ public class Utils {
         throwCmdException(p);
       }
     }
-
     stdin.close();
-    readerThread.join();
-    p.waitFor();
 
-    if (p.exitValue() != 0) {
-      throwCmdException(p);
+    BufferedReader reader =
+        new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
+
+    Stream<String> stream = reader.lines();
+
+    return stream.onClose(
+        () -> {
+          try {
+            int exit = p.waitFor();
+            reader.close();
+            if (exit != 0) {
+              throwCmdException(p);
+            }
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        });
+  }
+
+  public static ArrayList<String> execSystemCommand(String[] inputList, List<String> cmd)
+      throws IOException, InterruptedException {
+
+    ArrayList<String> results = new ArrayList<String>();
+    try (Stream<String> lines = execSystemCommandStream(inputList, cmd)) {
+      lines.forEach(results::add);
     }
     return results;
   }

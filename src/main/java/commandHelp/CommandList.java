@@ -483,7 +483,57 @@ public class CommandList {
             + "    seqRegex~~~~~~~~~~~~~-> Disable regex matching track\n"
             + "\n"
             + "To save matches to file, see the `print` command. This command is ignored if the"
-            + " reference fasta sequence is missing.");
+            + " reference fasta sequence is missing.\n"
+            + "\n"
+            + "See also: :code:`search` for searching an aligning patterns with mismatches.");
+    cmdList.add(cmd);
+
+    cmd = new CommandHelp();
+    cmd.setName("search");
+    cmd.setArgs("[-p|-f|-l pattern] [-k int]");
+    cmd.inSection = Section.FIND;
+    cmd.setBriefDescription("Search sequence for *pattern* allowing up to *k* mismatches. ");
+    cmd.setAdditionalDescription(
+        "\n"
+            + "`search` is useful for locating short sequences such as PCR primers, restriction"
+            + " sites, crispr targets.\n"
+            + "\n"
+            + "This command runs sassy <https://github.com/RagnarGrootKoerkamp/sassy> under the"
+            + " hood. :code:`search` will try first to use :code:`sassy` on the  user's search PATH"
+            + " and, if not found, use the sassy executable that ships with ASCIIGenome.\n"
+            + "\n"
+            + "Options:\n"
+            + "\n"
+            + "* :code:`-p` Comma separated patterns to search for (cannot be used with -f)\n"
+            + "\n"
+            + "* :code:`-l` Search each line of the file (cannot be used with -p)\n"
+            + "\n"
+            + "* :code:`-f` Search each record in the FASTA file (cannot be used with -p)\n"
+            + "\n"
+            + "* :code:`-k` Report matches up to (and including) this distance threshold [default ="
+            + " 1]\n"
+            + "\n"
+            + "* :code:`-a` The alphabet to use. DNA=ACTG, or default IUPAC=ACTG+NYR.... [default:"
+            + " iupac] [possible values: dna, iupac]\n"
+            + "\n"
+            + "* :code:`--overhang` Enable overhang alignment\n"
+            + "\n"
+            + "* :code:`--no-rc` Disable reverse complement search\n"
+            + "\n"
+            + "* :code:`--max-n-frac` Allow at most max_n_frac of N bases in the target sequence."
+            + " Values must be in the range [0, 1].  A value of 0 will allow only hits where the"
+            + " target sequence contains no Ns. A value of 0.1-0.2 will allow for matches that"
+            + " include a small number of Ns [default: 0.2]\n"
+            + "\n"
+            + "* :code:`-j` Number of threads to use. All CPUs by default\n"
+            + "\n"
+            + "Examples::\n"
+            + "\n"
+            + "    search -p GCGGCCGC -k 1~~~~-> NotI restriction site, 1 mismatch allowed\n"
+            + "    search -p ACTG,AACC,GGCCTT -k 0~-> Search these patterns\n"
+            + "    search -f patterns.fa -k 1~-> Get patterns from fasta file\n"
+            + "\n"
+            + "See also seqRegex for searching patterns as regex.");
     cmdList.add(cmd);
 
     cmd = new CommandHelp();
@@ -1397,9 +1447,9 @@ public class CommandList {
     cmd.inSection = Section.GENERAL;
     cmd.setBriefDescription("Add tracks from local or remote files. ");
     cmd.setAdditionalDescription(
-        "The list of files can be a list of file names or URLs. For local files, glob"
-            + " characters (wildcard) are expanded as in Bash (but note that currently globs in"
-            + " directory names are not expanded.)\n"
+        "The list of files can be a list of file names or URLs. For local files, glob characters"
+            + " (wildcard) are expanded as in Bash (but note that currently globs in directory"
+            + " names are not expanded.)\n"
             + "\n"
             + "Alternatively, the files to open can be given as numeric indexes of recently opened"
             + " files (see command :code:`recentlyOpened`). The last opened file has index 1, the"
@@ -1415,17 +1465,18 @@ public class CommandList {
             + "\n"
             + "* :code:`-s int` Column index of start position\n"
             + "\n"
-            + "* :code:`-e int` Column index of end position (if unset, assume"
-            + " features are 1 bp long)\n"
+            + "* :code:`-e int` Column index of end position (if unset, assume features are 1 bp"
+            + " long)\n"
             + "\n"
-            + "* :code:`-score int` Column index of score to plot (if unset, assume"
-            + " features are intervals, not quantitative)\n"
+            + "* :code:`-score int` Column index of score to plot (if unset, assume features are"
+            + " intervals, not quantitative)\n"
             + "\n"
             + "* :code:`-z` Start position is zero-based (like bed files)\n"
             + "\n"
             + "* :code:`-sep char` Column character separator. Auto-detected if unset\n"
             + "\n"
-            + "* :code:`-n int` Skip these many lines before reading data. Auto-detected if unset.\n"
+            + "* :code:`-n int` Skip these many lines before reading data. Auto-detected if"
+            + " unset.\n"
             + "\n"
             + "* :code:`-m char` Comment characters: Skip lines starting with this character\n"
             + "\n"
@@ -1805,6 +1856,7 @@ public class CommandList {
     paramList.add("nextChrom");
     paramList.add("find");
     paramList.add("seqRegex");
+    paramList.add("search");
     paramList.add("translate");
     paramList.add("bookmark");
     paramList.add("grep");

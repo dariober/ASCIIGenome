@@ -627,6 +627,7 @@ public class IntervalFeature implements Comparable<IntervalFeature>, Cloneable {
       return this.getScreenFrom() + (width / 2);
     }
   }
+
   public void setChrom(String chrom) {
     this.chrom = chrom;
   }
