@@ -154,10 +154,9 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
       } else if (this.getTrackFormat().equals(TrackFormat.BED)
           || this.getTrackFormat().equals(TrackFormat.BIGBED)) {
         if (this.bedFieldForName >= 0) {
+          List<String> fields = Splitter.on(this.getColumnSeparator()).splitToList(x.getRaw());
           String name =
-              Splitter.on(this.getColumnSeparator())
-                  .splitToList(x.getRaw())
-                  .get(this.bedFieldForName);
+              fields.size() >= this.bedFieldForName + 1 ? fields.get(this.bedFieldForName) : "";
           x.setName(name);
         } else {
           x.setName("");

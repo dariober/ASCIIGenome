@@ -43,7 +43,7 @@ public class TrackIntervalFeatureTest {
   }
 
   @Test
-  public void tmp()
+  public void testThreeFieldBed()
       throws ClassNotFoundException,
           IOException,
           InvalidRecordException,
@@ -51,8 +51,16 @@ public class TrackIntervalFeatureTest {
           SQLException,
           InvalidColourException {
 
-    GenomicCoords gc = new GenomicCoords("chr7:5540000-5570000", 80, null, null);
-    TrackIntervalFeature tb = new TrackIntervalFeature("test_data/test.bedGraph", gc);
+    GenomicCoords gc = new GenomicCoords("chr7:5525000-5600000", 80, null, null);
+    TrackIntervalFeature tb = new TrackIntervalFeature("test_data/batch_actb.bed", gc);
+    tb.setNoFormat(true);
+    assertEquals(
+        "    |||||||    ||||                                                             ",
+        tb.printToScreen());
+    tb.setFeatureName("1");
+    assertEquals(
+        "    |_chr_|    ||||                                                             ",
+        tb.printToScreen());
   }
 
   @Test
