@@ -1470,7 +1470,8 @@ public class UtilsTest {
     assertFalse(Utils.hasTabixIndex("test_data/test.bedGraph"));
 
     // This ftp file has index but see https://github.com/samtools/htsjdk/issues/797
-    assertFalse(Utils.hasTabixIndex(
+    assertFalse(
+        Utils.hasTabixIndex(
             "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase1/analysis_results/input_call_sets/ALL.wex.union_illumina_wcmc_bcm_bc_bi.20110521.snps.exome.sites.vcf.gz"));
 
     // HTTPS
@@ -1478,7 +1479,8 @@ public class UtilsTest {
         Utils.hasTabixIndex("https://genome.ucsc.edu/goldenPath/help/examples/vcfExample.vcf.gz"));
 
     // NB: Uncompressed files give a OutOfMemoryError: Java heap space
-    assertFalse(Utils.hasTabixIndex(
+    assertFalse(
+        Utils.hasTabixIndex(
             "ftp://ftp.solgenomics.net/tomato_genome/annotation/ITAG3.0_release/ITAG3.0_RepeatModeler_repeats_light.gff"));
   }
 

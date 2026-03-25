@@ -122,7 +122,7 @@ public class MakeTabixFileTest {
 
   @Test
   public void canQueryCustomSepZeroBased()
-      throws ClassNotFoundException, IOException, SQLException {
+      throws ClassNotFoundException, IOException, SQLException, InvalidRecordException {
     String infile = "test_data/generic2.csv";
     File outfile = new File("test_data/generic2.csv.tmp.gz");
     outfile.deleteOnExit();
@@ -182,7 +182,7 @@ public class MakeTabixFileTest {
 
   @Test
   public void canReadSpaceSeparatedOnelineInput()
-      throws ClassNotFoundException, IOException, SQLException {
+      throws ClassNotFoundException, IOException, SQLException, InvalidRecordException {
     String infile = "test_data/space_oneline.bedgraph";
     File outfile = new File("test_data/tmp.bedgraph.gz");
     outfile.deleteOnExit();

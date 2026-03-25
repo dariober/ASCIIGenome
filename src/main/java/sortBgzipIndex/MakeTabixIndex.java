@@ -139,8 +139,15 @@ public class MakeTabixIndex {
   private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition) {
     List<String> parts = Splitter.on(this.columnSeparator).splitToList(line);
     int start = Integer.parseInt(parts.get(tabixFormat.startPositionColumn - 1));
+    int end;
+    if (tabixFormat.endPositionColumn == tabixFormat.startPositionColumn
+        || tabixFormat.endPositionColumn == 0) {
+      end = start + 1;
+    } else {
+      end = Integer.parseInt(parts.get(tabixFormat.endPositionColumn - 1));
+    }
     GenericFeature feature =
-        new GenericFeature(parts.get(tabixFormat.sequenceColumn - 1), start, start + 1);
+        new GenericFeature(parts.get(tabixFormat.sequenceColumn - 1), start, end);
     indexCreator.addFeature(feature, filePosition);
   }
 

@@ -28,6 +28,20 @@ public class TrackIntervalFeatureTest {
   }
 
   @Test
+  public void canShowBed()
+      throws InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
+    GenomicCoords gc = new GenomicCoords("chr1:1000000-4000000", 80, null, null);
+    TrackIntervalFeature tif = new TrackIntervalFeature("test_data/skip.bed", gc);
+    tif.setNoFormat(true);
+    assertTrue(tif.printToScreen().startsWith("||||||||"));
+  }
+
+  @Test
   public void canCloseFiles()
       throws InvalidGenomicCoordsException,
           IOException,
