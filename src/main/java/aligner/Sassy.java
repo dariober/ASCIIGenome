@@ -105,7 +105,7 @@ public class Sassy {
               + "  -f [fasta file of patterns]");
     }
 
-    Stream<String> lines = Utils.execSystemCommandStream(new String[] {}, cmd);
+    Stream<String> lines = Utils.execSystemCommandStream(Stream.empty(), cmd);
     Iterator<String> iter = lines.iterator();
 
     if (!iter.hasNext()) {
