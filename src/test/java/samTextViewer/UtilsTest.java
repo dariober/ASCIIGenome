@@ -43,7 +43,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import jline.console.ConsoleReader;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
@@ -115,11 +115,10 @@ public class UtilsTest {
   }
 
   @Test
-  public void test() throws IOException, InterruptedException {
-    // Input list is [foo0, foo1, ..., foo99999]
+  public void testExecSystemCommandStream() throws IOException, InterruptedException {
     List<String> inputList = new ArrayList<String>();
-    for (int i = 0; i < 10; i++) {
-      inputList.add("foo" + i);
+    for (int i = 0; i < 100000; i++) {
+      inputList.add("fooBarSpam" + i);
     }
     for (int i = 0; i < 10; i++) {
       inputList.add("bar" + i);
@@ -129,13 +128,8 @@ public class UtilsTest {
     cmd.add("grep");
     cmd.add("foo");
 
-    for (int i = 0; i < 100; i++) {
-      ArrayList<String> results =
-          Utils.execSystemCommand(inputList.toArray(new String[inputList.size()]), cmd);
-      assertEquals(10, results.size());
-      // System.out.println("First element:" + results.get(0));
-      // System.out.println("Last element:" + results.get(results.size() - 1));
-    }
+    Stream<String> results = Utils.execSystemCommandStream(inputList.stream(), cmd);
+    assertEquals(100000, results.toList().size());
   }
 
   @Test
@@ -1144,7 +1138,6 @@ public class UtilsTest {
     history.add("foobar");
     history.add("baz");
     console.setHistory(history);
-    System.out.println(console.getHistory());
     console.close();
   }
 
@@ -1324,7 +1317,6 @@ public class UtilsTest {
   public void testStringContainsRegex() {
     String x = "foobarbaz";
     String regex = "b.r";
-    System.out.println("PATTERN:" + Pattern.compile(regex).matcher(x).find());
   }
 
   @Test
@@ -1459,7 +1451,6 @@ public class UtilsTest {
       assertEquals(42770, Utils.countReadsInWindow("test_data/ear045.oxBS.actb.bam", gc, filters));
     }
     long t1 = System.currentTimeMillis();
-    System.out.println("TIME TO FILTER: " + (t1 - t0));
 
     gc = new GenomicCoords("chr7:5524838-5611878", 80, samSeqDict, fastaFile);
   }
@@ -1592,10 +1583,6 @@ public class UtilsTest {
 
     int windowSize = 150;
     List<Double> mapping = Utils.seqFromToLenOut(1, 1000000, windowSize);
-    for (int i = 0; i < windowSize; i++) {
-      System.out.println("Index: " + i + " position: " + mapping.get(i));
-    }
-
     assertEquals(
         windowSize - 1,
         Arrays.binarySearch(mapping.toArray(new Double[mapping.size()]), 1000000.0));
@@ -1844,10 +1831,6 @@ public class UtilsTest {
     ArrayList<String> xx =
         Utils.tokenize(
             "'foo && bar' " + "&& bar" + "&&baz " + "&& 'foo && biz'" + "&& 'foo && \' biz'", "&&");
-    for (String token : xx) {
-      System.out.println(token);
-    }
-
     assertEquals("foo && bar", xx.get(0));
     assertEquals("bar", xx.get(1));
     assertEquals("baz", xx.get(2));

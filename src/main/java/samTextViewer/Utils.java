@@ -41,16 +41,7 @@ import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderVersion;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.Reader;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.HttpURLConnection;
@@ -68,19 +59,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -1980,24 +1959,50 @@ public class Utils {
     return Integer.signum(vals1.length - vals2.length);
   }
 
-  public static Stream<String> execSystemCommandStream(String[] inputList, List<String> cmd)
-      throws IOException, InterruptedException {
+  public static Stream<String> execSystemCommandStream(Stream<String> inputStream, List<String> cmd)
+      throws IOException {
 
-    ProcessBuilder pb = new ProcessBuilder().command(cmd);
+    ProcessBuilder pb = new ProcessBuilder(cmd);
     Process p = pb.start();
 
-    OutputStream stdin = p.getOutputStream();
+    // Capture stderr in background
+    StringBuilder stderrBuffer = new StringBuilder();
 
-    for (String line : inputList) {
-      stdin.write(line.getBytes(StandardCharsets.UTF_8));
-      stdin.write('\n');
-      try {
-        stdin.flush();
-      } catch (IOException e) {
-        throwCmdException(p);
-      }
-    }
-    stdin.close();
+    Thread stderrReader =
+        new Thread(
+            () -> {
+              try (BufferedReader err =
+                  new BufferedReader(
+                      new InputStreamReader(p.getErrorStream(), StandardCharsets.UTF_8))) {
+
+                String line;
+                while ((line = err.readLine()) != null) {
+                  stderrBuffer.append(line).append('\n');
+                }
+              } catch (IOException e) {
+                // ignore or log
+              }
+            });
+    stderrReader.start();
+
+    // Writer thread
+    Thread writer =
+        new Thread(
+            () -> {
+              try (OutputStream stdin = p.getOutputStream()) {
+                inputStream.forEach(
+                    line -> {
+                      try {
+                        stdin.write((line + "\n").getBytes(StandardCharsets.UTF_8));
+                      } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                      }
+                    });
+              } catch (IOException e) {
+                throw new UncheckedIOException(e);
+              }
+            });
+    writer.start();
 
     BufferedReader reader =
         new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
@@ -2007,13 +2012,20 @@ public class Utils {
     return stream.onClose(
         () -> {
           try {
-            int exit = p.waitFor();
+            writer.join();
             reader.close();
+
+            int exit = p.waitFor();
+            stderrReader.join();
+
             if (exit != 0) {
-              throwCmdException(p);
+              throw new RuntimeException("Process failed with exit " + exit + "\n" + stderrBuffer);
             }
+
           } catch (Exception e) {
             throw new RuntimeException(e);
+          } finally {
+            p.destroy();
           }
         });
   }
@@ -2021,11 +2033,9 @@ public class Utils {
   public static ArrayList<String> execSystemCommand(String[] inputList, List<String> cmd)
       throws IOException, InterruptedException {
 
-    ArrayList<String> results = new ArrayList<String>();
-    try (Stream<String> lines = execSystemCommandStream(inputList, cmd)) {
-      lines.forEach(results::add);
+    try (Stream<String> lines = execSystemCommandStream(Arrays.stream(inputList), cmd)) {
+      return new ArrayList<>(lines.toList());
     }
-    return results;
   }
 
   private static void throwCmdException(Process p) throws IOException, InterruptedException {

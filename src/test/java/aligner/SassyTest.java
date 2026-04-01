@@ -57,7 +57,6 @@ public class SassyTest {
     sassy = new Sassy(gc, tempWorkDir, null);
     sassy.search(Splitter.on(" ").splitToList("-p cccaTgacagtcactgattgactatcagctc -k 3"));
     recs = sassy.getSamRecords().toList();
-    System.out.println(recs);
     assertEquals("3=1X9=1D13=1I4=", recs.get(0).getCigarString());
   }
 
