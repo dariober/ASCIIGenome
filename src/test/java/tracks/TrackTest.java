@@ -110,8 +110,7 @@ public class TrackTest {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException,
-          InvalidColourException,
-          InvalidCommandLineException {
+          InvalidColourException {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-100000", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
@@ -123,6 +122,32 @@ public class TrackTest {
     assertEquals(
         11, Splitter.on("\n").omitEmptyStrings().splitToList(out).size()); // 11 lines grepped.
     assertTrue(out.contains("wash"));
+  }
+
+  @Test
+  public void canTableViewRespectMaxLineLength()
+          throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException,
+          InvalidColourException {
+
+    GenomicCoords gc = new GenomicCoords("chr1:1-100000", 100, null, null);
+    TrackIntervalFeature tif = new TrackIntervalFeature("test_data/hg19_genes_head.gtf", gc);
+    tif.setNoFormat(true);
+    tif.setPrintMode(PrintRawLine.CLIP);
+    List<String> out = Splitter.on("\n").splitToList(tif.printLines(50));
+    for (String line : out) {
+      assertTrue(line.length() < 100);
+    }
+
+    tif.setPrintMode(PrintRawLine.FULL);
+    List<String> out2 = Splitter.on("\n").omitEmptyStrings().splitToList(tif.printLines(5000));
+    for (String line : out2) {
+      assertTrue(line.trim().endsWith(";"));
+      assertTrue(line.length() > 100);
+    }
   }
 
   @Test

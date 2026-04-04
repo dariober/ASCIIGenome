@@ -493,6 +493,11 @@ public abstract class AbstractTrack {
     this.workFilename = workFilename;
   }
 
+
+  public String printLines() throws InvalidGenomicCoordsException, InvalidColourException, IOException {
+    return this.printLines(5000);
+  }
+
   /**
    * Print raw lines after having processed them through `cut`, `clip etc.`. This method also add
    * formatting so it returns a single string. It should be used only for printing and not for any
@@ -502,13 +507,11 @@ public abstract class AbstractTrack {
    * @throws IOException
    * @throws InvalidGenomicCoordsException
    * @throws InvalidColourException
-   * @throws InvalidCommandLineException
    */
-  public String printLines()
+  public String printLines(int maxLineLength)
       throws InvalidGenomicCoordsException,
           IOException,
-          InvalidColourException,
-          InvalidCommandLineException {
+          InvalidColourException {
 
     List<String> rawList =
         this.execSystemCommand(this.getRecordsAsStrings(), this.getSystemCommandForPrint());
@@ -588,7 +591,7 @@ public abstract class AbstractTrack {
         }
       }
 
-      featureList.add(line);
+      featureList.add(line.substring(0, Math.min(line.length(), maxLineLength)));
 
       count--;
       if (count == 0) {
