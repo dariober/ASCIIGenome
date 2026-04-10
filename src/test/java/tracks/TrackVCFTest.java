@@ -44,6 +44,30 @@ public class TrackVCFTest {
     assertEquals(24, tif.getReader().getChromosomes().size());
   }
 
+  @Test
+  public void canReadVcf43()
+          throws IOException,
+          InvalidGenomicCoordsException,
+          SQLException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    GenomicCoords gc = new GenomicCoords("1:1-1000", 80, null, null);
+    TrackVCF tif = new TrackVCF("test_data/all43Features.vcf", gc);
+    assertTrue(tif.getFeatureList().get(0).getRaw().contains("GATK_STANDARD"));
+  }
+
+  @Test
+  public void canReadVcf44()
+          throws IOException,
+          InvalidGenomicCoordsException,
+          SQLException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
+    TrackVCF tif = new TrackVCF("test_data/VCF4_4HeaderTest.vcf", gc);
+    System.out.println(tif.getFeatureList());
+  }
+
   //  @Test
   //  public void canReadBcfWithoutIndex() throws SQLException, InvalidGenomicCoordsException,
   // IOException, ClassNotFoundException, InvalidRecordException {

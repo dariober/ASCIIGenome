@@ -13,21 +13,13 @@ import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.AbstractFeatureReader;
 import htsjdk.tribble.readers.LineIterator;
 import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.variantcontext.writer.Options;
-import htsjdk.variant.variantcontext.writer.VariantContextWriter;
-import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
-import htsjdk.variant.vcf.VCFCodec;
-import htsjdk.variant.vcf.VCFFileReader;
-import htsjdk.variant.vcf.VCFHeader;
-import htsjdk.variant.vcf.VCFReader;
-import java.io.ByteArrayOutputStream;
+import htsjdk.variant.vcf.*;
+
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.NotImplementedException;
@@ -166,31 +158,13 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   }
 
   private List<String> variantsToVcfLines(List<VariantContext> variants, VCFHeader header) {
+    VCFEncoder encoder = new VCFEncoder(header, false, true);
 
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-    VariantContextWriter writer =
-        new VariantContextWriterBuilder()
-            .setOutputVCFStream(baos)
-            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
-            .build();
-    writer.writeHeader(header);
-
+    List<String> lines = new ArrayList<>();
     for (VariantContext vc : variants) {
-      writer.add(vc);
+      lines.add(encoder.encode(vc));
     }
-
-    writer.close();
-
-    List<String> vcfLinesWithHeader =
-        Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
-    List<String> vcfLines = new ArrayList<>();
-    for (String line : vcfLinesWithHeader) {
-      if (!line.startsWith("#") && !line.trim().isEmpty()) {
-        vcfLines.add(line.trim());
-      }
-    }
-    return vcfLines;
+    return lines;
   }
 
   private VCFReader prepareVcfReader(String vcfFile) throws IOException {
