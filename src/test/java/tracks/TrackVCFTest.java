@@ -50,10 +50,14 @@ public class TrackVCFTest {
           InvalidGenomicCoordsException,
           SQLException,
           ClassNotFoundException,
-          InvalidRecordException {
+          InvalidRecordException, InvalidCommandLineException, InvalidColourException {
     GenomicCoords gc = new GenomicCoords("1:1-1000", 80, null, null);
     TrackVCF tif = new TrackVCF("test_data/all43Features.vcf", gc);
+    tif.setNoFormat(true);
+    tif.setPrintMode(PrintRawLine.FULL);
+    tif.setSystemCommandForPrint("cut -f 1-4");
     assertTrue(tif.getFeatureList().get(0).getRaw().contains("GATK_STANDARD"));
+    assertEquals("1 | 327 | . | T\n", tif.printLines());
   }
 
 //  @Test

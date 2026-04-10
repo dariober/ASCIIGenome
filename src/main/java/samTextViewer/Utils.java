@@ -2444,6 +2444,17 @@ public class Utils {
 
   public static List<String> vcfHeaderToStrings(VCFHeader header) {
 
+    VCFHeader workHeader;
+    if (header.getVCFHeaderVersion().isAtLeastAsRecentAs(VCFHeaderVersion.VCF3_3)) {
+      workHeader = new VCFHeader(
+              header.getMetaDataInInputOrder(),
+              header.getGenotypeSamples()
+      );
+      workHeader.setVCFHeaderVersion(VCFHeaderVersion.VCF4_2);
+    } else {
+      workHeader = header;
+    }
+
     File fakeVCFFile;
     List<String> str = new ArrayList<String>();
     try {
@@ -2451,12 +2462,12 @@ public class Utils {
       final VariantContextWriter writer =
           new VariantContextWriterBuilder()
               .setOutputFile(fakeVCFFile)
-              .setReferenceDictionary(header.getSequenceDictionary())
+              .setReferenceDictionary(workHeader.getSequenceDictionary())
               .setOptions(
                   EnumSet.of(
                       Options.ALLOW_MISSING_FIELDS_IN_HEADER, Options.WRITE_FULL_FORMAT_FIELD))
               .build();
-      writer.writeHeader(header);
+      writer.writeHeader(workHeader);
       writer.close();
       BufferedReader br = new BufferedReader(new FileReader(fakeVCFFile));
       String line = br.readLine();

@@ -40,29 +40,29 @@ public class TabixBigBedIterator {
     this.vcfIterator = reader.query(chrom, start, end);
   }
 
-  private String variantToVcfLine(VariantContext ctx, VCFHeader header) {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-    VariantContextWriter writer =
-        new VariantContextWriterBuilder()
-            .setOutputVCFStream(baos)
-            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
-            .build();
-    writer.writeHeader(header);
-    writer.add(ctx);
-    writer.close();
-
-    List<String> vcfLinesWithHeader =
-        Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
-    List<String> vcfLines = new ArrayList<>();
-    for (String line : vcfLinesWithHeader) {
-      if (!line.startsWith("#") && !line.trim().isEmpty()) {
-        vcfLines.add(line.trim());
-      }
-    }
-    assert vcfLines.size() == 1;
-    return vcfLines.get(0);
-  }
+//  private String variantToVcfLine(VariantContext ctx, VCFHeader header) {
+//    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//
+//    VariantContextWriter writer =
+//        new VariantContextWriterBuilder()
+//            .setOutputVCFStream(baos)
+//            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
+//            .build();
+//    writer.writeHeader(header);
+//    writer.add(ctx);
+//    writer.close();
+//
+//    List<String> vcfLinesWithHeader =
+//        Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
+//    List<String> vcfLines = new ArrayList<>();
+//    for (String line : vcfLinesWithHeader) {
+//      if (!line.startsWith("#") && !line.trim().isEmpty()) {
+//        vcfLines.add(line.trim());
+//      }
+//    }
+//    assert vcfLines.size() == 1;
+//    return vcfLines.get(0);
+//  }
 
   protected void setVcfHeader(VCFHeader vcfHeader) {
     this.vcfHeader = vcfHeader;
@@ -93,14 +93,15 @@ public class TabixBigBedIterator {
       }
       return sb.toString();
     } else if (this.vcfIterator != null) {
-      VariantContext ctx;
-      try {
-        ctx = vcfIterator.next();
-      } catch (NoSuchElementException e) {
-        this.vcfIterator.close();
+//      VariantContext ctx;
+//      try {
+//        ctx = vcfIterator.next();
+//      } catch (NoSuchElementException e) {
+//        this.vcfIterator.close();
+//        return null;
+//      }
+//      return this.variantToVcfLine(ctx, this.vcfHeader);
         return null;
-      }
-      return this.variantToVcfLine(ctx, this.vcfHeader);
     } else {
       throw new RuntimeException();
     }
