@@ -24,6 +24,10 @@ New in 1.21.0
 may be one of the few, if not the only one, viewer for `bcf` files. Thanks to **@lindenb** for 
 making [bcfparser](https://github.com/lindenb/bcfparser).
 
+* Enable optimistic reading of vcf v4.4 (*i.e.* we hope the input vcf is
+  compatible with 4.3 - this appears to be what
+  [IGV](https://github.com/igvteam/igv/issues/1289) does).
+
 * In `find` command the track(s) to search is no longer optional unless only one track is loaded.
 This is to prevent the annoying case where you accidentally start a search on a massive file.
 
