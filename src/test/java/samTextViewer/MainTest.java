@@ -24,37 +24,6 @@ import org.junit.Test;
 
 public class MainTest {
 
-  // @Test
-  public void canReadVcf4_4()
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          BamIndexNotFoundException,
-          SQLException,
-          DocumentException,
-          UnindexableFastaFileException,
-          InvalidColourException,
-          InvalidConfigException {
-    // We test this here rather than in TrackVCFTest since we want to load
-    // System.setProperty("samjdk.optimistic_vcf_4_4", "true");
-    String[] args =
-        new String[] {
-          "-ni",
-          "-nf",
-          "--debug",
-          "2",
-          "-r",
-          "20:10499000-10499360",
-          "-x",
-          "print -sys 'cut -f 1-4'",
-          "test_data/fake_v4.vcf"
-        };
-    String out = Joiner.on("\n").join(this.runMain(args));
-    assertTrue(out.contains("20 | 10499005 | . | T     "));
-  }
-
   @Test
   public void canStartFromCsv()
       throws ClassNotFoundException,

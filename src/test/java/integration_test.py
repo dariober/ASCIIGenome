@@ -32,6 +32,16 @@ class TestCLI(unittest.TestCase):
         if os.path.exists("test_out"):
             shutil.rmtree("test_out")
 
+    def testVcf4_4(self):
+        # We test this here rather than in TrackVCFTest since we want to load
+        # System.setProperty("samjdk.optimistic_vcf_4_4", "true");
+        # and MainTest does agree with github CI
+        cmd = f"{ASCIIGenome} -nf ../../../test_data/fake_v4.vcf -r 20:10499000-10499360 -x 'print -sys \"cut -f 1-4\"'"
+        print(cmd)
+        p = shell(cmd)
+        self.assertEqual(p.returncode, 0)
+        self.assertTrue("20 | 10499005 | . | T     " in p.stdout)
+
     def testSearchPattern(self):
         cmd = f"{ASCIIGenome} -nf ../../../test_data/chr7.fa -r chr7:10995 -x 'search -p gggaggGtgagg -k 1'"
         print(cmd)
