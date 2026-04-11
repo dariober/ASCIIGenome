@@ -46,11 +46,13 @@ public class TrackVCFTest {
 
   @Test
   public void canReadVcf43()
-          throws IOException,
+      throws IOException,
           InvalidGenomicCoordsException,
           SQLException,
           ClassNotFoundException,
-          InvalidRecordException, InvalidCommandLineException, InvalidColourException {
+          InvalidRecordException,
+          InvalidCommandLineException,
+          InvalidColourException {
     GenomicCoords gc = new GenomicCoords("1:1-1000", 80, null, null);
     TrackVCF tif = new TrackVCF("test_data/all43Features.vcf", gc);
     tif.setNoFormat(true);
@@ -60,17 +62,17 @@ public class TrackVCFTest {
     assertEquals("1 | 327 | . | T\n", tif.printLines());
   }
 
-//  @Test
-//  public void canReadVcf44()
-//          throws IOException,
-//          InvalidGenomicCoordsException,
-//          SQLException,
-//          ClassNotFoundException,
-//          InvalidRecordException {
-//    GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
-//    TrackVCF tif = new TrackVCF("test_data/VCF4_4HeaderTest.vcf", gc);
-//    System.out.println(tif.getFeatureList());
-//  }
+  //  @Test
+  //  public void canReadVcf44()
+  //          throws IOException,
+  //          InvalidGenomicCoordsException,
+  //          SQLException,
+  //          ClassNotFoundException,
+  //          InvalidRecordException {
+  //    GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
+  //    TrackVCF tif = new TrackVCF("test_data/VCF4_4HeaderTest.vcf", gc);
+  //    System.out.println(tif.getFeatureList());
+  //  }
 
   //  @Test
   //  public void canReadBcfWithoutIndex() throws SQLException, InvalidGenomicCoordsException,

@@ -29,7 +29,7 @@ Reformat code *in place*:
 ```
 v=1.34.1
 curl -O -L https://github.com/google/google-java-format/releases/download/v$v/google-java-format-$v-all-deps.jar
-java -jar google-java-format-$v-all-deps.jar -i `find src/ -name '*.java'`
+java -jar google-java-format-*-all-deps.jar -i `find src/ -name '*.java'`
 ```
 
 Release new version

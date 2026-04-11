@@ -17,7 +17,6 @@ import htsjdk.variant.variantcontext.writer.Options;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
 import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.*;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -166,11 +165,9 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
   private List<String> variantsToVcfLines(List<VariantContext> variants, VCFHeader header) {
 
     VCFHeader workHeader;
-    if (header.getVCFHeaderVersion() != null && header.getVCFHeaderVersion().isAtLeastAsRecentAs(VCFHeaderVersion.VCF3_3)) {
-      workHeader = new VCFHeader(
-              header.getMetaDataInInputOrder(),
-              header.getGenotypeSamples()
-      );
+    if (header.getVCFHeaderVersion() != null
+        && header.getVCFHeaderVersion().isAtLeastAsRecentAs(VCFHeaderVersion.VCF3_3)) {
+      workHeader = new VCFHeader(header.getMetaDataInInputOrder(), header.getGenotypeSamples());
       workHeader.setVCFHeaderVersion(VCFHeaderVersion.VCF4_2);
     } else {
       workHeader = header;
@@ -179,10 +176,10 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
     VariantContextWriter writer =
-            new VariantContextWriterBuilder()
-                    .setOutputVCFStream(baos)
-                    .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
-                    .build();
+        new VariantContextWriterBuilder()
+            .setOutputVCFStream(baos)
+            .setOptions(EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER))
+            .build();
     writer.writeHeader(workHeader);
 
     for (VariantContext vc : variants) {
@@ -192,7 +189,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     writer.close();
 
     List<String> vcfLinesWithHeader =
-            Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
+        Splitter.on("\n").splitToList(baos.toString(StandardCharsets.UTF_8));
     List<String> vcfLines = new ArrayList<>();
     for (String line : vcfLinesWithHeader) {
       if (!line.startsWith("#") && !line.trim().isEmpty()) {

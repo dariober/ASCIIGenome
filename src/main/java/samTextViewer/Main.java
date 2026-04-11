@@ -63,6 +63,7 @@ public class Main {
           UnindexableFastaFileException,
           InvalidColourException,
           InvalidConfigException {
+    System.setProperty("samjdk.optimistic_vcf_4_4", "true");
 
     /* Start parsing arguments *
      * *** If you change something here change also in console input ***/

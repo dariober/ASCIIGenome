@@ -2445,11 +2445,9 @@ public class Utils {
   public static List<String> vcfHeaderToStrings(VCFHeader header) {
 
     VCFHeader workHeader;
-    if (header.getVCFHeaderVersion() != null && header.getVCFHeaderVersion().isAtLeastAsRecentAs(VCFHeaderVersion.VCF3_3)) {
-      workHeader = new VCFHeader(
-              header.getMetaDataInInputOrder(),
-              header.getGenotypeSamples()
-      );
+    if (header.getVCFHeaderVersion() != null
+        && header.getVCFHeaderVersion().isAtLeastAsRecentAs(VCFHeaderVersion.VCF3_3)) {
+      workHeader = new VCFHeader(header.getMetaDataInInputOrder(), header.getGenotypeSamples());
       workHeader.setVCFHeaderVersion(VCFHeaderVersion.VCF4_2);
     } else {
       workHeader = header;
