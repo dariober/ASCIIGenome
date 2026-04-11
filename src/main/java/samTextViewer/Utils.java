@@ -2445,7 +2445,7 @@ public class Utils {
   public static List<String> vcfHeaderToStrings(VCFHeader header) {
 
     VCFHeader workHeader;
-    if (header.getVCFHeaderVersion().isAtLeastAsRecentAs(VCFHeaderVersion.VCF3_3)) {
+    if (header.getVCFHeaderVersion() != null && header.getVCFHeaderVersion().isAtLeastAsRecentAs(VCFHeaderVersion.VCF3_3)) {
       workHeader = new VCFHeader(
               header.getMetaDataInInputOrder(),
               header.getGenotypeSamples()
