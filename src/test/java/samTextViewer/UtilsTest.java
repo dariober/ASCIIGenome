@@ -1150,7 +1150,7 @@ public class UtilsTest {
 
     cmdInput = Utils.tokenize("test_data", " ");
     globbed = Utils.globFiles(cmdInput);
-    assertTrue(globbed.size() > 10);
+    assertEquals(List.of("./test_data"), globbed);
 
     cmdInput = Utils.tokenize("test_data/*", " ");
     globbed = Utils.globFiles(cmdInput);
@@ -1162,10 +1162,13 @@ public class UtilsTest {
 
     cmdInput = Utils.tokenize("test_data/../test_data", " ");
     globbed = Utils.globFiles(cmdInput);
-    assertTrue(globbed.size() > 10);
+    assertEquals(List.of("test_data/../test_data"), globbed);
 
     cmdInput = Utils.tokenize("test_data/*.gtf.*", " ");
     globbed = Utils.globFiles(cmdInput);
+    for (String g : globbed) {
+      assertTrue(g.contains(".gtf."));
+    }
   }
 
   @Test

@@ -49,13 +49,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -1830,52 +1824,46 @@ public class Utils {
               Pattern.quote(File.separator) + "+",
               File.separator); // Remove double dir sep like "/foo//bar" -> /foo/bar
 
-      String location;
-      if (new File(x).isDirectory()) {
-        location = x;
-        x = x + File.separator + "*"; // From "my_dir" to "my_dir/*"
-      } else {
-        location = new File(x).getParent();
-        if (location == null) {
-          location = "";
-        }
-      }
-      for (Path p : match(x, location)) {
+//      String location;
+//      if (new File(x).isDirectory()) {
+//        location = x;
+//        x = x + File.separator + "*"; // From "my_dir" to "my_dir/*"
+//      } else {
+//        location = new File(x).getParent();
+//        if (location == null) {
+//          location = "";
+//        }
+//      }
+      for (Path p : glob(x)) {
         globbed.add(p.toString());
       }
     }
     return globbed;
   }
 
-  /**
-   * Search for a glob pattern in a given directory and its sub directories See
-   * http://javapapers.com/java/glob-with-java-nio/
-   */
-  private static List<Path> match(String glob, String location) throws IOException {
+  public static List<Path> glob(String pattern) throws IOException {
+    List<Path> matches = new ArrayList<>();
 
-    final List<Path> globbed = new ArrayList<Path>();
+    Path pathPattern = Paths.get(pattern);
+    Path dir = pathPattern.getParent();
+    String filePattern = pathPattern.getFileName().toString();
 
-    final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + glob);
+    if (dir == null) {
+      dir = Paths.get(".");
+    }
 
-    Files.walkFileTree(
-        Paths.get(location),
-        new SimpleFileVisitor<Path>() {
+    PathMatcher matcher = FileSystems.getDefault()
+            .getPathMatcher("glob:" + filePattern);
 
-          @Override
-          public FileVisitResult visitFile(Path path, BasicFileAttributes attrs)
-              throws IOException {
-            if (pathMatcher.matches(path)) {
-              globbed.add(path);
-            }
-            return FileVisitResult.CONTINUE;
-          }
+    try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+      for (Path path : stream) {
+        if (matcher.matches(path.getFileName())) {
+          matches.add(path);
+        }
+      }
+    }
 
-          @Override
-          public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-            return FileVisitResult.CONTINUE;
-          }
-        });
-    return globbed;
+    return matches;
   }
 
   /**
