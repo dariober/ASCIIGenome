@@ -6,7 +6,10 @@ docs/_static
 /.gradle/
 /.idea/
 /out/
-build/
+build/*
+!build/libs/
+build/libs/*
+!build/libs/ASCIIGenome.jar
 caches/
 daemon/
 native/
