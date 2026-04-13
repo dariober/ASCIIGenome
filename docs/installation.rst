@@ -35,7 +35,7 @@ ASCIIGenome can also be installed through `brew <http://brew.sh>`_ / `Linux Brew
 A little more detail
 --------------------
 
-:code:`ASCIIGenome.jar` requires **Java 1.8+** and this should be the only requirement. There is virtually no installation needed as :code:`ASCIIGenome` is pure Java and should work on most (all?) platforms. Download the zip file :code:`ASCIIGenome-x.x.x.zip` from `releases <https://github.com/dariober/ASCIIGenome/releases>`_, unzip it and execute the jar file with::
+:code:`ASCIIGenome.jar` requires **Java 1.17+** and this should be the only requirement. There is virtually no installation needed as :code:`ASCIIGenome` is pure Java and should work on most (all?) platforms. Download the zip file :code:`ASCIIGenome-x.x.x.zip` from `releases <https://github.com/dariober/ASCIIGenome/releases>`_, unzip it and execute the jar file with::
 
     java -jar /path/to/ASCIIGenome.jar --help
 
@@ -73,6 +73,10 @@ Note the helper is a bash script. To set the amount of memory available to java 
 
 If for some reason the text formatting misbehave, disable it with the :code:`-nf` option.
 
+.. note:: If you want to use the compiled jar of the master branch (not recommended as this may be unstable):
+
+    :code:`wget https://raw.githubusercontent.com/dariober/ASCIIGenome/refs/heads/master/build/libs/ASCIIGenome.jar`
+
 Compiling the source code
 -------------------------
 
@@ -88,3 +92,4 @@ re-compile it to an executable jar, all you need to do is::
 
 The executable jar file will be in :code:`build/libs/ASCIIGenome.jar`. 
 The :code:`-x test` option builds the code without running the tests. 
+
