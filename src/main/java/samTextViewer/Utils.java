@@ -50,7 +50,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -1824,16 +1823,6 @@ public class Utils {
               Pattern.quote(File.separator) + "+",
               File.separator); // Remove double dir sep like "/foo//bar" -> /foo/bar
 
-//      String location;
-//      if (new File(x).isDirectory()) {
-//        location = x;
-//        x = x + File.separator + "*"; // From "my_dir" to "my_dir/*"
-//      } else {
-//        location = new File(x).getParent();
-//        if (location == null) {
-//          location = "";
-//        }
-//      }
       for (Path p : glob(x)) {
         globbed.add(p.toString());
       }
@@ -1852,8 +1841,7 @@ public class Utils {
       dir = Paths.get(".");
     }
 
-    PathMatcher matcher = FileSystems.getDefault()
-            .getPathMatcher("glob:" + filePattern);
+    PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + filePattern);
 
     try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
       for (Path path : stream) {
