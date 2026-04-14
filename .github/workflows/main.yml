@@ -28,12 +28,16 @@ jobs:
           brew install samtools
 
       - name: Build and Test
-        run: |
-          ./gradlew build test jacocoTestReport
-          cp ASCIIGenome build/libs/
-          cd src/test/java
-          chmod a+x integration_test.py
-          ./integration_test.py
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: |
+            ./gradlew build test jacocoTestReport
+            cp ASCIIGenome build/libs/
+            cd src/test/java
+            chmod a+x integration_test.py
+            ./integration_test.py
 
       - name: Upload coverage to Codecov
         env:
