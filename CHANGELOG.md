@@ -33,6 +33,8 @@ This is to prevent the annoying case where you accidentally start a search on a 
 
 * Fix bug that made ASCIIGenome crash with IUPAC DNA compounds in reference sequence
 
+* Upgrade htsjdk to [5.0.0](https://github.com/samtools/htsjdk/releases/tag/5.0.0)
+
 New in 1.20.0
 =============
 

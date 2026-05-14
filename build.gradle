@@ -4,7 +4,7 @@ import java.nio.file.Paths
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-def jversion= JavaVersion.VERSION_11
+def jversion= JavaVersion.VERSION_17
 java {
     sourceCompatibility= jversion
     targetCompatibility= jversion
@@ -100,7 +100,7 @@ dependencies {
     implementation "jline:jline:2.14.5"
     implementation "com.github.igvteam:igv:v2.6.3"
     implementation "log4j:log4j:1.2.17"
-    implementation "com.github.samtools:htsjdk:4.3.0"
+    implementation "com.github.samtools:htsjdk:5.0.0"
     implementation "org.apache.commons:commons-text:1.15.0"
     implementation "org.apache.commons:commons-lang3:3.5"
     implementation "org.apache.commons:commons-math3:3.6.1"
