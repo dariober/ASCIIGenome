@@ -399,7 +399,7 @@ public class MakeTabixFileTest {
     new MakeTabixIndex(infile, outfile, TabixFormat.GFF, '\t');
 
     assertTrue(outfile.exists());
-    assertTrue(outfile.length() > 7000000);
+    assertTrue(outfile.length() > 100000000);
     assertTrue(expectedTbi.exists());
 
     FlexibleTabixReader tbx = new FlexibleTabixReader(outfile.getAbsolutePath());

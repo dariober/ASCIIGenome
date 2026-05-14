@@ -33,6 +33,7 @@ jobs:
           timeout_minutes: 10
           max_attempts: 3
           command: |
+            set -e
             ./gradlew build test jacocoTestReport
             cp ASCIIGenome build/libs/
             cd src/test/java

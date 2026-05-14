@@ -67,7 +67,6 @@ tasks.register('prepareTestData') {
 test {
     dependsOn prepareTestData
     useJUnit()
-    finalizedBy jacocoTestReport
 
     testLogging {
         events "passed", "skipped", "failed"
