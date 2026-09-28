@@ -9,7 +9,7 @@ public class ScreenWiggleLocusInfo {
   private double sumScore =
       0; // Sum of scores accumulated from wiggle sites mapped to this screen locus
   private double min = Double.MAX_VALUE;
-  private double max = Double.MIN_VALUE;
+  private double max = -Double.MAX_VALUE;
 
   /* C o n s t r u c t o r */
   public ScreenWiggleLocusInfo() {}
