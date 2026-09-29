@@ -1805,7 +1805,7 @@ public class TrackSet {
     String ignoredCmdName = tokens.remove(0);
     boolean invertSelection = Utils.argListContainsFlag(tokens, "-v");
 
-    String aggFun = Utils.getArgForParam(tokens, "-aggfun", null);
+    String aggFun = Utils.getArgForParam(tokens, "-g", null);
     DataAggregationMethod dataAggregationMethod = null;
     if (aggFun != null) {
       try {
@@ -1819,7 +1819,7 @@ public class TrackSet {
       }
     }
 
-    String transf = Utils.getArgForParam(tokens, "-transf", null);
+    String transf = Utils.getArgForParam(tokens, "-t", null);
     DataTransformation dataTransformation = null;
     if (transf != null) {
       try {
@@ -1834,7 +1834,7 @@ public class TrackSet {
     }
 
     int dataColIdx;
-    String strIdx = Utils.getArgForParam(tokens, "-datacol", "0");
+    String strIdx = Utils.getArgForParam(tokens, "-i", "0");
     try {
       dataColIdx = Integer.parseInt(strIdx);
     } catch (NumberFormatException e) {
