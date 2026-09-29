@@ -43,7 +43,7 @@ public class TrackProcessorTest {
 
     TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
     CsvFormat csv = new CsvFormat(4, 0, 1, 2, true, 1, '#', ',');
-    trackSet.addTrackFromSource("test_data/generic.csv", gc, null, csv);
+    trackSet.addTrackFromSource("test_data/generic.csv", gc, csv);
     TrackProcessor proc = new TrackProcessor(trackSet, gch);
     proc.setNoFormat(true);
     proc.iterateTracks();
@@ -70,9 +70,9 @@ public class TrackProcessorTest {
     gch.add(gc);
 
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/ear045.oxBS.actb.bam", gc, null);
-    trackSet.addTrackFromSource("test_data/ear045.oxBS.actb.tdf", gc, null);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
+    trackSet.addTrackFromSource("test_data/ear045.oxBS.actb.bam", gc);
+    trackSet.addTrackFromSource("test_data/ear045.oxBS.actb.tdf", gc);
     new TrackProcessor(trackSet, gch);
     // tp.iterateTracks();
   }
@@ -101,7 +101,7 @@ public class TrackProcessorTest {
     gch.add(gc);
 
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
     trackSet.editNamesForRegex(Utils.tokenize("editNames test_ foo\ntest_", " "));
 
     TrackProcessor tp = new TrackProcessor(trackSet, gch);

@@ -12,6 +12,7 @@ public class CsvPresets {
     map.put(TrackFormat.BEDGRAPH, new CsvFormat(0, 1, 2, 3, true, -1, '#', '\t'));
     map.put(TrackFormat.GFF, new CsvFormat(0, 3, 4, -1, false, -1, '#', '\t'));
     map.put(TrackFormat.GTF, new CsvFormat(0, 3, 4, -1, false, -1, '#', '\t'));
+    map.put(TrackFormat.GEMMA, new CsvFormat(0, 2, 2, 11, false, 1, '#', '\t'));
   }
 
   public static CsvFormat get(TrackFormat format) {

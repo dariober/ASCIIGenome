@@ -78,6 +78,7 @@ import tracks.IntervalFeature;
 import tracks.QuantitativeFeature;
 import tracks.TrackFormat;
 import utils.CsvFormat;
+import utils.CsvPresets;
 import utils.FlexibleTabixReader;
 import utils.Tokenizer;
 
@@ -625,12 +626,20 @@ public class Utils {
         }
       }
       String line;
+      int lineNo = 0;
       while ((line = br.readLine()) != null) {
         line = line.trim();
-        if (line.startsWith("#") || line.isEmpty() || line.startsWith("track ")) {
+        lineNo++;
+        if (fmt.equals(TrackFormat.GEMMA)) {
+          if (lineNo == 1) {
+            continue;
+          } else {
+            QuantitativeFeature feature = new QuantitativeFeature(line, CsvPresets.get(TrackFormat.GEMMA));
+            region = feature.getChrom() + ":" + feature.getFrom();
+          }
+        } else if (line.startsWith("#") || line.isEmpty() || line.startsWith("track ")) {
           continue;
-        }
-        if (fmt.equals(TrackFormat.VCF)) {
+        } else if (fmt.equals(TrackFormat.VCF)) {
           region = line.split("\t")[0] + ":" + line.split("\t")[1];
         } else {
           // If this is space separated bed file
@@ -675,11 +684,7 @@ public class Utils {
 
   public static String initRegionFromFile(String x)
       throws IOException,
-          InvalidGenomicCoordsException,
-          ClassNotFoundException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          SQLException {
+          InvalidGenomicCoordsException {
     return initRegionFromFile(x, null);
   }
 
@@ -825,6 +830,8 @@ public class Utils {
       return TrackFormat.TDF;
     } else if (fileName.endsWith(".bedgraph.gz") || fileName.endsWith(".bedgraph")) {
       return TrackFormat.BEDGRAPH;
+    } else if (fileName.endsWith(".assoc.txt") || fileName.endsWith(".assoc.txt.gz")) {
+      return TrackFormat.GEMMA;
     } else if (fileName.endsWith(".vcf.gz")
         || fileName.endsWith(".vcf")
         || fileName.endsWith(".vcf.bgz")

@@ -10,5 +10,6 @@ public enum TrackFormat {
   TDF,
   BEDGRAPH,
   VCF,
-  NARROWPEAK
+  NARROWPEAK,
+  GEMMA
 }

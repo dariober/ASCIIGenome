@@ -127,6 +127,10 @@ public abstract class AbstractTrack {
 
   private TrackHeader header = new TrackHeader(null);
 
+  protected DataTransformation dataTransformation = null;
+  protected DataAggregationMethod dataAggregationMethod = null;
+  protected int scoreColIdx = -1;
+
   public AbstractTrack() {}
 
   /**
@@ -1368,6 +1372,83 @@ public abstract class AbstractTrack {
   }
 
   public abstract CsvFormat getCsvFormat();
+
+  public DataAggregationMethod getDataAggregationMethod() {
+    return this.dataAggregationMethod;
+  }
+  public DataTransformation getDataTransformation() {
+    return this.dataTransformation;
+  }
+
+  /** NB: index here is 1-based */
+  protected void setScoreColIdx(int scoreColIdx)
+          throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
+    if (this.scoreColIdx != scoreColIdx) {
+      this.scoreColIdx = scoreColIdx;
+      if (this.getCsvFormat() != null) {
+        this.getCsvFormat().setScoreColIndex(scoreColIdx - 1); // CsvFormat is 0-based
+      }
+      this.update();
+    }
+  }
+
+  protected void setDataAggregationMethod(DataAggregationMethod dataAggregationMethod)
+          throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
+    if (this.dataAggregationMethod != dataAggregationMethod) {
+      this.dataAggregationMethod = dataAggregationMethod;
+      this.update();
+    }
+  }
+
+  protected void setDataTransformation(DataTransformation dataTransformation)
+          throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          InvalidRecordException,
+          ClassNotFoundException {
+    if (this.dataTransformation != dataTransformation) {
+      this.dataTransformation = dataTransformation;
+      this.update();
+    }
+  }
+
+  public String getTrackInfo() {
+    String hd = this.getyMaxLines() <= 0 ? "*" : "";
+    return "Track tag:    " + this.getTrackTag()
+            + "\n"
+            + "Input source: "
+            + this.getFilename()
+            + "\n"
+            + "Working file: "
+            + this.getWorkFilename()
+            + "\n"
+            + "Track type:   "
+            + this.getTrackFormat()
+            + " "
+            + hd
+            + "\n"
+            + "awk script:   "
+            + (!this.getAwk().trim().isEmpty() ? this.getAwk() : "N/A")
+            + "\n"
+            + "grep:         "
+            + "show: "
+            + this.getShowRegex()
+            + "; hide: "
+            + this.getHideRegex()
+            + "\nData aggregation method: "
+            + this.getDataAggregationMethod()
+            + "\nData transformation: "
+            + this.dataTransformation
+            + "\nColumn index of quantitative data (1-based): " + (this.getCsvFormat() != null ? (this.getCsvFormat().getScoreColIndex() + 1) : "n/a");
+  }
 
   //  @Override
   //  public VCFHeader getVcfHeader() {

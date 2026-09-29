@@ -79,6 +79,59 @@ public class MainTest {
   }
 
   @Test
+  public void canStartFromGemma()
+          throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
+    String[] args =
+            new String[] {
+                    "-ni",
+                    "-nf",
+                    "--debug",
+                    "2",
+                    "test_data/gemma_ebi.assoc.txt.gz"
+            };
+    String out = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(out.contains("1:798439"));
+    assertTrue(out.contains("range[0.93"));
+  }
+
+  @Test
+  public void canOpenGemma()
+          throws ClassNotFoundException,
+          IOException,
+          InvalidGenomicCoordsException,
+          InvalidCommandLineException,
+          InvalidRecordException,
+          BamIndexNotFoundException,
+          SQLException,
+          DocumentException,
+          UnindexableFastaFileException,
+          InvalidColourException,
+          InvalidConfigException {
+    String[] args =
+            new String[] {
+                    "-ni",
+                    "-nf",
+                    "--debug",
+                    "2",
+                    "--exec",
+                    "open test_data/gemma_ebi.assoc.txt.gz && goto 4:1-2191561"
+            };
+    String out = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(out.contains("::::::::::::"));
+    assertTrue(out.contains("range[0.0 9.08]"));
+  }
+
+  @Test
   public void canInitRegion() throws InvalidGenomicCoordsException, IOException {
     String reg = Main.initRegion(List.of("test_data/test.bedGraph"), null, null, 2);
     assertEquals("chr1:1", reg);
