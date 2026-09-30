@@ -51,7 +51,7 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr1:11912-12122", 80, null, null);
     gc.setTerminalWidth(ws);
     TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
-    trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc, null);
+    trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc);
     GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
     int x = nextGc.getFrom();
     assertEquals(12138, x); // This is the start of the found feature
@@ -71,14 +71,14 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     gc.setTerminalWidth(ws);
     TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc);
     GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
     int x = nextGc.getFrom();
     assertEquals(8404074, x); // This is the start of the found feature
     assertEquals(8405073, x + 1000 - 1); // window size unchanged
 
     trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc);
     nextGc = trackSet.goToNextFeatureOnFile("1", gc, 0, false);
     x = nextGc.getFrom();
     assertEquals(8404074 - ws / 2, x); // Start of the feature is in the middle of the window
@@ -86,7 +86,7 @@ public class TrackSetTest {
     assertEquals(xend - x + 1, ws); // Genomic window size = Terminal window size
 
     trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc);
     nextGc = trackSet.goToNextFeatureOnFile("1", gc, 2, false);
     x = nextGc.getFrom();
     xend = nextGc.getTo();
@@ -95,7 +95,7 @@ public class TrackSetTest {
 
     trackSet = new TrackSet(new ArrayList<String>(), gc);
     trackSet.addTrackFromSource(
-        "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig", gc, null);
+        "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig", gc);
     // trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
     nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
   }
@@ -119,7 +119,7 @@ public class TrackSetTest {
     gc = new GenomicCoords("chr1:1-200", terminalWidth, samSeqDict, null);
 
     TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
-    trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc, null);
+    trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc);
     GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, 5, false);
     assertEquals(11946, (int) nextGc.getFrom());
     assertEquals(terminalWidth, nextGc.getTo() - nextGc.getFrom() + 1);
@@ -143,9 +143,9 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     TrackSet trackSet;
     trackSet = new TrackSet(new ArrayList<>(), gc);
-    trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
+    trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc);
     trackSet.addTrackFromSource(
-        "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig", gc, null);
+        "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig", gc);
 
     GenomicCoords nextGc = trackSet.goToNextFeatureOnFile("1", gc, -1, false);
     assertEquals(gc, nextGc);
@@ -172,7 +172,7 @@ public class TrackSetTest {
     // Current position is BEFORE the match - same chrom
     GenomicCoords gc = new GenomicCoords("chr1:100-1000", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc);
 
     GenomicCoords newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
     assertEquals("chr1", newgc.getChrom());
@@ -181,7 +181,7 @@ public class TrackSetTest {
     // Current position is AFTER the match - same chrom
     gc = new GenomicCoords("chr1:70000000-70001000", 80, null, null);
     trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc);
 
     newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
     assertEquals("chr1", newgc.getChrom());
@@ -190,7 +190,7 @@ public class TrackSetTest {
     // Current contains the match
     gc = new GenomicCoords("chr1:60000000-70000000", 80, null, null);
     trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc);
 
     newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
     assertEquals("chr1", newgc.getChrom());
@@ -200,7 +200,7 @@ public class TrackSetTest {
     // Current position is BEFORE the match - different chrom
     gc = new GenomicCoords("chr2:1000-2000", 80, null, null);
     trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc);
 
     newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
     assertEquals("chr1", newgc.getChrom());
@@ -222,7 +222,7 @@ public class TrackSetTest {
 
     GenomicCoords gc = new GenomicCoords("chr1:11912-12122", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
-    trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc, null);
+    trackSet.addTrackFromSource("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc);
 
     GenomicCoords newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
     assertEquals("chr2", newgc.getChrom());
@@ -247,7 +247,7 @@ public class TrackSetTest {
     // Current position is AFTER the match - different chrom
     GenomicCoords gc = new GenomicCoords("chrFOO:70000000-70001000", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.short.sort.bed", gc);
 
     GenomicCoords newgc = trackSet.findNextMatchOnTrack(pattern, "", gc, false);
     assertEquals("chr1", newgc.getChrom());
@@ -267,7 +267,7 @@ public class TrackSetTest {
           InvalidColourException {
     GenomicCoords gc = new GenomicCoords("chr7:5566778-5566946", 80, null, "test_data/chr7.fa");
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
-    ts.addTrackFromSource("test_data/ds051.actb.cram", gc, null);
+    ts.addTrackFromSource("test_data/ds051.actb.cram", gc);
     assertTrue(ts.getTrackList().get(0).printToScreen().contains("::::::"));
 
     /*Useful error*/
@@ -275,7 +275,7 @@ public class TrackSetTest {
     ts = new TrackSet(new ArrayList<String>(), gc);
     boolean pass = false;
     try {
-      ts.addTrackFromSource("test_data/ds051.actb.cram", gc, null);
+      ts.addTrackFromSource("test_data/ds051.actb.cram", gc);
     } catch (InvalidGenomicCoordsException e) {
       pass = true;
     }
@@ -296,10 +296,10 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr1:1-1000", 80, null, null);
     TrackSet ts = new TrackSet(new ArrayList<String>(), gc);
 
-    ts.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
-    ts.addTrackFromSource("test_data/dataCol.bedGraph", gc, null);
-    ts.addTrackFromSource("test_data/hg19_genes_head.gtf.gz", gc, null);
-    ts.addTrackFromSource("test_data/ds051.short.bam", gc, null);
+    ts.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc);
+    ts.addTrackFromSource("test_data/dataCol.bedGraph", gc);
+    ts.addTrackFromSource("test_data/hg19_genes_head.gtf.gz", gc);
+    ts.addTrackFromSource("test_data/ds051.short.bam", gc);
 
     ts.getTrackList().get(1).setNoFormat(true);
 
@@ -345,7 +345,7 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr1:11869-12130", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<>(), gc);
 
-    trackSet.addTrackFromSource("test_data/CEU.exon.2010_06.genotypes.vcf", gc, null);
+    trackSet.addTrackFromSource("test_data/CEU.exon.2010_06.genotypes.vcf", gc);
     GenomicCoords newgc =
         trackSet.findNextMatchOnTrack(Pattern.compile("113054374"), "vcf", gc, false);
     assertEquals(113054374, (int) newgc.getFrom());
@@ -364,10 +364,10 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr7:5565052-5571960", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
 
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
-    trackSet.addTrackFromSource("test_data/hg19_genes_head.gtf.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc);
+    trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc);
+    trackSet.addTrackFromSource("test_data/hg19_genes_head.gtf.gz", gc);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc);
     GenomicCoords newgc = trackSet.findNextMatchOnTrack(Pattern.compile("DDX"), "gtf", gc, false);
     assertEquals(11874, (int) newgc.getFrom());
   }
@@ -384,8 +384,8 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr7:5565052-5571960", 80, null, null);
 
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
 
     GenomicCoords cropped = trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
     assertEquals(5566778 + 1, (int) cropped.getFrom());
@@ -394,8 +394,8 @@ public class TrackSetTest {
     // No feature in #1: What happens if we try to trim
     gc = new GenomicCoords("chr7:5568506-5575414", 80, null, null);
     trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
     // No change:
     cropped = trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
     assertEquals(5568506, (int) cropped.getFrom());
@@ -404,8 +404,8 @@ public class TrackSetTest {
     // Trim when feature(s) extend beyond the current window: No cropping
     gc = new GenomicCoords("chr7:5566843-5567275", 80, null, null);
     trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
 
     cropped = trackSet.trimCoordsForTrack(Utils.tokenize("trim refSeq.hg19", " "));
     assertEquals(5566843, (int) cropped.getFrom());
@@ -434,8 +434,8 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr7:5565052-5571960", 80, null, null);
 
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
     // --------------------------------------------------------------------
 
     // No redirection file: Nothing done
@@ -487,9 +487,9 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr7:1-100", 80, null, null);
 
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc, null);
-    trackSet.addTrackFromSource("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc, null);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
+    trackSet.addTrackFromSource("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc);
+    trackSet.addTrackFromSource("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc);
 
     // Test only
     ArrayList<String> cmdInput = Utils.tokenize("dropTracks -t .*", " ");
@@ -519,14 +519,14 @@ public class TrackSetTest {
     GenomicCoords gc = new GenomicCoords("chr7:1-100", 80, null, null);
 
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc, null);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
+    trackSet.addTrackFromSource("test_data/hg18_var_sample.wig.v2.1.30.tdf", gc);
     assertEquals(2, trackSet.getTrackList().size());
 
-    trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc, null);
+    trackSet.addTrackFromSource("test_data/ds051.actb.bam", gc);
     assertEquals(4, trackSet.getTrackList().size());
 
-    trackSet.addTrackFromSource("test_data/ds051.noindex.sam", gc, null);
+    trackSet.addTrackFromSource("test_data/ds051.noindex.sam", gc);
   }
 
   @Test
@@ -543,7 +543,7 @@ public class TrackSetTest {
 
     GenomicCoords gc = new GenomicCoords("chr1:1-100", 80, null, null);
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/malformed_header.vcf.gz", gc, null);
+    trackSet.addTrackFromSource("test_data/malformed_header.vcf.gz", gc);
   }
 
   @Test // Disable to save time

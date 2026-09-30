@@ -192,7 +192,7 @@ public class InteractiveInputTest {
     assertTrue(pi.stdout.contains("::::"));
     assertTrue(pi.stdout.contains("range[1.0 9.0]"));
 
-    pi = processInput(ip, "dataCol -datacol 6", proc);
+    pi = processInput(ip, "dataCol -i 6", proc);
     assertTrue(pi.stdout.contains("range[-99.0 -91.0]"));
 
     // Audodect format
@@ -224,27 +224,31 @@ public class InteractiveInputTest {
     assertTrue(pi.stdout.contains("[401.")); // Min of bins with data
     assertTrue(pi.stdout.contains(" 718."));
 
-    pi = processInput(ip, "dataCol -aggfun max", proc);
+    pi = processInput(ip, "dataCol -g max", proc);
     assertTrue(pi.stdout.contains("[596.")); // Min of bins with data
     assertTrue(pi.stdout.contains(" 933.0"));
 
-    pi = processInput(ip, "dataCol -datacol 5", proc);
+    pi = processInput(ip, "dataCol -i 5", proc);
     assertTrue(pi.stdout.contains(" 93.3"));
 
-    pi = processInput(ip, "dataCol -datacol 4 -aggfun Mean ds051", proc);
+    pi = processInput(ip, "dataCol -i 4 -g Mean ds051", proc);
+    assertTrue(pi.stdout.contains(" 718."));
+    pi = processInput(ip, "dataCol -i 4 -g Me ds051", proc);
     assertTrue(pi.stdout.contains(" 718."));
 
-    pi = processInput(ip, "dataCol -datacol 4 -aggfun max -transf log10 ds051", proc);
+    pi = processInput(ip, "dataCol -i 4 -g max -t log10 ds051", proc);
     assertTrue(pi.stdout.contains(" 2.9"));
 
-    pi = processInput(ip, "dataCol -datacol 4 -aggfun max -transf foo ds051", proc);
+    pi = processInput(ip, "dataCol -i 4 -g max -t foo ds051", proc);
     assertTrue(pi.stderr.contains("Invalid data transformation method"));
 
-    pi = processInput(ip, "dataCol -datacol 4 -aggfun min -transf minus_log10 ds051", proc);
+    pi = processInput(ip, "dataCol -i 4 -g min -t minus_log10 ds051", proc);
+    assertTrue(pi.stdout.contains("[-2.9"));
+    pi = processInput(ip, "dataCol -i 4 -g min -t minus ds051", proc);
     assertTrue(pi.stdout.contains("[-2.9"));
 
     // Zero and negatives are silently removed
-    pi = processInput(ip, "dataCol -datacol 7 -aggfun min -transf log10 ds051", proc);
+    pi = processInput(ip, "dataCol -i 7 -g min -t log10 ds051", proc);
     assertEquals("", pi.stderr);
 
     // Region with no data
@@ -254,17 +258,17 @@ public class InteractiveInputTest {
     processInput(ip, "goto chr7:5563603-5596627", proc);
 
     // This should fail!!
-    pi = processInput(ip, "dataCol -datacol 100", proc);
+    pi = processInput(ip, "dataCol -i 100", proc);
     assertEquals("Invalid index for score column: 100", pi.stderr.trim());
 
-    pi = processInput(ip, "dataCol -datacol x", proc);
+    pi = processInput(ip, "dataCol -i x", proc);
     assertEquals("Invalid index for data column: x", pi.stderr.trim());
 
-    pi = processInput(ip, "dataCol -datacol 4 -aggfun foo", proc);
+    pi = processInput(ip, "dataCol -i 4 -g foo", proc);
     assertTrue(pi.stderr.contains("Invalid data aggregation method:"));
 
     // Non-numeric ignored
-    pi = processInput(ip, "dataCol -datacol 6", proc);
+    pi = processInput(ip, "dataCol -i 6", proc);
     assertEquals("", pi.stderr);
     assertTrue(pi.stdout.contains("range[NaN NaN]"));
   }
@@ -284,17 +288,17 @@ public class InteractiveInputTest {
     processInput(ip, "open test_data/ds051.actb.bedgraph.gz", proc);
     processInput(ip, "open test_data/ds051.actb.bam", proc);
 
-    ProcessInput pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1", proc);
+    ProcessInput pi = processInput(ip, "dataCol -i 5 -g Mean #1", proc);
     assertTrue(pi.stdout.contains("82.3]"));
     assertTrue(pi.stdout.contains("823"));
     assertTrue(pi.stdout.contains("825"));
 
-    pi = processInput(ip, "dataCol -datacol 4 -aggfun Mean", proc);
+    pi = processInput(ip, "dataCol -i 4 -g Mean", proc);
     assertFalse(pi.stdout.contains("82.3]"));
     assertTrue(pi.stdout.contains("823"));
     assertTrue(pi.stdout.contains("825"));
 
-    pi = processInput(ip, "dataCol -datacol 5 -aggfun Mean #1 #2", proc);
+    pi = processInput(ip, "dataCol -i 5 -g Mean #1 #2", proc);
     assertTrue(pi.stdout.contains("82.3]"));
     assertFalse(pi.stdout.contains("823"));
     assertTrue(pi.stdout.contains("825"));

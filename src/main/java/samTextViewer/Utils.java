@@ -24,6 +24,9 @@ import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.cram.build.CramContainerHeaderIterator;
+import htsjdk.samtools.cram.structure.AlignmentContext;
+import htsjdk.samtools.cram.structure.ContainerHeader;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
@@ -78,6 +81,7 @@ import tracks.IntervalFeature;
 import tracks.QuantitativeFeature;
 import tracks.TrackFormat;
 import utils.CsvFormat;
+import utils.CsvPresets;
 import utils.FlexibleTabixReader;
 import utils.Tokenizer;
 
@@ -372,6 +376,24 @@ public class Utils {
 
   public static long getAlignedReadCount(String bam) throws IOException {
 
+    if (Utils.isCRAM(bam)) {
+      long alnCount = 0;
+
+      CramContainerHeaderIterator it =
+              new CramContainerHeaderIterator(new FileInputStream(bam));
+
+      try {
+        while (it.hasNext()) {
+          ContainerHeader containerHeader = it.next().getContainerHeader();
+          alnCount += containerHeader.getNumberOfRecords();
+        }
+      } finally {
+        it.close();
+      }
+
+      return alnCount;
+    }
+
     /*  ------------------------------------------------------ */
     /* This chunk prepares SamReader from local bam or URL bam */
     UrlValidator urlValidator = new UrlValidator();
@@ -397,6 +419,26 @@ public class Utils {
     samReader.close();
     return alnCount;
   }
+
+  public static List<String> matchByPrefix(String x, List<String> candidates, boolean ignoreCase) {
+    List<String> found = new ArrayList<>();
+    x = ignoreCase ? x.toLowerCase() : x;
+    for (String c : candidates) {
+      // Full match
+      if ((ignoreCase && c.toLowerCase().equals(x)) || c.equals(x)) {
+        found.add(c);
+        return found;
+      }
+    }
+    for (String c : candidates) {
+      // Prefix match
+      if ((ignoreCase && c.toLowerCase().startsWith(x)) || c.startsWith(x)) {
+        found.add(c);
+      }
+    }
+    return found;
+  }
+
 
   public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
       List<T> intervalList, boolean screenCoords) {
@@ -625,12 +667,20 @@ public class Utils {
         }
       }
       String line;
+      int lineNo = 0;
       while ((line = br.readLine()) != null) {
         line = line.trim();
-        if (line.startsWith("#") || line.isEmpty() || line.startsWith("track ")) {
+        lineNo++;
+        if (fmt.equals(TrackFormat.GEMMA)) {
+          if (lineNo == 1) {
+            continue;
+          } else {
+            QuantitativeFeature feature = new QuantitativeFeature(line, CsvPresets.get(TrackFormat.GEMMA));
+            region = feature.getChrom() + ":" + feature.getFrom();
+          }
+        } else if (line.startsWith("#") || line.isEmpty() || line.startsWith("track ")) {
           continue;
-        }
-        if (fmt.equals(TrackFormat.VCF)) {
+        } else if (fmt.equals(TrackFormat.VCF)) {
           region = line.split("\t")[0] + ":" + line.split("\t")[1];
         } else {
           // If this is space separated bed file
@@ -675,11 +725,7 @@ public class Utils {
 
   public static String initRegionFromFile(String x)
       throws IOException,
-          InvalidGenomicCoordsException,
-          ClassNotFoundException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          SQLException {
+          InvalidGenomicCoordsException {
     return initRegionFromFile(x, null);
   }
 
@@ -825,6 +871,8 @@ public class Utils {
       return TrackFormat.TDF;
     } else if (fileName.endsWith(".bedgraph.gz") || fileName.endsWith(".bedgraph")) {
       return TrackFormat.BEDGRAPH;
+    } else if (fileName.endsWith(".assoc.txt") || fileName.endsWith(".assoc.txt.gz")) {
+      return TrackFormat.GEMMA;
     } else if (fileName.endsWith(".vcf.gz")
         || fileName.endsWith(".vcf")
         || fileName.endsWith(".vcf.bgz")
@@ -1426,144 +1474,6 @@ public class Utils {
       newFileNames.add(x);
     }
     inputFileList.addAll(newFileNames);
-  }
-
-  /**
-   * Read a sample of file x and return its track format. This method is not generic so keep it
-   * private. Input file must be uncompressed, must have header if SAM or VCF.
-   *
-   * @throws IOException
-   */
-  public static TrackFormat sniffFile(File x) throws IOException {
-
-    try {
-      VCFFileReader vcf = new VCFFileReader(x, false);
-      for (@SuppressWarnings("unused") VariantContext rec : vcf) {
-        //
-      }
-      vcf.close();
-      return TrackFormat.VCF;
-    } catch (Exception e) {
-      //
-    }
-
-    try {
-      SamReader sam = SamReaderFactory.make().open(x);
-      for (@SuppressWarnings("unused") SAMRecord rec : sam) {
-        //
-      }
-      sam.close();
-      return TrackFormat.BAM;
-    } catch (Exception e) {
-      //
-    }
-
-    BufferedReader br = new BufferedReader(new FileReader(x));
-    int maxLines = 100000;
-    boolean firstLine = true;
-    String line = null;
-    List<String[]> sample = new ArrayList<String[]>();
-    while ((line = br.readLine()) != null) {
-      line = line.trim();
-      if (line.isEmpty()) {
-        continue;
-      }
-      if (firstLine && line.startsWith("##") && line.contains("gff-version")) {
-        br.close();
-        return TrackFormat.GFF;
-      }
-      firstLine = false;
-      if (line.startsWith("#")) {
-        continue;
-      }
-      sample.add(line.split("\t"));
-      maxLines--;
-      if (maxLines == 0) {
-        br.close();
-        break;
-      }
-    }
-    br.close();
-    // Try GTF format. We don't distiguish here between GTF and GFF.
-    boolean isGtf = true;
-    for (String[] s : sample) {
-      if (s.length < 8) {
-        isGtf = false;
-        break;
-      }
-      try {
-        int start = Integer.valueOf(s[3]);
-        int end = Integer.valueOf(s[4]);
-        if (start > end || start < 1 || end < 1) {
-          isGtf = false;
-          break;
-        }
-      } catch (NumberFormatException e) {
-        isGtf = false;
-        break;
-      }
-      if (!(s[6].equals("+") || s[6].equals("-") || s[6].equals("."))) {
-        isGtf = false;
-        break;
-      }
-    }
-    if (isGtf) {
-      return TrackFormat.GTF;
-    }
-
-    // Try bedgraph
-    boolean isBedgraph = true;
-    for (String[] bdg : sample) {
-      if (bdg.length < 4) {
-        isBedgraph = false;
-        break;
-      }
-
-      try {
-        Integer.valueOf(bdg[1]);
-        Integer.valueOf(bdg[2]);
-        Double.valueOf(bdg[3]);
-      } catch (NumberFormatException e) {
-        isBedgraph = false;
-        break;
-      }
-      if (Integer.valueOf(bdg[1]) < 0
-          || Integer.valueOf(bdg[2]) < 0
-          || Integer.valueOf(bdg[1]) > Integer.valueOf(bdg[2])) {
-        isBedgraph = false;
-        break;
-      }
-    }
-    if (isBedgraph) {
-      return TrackFormat.BEDGRAPH;
-    }
-
-    // Last option: BED
-    boolean isBed = true;
-    for (String[] bed : sample) {
-      if (bed.length < 3) {
-        isBed = false;
-        break;
-      }
-      int start;
-      int end;
-      try {
-        start = Integer.valueOf(bed[1]);
-        end = Integer.valueOf(bed[2]);
-      } catch (NumberFormatException e) {
-        isBed = false;
-        break;
-      }
-      if (start < 0 || end < 0 || start > end) {
-        isBed = false;
-        break;
-      }
-    }
-    if (isBed) {
-      return TrackFormat.BED;
-    } else {
-      throw new IOException("Input format cannot be determined.");
-    }
   }
 
   /**

@@ -80,6 +80,8 @@ public class TrackSet {
           this.addTrack(new TrackVCF(sourceName, gc), sourceName);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BEDGRAPH)) {
           this.addTrack(new TrackBedgraph(sourceName, gc), sourceName);
+        } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.GEMMA)) {
+          this.addTrack(new TrackGemma(sourceName, gc), sourceName);
         } else if (Utils.getFileTypeFromName(sourceName).equals(TrackFormat.BIGWIG)
             || Utils.getFileTypeFromName(sourceName).equals(TrackFormat.TDF)) {
           this.addTrack(new TrackWiggles(sourceName, gc), sourceName);
@@ -140,7 +142,7 @@ public class TrackSet {
   }
 
   public void addTrackFromSource(
-      String sourceName, GenomicCoords gc, String trackTag, CsvFormat csvFormat)
+      String sourceName, GenomicCoords gc, CsvFormat csvFormat)
       throws SQLException,
           InvalidGenomicCoordsException,
           IOException,
@@ -148,7 +150,7 @@ public class TrackSet {
           InvalidRecordException,
           ClassNotFoundException {
     if (csvFormat == null) {
-      addTrackFromSource(sourceName, gc, trackTag);
+      addTrackFromSource(sourceName, gc);
       return;
     }
 
@@ -168,7 +170,7 @@ public class TrackSet {
     }
   }
 
-  public void addTrackFromSource(String sourceName, GenomicCoords gc, String trackTag)
+  public void addTrackFromSource(String sourceName, GenomicCoords gc)
       throws IOException,
           BamIndexNotFoundException,
           InvalidGenomicCoordsException,
@@ -179,22 +181,25 @@ public class TrackSet {
     TrackFormat fmt = Utils.getFileTypeFromName(sourceName);
 
     if (fmt.equals(TrackFormat.BAM)) {
-      this.addBamTrackFromSourceName(sourceName, gc, trackTag);
+      this.addBamTrackFromSourceName(sourceName, gc);
 
     } else if (fmt.equals(TrackFormat.VCF)) {
-      this.addIntervalFeatureTrackFromVCF(sourceName, gc, trackTag);
+      this.addIntervalFeatureTrackFromVCF(sourceName, gc);
 
     } else if (fmt.equals(TrackFormat.BEDGRAPH)) {
-      this.addBedgraphTrackFromSourceName(sourceName, gc, trackTag);
+      this.addBedgraphTrackFromSourceName(sourceName, gc);
+
+    } else if (fmt.equals(TrackFormat.GEMMA)) {
+      this.addGemmaTrackFromSourceName(sourceName, gc);
 
     } else if (fmt.equals(TrackFormat.BED)
         || fmt.equals(TrackFormat.BIGBED)
         || fmt.equals(TrackFormat.GFF)
         || fmt.equals(TrackFormat.GTF)) {
-      this.addIntervalFeatureTrackFromSourceName(sourceName, gc, trackTag);
+      this.addIntervalFeatureTrackFromSourceName(sourceName, gc);
 
     } else if (fmt.equals(TrackFormat.BIGWIG) || fmt.equals(TrackFormat.TDF)) {
-      this.addWiggleTrackFromSourceName(sourceName, gc, trackTag);
+      this.addWiggleTrackFromSourceName(sourceName, gc);
     } else {
       System.err.println(
           "Unexpected file format: "
@@ -217,7 +222,7 @@ public class TrackSet {
     this.openedFiles.add(sourceName);
   }
 
-  private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag)
+  private void addWiggleTrackFromSourceName(String sourceName, GenomicCoords gc)
       throws IOException,
           InvalidRecordException,
           InvalidGenomicCoordsException,
@@ -225,7 +230,6 @@ public class TrackSet {
           SQLException {
 
     int idForTrack = this.getNextTrackId();
-    // String trackId= new File(sourceName).getName() + "#" + idForTrack;
     String trackId = sourceName + "#" + idForTrack;
 
     TrackWiggles tw = new TrackWiggles(sourceName, gc);
@@ -234,7 +238,7 @@ public class TrackSet {
   }
 
   private void addIntervalFeatureTrackFromSourceName(
-      String sourceName, GenomicCoords gc, String trackTag)
+      String sourceName, GenomicCoords gc)
       throws IOException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
@@ -249,7 +253,7 @@ public class TrackSet {
     this.trackList.add(tif);
   }
 
-  private void addBedgraphTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag)
+  private void addBedgraphTrackFromSourceName(String sourceName, GenomicCoords gc)
       throws IOException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
@@ -263,7 +267,21 @@ public class TrackSet {
     this.trackList.add(tif);
   }
 
-  private void addIntervalFeatureTrackFromVCF(String sourceName, GenomicCoords gc, String trackTag)
+  private void addGemmaTrackFromSourceName(String sourceName, GenomicCoords gc)
+          throws IOException,
+          InvalidGenomicCoordsException,
+          ClassNotFoundException,
+          InvalidRecordException,
+          SQLException {
+
+    int idForTrack = this.getNextTrackId();
+    String trackId = sourceName + "#" + idForTrack;
+    TrackGemma tif = new TrackGemma(sourceName, gc);
+    tif.setTrackTag(trackId);
+    this.trackList.add(tif);
+  }
+
+  private void addIntervalFeatureTrackFromVCF(String sourceName, GenomicCoords gc)
       throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
@@ -286,7 +304,7 @@ public class TrackSet {
     this.trackList.add(tif);
   }
 
-  private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc, String trackTag)
+  private void addBamTrackFromSourceName(String sourceName, GenomicCoords gc)
       throws IOException,
           BamIndexNotFoundException,
           InvalidGenomicCoordsException,
@@ -347,31 +365,8 @@ public class TrackSet {
     List<String> trackInfo = new ArrayList<String>();
 
     for (AbstractTrack track : this.getTrackList()) {
-      String hd = track.getyMaxLines() <= 0 ? "*" : "";
       trackInfo.add(
-          "------\n"
-              + "Track tag:    "
-              + track.getTrackTag()
-              + "\n"
-              + "Input source: "
-              + track.getFilename()
-              + "\n"
-              + "Working file: "
-              + track.getWorkFilename()
-              + "\n"
-              + "Track type:   "
-              + track.getTrackFormat()
-              + " "
-              + hd
-              + "\n"
-              + "awk script:   "
-              + (!track.getAwk().trim().isEmpty() ? track.getAwk() : "N/A")
-              + "\n"
-              + "grep:         "
-              + "show: "
-              + track.getShowRegex()
-              + "; hide: "
-              + track.getHideRegex());
+          "------\n" + track.getTrackInfo());
     }
 
     StringBuilder sb = new StringBuilder();
@@ -1810,36 +1805,36 @@ public class TrackSet {
     String ignoredCmdName = tokens.remove(0);
     boolean invertSelection = Utils.argListContainsFlag(tokens, "-v");
 
-    String aggFun = Utils.getArgForParam(tokens, "-aggfun", null);
+    String aggFun = Utils.getArgForParam(tokens, "-g", null);
     DataAggregationMethod dataAggregationMethod = null;
     if (aggFun != null) {
-      try {
-        dataAggregationMethod = DataAggregationMethod.valueOf(aggFun.toUpperCase());
-      } catch (Exception e) {
+      List<String> af = Utils.matchByPrefix(aggFun, Arrays.stream(DataAggregationMethod.values()).map(Enum::name).toList(), true);
+      if (af.size() != 1) {
         throw new RuntimeException(
-            "Invalid data aggregation method: '"
-                + aggFun
-                + "'. Valid methods are: "
-                + Arrays.stream(DataAggregationMethod.values()).toList());
+                "Invalid data aggregation method: '"
+                        + aggFun
+                        + "'. Valid methods are: "
+                        + Arrays.stream(DataAggregationMethod.values()).toList());
       }
+      dataAggregationMethod = DataAggregationMethod.valueOf(af.get(0));
     }
 
-    String transf = Utils.getArgForParam(tokens, "-transf", null);
+    String transf = Utils.getArgForParam(tokens, "-t", null);
     DataTransformation dataTransformation = null;
     if (transf != null) {
-      try {
-        dataTransformation = DataTransformation.valueOf(transf.toUpperCase());
-      } catch (Exception e) {
+      List<String> dt = Utils.matchByPrefix(transf, Arrays.stream(DataTransformation.values()).map(Enum::name).toList(), true);
+      if (dt.size() != 1) {
         throw new RuntimeException(
-            "Invalid data transformation method: '"
-                + transf
-                + "'. Valid methods are: "
-                + Arrays.stream(DataTransformation.values()).toList());
+                "Invalid data transformation method: '"
+                        + transf
+                        + "'. Valid methods are: "
+                        + Arrays.stream(DataTransformation.values()).toList());
       }
+      dataTransformation = DataTransformation.valueOf(dt.get(0));
     }
 
     int dataColIdx;
-    String strIdx = Utils.getArgForParam(tokens, "-datacol", "0");
+    String strIdx = Utils.getArgForParam(tokens, "-i", "0");
     try {
       dataColIdx = Integer.parseInt(strIdx);
     } catch (NumberFormatException e) {
@@ -1856,17 +1851,14 @@ public class TrackSet {
     // And set as required:
     List<AbstractTrack> tracksToReset = this.matchTracks(trackNameRegex, true, invertSelection);
     for (AbstractTrack tr : tracksToReset) {
-      if (tr.getTrackFormat().equals(TrackFormat.BEDGRAPH)) {
-        TrackBedgraph bdg = (TrackBedgraph) tr;
-        if (dataColIdx != 0) {
-          bdg.setScoreColIdx(dataColIdx);
-        }
-        if (dataAggregationMethod != null) {
-          bdg.setDataAggregationMethod(dataAggregationMethod);
-        }
-        if (dataTransformation != null) {
-          bdg.setDataTransformation(dataTransformation);
-        }
+      if (dataColIdx != 0) {
+        tr.setScoreColIdx(dataColIdx);
+      }
+      if (dataAggregationMethod != null) {
+        tr.setDataAggregationMethod(dataAggregationMethod);
+      }
+      if (dataTransformation != null) {
+        tr.setDataTransformation(dataTransformation);
       }
     }
   }

@@ -1408,9 +1408,23 @@ public class UtilsTest {
   @Test
   public void canGetBamReadCount() throws IOException {
     assertEquals(15098, Utils.getAlignedReadCount("test_data/ds051.actb.bam"));
-    // Painfully slow!
-    // assertEquals(6337212,
-    // Utils.getAlignedReadCount("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SplicesRep2V2.bam"));
+    assertEquals(15098, Utils.getAlignedReadCount("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.actb.bam"));
+
+    assertEquals(15098, Utils.getAlignedReadCount("test_data/ds051.actb.cram"));
+    System.out.println(Utils.getAlignedReadCount("test_data/read_count.cram"));
+  }
+
+  @Test
+  public void canMatchByPrefix() {
+    List<String> candidates = List.of("MIN", "MAX", "ABS_MAX");
+
+    assertEquals(List.of("MAX"), Utils.matchByPrefix("MAX", candidates, false));
+    assertEquals(List.of("MAX"), Utils.matchByPrefix("MA", candidates, false));
+    assertEquals(List.of("MIN", "MAX"), Utils.matchByPrefix("M", candidates, false));
+    assertEquals(List.of("MAX"), Utils.matchByPrefix("max", candidates, true));
+    assertEquals(List.of("MAX"), Utils.matchByPrefix("ma", candidates, true));
+    assertEquals(List.of("MIN", "MAX"), Utils.matchByPrefix("m", candidates, true));
+    assertEquals(0, Utils.matchByPrefix("_max", candidates, true).size());
   }
 
   @Test

@@ -1641,7 +1641,7 @@ public class InteractiveInput {
       try {
         proc.getTrackSet()
             .addTrackFromSource(
-                sourceName, proc.getGenomicCoordsHistory().current(), null, csvFormat);
+                sourceName, proc.getGenomicCoordsHistory().current(), csvFormat);
       } catch (Exception e) {
         try {
           // It may be that you are in position that doesn't exist in the sequence
@@ -1655,7 +1655,7 @@ public class InteractiveInput {
           proc.getGenomicCoordsHistory().add(gc);
           proc.getTrackSet()
               .addTrackFromSource(
-                  sourceName, proc.getGenomicCoordsHistory().current(), null, csvFormat);
+                  sourceName, proc.getGenomicCoordsHistory().current(), csvFormat);
         } catch (Exception x) {
           x.printStackTrace();
           msg = Utils.padEndMultiLine("Failed to add: " + sourceName, proc.getWindowSize());

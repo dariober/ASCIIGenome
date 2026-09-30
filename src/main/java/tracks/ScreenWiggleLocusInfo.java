@@ -9,7 +9,8 @@ public class ScreenWiggleLocusInfo {
   private double sumScore =
       0; // Sum of scores accumulated from wiggle sites mapped to this screen locus
   private double min = Double.MAX_VALUE;
-  private double max = Double.MIN_VALUE;
+  private double max = -Double.MAX_VALUE;
+  private double abs_max = 0;
 
   /* C o n s t r u c t o r */
   public ScreenWiggleLocusInfo() {}
@@ -17,10 +18,6 @@ public class ScreenWiggleLocusInfo {
   /* M e t h o d s */
   /** Increment attributes by given score */
   public void increment(double score, DataTransformation dataTransformation) {
-    //    if (score <= 0 && (dataTransformation == DataTransformation.LOG10 || dataTransformation ==
-    // DataTransformation.MINUS_LOG10)) {
-    //      throw  new RuntimeException("Invalid transformation for value: " + score);
-    //    }
     if (dataTransformation == DataTransformation.IDENTITY) {
       //
     } else if (dataTransformation == DataTransformation.LOG10) {
@@ -35,6 +32,9 @@ public class ScreenWiggleLocusInfo {
     sumScore += score;
     this.min = Math.min(this.min, score);
     this.max = Math.max(this.max, score);
+    if (Math.abs(score) > Math.abs(this.abs_max)) {
+      this.abs_max = score;
+    }
   }
 
   public String toString() {
@@ -55,6 +55,14 @@ public class ScreenWiggleLocusInfo {
     }
   }
 
+  public double getAbsMax() {
+    if (this.cntGenomicLoci > 0) {
+      return abs_max;
+    } else {
+      return Double.NaN;
+    }
+  }
+
   public double getMin() {
     if (this.cntGenomicLoci > 0) {
       return min;
@@ -62,4 +70,5 @@ public class ScreenWiggleLocusInfo {
       return Double.NaN;
     }
   }
+
 }
