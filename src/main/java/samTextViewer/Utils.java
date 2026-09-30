@@ -420,6 +420,26 @@ public class Utils {
     return alnCount;
   }
 
+  public static List<String> matchByPrefix(String x, List<String> candidates, boolean ignoreCase) {
+    List<String> found = new ArrayList<>();
+    x = ignoreCase ? x.toLowerCase() : x;
+    for (String c : candidates) {
+      // Full match
+      if ((ignoreCase && c.toLowerCase().equals(x)) || c.equals(x)) {
+        found.add(c);
+        return found;
+      }
+    }
+    for (String c : candidates) {
+      // Prefix match
+      if ((ignoreCase && c.toLowerCase().startsWith(x)) || c.startsWith(x)) {
+        found.add(c);
+      }
+    }
+    return found;
+  }
+
+
   public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
       List<T> intervalList, boolean screenCoords) {
     List<T> mergedList = new ArrayList<>();

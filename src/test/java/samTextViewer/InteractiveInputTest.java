@@ -233,6 +233,8 @@ public class InteractiveInputTest {
 
     pi = processInput(ip, "dataCol -i 4 -g Mean ds051", proc);
     assertTrue(pi.stdout.contains(" 718."));
+    pi = processInput(ip, "dataCol -i 4 -g Me ds051", proc);
+    assertTrue(pi.stdout.contains(" 718."));
 
     pi = processInput(ip, "dataCol -i 4 -g max -t log10 ds051", proc);
     assertTrue(pi.stdout.contains(" 2.9"));
@@ -241,6 +243,8 @@ public class InteractiveInputTest {
     assertTrue(pi.stderr.contains("Invalid data transformation method"));
 
     pi = processInput(ip, "dataCol -i 4 -g min -t minus_log10 ds051", proc);
+    assertTrue(pi.stdout.contains("[-2.9"));
+    pi = processInput(ip, "dataCol -i 4 -g min -t minus ds051", proc);
     assertTrue(pi.stdout.contains("[-2.9"));
 
     // Zero and negatives are silently removed

@@ -1808,29 +1808,29 @@ public class TrackSet {
     String aggFun = Utils.getArgForParam(tokens, "-g", null);
     DataAggregationMethod dataAggregationMethod = null;
     if (aggFun != null) {
-      try {
-        dataAggregationMethod = DataAggregationMethod.valueOf(aggFun.toUpperCase());
-      } catch (Exception e) {
+      List<String> af = Utils.matchByPrefix(aggFun, Arrays.stream(DataAggregationMethod.values()).map(Enum::name).toList(), true);
+      if (af.size() != 1) {
         throw new RuntimeException(
-            "Invalid data aggregation method: '"
-                + aggFun
-                + "'. Valid methods are: "
-                + Arrays.stream(DataAggregationMethod.values()).toList());
+                "Invalid data aggregation method: '"
+                        + aggFun
+                        + "'. Valid methods are: "
+                        + Arrays.stream(DataAggregationMethod.values()).toList());
       }
+      dataAggregationMethod = DataAggregationMethod.valueOf(af.get(0));
     }
 
     String transf = Utils.getArgForParam(tokens, "-t", null);
     DataTransformation dataTransformation = null;
     if (transf != null) {
-      try {
-        dataTransformation = DataTransformation.valueOf(transf.toUpperCase());
-      } catch (Exception e) {
+      List<String> dt = Utils.matchByPrefix(transf, Arrays.stream(DataTransformation.values()).map(Enum::name).toList(), true);
+      if (dt.size() != 1) {
         throw new RuntimeException(
-            "Invalid data transformation method: '"
-                + transf
-                + "'. Valid methods are: "
-                + Arrays.stream(DataTransformation.values()).toList());
+                "Invalid data transformation method: '"
+                        + transf
+                        + "'. Valid methods are: "
+                        + Arrays.stream(DataTransformation.values()).toList());
       }
+      dataTransformation = DataTransformation.valueOf(dt.get(0));
     }
 
     int dataColIdx;

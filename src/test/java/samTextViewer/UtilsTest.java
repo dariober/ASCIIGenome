@@ -1415,6 +1415,19 @@ public class UtilsTest {
   }
 
   @Test
+  public void canMatchByPrefix() {
+    List<String> candidates = List.of("MIN", "MAX", "ABS_MAX");
+
+    assertEquals(List.of("MAX"), Utils.matchByPrefix("MAX", candidates, false));
+    assertEquals(List.of("MAX"), Utils.matchByPrefix("MA", candidates, false));
+    assertEquals(List.of("MIN", "MAX"), Utils.matchByPrefix("M", candidates, false));
+    assertEquals(List.of("MAX"), Utils.matchByPrefix("max", candidates, true));
+    assertEquals(List.of("MAX"), Utils.matchByPrefix("ma", candidates, true));
+    assertEquals(List.of("MIN", "MAX"), Utils.matchByPrefix("m", candidates, true));
+    assertEquals(0, Utils.matchByPrefix("_max", candidates, true).size());
+  }
+
+  @Test
   public void canCountReadsInWindow2() throws InvalidGenomicCoordsException, IOException {
     GenomicCoords gc = new GenomicCoords("chr7:5524838-5611878", 80, samSeqDict, fastaFile);
     List<SamRecordFilter> filters = new ArrayList<SamRecordFilter>();
