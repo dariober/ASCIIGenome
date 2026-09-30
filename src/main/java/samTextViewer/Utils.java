@@ -24,6 +24,9 @@ import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.cram.build.CramContainerHeaderIterator;
+import htsjdk.samtools.cram.structure.AlignmentContext;
+import htsjdk.samtools.cram.structure.ContainerHeader;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
@@ -372,6 +375,24 @@ public class Utils {
   }
 
   public static long getAlignedReadCount(String bam) throws IOException {
+
+    if (Utils.isCRAM(bam)) {
+      long alnCount = 0;
+
+      CramContainerHeaderIterator it =
+              new CramContainerHeaderIterator(new FileInputStream(bam));
+
+      try {
+        while (it.hasNext()) {
+          ContainerHeader containerHeader = it.next().getContainerHeader();
+          alnCount += containerHeader.getNumberOfRecords();
+        }
+      } finally {
+        it.close();
+      }
+
+      return alnCount;
+    }
 
     /*  ------------------------------------------------------ */
     /* This chunk prepares SamReader from local bam or URL bam */

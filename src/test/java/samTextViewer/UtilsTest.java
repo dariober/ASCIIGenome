@@ -1408,9 +1408,10 @@ public class UtilsTest {
   @Test
   public void canGetBamReadCount() throws IOException {
     assertEquals(15098, Utils.getAlignedReadCount("test_data/ds051.actb.bam"));
-    // Painfully slow!
-    // assertEquals(6337212,
-    // Utils.getAlignedReadCount("http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SplicesRep2V2.bam"));
+    assertEquals(15098, Utils.getAlignedReadCount("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.actb.bam"));
+
+    assertEquals(15098, Utils.getAlignedReadCount("test_data/ds051.actb.cram"));
+    System.out.println(Utils.getAlignedReadCount("test_data/read_count.cram"));
   }
 
   @Test
