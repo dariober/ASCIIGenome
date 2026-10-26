@@ -1247,7 +1247,7 @@ public class CommandList {
 
     cmd = new CommandHelp();
     cmd.setName("dataCol");
-    cmd.setArgs("[-datacol i ] [-transf identity] [-aggfun mean] [-v] [track_regex = .*]...");
+    cmd.setArgs("[-i i ] [-t identity] [-g mean] [-v] [track_regex = .*]...");
     cmd.inSection = Section.DISPLAY;
     cmd.setBriefDescription("Set data column for bedgraph tracks");
     cmd.setAdditionalDescription(
@@ -1256,14 +1256,14 @@ public class CommandList {
             + " when multiple values fall in the same screen column. Non-numeric data, including"
             + " any generated NaN, are ignored.\n"
             + "\n"
-            + ":code:`-datacol` Column index (1-based) of data to plot.\n"
+            + ":code:`-i` Column index (1-based) of data to plot.\n"
             + "\n"
-            + ":code:`-transf` Apply this transformation to the data. This happens before"
+            + ":code:`-t` Apply this transformation to the data. This happens before"
             + " aggregation. Options: "
             + Arrays.asList(DataTransformation.values())
             + "\n"
             + "\n"
-            + ":code:`-aggfun` Aggregate function to summarise data falling in the same screen"
+            + ":code:`-g` Aggregate function to summarise data falling in the same screen"
             + " column. Options: "
             + Arrays.asList(DataAggregationMethod.values())
             + "\n"
@@ -1271,10 +1271,10 @@ public class CommandList {
             + ":code:`-v` Invert selection: apply changes to the tracks not selected by list of"
             + " track_regex\n"
             + "\n"
-            + "Argument to -transf and -aggfun are case-insensitive. Examples::\n"
+            + "Argument to -t and -g are case-insensitive. Examples::\n"
             + " \n"
-            + "    dataCol -aggfun max -datacol 5 #1 #3~~~~->Use column 5 for track #1 and #3\n"
-            + "    dataCol -aggfun max -transf minus_log10~->Useful for plotting p-values\n"
+            + "    dataCol -g max -i 5 #1 #3~~~~~->Use column 5 for track #1 and #3\n"
+            + "    dataCol -g max -t minus_log10~->Useful for plotting p-values\n"
             + "\n");
     cmdList.add(cmd);
 

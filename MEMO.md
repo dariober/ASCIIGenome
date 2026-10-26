@@ -11,6 +11,7 @@
     * [Start new development branch](#start-new-development-branch)
         * [Create a new branch:](#create-a-new-branch:)
 * [Install or update gradle](#install-or-update-gradle)
+* [Test data](#test-data)
 
 <!-- vim-markdown-toc -->
 
@@ -143,4 +144,20 @@ Create or update the gradlew wrapper:
 
 ```
 gradle wrapper
+```
+
+# Test data
+
+```
+ebi <- fread('https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST90565001-GCST90566000/GCST90565346/GCST90565346.tsv')
+tdt <- ebi[chromosome %in% c(1,2,3,4), .SD[1:10000], chromosome]
+setnames(tdt, c('chromosome', 'base_pair_location', 'effect_allele', 'other_allele', 'standard_error', 'effect_allele_frequency', 'p_value'),
+    c('chr', 'ps', 'allele1', 'allele0', 'se', 'af', 'p_wald'))
+tdt[, rs := sprintf('%s:%s:%s:%s', chr, ps, allele0, allele1)]
+tdt[, logl_H1 := rnorm(nrow(tdt), mean=1000)]
+tdt[, l_remle := rnorm(nrow(tdt), mean=10)]
+tdt[, n_miss := rpois(nrow(tdt), lambda=50)]
+
+setcolorder(tdt, c('chr', 'rs', 'ps', 'n_miss', 'allele1', 'allele0', 'af', 'beta', 'se', 'logl_H1', 'l_remle', 'p_wald'))
+fwrite(tdt, 'gemma_ebi.assoc.txt.gz', sep='\t')
 ```

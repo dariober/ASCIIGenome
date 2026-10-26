@@ -84,7 +84,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
     this.setWorkFilename(tmpWorkFile);
 
     TabixFormat tabixFormat;
-    if (csvFormat == null) {
+    if (this.csvFormat == null) {
       tabixFormat = Utils.trackFormatToTabixFormat(this.getTrackFormat());
     } else {
       tabixFormat =

@@ -20,10 +20,6 @@ import utils.CsvFormat;
 
 public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
 
-  private DataTransformation dataTransformation = DataTransformation.IDENTITY;
-  private DataAggregationMethod dataAggregationMethod = DataAggregationMethod.MEAN;
-  protected int scoreColIdx = -1;
-
   public TrackBedgraph(String filename, GenomicCoords gc)
       throws SQLException,
           InvalidGenomicCoordsException,
@@ -39,6 +35,7 @@ public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
           InvalidGenomicCoordsException,
           InvalidRecordException,
           SQLException {
+    this();
     if (csvFormat == null) {
       this.csvFormat = new CsvFormat(0, 1, 2, 3, true, 0, '#', '\t');
     } else {
@@ -59,7 +56,11 @@ public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
     this.setGc(gc);
   }
 
-  public TrackBedgraph() {}
+  public TrackBedgraph() {
+    this.dataTransformation = DataTransformation.IDENTITY;
+    this.dataAggregationMethod = DataAggregationMethod.MEAN;
+    this.scoreColIdx = -1;
+  }
 
   /* ----------- METHODS ----------- */
 
@@ -84,54 +85,6 @@ public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
     return new QuantitativeFeature(line, this.getCsvFormat());
   }
 
-  /** NB: index here is 1-based */
-  protected void setScoreColIdx(int scoreColIdx)
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidRecordException,
-          SQLException {
-    if (this.scoreColIdx != scoreColIdx) {
-      this.scoreColIdx = scoreColIdx;
-      if (this.csvFormat != null) {
-        this.csvFormat.setScoreColIndex(scoreColIdx - 1); // CsvFormat is 0-based
-      }
-      this.update();
-    }
-  }
-
-  protected void setDataAggregationMethod(DataAggregationMethod dataAggregationMethod)
-      throws ClassNotFoundException,
-          IOException,
-          InvalidGenomicCoordsException,
-          InvalidRecordException,
-          SQLException {
-    if (this.dataAggregationMethod != dataAggregationMethod) {
-      this.dataAggregationMethod = dataAggregationMethod;
-      this.update();
-    }
-  }
-
-  protected DataAggregationMethod getDataAggregationMethod() {
-    return this.dataAggregationMethod;
-  }
-
-  protected void setDataTransformation(DataTransformation dataTransformation)
-      throws SQLException,
-          InvalidGenomicCoordsException,
-          IOException,
-          InvalidRecordException,
-          ClassNotFoundException {
-    if (this.dataTransformation != dataTransformation) {
-      this.dataTransformation = dataTransformation;
-      this.update();
-    }
-  }
-
-  protected DataTransformation getDataTransformation() {
-    return this.dataTransformation;
-  }
-
   /** Get values for bedgraph */
   private void bedGraphToScores(List<QuantitativeFeature> quantitativeFeatureList)
       throws IOException, InvalidGenomicCoordsException {
@@ -141,13 +94,12 @@ public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
       screenWigLocInfoList.add(new ScreenWiggleLocusInfo());
     }
 
-    for (QuantitativeFeature ift : quantitativeFeatureList) {
-      ift.mapToScreen(this.getGc().getMapping());
-      for (int i = ift.getScreenFrom(); i <= ift.getScreenTo(); i++) {
-        screenWigLocInfoList.get(i).increment(ift.getScore(), this.getDataTransformation());
+    for (QuantitativeFeature qf : quantitativeFeatureList) {
+      qf.mapToScreen(this.getGc().getMapping());
+      for (int i = qf.getScreenFrom(); i <= qf.getScreenTo(); i++) {
+        screenWigLocInfoList.get(i).increment(qf.getScore(), this.getDataTransformation());
       }
     }
-
     List<Double> screenScores = this.aggregateScreenScores(screenWigLocInfoList);
     this.setScreenScores(screenScores);
   }
@@ -159,6 +111,8 @@ public class TrackBedgraph extends AbstractTrackFeature<QuantitativeFeature> {
         screenScores.add(x.getMeanScore());
       } else if (this.getDataAggregationMethod() == DataAggregationMethod.MAX) {
         screenScores.add(x.getMax());
+      } else if (this.getDataAggregationMethod() == DataAggregationMethod.ABS_MAX) {
+        screenScores.add(x.getAbsMax());
       } else if (this.getDataAggregationMethod() == DataAggregationMethod.MIN) {
         screenScores.add(x.getMin());
       } else {

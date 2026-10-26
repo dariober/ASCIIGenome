@@ -1,5 +1,9 @@
-New in 1.21.0
+New in 1.21.1
 =============
+
+* Support GWA summary statistics from
+  [GEMMA](https://github.com/genetics-statistics/GEMMA). Input must have suffix
+  `.assoc.txt[.gz]` to be correctly recognized.
 
 * New command
   [search](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#search):
@@ -15,9 +19,8 @@ New in 1.21.0
   [open](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#open)
   command has additional options for input settings.
 
-* [dataCol](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#dataCol) enabled to apply data transformations and aggregations. E.g. for
-  plotting p-values from gwas it is useful to use `dataCol -aggfun max -transf
-  minus_log10`
+* [dataCol](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#dataCol) enabled data transformations and aggregations. E.g. for
+  plotting p-values from gwas it is useful to use `dataCol -g max -t minus_log10`
 
 * Partial support for **bcf** format, at some conditions: `bcf` files must be already sorted and indexed
 (*e.g.* using `bcftools`) and they must be local (*i.e.* you cannot read from remote URLs). ASCIIGenome 

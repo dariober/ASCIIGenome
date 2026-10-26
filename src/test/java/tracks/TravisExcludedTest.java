@@ -38,13 +38,12 @@ public class TravisExcludedTest {
     GenomicCoords gc = new GenomicCoords("chr7:5565052-5571960", 80, null, null);
 
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc, null);
-    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc, null);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc);
+    trackSet.addTrackFromSource("test_data/hg19_genes.gtf.gz", gc);
+    trackSet.addTrackFromSource("test_data/refSeq.hg19.bed.gz", gc);
     trackSet.addTrackFromSource(
         "ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.18.gff3.gz",
-        gc,
-        null);
+        gc);
 
     assertTrue(new File(trackSet.getOpenedFiles().iterator().next()).isAbsolute());
     assertEquals(3, trackSet.getOpenedFiles().size());
@@ -65,11 +64,9 @@ public class TravisExcludedTest {
     TrackSet trackSet = new TrackSet(new ArrayList<String>(), gc);
     trackSet.addTrackFromSource(
         "http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400GeneGencV3cRep2V3.gtf.gz",
-        gc,
-        null);
+        gc);
     trackSet.addTrackFromSource(
         "ftp://ftp.ensembl.org/pub/release-86/gff3/homo_sapiens/Homo_sapiens.GRCh38.86.chromosome.18.gff3.gz",
-        gc,
-        null);
+        gc);
   }
 }
