@@ -35,6 +35,16 @@ public class GenomicCoordsTest {
   }
 
   @Test
+  public void issue137() throws InvalidGenomicCoordsException, IOException {
+    GenomicCoords initGc = new GenomicCoords("1:20000", 80, null, null);
+    List<String> initList = List.of("test_data/contig_wo_length.vcf");
+    initGc.setGenome(initList, false);
+    GenomicCoords gc = new GenomicCoords(initGc.toStringRegion(), 80, initGc.getSamSeqDict(), initGc.getFastaFile());
+    assertEquals(gc.getFrom(), (Integer)20000);
+    assertEquals(gc.getTo(), (Integer)20079);
+  }
+
+  @Test
   public void canPrintSequenceDictionaryOnlyContigs()
       throws InvalidGenomicCoordsException, IOException {
     ArrayList<String> knownContigs = new ArrayList<String>();

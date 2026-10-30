@@ -135,6 +135,9 @@ public class GenomicCoords implements Cloneable {
     Integer sequenceLength = null;
     if (this.getSamSeqDict() != null && this.getSamSeqDict().getSequence(this.chrom) != null) {
       sequenceLength = this.getSamSeqDict().getSequence(this.chrom).getSequenceLength();
+      if (sequenceLength == 0) {
+        sequenceLength = Integer.MAX_VALUE;
+      }
     }
     return sequenceLength;
   }
@@ -763,10 +766,8 @@ public class GenomicCoords implements Cloneable {
    * Same as R seq(from to, length.out). See also func in Utils
    *
    * @return
-   * @throws IOException
-   * @throws InvalidGenomicCoordsException
    */
-  private List<Double> seqFromToLenOut(int size) throws InvalidGenomicCoordsException, IOException {
+  private List<Double> seqFromToLenOut(int size) {
 
     if (this.getFrom() == null || this.getTo() == null) {
       return null;
