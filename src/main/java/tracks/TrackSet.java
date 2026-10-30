@@ -569,7 +569,6 @@ public class TrackSet {
     // PARSE ARGS
     // --------------------------------------------------------------------
     boolean invertSelection = Utils.argListContainsFlag(args, "-v");
-
     boolean esf = Utils.argListContainsFlag(args, "-esf");
     if (esf) {
       printMode = PrintRawLine.CLIP;
@@ -618,7 +617,7 @@ public class TrackSet {
     }
 
     String sys = Utils.getArgForParam(args, "-sys", "");
-    if (sys != "") {
+    if (!sys.isEmpty() && printMode == null) {
       printMode = PrintRawLine.NO_ACTION;
     }
 
@@ -655,7 +654,7 @@ public class TrackSet {
     }
 
     // Everything left in arg list is positional args of regex for tracks
-    if (args.size() >= 1) {
+    if (!args.isEmpty()) {
       trackNameRegex = args;
     }
     // END PARSING ARGS.

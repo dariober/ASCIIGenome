@@ -210,6 +210,27 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canSetPrintModeAndSysIssue78()
+          throws SQLException,
+          InvalidGenomicCoordsException,
+          IOException,
+          ClassNotFoundException,
+          InvalidRecordException {
+    TrackProcessor proc =
+            gimmeTrackProcessor("1:113054374-113054662", 100, "test_data/CEU.exon.2010_06.genotypes.vcf");
+
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    processInput(ip, "open test_data/CEU.exon.2010_06.genotypes.vcf", proc);
+    ProcessInput pi = processInput(ip, "print -sys ''' sed 's/PASS/P_A_S_S/' '''", proc);
+    assertTrue(pi.stdout.contains("P_A_S_S"));
+    assertFalse(pi.stdout.contains("253:atlas"));
+
+    pi = processInput(ip, "print -full -sys ''' sed 's/PASS/pass/' '''", proc);
+    assertTrue(pi.stdout.contains("pass"));
+    assertTrue(pi.stdout.contains("253:atlas"));
+  }
+
+  @Test
   public void canSetDataColumn()
       throws SQLException,
           InvalidGenomicCoordsException,
