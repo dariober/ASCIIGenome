@@ -228,6 +228,13 @@ public class InteractiveInputTest {
     pi = processInput(ip, "print -full -sys ''' sed 's/PASS/pass/' '''", proc);
     assertTrue(pi.stdout.contains("pass"));
     assertTrue(pi.stdout.contains("253:atlas"));
+
+    // Sys command has been reset
+    pi = processInput(ip, "print -clip", proc);
+    assertTrue(pi.stdout.contains("PASS"));
+    assertFalse(pi.stdout.contains("pass"));
+    assertFalse(pi.stdout.contains("253:atlas"));
+
   }
 
   @Test
