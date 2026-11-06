@@ -15,6 +15,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -65,14 +66,14 @@ public class MakeTabixIndex {
 
     try {
       // Try to block compress and create index assuming the file is sorted
-      blockCompressAndIndex(intab, tmp);
+      blockCompressAndIndex(intab, tmp.toPath());
     } catch (Exception e) {
       // If intab is not sorted, sort it first.
       PrintWriter pw = new PrintWriter(tmp);
       pw.close();
       File sorted = Utils.createTempFile(".asciigenome.", ".sorted.tmp", true);
       sortByChromThenPos(intab, sorted);
-      blockCompressAndIndex(sorted.getAbsolutePath(), tmp);
+      blockCompressAndIndex(sorted.getAbsolutePath(), tmp.toPath());
       Files.delete(Paths.get(sorted.getAbsolutePath()));
     }
 
@@ -91,7 +92,7 @@ public class MakeTabixIndex {
     Files.move(Paths.get(tmpTbi.getAbsolutePath()), Paths.get(bgzfOutTbi.getAbsolutePath()));
   }
 
-  private void blockCompressAndIndex(String intab, File bgzfOut) throws IOException {
+  private void blockCompressAndIndex(String intab, Path bgzfOut) throws IOException {
     BlockCompressedOutputStream writer = new BlockCompressedOutputStream(bgzfOut);
     long filePosition = writer.getFilePointer();
 
@@ -130,7 +131,7 @@ public class MakeTabixIndex {
     writer.flush();
 
     Index index = indexCreator.finalizeIndex(writer.getFilePointer());
-    index.writeBasedOnFeatureFile(bgzfOut);
+    index.writeBasedOnFeaturePath(bgzfOut);
     writer.close();
     CloserUtil.close(lin);
   }

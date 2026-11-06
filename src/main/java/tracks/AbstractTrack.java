@@ -1311,7 +1311,7 @@ public abstract class AbstractTrack {
     }
     ReferenceSequenceFile faSeqFile =
         ReferenceSequenceFileFactory.getReferenceSequenceFile(
-            new File(this.getGc().getFastaFile()));
+            new File(this.getGc().getFastaFile()).toPath());
     byte[] faSeq = faSeqFile.getSubsequenceAt(chrom, from, to).getBases();
     faSeqFile.close();
     this.getFeatureFilter().setVariantReadInInterval(chrom, from, to, faSeq);

@@ -210,7 +210,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     if (isBCF) {
       return new BCFFileReader(Path.of(vcfFile), true);
     } else {
-      return new VCFFileReader(new File(vcfFile), true);
+      return new VCFFileReader(new File(vcfFile).toPath(), true);
     }
   }
 

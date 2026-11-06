@@ -39,7 +39,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -56,10 +55,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -248,22 +243,8 @@ public class IOUtils {
     return openFileForReading(new File(uri));
   }
 
-  public static BufferedReader openURIForBufferedReading(String uri) throws IOException {
-    return new BufferedReader(
-        new InputStreamReader(openURIForReading(uri), Charset.forName("UTF-8")));
-  }
-
-  public static Reader openFileForReader(File file) throws IOException {
-    IOUtil.assertFileIsReadable(file);
-    if (file.getName().endsWith(".gz") || file.getName().endsWith(".bgz")) // DB added .bgz
-    {
-      return new InputStreamReader(openFileForReading(file));
-    }
-    return new FileReader(file);
-  }
-
   public static InputStream openFileForReading(final File file) throws IOException {
-    IOUtil.assertFileIsReadable(file);
+    IOUtil.assertFileIsReadable(file.toPath());
     InputStream in = Files.newInputStream(file.toPath());
     if (file.getName().endsWith(".gz") || file.getName().endsWith(".bgz")) // DB added .bgz
     {
@@ -284,7 +265,7 @@ public class IOUtils {
 
   public static OutputStream openFileForWriting(final File file) throws IOException {
     if (file.getName().endsWith(".vcf.gz")) {
-      return new BlockCompressedOutputStream(file);
+      return new BlockCompressedOutputStream(file.toPath());
     } else if (file.getName().endsWith(".gz")) {
       return new GZIPOutputStream(Files.newOutputStream(file.toPath()), true);
     } else {
@@ -380,74 +361,6 @@ public class IOUtils {
 
   public static final String UNROLL_FILE_MESSAGE =
       "if filename ends with '.list' it is interpreted as a list of file (one file per line)";
-
-  /** unrol one file if needed, If file is null, returns empty list */
-  public static List<File> unrollFile(final File file) {
-    if (file == null) return Collections.emptyList();
-    IOUtil.assertFileIsReadable(file);
-    if (!file.getName().endsWith(".list")) return Collections.singletonList(file);
-    try {
-      return Files.readAllLines(file.toPath()).stream()
-          .filter(L -> !(L.isEmpty() || L.startsWith("#")))
-          .map(L -> new File(L))
-          .collect(Collectors.toList());
-    } catch (IOException e) {
-      throw new RuntimeIOException(e);
-    }
-  }
-
-  /**
-   * return 'inputs' as set, if a filename ends with '*.list' is is considered as a file:one file
-   * per line
-   *
-   * @param inputs files
-   * @return set of files
-   */
-  public static LinkedHashSet<String> unrollFiles(java.util.Collection<String> inputs) {
-    final LinkedHashSet<String> vcfFiles = new LinkedHashSet<>(inputs.size() + 1);
-    for (final String file : inputs) {
-      if (file.isEmpty()) {
-        // ignore
-      } else if (IOUtil.isUrl(file)) {
-        vcfFiles.add(file);
-      } else if (file.endsWith(".list")) {
-        File f = new File(file);
-        IOUtil.assertFileIsReadable(f);
-        for (final String s : IOUtil.readLines(f)) {
-          if (s.endsWith("#")) continue;
-          if (s.trim().isEmpty()) continue;
-          vcfFiles.add(s);
-        }
-      } else {
-        vcfFiles.add(file);
-      }
-    }
-    return vcfFiles;
-  }
-
-  /**
-   * return 'inputs' as set, if a filename ends with '*.list' is is considered as a file:one file
-   * per line
-   *
-   * @param inputs files
-   * @return set of files
-   */
-  public static LinkedHashSet<File> unrollFileCollection(java.util.Collection<File> inputs) {
-    LinkedHashSet<File> vcfFiles = new LinkedHashSet<>(inputs.size() + 1);
-    for (final File file : inputs) {
-      if (file.getName().endsWith(".list")) {
-        IOUtil.assertFileIsReadable(file);
-        for (final String s : IOUtil.readLines(file)) {
-          if (s.endsWith("#")) continue;
-          if (s.trim().isEmpty()) continue;
-          vcfFiles.add(new File(s));
-        }
-      } else {
-        vcfFiles.add(file);
-      }
-    }
-    return vcfFiles;
-  }
 
   /** test wether the two first bytes are gzip */
   public static boolean isGZipCompressed(final byte[] twoBytes) {

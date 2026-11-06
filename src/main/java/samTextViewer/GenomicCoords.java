@@ -425,10 +425,10 @@ public class GenomicCoords implements Cloneable {
     return this.genomicSequence.getSequence();
   }
 
-  public byte[] getSequenceFromFasta() throws IOException {
+  public byte[] getSequenceFromFasta() {
     ReferenceSequenceFile faSeqFile = null;
     try {
-      faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.fastaFile));
+      faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.fastaFile).toPath());
       try {
         byte[] seq = faSeqFile.getSubsequenceAt(this.chrom, this.from, this.getTo()).getBases();
         faSeqFile.close();
@@ -446,7 +446,7 @@ public class GenomicCoords implements Cloneable {
         e.printStackTrace();
       }
       faSeqFile.close();
-    } catch (FileNotFoundException e) {
+    } catch (Exception e) {
       e.printStackTrace();
     }
     return null;
@@ -1129,7 +1129,7 @@ public class GenomicCoords implements Cloneable {
     SamReaderFactory srf = SamReaderFactory.make();
     srf.validationStringency(ValidationStringency.SILENT);
     SamReader samReader;
-    samReader = srf.open(new File(bamfile));
+    samReader = srf.open(new File(bamfile).toPath());
     /*  ------------------------------------------------------ */
     SAMSequenceDictionary seqDict = samReader.getFileHeader().getSequenceDictionary();
     if (seqDict != null && !seqDict.isEmpty()) {
