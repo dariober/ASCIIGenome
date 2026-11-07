@@ -55,6 +55,7 @@ public class MainTest {
           "-ni", "-nf", "--debug", "2", "--exec", "open test_data/test.bedGraph && goto chr1:1"
         };
     String bdg = Joiner.on("\n").join(this.runMain(args));
+    System.out.println(bdg);
     assertTrue(bdg.contains(":    ,,,,,     ::::::,"));
 
     args =

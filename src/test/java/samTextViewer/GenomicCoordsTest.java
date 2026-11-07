@@ -23,7 +23,7 @@ import org.junit.Test;
 public class GenomicCoordsTest {
 
   static SamReaderFactory srf = SamReaderFactory.make();
-  static SamReader samReader = srf.open(new File("test_data/ds051.short.bam"));
+  static SamReader samReader = srf.open(new File("test_data/ds051.short.bam").toPath());
   public static SAMSequenceDictionary samSeqDict =
       samReader.getFileHeader().getSequenceDictionary();
 

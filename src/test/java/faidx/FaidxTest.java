@@ -100,7 +100,7 @@ public class FaidxTest {
 
     // Can retrieve seqs
     ReferenceSequenceFile faSeqFile =
-        ReferenceSequenceFileFactory.getReferenceSequenceFile(new File("test_data/faidx/empty.fa"));
+        ReferenceSequenceFileFactory.getReferenceSequenceFile(new File("test_data/faidx/empty.fa").toPath());
     assertEquals(
         "ACTGNNNNNNNNNNNNN", new String(faSeqFile.getSubsequenceAt("seq", 1, 17).getBases()));
     assertEquals("AACCGGTTNN", new String(faSeqFile.getSubsequenceAt("seq2", 1, 10).getBases()));
@@ -137,86 +137,4 @@ public class FaidxTest {
     new Faidx(fasta);
     assertFalse(new File(fasta.getAbsolutePath() + ".fai").exists());
   }
-
-  //	@Test
-  //	public void testFileChannel() throws IOException{
-  //
-  //		FileChannel fileChannel = FileChannel.open(Paths.get("chr1.fa"));
-  //		long n= 0;
-  //		int noOfBytesRead = 0;
-  //
-  //		long t0= System.nanoTime();
-  //
-  //		while(noOfBytesRead != -1){
-  //			ByteBuffer buffer = ByteBuffer.allocate(10000);
-  //			noOfBytesRead = fileChannel.read(buffer);
-  //			buffer.flip();
-  //			while ( buffer.hasRemaining() ) {
-  //				char x= (char)buffer.get();
-  //				n++;
-  //			}
-  //		}
-  //		long t1= System.nanoTime();
-  //		System.err.println((float)(t1-t0) / 1e6);
-  //		System.err.println("nchars: " + n);
-  //	}
-
-  //	@Test
-  //	public void readArrayTest() throws IOException, InterruptedException {
-  //
-  //		final int BUFFER_SIZE = 100;
-  //		char[] arr = new char[BUFFER_SIZE];
-  //
-  //	    int result = 0;
-  //	    try (BufferedReader reader = new BufferedReader(new FileReader("chr1.fa"))) {
-  //	        int charsRead;
-  //			long t0= System.nanoTime();
-  //	        while ((charsRead = reader.read(arr)) != -1) {
-  //	            for (int i = 0; i < charsRead; i++) {
-  //	            	result += arr[i];
-  //	            }
-  //	        }
-  //			long t1= System.nanoTime();
-  //			System.err.println((t1-t0) / 1000000.0);
-  //	    }
-  //	    System.err.println(result);
-  //	}
-
-  //	@Test
-  //	public void testRead() throws IOException, UnindexableFastaFileException{
-  //
-  //		BufferedReader fa= new BufferedReader(new FileReader(new File("chr1.fa")));
-  //		long t0= System.nanoTime();
-  //		int c;
-  //		while( (c = fa.read()) != -1 ){
-  //			if(c == '>'){ System.out.println(c); };
-  //		}
-  //		long t1= System.nanoTime();
-  //		System.err.println(t1-t0); // ~ 7000 ms
-  //
-  //	}
-  //
-  //	@Test
-  //	public void testReadLine() throws IOException{
-  //
-  //		BufferedReader fa= new BufferedReader(new FileReader(new File("chr1.fa")));
-  //
-  //		String line;
-  //		long t0= System.nanoTime();
-  //		while( (line = fa.readLine()) != null ){
-  //			if(line.contains(">")){ System.out.println(line); }
-  //		}
-  //		long t1= System.nanoTime();
-  //		System.err.println(t1-t0); // ~ 700 ms
-  //	}
-
-  //	@Test
-  //	public void simpleFasta() throws IOException, UnindexableFastaFileException{
-  //		File fasta= new File("/Users/berald01/Desktop/asciigenome_demo/genome.fa");
-  //		long t0= System.currentTimeMillis();
-  //		new Faidx(fasta);
-  //		long t1= System.currentTimeMillis();
-  //		System.err.println(t1-t0);
-  //	}
-
 }

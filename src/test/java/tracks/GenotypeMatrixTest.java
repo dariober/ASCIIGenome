@@ -39,7 +39,7 @@ public class GenotypeMatrixTest {
           InvalidCommandLineException {
 
     VCFFileReader reader =
-        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
+        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:5934301-6000000", 80, null, null);
@@ -62,7 +62,7 @@ public class GenotypeMatrixTest {
           InvalidColourException,
           IOException {
 
-    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
+    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
@@ -94,7 +94,7 @@ public class GenotypeMatrixTest {
           InvalidColourException,
           IOException {
 
-    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
+    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
 
@@ -174,7 +174,7 @@ public class GenotypeMatrixTest {
           ClassNotFoundException,
           InvalidRecordException,
           InvalidColourException {
-    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
+    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
 
@@ -201,7 +201,7 @@ public class GenotypeMatrixTest {
           SQLException,
           InvalidColourException,
           IOException {
-    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
+    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
@@ -231,7 +231,7 @@ public class GenotypeMatrixTest {
           InvalidColourException,
           IOException {
 
-    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
+    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
@@ -272,7 +272,7 @@ public class GenotypeMatrixTest {
           IOException,
           InvalidCommandLineException {
 
-    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
+    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
@@ -306,7 +306,7 @@ public class GenotypeMatrixTest {
           InvalidColourException,
           InvalidCommandLineException {
 
-    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz"));
+    VCFFileReader reader = new VCFFileReader(new File("test_data/info_formats.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:17822074-17822184", 80, null, null);
@@ -362,7 +362,7 @@ public class GenotypeMatrixTest {
           InvalidColourException {
 
     VCFFileReader reader =
-        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
+        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
 
@@ -403,7 +403,7 @@ public class GenotypeMatrixTest {
           InvalidColourException {
 
     VCFFileReader reader =
-        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
+        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
 

@@ -35,7 +35,7 @@ public class VCFFeatureTest {
 
   @Test
   public void handleMissingInfoLinesInHeader() {
-    VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header3.vcf.gz"));
+    VCFFileReader reader = new VCFFileReader(new File("test_data/malformed_header3.vcf.gz").toPath());
     reader.close();
   }
 
@@ -48,7 +48,7 @@ public class VCFFeatureTest {
     }
 
     // Prepare header
-    VCFFileReader reader = new VCFFileReader(new File("test_data/CHD.exon.2010_03.sites.vcf.gz"));
+    VCFFileReader reader = new VCFFileReader(new File("test_data/CHD.exon.2010_03.sites.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     VCFCodec vcfCodec = new VCFCodec();
@@ -97,7 +97,7 @@ public class VCFFeatureTest {
 
     // Prepare header
     VCFFileReader reader =
-        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
+        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     VCFCodec vcfCodec = new VCFCodec();

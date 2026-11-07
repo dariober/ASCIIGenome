@@ -63,7 +63,7 @@ public class UtilsTest {
   }
 
   static SamReaderFactory srf = SamReaderFactory.make();
-  static SamReader samReader = srf.open(new File("test_data/ds051.short.bam"));
+  static SamReader samReader = srf.open(new File("test_data/ds051.short.bam").toPath());
   public static SAMSequenceDictionary samSeqDict =
       samReader.getFileHeader().getSequenceDictionary();
 
@@ -290,14 +290,14 @@ public class UtilsTest {
   @Test
   public void canGetVCFHeaderAsString() {
     VCFFileReader reader =
-        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
+        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
     VCFHeader hdr = reader.getFileHeader();
     reader.close();
     List<String> str = Utils.vcfHeaderToStrings(hdr);
     assertEquals(71, str.size());
     assertTrue(str.get(str.size() - 1).startsWith("#CHROM"));
 
-    reader = new VCFFileReader(new File("test_data/CEU.exon.2010_06.genotypes.vcf.gz"));
+    reader = new VCFFileReader(new File("test_data/CEU.exon.2010_06.genotypes.vcf.gz").toPath());
     hdr = reader.getFileHeader();
     reader.close();
     str = Utils.vcfHeaderToStrings(hdr);
@@ -1520,11 +1520,7 @@ public class UtilsTest {
   @Test
   public void canInitRegion()
       throws IOException,
-          InvalidGenomicCoordsException,
-          ClassNotFoundException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          SQLException {
+          InvalidGenomicCoordsException {
 
     // Files with no records
     assertEquals("chr1", Utils.initRegionFromFile("test_data/norecords.vcf"));
