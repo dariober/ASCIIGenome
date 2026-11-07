@@ -17,9 +17,9 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.NoSuchElementException;
-import org.broad.igv.bbfile.BBFileReader;
-import org.broad.igv.bbfile.BedFeature;
-import org.broad.igv.bbfile.BigBedIterator;
+import org.igv.bbfile.BBFileReader;
+import org.igv.bbfile.BedFeature;
+import org.igv.bbfile.BigBedIterator;
 import utils.FlexibleTabixReader;
 
 public class TabixBigBedIterator {

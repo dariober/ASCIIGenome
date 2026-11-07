@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
-import org.broad.igv.bbfile.BBFileReader;
+import org.igv.bbfile.BBFileReader;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;

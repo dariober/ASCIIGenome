@@ -6,7 +6,7 @@ import htsjdk.variant.vcf.VCFReader;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.broad.igv.bbfile.BBFileReader;
+import org.igv.bbfile.BBFileReader;
 import utils.FlexibleTabixReader;
 
 /** Adapter to make tabixReader and bigBed behave in the same way. */
