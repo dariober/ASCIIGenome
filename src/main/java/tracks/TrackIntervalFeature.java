@@ -14,7 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
-import org.igv.bbfile.BBFileReader;
+import org.igv.ucsc.bb.BBFile;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -55,8 +55,8 @@ public class TrackIntervalFeature extends AbstractTrackFeature<IntervalFeature> 
     this.csvFormat = csvFormat;
 
     if (this.getTrackFormat().equals(TrackFormat.BIGBED)) {
-      this.bigBedReader = new BBFileReader(filename); // or url for remote access.
-      if (!this.bigBedReader.getBBFileHeader().isBigBed()) {
+      this.bigBedReader = new BBFile(filename, null); // or url for remote access.
+      if (!this.bigBedReader.isBigBedFile()) {
         throw new RuntimeException("File " + filename + " is not bigBed.");
       }
       this.setWorkFilename(filename);

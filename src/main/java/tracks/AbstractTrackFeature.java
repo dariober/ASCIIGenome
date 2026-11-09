@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
-import org.igv.bbfile.BBFileReader;
+import org.igv.ucsc.bb.BBFile;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -30,7 +30,7 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
 
   protected CsvFormat csvFormat;
 
-  protected BBFileReader bigBedReader;
+  protected BBFile bigBedReader;
   protected VCFReader vcfReader;
   List<T> featureList = new ArrayList<>();
   private List<Argument> colourForRegex = null;
@@ -741,14 +741,19 @@ public abstract class AbstractTrackFeature<T extends IntervalFeature> extends Ab
 
   @Override
   public ArrayList<String> getChromosomeNames() {
-    ArrayList<String> x = new ArrayList<>(this.getReader().getChromosomes());
+    ArrayList<String> x = null;
+    try {
+      x = new ArrayList<>(this.getReader().getChromosomes());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
     Collections.sort(x);
     return x;
   }
 
   TabixBigBedReader getReader() {
     if (this.bigBedReader != null) {
-      return new TabixBigBedReader(this.bigBedReader);
+      return new TabixBigBedReader(this.bigBedReader, this.getWorkFilename());
     } else if (this.tabixReader != null) {
       this.tabixReader.setColumnSeparator(this.getColumnSeparator());
       return new TabixBigBedReader(this.tabixReader);

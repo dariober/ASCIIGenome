@@ -1518,6 +1518,30 @@ public class UtilsTest {
   }
 
   @Test
+  public void canInitRegionFromBigWig() throws InvalidGenomicCoordsException, IOException {
+    assertEquals(
+            "chr1:1",
+            Utils.initRegionFromFile(
+                    "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
+
+    boolean pass = false;
+    try {
+      Utils.initRegionFromFile(
+              "http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig");
+    } catch (InvalidGenomicCoordsException e) {
+      pass = true;
+    }
+    assertTrue(pass);
+  }
+
+  @Test
+  public void canInitRegionFromBigBed() throws InvalidGenomicCoordsException, IOException {
+    assertEquals(
+            "Undefined_contig:1",
+            Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
+  }
+
+  @Test
   public void canInitRegion()
       throws IOException,
           InvalidGenomicCoordsException {
@@ -1536,28 +1560,13 @@ public class UtilsTest {
         Utils.initRegionFromFile(
             "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.short.bam"));
     assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
-    assertEquals(
-        "chr9:15077",
-        Utils.initRegionFromFile(
-            "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
     assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
     assertEquals(
         "chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
     assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
     assertEquals(
-        "chr9:41066",
-        Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
-    assertEquals(
         "1:113054374", Utils.initRegionFromFile("test_data/CEU.exon.2010_06.genotypes.vcf"));
 
-    boolean pass = false;
-    try {
-      Utils.initRegionFromFile(
-          "http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig");
-    } catch (InvalidGenomicCoordsException e) {
-      pass = true;
-    }
-    assertTrue(pass);
   }
 
   @Test

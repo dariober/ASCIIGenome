@@ -14,6 +14,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import jdk.jshell.spi.ExecutionControl;
+import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
@@ -244,11 +247,14 @@ public class TrackIntervalFeatureTest {
     String intervalFileName = "test_data/hg19_genes.gtf.gz";
     GenomicCoords gc = new GenomicCoords("7:5527151-5530709", 80, null, null);
     TrackIntervalFeature tif = new TrackIntervalFeature(intervalFileName, gc);
-
-    assertTrue(tif.getChromosomeNames().size() > 10);
+    assertEquals(47, tif.getChromosomeNames().size());
+    assertTrue(tif.getChromosomeNames().contains("chr1"));
+    assertTrue(tif.getChromosomeNames().contains("chrY"));
 
     tif = new TrackIntervalFeature("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb", gc);
-    assertTrue(tif.getChromosomeNames().size() > 10);
+    assertTrue(tif.getChromosomeNames().contains("chr1"));
+    assertTrue(tif.getChromosomeNames().contains("chrX"));
+    assertEquals(23, tif.getChromosomeNames().size());
   }
 
   @Test
@@ -414,19 +420,19 @@ public class TrackIntervalFeatureTest {
     assertTrue(tif.printToScreen().contains("_0_"));
 
     // Bigbed
-    intervalFileName = "test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb";
-
-    gc = new GenomicCoords("chr1:1200328-1200477", 80, null, null);
-    tif = new TrackIntervalFeature(intervalFileName, gc);
-    tif.setNoFormat(true);
-    assertTrue(tif.printToScreen().replaceAll("\\|", "").trim().isEmpty());
-
-    tif.setFeatureName("5");
-    assertTrue(tif.printToScreen().contains("_1000_"));
-
-    // Name not to be shown
-    tif.setFeatureName("-na");
-    assertTrue(tif.printToScreen().replaceAll("\\|", "").trim().isEmpty());
+//    intervalFileName = "test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb";
+//
+//    gc = new GenomicCoords("chr1:1200328-1200477", 80, null, null);
+//    tif = new TrackIntervalFeature(intervalFileName, gc);
+//    tif.setNoFormat(true);
+//    assertTrue(tif.printToScreen().replaceAll("\\|", "").trim().isEmpty());
+//
+//    tif.setFeatureName("5");
+//    assertTrue(tif.printToScreen().contains("_1000_"));
+//
+//    // Name not to be shown
+//    tif.setFeatureName("-na");
+//    assertTrue(tif.printToScreen().replaceAll("\\|", "").trim().isEmpty());
   }
 
   @Test

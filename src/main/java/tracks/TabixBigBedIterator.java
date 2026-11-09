@@ -17,28 +17,34 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.NoSuchElementException;
-import org.igv.bbfile.BBFileReader;
-import org.igv.bbfile.BedFeature;
-import org.igv.bbfile.BigBedIterator;
+
+import org.igv.feature.IGVFeature;
+import org.igv.ucsc.bb.BBFeatureSource;
+import org.igv.ucsc.bb.BBFile;
 import utils.FlexibleTabixReader;
 
 public class TabixBigBedIterator {
 
   Iterator tabixIterator;
-  BigBedIterator bigBedIterator;
+  java.util.Iterator<IGVFeature> bigBedIterator;
   CloseableIterator<VariantContext> vcfIterator;
   private VCFHeader vcfHeader;
+  private String chrom = null;
 
   protected TabixBigBedIterator(FlexibleTabixReader reader, String chrom, int start, int end) {
+    this.chrom = chrom;
     this.tabixIterator = reader.query(chrom, start, end);
   }
 
-  protected TabixBigBedIterator(BBFileReader reader, String chrom, int start, int end) {
-    this.bigBedIterator = reader.getBigBedIterator(chrom, start, chrom, end, false);
+  protected TabixBigBedIterator(BBFile reader, String chrom, int start, int end) throws IOException {
+    BBFeatureSource bigbedFeatureSource = new BBFeatureSource(reader, null);
+    this.bigBedIterator = bigbedFeatureSource.getFeatures(chrom, start, end);
+    this.chrom = chrom;
   }
 
   protected TabixBigBedIterator(VCFReader reader, String chrom, int start, int end) {
     this.vcfIterator = reader.query(chrom, start, end);
+    this.chrom = chrom;
   }
 
   private String variantToVcfLine(VariantContext ctx, VCFHeader header) {
@@ -86,19 +92,19 @@ public class TabixBigBedIterator {
       if (!this.bigBedIterator.hasNext()) {
         return null;
       }
-      BedFeature x = this.bigBedIterator.next();
+      IGVFeature x = this.bigBedIterator.next();
       if (x == null) {
         return null;
       }
       StringBuilder sb = new StringBuilder();
-      sb.append(x.getChromosome());
+      sb.append(this.chrom);
       sb.append("\t");
-      sb.append(x.getStartBase());
+      sb.append(x.getStart());
       sb.append("\t");
-      sb.append(x.getEndBase());
-      for (String field : x.getRestOfFields()) {
+      sb.append(x.getEnd());
+      for (String key : x.getAttributeKeys()) {
         sb.append("\t");
-        sb.append(field);
+        sb.append(x.getAttribute(key));
       }
       return sb.toString();
     } else if (this.vcfIterator != null) {

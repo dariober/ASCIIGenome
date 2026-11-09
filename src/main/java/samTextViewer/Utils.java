@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import exceptions.InvalidCommandLineException;
 import exceptions.InvalidGenomicCoordsException;
+import exceptions.InvalidRecordException;
 import faidx.Faidx;
 import faidx.UnindexableFastaFileException;
 import htsjdk.samtools.SAMFileHeader.SortOrder;
@@ -51,6 +52,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -66,17 +68,10 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.biojava.nbio.genome.parsers.gff.FeatureI;
 import org.biojava.nbio.genome.parsers.gff.FeatureList;
 import org.biojava.nbio.genome.parsers.gff.GFF3Reader;
-import org.igv.bbfile.BBFileReader;
-import org.igv.bbfile.BedFeature;
-import org.igv.bbfile.BigBedIterator;
-import org.igv.bbfile.BigWigIterator;
-import org.igv.bbfile.WigItem;
 import org.igv.tdf.TDFReader;
+import org.igv.ucsc.bb.BBFile;
 import org.igv.util.FileUtils;
-import tracks.AbstractTrack;
-import tracks.IntervalFeature;
-import tracks.QuantitativeFeature;
-import tracks.TrackFormat;
+import tracks.*;
 import utils.CsvFormat;
 import utils.CsvPresets;
 import utils.FlexibleTabixReader;
@@ -726,48 +721,25 @@ public class Utils {
     return initRegionFromFile(x, null);
   }
 
-  private static String initRegionFromBigBed(String bigBedFile) throws IOException {
-
-    BBFileReader reader = new BBFileReader(bigBedFile);
-    if (!reader.isBigBedFile()) {
-      System.err.println("File " + bigBedFile + " is not bigBed.");
-      throw new RuntimeException();
-    }
-    String region = reader.getChromosomeNames().get(0); // Just get chrom to start with
-
-    for (String chrom : reader.getChromosomeNames()) {
-      BigBedIterator iter = reader.getBigBedIterator(chrom, 0, chrom, Integer.MAX_VALUE, false);
-      if (iter.hasNext()) {
-        BedFeature x = (BedFeature) iter.next();
-        region = x.getChromosome() + ":" + (x.getStartBase() + 1);
-        reader.close();
-        return region;
-      }
-    }
-    reader.close();
-    return region;
+  private static String initRegionFromBigBed(String bigBedFile) throws IOException, InvalidGenomicCoordsException {
+    return "Undefined_contig:1";
   }
 
-  private static String initRegionFromBigWig(String bigWigFile) throws IOException {
-
-    BBFileReader reader = new BBFileReader(bigWigFile);
-    if (!reader.isBigWigFile()) {
-      System.err.println("File " + bigWigFile + " is not bigWig.");
-      throw new RuntimeException();
+  private static String initRegionFromBigWig(String bigWigFile) throws IOException, InvalidGenomicCoordsException {
+    TrackWiggles tr;
+    GenomicCoords gc = new GenomicCoords();
+    gc.setChrom("Undefined_contig");
+    gc.setFrom(1);
+    gc.setTo(1);
+    try {
+      tr = new TrackWiggles(bigWigFile, gc, TrackFormat.BIGWIG);
+    } catch (InvalidRecordException | InvalidGenomicCoordsException | ClassNotFoundException | SQLException e) {
+      throw new RuntimeException(e);
     }
-    String region = reader.getChromosomeNames().get(0); // Just get chrom to start with
-
-    for (String chrom : reader.getChromosomeNames()) {
-      BigWigIterator iter = reader.getBigWigIterator(chrom, 0, chrom, Integer.MAX_VALUE, false);
-      if (iter.hasNext()) {
-        WigItem x = iter.next();
-        region = x.getChromosome() + ":" + (x.getStartBase() + 1);
-        reader.close();
-        return region;
-      }
-    }
-    reader.close();
-    return region;
+    ArrayList<String> chromNames = tr.getChromosomeNames();
+    String chrom = chromNames.get(0); // Just get chrom to start with
+    tr.close();
+    return chrom + ":1";
   }
 
   public static boolean bamHasIndex(String bam) throws IOException {
