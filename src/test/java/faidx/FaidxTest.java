@@ -93,9 +93,7 @@ public class FaidxTest {
 
     String[] observed = FileUtils.readFileToString(fai).split("\n");
     for (String x : observed) {
-      if (x.startsWith("empty")) { // Empty sequences just check sequence length is 0
-        assertEquals("0", x.split("\t")[1]);
-      }
+      assertTrue(Integer.parseInt(x.split("\t")[1]) > 0);
     }
 
     // Can retrieve seqs
