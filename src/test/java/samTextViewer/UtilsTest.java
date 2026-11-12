@@ -1537,7 +1537,7 @@ public class UtilsTest {
   @Test
   public void canInitRegionFromBigBed() throws InvalidGenomicCoordsException, IOException {
     assertEquals(
-            "Undefined_contig:1",
+            "chr1:1",
             Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
   }
 

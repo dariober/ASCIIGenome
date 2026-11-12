@@ -722,7 +722,19 @@ public class Utils {
   }
 
   private static String initRegionFromBigBed(String bigBedFile) throws IOException, InvalidGenomicCoordsException {
-    return "Undefined_contig:1";
+    TrackIntervalFeature tr;
+    GenomicCoords gc = new GenomicCoords();
+    gc.setChrom("Undefined_contig");
+    gc.setFrom(1);
+    gc.setTo(1);
+    try {
+      tr = new TrackIntervalFeature(bigBedFile, gc);
+    } catch (InvalidRecordException | InvalidGenomicCoordsException | ClassNotFoundException | SQLException e) {
+      throw new RuntimeException(e);
+    }
+    String chrom = !tr.getChromosomeNames().isEmpty() ? tr.getChromosomeNames().getFirst() : "Undefined_contig";
+    tr.close();
+    return chrom + ":1"; // reg.toStringRegion();
   }
 
   private static String initRegionFromBigWig(String bigWigFile) throws IOException, InvalidGenomicCoordsException {

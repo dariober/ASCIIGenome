@@ -12,11 +12,17 @@ import exceptions.InvalidRecordException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import jdk.jshell.spi.ExecutionControl;
 import org.apache.commons.lang3.NotImplementedException;
+import org.igv.feature.IGVFeature;
+import org.igv.feature.genome.Genome;
+import org.igv.ucsc.bb.BBChainFeatureSource;
+import org.igv.ucsc.bb.BBFeatureSource;
+import org.igv.ucsc.bb.BBFile;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
@@ -434,6 +440,29 @@ public class TrackIntervalFeatureTest {
 //    tif.setFeatureName("-na");
 //    assertTrue(tif.printToScreen().replaceAll("\\|", "").trim().isEmpty());
   }
+
+//  @Test
+//  public void testBigBedTmp() throws IOException {
+//    String path = "test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb";
+//    String chr = "chr1";
+//    int start = 0;
+//    int end = Integer.MAX_VALUE;
+//
+//    Genome genome = null;
+//    BBFile reader = new BBFile(path, genome);
+//    BBFeatureSource bwSource = new BBFeatureSource(reader, genome);
+//
+//    Iterator<IGVFeature> iter = bwSource.getFeatures(chr, start, end);
+//
+//    List<IGVFeature> features = new ArrayList<>();
+//    while (iter.hasNext()) {
+//      features.add(iter.next());
+//    }
+//    System.out.println("SIZE " + features.size());
+//    for (IGVFeature f : features) {
+//      System.out.println(f.getAttributeKeys());
+//    }
+//  }
 
   @Test
   public void canReadBigBed()

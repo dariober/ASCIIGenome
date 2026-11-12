@@ -814,9 +814,10 @@ public class GenomicCoords implements Cloneable {
 
     double diffFrom = Math.abs(mapping.get(0) - this.from);
     if (diffFrom > 0.01 || mapping.size() != size) {
-      System.err.println("Error generating sequence:");
+      System.err.println("Error generating sequence:" + this.toStringRegion());
       System.err.println("Expected size: " + size + "; Effective: " + mapping.size());
       System.err.println("From diff: " + diffFrom);
+      System.err.println("Mapping: " + mapping);
       System.exit(1);
     }
     return mapping;
