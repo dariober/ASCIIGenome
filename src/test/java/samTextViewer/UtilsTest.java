@@ -1528,14 +1528,10 @@ public class UtilsTest {
         Utils.initRegionFromFile(
             "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
 
-    boolean pass = false;
-    try {
-      Utils.initRegionFromFile(
-          "http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig");
-    } catch (InvalidGenomicCoordsException e) {
-      pass = true;
-    }
-    assertTrue(pass);
+    assertEquals(
+            "chr1:1",
+            Utils.initRegionFromFile(
+                    "https://raw.githubusercontent.com/dariober/ASCIIGenome/947b3a4efb00b8d0f328dbb6d1d81bb9bb1f0623/test_data//wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
   }
 
   @Test
