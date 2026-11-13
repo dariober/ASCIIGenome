@@ -141,8 +141,7 @@ public class TrackSet {
     this.trackList.add(track);
   }
 
-  public void addTrackFromSource(
-      String sourceName, GenomicCoords gc, CsvFormat csvFormat)
+  public void addTrackFromSource(String sourceName, GenomicCoords gc, CsvFormat csvFormat)
       throws SQLException,
           InvalidGenomicCoordsException,
           IOException,
@@ -237,8 +236,7 @@ public class TrackSet {
     this.trackList.add(tw);
   }
 
-  private void addIntervalFeatureTrackFromSourceName(
-      String sourceName, GenomicCoords gc)
+  private void addIntervalFeatureTrackFromSourceName(String sourceName, GenomicCoords gc)
       throws IOException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
@@ -268,7 +266,7 @@ public class TrackSet {
   }
 
   private void addGemmaTrackFromSourceName(String sourceName, GenomicCoords gc)
-          throws IOException,
+      throws IOException,
           InvalidGenomicCoordsException,
           ClassNotFoundException,
           InvalidRecordException,
@@ -365,8 +363,7 @@ public class TrackSet {
     List<String> trackInfo = new ArrayList<String>();
 
     for (AbstractTrack track : this.getTrackList()) {
-      trackInfo.add(
-          "------\n" + track.getTrackInfo());
+      trackInfo.add("------\n" + track.getTrackInfo());
     }
 
     StringBuilder sb = new StringBuilder();
@@ -1807,13 +1804,15 @@ public class TrackSet {
     String aggFun = Utils.getArgForParam(tokens, "-g", null);
     DataAggregationMethod dataAggregationMethod = null;
     if (aggFun != null) {
-      List<String> af = Utils.matchByPrefix(aggFun, Arrays.stream(DataAggregationMethod.values()).map(Enum::name).toList(), true);
+      List<String> af =
+          Utils.matchByPrefix(
+              aggFun, Arrays.stream(DataAggregationMethod.values()).map(Enum::name).toList(), true);
       if (af.size() != 1) {
         throw new RuntimeException(
-                "Invalid data aggregation method: '"
-                        + aggFun
-                        + "'. Valid methods are: "
-                        + Arrays.stream(DataAggregationMethod.values()).toList());
+            "Invalid data aggregation method: '"
+                + aggFun
+                + "'. Valid methods are: "
+                + Arrays.stream(DataAggregationMethod.values()).toList());
       }
       dataAggregationMethod = DataAggregationMethod.valueOf(af.get(0));
     }
@@ -1821,13 +1820,15 @@ public class TrackSet {
     String transf = Utils.getArgForParam(tokens, "-t", null);
     DataTransformation dataTransformation = null;
     if (transf != null) {
-      List<String> dt = Utils.matchByPrefix(transf, Arrays.stream(DataTransformation.values()).map(Enum::name).toList(), true);
+      List<String> dt =
+          Utils.matchByPrefix(
+              transf, Arrays.stream(DataTransformation.values()).map(Enum::name).toList(), true);
       if (dt.size() != 1) {
         throw new RuntimeException(
-                "Invalid data transformation method: '"
-                        + transf
-                        + "'. Valid methods are: "
-                        + Arrays.stream(DataTransformation.values()).toList());
+            "Invalid data transformation method: '"
+                + transf
+                + "'. Valid methods are: "
+                + Arrays.stream(DataTransformation.values()).toList());
       }
       dataTransformation = DataTransformation.valueOf(dt.get(0));
     }

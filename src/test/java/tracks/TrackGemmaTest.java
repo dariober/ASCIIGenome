@@ -1,16 +1,14 @@
 package tracks;
 
+import static org.junit.Assert.assertTrue;
+
 import colouring.Config;
 import exceptions.*;
+import java.io.IOException;
+import java.sql.SQLException;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
-
-import java.io.IOException;
-import java.sql.SQLException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class TrackGemmaTest {
   @Before
@@ -20,17 +18,20 @@ public class TrackGemmaTest {
 
   // Format of Gemma prefix.assoc.txt (from manual):
   //  The 11 columns are: chromosome numbers, snp ids, base pair positions on the chromosome,
-  //  number of missing individuals for a given snp, number of non-missing individuals for a given snp,
-  //  minor allele, major allele, allele frequency, beta estimates (additive eﬀect), standard errors for beta,
+  //  number of missing individuals for a given snp, number of non-missing individuals for a given
+  // snp,
+  //  minor allele, major allele, allele frequency, beta estimates (additive eﬀect), standard errors
+  // for beta,
   //  and p values from the Wald test.
   @Test
   public void canReadAndPlotProfile()
-          throws InvalidGenomicCoordsException,
+      throws InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,
           InvalidRecordException,
           SQLException,
-          InvalidColourException, InvalidCommandLineException {
+          InvalidColourException,
+          InvalidCommandLineException {
 
     GenomicCoords gc = new GenomicCoords("4:36494-1678835", 80, null, null);
     TrackGemma tg = new TrackGemma("test_data/gemma_ebi.assoc.txt.gz", gc);
@@ -54,6 +55,7 @@ public class TrackGemmaTest {
     tg.setDataTransformation(DataTransformation.IDENTITY);
     tg.update();
     assertTrue(tg.concatTitleAndTrack().contains("range[-0.00723 0.00244]"));
-    assertTrue(tg.concatTitleAndTrack().contains(",                                                  :"));
+    assertTrue(
+        tg.concatTitleAndTrack().contains(",                                                  :"));
   }
 }

@@ -3,15 +3,11 @@ package tracks;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFReader;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.apache.commons.lang3.NotImplementedException;
-import org.igv.ucsc.bb.BBFeatureSource;
 import org.igv.ucsc.bb.BBFile;
 import org.igv.ucsc.bb.ChromTree;
 import utils.FlexibleTabixReader;
@@ -76,6 +72,7 @@ public class TabixBigBedReader {
     }
     return chromNames;
   }
+
   public Set<String> getChromosomes() throws IOException {
     if (this.tabixReader != null) {
       // This is also for vcf files

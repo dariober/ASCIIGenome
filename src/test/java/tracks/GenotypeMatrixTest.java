@@ -39,7 +39,8 @@ public class GenotypeMatrixTest {
           InvalidCommandLineException {
 
     VCFFileReader reader =
-        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
+        new VCFFileReader(
+            new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
     GenomicCoords gc = new GenomicCoords("1:5934301-6000000", 80, null, null);
@@ -362,7 +363,8 @@ public class GenotypeMatrixTest {
           InvalidColourException {
 
     VCFFileReader reader =
-        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
+        new VCFFileReader(
+            new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
 
@@ -403,7 +405,8 @@ public class GenotypeMatrixTest {
           InvalidColourException {
 
     VCFFileReader reader =
-        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
+        new VCFFileReader(
+            new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
     VCFHeader vcfHeader = reader.getFileHeader();
     reader.close();
 

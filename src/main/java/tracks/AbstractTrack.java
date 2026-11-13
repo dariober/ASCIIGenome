@@ -1376,13 +1376,14 @@ public abstract class AbstractTrack {
   public DataAggregationMethod getDataAggregationMethod() {
     return this.dataAggregationMethod;
   }
+
   public DataTransformation getDataTransformation() {
     return this.dataTransformation;
   }
 
   /** NB: index here is 1-based */
   protected void setScoreColIdx(int scoreColIdx)
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
@@ -1397,7 +1398,7 @@ public abstract class AbstractTrack {
   }
 
   protected void setDataAggregationMethod(DataAggregationMethod dataAggregationMethod)
-          throws ClassNotFoundException,
+      throws ClassNotFoundException,
           IOException,
           InvalidGenomicCoordsException,
           InvalidRecordException,
@@ -1409,7 +1410,7 @@ public abstract class AbstractTrack {
   }
 
   protected void setDataTransformation(DataTransformation dataTransformation)
-          throws SQLException,
+      throws SQLException,
           InvalidGenomicCoordsException,
           IOException,
           InvalidRecordException,
@@ -1422,32 +1423,34 @@ public abstract class AbstractTrack {
 
   public String getTrackInfo() {
     String hd = this.getyMaxLines() <= 0 ? "*" : "";
-    return "Track tag:    " + this.getTrackTag()
-            + "\n"
-            + "Input source: "
-            + this.getFilename()
-            + "\n"
-            + "Working file: "
-            + this.getWorkFilename()
-            + "\n"
-            + "Track type:   "
-            + this.getTrackFormat()
-            + " "
-            + hd
-            + "\n"
-            + "awk script:   "
-            + (!this.getAwk().trim().isEmpty() ? this.getAwk() : "N/A")
-            + "\n"
-            + "grep:         "
-            + "show: "
-            + this.getShowRegex()
-            + "; hide: "
-            + this.getHideRegex()
-            + "\nData aggregation method: "
-            + this.getDataAggregationMethod()
-            + "\nData transformation: "
-            + this.dataTransformation
-            + "\nColumn index of quantitative data (1-based): " + (this.getCsvFormat() != null ? (this.getCsvFormat().getScoreColIndex() + 1) : "n/a");
+    return "Track tag:    "
+        + this.getTrackTag()
+        + "\n"
+        + "Input source: "
+        + this.getFilename()
+        + "\n"
+        + "Working file: "
+        + this.getWorkFilename()
+        + "\n"
+        + "Track type:   "
+        + this.getTrackFormat()
+        + " "
+        + hd
+        + "\n"
+        + "awk script:   "
+        + (!this.getAwk().trim().isEmpty() ? this.getAwk() : "N/A")
+        + "\n"
+        + "grep:         "
+        + "show: "
+        + this.getShowRegex()
+        + "; hide: "
+        + this.getHideRegex()
+        + "\nData aggregation method: "
+        + this.getDataAggregationMethod()
+        + "\nData transformation: "
+        + this.dataTransformation
+        + "\nColumn index of quantitative data (1-based): "
+        + (this.getCsvFormat() != null ? (this.getCsvFormat().getScoreColIndex() + 1) : "n/a");
   }
 
   //  @Override

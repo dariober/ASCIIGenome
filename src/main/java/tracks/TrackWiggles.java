@@ -13,13 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.igv.data.DataTile;
-import org.igv.feature.genome.Genome;
-import org.igv.ucsc.bb.BBDataSource;
-import org.igv.ucsc.bb.BBFile;
 import org.igv.tdf.TDFDataset;
 import org.igv.tdf.TDFGroup;
 import org.igv.tdf.TDFReader;
 import org.igv.tdf.TDFTile;
+import org.igv.ucsc.bb.BBDataSource;
+import org.igv.ucsc.bb.BBFile;
 import org.igv.ucsc.bb.ChromTree;
 import org.igv.util.ResourceLocator;
 import samTextViewer.GenomicCoords;
@@ -278,8 +277,7 @@ public class TrackWiggles extends AbstractTrack {
    * @throws IOException
    * @throws InvalidGenomicCoordsException
    */
-  private void bigWigToScores()
-      throws InvalidGenomicCoordsException, IOException {
+  private void bigWigToScores() throws InvalidGenomicCoordsException, IOException {
 
     // List of length equal to screen size. Each inner map contains info about the screen locus
     List<ScreenWiggleLocusInfo> screenWigLocInfoList = new ArrayList<ScreenWiggleLocusInfo>();
@@ -288,7 +286,8 @@ public class TrackWiggles extends AbstractTrack {
     }
 
     BBDataSource bigwigDataSource = new BBDataSource(this.bigWigReader, null);
-    DataTile rawData = bigwigDataSource.getRawData(getGc().getChrom(), getGc().getFrom(), getGc().getTo());
+    DataTile rawData =
+        bigwigDataSource.getRawData(getGc().getChrom(), getGc().getFrom(), getGc().getTo());
     if (rawData == null) {
       return;
     }
@@ -299,22 +298,27 @@ public class TrackWiggles extends AbstractTrack {
         int idx =
             Utils.getIndexOfclosestValue(
                 pos, this.getGc().getMapping()); // Where should this position be mapped on screen?
-        screenWigLocInfoList.get(idx).increment(rawData.getValues()[i], DataTransformation.IDENTITY);
+        screenWigLocInfoList
+            .get(idx)
+            .increment(rawData.getValues()[i], DataTransformation.IDENTITY);
       }
     }
 
-//    BigWigIterator iter =
-//        this.bigWigReader.getBigWigIterator(
-//            getGc().getChrom(), getGc().getFrom(), getGc().getChrom(), getGc().getTo(), false);
-//    while (iter.hasNext()) {
-//      WigItem bw = iter.next();
-//      for (int i = bw.getStartBase(); i <= bw.getEndBase(); i++) {
-//        int idx =
-//            Utils.getIndexOfclosestValue(
-//                i, this.getGc().getMapping()); // Where should this position be mapped on screen?
-//        screenWigLocInfoList.get(idx).increment(bw.getWigValue(), DataTransformation.IDENTITY);
-//      }
-//    }
+    //    BigWigIterator iter =
+    //        this.bigWigReader.getBigWigIterator(
+    //            getGc().getChrom(), getGc().getFrom(), getGc().getChrom(), getGc().getTo(),
+    // false);
+    //    while (iter.hasNext()) {
+    //      WigItem bw = iter.next();
+    //      for (int i = bw.getStartBase(); i <= bw.getEndBase(); i++) {
+    //        int idx =
+    //            Utils.getIndexOfclosestValue(
+    //                i, this.getGc().getMapping()); // Where should this position be mapped on
+    // screen?
+    //        screenWigLocInfoList.get(idx).increment(bw.getWigValue(),
+    // DataTransformation.IDENTITY);
+    //      }
+    //    }
     List<Double> screenScores = new ArrayList<>();
     for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
       screenScores.add(x.getMeanScore());
@@ -373,7 +377,8 @@ public class TrackWiggles extends AbstractTrack {
   private ArrayList<String> getChromosomeNamesFromBigWig() {
     ChromTree chromTree;
     try {
-      chromTree = new ChromTree(this.getWorkFilename(), this.bigWigReader.getHeader().chromTreeOffset);
+      chromTree =
+          new ChromTree(this.getWorkFilename(), this.bigWigReader.getHeader().chromTreeOffset);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

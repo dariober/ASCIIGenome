@@ -428,7 +428,8 @@ public class GenomicCoords implements Cloneable {
   public byte[] getSequenceFromFasta() {
     ReferenceSequenceFile faSeqFile = null;
     try {
-      faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.fastaFile).toPath());
+      faSeqFile =
+          ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(this.fastaFile).toPath());
       try {
         byte[] seq = faSeqFile.getSubsequenceAt(this.chrom, this.from, this.getTo()).getBases();
         faSeqFile.close();

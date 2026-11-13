@@ -140,8 +140,7 @@ public class MakeTabixFileTest {
   }
 
   @Test
-  public void canReadSpaceSeparatedBed()
-      throws ClassNotFoundException, IOException, SQLException {
+  public void canReadSpaceSeparatedBed() throws ClassNotFoundException, IOException, SQLException {
     String infile = "test_data/space_sep.bedgraph";
     File outfile = new File("test_data/tmp.bedgraph.gz");
     outfile.deleteOnExit();

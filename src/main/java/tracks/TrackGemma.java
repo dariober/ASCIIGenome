@@ -2,23 +2,20 @@ package tracks;
 
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
-import org.checkerframework.checker.units.qual.C;
-import samTextViewer.GenomicCoords;
-import samTextViewer.Utils;
-import utils.CsvFormat;
-import utils.CsvPresets;
-
 import java.io.IOException;
 import java.sql.SQLException;
+import samTextViewer.GenomicCoords;
+import samTextViewer.Utils;
+import utils.CsvPresets;
 
 public class TrackGemma extends TrackBedgraph {
 
-//  protected DataTransformation dataTransformation = DataTransformation.IDENTITY;
-//  protected DataAggregationMethod dataAggregationMethod = DataAggregationMethod.MEAN;
-//  protected int scoreColIdx = 12;
+  //  protected DataTransformation dataTransformation = DataTransformation.IDENTITY;
+  //  protected DataAggregationMethod dataAggregationMethod = DataAggregationMethod.MEAN;
+  //  protected int scoreColIdx = 12;
 
   public TrackGemma(String filename, GenomicCoords gc)
-          throws SQLException,
+      throws SQLException,
           InvalidGenomicCoordsException,
           IOException,
           ClassNotFoundException,

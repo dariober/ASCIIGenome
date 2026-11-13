@@ -69,7 +69,6 @@ import org.biojava.nbio.genome.parsers.gff.FeatureI;
 import org.biojava.nbio.genome.parsers.gff.FeatureList;
 import org.biojava.nbio.genome.parsers.gff.GFF3Reader;
 import org.igv.tdf.TDFReader;
-import org.igv.ucsc.bb.BBFile;
 import org.igv.util.FileUtils;
 import tracks.*;
 import utils.CsvFormat;
@@ -356,7 +355,8 @@ public class Utils {
         throw new IOException();
       }
     }
-    ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(faFile.toPath());
+    ReferenceSequenceFile faSeqFile =
+        ReferenceSequenceFileFactory.getReferenceSequenceFile(faFile.toPath());
     if (faSeqFile.isIndexed()) {
       faSeqFile.close();
     } else {
@@ -371,8 +371,7 @@ public class Utils {
     if (Utils.isCRAM(bam)) {
       long alnCount = 0;
 
-      CramContainerHeaderIterator it =
-              new CramContainerHeaderIterator(new FileInputStream(bam));
+      CramContainerHeaderIterator it = new CramContainerHeaderIterator(new FileInputStream(bam));
 
       try {
         while (it.hasNext()) {
@@ -430,7 +429,6 @@ public class Utils {
     }
     return found;
   }
-
 
   public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
       List<T> intervalList, boolean screenCoords) {
@@ -667,7 +665,8 @@ public class Utils {
           if (lineNo == 1) {
             continue;
           } else {
-            QuantitativeFeature feature = new QuantitativeFeature(line, CsvPresets.get(TrackFormat.GEMMA));
+            QuantitativeFeature feature =
+                new QuantitativeFeature(line, CsvPresets.get(TrackFormat.GEMMA));
             region = feature.getChrom() + ":" + feature.getFrom();
           }
         } else if (line.startsWith("#") || line.isEmpty() || line.startsWith("track ")) {
@@ -716,12 +715,12 @@ public class Utils {
   }
 
   public static String initRegionFromFile(String x)
-      throws IOException,
-          InvalidGenomicCoordsException {
+      throws IOException, InvalidGenomicCoordsException {
     return initRegionFromFile(x, null);
   }
 
-  private static String initRegionFromBigBed(String bigBedFile) throws IOException, InvalidGenomicCoordsException {
+  private static String initRegionFromBigBed(String bigBedFile)
+      throws IOException, InvalidGenomicCoordsException {
     TrackIntervalFeature tr;
     GenomicCoords gc = new GenomicCoords();
     gc.setChrom("Undefined_contig");
@@ -729,15 +728,22 @@ public class Utils {
     gc.setTo(1);
     try {
       tr = new TrackIntervalFeature(bigBedFile, gc);
-    } catch (InvalidRecordException | InvalidGenomicCoordsException | ClassNotFoundException | SQLException e) {
+    } catch (InvalidRecordException
+        | InvalidGenomicCoordsException
+        | ClassNotFoundException
+        | SQLException e) {
       throw new RuntimeException(e);
     }
-    String chrom = !tr.getChromosomeNames().isEmpty() ? tr.getChromosomeNames().getFirst() : "Undefined_contig";
+    String chrom =
+        !tr.getChromosomeNames().isEmpty()
+            ? tr.getChromosomeNames().getFirst()
+            : "Undefined_contig";
     tr.close();
     return chrom + ":1"; // reg.toStringRegion();
   }
 
-  private static String initRegionFromBigWig(String bigWigFile) throws IOException, InvalidGenomicCoordsException {
+  private static String initRegionFromBigWig(String bigWigFile)
+      throws IOException, InvalidGenomicCoordsException {
     TrackWiggles tr;
     GenomicCoords gc = new GenomicCoords();
     gc.setChrom("Undefined_contig");
@@ -745,7 +751,10 @@ public class Utils {
     gc.setTo(1);
     try {
       tr = new TrackWiggles(bigWigFile, gc, TrackFormat.BIGWIG);
-    } catch (InvalidRecordException | InvalidGenomicCoordsException | ClassNotFoundException | SQLException e) {
+    } catch (InvalidRecordException
+        | InvalidGenomicCoordsException
+        | ClassNotFoundException
+        | SQLException e) {
       throw new RuntimeException(e);
     }
     ArrayList<String> chromNames = tr.getChromosomeNames();
@@ -1301,8 +1310,7 @@ public class Utils {
     List<String> outputTable = new ArrayList<String>();
     for (List<String> lstRow : tTable) {
       String row = Joiner.on(columnSep).join(lstRow); // Here you decide what separates columns.
-      outputTable.add(
-              row); // Do not use .trim() here otherwise you could strip ANSI formatting
+      outputTable.add(row); // Do not use .trim() here otherwise you could strip ANSI formatting
     }
     return outputTable;
   }
@@ -2183,7 +2191,8 @@ public class Utils {
       bcf.close();
       return bcf.getHeader();
     } else {
-      VCFFileReader reader = new VCFFileReader(new File(source).toPath(), false); // Set requiredIndex false!
+      VCFFileReader reader =
+          new VCFFileReader(new File(source).toPath(), false); // Set requiredIndex false!
       vcfHeader = reader.getFileHeader();
       reader.close();
     }

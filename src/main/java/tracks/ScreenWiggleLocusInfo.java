@@ -70,5 +70,4 @@ public class ScreenWiggleLocusInfo {
       return Double.NaN;
     }
   }
-
 }

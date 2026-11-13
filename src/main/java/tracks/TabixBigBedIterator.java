@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.NoSuchElementException;
-
 import org.igv.feature.IGVFeature;
 import org.igv.ucsc.bb.BBFeatureSource;
 import org.igv.ucsc.bb.BBFile;
@@ -36,7 +35,8 @@ public class TabixBigBedIterator {
     this.tabixIterator = reader.query(chrom, start, end);
   }
 
-  protected TabixBigBedIterator(BBFile reader, String chrom, int start, int end) throws IOException {
+  protected TabixBigBedIterator(BBFile reader, String chrom, int start, int end)
+      throws IOException {
     BBFeatureSource bigbedFeatureSource = new BBFeatureSource(reader, null);
     this.bigBedIterator = bigbedFeatureSource.getFeatures(chrom, start, end);
     this.chrom = chrom;
