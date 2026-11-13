@@ -25,7 +25,6 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.cram.build.CramContainerHeaderIterator;
-import htsjdk.samtools.cram.structure.AlignmentContext;
 import htsjdk.samtools.cram.structure.ContainerHeader;
 import htsjdk.samtools.filter.AggregateFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
@@ -69,17 +68,9 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.biojava.nbio.genome.parsers.gff.FeatureI;
 import org.biojava.nbio.genome.parsers.gff.FeatureList;
 import org.biojava.nbio.genome.parsers.gff.GFF3Reader;
-import org.broad.igv.bbfile.BBFileReader;
-import org.broad.igv.bbfile.BedFeature;
-import org.broad.igv.bbfile.BigBedIterator;
-import org.broad.igv.bbfile.BigWigIterator;
-import org.broad.igv.bbfile.WigItem;
-import org.broad.igv.tdf.TDFReader;
-import org.broad.igv.util.FileUtils;
-import tracks.AbstractTrack;
-import tracks.IntervalFeature;
-import tracks.QuantitativeFeature;
-import tracks.TrackFormat;
+import org.igv.tdf.TDFReader;
+import org.igv.util.FileUtils;
+import tracks.*;
 import utils.CsvFormat;
 import utils.CsvPresets;
 import utils.FlexibleTabixReader;
@@ -364,7 +355,8 @@ public class Utils {
         throw new IOException();
       }
     }
-    ReferenceSequenceFile faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(faFile);
+    ReferenceSequenceFile faSeqFile =
+        ReferenceSequenceFileFactory.getReferenceSequenceFile(faFile.toPath());
     if (faSeqFile.isIndexed()) {
       faSeqFile.close();
     } else {
@@ -379,8 +371,7 @@ public class Utils {
     if (Utils.isCRAM(bam)) {
       long alnCount = 0;
 
-      CramContainerHeaderIterator it =
-              new CramContainerHeaderIterator(new FileInputStream(bam));
+      CramContainerHeaderIterator it = new CramContainerHeaderIterator(new FileInputStream(bam));
 
       try {
         while (it.hasNext()) {
@@ -405,7 +396,7 @@ public class Utils {
           SamReaderFactory.makeDefault()
               .open(SamInputResource.of(new URL(bam)).index(new URL(bam + ".bai")));
     } else {
-      samReader = srf.open(new File(bam));
+      samReader = srf.open(new File(bam).toPath());
     }
     /*  ------------------------------------------------------ */
 
@@ -438,7 +429,6 @@ public class Utils {
     }
     return found;
   }
-
 
   public static <T extends IntervalFeature> List<T> mergeIntervalFeatures(
       List<T> intervalList, boolean screenCoords) {
@@ -593,16 +583,16 @@ public class Utils {
       if (urlValidator.isValid(x)) {
         SamReaderFactory srf = SamReaderFactory.makeDefault();
         if (referenceSequence != null) {
-          srf.referenceSequence(new File(referenceSequence));
+          srf.referenceSequence(new File(referenceSequence).toPath());
         }
         samReader = srf.open(SamInputResource.of(new URL(x)));
       } else {
         SamReaderFactory srf = SamReaderFactory.make();
         if (referenceSequence != null) {
-          srf.referenceSequence(new File(referenceSequence));
+          srf.referenceSequence(new File(referenceSequence).toPath());
         }
         srf.validationStringency(ValidationStringency.SILENT);
-        samReader = srf.open(new File(x));
+        samReader = srf.open(new File(x).toPath());
       }
       // Default: Start from the first contig in dictionary
       region = samReader.getFileHeader().getSequence(0).getSequenceName();
@@ -618,18 +608,11 @@ public class Utils {
       }
       return region;
 
-    } else if (fmt.equals(TrackFormat.BIGWIG) && !urlValidator.isValid(x)) {
-      // Loading from URL is painfully slow so do not initialize from URL
+    } else if (fmt.equals(TrackFormat.BIGWIG)) {
       return initRegionFromBigWig(x);
 
-    } else if (fmt.equals(TrackFormat.BIGBED) && !urlValidator.isValid(x)) {
-      // Loading from URL is painfully slow so do not initialize from URL
+    } else if (fmt.equals(TrackFormat.BIGBED)) {
       return initRegionFromBigBed(x);
-
-    } else if (urlValidator.isValid(x)
-        && (fmt.equals(TrackFormat.BIGWIG) || fmt.equals(TrackFormat.BIGBED))) {
-      System.err.println("Refusing to initialize from URL");
-      throw new InvalidGenomicCoordsException();
 
     } else if (fmt.equals(TrackFormat.TDF)) {
       Iterator<String> iter = TDFReader.getReader(x).getChromosomeNames().iterator();
@@ -655,12 +638,12 @@ public class Utils {
           InputStream fileStream = new FileInputStream(x);
           gzipStream = new GZIPInputStream(fileStream);
         }
-        Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+        Reader decoder = new InputStreamReader(gzipStream, StandardCharsets.UTF_8);
         br = new BufferedReader(decoder);
       } else {
         if (urlValidator.isValid(x)) {
           InputStream instream = new URL(x).openStream();
-          Reader decoder = new InputStreamReader(instream, "UTF-8");
+          Reader decoder = new InputStreamReader(instream, StandardCharsets.UTF_8);
           br = new BufferedReader(decoder);
         } else {
           br = new BufferedReader(new FileReader(x));
@@ -675,7 +658,8 @@ public class Utils {
           if (lineNo == 1) {
             continue;
           } else {
-            QuantitativeFeature feature = new QuantitativeFeature(line, CsvPresets.get(TrackFormat.GEMMA));
+            QuantitativeFeature feature =
+                new QuantitativeFeature(line, CsvPresets.get(TrackFormat.GEMMA));
             region = feature.getChrom() + ":" + feature.getFrom();
           }
         } else if (line.startsWith("#") || line.isEmpty() || line.startsWith("track ")) {
@@ -724,53 +708,52 @@ public class Utils {
   }
 
   public static String initRegionFromFile(String x)
-      throws IOException,
-          InvalidGenomicCoordsException {
+      throws IOException, InvalidGenomicCoordsException {
     return initRegionFromFile(x, null);
   }
 
-  private static String initRegionFromBigBed(String bigBedFile) throws IOException {
-
-    BBFileReader reader = new BBFileReader(bigBedFile);
-    if (!reader.isBigBedFile()) {
-      System.err.println("File " + bigBedFile + " is not bigBed.");
-      throw new RuntimeException();
+  private static String initRegionFromBigBed(String bigBedFile)
+      throws IOException, InvalidGenomicCoordsException {
+    TrackIntervalFeature tr;
+    GenomicCoords gc = new GenomicCoords();
+    gc.setChrom("Undefined_contig");
+    gc.setFrom(1);
+    gc.setTo(1);
+    try {
+      tr = new TrackIntervalFeature(bigBedFile, gc);
+    } catch (InvalidRecordException
+        | InvalidGenomicCoordsException
+        | ClassNotFoundException
+        | SQLException e) {
+      throw new RuntimeException(e);
     }
-    String region = reader.getChromosomeNames().get(0); // Just get chrom to start with
-
-    for (String chrom : reader.getChromosomeNames()) {
-      BigBedIterator iter = reader.getBigBedIterator(chrom, 0, chrom, Integer.MAX_VALUE, false);
-      if (iter.hasNext()) {
-        BedFeature x = (BedFeature) iter.next();
-        region = x.getChromosome() + ":" + (x.getStartBase() + 1);
-        reader.close();
-        return region;
-      }
-    }
-    reader.close();
-    return region;
+    String chrom =
+        !tr.getChromosomeNames().isEmpty()
+            ? tr.getChromosomeNames().getFirst()
+            : "Undefined_contig";
+    tr.close();
+    return chrom + ":1"; // reg.toStringRegion();
   }
 
-  private static String initRegionFromBigWig(String bigWigFile) throws IOException {
-
-    BBFileReader reader = new BBFileReader(bigWigFile);
-    if (!reader.isBigWigFile()) {
-      System.err.println("File " + bigWigFile + " is not bigWig.");
-      throw new RuntimeException();
+  private static String initRegionFromBigWig(String bigWigFile)
+      throws IOException, InvalidGenomicCoordsException {
+    TrackWiggles tr;
+    GenomicCoords gc = new GenomicCoords();
+    gc.setChrom("Undefined_contig");
+    gc.setFrom(1);
+    gc.setTo(1);
+    try {
+      tr = new TrackWiggles(bigWigFile, gc, TrackFormat.BIGWIG);
+    } catch (InvalidRecordException
+        | InvalidGenomicCoordsException
+        | ClassNotFoundException
+        | SQLException e) {
+      throw new RuntimeException(e);
     }
-    String region = reader.getChromosomeNames().get(0); // Just get chrom to start with
-
-    for (String chrom : reader.getChromosomeNames()) {
-      BigWigIterator iter = reader.getBigWigIterator(chrom, 0, chrom, Integer.MAX_VALUE, false);
-      if (iter.hasNext()) {
-        WigItem x = iter.next();
-        region = x.getChromosome() + ":" + (x.getStartBase() + 1);
-        reader.close();
-        return region;
-      }
-    }
-    reader.close();
-    return region;
+    ArrayList<String> chromNames = tr.getChromosomeNames();
+    String chrom = chromNames.get(0); // Just get chrom to start with
+    tr.close();
+    return chrom + ":1";
   }
 
   public static boolean bamHasIndex(String bam) throws IOException {
@@ -786,7 +769,7 @@ public class Utils {
           SamReaderFactory.makeDefault()
               .open(SamInputResource.of(new URL(bam)).index(new URL(bam + ".bai")));
     } else {
-      samReader = srf.open(new File(bam));
+      samReader = srf.open(new File(bam).toPath());
     }
     /*  ------------------------------------------------------ */
 
@@ -960,35 +943,6 @@ public class Utils {
       compressed.add(Utils.calculateAverage(zlist.get(i)));
     }
     return compressed;
-  }
-
-  /**
-   * Get sequence as byte[] for the given genomic coords.
-   *
-   * @param fasta
-   * @param gc
-   * @return
-   * @throws IOException
-   */
-  public static byte[] prepareRefSeq(String fasta, GenomicCoords gc) throws IOException {
-
-    byte[] faSeq = null;
-    if (fasta != null) {
-      ReferenceSequenceFile faSeqFile = null;
-      try {
-        faSeqFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fasta));
-        try {
-          faSeq = faSeqFile.getSubsequenceAt(gc.getChrom(), gc.getFrom(), gc.getTo()).getBases();
-        } catch (NullPointerException e) {
-          System.err.println("Cannot fetch sequence " + gc.toString());
-          e.printStackTrace();
-        }
-        faSeqFile.close();
-      } catch (FileNotFoundException e) {
-        e.printStackTrace();
-      }
-    }
-    return faSeq;
   }
 
   private static int parseStringToIntWithUnits(String x) {
@@ -1271,11 +1225,8 @@ public class Utils {
     List<ArrayList<String>> rawTable = new ArrayList<ArrayList<String>>();
     int ncol = 0;
     for (String x : rawList) {
-      List<String> row = new ArrayList<String>();
-      for (String item : x.split("\t")) {
-        row.add(item);
-      }
-      rawTable.add((ArrayList<String>) row);
+      ArrayList<String> row = new ArrayList<String>(Arrays.asList(x.split("\t")));
+      rawTable.add(row);
       // * Get max number of columns (max list length)
       if (row.size() > ncol) {
         ncol = row.size();
@@ -1352,8 +1303,7 @@ public class Utils {
     List<String> outputTable = new ArrayList<String>();
     for (List<String> lstRow : tTable) {
       String row = Joiner.on(columnSep).join(lstRow); // Here you decide what separates columns.
-      outputTable.add(
-          row.toString()); // Do not use .trim() here otherwise you could strip ANSI formatting
+      outputTable.add(row); // Do not use .trim() here otherwise you could strip ANSI formatting
     }
     return outputTable;
   }
@@ -1450,7 +1400,6 @@ public class Utils {
    *
    * @param inputFileList Existing list of files to be extended
    * @param newFileNames List of files to append
-   * @throws InvalidCommandLineException
    * @throws IOException
    */
   public static void addSourceName(List<String> inputFileList, List<String> newFileNames, int debug)
@@ -1458,21 +1407,15 @@ public class Utils {
 
     List<String> dropMe = new ArrayList<String>();
     List<String> addMe = new ArrayList<String>();
-    for (int i = 0; i < newFileNames.size(); i++) {
-      String x = newFileNames.get(i).trim();
+    for (String newFileName : newFileNames) {
+      String x = newFileName.trim();
       if (!new File(x).isFile() && !Utils.urlFileExists(x)) {
         dropMe.add(x);
         System.err.println("Unable to add " + x);
         throw new InvalidCommandLineException();
       }
     }
-    for (String x : dropMe) {
-      // System.err.println("\nWarning: File " + x + " is not a local file.\n");
-      newFileNames.remove(x);
-    }
-    for (String x : addMe) {
-      newFileNames.add(x);
-    }
+    // System.err.println("\nWarning: File " + x + " is not a local file.\n");
     inputFileList.addAll(newFileNames);
   }
 
@@ -1596,7 +1539,7 @@ public class Utils {
     if (urlValidator.isValid(bam)) {
       samReader = srf.open(SamInputResource.of(new URL(bam)).index(new URL(bam + ".bai")));
     } else {
-      samReader = srf.open(new File(bam));
+      samReader = srf.open(new File(bam).toPath());
     }
     /*  ------------------------------------------------------ */
 
@@ -2179,7 +2122,7 @@ public class Utils {
     UrlValidator urlValidator = new UrlValidator();
     SamReaderFactory srf = SamReaderFactory.make();
     if (referenceSequence != null) {
-      srf.referenceSequence(new File(referenceSequence));
+      srf.referenceSequence(new File(referenceSequence).toPath());
     }
     srf.validationStringency(ValidationStringency.SILENT);
     SamReader samReader;
@@ -2188,7 +2131,7 @@ public class Utils {
           srf.open(
               SamInputResource.of(new URL(workFilename)).index(new URL(workFilename + ".bai")));
     } else {
-      samReader = srf.open(new File(workFilename));
+      samReader = srf.open(new File(workFilename).toPath());
     }
     return samReader;
   }
@@ -2241,7 +2184,8 @@ public class Utils {
       bcf.close();
       return bcf.getHeader();
     } else {
-      VCFFileReader reader = new VCFFileReader(new File(source), false); // Set requiredIndex false!
+      VCFFileReader reader =
+          new VCFFileReader(new File(source).toPath(), false); // Set requiredIndex false!
       vcfHeader = reader.getFileHeader();
       reader.close();
     }
@@ -2277,14 +2221,14 @@ public class Utils {
     UrlValidator urlValidator = new UrlValidator();
     SamReaderFactory srf = SamReaderFactory.make();
     if (Utils.isCRAM(inSamOrBam)) {
-      srf.referenceSequence(new File(referenceSequence));
+      srf.referenceSequence(new File(referenceSequence).toPath());
     }
     srf.validationStringency(ValidationStringency.SILENT);
     SamReader samReader;
     if (urlValidator.isValid(inSamOrBam)) {
       samReader = SamReaderFactory.makeDefault().open(SamInputResource.of(new URL(inSamOrBam)));
     } else {
-      samReader = srf.open(new File(inSamOrBam));
+      samReader = srf.open(new File(inSamOrBam).toPath());
     }
     /*  ------------------------------------------------------ */
 
@@ -2300,7 +2244,7 @@ public class Utils {
     SAMFileWriter outputSam =
         new SAMFileWriterFactory()
             .setCreateIndex(true)
-            .makeSAMOrBAMWriter(samReader.getFileHeader(), false, out);
+            .makeSAMOrBAMWriter(samReader.getFileHeader(), false, out.toPath());
 
     for (final SAMRecord samRecord : samReader) {
       outputSam.addAlignment(samRecord);
@@ -2345,7 +2289,7 @@ public class Utils {
       fakeVCFFile = Utils.createTempFile(".vcfheader", ".vcf", true);
       final VariantContextWriter writer =
           new VariantContextWriterBuilder()
-              .setOutputFile(fakeVCFFile)
+              .setOutputPath(fakeVCFFile.toPath())
               .setReferenceDictionary(workHeader.getSequenceDictionary())
               .setOptions(
                   EnumSet.of(
@@ -2417,15 +2361,15 @@ public class Utils {
         }
       }
     }
-    if (starts.size() == 0) {
+    if (starts.isEmpty()) {
       return x;
     }
     StringBuilder formattedX = new StringBuilder();
     for (int i = 0; i < starts.size(); i++) {
       if (i == 0) {
-        formattedX.append(x.substring(0, starts.get(i)));
+        formattedX.append(x, 0, starts.get(i));
       } else {
-        formattedX.append(x.substring(ends.get(i - 1), starts.get(i)));
+        formattedX.append(x, ends.get(i - 1), starts.get(i));
       }
       formattedX.append(repls.get(i));
     }
@@ -2690,7 +2634,7 @@ public class Utils {
     }
 
     try {
-      VCFFileReader reader = new VCFFileReader(new File(file), false);
+      VCFFileReader reader = new VCFFileReader(new File(file).toPath(), false);
       CloseableIterator<VariantContext> iter = reader.iterator();
       int n = 0;
       while (iter.hasNext() && n < 1000) {
@@ -2750,7 +2694,7 @@ public class Utils {
     for (String fa : fileList) {
       try {
         ReferenceSequenceFile faSeqFile =
-            ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fa));
+            ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fa).toPath());
         faSeqFile.close();
         // It's not enough to check that the getReferenceSequenceFile call succeeds.
         if (faSeqFile.isIndexed()) {

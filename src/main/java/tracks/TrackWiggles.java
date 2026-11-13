@@ -12,14 +12,15 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.broad.igv.bbfile.BBFileReader;
-import org.broad.igv.bbfile.BigWigIterator;
-import org.broad.igv.bbfile.WigItem;
-import org.broad.igv.tdf.TDFDataset;
-import org.broad.igv.tdf.TDFGroup;
-import org.broad.igv.tdf.TDFReader;
-import org.broad.igv.tdf.TDFTile;
-import org.broad.igv.util.ResourceLocator;
+import org.igv.data.DataTile;
+import org.igv.tdf.TDFDataset;
+import org.igv.tdf.TDFGroup;
+import org.igv.tdf.TDFReader;
+import org.igv.tdf.TDFTile;
+import org.igv.ucsc.bb.BBDataSource;
+import org.igv.ucsc.bb.BBFile;
+import org.igv.ucsc.bb.ChromTree;
+import org.igv.util.ResourceLocator;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import utils.CsvFormat;
@@ -28,12 +29,11 @@ import utils.CsvFormat;
 public class TrackWiggles extends AbstractTrack {
 
   private List<ScreenWiggleLocusInfo> screenWiggleLocusInfoList;
-  private BBFileReader bigWigReader;
+  private BBFile bigWigReader;
 
   /* C o n s t r u c t o r s */
-  public TrackWiggles() {}
 
-  protected TrackWiggles(String filename, GenomicCoords gc, TrackFormat trackFormat)
+  public TrackWiggles(String filename, GenomicCoords gc, TrackFormat trackFormat)
       throws IOException,
           InvalidRecordException,
           InvalidGenomicCoordsException,
@@ -45,8 +45,8 @@ public class TrackWiggles extends AbstractTrack {
 
     if (this.getTrackFormat().equals(TrackFormat.BIGWIG)) {
       this.setTrackFormat(TrackFormat.BIGWIG);
-      this.bigWigReader = new BBFileReader(this.getWorkFilename()); // or url for remote access.
-      if (!this.bigWigReader.getBBFileHeader().isBigWig()) {
+      this.bigWigReader = new BBFile(this.getWorkFilename(), null); // or url for remote access.
+      if (!this.bigWigReader.isBigWigFile()) {
         throw new RuntimeException("Invalid file type " + this.getWorkFilename());
       }
     }
@@ -86,7 +86,7 @@ public class TrackWiggles extends AbstractTrack {
 
     if (this.getTrackFormat().equals(TrackFormat.BIGWIG)) {
 
-      this.bigWigToScores(this.bigWigReader);
+      this.bigWigToScores();
 
     } else if (this.getTrackFormat().equals(TrackFormat.TDF)) {
 
@@ -161,7 +161,7 @@ public class TrackWiggles extends AbstractTrack {
         if (tile == null) {
           // System.out.println("Null tile: " + dsName + " [" + tileNumber + "]");
         } else {
-          int nTracks = reader.getTrackNames().length;
+          int nTracks = reader.getSampleNames().length;
           if (nTracks > 1) {
             throw new RuntimeException("More than one track found in tdf file " + ibfFile);
           }
@@ -277,8 +277,7 @@ public class TrackWiggles extends AbstractTrack {
    * @throws IOException
    * @throws InvalidGenomicCoordsException
    */
-  private void bigWigToScores(BBFileReader reader)
-      throws InvalidGenomicCoordsException, IOException {
+  private void bigWigToScores() throws InvalidGenomicCoordsException, IOException {
 
     // List of length equal to screen size. Each inner map contains info about the screen locus
     List<ScreenWiggleLocusInfo> screenWigLocInfoList = new ArrayList<ScreenWiggleLocusInfo>();
@@ -286,18 +285,40 @@ public class TrackWiggles extends AbstractTrack {
       screenWigLocInfoList.add(new ScreenWiggleLocusInfo());
     }
 
-    BigWigIterator iter =
-        reader.getBigWigIterator(
-            getGc().getChrom(), getGc().getFrom(), getGc().getChrom(), getGc().getTo(), false);
-    while (iter.hasNext()) {
-      WigItem bw = iter.next();
-      for (int i = bw.getStartBase(); i <= bw.getEndBase(); i++) {
+    BBDataSource bigwigDataSource = new BBDataSource(this.bigWigReader, null);
+    DataTile rawData =
+        bigwigDataSource.getRawData(getGc().getChrom(), getGc().getFrom(), getGc().getTo());
+    if (rawData == null) {
+      return;
+    }
+    for (int i = 0; i < rawData.getValues().length; i++) {
+      int startBase = rawData.getStartLocations()[i];
+      int endBase = rawData.getEndLocations()[i];
+      for (int pos = startBase; pos <= endBase; pos++) {
         int idx =
             Utils.getIndexOfclosestValue(
-                i, this.getGc().getMapping()); // Where should this position be mapped on screen?
-        screenWigLocInfoList.get(idx).increment(bw.getWigValue(), DataTransformation.IDENTITY);
+                pos, this.getGc().getMapping()); // Where should this position be mapped on screen?
+        screenWigLocInfoList
+            .get(idx)
+            .increment(rawData.getValues()[i], DataTransformation.IDENTITY);
       }
     }
+
+    //    BigWigIterator iter =
+    //        this.bigWigReader.getBigWigIterator(
+    //            getGc().getChrom(), getGc().getFrom(), getGc().getChrom(), getGc().getTo(),
+    // false);
+    //    while (iter.hasNext()) {
+    //      WigItem bw = iter.next();
+    //      for (int i = bw.getStartBase(); i <= bw.getEndBase(); i++) {
+    //        int idx =
+    //            Utils.getIndexOfclosestValue(
+    //                i, this.getGc().getMapping()); // Where should this position be mapped on
+    // screen?
+    //        screenWigLocInfoList.get(idx).increment(bw.getWigValue(),
+    // DataTransformation.IDENTITY);
+    //      }
+    //    }
     List<Double> screenScores = new ArrayList<>();
     for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
       screenScores.add(x.getMeanScore());
@@ -348,9 +369,30 @@ public class TrackWiggles extends AbstractTrack {
       // chroms.addAll();
     }
     if (this.getTrackFormat().equals(TrackFormat.BIGWIG)) {
-      return this.bigWigReader.getChromosomeNames();
+      return this.getChromosomeNamesFromBigWig();
     }
     return null;
+  }
+
+  private ArrayList<String> getChromosomeNamesFromBigWig() {
+    ChromTree chromTree;
+    try {
+      chromTree =
+          new ChromTree(this.getWorkFilename(), this.bigWigReader.getHeader().chromTreeOffset);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    ArrayList<String> chromNames = new ArrayList<>();
+    int i = 0;
+    while (true) {
+      String name = chromTree.getNameForId(i);
+      if (name == null) {
+        break;
+      }
+      chromNames.add(name);
+      i++;
+    }
+    return chromNames;
   }
 
   @Override

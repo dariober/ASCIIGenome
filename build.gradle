@@ -1,13 +1,22 @@
 import java.security.MessageDigest
 import java.nio.file.Paths
 
+//plugins {
+//    id 'java'
+//    id 'com.gradleup.shadow' version '8.3.6'
+//}
+
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-def jversion= JavaVersion.VERSION_17
+def jversion= JavaVersion.VERSION_21
 java {
     sourceCompatibility= jversion
     targetCompatibility= jversion
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
 }
 
 if(JavaVersion.current() < jversion) {
@@ -97,9 +106,9 @@ jar {
 dependencies {
     implementation "net.sourceforge.argparse4j:argparse4j:0.8.1"
     implementation "jline:jline:2.14.5"
-    implementation "com.github.igvteam:igv:v2.6.3"
+    implementation files('libs/igv.jar')
     implementation "log4j:log4j:1.2.17"
-    implementation "com.github.samtools:htsjdk:5.0.0"
+    implementation "com.github.samtools:htsjdk:6.0.0"
     implementation "org.apache.commons:commons-text:1.15.0"
     implementation "org.apache.commons:commons-lang3:3.5"
     implementation "org.apache.commons:commons-math3:3.6.1"
@@ -118,6 +127,12 @@ dependencies {
     implementation  "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.1"
     implementation files('libs/bcf.jar')
     testImplementation 'junit:junit:4.12'
+
+    implementation platform('software.amazon.awssdk:bom:2.30.17')
+    implementation 'software.amazon.awssdk:cognitoidentity'
+    implementation 'software.amazon.awssdk:sts'
+    implementation 'software.amazon.awssdk:s3'
+    implementation 'software.amazon.awssdk:sso'
 }
 
 jacocoTestReport {

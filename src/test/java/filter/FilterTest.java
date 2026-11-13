@@ -142,7 +142,7 @@ public class FilterTest {
     int to = 100;
 
     SamReaderFactory srf = SamReaderFactory.make();
-    SamReader samReader = srf.open(new File("test_data/mjb050_oxBS.bam"));
+    SamReader samReader = srf.open(new File("test_data/mjb050_oxBS.bam").toPath());
     SAMFileHeader fh = samReader.getFileHeader();
     IntervalList il = new IntervalList(fh);
     Interval interval = new Interval(chrom, from, to);
@@ -154,7 +154,7 @@ public class FilterTest {
     samLocIter.setSamFilters(filters);
     while (samLocIter.hasNext()) {
       LocusInfo locus = samLocIter.next();
-      if (locus.getRecordAndOffsets().size() > 0) {
+      if (!locus.getRecordAndOffsets().isEmpty()) {
         // System.out.println(locus.getPosition() + " " + locus.getRecordAndPositions().size() + " "
         // +
         //        locus.getRecordAndPositions().get(0).getRecord().getFlags());
@@ -175,7 +175,7 @@ public class FilterTest {
     int to = 1;
 
     SamReaderFactory srf = SamReaderFactory.make();
-    SamReader samReader = srf.open(new File("test_data/mjb050_oxBS.bam"));
+    SamReader samReader = srf.open(new File("test_data/mjb050_oxBS.bam").toPath());
 
     SAMFileHeader fh = samReader.getFileHeader();
     IntervalList il = new IntervalList(fh);

@@ -38,7 +38,7 @@ public class SessionGenome {
     SAMSequenceDictionary samSeqDict = null;
     if (this.samSeqDictSource != null && new File(this.samSeqDictSource).exists()) {
       SamReaderFactory srf = SamReaderFactory.make();
-      try (SamReader samReader = srf.open(new File(this.samSeqDictSource))) {
+      try (SamReader samReader = srf.open(new File(this.samSeqDictSource).toPath())) {
         samSeqDict = samReader.getFileHeader().getSequenceDictionary();
       }
     }

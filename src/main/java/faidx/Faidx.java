@@ -144,7 +144,9 @@ public class Faidx {
     BufferedWriter wr =
         new BufferedWriter(new FileWriter(new File(fasta.getAbsolutePath() + ".fai")));
     for (FaidxRecord rec : records) {
-      wr.write(rec.toString() + "\n");
+      if (rec.seqLength > 0) {
+        wr.write(rec.toString() + "\n");
+      }
     }
     wr.close();
   }

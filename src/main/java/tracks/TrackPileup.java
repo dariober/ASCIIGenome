@@ -399,7 +399,7 @@ public class TrackPileup extends TrackBedgraph {
     if (this.getGc().getFastaFile() != null) {
       ReferenceSequenceFile faSeqFile =
           ReferenceSequenceFileFactory.getReferenceSequenceFile(
-              new File(this.getGc().getFastaFile()));
+              new File(this.getGc().getFastaFile()).toPath());
       refSeq =
           faSeqFile
               .getSubsequenceAt(

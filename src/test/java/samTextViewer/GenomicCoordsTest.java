@@ -23,7 +23,7 @@ import org.junit.Test;
 public class GenomicCoordsTest {
 
   static SamReaderFactory srf = SamReaderFactory.make();
-  static SamReader samReader = srf.open(new File("test_data/ds051.short.bam"));
+  static SamReader samReader = srf.open(new File("test_data/ds051.short.bam").toPath());
   public static SAMSequenceDictionary samSeqDict =
       samReader.getFileHeader().getSequenceDictionary();
 
@@ -39,9 +39,11 @@ public class GenomicCoordsTest {
     GenomicCoords initGc = new GenomicCoords("1:20000", 80, null, null);
     List<String> initList = List.of("test_data/contig_wo_length.vcf");
     initGc.setGenome(initList, false);
-    GenomicCoords gc = new GenomicCoords(initGc.toStringRegion(), 80, initGc.getSamSeqDict(), initGc.getFastaFile());
-    assertEquals(gc.getFrom(), (Integer)20000);
-    assertEquals(gc.getTo(), (Integer)20079);
+    GenomicCoords gc =
+        new GenomicCoords(
+            initGc.toStringRegion(), 80, initGc.getSamSeqDict(), initGc.getFastaFile());
+    assertEquals(gc.getFrom(), (Integer) 20000);
+    assertEquals(gc.getTo(), (Integer) 20079);
   }
 
   @Test

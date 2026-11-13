@@ -25,7 +25,7 @@ public class MakeTabixFileTest {
 
   public void vcfTester(String inVcf) {
     // Credit: https://www.biostars.org/p/262943/
-    VCFFileReader r = new VCFFileReader(new File(inVcf));
+    VCFFileReader r = new VCFFileReader(new File(inVcf).toPath());
     CloseableIterator<VariantContext> t = r.iterator();
     while (t.hasNext()) {
       t.next();
@@ -140,8 +140,7 @@ public class MakeTabixFileTest {
   }
 
   @Test
-  public void canReadSpaceSeparatedBed()
-      throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+  public void canReadSpaceSeparatedBed() throws ClassNotFoundException, IOException, SQLException {
     String infile = "test_data/space_sep.bedgraph";
     File outfile = new File("test_data/tmp.bedgraph.gz");
     outfile.deleteOnExit();
@@ -149,7 +148,7 @@ public class MakeTabixFileTest {
     File expectedTbi = new File(outfile.getAbsolutePath() + TabixUtils.STANDARD_INDEX_EXTENSION);
     expectedTbi.deleteOnExit();
 
-    TabixFormat tabixFormat = new TabixFormat(TabixFormat.GENERIC_FLAGS, 1, 2, 3, '#', 0);
+    TabixFormat tabixFormat = new TabixFormat(TabixFormat.ZERO_BASED, 1, 2, 3, '#', 0);
     new MakeTabixIndex(infile, outfile, tabixFormat, ' ');
 
     try (BufferedReader br = Utils.reader(outfile.getAbsolutePath())) {
@@ -160,7 +159,7 @@ public class MakeTabixFileTest {
 
   @Test
   public void canReadSpaceSeparatedSorted()
-      throws ClassNotFoundException, IOException, InvalidRecordException, SQLException {
+      throws ClassNotFoundException, IOException, SQLException {
     String infile = "test_data/space_sorted.bedgraph";
     File outfile = new File("test_data/tmp.bedgraph.gz");
     outfile.deleteOnExit();

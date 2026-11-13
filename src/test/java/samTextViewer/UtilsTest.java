@@ -63,7 +63,7 @@ public class UtilsTest {
   }
 
   static SamReaderFactory srf = SamReaderFactory.make();
-  static SamReader samReader = srf.open(new File("test_data/ds051.short.bam"));
+  static SamReader samReader = srf.open(new File("test_data/ds051.short.bam").toPath());
   public static SAMSequenceDictionary samSeqDict =
       samReader.getFileHeader().getSequenceDictionary();
 
@@ -290,14 +290,15 @@ public class UtilsTest {
   @Test
   public void canGetVCFHeaderAsString() {
     VCFFileReader reader =
-        new VCFFileReader(new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz"));
+        new VCFFileReader(
+            new File("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.gz").toPath());
     VCFHeader hdr = reader.getFileHeader();
     reader.close();
     List<String> str = Utils.vcfHeaderToStrings(hdr);
     assertEquals(71, str.size());
     assertTrue(str.get(str.size() - 1).startsWith("#CHROM"));
 
-    reader = new VCFFileReader(new File("test_data/CEU.exon.2010_06.genotypes.vcf.gz"));
+    reader = new VCFFileReader(new File("test_data/CEU.exon.2010_06.genotypes.vcf.gz").toPath());
     hdr = reader.getFileHeader();
     reader.close();
     str = Utils.vcfHeaderToStrings(hdr);
@@ -1408,7 +1409,10 @@ public class UtilsTest {
   @Test
   public void canGetBamReadCount() throws IOException {
     assertEquals(15098, Utils.getAlignedReadCount("test_data/ds051.actb.bam"));
-    assertEquals(15098, Utils.getAlignedReadCount("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.actb.bam"));
+    assertEquals(
+        15098,
+        Utils.getAlignedReadCount(
+            "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.actb.bam"));
 
     assertEquals(15098, Utils.getAlignedReadCount("test_data/ds051.actb.cram"));
     System.out.println(Utils.getAlignedReadCount("test_data/read_count.cram"));
@@ -1518,13 +1522,30 @@ public class UtilsTest {
   }
 
   @Test
-  public void canInitRegion()
-      throws IOException,
-          InvalidGenomicCoordsException,
-          ClassNotFoundException,
-          InvalidCommandLineException,
-          InvalidRecordException,
-          SQLException {
+  public void canInitRegionFromBigWig() throws InvalidGenomicCoordsException, IOException {
+    assertEquals(
+        "chr1:1",
+        Utils.initRegionFromFile(
+            "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
+
+    assertEquals(
+            "chr1:1",
+            Utils.initRegionFromFile(
+                    "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
+  }
+
+  @Test
+  public void canInitRegionFromBigBed() throws InvalidGenomicCoordsException, IOException {
+    assertEquals(
+        "chr1:1", Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
+    assertEquals(
+        "chr1:1",
+        Utils.initRegionFromFile(
+            "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
+  }
+
+  @Test
+  public void canInitRegion() throws IOException, InvalidGenomicCoordsException {
 
     // Files with no records
     assertEquals("chr1", Utils.initRegionFromFile("test_data/norecords.vcf"));
@@ -1540,28 +1561,12 @@ public class UtilsTest {
         Utils.initRegionFromFile(
             "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.short.bam"));
     assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
-    assertEquals(
-        "chr9:15077",
-        Utils.initRegionFromFile(
-            "test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
     assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
     assertEquals(
         "chr1:8404074", Utils.initRegionFromFile("test_data/refSeq.hg19.short.sort.bed.gz"));
     assertEquals("chr1:11874", Utils.initRegionFromFile("test_data/hg19_genes_head.gtf.gz"));
     assertEquals(
-        "chr9:41066",
-        Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
-    assertEquals(
         "1:113054374", Utils.initRegionFromFile("test_data/CEU.exon.2010_06.genotypes.vcf"));
-
-    boolean pass = false;
-    try {
-      Utils.initRegionFromFile(
-          "http://hgdownload.cse.ucsc.edu/goldenpath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig");
-    } catch (InvalidGenomicCoordsException e) {
-      pass = true;
-    }
-    assertTrue(pass);
   }
 
   @Test

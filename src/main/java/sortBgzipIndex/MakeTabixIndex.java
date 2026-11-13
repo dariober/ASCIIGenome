@@ -15,6 +15,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -22,12 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.sqlite.SQLiteException;
 import samTextViewer.Utils;
 
@@ -65,14 +61,14 @@ public class MakeTabixIndex {
 
     try {
       // Try to block compress and create index assuming the file is sorted
-      blockCompressAndIndex(intab, tmp);
+      blockCompressAndIndex(intab, tmp.toPath());
     } catch (Exception e) {
       // If intab is not sorted, sort it first.
       PrintWriter pw = new PrintWriter(tmp);
       pw.close();
       File sorted = Utils.createTempFile(".asciigenome.", ".sorted.tmp", true);
       sortByChromThenPos(intab, sorted);
-      blockCompressAndIndex(sorted.getAbsolutePath(), tmp);
+      blockCompressAndIndex(sorted.getAbsolutePath(), tmp.toPath());
       Files.delete(Paths.get(sorted.getAbsolutePath()));
     }
 
@@ -91,7 +87,7 @@ public class MakeTabixIndex {
     Files.move(Paths.get(tmpTbi.getAbsolutePath()), Paths.get(bgzfOutTbi.getAbsolutePath()));
   }
 
-  private void blockCompressAndIndex(String intab, File bgzfOut) throws IOException {
+  private void blockCompressAndIndex(String intab, Path bgzfOut) throws IOException {
     BlockCompressedOutputStream writer = new BlockCompressedOutputStream(bgzfOut);
     long filePosition = writer.getFilePointer();
 
@@ -130,7 +126,7 @@ public class MakeTabixIndex {
     writer.flush();
 
     Index index = indexCreator.finalizeIndex(writer.getFilePointer());
-    index.writeBasedOnFeatureFile(bgzfOut);
+    index.writeBasedOnFeaturePath(bgzfOut);
     writer.close();
     CloserUtil.close(lin);
   }
@@ -139,10 +135,14 @@ public class MakeTabixIndex {
   private void addLineToIndex(String line, TabixIndexCreator indexCreator, long filePosition) {
     List<String> parts = Splitter.on(this.columnSeparator).splitToList(line);
     int start = Integer.parseInt(parts.get(tabixFormat.startPositionColumn - 1));
+    boolean zeroBased = (tabixFormat.flags & TabixFormat.ZERO_BASED) != 0;
+    if (zeroBased) {
+      start += 1;
+    }
     int end;
     if (tabixFormat.endPositionColumn == tabixFormat.startPositionColumn
         || tabixFormat.endPositionColumn == 0) {
-      end = start + 1;
+      end = start;
     } else {
       end = Integer.parseInt(parts.get(tabixFormat.endPositionColumn - 1));
     }
@@ -219,105 +219,6 @@ public class MakeTabixIndex {
     wr.close();
     conn.close();
     Files.delete(Paths.get(this.sqliteFile.getAbsolutePath()));
-  }
-
-  private Stream<String> sortByChromThenPos(String unsorted, String sorted)
-      throws SQLException, IOException, ClassNotFoundException {
-
-    Connection conn;
-    try {
-      this.sqliteFile = Utils.createTempFile(".asciigenome.", ".tmp.sqlite", true);
-      conn = this.createSQLiteDb("data");
-    } catch (SQLiteException e) {
-      this.sqliteFile = File.createTempFile(".asciigenome.", ".tmp.sqlite");
-      this.sqliteFile.deleteOnExit();
-      conn = this.createSQLiteDb("data");
-    }
-    PreparedStatement stmtInsert =
-        conn.prepareStatement("INSERT INTO data (contig, pos, line) VALUES (?, ?, ?)");
-
-    BufferedReader br = Utils.reader(unsorted);
-    BufferedWriter wr = new BufferedWriter(new FileWriter(sorted));
-    String line;
-    int headerLinesToSkip = this.tabixFormat.numHeaderLinesToSkip;
-    boolean dataLinesfound = false;
-    int n = 0;
-    while ((line = br.readLine()) != null) {
-      if (line.trim().startsWith("##FASTA")
-          && dataLinesfound
-          && this.tabixFormat.equals(TabixFormat.GFF)) {
-        break;
-      }
-      if (line.trim().startsWith(String.valueOf(this.tabixFormat.metaCharacter))) {
-        wr.write(line + "\n");
-        continue;
-      }
-      if (headerLinesToSkip > 0) {
-        wr.write(line + "\n");
-        headerLinesToSkip -= 1;
-        continue;
-      }
-      if (line.trim().isEmpty()) {
-        continue;
-      }
-
-      List<String> tabs = Splitter.on(this.columnSeparator).splitToList(line);
-      stmtInsert.setString(1, tabs.get(tabixFormat.sequenceColumn - 1));
-      stmtInsert.setInt(2, Integer.parseInt(tabs.get(tabixFormat.startPositionColumn - 1)));
-      stmtInsert.setString(3, line.replaceAll("\n$", ""));
-      stmtInsert.addBatch();
-      if (n % 10000 == 0) {
-        stmtInsert.executeBatch();
-      }
-      n += 1;
-      dataLinesfound = true;
-    }
-    stmtInsert.executeBatch();
-    stmtInsert.close();
-    br.close();
-
-    PreparedStatement stmtSelect =
-        conn.prepareStatement("SELECT line FROM data ORDER BY contig, pos");
-
-    ResultSet rs = stmtSelect.executeQuery();
-    Iterator<String> iterator =
-        new Iterator<>() {
-          @Override
-          public boolean hasNext() {
-            try {
-              return rs.next();
-            } catch (SQLException e) {
-              throw new RuntimeException(e);
-            }
-          }
-
-          @Override
-          public String next() {
-            try {
-              return rs.getString("line");
-            } catch (SQLException e) {
-              throw new RuntimeException(e);
-            }
-          }
-        };
-
-    Spliterator<String> spliterator =
-        Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
-
-    Stream<String> stream = StreamSupport.stream(spliterator, false);
-    Connection finalConn = conn;
-    return stream.onClose(
-        () -> {
-          try {
-            rs.close();
-            stmtSelect.close();
-            finalConn.commit();
-            finalConn.close();
-            Files.delete(Paths.get(this.sqliteFile.getAbsolutePath()));
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        });
   }
 
   private Connection createSQLiteDb(String tablename) throws SQLException, ClassNotFoundException {

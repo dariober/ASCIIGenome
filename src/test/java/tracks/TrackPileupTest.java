@@ -39,7 +39,7 @@ public class TrackPileupTest {
   }
 
   static SamReaderFactory srf = SamReaderFactory.make();
-  static SamReader samReader = srf.open(new File("test_data/ds051.actb.bam"));
+  static SamReader samReader = srf.open(new File("test_data/ds051.actb.bam").toPath());
   public static SAMSequenceDictionary samSeqDict =
       samReader.getFileHeader().getSequenceDictionary();
 
