@@ -1531,7 +1531,7 @@ public class UtilsTest {
     assertEquals(
             "chr1:1",
             Utils.initRegionFromFile(
-                    "https://raw.githubusercontent.com/dariober/ASCIIGenome/947b3a4efb00b8d0f328dbb6d1d81bb9bb1f0623/test_data//wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.bigWig"));
+                    "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/wgEncodeCaltechRnaSeqGm12878R2x75Il400SigRep2V2.sample.bigWig"));
   }
 
   @Test
@@ -1541,7 +1541,7 @@ public class UtilsTest {
     assertEquals(
         "chr1:1",
         Utils.initRegionFromFile(
-            "https://raw.githubusercontent.com/dariober/ASCIIGenome/947b3a4efb00b8d0f328dbb6d1d81bb9bb1f0623/test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
+            "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
   }
 
   @Test
