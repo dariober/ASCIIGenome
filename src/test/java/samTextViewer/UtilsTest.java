@@ -1542,6 +1542,10 @@ public class UtilsTest {
   public void canInitRegionFromBigBed() throws InvalidGenomicCoordsException, IOException {
     assertEquals(
         "chr1:1", Utils.initRegionFromFile("test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
+    assertEquals(
+        "chr1:1",
+        Utils.initRegionFromFile(
+            "https://raw.githubusercontent.com/dariober/ASCIIGenome/947b3a4efb00b8d0f328dbb6d1d81bb9bb1f0623/test_data/wgEncodeDukeDnase8988T.fdr01peaks.hg19.bb"));
   }
 
   @Test

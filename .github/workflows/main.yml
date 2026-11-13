@@ -1,20 +1,31 @@
 name: CI
+
 on: [push]
+
 jobs:
   build-and-test:
-    runs-on: 
-      ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         version: [21, 27]
+
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-java@v5
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: ${{ matrix.version }}
+          cache: gradle
+
+      - name: Check Java and Gradle versions
+        run: |
+          java -version
+          ./gradlew --version
 
       - name: Install samtools (Linux)
         if: runner.os == 'Linux'
@@ -24,8 +35,7 @@ jobs:
 
       - name: Install samtools (macOS)
         if: runner.os == 'macOS'
-        run: |
-          brew install samtools
+        run: brew install samtools
 
       - name: Build and Test
         uses: nick-fields/retry@v3
@@ -34,7 +44,7 @@ jobs:
           max_attempts: 3
           command: |
             set -e
-            ./gradlew build test jacocoTestReport
+            ./gradlew clean build jacocoTestReport
             cp ASCIIGenome build/libs/
             cd src/test/java
             chmod a+x integration_test.py

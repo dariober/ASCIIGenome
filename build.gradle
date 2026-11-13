@@ -1,10 +1,10 @@
 import java.security.MessageDigest
 import java.nio.file.Paths
 
-plugins {
-    id 'java'
-    id 'com.gradleup.shadow' version '8.3.6'
-}
+//plugins {
+//    id 'java'
+//    id 'com.gradleup.shadow' version '8.3.6'
+//}
 
 apply plugin: 'java'
 apply plugin: 'jacoco'
@@ -13,6 +13,10 @@ def jversion= JavaVersion.VERSION_21
 java {
     sourceCompatibility= jversion
     targetCompatibility= jversion
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
 }
 
 if(JavaVersion.current() < jversion) {

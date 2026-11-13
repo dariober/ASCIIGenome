@@ -2,6 +2,7 @@
 
 * [Notes on maintenance and development](#notes-on-maintenance-and-development)
     * [Code style](#code-style)
+    * [Build IGV and add it as dependency](#build-igv-and-add-it-as-dependency)
     * [Release new version](#release-new-version)
         * [Upload release to github](#upload-release-to-github)
         * [Upload ASCIIGenome-x.y.z.zip to github](#upload-asciigenome-x.y.z.zip-to-github)
@@ -32,6 +33,24 @@ v=1.34.1
 curl -O -L https://github.com/google/google-java-format/releases/download/v$v/google-java-format-$v-all-deps.jar
 java -jar google-java-format-*-all-deps.jar -i `find src/ -name '*.java'`
 ```
+
+Build IGV and add it as dependency
+----------------------------------
+
+```
+git clone https://github.com/igvteam/igv.git
+cd igv
+git checkout bc6ef372164de5776f53d24f71ad8356c90f10a4
+./gradlew clean jar
+cp build/libs/igv.jar ~/git_repos/ASCIIGenome/libs/
+```
+
+In [build.gradle(./build.gradle) you should already have dependency:
+
+```
+implementation files('libs/igv.jar')
+```
+
 
 Release new version
 -------------------

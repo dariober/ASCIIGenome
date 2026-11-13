@@ -608,18 +608,11 @@ public class Utils {
       }
       return region;
 
-    } else if (fmt.equals(TrackFormat.BIGWIG) && !urlValidator.isValid(x)) {
-      // Loading from URL is painfully slow so do not initialize from URL
+    } else if (fmt.equals(TrackFormat.BIGWIG)) {
       return initRegionFromBigWig(x);
 
-    } else if (fmt.equals(TrackFormat.BIGBED) && !urlValidator.isValid(x)) {
-      // Loading from URL is painfully slow so do not initialize from URL
+    } else if (fmt.equals(TrackFormat.BIGBED)) {
       return initRegionFromBigBed(x);
-
-    } else if (urlValidator.isValid(x)
-        && (fmt.equals(TrackFormat.BIGWIG) || fmt.equals(TrackFormat.BIGBED))) {
-      System.err.println("Refusing to initialize from URL");
-      throw new InvalidGenomicCoordsException();
 
     } else if (fmt.equals(TrackFormat.TDF)) {
       Iterator<String> iter = TDFReader.getReader(x).getChromosomeNames().iterator();
