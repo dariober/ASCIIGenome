@@ -237,8 +237,12 @@ public class MainTest {
     String[] args =
         new String[] {"-ni", "-nf", "--debug", "2", "test_data/gnomad.exomes.v4.1.sites.chr1.bcf"};
     String out = Joiner.on("\n").join(this.runMain(args));
-    System.out.println(out);
-    assertTrue(out.contains("chr1:1"));
+    assertTrue(out.contains("chr1:11994"));
+
+    args =
+            new String[] {"-ni", "-nf", "--debug", "2", "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/gnomad.exomes.v4.1.sites.chr1.bcf"};
+    out = Joiner.on("\n").join(this.runMain(args));
+    assertTrue(out.contains("chr1:11994"));
   }
 
   @Test

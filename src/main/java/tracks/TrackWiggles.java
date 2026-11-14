@@ -278,7 +278,6 @@ public class TrackWiggles extends AbstractTrack {
    * @throws InvalidGenomicCoordsException
    */
   private void bigWigToScores() throws InvalidGenomicCoordsException, IOException {
-
     // List of length equal to screen size. Each inner map contains info about the screen locus
     List<ScreenWiggleLocusInfo> screenWigLocInfoList = new ArrayList<ScreenWiggleLocusInfo>();
     for (int i = 0; i < getGc().getUserWindowSize(); i++) {
@@ -304,21 +303,6 @@ public class TrackWiggles extends AbstractTrack {
       }
     }
 
-    //    BigWigIterator iter =
-    //        this.bigWigReader.getBigWigIterator(
-    //            getGc().getChrom(), getGc().getFrom(), getGc().getChrom(), getGc().getTo(),
-    // false);
-    //    while (iter.hasNext()) {
-    //      WigItem bw = iter.next();
-    //      for (int i = bw.getStartBase(); i <= bw.getEndBase(); i++) {
-    //        int idx =
-    //            Utils.getIndexOfclosestValue(
-    //                i, this.getGc().getMapping()); // Where should this position be mapped on
-    // screen?
-    //        screenWigLocInfoList.get(idx).increment(bw.getWigValue(),
-    // DataTransformation.IDENTITY);
-    //      }
-    //    }
     List<Double> screenScores = new ArrayList<>();
     for (ScreenWiggleLocusInfo x : screenWigLocInfoList) {
       screenScores.add(x.getMeanScore());

@@ -22,10 +22,9 @@ New in 1.21.1
 * [dataCol](https://asciigenome.readthedocs.io/en/latest/commandHelp.html#dataCol) enabled data transformations and aggregations. E.g. for
   plotting p-values from gwas it is useful to use `dataCol -g max -t minus_log10`
 
-* Partial support for **bcf** format, at some conditions: `bcf` files must be already sorted and indexed
-(*e.g.* using `bcftools`) and they must be local (*i.e.* you cannot read from remote URLs). ASCIIGenome 
-may be one of the few, if not the only one, viewer for `bcf` files. Thanks to **@lindenb** for 
-making [bcfparser](https://github.com/lindenb/bcfparser).
+* Support for **bcf** format, `bcf` files must be already sorted and indexed
+(*e.g.* using `bcftools index`) ASCIIGenome 
+may be one of the few, if not the only one, viewer for `bcf` files.
 
 * Enable optimistic reading of vcf v4.4 (*i.e.* we hope the input vcf is
   compatible with 4.3 - this appears to be what
@@ -36,7 +35,7 @@ This is to prevent the annoying case where you accidentally start a search on a 
 
 * Fix bug that made ASCIIGenome crash with IUPAC DNA compounds in reference sequence
 
-* Upgrade htsjdk to [5.0.0](https://github.com/samtools/htsjdk/releases/tag/5.0.0)
+* Upgrade htsjdk to [6.0.0](https://github.com/samtools/htsjdk/releases/tag/6.0.0)
 
 New in 1.20.0
 =============

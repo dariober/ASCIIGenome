@@ -671,6 +671,23 @@ public class InteractiveInputTest {
   }
 
   @Test
+  public void canPrintGenomeBcf()
+          throws IOException,
+          InvalidConfigException,
+          ClassNotFoundException,
+          InvalidGenomicCoordsException,
+          InvalidRecordException,
+          SQLException {
+    new Config(null);
+    TrackProcessor proc;
+    InteractiveInput ip = new InteractiveInput(new ConsoleReader(), 1, false);
+    proc = gimmeTrackProcessor("chr1:11994-12176", 80, "test_data/gnomad.exomes.v4.1.sites.chr1.bcf");
+    ProcessInput pi = this.processInput(ip, "show ge -n -1", proc);
+    String[] out = pi.stderr.split("\n");
+    assertEquals("Genome size: 3088269832; Number of contigs: 24", out[0].trim());
+  }
+
+  @Test
   public void canPrintGenome()
       throws IOException,
           InvalidConfigException,

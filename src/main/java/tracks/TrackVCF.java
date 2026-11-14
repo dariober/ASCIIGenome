@@ -2,7 +2,6 @@ package tracks;
 
 import static htsjdk.variant.vcf.VCFFileReader.isBCF;
 
-import com.github.lindenb.jvarkit.variant.bcf.BCFFileReader;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import exceptions.InvalidColourException;
@@ -11,7 +10,8 @@ import exceptions.InvalidRecordException;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.samtools.util.FileExtensions;
 import htsjdk.tribble.AbstractFeatureReader;
-import htsjdk.tribble.readers.LineIterator;
+import htsjdk.tribble.FeatureCodec;
+import htsjdk.variant.bcf2.BCF2Codec;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.Options;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import samTextViewer.GenomicCoords;
 import samTextViewer.Utils;
 import sortBgzipIndex.MakeTabixIndex;
@@ -37,7 +38,6 @@ import utils.FlexibleTabixReader;
 
 public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
-  private List<VCFFeature> featureList = new ArrayList<>();
   private VCFCodec vcfCodec;
   private final VCFReader vcfReader;
   private final boolean isBCF;
@@ -68,7 +68,7 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
           new File(this.getWorkFilename()),
           Utils.trackFormatToTabixFormat(this.getTrackFormat()),
           this.getColumnSeparator());
-    } else if (isBCF(Path.of(filename)) && !new File(Path.of(filename) + ".csi").exists()) {
+    } else if (isBCF(Path.of(filename)) && !this.hasIndex(filename)) {
       throw new NotImplementedException("Cannot sort and index bcf files.");
     } else { // This means the input is indexed.
       this.setWorkFilename(filename);
@@ -80,6 +80,10 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
       this.tabixReader = null;
     }
     this.setGc(gc);
+  }
+
+  private boolean hasIndex(String fn) {
+    return this.prepareVcfReader(fn).isQueryable();
   }
 
   @Override
@@ -199,19 +203,17 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
     return vcfLines;
   }
 
-  private VCFReader prepareVcfReader(String vcfFile) throws IOException {
-    if (Utils.urlFileExists(vcfFile)) {
-      AbstractFeatureReader<VariantContext, LineIterator> reader =
-          AbstractFeatureReader.getFeatureReader(
-              vcfFile, new VCFCodec(), true // requires index
-              );
+  private VCFReader prepareVcfReader(String vcfFile) {
+      FeatureCodec<VariantContext, ?> codec =
+              isBCF ? new BCF2Codec() : new VCFCodec();
+
+      AbstractFeatureReader<VariantContext, ?> reader =
+              AbstractFeatureReader.getFeatureReader(
+                      vcfFile,
+                      codec,
+                      true);
+
       return new VCFReaderAdapter(reader);
-    }
-    if (isBCF) {
-      return new BCFFileReader(Path.of(vcfFile), true);
-    } else {
-      return new VCFFileReader(new File(vcfFile).toPath(), true);
-    }
   }
 
   @Override
@@ -324,44 +326,40 @@ public class TrackVCF extends AbstractTrackFeature<VCFFeature> {
 
   // <----
 
-  private static class VCFReaderAdapter implements VCFReader {
-    private final AbstractFeatureReader<VariantContext, LineIterator> reader;
-
-    public VCFReaderAdapter(AbstractFeatureReader<VariantContext, LineIterator> reader) {
-      this.reader = reader;
-    }
+  private record VCFReaderAdapter(AbstractFeatureReader<VariantContext, ?> reader) implements VCFReader {
 
     @Override
-    public VCFHeader getHeader() {
-      return (VCFHeader) reader.getHeader();
-    }
+      public VCFHeader getHeader() {
+        return (VCFHeader) reader.getHeader();
+      }
 
-    @Override
-    public CloseableIterator<VariantContext> query(String chrom, int start, int end) {
-      try {
-        return reader.query(chrom, start, end);
-      } catch (IOException e) {
-        throw new RuntimeException("Error querying VCF: " + e.getMessage(), e);
+      @Override
+      public CloseableIterator<VariantContext> query(String chrom, int start, int end) {
+        try {
+          return reader.query(chrom, start, end);
+        } catch (IOException e) {
+          throw new RuntimeException("Error querying VCF: " + e.getMessage(), e);
+        }
+      }
+
+      @Override
+      public boolean isQueryable() {
+        return true;
+      }
+
+      @Override
+      @NonNull
+      public CloseableIterator<VariantContext> iterator() {
+        try {
+          return reader.iterator();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+
+      @Override
+      public void close() throws IOException {
+        reader.close();
       }
     }
-
-    @Override
-    public boolean isQueryable() {
-      return true;
-    }
-
-    @Override
-    public CloseableIterator<VariantContext> iterator() {
-      try {
-        return reader.iterator();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public void close() throws IOException {
-      reader.close();
-    }
-  }
 }
