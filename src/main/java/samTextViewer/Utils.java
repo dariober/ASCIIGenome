@@ -1,6 +1,5 @@
 package samTextViewer;
 
-import com.github.lindenb.jvarkit.variant.bcf.BCFFileReader;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -32,8 +31,10 @@ import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.AbstractFeatureReader;
+import htsjdk.tribble.FeatureCodec;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.readers.LineIterator;
+import htsjdk.variant.bcf2.BCF2Codec;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.Options;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
@@ -46,10 +47,7 @@ import htsjdk.variant.vcf.VCFHeaderVersion;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.sql.SQLException;
@@ -75,6 +73,8 @@ import utils.CsvFormat;
 import utils.CsvPresets;
 import utils.FlexibleTabixReader;
 import utils.Tokenizer;
+
+import static htsjdk.variant.vcf.VCFFileReader.isBCF;
 
 /**
  * @author berald01
@@ -624,8 +624,8 @@ public class Utils {
       }
       System.err.println("Cannot initialize from " + x);
       throw new RuntimeException();
-    } else if (fmt.equals(TrackFormat.VCF) && x.toLowerCase().endsWith(".bcf")) {
-      return initRegionFromBcf(x);
+    } else if (fmt.equals(TrackFormat.VCF)) {
+      return initRegionFromVcf(x);
     } else {
       // Input file appears to be a generic interval file. We expect chrom to be in column 1
       // VCF files are also included here since they are either gzip or plain ASCII.
@@ -664,8 +664,6 @@ public class Utils {
           }
         } else if (line.startsWith("#") || line.isEmpty() || line.startsWith("track ")) {
           continue;
-        } else if (fmt.equals(TrackFormat.VCF)) {
-          region = line.split("\t")[0] + ":" + line.split("\t")[1];
         } else {
           // If this is space separated bed file
           String sep = Utils.getBedColumnSeparator(x);
@@ -683,29 +681,43 @@ public class Utils {
         br.close();
         return region;
       }
-      if (line == null) { // This means the input has no records
-        region = "Undefined_contig";
-        if (fmt.equals(TrackFormat.VCF)) {
-          SAMSequenceDictionary seqdict = getVCFHeader(x).getSequenceDictionary();
-          if (seqdict != null) {
-            Iterator<SAMSequenceRecord> iter = seqdict.getSequences().iterator();
-            if (iter.hasNext()) {
-              region = iter.next().getSequenceName();
-            }
-          }
-        }
-        return region;
-      }
+      // This means the input has no records
+      return "Undefined_contig";
     }
-    throw new RuntimeException("Cannot initialize from " + x);
   }
 
-  private static String initRegionFromBcf(String bcf) throws IOException {
-    BCFFileReader bcfIn = new BCFFileReader(Path.of(bcf), true);
-    VCFHeader h = bcfIn.getHeader();
-    bcfIn.close();
-    return h.getSequenceDictionary().getSequence(0).getSequenceName();
+  private static AbstractFeatureReader<VariantContext, ?> getVcfReader(String vcf) {
+    FeatureCodec<VariantContext, ?> codec =
+            isBCF(Path.of(vcf)) ? new BCF2Codec() : new VCFCodec();
+
+    AbstractFeatureReader<VariantContext, ?> reader =
+            AbstractFeatureReader.getFeatureReader(
+                    vcf,
+                    codec,
+                    false);
+    return reader;
   }
+
+  private static String initRegionFromVcf(String vcf) throws IOException {
+    AbstractFeatureReader<VariantContext, ?> reader = getVcfReader(vcf);
+    CloseableIterator<VariantContext> iter = reader.iterator();
+    if (iter.hasNext()) {
+      VariantContext rec = iter.next();
+      reader.close();
+      return rec.getContig() + ":" + rec.getStart();
+    }
+    VCFHeader vcfHeader = (VCFHeader) reader.getHeader();
+    if (vcfHeader.getSequenceDictionary() == null) {
+      return "Undefined_contig";
+    }
+    List<SAMSequenceRecord> seqs = vcfHeader.getSequenceDictionary().getSequences();
+    reader.close();
+    if (seqs != null && !seqs.isEmpty()) {
+      return seqs.getFirst().getContig();
+    }
+    return "Undefined_contig";
+  }
+
 
   public static String initRegionFromFile(String x)
       throws IOException, InvalidGenomicCoordsException {
@@ -865,24 +877,6 @@ public class Utils {
       return TrackFormat.BED;
     }
   }
-
-  //	public static LinkedHashMap<String, IntervalFeatureSet> createIntervalFeatureSets(List<String>
-  // fileNames) throws IOException, InvalidGenomicCoordsException, ClassNotFoundException,
-  // InvalidRecordException, SQLException{
-  //		LinkedHashMap<String, IntervalFeatureSet> ifsets= new LinkedHashMap<String,
-  // IntervalFeatureSet>();
-  //		for(String x : fileNames){
-  //			String f= x;
-  //			if(getFileTypeFromName(x).equalCoordsUnstranded(TrackFormat.BED) ||
-  // getFileTypeFromName(x).equalCoordsUnstranded(TrackFormat.GFF)){
-  //				if(!ifsets.containsKey(x)){ // If the input has duplicates, do not reload duplicates!
-  //					IntervalFeatureSet ifs= new IntervalFeatureSet(f);
-  //					ifsets.put(x, ifs);
-  //				}
-  //			}
-  //		}
-  //		return ifsets;
-  //	}
 
   /**
    * Transpose list of list as if they were a table. No empty cells should be present. See
@@ -2173,22 +2167,9 @@ public class Utils {
 
   /** Get VCFHeader from the given source which could be URL or local file. */
   public static VCFHeader getVCFHeader(String source) throws IOException {
-    VCFHeader vcfHeader;
-    if (Utils.urlFileExists(source)) {
-      URL url = new URL(source);
-      AbstractFeatureReader<VariantContext, LineIterator> reader =
-          AbstractFeatureReader.getFeatureReader(url.toExternalForm(), new VCFCodec(), false);
-      vcfHeader = (VCFHeader) reader.getHeader();
-    } else if (source.toLowerCase().endsWith(".bcf")) {
-      BCFFileReader bcf = new BCFFileReader(Path.of(source), true);
-      bcf.close();
-      return bcf.getHeader();
-    } else {
-      VCFFileReader reader =
-          new VCFFileReader(new File(source).toPath(), false); // Set requiredIndex false!
-      vcfHeader = reader.getFileHeader();
-      reader.close();
-    }
+    AbstractFeatureReader<VariantContext, ?> reader = getVcfReader(source);
+    VCFHeader vcfHeader = (VCFHeader)reader.getHeader();
+    reader.close();
     return vcfHeader;
   }
 

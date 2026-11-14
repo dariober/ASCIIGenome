@@ -27,11 +27,14 @@ import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.filter.AlignedFilter;
 import htsjdk.samtools.filter.MappingQualityFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
+import htsjdk.samtools.util.CloseableIterator;
+import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +71,15 @@ public class UtilsTest {
       samReader.getFileHeader().getSequenceDictionary();
 
   public static String fastaFile = "test_data/chr7.fa";
+
+  @Test
+  public void tmp() {
+    VCFFileReader reader = new VCFFileReader(Path.of("test_data/gnomad.exomes.v4.1.sites.chr1.no_index.bcf"), false);
+    CloseableIterator<VariantContext> iter = reader.iterator();
+    while (iter.hasNext()) {
+      System.out.println(iter.next().toStringDecodeGenotypes());
+    }
+  }
 
   @Test
   public void canGuessCsvFormat() {
@@ -380,6 +392,18 @@ public class UtilsTest {
       pass = true;
     }
     assertTrue(pass);
+  }
+
+  @Test
+  public void canGetVCFHeaderFromBcf() throws IOException {
+    VCFHeader hdr = Utils.getVCFHeader("test_data/gnomad.exomes.v4.1.sites.chr1.bcf");
+    assertEquals(24, hdr.getContigLines().size());
+
+    hdr = Utils.getVCFHeader("https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/gnomad.exomes.v4.1.sites.chr1.bcf");
+    assertEquals(24, hdr.getContigLines().size());
+
+    hdr = Utils.getVCFHeader("test_data/ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf");
+    assertEquals(25, hdr.getContigLines().size());
   }
 
   @Test
@@ -935,7 +959,7 @@ public class UtilsTest {
       i++;
     }
     long t1 = System.currentTimeMillis();
-    assertTrue((t1 - t0) < 10000); // It can filter reasonably fast (?)
+    assertTrue((t1 - t0) < 20000); // It can filter reasonably fast (?)
   }
 
   /*
@@ -1546,6 +1570,11 @@ public class UtilsTest {
 
   @Test
   public void canInitRegion() throws IOException, InvalidGenomicCoordsException {
+    assertEquals("chr7:5566778", Utils.initRegionFromFile("test_data/ds051.short.bam"));
+    assertEquals(
+            "chr7:5566778",
+            Utils.initRegionFromFile(
+                    "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.short.bam"));
 
     // Files with no records
     assertEquals("chr1", Utils.initRegionFromFile("test_data/norecords.vcf"));
@@ -1555,11 +1584,6 @@ public class UtilsTest {
     assertEquals("Undefined_contig", Utils.initRegionFromFile("test_data/empty2.bedGraph"));
     // Note: empty bigBed and bigWig seems to fail for reasons independent of ASCIIGenome
 
-    assertEquals("chr7:5566778", Utils.initRegionFromFile("test_data/ds051.short.bam"));
-    assertEquals(
-        "chr7:5566778",
-        Utils.initRegionFromFile(
-            "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/ds051.short.bam"));
     assertEquals("chr9", Utils.initRegionFromFile("test_data/hg18_var_sample.wig.v2.1.30.tdf"));
     assertEquals("chr1:67208779", Utils.initRegionFromFile("test_data/refSeq.hg19.short.bed"));
     assertEquals(

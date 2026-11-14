@@ -11,9 +11,12 @@ import exceptions.InvalidConfigException;
 import exceptions.InvalidGenomicCoordsException;
 import exceptions.InvalidRecordException;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import htsjdk.variant.vcf.VCFFileReader;
 import org.junit.Before;
 import org.junit.Test;
 import samTextViewer.GenomicCoords;
@@ -33,6 +36,7 @@ public class TrackVCFTest {
           SQLException,
           ClassNotFoundException,
           InvalidRecordException {
+
     GenomicCoords gc = new GenomicCoords("chr1:1-12160", 80, null, null);
     TrackVCF tif = new TrackVCF("test_data/gnomad.exomes.v4.1.sites.chr1.bcf", gc);
     assertEquals(8, tif.getFeatureList().size());
@@ -93,6 +97,15 @@ public class TrackVCFTest {
     assertEquals("1", (tif.getGc().getChrom()));
     assertEquals(22, tif.getReader().getChromosomes().size());
     tif.close();
+  }
+
+  @Test
+  public void canReadBcfFromURL() throws InvalidGenomicCoordsException, IOException, SQLException, ClassNotFoundException, InvalidRecordException {
+    String bcf =
+            "https://raw.githubusercontent.com/dariober/ASCIIGenome/master/test_data/gnomad.exomes.v4.1.sites.chr1.bcf";
+    GenomicCoords gc = new GenomicCoords("chr1:11994-12165", 80, null, null);
+    TrackVCF tif = new TrackVCF(bcf, gc);
+    System.err.println(tif.getFeatureList());
   }
 
   @Test
