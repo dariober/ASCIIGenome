@@ -28,7 +28,7 @@ possible but ASCIIGenome will first download them locally.
    "`tdf <https://www.broadinstitute.org/igv/TDF>`_", ":code:`.tdf`", "Useful for quantitative data on very large intervals."
    "", "*Other*", ""
    "`vcf <https://en.wikipedia.org/wiki/Variant_Call_Format>`_", ":code:`.vcf`", "Can be gzipped (:code:`.gz`)"
-   "`bcf (version 2.1, 2.2) <https://en.wikipedia.org/wiki/Variant_Call_Format>`_", ":code:`.bcf`", "Must be sorted and indexed. Only supported for local files, reading from remote URL is not possible"
+   "`bcf<https://en.wikipedia.org/wiki/Variant_Call_Format>`_", ":code:`.bcf`", "Must be sorted and indexed"
    "`bam and sam <https://samtools.github.io/hts-specs/SAMv1.pdf>`_", ":code:`.bam .sam .sam.gz`", "Files without index are first sorted and then indexed.
    Remote URLs are painfully slow (*same for IGV*)." 
    "`cram <https://en.wikipedia.org/wiki/CRAM_(file_format)>`_", ":code:`.cram`", "Same as :code:`bam`, requires a reference genome in fasta format"
@@ -38,9 +38,6 @@ same as *.bigbed*.
 
 .. tip:: For input format specs see also `UCSC format <https://genome.ucsc.edu/FAQ/FAQformat.html>`_ and `Ensembl <http://www.ensembl.org>`_.  
          For guidelines on the choice of format see the `IGV recommendations <https://www.broadinstitute.org/igv/RecommendedFileFormats>`_.
-
-Please see `issue #2 <https://github.com/dariober/ASCIIGenome/issues/2>`_ and `issue #41 <https://github.com/dariober/ASCIIGenome/issues/41>`_
-about reading remote tabix files (*to be resolved*).
 
 .. _handling_large_files:
 
