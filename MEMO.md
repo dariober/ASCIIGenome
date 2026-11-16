@@ -125,31 +125,16 @@ Test brew installation
 ----------------------
 
 ```
-brew reinstall dariober/asciigenome/asciigenome
+brew update
+brew upgrade dariober/asciigenome/asciigenome # or `brew install` for fresh installation
 # Check it works by executing ASCIIGenome from the brepath e.g.:
-/opt/homebrew/bin/ASCIIGenome
+/opt/homebrew/bin/ASCIIGenome --version
 ```
 
 ### Update bioconda
 
 Similar to brew: edit [meta.yaml](https://github.com/bioconda/bioconda-recipes/blob/master/recipes/asciigenome/meta.yaml) 
 as appropriate. NB: You should include sha sum here as well!
-
-Start new development branch
-----------------------------
-
-You have uploaded a new release and now you want to develop new features. 
-For development, create a branch from the master. Work on it and once happy return to
-the steps to [release a new version](#release-new-version), in an iterative way.
-
-### Create a new branch:
-
-```
-cd ~/git_repos/ASCIIGenome # Or wherever you the repo
-git checkout -b v1.18.0    # Create new branch
-git checkout v1.18.0       # Switch to new branch 
-git push -u origin v1.18.0 # Add branch to remote     
-```
 
 # Install or update gradle
 
