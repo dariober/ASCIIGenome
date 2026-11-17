@@ -10,9 +10,10 @@ New in 1.21.1
   Search the sequence in the current window for matches to one or more patterns
   and return results as an alignment track. The pattern is allowed to have
   mismatches. `search` is useful for locating short sequences such as PCR
-  primers, restriction sites, crispr targets. The search engine, is
-  [sassy](https://github.com/RagnarGrootKoerkamp/sassy), the user must download
-  and put it on PATH (*e.g.* using conda).
+  primers, restriction sites, crispr targets. The search engine is
+  [sassy](https://github.com/RagnarGrootKoerkamp/sassy). `search` will try first to use `sassy` on the user's
+    search PATH and, if not found, use the sassy executable that ships
+    with ASCIIGenome.
 
 * Support for generic tabular files, *i.e.* input does not need to comply with
   bed or bedgraph format. The
@@ -24,7 +25,7 @@ New in 1.21.1
 
 * Support for **bcf** format, `bcf` files must be already sorted and indexed
 (*e.g.* using `bcftools index`) ASCIIGenome 
-may be one of the few, if not the only one, viewer for `bcf` files.
+may be one of the few viewers for `bcf` files.
 
 * Enable optimistic reading of vcf v4.4 (*i.e.* we hope the input vcf is
   compatible with 4.3 - this appears to be what
